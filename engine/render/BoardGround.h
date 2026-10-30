@@ -119,6 +119,9 @@ class BoardGround {
   // Builds both looks for the board and requests its textures. False if the map needs more baked layers
   // than the palette holds.
   bool build(const ember::Board& board);
+  // The map editor's edit on the open map (the user, 2026-10-29: the preview blinked and reloaded everything at every tile): the
+  // geometry built again for the edited board, the textures kept; the previous geometry is drawn until the new one is on the GPU.
+  bool rebuild(const ember::Board& board);
   // Once per frame: streaming.
   void update();
   bool ready() const;
@@ -155,23 +158,6 @@ class BoardGround {
     uint32_t wallFrom = 0;  // the first vertex of the board's added side walls (closeBoardSides); 0 = none
   };
 
-  void texture(const std::string& asset);  // requests it once
-  void pack(const ember::GroundGeometry& g, const std::vector<int>& palette, Mesh& out);
-  void upload(Mesh& mesh);
-  void buildWater3D(const ember::Board& board);
-  void updateTexture(Texture& t);
-
-  VulkanContext& context_;
-  Bindless& bindless_;
-  AssetManager& assets_;
-  UploadQueue& uploads_;
-  std::unordered_map<std::string, std::unique_ptr<Texture>> textures_;
-  std::vector<std::pair<std::string, size_t>> slots_;  // (asset, word in record_) to fill once resident
-  TerrainGpu record_{};
-  Buffer recordBuffer_;
-  ImageUpload recordUpload_;
-  bool recordQueued_ = false;
-  Mesh meshes_[3];  // smooth, hard, tabletop
   struct Water {
     std::vector<WaterVertexGpu> vertices;
     std::vector<uint32_t> indices;  // grouped by look (WaterView::lookCount)
@@ -179,16 +165,43 @@ class BoardGround {
     Buffer vertexBuffer, indexBuffer;
     ImageUpload vertexUpload, indexUpload;
   };
-  Water water_[2];
   struct Water3D {
     std::vector<Water3DVertexGpu> vertices;
     std::vector<uint32_t> indices;
     Buffer vertexBuffer, indexBuffer;
     ImageUpload vertexUpload, indexUpload;
   };
-  Water3D water3d_[2];  // smooth, hard (tabletop uses hard's)
-  float boardBottom_ = -1e30f;  // the smooth look's side walls end here (the 3D water's floorY)
-  Water3DView water3dMaterial_;
+  // One board's geometry and its record (heap: the upload queue points at its members).
+  struct Geometry {
+    std::vector<std::pair<std::string, size_t>> slots;  // (asset, word in record) to fill once resident
+    TerrainGpu record{};
+    Buffer recordBuffer;
+    ImageUpload recordUpload;
+    bool recordQueued = false;
+    Mesh meshes[3];  // smooth, hard, tabletop
+    Water water[2];
+    Water3D water3d[2];  // smooth, hard (tabletop uses hard's)
+    float boardBottom = -1e30f;  // the smooth look's side walls end here (the 3D water's floorY)
+    Water3DView water3dMaterial;
+  };
+
+  void texture(const std::string& asset);  // requests it once
+  bool buildInto(Geometry& g, const ember::Board& board);
+  void pack(const ember::GroundGeometry& g, const std::vector<int>& palette, Mesh& out);
+  void upload(Mesh& mesh);
+  void buildWater3D(Geometry& g, const ember::Board& board);
+  void updateTexture(Texture& t);
+  bool uploaded(const Geometry& g) const;  // its record, meshes and water on the GPU
+  void destroy(Geometry& g);
+  const Geometry& served() const { return old_ && !uploaded(*geo_) ? *old_ : *geo_; }
+
+  VulkanContext& context_;
+  Bindless& bindless_;
+  AssetManager& assets_;
+  UploadQueue& uploads_;
+  std::unordered_map<std::string, std::unique_ptr<Texture>> textures_;
+  std::unique_ptr<Geometry> geo_ = std::make_unique<Geometry>();  // the board as it is
+  std::unique_ptr<Geometry> old_;  // a rebuild's previous geometry, drawn until geo_ is on the GPU
   uint64_t uploadWaitValue_ = 0;
   Stats stats_;
 };

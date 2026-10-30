@@ -383,8 +383,7 @@ class MapStage final : public Stage {
       sprites_.start();
       // 3D models: Ember's GLBs, cooked by Cooker meshes ("/game/models/x.glb" -> "meshes/models/x.mesh").
       for (const ember::SceneModel& m : scene_->models) {
-        std::string asset = m.file.substr(std::string("/game/").size());
-        asset = "meshes/" + asset.substr(0, asset.size() - 4) + ".mesh";
+        const std::string asset = modelAsset(m);
         if (!modelMeshes_.contains(asset)) modelMeshes_[asset] = meshes_.add(assetId(asset));
       }
       buildArchitecture();
@@ -1789,6 +1788,49 @@ class MapStage final : public Stage {
     captured_ = true, homeYaw_ = yaw_, homePitch_ = pitch_, homeTarget_ = target_, homeDistance_ = distance_;
   }
   bool failed() const { return failed_; }
+  // The map editor's edit on the open preview (the user, 2026-10-29: "why does the edit have to blink everything each time you place
+  // a single object or tile"): the edited board and its scene replace the old ones here; the ground's textures, the meshes and the
+  // sprites already on the GPU stay, and the previous ground is drawn until the new one is up. False (nothing changed): the edit needs
+  // the preview opened again (another board size, a relief that does not load).
+  bool applyEditorDraft(ember::MapDraft draft, ember::SceneData scene) {
+    if (!board_ || !scene_ || !data_) return false;
+    const auto started = std::chrono::steady_clock::now();
+    auto board = std::make_unique<ember::Board>(*data_, std::move(draft));
+    if (board->layout().cols != board_->layout().cols || board->layout().rows != board_->layout().rows) return false;
+    if (!board->loadRelief(options_.artRoot)) return false;
+    if (probeBusy_) jobs_.wait(probeJob_), probeBusy_ = false;  // the bake reads the old board's room
+    if (!ground_.rebuild(*board)) return false;
+    board_ = std::move(board);
+    double top = 0;
+    for (const ember::Cell& c : board_->cells()) top = std::max(top, c.groundY);
+    boardTop_ = static_cast<float>(top);
+    groundLow_ = static_cast<float>(board_->lowestGround());
+    boardCenter_.y = static_cast<float>(top * 0.5);
+    boardRadius_ = 0.5f * std::sqrt(boardWidth_ * boardWidth_ + boardDepth_ * boardDepth_ + boardTop_ * boardTop_) + 1.0f;
+    std::string backdrop = std::move(scene_->backdrop);  // the panorama chosen when the preview opened stays
+    scene_ = std::move(scene);
+    scene_->backdrop = std::move(backdrop);
+    for (const ember::SceneModel& m : scene_->models)
+      if (const std::string asset = modelAsset(m); !modelMeshes_.contains(asset)) modelMeshes_[asset] = meshes_.add(assetId(asset));
+    buildArchitecture();
+    arrangeScene();
+    initUnits();
+    hero_ = -1;
+    setUpParty();
+    if (!options_.heroes.empty()) setUpPoses(options_.heroes);
+    pinUnitArt();
+    if (meshes_.placeable()) placeModels();
+    else modelsPlaced_ = false;  // a new model still loading: frame() places them all once it is in
+    logInfo("map editor: the edit applied on the open preview in {:.0f} ms",
+            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count());
+    return true;
+  }
+  // The ground hex under the mouse, cards ignored (the editor's brush strokes).
+  std::optional<std::pair<int, int>> groundHexUnderMouse() const {
+    if (mouse_.x < 0.0f || (ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureMouse)) return std::nullopt;
+    const std::optional<ember::BattleHex> hex = pick(mouseWindow_, mouse_.x, mouse_.y, false);
+    return hex ? std::optional<std::pair<int, int>>({hex->x, hex->y}) : std::nullopt;
+  }
 
   // The player asked to leave the fight (the battle menu's Desistir / Encerrar teste, or after the battle's end: back
   // where it came from), or to fight it again.
@@ -2298,6 +2340,11 @@ class MapStage final : public Stage {
     bool passable = false;   // its cells walked and seen through
     std::vector<std::pair<int, int>> cells;
   };
+  // A scene model's cooked mesh: "/game/x.glb" -> "meshes/x.mesh" (Cooker meshes).
+  static std::string modelAsset(const ember::SceneModel& m) {
+    const std::string file = m.file.substr(std::string("/game/").size());
+    return "meshes/" + file.substr(0, file.size() - 4) + ".mesh";
+  }
   static const ember::EditorCatalog& architectureCatalog() {
     static const ember::EditorCatalog catalog = [] {
       ember::EditorCatalog c;
@@ -2463,6 +2510,15 @@ class MapStage final : public Stage {
         ++triangles;
       }
       if (triangles == 0) return std::nullopt;
+      // The map editor builds the pieces again at every edit (applyEditorDraft): a piece whose geometry did not change keeps its mesh.
+      uint64_t key = 1469598103934665603ull;
+      const auto mix = [&key](const void* data, size_t bytes) {
+        for (size_t b = 0; b < bytes; ++b) key = (key ^ static_cast<const uint8_t*>(data)[b]) * 1099511628211ull;
+      };
+      mix(def->id.data(), def->id.size());
+      mix(g.position.data(), g.position.size() * sizeof(float));
+      mix(g.uv.data(), g.uv.size() * sizeof(float));
+      if (const auto known = archMeshes_.find(key); known != archMeshes_.end()) return known->second;
       // MeshStandardMaterial({map, color: map ? white : the piece's colour, roughness, metalness}) (three colours are sRGB)
       const bool metal = def->doorStyle == "iron" || def->doorStyle == "steel";
       const uint32_t hex = metal ? (def->doorStyle == "iron" ? 0x555b60u : 0x9ca7b0u) : def->model3d == "door" ? 0x925b32u : def->model3d == "doorway" ? 0xb7a27cu : 0x8b8b86u;
@@ -2530,7 +2586,7 @@ class MapStage final : public Stage {
         logWarn("architecture: {}: the cluster build gave nothing ({} triangles, {} clusters)", def->id, triangles, build.clusterCount());
         return std::nullopt;
       }
-      return meshes_.addBuilt(std::move(bytes));
+      return archMeshes_[key] = meshes_.addBuilt(std::move(bytes));
       };
       const std::optional<MeshId> pieceMesh = meshOf(g, true);
       if (!pieceMesh) {
@@ -3092,8 +3148,7 @@ class MapStage final : public Stage {
     for (const ember::SceneModel& m : scene_->models) {
       if (lockOpened(m.id, "doorDecor", m.x, m.z)) continue;  // the door was picked open: its closed model is gone
       if (lockOpened(m.id, "chest", m.x, m.z)) continue;      // a 3D chest opened with a Gazua is gone, like the 2D one
-      std::string asset = m.file.substr(std::string("/game/").size());
-      asset = "meshes/" + asset.substr(0, asset.size() - 4) + ".mesh";
+      const std::string asset = modelAsset(m);
       const MeshHeader* h = meshes_.header(modelMeshes_.at(asset));
       if (!h) {
         logWarn("scene: model {} is not in the mesh pack", asset);
@@ -4010,9 +4065,11 @@ class MapStage final : public Stage {
   // The map's units find their own catalog entry by key. The panel's poses: those at least one of the map's units
   // has, in the catalog's order of first appearance with its label, the idle ("Parado") first.
   void setUpPoses(const std::filesystem::path& path) {
-    std::optional<std::vector<ember::Hero>> catalog = ember::loadHeroes(path);
-    if (!catalog) return;
-    catalog_ = std::move(*catalog);
+    if (catalog_.empty()) {  // (read once: the editor's edits match the scene's units again on the same catalog)
+      std::optional<std::vector<ember::Hero>> catalog = ember::loadHeroes(path);
+      if (!catalog) return;
+      catalog_ = std::move(*catalog);
+    }
     std::unordered_map<std::string, const ember::Hero*> byKey;
     for (const ember::Hero& h : catalog_)
       if (!h.key.empty()) byKey.emplace(h.key, &h);
@@ -10481,8 +10538,7 @@ class MapStage final : public Stage {
       if (a.blocks)
         for (const auto& [x, z] : a.footprint) fog_->block(x, z, a.top);
     for (const ember::SceneModel& m : scene_->models) {
-      std::string asset = m.file.substr(std::string("/game/").size());
-      asset = "meshes/" + asset.substr(0, asset.size() - 4) + ".mesh";
+      const std::string asset = modelAsset(m);
       const MeshHeader* h = meshes_.header(modelMeshes_.at(asset));
       if (!h) continue;
       const float k = m.height / std::max(h->boundsMax[1] - h->boundsMin[1], 1e-4f);
@@ -11006,6 +11062,7 @@ class MapStage final : public Stage {
   };
   std::vector<PieceBox> pieceBoxes_;
   std::vector<ArchPiece> arch_;  // Ember's walls, doors and gates (buildArchitecture)
+  std::unordered_map<uint64_t, MeshId> archMeshes_;  // the pieces' built meshes by their geometry (applyEditorDraft builds them again)
   std::vector<DoorLeaf> doorLeaves_;  // the animated doors' leaves (buildArchitecture)
   std::vector<glm::vec2> stairPieces_;  // the 3D stairs' centres (x, z): the 2D stairs card under one is not drawn
   std::vector<glm::vec4> groundHoles_;  // the down stairs' wells: ground cut away (x0, z0, x1, z1; Renderer::setGroundHoles)

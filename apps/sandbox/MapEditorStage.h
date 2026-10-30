@@ -62,6 +62,7 @@
 #include "world/Battle.h"
 #include "world/Board.h"
 #include "world/Campaign.h"
+#include "world/Combat.h"
 #include "world/Locais.h"
 #include "world/MapDressing.h"
 #include "world/Overworld.h"
@@ -199,6 +200,9 @@ class MapEditorStage : public Stage {
   void frame(Renderer& renderer, VkExtent2D size) override {
     ++frames_;
     if (frames_ == 60 && !script_.empty()) runScript(std::exchange(script_, {}));
+    // A brush stroke follows the mouse over the ground.
+    if (stroking_ && preview_)
+      if (const std::optional<std::pair<int, int>> h = preview_->groundHexUnderMouse(); h && h != strokeLast_) strokeTo(*h);
     // A click on the board (reported by the preview) is applied between frames.
     if (pendingClick_) {
       const auto [x, y] = *pendingClick_;
@@ -224,7 +228,7 @@ class MapEditorStage : public Stage {
     }
     // The preview follows the draft a moment after the last edit (Ember setPreviewMission).
     const auto now = std::chrono::steady_clock::now();
-    if (dirty_ && showPreview_ && now - lastEdit_ > std::chrono::milliseconds(120)) rebuildPreview();
+    if (dirty_ && showPreview_ && !stroking_ && now - lastEdit_ > std::chrono::milliseconds(120)) rebuildPreview();
     // Testar finished preparing: the battle opens.
     if (playtest_.valid() && playtest_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
       std::optional<MissionEntry> entry = playtest_.get();
@@ -554,11 +558,12 @@ class MapEditorStage : public Stage {
   // Every edit goes through here: history (a burst within 600 ms is one step, Ember's coalescing), then the preview.
   void beginEdit() {
     const auto now = std::chrono::steady_clock::now();
-    if (now - lastEdit_ > std::chrono::milliseconds(600) || past_.empty()) {
+    if ((now - lastEdit_ > std::chrono::milliseconds(600) || past_.empty()) && !strokeEdited_) {
       past_.push_back(draft_);
       if (past_.size() > kHistory) past_.pop_front();
       future_.clear();
     }
+    strokeEdited_ = stroking_;  // a whole stroke is one step, however slow the drag
     lastEdit_ = now;
     dirty_ = true;
   }
@@ -742,7 +747,7 @@ class MapEditorStage : public Stage {
         if (cx < 0 || cy < 0 || cx >= cols() || cy >= rows()) continue;
         const int k = cy * cols() + cx;
         if (!visited.insert(k).second) continue;
-        if (tileAt(k) != "void")
+        if (tileAt(k) != "void" && (!stroking_ || elevationTool_ == 2 || strokeRaised_.insert(k).second))  // a stroke raises a hex once
           elev[k] = elevationTool_ == 2 ? static_cast<double>(elevationLevel_) : std::clamp(elev[k].get<double>() + (elevationTool_ == 0 ? 1.0 : -1.0), 0.0, 12.0);
         for (const ember::OverworldHex& nb : ember::Overworld::neighbors(cx, cy)) next.push_back({nb.col, nb.row});
       }
@@ -1212,6 +1217,16 @@ class MapEditorStage : public Stage {
 
   // --- the preview --------------------------------------------------------------------------------------------------
 
+  // What a preview can take on the open map (MapStage::applyEditorDraft): the board's cells and what stands on them. Any other
+  // field (size, light, background, tiles set, ...) opens the preview again.
+  static ember::Json previewSettings(const ember::Json& draft) {
+    ember::Json out = draft;
+    for (const char* key : {"tiles", "tileVariants", "tileRots", "terrainElevations", "waterLevels", "waterFootprints", "waterPatches", "decorations",
+                            "playerSpawns", "enemySpawns", "neutralSpawns"})
+      out.erase(key);
+    return out;
+  }
+
   void rebuildPreview() {
     dirty_ = false;
     if (!data_) return;
@@ -1221,6 +1236,10 @@ class MapEditorStage : public Stage {
     board.loadRelief(base_.artRoot);
     std::map<std::string, int> skipped;
     ember::SceneData scene = ember::buildScene(board, catalog_, &skipped);
+    // An edit of the cells or of what stands on them goes onto the open preview: nothing reloads, nothing blinks.
+    ember::Json settings = previewSettings(draft_);
+    if (preview_ && settings == previewSettings_ && preview_->applyEditorDraft(*draft, scene)) return;
+    previewSettings_ = std::move(settings);
     MapStageOptions options = base_;
     options.map.clear(), options.scene.clear(), options.battle.clear();
     options.draftData = std::move(*draft);
@@ -1248,6 +1267,16 @@ class MapEditorStage : public Stage {
   // MapPreviewCanvas onPointerDownCapture: a unit (any side) or a prop under the press is picked up; the left button only
   // when Girar objeto is not armed.
   bool grab(int x, int y, bool left) {
+    // Terreno / Elevação (the user, 2026-10-29: "impossible to do it one by one"): the left press paints its hex and the drag every hex
+    // the mouse crosses, until the button lets go; the preview takes the whole stroke then.
+    if (left && strokeBrush()) {
+      const std::optional<std::pair<int, int>> ground = preview_ ? preview_->groundHexUnderMouse() : std::nullopt;
+      stroking_ = true, strokeEdited_ = false;
+      strokeCells_.clear(), strokeRaised_.clear(), strokeLast_.reset();
+      heldUnit_.reset(), heldDeco_.reset();
+      strokeTo(ground.value_or(std::pair{x, y}));
+      return true;
+    }
     if (left && turningDeco_) return false;
     // The wall tools (3D Walls > Traçar parede / Fechar sala): the left press starts the run; release() lays it.
     if (left && mode_ == Mode::Architecture && !architectureDecorations_ && wallTool_ != 0) {
@@ -1282,6 +1311,12 @@ class MapEditorStage : public Stage {
   // The press let go: a drag drops the held unit / prop on the hex under the pointer; a plain press keeps the unit held
   // (Delete removes it).
   void release(std::optional<std::pair<int, int>> hex, bool moved) {
+    if (stroking_) {
+      stroking_ = strokeEdited_ = false;
+      strokeRaised_.clear(), strokeLast_.reset();
+      if (dirty_) lastEdit_ = {};  // the preview takes the stroke at once
+      return;
+    }
     if (wallDragFrom_) {
       const std::pair<int, int> from = *wallDragFrom_;
       wallDragFrom_.reset();
@@ -1301,6 +1336,20 @@ class MapEditorStage : public Stage {
       if (moved && hex) placeDecoration(held, hex->first, hex->second);
     }
   }
+  bool strokeBrush() const { return (mode_ == Mode::Paint && !turning_) || mode_ == Mode::Elevation; }
+  // The stroke on to `to`: every hex on the line from the last one (a quick drag skips none), each painted once a stroke.
+  void strokeTo(std::pair<int, int> to) {
+    std::vector<std::pair<int, int>> cells;
+    if (strokeLast_)
+      for (const ember::BattleHex& h : ember::hexLine(ember::BattleHex{strokeLast_->first, strokeLast_->second}, ember::BattleHex{to.first, to.second}))
+        cells.push_back({h.x, h.y});
+    else
+      cells.push_back(to);
+    strokeLast_ = to;
+    for (const auto& [x, y] : cells)
+      if (x >= 0 && y >= 0 && x < cols() && y < rows() && strokeCells_.insert(y * cols() + x).second) onCellClick(x, y, std::nullopt);
+  }
+
   // placePreviewUnit: refused onto a hex another unit holds.
   void placeUnit(const HeldUnit& held, int x, int y) {
     for (const char* key : {"playerSpawns", "enemySpawns", "neutralSpawns"}) {
@@ -1434,6 +1483,8 @@ class MapEditorStage : public Stage {
       for (const auto& [x, y] : cellsOf(*selected_)) add(x, y, IM_COL32(120, 200, 255, 230));
     if (wallDragFrom_ && hover_)
       for (const WallCell& c : wallCells(*wallDragFrom_, *hover_)) add(c.x, c.y, IM_COL32(255, 170, 60, 240));
+    if (stroking_)  // the stroke so far (the preview takes it when the button lets go)
+      for (const int k : strokeCells_) add(k % cols(), k / cols(), IM_COL32(150, 230, 120, 230));
     if (hover_) add(hover_->first, hover_->second, IM_COL32(255, 214, 140, 230));
     return out;
   }
@@ -3665,6 +3716,11 @@ class MapEditorStage : public Stage {
   std::deque<ember::Json> past_, future_;
   std::chrono::steady_clock::time_point lastEdit_{};
   bool dirty_ = false;
+  ember::Json previewSettings_;  // the draft's settings the open preview was made with (previewSettings)
+  // The brush stroke (Terreno / Elevação dragged over the preview): the hexes painted so far, the last one, the hexes raised.
+  bool stroking_ = false, strokeEdited_ = false;
+  std::set<int> strokeCells_, strokeRaised_;
+  std::optional<std::pair<int, int>> strokeLast_;
   std::unique_ptr<MapStage> preview_;
   std::optional<std::pair<int, int>> pendingClick_, hover_;
   std::optional<glm::vec3> pendingPoint_;

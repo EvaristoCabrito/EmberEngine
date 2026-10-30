@@ -51,46 +51,74 @@ VkFormat vkFormat(TextureFormat format) {
 }  // namespace
 
 BoardGround::BoardGround(VulkanContext& context, Bindless& bindless, AssetManager& assets, UploadQueue& uploads)
-    : context_(context), bindless_(bindless), assets_(assets), uploads_(uploads) {
-  std::fill(std::begin(record_.proto), std::end(record_.proto), kNoTextureIndex);
-  record_.plains049Color = record_.plains049Rough = kNoTextureIndex;
-  for (uint32_t k = 0; k < kTerrainPaletteSize; ++k) record_.layerColor[k] = record_.layerNormal[k] = record_.layerRough[k] = kNoTextureIndex;
-}
+    : context_(context), bindless_(bindless), assets_(assets), uploads_(uploads) {}
 
 BoardGround::~BoardGround() {
-  for (Mesh& m : meshes_) {
-    uploads_.cancel(m.vertexUpload);
-    uploads_.cancel(m.indexUpload);
-  }
-  for (Water& w : water_) {
-    uploads_.cancel(w.vertexUpload);
-    uploads_.cancel(w.indexUpload);
-  }
-  for (Water3D& w : water3d_) {
-    uploads_.cancel(w.vertexUpload);
-    uploads_.cancel(w.indexUpload);
-  }
-  uploads_.cancel(recordUpload_);
   for (auto& [asset, t] : textures_) uploads_.cancel(t->upload);
-  vkDeviceWaitIdle(context_.device);  // copies and draws may still use the buffers and images
+  destroy(*geo_);  // (waits for the device: copies and draws may still use the buffers and images)
+  if (old_) destroy(*old_);
   for (auto& [asset, t] : textures_) {
     if (t->index != UINT32_MAX) bindless_.removeSampledImage(t->index);
     destroyImage(context_, t->image);
     if (t->handle) assets_.release(t->handle);
   }
-  for (Mesh& m : meshes_) {
+}
+
+void BoardGround::destroy(Geometry& g) {
+  for (Mesh& m : g.meshes) {
+    uploads_.cancel(m.vertexUpload);
+    uploads_.cancel(m.indexUpload);
+  }
+  for (Water& w : g.water) {
+    uploads_.cancel(w.vertexUpload);
+    uploads_.cancel(w.indexUpload);
+  }
+  for (Water3D& w : g.water3d) {
+    uploads_.cancel(w.vertexUpload);
+    uploads_.cancel(w.indexUpload);
+  }
+  uploads_.cancel(g.recordUpload);
+  vkDeviceWaitIdle(context_.device);
+  for (Mesh& m : g.meshes) {
     destroyBuffer(context_, m.vertexBuffer);
     destroyBuffer(context_, m.indexBuffer);
   }
-  for (Water& w : water_) {
+  for (Water& w : g.water) {
     destroyBuffer(context_, w.vertexBuffer);
     destroyBuffer(context_, w.indexBuffer);
   }
-  for (Water3D& w : water3d_) {
+  for (Water3D& w : g.water3d) {
     destroyBuffer(context_, w.vertexBuffer);
     destroyBuffer(context_, w.indexBuffer);
   }
-  destroyBuffer(context_, recordBuffer_);
+  destroyBuffer(context_, g.recordBuffer);
+}
+
+bool BoardGround::uploaded(const Geometry& g) const {
+  if (!g.recordQueued || !uploads_.finished(g.recordUpload)) return false;
+  for (const Mesh& m : g.meshes) {
+    if (!m.vertexUpload.buffer || !uploads_.finished(m.vertexUpload)) return false;
+    if (m.indexUpload.buffer && !uploads_.finished(m.indexUpload)) return false;
+  }
+  for (const Water& w : g.water)
+    if (w.vertexBuffer.buffer && (!uploads_.finished(w.vertexUpload) || !uploads_.finished(w.indexUpload))) return false;
+  for (const Water3D& w : g.water3d)
+    if (w.vertexBuffer.buffer && (!uploads_.finished(w.vertexUpload) || !uploads_.finished(w.indexUpload))) return false;
+  return true;
+}
+
+bool BoardGround::build(const ember::Board& board) { return buildInto(*geo_, board); }
+
+bool BoardGround::rebuild(const ember::Board& board) {
+  auto next = std::make_unique<Geometry>();
+  stats_.geometryBytes = 0;
+  if (!buildInto(*next, board)) return false;
+  // A rebuild over a rebuild still on its way up: the one being drawn stays, the unfinished one goes.
+  if (old_ && !uploaded(*geo_)) destroy(*geo_);
+  else if (old_) destroy(*old_), old_ = std::move(geo_);
+  else old_ = std::move(geo_);
+  geo_ = std::move(next);
+  return true;
 }
 
 void BoardGround::texture(const std::string& asset) {
@@ -101,7 +129,11 @@ void BoardGround::texture(const std::string& asset) {
   }
 }
 
-bool BoardGround::build(const ember::Board& board) {
+bool BoardGround::buildInto(Geometry& geo, const ember::Board& board) {
+  TerrainGpu& record = geo.record;
+  std::fill(std::begin(record.proto), std::end(record.proto), kNoTextureIndex);
+  record.plains049Color = record.plains049Rough = kNoTextureIndex;
+  for (uint32_t k = 0; k < kTerrainPaletteSize; ++k) record.layerColor[k] = record.layerNormal[k] = record.layerRough[k] = kNoTextureIndex;
   const ember::BoardData& data = board.data();
   // The palette: the baked layers this map's cells use, in layer order.
   std::vector<int> palette;
@@ -112,13 +144,13 @@ bool BoardGround::build(const ember::Board& board) {
     logError("ground: map {} uses {} baked ground layers (the palette holds {})", board.draft().id, palette.size(), kTerrainPaletteSize);
     return false;
   }
-  record_.layerCount = static_cast<uint32_t>(palette.size());
-  stats_.layers = record_.layerCount;
+  record.layerCount = static_cast<uint32_t>(palette.size());
+  stats_.layers = record.layerCount;
 
   // Textures: the procedural surfaces, plains049, and each palette layer's maps.
   const auto want = [&](const std::string& asset, size_t word) {
     texture(asset);
-    slots_.emplace_back(asset, word);
+    geo.slots.emplace_back(asset, word);
   };
   const size_t protoWord = offsetof(TerrainGpu, proto) / 4;
   static constexpr const char* kProto[9] = {"grass", "forest", "pavers", "snow", "rock", "gravel", "ash", "earth", "cliff"};
@@ -136,7 +168,7 @@ bool BoardGround::build(const ember::Board& board) {
   for (size_t k = 0; k < palette.size(); ++k) {
     const ember::GroundLayerSource& layer = data.groundLayers[palette[k]];
     if (layer.absent) continue;  // Ember: this set has no such layer; the procedural ground stays
-    record_.layerTile[k] = layer.tile;
+    record.layerTile[k] = layer.tile;
     want(ember::groundLayerAsset(layer.key, "color"), offsetof(TerrainGpu, layerColor) / 4 + k);
     want(ember::groundLayerAsset(layer.key, "color"), offsetof(TerrainGpu, layerHas) / 4 + k);  // 1 once resident
     if (!layer.normal.empty()) want(ember::groundLayerAsset(layer.key, "normal"), offsetof(TerrainGpu, layerNormal) / 4 + k);
@@ -161,29 +193,29 @@ bool BoardGround::build(const ember::Board& board) {
     // (MapDraft::emberFloorOverWater): the sheet stands at the bed + 0.65, never cut by the walls' bottom.
     double bed = low;
     for (const ember::Cell& c : board.cells()) bed = std::min(bed, c.groundY);
-    boardBottom_ = static_cast<float>(bed - 0.35);
+    geo.boardBottom = static_cast<float>(bed - 0.35);
     if (looks[0].vertexCount() == wallFrom) wallFrom = 0;
   }
   // The walls take no light and no shadow of their own (the user, 2026-10-23: "esse sombreado nas bordas do tabuleiro tem que acabar,
   // essa área não deve ser afetada por luz e sombra"; terrain.hlsl). The Inn's floors keep their walls lit as before (never touch the
   // Inn): the top bit of wallFrom says so.
-  meshes_[0].wallFrom = wallFrom;
+  geo.meshes[0].wallFrom = wallFrom;
   if (!sideAsset.empty())
-    for (Mesh& m : meshes_) m.wallFrom |= TerrainView::kWallsRock;
+    for (Mesh& m : geo.meshes) m.wallFrom |= TerrainView::kWallsRock;
   if (board.draft().id.rfind("estalagem", 0) == 0)
-    for (Mesh& m : meshes_) m.wallFrom |= TerrainView::kWallsLit;
+    for (Mesh& m : geo.meshes) m.wallFrom |= TerrainView::kWallsLit;
   for (int i = 0; i < 3; ++i) {
-    pack(looks[i], palette, meshes_[i]);
-    upload(meshes_[i]);
+    pack(looks[i], palette, geo.meshes[i]);
+    upload(geo.meshes[i]);
     stats_.vertices[i] = static_cast<uint32_t>(looks[i].vertexCount());
-    stats_.triangles[i] = meshes_[i].count / 3;
+    stats_.triangles[i] = geo.meshes[i].count / 3;
   }
   // Water, both looks (its sheet follows each look's shore).
   const VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
   for (int i = 0; i < 2; ++i) {
     const ember::WaterGeometry g = ember::buildWater(board, i == 0 ? ember::EdgeStyle::Smooth : ember::EdgeStyle::Hard);
     if (g.indices.empty()) continue;
-    Water& w = water_[i];
+    Water& w = geo.water[i];
     w.vertices.resize(g.positions.size() / 3);
     for (size_t v = 0; v < w.vertices.size(); ++v) {
       std::memcpy(w.vertices[v].position, &g.positions[v * 3], 12);
@@ -227,7 +259,7 @@ bool BoardGround::build(const ember::Board& board) {
     uploads_.enqueue(w.indexUpload);
     stats_.geometryBytes += w.vertices.size() * sizeof(WaterVertexGpu) + w.indices.size() * 4;
   }
-  buildWater3D(board);
+  buildWater3D(geo, board);
   return true;
 }
 
@@ -235,7 +267,7 @@ bool BoardGround::build(const ember::Board& board) {
 // battle ground rises 1.5 tile per level, this one 1 (kStep): heights are divided by 1.5, the ground's depth under
 // the water multiplied back. Its textures (public/game/textures/water*/water-*.png) are not in Ember's repository:
 // the ground pack's own water layer (ground-claude/water) stands in.
-void BoardGround::buildWater3D(const ember::Board& board) {
+void BoardGround::buildWater3D(Geometry& geo, const ember::Board& board) {
   const ember::Water3DMap& map = board.draft().water3d;
   if (!map.any()) return;
   const ember::HexLayout& L = board.layout();
@@ -250,7 +282,7 @@ void BoardGround::buildWater3D(const ember::Board& board) {
     };
     const ember::Water3DSheet sheet = ember::buildWater3D(map, ground);
     if (sheet.empty()) continue;
-    Water3D& w = water3d_[i];
+    Water3D& w = geo.water3d[i];
     w.vertices.resize(sheet.coverage.size());
     for (size_t v = 0; v < w.vertices.size(); ++v) {
       Water3DVertexGpu& o = w.vertices[v];
@@ -286,29 +318,31 @@ void BoardGround::buildWater3D(const ember::Board& board) {
   const std::string& v = map.version;
   const bool v1 = v == "v1", v3 = v == "v3", v4 = v == "v4", modern = !v1;
   const uint32_t hex = v3 || v4 ? 0xffffffu : modern ? 0xc5d9dbu : 0x278d9eu;
+  Water3DView& material = geo.water3dMaterial;
   for (int k = 0; k < 3; ++k) {
     const float c = static_cast<float>((hex >> (16 - 8 * k)) & 255u) / 255.0f;
-    water3dMaterial_.color[k] = c <= 0.04045f ? c / 12.92f : std::pow((c + 0.055f) / 1.055f, 2.4f);
+    material.color[k] = c <= 0.04045f ? c / 12.92f : std::pow((c + 0.055f) / 1.055f, 2.4f);
   }
-  water3dMaterial_.opacity = v4 ? 0.9f : v3 ? 0.94f : modern ? 0.92f : 0.8f;
-  water3dMaterial_.normalScale = v4 ? 1.0f : v3 ? 0.9f : modern ? 0.72f : 0.48f;
-  water3dMaterial_.roughness = v4 ? 1.0f : v3 ? 0.9f : modern ? 0.85f : 0.42f;
-  water3dMaterial_.modern = modern ? 1.0f : 0.0f;
-  water3dMaterial_.v4 = v4 ? 1.0f : 0.0f;
-  water3dMaterial_.repeat = v3 ? 0.5f : v4 ? 0.75f : 1.0f;
+  material.opacity = v4 ? 0.9f : v3 ? 0.94f : modern ? 0.92f : 0.8f;
+  material.normalScale = v4 ? 1.0f : v3 ? 0.9f : modern ? 0.72f : 0.48f;
+  material.roughness = v4 ? 1.0f : v3 ? 0.9f : modern ? 0.85f : 0.42f;
+  material.modern = modern ? 1.0f : 0.0f;
+  material.v4 = v4 ? 1.0f : 0.0f;
+  material.repeat = v3 ? 0.5f : v4 ? 0.75f : 1.0f;
 }
 
 Water3DView BoardGround::water3d(ember::EdgeStyle style) const {
-  const Water3D& w = water3d_[style == ember::EdgeStyle::Smooth ? 0 : 1];
+  const Geometry& geo = served();
+  const Water3D& w = geo.water3d[style == ember::EdgeStyle::Smooth ? 0 : 1];
   if (!w.vertexBuffer.buffer || !uploads_.finished(w.vertexUpload) || !uploads_.finished(w.indexUpload)) return {};
-  Water3DView view = water3dMaterial_;
+  Water3DView view = geo.water3dMaterial;
   view.vertices = bufferAddress(context_, w.vertexBuffer);
   view.indices = bufferAddress(context_, w.indexBuffer);
   view.count = static_cast<uint32_t>(w.indices.size());
   view.colorMap = textureIndex(ember::groundLayerAsset("water", "color"));
   view.normalMap = textureIndex(ember::groundLayerAsset("water", "normal"));
   view.roughMap = textureIndex(ember::groundLayerAsset("water", "rough"));
-  view.floorY = boardBottom_;
+  view.floorY = geo.boardBottom;
   return view;
 }
 
@@ -398,29 +432,35 @@ void BoardGround::update() {
     }
   }
   stats_.texturesReady = ready;
-  for (const Mesh& m : meshes_)
+  Geometry& geo = *geo_;
+  for (const Mesh& m : geo.meshes)
     for (const ImageUpload* u : {&m.vertexUpload, &m.indexUpload})
       if (u->buffer && uploads_.finished(*u)) uploadWaitValue_ = std::max(uploadWaitValue_, u->signalValue);
-  for (const Water& w : water_)
+  for (const Water& w : geo.water)
     for (const ImageUpload* u : {&w.vertexUpload, &w.indexUpload})
       if (u->buffer && uploads_.finished(*u)) uploadWaitValue_ = std::max(uploadWaitValue_, u->signalValue);
-  for (const Water3D& w : water3d_)
+  for (const Water3D& w : geo.water3d)
     for (const ImageUpload* u : {&w.vertexUpload, &w.indexUpload})
       if (u->buffer && uploads_.finished(*u)) uploadWaitValue_ = std::max(uploadWaitValue_, u->signalValue);
   // Every texture resident: the record gets its bindless indices and goes up once.
-  if (!recordQueued_ && ready == textures_.size() && !textures_.empty()) {
-    for (const auto& [asset, word] : slots_) {
+  if (!geo.recordQueued && ready == textures_.size() && !textures_.empty()) {
+    for (const auto& [asset, word] : geo.slots) {
       const bool has = word >= offsetof(TerrainGpu, layerHas) / 4 && word < offsetof(TerrainGpu, layerHas) / 4 + kTerrainPaletteSize;
-      reinterpret_cast<uint32_t*>(&record_)[word] = has ? 1u : textures_.at(asset)->index;
+      reinterpret_cast<uint32_t*>(&geo.record)[word] = has ? 1u : textures_.at(asset)->index;
     }
-    recordBuffer_ = createDeviceBuffer(context_, sizeof(TerrainGpu), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, true);
-    recordUpload_ = {};
-    recordUpload_.buffer = recordBuffer_.buffer;
-    recordUpload_.data = std::as_bytes(std::span(&record_, 1));
-    uploads_.enqueue(recordUpload_);
-    recordQueued_ = true;
+    geo.recordBuffer = createDeviceBuffer(context_, sizeof(TerrainGpu), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, true);
+    geo.recordUpload = {};
+    geo.recordUpload.buffer = geo.recordBuffer.buffer;
+    geo.recordUpload.data = std::as_bytes(std::span(&geo.record, 1));
+    uploads_.enqueue(geo.recordUpload);
+    geo.recordQueued = true;
   }
-  if (recordQueued_ && uploads_.finished(recordUpload_)) uploadWaitValue_ = std::max(uploadWaitValue_, recordUpload_.signalValue);
+  if (geo.recordQueued && uploads_.finished(geo.recordUpload)) uploadWaitValue_ = std::max(uploadWaitValue_, geo.recordUpload.signalValue);
+  // A rebuild's new geometry is on the GPU: the previous one goes.
+  if (old_ && uploaded(geo)) {
+    destroy(*old_);
+    old_.reset();
+  }
 }
 
 uint32_t BoardGround::textureIndex(const std::string& asset) const {
@@ -428,9 +468,11 @@ uint32_t BoardGround::textureIndex(const std::string& asset) const {
   return it != textures_.end() && it->second->index != UINT32_MAX ? it->second->index : kNoTextureIndex;
 }
 
+// Ready = something to draw: the board's geometry, or a rebuild's previous one while the new one goes up.
 bool BoardGround::ready() const {
-  if (!recordQueued_ || !uploads_.finished(recordUpload_)) return false;
-  for (const Mesh& m : meshes_) {
+  const Geometry& geo = served();
+  if (!geo.recordQueued || !uploads_.finished(geo.recordUpload)) return false;
+  for (const Mesh& m : geo.meshes) {
     if (!m.vertexUpload.buffer || !uploads_.finished(m.vertexUpload)) return false;
     if (m.indexUpload.buffer && !uploads_.finished(m.indexUpload)) return false;
   }
@@ -438,19 +480,21 @@ bool BoardGround::ready() const {
 }
 
 WaterView BoardGround::water(ember::EdgeStyle style) const {
-  const Water& w = water_[style == ember::EdgeStyle::Smooth ? 0 : 1];
+  const Geometry& geo = served();
+  const Water& w = geo.water[style == ember::EdgeStyle::Smooth ? 0 : 1];
   if (!w.vertexBuffer.buffer || !uploads_.finished(w.vertexUpload) || !uploads_.finished(w.indexUpload)) return {};
   WaterView view{bufferAddress(context_, w.vertexBuffer), bufferAddress(context_, w.indexBuffer), static_cast<uint32_t>(w.indices.size())};
   std::copy(std::begin(w.lookCount), std::end(w.lookCount), view.lookCount);
-  view.floorY = boardBottom_;
+  view.floorY = geo.boardBottom;
   return view;
 }
 
 TerrainView BoardGround::view(ember::EdgeStyle style) const {
   if (!ready()) return {};
-  const Mesh& m = meshes_[style == ember::EdgeStyle::Smooth ? 0 : style == ember::EdgeStyle::Hard ? 1 : 2];
+  const Geometry& geo = served();
+  const Mesh& m = geo.meshes[style == ember::EdgeStyle::Smooth ? 0 : style == ember::EdgeStyle::Hard ? 1 : 2];
   TerrainView v;
-  v.record = bufferAddress(context_, recordBuffer_);
+  v.record = bufferAddress(context_, geo.recordBuffer);
   v.vertices = bufferAddress(context_, m.vertexBuffer);
   v.indices = m.indices.empty() ? 0 : bufferAddress(context_, m.indexBuffer);
   v.count = m.count;
