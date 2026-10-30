@@ -78,7 +78,7 @@ class Floor:
         self.windows, self.slits, self.torches = set(), set(), set()
         self.ramparts = set()  # wall cells that are the muralha (RAMPART / RAMPART_TORCH instead of WALL / TORCH)
         self.decorations, self.owner, self.people, self.spawns = [], {}, {}, []
-        self.neutrals, self.players = [], []
+        self.neutrals, self.players, self.enemies = [], [], []
 
     # tiles
     def put(self, x, y, t):
@@ -155,7 +155,7 @@ class Floor:
             extra['returnConnector'] = True
         self.place('floor-connector', x, y, **extra)
 
-    def person(self, name, class_id, x, y, level=3, dialog=None, player=False):
+    def person(self, name, class_id, x, y, level=3, dialog=None, player=False, enemy=False):
         c = (x, y)
         if c in self.owner and self.owner[c] not in PASSABLE_PROPS:
             raise SystemExit(f'{self.id}: {name} stands on {self.owner[c]} at {c}')
@@ -165,7 +165,7 @@ class Floor:
         s = {'name': name, 'classId': class_id, 'x': x, 'y': y, 'level': level}
         if dialog:
             s['dialog'] = dialog
-        (self.players if player else self.neutrals).append(s)
+        (self.players if player else self.enemies if enemy else self.neutrals).append(s)
         return s
 
     # checks and the file
@@ -228,7 +228,7 @@ class Floor:
         n = self.cols * self.rows
         draft.update({'id': self.id, 'cols': self.cols, 'rows': self.rows, 'tiles': list(self.tiles), 'tileVariants': [None] * n,
                       'terrainElevations': [0] * n, 'waterLevels': [0] * n, 'tileRots': [0] * n, 'decorations': self.decorations,
-                      'elementalFx': [], 'playerSpawns': self.players, 'enemySpawns': [], 'neutralSpawns': self.neutrals,
+                      'elementalFx': [], 'playerSpawns': self.players, 'enemySpawns': self.enemies, 'neutralSpawns': self.neutrals,
                       'win': 'rout', 'hub': False, 'explore': True, 'locationId': 'mosteiro'})
         for key in ('aboveGround', 'underground', 'emberTiles', 'emberFloor', 'emberBaseLevels'):
             draft.pop(key, None)

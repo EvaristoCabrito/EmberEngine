@@ -20,8 +20,8 @@ COL, ROW = 3, 5
 HEX_SIZE = 5.0
 X = round((COL + (0.5 if ROW % 2 else 0.0)) * HEX_SIZE * 3 ** 0.5, 2)  # overworld.ts hexToWorld: odd rows half a hex east
 Y = round(ROW * HEX_SIZE * 1.5, 2)
-FLOORS = [('mosteiro-andar-2', 2), ('mosteiro-andar-3', 3)]
-MISSIONS = ['mosteiro', 'mosteiro-andar-2', 'mosteiro-andar-3']
+FLOORS = [('mosteiro-andar-2', 2), ('mosteiro-andar-3', 3), ('mosteiro-masmorras', -1), ('mosteiro-laboratorio', -2)]
+MISSIONS = ['mosteiro', 'mosteiro-andar-2', 'mosteiro-andar-3', 'mosteiro-masmorras', 'mosteiro-laboratorio']
 
 
 def newest(map_id):

@@ -1833,6 +1833,19 @@ e tem a diretoria macabra do monasterio")
   on their order. Final props come from Meshy / TripoSR / an open library on the user's choice (asked, not answered). NOT cooked into
   any mesh pack yet (JOGAR mounts props-v12.pak; staging `build/meshes/src-v2/ember/mosteiro/` has the v02 GLBs): the maps warn
   "not in the mesh pack" for them (and for `ritual-brazier-v02`, `dead-oak-v02`, `funeral-urns-v02`: catalogued props missing from v12).
+- **The two underground levels (2026-10-30, the user: "design the two underground levels", "sub solo dungeon levels"):**
+  `make_monastery_underground.py [1|2]` → `mosteiro-masmorras001` (−1: the stair hall, the warden's room, the store with the
+  prisoners' belongings, the corridor, five LOCKED cells with the prisoners Tomé / Ferreiro de Vau / Lenhador / Irmão Davi (dialogs),
+  the torture room, the cistern, the penitents' pit, the LOCKED descent) and `mosteiro-laboratorio001` (−2: arrival, the Mestre's
+  study, the specimen store, the infusion hall with Ember tanks + altar + horrors, the pens with the Ash golem, the LOCKED chamber of
+  the Mestre Infusor cultistV2 18 + O Açougueiro). Both Subterrâneo (indoor + underground), fog on, foes = cultist / cultistV2 /
+  chainBoundPenitent / wardog2 + the never-used monsters as placeholders (minorHorror, horror, emberedWraith, apparition,
+  ancientGolem, giantBeetle, theButcher). `monastery_lib.py Floor.person(..., enemy=True)` → enemySpawns. Floors −1 / −2 in the
+  location's submaps + campaign.json missions (add_monastery_location.py re-run). The catalog lost the crypt / mines kits
+  (700391d8): the dungeon dresses in torture-*, cave-*, dungeon-*, ember-ember-*, Poly Haven and Smithsonian pieces. Verified:
+  both open in release with props-v33 (0 models missing; 17 / 17 and 16 / 16 units in play; captures `captures/mosteiro/
+  mosteiro-masmorras001.png`, `-laboratorio001.png`); `Cooker check-overworld` fails by design since the encounters change (1641
+  differences, not this work's). Not verified: the fights, the locked cells opened with the Gazua, the stairs between levels in play.
 - **On the world map since 2026-10-29 (the user: two hexes east of the Farm): hex (3, 5)**, `tools/scripts/data/add_monastery_location.py`
   writes the location (open access, floors as submaps) into overworld.json + campaign.json (+ the three missions, index 64, texts from
   the newest drafts) and the editor's Locais (editor-catalog `editor.locations` / `locais.submaps`); the pin opens the mission in Modo

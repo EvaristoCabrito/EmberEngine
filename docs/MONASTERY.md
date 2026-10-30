@@ -12,8 +12,8 @@ normais, exceto no topo que está trancado e tem a diretoria macabra do monaster
 | `mosteiro` | térreo: pátio, igreja, claustro, sacristia, escritório, refeitório, dormitório, enfermaria, cemitério, pátio dos penitentes; a porta de pedra trancada da cripta desce; a escada do dormitório sobe | 52 x 46, externo | **feito** (`mosteiro002`) |
 | `mosteiro-andar-2` | Andar II: biblioteca, sala do capítulo, quartos dos hóspedes, celas, escritório do tesoureiro, sala das escadas | 44 x 36, Interna acima do solo | **feito** (`mosteiro-andar-2001`) |
 | `mosteiro-andar-3` | Andar III, o topo: sala de chegada, o irmão de guarda, a PORTA DE PEDRA TRANCADA; atrás dela o capítulo da Cinza (a diretoria) e a capela do Abade | 34 x 28, Interna acima do solo | **feito** (`mosteiro-andar-3002`) |
-| `mosteiro-masmorras` | as masmorras: celas com prisioneiros, guardas Devotos e Penitentes → combate ao serem avistados | | a fazer |
-| `mosteiro-laboratorio` | o laboratório: tanques de infusão de Ember, horrores, Penitentes Acorrentados, o chefe. Subterrâneo | | a fazer (monstros nunca usados como placeholder: `minorHorror`, `horror`, `asherah`, `ancientGolem`, `emberedWraith`, `apparition`, `undeadOx`, `plagueBearingCattle`, `troll2`, `giantBeetle`, `punisher`, `theButcher`) |
+| `mosteiro-masmorras` | nível −1, sob a sacristia: a sala da escada, o quarto do carcereiro, o depósito (os pertences dos presos), o corredor, cinco celas TRANCADAS com os prisioneiros, a sala de tortura, a cisterna, o poço dos penitentes e, atrás de outra porta de pedra, a descida | 44 x 34, Subterrâneo | **feito** (`mosteiro-masmorras001`) |
+| `mosteiro-laboratorio` | nível −2: a chegada, o escritório do Mestre, o depósito de espécimes, o grande salão de infusão (tanques de Ember entre pilares, o altar com o relicário, horrores soltos), os cercados dos penitentes com o Golem de Cinza e, atrás de porta trancada, a câmara do Mestre Infusor | 38 x 30, Subterrâneo | **feito** (`mosteiro-laboratorio001`; monstros nunca usados como placeholder: `minorHorror`, `horror`, `emberedWraith`, `apparition`, `ancientGolem`, `giantBeetle`, `theButcher`; `asherah`, `undeadOx`, `plagueBearingCattle`, `troll2`, `punisher` ficam para trocar depois) |
 
 Geradores: `tools/scripts/maps/make_monastery.py` (térreo), `make_monastery_upper.py [2|3]` (os andares), sobre `monastery_lib.py`
 (hexes odd-r, as paredes do kit, os footprints do catálogo, as pessoas com as conversas, as checagens: nada sobre parede / pessoa /
@@ -53,6 +53,36 @@ PORTA DE PEDRA TRANCADA em (16-17, 18). Atrás dela a antecâmara (linhas 14-17:
 dois salões: o capítulo da Cinza (x 2-14: a mesa do conselho com seis cadeiras, o relicário no pedestal, ossos, correntes, os livros
 antigos; o Prior Vânio e o Mestre dos Noviços) e a capela do Abade (x 16-31: o altar entre estátuas penitentes, o sarcófago da
 "Santa", a gaiola suspensa, bancos, a porta secreta de pedra no fundo; a Irmã Superiora).
+
+## Os níveis subterrâneos (2026-10-30; o user: "design the two underground levels", "sub solo dungeon levels")
+
+`tools/scripts/maps/make_monastery_underground.py [1|2]` (a mesma biblioteca, agora com `person(..., enemy=True)` → `enemySpawns`).
+Os dois são **Subterrâneo** (`environment: indoor` + `underground: true`: sem sol nem lua; só tochas, braseiros e o brilho do Ember),
+névoa de guerra ligada: exploração livre até um inimigo ser avistado (a regra do free roam), aí combate. O kit do Mosteiro nas
+paredes; a decoração com o que o catálogo tem hoje (os kits cripta / minas saíram: `700391d8`): tortura (`torture-*`), caverna
+(`cave-*`), ossários (`dungeon-*`), as peças de Ember (`ember-ember-containment-box`, `-ember-lantern`, `-ancient-reliquary`), jaulas,
+Poly Haven (mesas, estantes, barris, caixas, o martelo, o machado) e os crânios do Smithsonian na mesa do Mestre.
+
+**Masmorras (−1, 44 x 34)**, em quatro faixas: A (y 2-9) sala da escada que sobe (x 2-12; `returnConnector` para o térreo), quarto
+do Carcereiro (x 14-24: mesa, chaves, baú, cama), depósito (x 26-42: caixas e barris com os pertences dos presos: o martelo do
+ferreiro, o machado dos lenhadores, um escudo); B (y 11-13) o corredor (dois guardas, um cão de guerra); C (y 15-21) cinco celas de
+3 hexes (x 2-20, y 15-17) atrás de portas de pedra TRANCADAS que abrem para o sul, para o corredor das celas (y 19-21); a leste a
+sala de tortura (x 22-30: pelourinho, grilhões, braseiro, jaula, o Carrasco) e a cisterna (x 32-42: a poça subterrânea, ossos,
+cogumelos); D (y 23-31) o poço dos penitentes (x 2-20: pilares acorrentados, jaulas, três Penitentes Acorrentados e o Guardião do
+Poço) e a descida (x 22-42), atrás de porta TRANCADA na cisterna (36-37, 22): a escada para o laboratório, o Guardião da Descida e um
+Penitente. Presos que falam: **Tomé** (cela 1), **Ferreiro de Vau** (2), **Lenhador** (3), **Irmão Davi** (4); a cela 5 só tem ossos.
+Inimigos: 2 cultistV2 guardas-chefe, 3 cultist, 1 wardog2, 4 chainBoundPenitent, o Carrasco e o Guardião da Descida (cultistV2).
+
+**Laboratório (−2, 38 x 30)**: a chegada (x 2-10, y 2-8: escada que sobe, `returnConnector`), o escritório do Mestre (x 12-24:
+estantes, mesa com crânios, o relicário, o cofre), o depósito de espécimes (x 26-36: jaulas, o Besouro Gigante, ossos, caldeirão); o
+grande salão de infusão (x 2-36, y 10-21: oito pilares, dez tanques de Ember em duas fileiras, o altar com o relicário, lanternas de
+Ember, cristais azuis e geodos, correntes; dois Devotos Infusores, dois Horrores Menores, um Espectro de Brasa, uma Aparição, um
+Horror); os cercados (x 2-18, y 23-28: jaulas, pilar acorrentado, um tanque, três Penitentes sendo feitos e o Golem de Cinza);
+a câmara do Mestre Infusor (x 20-36), atrás de porta TRANCADA (27-28, 22): o sarcófago da "Santa", estátuas penitentes, o relicário,
+o Mestre Infusor (cultistV2, nível 18), O Açougueiro e um Horror. Sem NPC neutro.
+
+Limites: libertar um preso = abrir a cela e falar (nenhuma mecânica de resgate / escolta existe); o chefe não encerra o mapa (os mapas
+de exploração terminam só num waypoint: a escada); os monstros são placeholders do user ("depois troco por mais apropriados").
 
 ## A investigação (as conversas, nos próprios mapas: `neutralSpawns[].dialog`)
 
