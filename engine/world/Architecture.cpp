@@ -726,9 +726,8 @@ Geometry innGeometry(const ArchitectureDef& def, double tile, double height, int
 // --- the stairs (2026-10-21, the user: "escadas 3D da torre (subindo e descendo), no kit, com luz") ---------------------------
 // Both stand on two hexes along the run (local x, centred), the first hex the foot / the head where a unit stands, the climb or the
 // descent over the second, towards a wall. Up: a stepped stone flight between stepped cheeks to a landing two thirds of a wall up,
-// a stone arch on the landing opening onto darkness (the way to the floor above), a torch on the arch. Down: a stairwell: a kerb and
-// a parapet on three sides at floor level, the ground cut away over the well (MapStage hands the hole to the terrain pass), a lined
-// shaft, the steps going down into it to a dark doorway, a torch on the shaft's wall just under the floor.
+// a stone arch on the landing opening onto darkness (the way to the floor above), a torch on the arch. Down: a stairwell's mouth: a
+// kerb and a parapet on three sides at floor level round a dark plate (the way down), a torch on the far parapet; nothing below the floor.
 struct StairPlan {
   double L = 0, W = 0;          // run length (two cells), clear width
   double from = 0, to = 0;      // the flight's x range
@@ -842,7 +841,7 @@ Geometry stairsGeometry(const ArchitectureDef& def, double tile, double height, 
     // its cornice
     boxSpan(p.L / 2 - depth - 0.06 * tile, p.L / 2 + 0.02 * tile, -archW / 2 - 0.06 * tile, archW / 2 + 0.06 * tile, p.top + archH - 0.14 * tile, p.top + archH);
   } else {
-    const double x0 = p.from, x1 = p.L / 2 - 0.1 * tile, depth = p.top + 0.5 * tile, wall = 0.3 * tile;
+    const double x0 = p.from, x1 = p.L / 2 - 0.1 * tile;
     // the kerb round the well and the parapet on its long sides and far end (the near end is the way in)
     const double k = 0.25 * tile, kh = 0.12 * tile, ph = 0.85 * tile, pt = 0.22 * tile;
     boxSpan(x0 - k, x1 + k, hw, hw + k, 0, kh, 6);
@@ -853,19 +852,9 @@ Geometry stairsGeometry(const ArchitectureDef& def, double tile, double height, 
     boxSpan(x0 + 0.2 * tile, x1 + pt, -hw - pt, -hw, kh, kh + ph, 6);
     boxSpan(x1, x1 + pt, -hw, hw, kh, kh + ph, 6);
     for (int s : {-1, 1}) boxSpan(x0 + 0.12 * tile, x0 + 0.32 * tile, s > 0 ? hw - 0.02 * tile : -hw - pt - 0.04 * tile, s > 0 ? hw + pt + 0.04 * tile : -hw + 0.02 * tile, kh, kh + ph + 0.14 * tile, 6);  // newel posts
-    // the shaft lining
-    boxSpan(x0 - wall, x1 + wall, hw, hw + wall, -depth, 0);
-    boxSpan(x0 - wall, x1 + wall, -hw - wall, -hw, -depth, 0);
-    boxSpan(x0 - wall, x0, -hw, hw, -depth, 0);
-    boxSpan(x1, x1 + wall, -hw, hw, -depth, 0);
-    // the steps down: each a block from its nose to the far wall, down to the shaft's floor
-    for (int i = 0; i < p.steps; ++i) {
-      const double nose = x0 + i * p.tread, z1 = -(i + 1) * p.rise;
-      boxSpan(nose, x1, -hw, hw, -depth, z1, 6);
-      boxSpan(nose - 0.03 * tile, nose + 0.06 * tile, -hw, hw, z1 - 0.05 * tile, z1 + 0.015 * tile, 6);
-    }
-    // the dark doorway at the bottom, on the far wall (the way down)
-    boxSpan(x1 - 0.04 * tile, x1, -hw * 0.72, hw * 0.72, -p.top, -p.top + 2.3 * tile, 5);
+    // Nothing below the floor (the user, 2026-10-29: the shaft and its steps hung under the board as a block, "corte o 3D"): the
+    // well's mouth is a dark plate at floor level inside the kerb (the way down), the ground stays whole (emberStairHole: none).
+    boxSpan(x0, x1, -hw, hw, 0, 0.02 * tile, 5);
   }
   std::array<double, 3> flame{};
   parts.push_back(torchAt(stairTorch(def, tile, height, rotation), &flame));
@@ -1307,14 +1296,8 @@ std::optional<std::array<double, 3>> emberStairFlame(const ArchitectureDef& def,
   return emberToPiece(flame[0], flame[1], flame[2], rotation);
 }
 
-std::optional<std::array<double, 4>> emberStairHole(const ArchitectureDef& def, int rotation) {
-  if (def.emberStyle != "stairs-down") return std::nullopt;
-  const double height = 0.75 * def.heightScale * 3.5 * 1.6;
-  const StairPlan p = stairPlan(def, 1.0, height, rotation);
-  const double x0 = p.from, x1 = p.L / 2 - 0.1, hw = p.W / 2;
-  const std::array<double, 3> a = emberToPiece(x0, -hw, 0, rotation), b = emberToPiece(x1, hw, 0, rotation);
-  return std::array<double, 4>{std::min(a[0], b[0]), std::min(a[2], b[2]), std::max(a[0], b[0]), std::max(a[2], b[2])};
-}
+// The down stairs no longer cut the ground (2026-10-29: nothing of them lies below the floor, their mouth is a dark plate on it).
+std::optional<std::array<double, 4>> emberStairHole(const ArchitectureDef&, int) { return std::nullopt; }
 
 double emberAxisAngle(int rotation, const std::vector<std::pair<double, double>>& connections) {
   double a;
