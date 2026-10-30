@@ -155,6 +155,13 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"cave4-v01", "hill", "ember-cave4-no-v01", "content/ground/cave4-no-v01.png", 4.5f, true},
     {"cave4-v01", "snow", "ember-cave4-margem-v01", "content/ground/cave4-margem-v01.png", 4.0f, true},
     {"cave4-v01", "side", "ember-cave4-flanco-v01", "content/ground/cave4-flanco-v01.png", 3.0f},
+    // O Mosteiro das Cinzas (mosteiro-v01, the user's photos in Attachments/Monastery, 2026-10-29; prompts of that day): the courtyard's
+    // trodden earth on plains, the church's flagstones on nave (cut on the slab joints, 2 x 2 slabs), rubble on ruins, the graveyard's leaf
+    // litter on woods; every one over its terrain's baked art too, so no stock tile shows through.
+    {"mosteiro-v01", "plains", "ember-mosteiro-patio-v01", "content/ground/mosteiro-patio-v01.png", 4.0f, true},
+    {"mosteiro-v01", "nave", "ember-mosteiro-piso-v01", "content/ground/mosteiro-piso-v01.png", 3.2f, true},
+    {"mosteiro-v01", "ruins", "ember-mosteiro-ruinas-v01", "content/ground/mosteiro-ruinas-v01.png", 4.0f, true},
+    {"mosteiro-v01", "woods", "ember-mosteiro-bosque-v01", "content/ground/mosteiro-bosque-v01.png", 4.5f, true},
 };
 
 inline std::string skyMoonAsset(std::string_view phase) { return "sky/moon/" + std::string(phase) + ".tex"; }
