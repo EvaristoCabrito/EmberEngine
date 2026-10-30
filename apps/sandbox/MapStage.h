@@ -2721,6 +2721,17 @@ class MapStage final : public Stage {
           low.heightScale = def->heightScale * kCutHeight / std::max(maxY, 0.1f);
           piece.cutMesh = meshOf(ember::pieceGeometry(low, rot, connections, {x, -z}), false);
         }
+      } else if (p.id.starts_with("ember-arch-mosteiro-") && !stairs) {
+        // The Monastery's smart walls (the user, 2026-10-30: "eu vou precisar daquelas paredes espertas"): the Inn's cut on the
+        // monastery kit, the precinct's muralha included: a piece between the camera and what it looks at stands as a plain wall
+        // kCutHeight tall (windows, slits and torches too); a door, a portal or a gate is left out while cut (the gap reads as the opening).
+        piece.cuttable = true;
+        if (def->emberStyle == "wall" || def->emberStyle == "window" || def->emberStyle == "slit" || def->emberStyle == "wall-torch") {
+          ember::ArchitectureDef low = *def;
+          low.emberStyle = "wall";
+          low.heightScale = def->heightScale * kCutHeight / std::max(maxY, 0.1f);
+          piece.cutMesh = meshOf(ember::pieceGeometry(low, rot, connections, {x, -z}), false);
+        }
       }
       if (def->emberStyle.starts_with("gothic-")) piece.deckHalf = static_cast<float>(0.32 * def->wallThicknessScale * 0.5);
       piece.blocks = def->model3d == "wall" || def->model3d == "door" || def->model3d == "secretDoor";
