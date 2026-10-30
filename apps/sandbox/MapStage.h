@@ -5070,13 +5070,21 @@ class MapStage final : public Stage {
       text = tr("Encontraram uma rota de fuga. Desejam tentar escapar? (" + chance + "% de chance)", "You found a way out. Try to escape? (" + chance + "% chance)");
       yes = tr("Tentar escapar", "Try to escape"), no = tr("Ficar", "Stay");
     } else if (exit && exit->kind == "connector" && !exit->targetMapId.empty()) {
-      const bool up = connectorUp(*exit);
-      text = up ? tr("Encontraram uma passagem para subir. Deseja subir?", "You found a way up. Go up?")
-                : tr("Encontraram uma passagem para descer. Deseja descer?", "You found a way down. Go down?");
-      if (exit->returnConnector && exit->connectorDirection.empty() && !innFloor())
-        text = tr("Encontraram a passagem de volta. Deseja voltar?", "You found the way back. Go back?");
-      yes = tr("Sim", "Yes"), no = tr("Não", "No");
-      floorExit = exit->targetMapId;
+      // The stairs never lead anywhere in the middle of a fight (the user, 2026-10-30: "não seja possível usar escadas no meio do
+      // combate, apenas warp", "deve ter uma mensagem avisando"): with the turns running the prompt only says so; the free roam
+      // (battle_->roaming()) takes the stairs as before.
+      if (!battle_->roaming()) {
+        text = tr("Você não pode continuar em meio ao combate.", "You cannot go on in the middle of a fight.");
+        yes = tr("Ok", "Ok");
+      } else {
+        const bool up = connectorUp(*exit);
+        text = up ? tr("Encontraram uma passagem para subir. Deseja subir?", "You found a way up. Go up?")
+                  : tr("Encontraram uma passagem para descer. Deseja descer?", "You found a way down. Go down?");
+        if (exit->returnConnector && exit->connectorDirection.empty() && !innFloor())
+          text = tr("Encontraram a passagem de volta. Deseja voltar?", "You found the way back. Go back?");
+        yes = tr("Sim", "Yes"), no = tr("Não", "No");
+        floorExit = exit->targetMapId;
+      }
     } else if (exit) {
       text = exit->kind == "dungeon" ? tr("Encontraram a saída da masmorra. Desejam sair?", "You found the dungeon exit. Leave?")
                                      : tr("Encontraram uma passagem para o próximo andar. Deseja avançar?", "You found a way to the next floor. Go on?");
@@ -5102,12 +5110,15 @@ class MapStage final : public Stage {
     if (emberButton("##finishyes", yes.c_str(), true, true)) {
       // On a free-roam map (the walkable Inn) a floor connector leads straight onto the linked floor. In a fight it ends the
       // mission as Ember's confirmFinish does: victory, then the result screen's "Subir" / "Descer" / "Avançar" / "Voltar"
-      // (GameApp startBattle(target, ..., preserveKnockouts, arrivedFrom)).
-      if (!floorExit.empty() && explores_) floorRequest_ = floorExit, winDismissed_ = true;
+      // (GameApp startBattle(target, ..., preserveKnockouts, arrivedFrom)). The stairs' warning in a fight (no.empty()) only closes.
+      if (no.empty()) winDismissed_ = true;
+      else if (!floorExit.empty() && explores_) floorRequest_ = floorExit, winDismissed_ = true;
       else confirmFinishNow();
     }
-    ImGui::SameLine();
-    if (emberButton("##finishno", no.c_str(), false, true)) winDismissed_ = true;
+    if (!no.empty()) {
+      ImGui::SameLine();
+      if (emberButton("##finishno", no.c_str(), false, true)) winDismissed_ = true;
+    }
     ImGui::End();
     ImGui::PopStyleColor(2);
     ImGui::PopStyleVar(3);

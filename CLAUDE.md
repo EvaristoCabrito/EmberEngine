@@ -1853,6 +1853,10 @@ e tem a diretoria macabra do monasterio")
   editor save of 03:50). Also openable through the Map Editor (Testar) or the Cooker + `--map/--scene/--battle-rules` line in the doc. Verified: the three floors open in release (scene built, every unit in play, the
   indoor floors with window light + probes), captures `captures/mosteiro/`. Not verified: the conversations and the locked doors in
   the window, the stairs between floors in play (code path only), the look (the user judges).
+- **No stairs in combat (2026-10-30, the user: "não seja possível usar escadas no meio do combate, apenas warp", "deve ter uma mensagem
+  avisando"):** on every map, with the turns running (`!battle_->roaming()`) a floor connector's prompt is only "Você não pode continuar
+  em meio ao combate." + Ok (`drawFinishPrompt`); in free roam the Sim / Não question as before. Proven by release captures
+  `captures/mosteiro/stairs-turns.png` / `stairs-roam.png`.
 
 ## Streaming das texturas 3D + Texturas 3D Leve / Média (2026-10-29; the user: "faz, pode embutir 2K como média uma opção de leve",
 "we should prioritize sprites over 3D objects and it will be fine if we see some streaming textures")

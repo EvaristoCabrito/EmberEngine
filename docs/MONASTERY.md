@@ -84,6 +84,11 @@ o Mestre Infusor (cultistV2, nível 18), O Açougueiro e um Horror. Sem NPC neut
 Limites: libertar um preso = abrir a cela e falar (nenhuma mecânica de resgate / escolta existe); o chefe não encerra o mapa (os mapas
 de exploração terminam só num waypoint: a escada); os monstros são placeholders do user ("depois troco por mais apropriados").
 
+**Escadas em combate (2026-10-30, o user: "não seja possível usar escadas no meio do combate, apenas warp", "deve ter uma mensagem
+avisando"):** em todo mapa, com os turnos rodando (`!battle_->roaming()`), parar num conector de andar abre só o aviso "Você não pode
+continuar em meio ao combate." com um Ok (`MapStage::drawFinishPrompt`); no movimento livre a pergunta Sim / Não de sempre. Provado nas
+Masmorras: `captures/mosteiro/stairs-turns.png` (Kael em (6, 5) com o Carcereiro à vista) e `stairs-roam.png` (`--fog 1`, movimento livre).
+
 ## A investigação (as conversas, nos próprios mapas: `neutralSpawns[].dialog`)
 
 | quem | arte (placeholder) | onde | o que deixa escapar |
