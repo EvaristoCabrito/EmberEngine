@@ -151,16 +151,22 @@ void CleaveSweep::build(float now, const Camera& camera, VfxFrame& frame, std::v
     draw(VfxMaterial::Basic, frame.addVertices(spearGeometry()), spearGeometry().size(), root * glm::translate(glm::mat4(1.0f), spear), {}, {},
          glm::vec4(three::hex(0xf4fbff), 1.0f), VfxBlend::Alpha);
 
-  // --- The crescents (scaled along x as they grow): wake, blade, edge ---
+  // --- The crescents (scaled along x as they grow): wake, blade, edge. They sweep low over the ground: drawn with it, under every
+  // card, so the swinging unit is never covered by its own arc (the user, 2026-10-30: "the FX of cleave should be behind the User's
+  // card") ---
   const glm::mat4 growing = glm::scale(glm::mat4(1.0f), {grow, 1.0f, 1.0f});
-  if (t > 0.47f && collapse > 0.01f)
+  if (t > 0.47f && collapse > 0.01f) {
     draw(VfxMaterial::Standard, frame.addVertices(wake_), wake_.size(), root * glm::translate(glm::mat4(1.0f), {0, 0, 0.08f}) * growing,
          {1.0f, 0.0f, 0, 0}, glm::vec4(three::hex(0x597882), 0.5f), glm::vec4(three::hex(0x9aaeb5), 0.42f * collapse), VfxBlend::Alpha);
+    frame.draws.back().underCards = true;
+  }
   if (t > 0.34f && collapse > 0.01f) {
     draw(VfxMaterial::Standard, frame.addVertices(blade_), blade_.size(), root * glm::translate(glm::mat4(1.0f), {0, 0, 0.17f}) * growing,
          {0.3f, 0.08f, 0, 0}, glm::vec4(three::hex(0x7ca9b9), 1.8f), glm::vec4(three::hex(0xc8e6f2), 0.76f * collapse), VfxBlend::Alpha);
+    frame.draws.back().underCards = true;
     draw(VfxMaterial::Basic, frame.addVertices(edge_), edge_.size(), root * glm::translate(glm::mat4(1.0f), {0, 0, 0.23f}) * growing, {}, {},
          glm::vec4(three::hex(0xf2fbff), 0.95f), VfxBlend::Alpha);
+    frame.draws.back().underCards = true;
   }
 
   // --- The trail: the spearhead's last 30 places (one per 60 Hz frame, as Ember's per-frame history) ---

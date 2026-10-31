@@ -44,6 +44,9 @@ static const float kTilt = 0.55;      // Ember TILT
 static const float kWrap = 0.85;      // Ember WRAP
 static const float kMaxLit = 2.0;     // Ember MAX_LIT
 static const float kUnitFront = 1.2;  // Ember UNIT_FRONT
+#ifdef CARD_STANDING_DEPTH
+static const float kUnitFrontNear = 0.25;  // a unit away from walls: just off the ground under its feet
+#endif
 static const float kGlowRadius = 0.1; // Ember GLOW_RADIUS
 
 struct VSOut {
@@ -84,7 +87,14 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
     // stays where it was (the depth alone changes).
     const float3 eye = loadFrame(push.frame).cameraPosition;
     const float3 d = s.origin - eye;
+#ifdef CARD_STANDING_DEPTH
+    // Every map but the Inn's: a unit with no architecture wall beside it (flag 32, MapStage) slides only kUnitFrontNear, so a tree or
+    // a prop standing nearer the camera than its feet covers it (the user, 2026-10-30: "he should be fully behind the tree").
+    const float front = (s.flags & 32u) ? kUnitFrontNear : kUnitFront;
+    const float4 feet = mul(float4(eye + d * (1.0 - min(front / max(length(d), 1e-3), 0.9)), 1.0), push.viewProjection);
+#else
     const float4 feet = mul(float4(eye + d * (1.0 - min(kUnitFront / max(length(d), 1e-3), 0.9)), 1.0), push.viewProjection);
+#endif
     o.position.z = feet.z / feet.w * o.position.w;
   }
 #ifdef CARD_STANDING_DEPTH

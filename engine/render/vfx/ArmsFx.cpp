@@ -18,6 +18,7 @@ constexpr float kTau = 2.0f * kPi;
 constexpr glm::vec3 kUp{0.0f, 1.0f, 0.0f};
 constexpr float kPull = 1.3f, kGroundPull = 0.7f;  // as CombatFx: in front of the card, which is drawn 1.2 units nearer
 constexpr float kGravity = 9.8f;
+constexpr float kRingUnderFeet = 0.6f;  // a ring this near its unit's feet height lies on the ground
 constexpr float kModeStreak = 0.0f, kModePuff = 1.0f, kModeEnergy = 2.0f, kModeRing = 3.0f, kModeTrail = 4.0f, kModeSlash = 5.0f;
 constexpr float kHex = 1.7320508f;  // the distance between neighbouring hex centres, world units
 
@@ -141,6 +142,8 @@ struct Draw {
     d.gpu.firstInstance = firstInstance;
     d.gpu.material = static_cast<uint32_t>(VfxMaterial::Combat);
     d.gpu.sightAt = sight;
+    // A ring at the feet lies under every card (the user, 2026-10-30: "o poison tinha que estar abaixo de todos os pés").
+    if (mode == kModeRing && std::abs(model[3].y - sight.y) < kRingUnderFeet) d.underCards = true;
     d.instances = instances;
     d.blend = blend;
     d.depthTest = true;

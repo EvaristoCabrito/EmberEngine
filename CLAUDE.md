@@ -1718,8 +1718,9 @@ open area with large tables ... some separate rooms for NPCs and services, use t
   cells differ from the TypeScript exporter's by design now. Memory note `only-barricades-block`.
   **Changed 2026-10-30 (the user: "we shouldn't be able to walk into 3D like this", "Todo 3D bloqueia", "mas apenas colunas bloqueiam
   projéteis", "paredes e portas devem bloquear projéteis"; the Inn included, with the Inn's word):** every 3D object blocks movement
-  (MapStage blockEmberProps: any catalog decoration with a model), except ground cover (grass, moss, rugs), stairs, stand-on pieces and
-  exits; of the 3D objects only columns / pillars stop shots; walls, doors and barricades stop them as before; 2D cards still never
+  (MapStage blockEmberProps: any catalog decoration with a model), except ground cover (grass, moss, rugs, and the same evening ferns and
+  small plants: "samambaias e pequenas plantas 3D pode ficar livres"), stairs, stand-on pieces and exits; a tree blocks only its trunk's
+  hex (the three-hex trees walled off the Wisp Forest's chests); of the 3D objects only columns / pillars stop shots; walls, doors and barricades stop them as before; 2D cards still never
   block. A unit the party can no longer walk up to is logged "cannot be reached on foot" (none on the Monastery 009, both Inn floors,
   Wisp Forest 031).
 - **The city (2026-10-25, the user: "eu não tenho mapas de cidade nenhuma, você vai criar"; capricho máximo is mine, their prompts

@@ -16,6 +16,7 @@ constexpr float kPi = std::numbers::pi_v<float>;
 constexpr float kTau = 2.0f * kPi;
 constexpr glm::vec3 kUp{0.0f, 1.0f, 0.0f};
 constexpr float kPull = 1.3f, kGroundPull = 0.7f;  // as CombatFx: in front of the card, which is drawn 1.2 units nearer
+constexpr float kRingUnderFeet = 0.6f;  // a ring this near its unit's feet height lies on the ground
 constexpr float kModeStreak = 0.0f, kModeEnergy = 2.0f, kModeRing = 3.0f;
 constexpr glm::vec3 kViolet{0.62f, 0.4f, 1.0f}, kVioletCore{0.9f, 0.82f, 1.0f}, kWhite{1.0f, 0.98f, 0.94f}, kDeep{0.4f, 0.2f, 0.8f};
 
@@ -89,6 +90,8 @@ struct Draw {
     d.gpu.firstInstance = firstInstance;
     d.gpu.material = static_cast<uint32_t>(VfxMaterial::Combat);
     d.gpu.sightAt = sight;
+    // A ring at the feet lies under every card (the user, 2026-10-30: "o poison tinha que estar abaixo de todos os pés").
+    if (mode == kModeRing && std::abs(model[3].y - sight.y) < kRingUnderFeet) d.underCards = true;
     d.instances = instances;
     d.blend = blend;
     d.depthTest = true;

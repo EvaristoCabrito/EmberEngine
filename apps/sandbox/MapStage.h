@@ -631,6 +631,7 @@ class MapStage final : public Stage {
     meshes_.setRegionView(camera.viewProjection());
     meshes_.setView(camera.position, static_cast<float>(size.height) / (2.0f * std::tan(glm::radians((flat_ ? kFlatFov : kFov) * 0.5f))));
     if (modelsPlaced_) updateCutaway(camera);
+    if (modelsPlaced_) updateOccluders(camera);
     drawList_.clear();
     frontCards_.clear();
     laps.lap("goal+eye");
@@ -2224,6 +2225,7 @@ class MapStage final : public Stage {
   static constexpr float kFlatFov = 1.0f;             // Ember FLAT_FOV: Tática's long lens
   static constexpr float kFlatRowStep = 0.002f;       // Ember FLAT_ROW_STEP: Tática's height step per unit of depth
   static constexpr float kFlatLift = 0.01f;           // Tática's first row over the highest ground
+  static constexpr float kWallNearSq = 2.6f * 2.6f;   // a wall piece's anchor this near a unit keeps the unit's full depth slide
   // Tática's card height at depth z: counted from the board's north edge (2026-10-30, the user: the hero sank under the tiles, more
   // the further up the map: z is negative there, so boardTop + z * step lay under the ground).
   float flatY(float z) const { return boardTop_ + kFlatLift + (z - boardZ0_) * kFlatRowStep; }
@@ -3326,9 +3328,51 @@ class MapStage final : public Stage {
       logInfo("window light: {} roof slab(s) {:.2f} .. {:.2f} (ground top {:.2f}), {} wall pieces (tops at their ground + 4.2), {} instances", roofs_.size(),
               roofBottom_, 2.0f * roofCentreY_ - roofBottom_, boardTop_, arch_.size(), instances.size());
     placedInstances_ = std::move(instances);
-    meshes_.setInstances(placedInstances_);
+    occluding_.assign(modelCount_, 0);
+    pushInstances();
     lastHearthFireFrame_ = -1;
     placedLook_ = look_;
+  }
+
+  // The GPU's instance list = placedInstances_ with the models that stand in the camera's way drawn into the sun's shadow only.
+  void pushInstances() {
+    if (std::none_of(occluding_.begin(), occluding_.end(), [](uint8_t o) { return o != 0; })) {
+      meshes_.setInstances(placedInstances_);
+      return;
+    }
+    std::vector<InstanceGpu> shown = placedInstances_;
+    for (size_t i = 0; i < occluding_.size() && i < shown.size(); ++i)
+      if (occluding_[i]) shown[i].flags |= kInstanceShadowOnly;
+    meshes_.setInstances(shown);
+  }
+
+  // Smart occlusion (the user, 2026-10-30: "smart oclusion for 3D objects like trees that get into the camera like that, in particular
+  // during ATT and casting sequences"): a tall model (a tree, a big rock: kOccluderHeight and up) whose trunk stands across the line
+  // from the eye to the point the camera looks at (the action shot's too), or right at the lens, is not drawn while it does; its
+  // shadow stays. A model comes back only once it is clear by a margin, so it never flickers at the edge.
+  void updateOccluders(const Camera& camera) {
+    if (occluding_.size() != modelCount_) occluding_.assign(modelCount_, 0);
+    const glm::vec3 eye = camera.position;
+    const glm::vec3 focus = lookTarget(cam_) + glm::vec3(0.0f, shotLift_, 0.0f);
+    const glm::vec2 e{eye.x, eye.z}, seg = glm::vec2(focus.x, focus.z) - e;
+    const float segLen2 = std::max(glm::dot(seg, seg), 1e-4f);
+    bool changed = false;
+    for (size_t i = 0; i < occluding_.size() && i < pieceBoxes_.size() && i < placedInstances_.size(); ++i) {
+      const PieceBox& b = pieceBoxes_[i];
+      const float base = placedInstances_[i].rows[1].w;
+      bool hide = false;
+      if (!flat_ && b.top - base >= kOccluderHeight) {
+        const glm::vec2 c{b.x, b.z};
+        const float t = std::clamp(glm::dot(c - e, seg) / segLen2, 0.0f, 1.0f);
+        const float reach = std::max(0.45f * b.radius, 0.6f) * (occluding_[i] ? 1.3f : 1.0f);  // the trunk and the near canopy
+        const float lineY = eye.y + (focus.y - eye.y) * t;
+        const bool across = t > 0.0f && t < 0.92f && glm::distance(c, e + seg * t) < reach && lineY < b.top;
+        const bool atLens = glm::distance(c, e) < b.radius + 1.0f && eye.y < b.top;
+        hide = across || atLens;
+      }
+      if (hide != (occluding_[i] != 0)) occluding_[i] = hide ? 1 : 0, changed = true;
+    }
+    if (changed) pushInstances();
   }
 
   // The fog's explored cells are monotonic; GPU instances need changing only
@@ -3347,7 +3391,7 @@ class MapStage final : public Stage {
       }
       discovered += (instance.flags & kInstanceAlwaysSeen) ? 1u : 0u;
     }
-    if (changed) meshes_.setInstances(placedInstances_);
+    if (changed) pushInstances();
     if (std::getenv("EMBER_STREAM_CHECK")) logInfo("stream discovery: {}/{} models discovered by explored footprint", discovered, modelSightCells_.size());
   }
 
@@ -3358,7 +3402,7 @@ class MapStage final : public Stage {
     if (frame == lastHearthFireFrame_) return;
     for (const uint32_t index : hearthFireInstances_)
       if (index < placedInstances_.size()) placedInstances_[index].pad = static_cast<uint32_t>(frame);
-    meshes_.setInstances(placedInstances_);
+    pushInstances();
     lastHearthFireFrame_ = frame;
   }
 
@@ -3655,7 +3699,14 @@ class MapStage final : public Stage {
       const bool mirror = !leftCut && ((unitFacing_[ui] == -1) != reversed);
       // Tática (Ember UnitActor.update with flatTop): flat over its own row's cards by half a row step, no shadow.
       if (flat_) anchor.y = flatY(anchor.z) + kFlatRowStep * 0.5f;
-      const uint32_t flags = flat_ ? kSpriteLit | kSpriteFlat : kSpriteLit | kSpriteFront | kSpriteCastsShadow;
+      uint32_t flags = flat_ ? kSpriteLit | kSpriteFlat : kSpriteLit | kSpriteFront | kSpriteCastsShadow;
+      // The full slide toward the camera is for the walls (2026-10-21: a figure "melting with the walls"); with none within a hex and
+      // a half, a tree or a prop nearer the camera than the unit's feet covers it (the user, 2026-10-30: "he should be fully behind
+      // the tree").
+      if (!flat_ && !std::any_of(arch_.begin(), arch_.end(), [&](const ArchPiece& a) {
+            return (a.x - anchor.x) * (a.x - anchor.x) + (a.z - anchor.z) * (a.z - anchor.z) < kWallNearSq;
+          }))
+        flags |= kSpriteFrontNear;
       const size_t cardsBefore = drawList_.size();
       // Ember centerBody: a sheet that drifts sideways mid-swing (Neera's off-hand dagger) is held on its hex.
       const float drift = p && frame < p->bodyShift.size() ? p->bodyShift[frame] * boxW : 0.0f;
@@ -4388,11 +4439,15 @@ class MapStage final : public Stage {
       // lies on the ground (grass, moss, rugs), stairs, and pieces made to stand on. The Inn too (the user gave the Inn's word).
       const bool solidWall = cd->architecture && (cd->model3d == "wall" || cd->model3d == "door" || cd->model3d == "secretDoor");
       const bool barricade = d.id.find("barricade") != std::string::npos;
+      // Ground plants are ground cover too, and a tree blocks only its trunk's hex (the user, same day, on the Wisp Forest: "toda área
+      // atrás dele está bloqueada, não deveria ter bloqueio nessa área": the three-hex trees and a fern had walled it off).
       const bool object3d = !cd->architecture && cd->model && !cd->standOn && cd->exitKind.empty() &&
-                            !has(d.id, {"grass", "moss", "rug", "stairs"});
+                            !has(d.id, {"grass", "moss", "rug", "stairs", "fern", "celandine", "periwinkle", "plant", "flower"});
       if (!solidWall && !barricade && !object3d) continue;
       const bool stopsShots = solidWall || barricade || has(d.id + " " + cd->name, {"pillar", "column", "coluna", "pilar"});
-      for (const ember::FootOffset& f : ember::placedFootprint(*cd, d.x, d.y, d.rot)) {
+      const bool trunkOnly = object3d && has(d.id, {"tree"});
+      const std::vector<ember::FootOffset> cellsOf = trunkOnly ? std::vector<ember::FootOffset>{{0, 0}} : ember::placedFootprint(*cd, d.x, d.y, d.rot);
+      for (const ember::FootOffset& f : cellsOf) {
         const int x = d.x + f.dx, y = d.y + f.dy;
         if (!ember::inBoard(L, x, y)) continue;
         ember::BattleCell c = battle_->cell(x, y);
@@ -4428,6 +4483,17 @@ class MapStage final : public Stage {
         near = near || (battle_->inBounds(n.x, n.y) && reached[static_cast<size_t>(n.y * L.cols + n.x)]);
       if (!near) logWarn("battle: {} at ({}, {}) cannot be reached on foot from {}", u.name, u.x, u.y, from->name);
     }
+    for (const ember::Battle::Lock& l : battle_->locks()) {
+      bool near = false;
+      for (const ember::BattleHex& n : ember::Battle::neighbors(l.x, l.y))
+        near = near || (battle_->inBounds(n.x, n.y) && reached[static_cast<size_t>(n.y * L.cols + n.x)]);
+      if (!near) logWarn("battle: the {} {} at ({}, {}) cannot be reached on foot from {}", l.kind, l.id, l.x, l.y, from->name);
+    }
+    size_t walkable = 0, cut = 0;
+    for (int y = 0; y < L.rows; ++y)
+      for (int x = 0; x < L.cols; ++x)
+        if (battle_->cell(x, y).passable) ++walkable, cut += reached[static_cast<size_t>(y * L.cols + x)] ? 0 : 1;
+    if (cut) logWarn("battle: {} of {} walkable cells cannot be reached on foot from {}", cut, walkable, from->name);
   }
   // The battle: each scene unit finds its battle unit by side and name, in spawn order.
   void setUpBattle(const std::filesystem::path& path) {
@@ -5108,17 +5174,27 @@ class MapStage final : public Stage {
   const std::vector<size_t>& aimHits(size_t b, ember::BattleHex hex) const {
     const std::string key = std::format("{}:{}:{}:{}", spellMode_, b, hex.x, hex.y);
     if (key == hitsKey_) return hits_;
-    hitsKey_ = key, hits_.clear();
+    hitsKey_ = key, hits_.clear(), harms_.clear();
     if (potionOf(spellMode_) || ember::spellTargetCount(*battle_, b, spellMode_) != 1) return hits_;
     ember::Battle copy = *battle_;
+    using StepType = ember::BattleStep::Type;
     if (const std::optional<std::vector<ember::BattleStep>> steps = ember::castSpell(copy, b, spellMode_, {hex}, nullptr, false))
       for (const ember::BattleStep& s : *steps) {
         std::vector<size_t> ids = s.ids;
-        if (s.type == ember::BattleStep::Type::Combat) ids.push_back(s.def);
-        for (size_t id : ids)
-          if (id != b && id < battle_->units().size() && std::find(hits_.begin(), hits_.end(), id) == hits_.end()) hits_.push_back(id);
+        if (s.type == StepType::Combat) ids.push_back(s.def);
+        const bool support = s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food || s.type == StepType::Potion;
+        for (size_t id : ids) {
+          if (id == b || id >= battle_->units().size()) continue;
+          if (std::find(hits_.begin(), hits_.end(), id) == hits_.end()) hits_.push_back(id);
+          if (!support && std::find(harms_.begin(), harms_.end(), id) == harms_.end()) harms_.push_back(id);
+        }
       }
     return hits_;
+  }
+  // The units the aimed spell would harm (aimHits without the ones it only heals, cures or feeds: no "Fogo amigo" for a Círculo de Cura).
+  const std::vector<size_t>& aimHarms(size_t b, ember::BattleHex hex) const {
+    aimHits(b, hex);
+    return harms_;
   }
 
   // A hex clicked while a spell is aimed: one more target (Míssil Mágico takes one per missile), then the cast.
@@ -5330,7 +5406,7 @@ class MapStage final : public Stage {
     // Fogo amigo: the aimed spell would hit friends too (allowed; it costs their affinity with the caster).
     if (pendingFoe_ < 0 && spellArmed_ && ready) {
       std::string friends;
-      for (size_t id : aimHits(ab, *spellArmed_))
+      for (size_t id : aimHarms(ab, *spellArmed_))
         if (battle_->units()[id].side == battle_->units()[ab].side) friends += (friends.empty() ? "" : ", ") + battle_->units()[id].name;
       if (!friends.empty()) {
         centred(tr("Fogo amigo: ", "Friendly fire: ").append(friends).c_str(), uiFont(UiFont::Ui), 14.0f, IM_COL32(255, 112, 92, 255));
@@ -6347,9 +6423,11 @@ class MapStage final : public Stage {
     if (s.type == StepType::Food || s.type == StepType::Move || s.type == StepType::Effect) target = -1;  // around the caster / a walk: nobody to turn to
     else if (s.type != StepType::Spell) target = sceneUnitOf(static_cast<int>(x.counter ? s.att : s.def));
     else if (!s.ids.empty()) target = sceneUnitOf(static_cast<int>(s.ids[0]));
+    stepFace_ = {-1, -1, 0};
     if (striker >= 0 && target >= 0 && striker != target) {
       faceToward(static_cast<size_t>(striker), static_cast<size_t>(target));
       if (!support && !s.rearSure) faceToward(static_cast<size_t>(target), static_cast<size_t>(striker));  // Salto de Vara: struck from behind, unseen
+      stepFace_ = {striker, target, !support && !s.rearSure ? 1 : 0};
     }
     // A potion is drunk or handed over with no pose of its own (Ember applyPotion); the cures and the food play the
     // healing pose.
@@ -8129,6 +8207,13 @@ class MapStage final : public Stage {
     if (!exchange_) return;
     Exchange& x = *exchange_;
     const ember::BattleStep& s = x.steps[x.step];
+    // The action camera turns after the step began (planShot), which can swap which side of the screen the target is on: the
+    // striker (and the struck) keep facing each other at the camera as it is now (the user, 2026-10-30: "make sure Kael and
+    // Aldric face the enemy when they ATT").
+    if (stepFace_[0] >= 0 && stepFace_[1] >= 0) {
+      faceToward(static_cast<size_t>(stepFace_[0]), static_cast<size_t>(stepFace_[1]));
+      if (stepFace_[2]) faceToward(static_cast<size_t>(stepFace_[1]), static_cast<size_t>(stepFace_[0]));
+    }
     if (!x.landed && now_ >= x.impact) {
       x.landed = true;
       // stepCombat's strike cue (Kael's long swing) and emitMissileFx's arrow release (Tiro Longo).
@@ -11217,6 +11302,8 @@ class MapStage final : public Stage {
     float x, z, radius, top;  // a 3D piece's footprint (square around its centre) and top, world units
   };
   std::vector<PieceBox> pieceBoxes_;
+  std::vector<uint8_t> occluding_;  // per model instance: standing in the camera's way, drawn into the shadow only (updateOccluders)
+  static constexpr float kOccluderHeight = 2.5f;  // models at least this tall can be taken out of the camera's way
   std::vector<ArchPiece> arch_;  // Ember's walls, doors and gates (buildArchitecture)
   std::unordered_map<uint64_t, MeshId> archMeshes_;  // the pieces' built meshes by their geometry (applyEditorDraft builds them again)
   std::vector<DoorLeaf> doorLeaves_;  // the animated doors' leaves (buildArchitecture)
@@ -11660,6 +11747,7 @@ class MapStage final : public Stage {
   std::optional<ember::BattleHex> spellPreviewAim_;  // a line / cone spell: the aim at the nearest foe it reaches (cursor off the board)
   mutable std::string hitsKey_;              // aimHits' cache: the spell, caster and hex it was worked out for
   mutable std::vector<size_t> hits_;
+  mutable std::vector<size_t> harms_;  // aimHarms
   bool attackMode_ = false;               // "Atacar": only the foes it can strike are marked
   bool showTurnOrder_ = false;
   std::string tip_;                       // why a click did nothing (Ember's tip line)
@@ -11712,6 +11800,7 @@ class MapStage final : public Stage {
     return r.dir * (reach * k) + glm::vec3(0.0f, r.heavy ? -0.04f * height * std::min(k, 1.0f) : 0.0f, 0.0f);
   }
   std::optional<Exchange> exchange_;
+  std::array<int, 3> stepFace_{-1, -1, 0};  // the step's striker and target (scene units) and whether the target turns back (startStep)
   struct Popup {
     size_t unit = 0;
     std::string text;

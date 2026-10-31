@@ -16,6 +16,7 @@ constexpr float kPi = std::numbers::pi_v<float>;
 constexpr float kTau = 2.0f * kPi;
 constexpr glm::vec3 kUp{0.0f, 1.0f, 0.0f};
 constexpr float kPull = 1.3f, kGroundPull = 0.7f;  // as CrusaderFx: in front of the card, which is drawn 1.2 units nearer
+constexpr float kRingUnderFeet = 0.6f;  // a ring this near its unit's feet height lies on the ground
 constexpr float kModeStreak = 0.0f, kModeEnergy = 2.0f, kModeRing = 3.0f;  // Combat material
 constexpr float kHolyPool = 1.0f, kHolyMote = 2.0f, kHolyLine = 4.0f;       // Holy material, in violet
 constexpr float kBurstLead = 0.3f;  // the rune flares this long before the burst's hit
@@ -101,6 +102,8 @@ struct CombatDraw {
     d.gpu.firstInstance = firstInstance;
     d.gpu.material = static_cast<uint32_t>(VfxMaterial::Combat);
     d.gpu.sightAt = sight;
+    // A ring at the feet lies under every card (the user, 2026-10-30: "o poison tinha que estar abaixo de todos os pés").
+    if (mode == kModeRing && std::abs(model[3].y - sight.y) < kRingUnderFeet) d.underCards = true;
     d.instances = instances;
     d.blend = blend;
     d.depthTest = true;
@@ -121,6 +124,8 @@ struct HolyDraw {
     d.gpu.firstInstance = firstInstance;
     d.gpu.material = static_cast<uint32_t>(VfxMaterial::Holy);
     d.gpu.sightAt = sight;
+    // A ring at the feet lies under every card (the user, 2026-10-30: "o poison tinha que estar abaixo de todos os pés").
+    if (mode == kModeRing && std::abs(model[3].y - sight.y) < kRingUnderFeet) d.underCards = true;
     d.instances = instances;
     d.blend = VfxBlend::Additive;
     d.depthTest = true;
