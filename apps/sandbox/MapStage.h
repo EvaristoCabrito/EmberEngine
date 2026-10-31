@@ -3605,11 +3605,17 @@ class MapStage final : public Stage {
       const bool walking = !unitWalk_[ui].points.empty();
       std::string shown = kIdle;
       const ember::HeroPose* p = nullptr;
-      // The fallen: their death plays out, holds, then they are gone. -1000 = gone already (fallen in a loaded save, absent,
-      // a summon dismissed): never drawn (the loaded dead stood on the board as ghosts, the user 2026-10-20).
-      if (ui < unitDiedAt_.size() && (unitDiedAt_[ui] <= -999.0f ||
-                                      (unitDiedAt_[ui] >= 0.0f && time - unitDiedAt_[ui] > poseSeconds(ui, "death") / unitShot_[ui].rate + kCorpseSeconds)))
-        continue;
+      // The fallen: their death plays out, then they fade away over kCorpseSeconds and are gone (the user, 2026-10-30: "um efeito de
+      // fading gradual nos cards quando eles morrem, começa apenas após a animação terminar, nos casos sem animação de imediato após o
+      // hit"). -1000 = gone already (fallen in a loaded save, absent, a summon dismissed): never drawn (the loaded dead stood on the
+      // board as ghosts, the user 2026-10-20).
+      float corpseFade = 0.0f;
+      if (ui < unitDiedAt_.size() && unitDiedAt_[ui] >= 0.0f) {
+        // the Inn's (locked) keep their old hold when they have no death pose
+        const float deathLength = hasPose(ui, "death") || innFloor() ? poseSeconds(ui, "death") / unitShot_[ui].rate : 0.0f;
+        corpseFade = std::clamp((time - unitDiedAt_[ui] - deathLength) / kCorpseSeconds, 0.0f, 1.0f);
+      }
+      if (ui < unitDiedAt_.size() && (unitDiedAt_[ui] <= -999.0f || corpseFade >= 1.0f)) continue;
       OneShot shotNow;  // this frame's (the stored one may move on to its next pose below)
       const OneShot* shot = nullptr;
       if (ui < unitShot_.size() && !unitShot_[ui].pose.empty()) shotNow = unitShot_[ui], shot = &shotNow;
@@ -3707,6 +3713,7 @@ class MapStage final : public Stage {
             return (a.x - anchor.x) * (a.x - anchor.x) + (a.z - anchor.z) * (a.z - anchor.z) < kWallNearSq;
           }))
         flags |= kSpriteFrontNear;
+      if (corpseFade > 0.0f) flags |= static_cast<uint32_t>(std::lround(corpseFade * 255.0f)) << kSpriteFadeShift;
       const size_t cardsBefore = drawList_.size();
       // Ember centerBody: a sheet that drifts sideways mid-swing (Neera's off-hand dagger) is held on its hex.
       const float drift = p && frame < p->bodyShift.size() ? p->bodyShift[frame] * boxW : 0.0f;

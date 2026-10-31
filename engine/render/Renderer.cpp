@@ -602,9 +602,11 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   sprites.fragmentShader = "sprites.PSDepth";
   sprites.depthWrite = true;
   spriteDepthPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), sprites);
+  // Every map but the Inn's: the standing variant (sprites.hlsl with CARD_STANDING_DEPTH), its pixels too (a fallen unit's fade).
   sprites.vertexShader = "sprites_standing.VSMain";
+  sprites.fragmentShader = "sprites_standing.PSDepth";
   standingSpriteDepthPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), sprites);
-  sprites.fragmentShader = "sprites.PSMain";
+  sprites.fragmentShader = "sprites_standing.PSMain";
   sprites.depthWrite = false;
   standingSpritePipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), sprites);
 

@@ -30,5 +30,7 @@ inline constexpr uint32_t kSpriteCastsShadow = 8;  // drawn into the sun's card 
 inline constexpr uint32_t kSpriteFlat = 16;  // lies flat facing up, its top toward -z (the 2D view, Tática)
 // With kSpriteFront: no architecture wall beside the unit, so it slides only 0.25 nearer (sprites_standing; the Inn's cards ignore it)
 inline constexpr uint32_t kSpriteFrontNear = 32;
+// Bits 24..31: how far the card has faded out, 0..255 (a fallen unit; sprites_standing only, the Inn's cards ignore it)
+inline constexpr uint32_t kSpriteFadeShift = 24;
 
 }  // namespace ember

@@ -120,6 +120,9 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
 float4 PSMain(VSOut i) : SV_Target0 {
   const SpriteInstance s = loadSprite(i.instance);
   float4 c = gTextureArrays[NonUniformResourceIndex(s.textureIndex)].Sample(gSamplers[push.samplerIndex], float3(i.uv, s.layer));
+#ifdef CARD_STANDING_DEPTH
+  c *= 1.0 - float((s.flags >> 24) & 255u) / 255.0;  // a fallen unit fading out (MapStage kSpriteFadeShift: flags bits 24..31, how far)
+#endif
   clip(c.a - 1.0 / 255.0);
   float3 color = c.rgb;
   if ((s.flags & 2u) && push.frame != 0) {
@@ -175,7 +178,12 @@ float4 PSDepth(VSOut i) : SV_Target0 {
   const SpriteInstance s = loadSprite(i.instance);
   const bool unit = (s.flags & 4u) != 0;
   if (((push.lean & 4u) != 0 && unit) || ((push.lean & 8u) != 0 && !unit)) discard;
+#ifdef CARD_STANDING_DEPTH
+  const float a = gTextureArrays[NonUniformResourceIndex(s.textureIndex)].Sample(gSamplers[push.samplerIndex], float3(i.uv, s.layer)).a *
+                  (1.0 - float((s.flags >> 24) & 255u) / 255.0);
+#else
   const float a = gTextureArrays[NonUniformResourceIndex(s.textureIndex)].Sample(gSamplers[push.samplerIndex], float3(i.uv, s.layer)).a;
+#endif
   clip(a - 0.5);
   return float4(0.0, 0.0, 0.0, 0.0);
 }

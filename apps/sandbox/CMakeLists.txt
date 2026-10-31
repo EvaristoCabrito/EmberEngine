@@ -9,7 +9,7 @@ ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/tonemap.hlsl STAGES vs:VS
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/worldmap.hlsl STAGES vs:VSMain ps:PSMain)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/ground.hlsl STAGES vs:VSMain ps:PSMain)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/sprites.hlsl STAGES vs:VSMain ps:PSMain ps:PSDepth vs:VSShadow ps:PSShadow)
-ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/sprites.hlsl NAME sprites_standing DEFINES CARD_STANDING_DEPTH STAGES vs:VSMain)
+ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/sprites.hlsl NAME sprites_standing DEFINES CARD_STANDING_DEPTH STAGES vs:VSMain ps:PSMain ps:PSDepth)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/effects.hlsl STAGES vs:VSMain ps:PSMain)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/vfx.hlsl STAGES vs:VSMain ps:PSMain)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/hiz.hlsl STAGES cs:CSDownsample)
