@@ -1914,6 +1914,11 @@ para cada tipo de terreno")
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
+- The Wisp Forest's bare fir (2026-10-30; `content/models/blender/fix_fir_trunk_uv.py`, `make_fir_v03.py -- v03|v04|v05`):
+  `polyhaven-wisp-v02/fir_tree_01_bare_v02.glb` (the trunk unwrapped), `_v03.glb` (the user's Pine.jpg bark, `content/textures/bark/`:
+  "ainda está uma bosta"), `_v04.glb` (the Bosque Morto's bark, the old root splat: "consegue suavizar essas raízes?"). The game plays
+  v05 (that bark + a smooth five-root flare, 15.6 tall) from `build/meshes/props-v36.pak`; props-v34 / v35 carry v03 / v04.
+
 - `build/meshes/props-v31.pak` + `build/meshes/src-v31/` (hard links) + `props-v31-cook.log` (2026-10-29): props-v16's set + the upright
   Wisp tree v03, cooked for the tree before the other session's commit removing 158 primitive props (700391d8) was seen. Would bring
   those back: JOGAR stays on props-v17 (which already carries v03). Not used.
