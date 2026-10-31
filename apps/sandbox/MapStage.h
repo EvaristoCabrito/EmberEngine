@@ -3770,6 +3770,26 @@ class MapStage final : public Stage {
           unitKey = behind ? std::max(unitKey, cardKey + 1e-3f) : std::min(unitKey, cardKey - 1e-3f);
         }
       }
+      // That shift can carry a figure past another standing near it, and then the one behind was drawn over the one in front, at some
+      // camera angles only (the user, 2026-10-30: "every now and then the camera will make a card on the back draw in front of
+      // another", "if I move the camera a little it auto fixes"). Two figures overlapping on screen keep their own depth order.
+      std::vector<size_t> units;
+      for (size_t k = 0; k < order.size(); ++k)
+        if ((drawList_[order[k].second].flags & kSpriteFront) != 0) units.push_back(k);
+      for (int pass = 0; pass < 4; ++pass) {
+        bool moved = false;
+        for (size_t a : units)
+          for (size_t b : units) {
+            const SpriteInstance& ua = drawList_[order[a].second];
+            const SpriteInstance& ub = drawList_[order[b].second];
+            const float depthA = glm::dot(ua.origin - eye, fwd), depthB = glm::dot(ub.origin - eye, fwd);
+            if (depthA <= depthB) continue;  // a is the farther one: it must be drawn first (the larger key)
+            const float sa = glm::dot(glm::vec2(ua.origin.x, ua.origin.z), across), sb = glm::dot(glm::vec2(ub.origin.x, ub.origin.z), across);
+            if (std::abs(sa - sb) >= 0.5f * (ua.width + ub.width)) continue;
+            if (order[a].first <= order[b].first) order[a].first = order[b].first + 1e-4f, moved = true;
+          }
+        if (!moved) break;
+      }
     }
     std::sort(order.begin(), order.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
     std::vector<SpriteInstance> sorted;
