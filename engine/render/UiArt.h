@@ -15,7 +15,8 @@
 
 namespace ember {
 
-enum class UiFont { Ui, Display, Mark };
+// Plain / Strong: Windows' Segoe UI and Segoe UI Semibold (the Map Editor: the user, 2026-10-31, "uma fonte mais fácil de ler").
+enum class UiFont { Ui, Display, Mark, Plain, Strong };
 // The font, or ImGui's default when its file is missing. Sizes are given per push (ImGui 1.93: PushFont(font, px)).
 ImFont* uiFont(UiFont font);
 // Called once by DebugUi while it builds the font atlas.

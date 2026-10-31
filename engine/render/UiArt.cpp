@@ -28,7 +28,7 @@ namespace ember {
 
 namespace {
 
-ImFont* gFonts[3] = {};
+ImFont* gFonts[5] = {};
 
 struct Sized {
   int width = 0, height = 0;
@@ -433,6 +433,17 @@ void loadUiFonts() {
         io.Fonts->AddFontFromFileTTF(symbols.c_str(), 18.0f, &merge);
       }
     }
+  }
+  // Segoe UI and its Semibold from the Windows fonts folder (the Map Editor's text); Figtree if they are missing.
+  char windows[MAX_PATH] = {};
+  const UINT length = GetWindowsDirectoryA(windows, MAX_PATH);
+  const std::string fonts = (length > 0 && length < MAX_PATH ? std::string(windows) : std::string("C:\\Windows")) + "\\Fonts\\";
+  const char* segoe[2] = {"segoeui.ttf", "seguisb.ttf"};
+  for (int i = 0; i < 2; ++i) {
+    const std::string file = fonts + segoe[i];
+    std::error_code error;
+    if (std::filesystem::exists(file, error)) gFonts[3 + i] = io.Fonts->AddFontFromFileTTF(file.c_str(), 18.0f);
+    else logError("UI font not found: {}", file), gFonts[3 + i] = gFonts[0];
   }
 }
 

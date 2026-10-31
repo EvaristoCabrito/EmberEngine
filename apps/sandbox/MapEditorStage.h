@@ -168,10 +168,16 @@ class MapEditorStage : public Stage {
                 : m == "summon" ? Mode::Summon : m == "elev" ? Mode::Elevation : Mode::Paint;
         architectureDecorations_ = m == "props";
         if (m == "arch" || m == "props") decoBrush_ = m == "props" ? "prop-3d-tavern-table" : "wall-3d-stone";
+        tab_ = tabOf(mode_);
         continue;
       }
       if (step.starts_with("dialog:")) {
         pendingDialog_ = step.substr(7);
+        continue;
+      }
+      if (step.starts_with("tab:")) {  // a tab of the page opened: file map terrain decor units scene rules world
+        for (const TabInfo& t : kTabs)
+          if (step.substr(4) == t.key) openTab(t.tab);
         continue;
       }
       const size_t c1 = step.find(':'), c2 = step.rfind(':');
@@ -190,6 +196,7 @@ class MapEditorStage : public Stage {
       else if (mode == "npc") mode_ = Mode::Npc;
       else if (mode == "summon") mode_ = Mode::Summon;
       lastEdit_ = {};
+      tab_ = tabOf(mode_);
       onCellClick(x, y, std::nullopt);
     }
   }
@@ -269,6 +276,7 @@ class MapEditorStage : public Stage {
 
   void drawPanel() override {
     if (preview_ && showPreview_) preview_->drawPanel();  // the camera bar
+    pushLook();
     drawEditor();
     if (showTechnical_) drawTechnicalMap();
     if (showLocations_) drawLocais();
@@ -276,6 +284,7 @@ class MapEditorStage : public Stage {
     if (!pendingDialog_.empty()) openDialogEditor(std::exchange(pendingDialog_, {}));
     dialogUi_.draw(portraits(), editor_.affinityHeroes);
     drawHoverTip();
+    popLook();
   }
 
  private:
@@ -833,6 +842,7 @@ class MapEditorStage : public Stage {
     if (!model || mode_ != Mode::Architecture) decoBrush_ = id;
     if (model) mode_ = Mode::Architecture;
     else if (mode_ == Mode::Architecture) mode_ = Mode::Decoration;
+    if (tab_ != Tab::Rules) tab_ = Tab::Decor;
     if (const auto s = editor_.decoSection.find(id); s != editor_.decoSection.end()) decoSection_ = s->second;
   }
 
@@ -1914,76 +1924,415 @@ class MapEditorStage : public Stage {
     va_end(args);
   }
 
+  // --- the editor's look (the user, 2026-10-31: "something more customized and organized", "uma fonte mais fácil de ler") ---------
+  // The game's dark bronze and ember on every widget, Segoe UI 16 (Semibold for titles and labels); a rail of tabs on the left of
+  // the page, the brush a click on the board uses and the actions (Testar, Salvar mapa) always in view.
+
+  static constexpr ImU32 kPanelInk = IM_COL32(15, 12, 10, 246), kRailInk = IM_COL32(9, 7, 6, 255), kCardInk = IM_COL32(26, 20, 16, 255);
+  static constexpr ImU32 kBronzeInk = IM_COL32(190, 150, 95, 255), kBronzeDimInk = IM_COL32(190, 150, 95, 60), kEmberInk = IM_COL32(236, 128, 52, 255);
+  static constexpr ImU32 kEdgeInk = IM_COL32(88, 68, 48, 255), kTextInk = IM_COL32(236, 228, 216, 255), kLabelInk = IM_COL32(204, 176, 136, 255);
+  static constexpr ImU32 kMutedInk = IM_COL32(150, 138, 122, 255), kLitInk = IM_COL32(255, 224, 186, 255);
+  static constexpr std::pair<ImGuiCol, ImU32> kLook[] = {
+      {ImGuiCol_Text, kTextInk},
+      {ImGuiCol_TextDisabled, kMutedInk},
+      {ImGuiCol_WindowBg, kPanelInk},
+      {ImGuiCol_ChildBg, IM_COL32(0, 0, 0, 0)},
+      {ImGuiCol_PopupBg, IM_COL32(20, 16, 13, 250)},
+      {ImGuiCol_Border, kEdgeInk},
+      {ImGuiCol_BorderShadow, IM_COL32(0, 0, 0, 0)},
+      {ImGuiCol_FrameBg, IM_COL32(30, 24, 19, 255)},
+      {ImGuiCol_FrameBgHovered, IM_COL32(46, 35, 27, 255)},
+      {ImGuiCol_FrameBgActive, IM_COL32(60, 43, 30, 255)},
+      {ImGuiCol_TitleBg, IM_COL32(20, 16, 13, 255)},
+      {ImGuiCol_TitleBgActive, IM_COL32(48, 32, 21, 255)},
+      {ImGuiCol_TitleBgCollapsed, IM_COL32(20, 16, 13, 255)},
+      {ImGuiCol_ScrollbarBg, IM_COL32(0, 0, 0, 60)},
+      {ImGuiCol_ScrollbarGrab, IM_COL32(96, 74, 50, 255)},
+      {ImGuiCol_ScrollbarGrabHovered, IM_COL32(132, 98, 62, 255)},
+      {ImGuiCol_ScrollbarGrabActive, IM_COL32(172, 124, 72, 255)},
+      {ImGuiCol_CheckMark, IM_COL32(242, 146, 64, 255)},
+      {ImGuiCol_SliderGrab, IM_COL32(200, 120, 56, 255)},
+      {ImGuiCol_SliderGrabActive, IM_COL32(242, 150, 70, 255)},
+      {ImGuiCol_Button, IM_COL32(42, 32, 25, 255)},
+      {ImGuiCol_ButtonHovered, IM_COL32(74, 51, 34, 255)},
+      {ImGuiCol_ButtonActive, IM_COL32(114, 66, 36, 255)},
+      {ImGuiCol_Header, IM_COL32(62, 43, 29, 255)},
+      {ImGuiCol_HeaderHovered, IM_COL32(86, 59, 37, 255)},
+      {ImGuiCol_HeaderActive, IM_COL32(112, 72, 40, 255)},
+      {ImGuiCol_Separator, kEdgeInk},
+      {ImGuiCol_ResizeGrip, IM_COL32(120, 88, 56, 90)},
+      {ImGuiCol_ResizeGripHovered, IM_COL32(190, 150, 95, 170)},
+      {ImGuiCol_ResizeGripActive, IM_COL32(236, 128, 52, 220)},
+      {ImGuiCol_TextSelectedBg, IM_COL32(200, 120, 56, 110)}};
+  static constexpr int kLookVars = 9;
+  // Every window the editor draws (the panel, Locais, R-Encounter, the technical map, the dialog editor) wears it.
+  static void pushLook() {
+    for (const auto& [c, v] : kLook) ImGui::PushStyleColor(c, v);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 4.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, 4.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_GrabRounding, 3.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarRounding, 6.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarSize, 12.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{9.0f, 5.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{8.0f, 7.0f});
+    ImGui::PushFont(uiFont(UiFont::Plain), 16.0f);
+  }
+  static void popLook() {
+    ImGui::PopFont();
+    ImGui::PopStyleVar(kLookVars);
+    ImGui::PopStyleColor(static_cast<int>(std::size(kLook)));
+  }
+
+  // A field's name above it: Segoe UI Semibold in the label colour.
+  static void fieldLabel(const char* fmt, ...) IM_FMTARGS(1) {
+    va_list args;
+    va_start(args, fmt);
+    ImGui::PushFont(uiFont(UiFont::Strong), 14.0f);
+    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::ColorConvertU32ToFloat4(kLabelInk));
+    ImGui::TextV(fmt, args);
+    ImGui::PopStyleColor();
+    ImGui::PopFont();
+    va_end(args);
+  }
+  // A section of a tab: its title and a bronze rule fading to the right.
+  static void section(const char* title) {
+    ImGui::Dummy({0, 8});
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec2 at = ImGui::GetCursorScreenPos();
+    const float w = ImGui::GetContentRegionAvail().x;
+    ImFont* font = uiFont(UiFont::Strong);
+    const ImVec2 ts = font->CalcTextSizeA(16.5f, FLT_MAX, 0.0f, title);
+    dl->AddText(font, 16.5f, at, kBronzeInk, title);
+    const float y = std::round(at.y + ts.y * 0.58f);
+    if (at.x + ts.x + 12 < at.x + w)
+      dl->AddRectFilledMultiColor({at.x + ts.x + 12, y}, {at.x + w, y + 1}, kBronzeDimInk, IM_COL32(190, 150, 95, 0), IM_COL32(190, 150, 95, 0), kBronzeDimInk);
+    ImGui::Dummy({w, ts.y + 2});
+  }
+  // `text` cut to `width` with an ellipsis.
+  static std::string fitText(ImFont* font, float size, const std::string& text, float width) {
+    if (font->CalcTextSizeA(size, FLT_MAX, 0.0f, text.c_str()).x <= width) return text;
+    std::string s = text;
+    while (!s.empty()) {
+      size_t cut = s.size() - 1;
+      while (cut > 0 && (static_cast<unsigned char>(s[cut]) & 0xC0) == 0x80) --cut;  // a whole UTF-8 character
+      s.resize(cut);
+      if (font->CalcTextSizeA(size, FLT_MAX, 0.0f, (s + "…").c_str()).x <= width) return s + "…";
+    }
+    return {};
+  }
+  // A thumbnail's name under it ([a, b]), cut to its width; the space it takes is reserved.
+  static void nameUnder(const std::string& name, ImVec2 a, ImVec2 b) {
+    const float cell = b.x - a.x;
+    const ImVec2 at{a.x, b.y + 3};
+    ImFont* font = uiFont(UiFont::Plain);
+    const std::string shown = fitText(font, 13.0f, name, cell);
+    const float tw = font->CalcTextSizeA(13.0f, FLT_MAX, 0.0f, shown.c_str()).x;
+    ImGui::GetWindowDrawList()->AddText(font, 13.0f, {std::round(at.x + (cell - tw) * 0.5f), at.y}, kMutedInk, shown.c_str());
+    ImGui::SetCursorScreenPos(at);
+    ImGui::Dummy({cell, 16});
+  }
+  // A square icon button; `on` = a switch that is lit.
+  static bool iconButton(const char* id, const char* icon, const std::string& tip, bool on, float size = 34, bool enabled = true) {
+    ImGui::BeginDisabled(!enabled);
+    const bool clicked = ImGui::InvisibleButton(id, {size, size});
+    ImGui::EndDisabled();
+    const bool hover = enabled && ImGui::IsItemHovered();
+    const ImVec2 a = ImGui::GetItemRectMin(), b = ImGui::GetItemRectMax();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    dl->AddRectFilled(a, b, on ? IM_COL32(92, 50, 24, 255) : hover ? IM_COL32(52, 38, 28, 255) : kCardInk, 4.0f);
+    dl->AddRect(a, b, on ? kEmberInk : hover ? kBronzeInk : kEdgeInk, 4.0f);
+    uiIcon(dl, icon, {(a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f}, std::round(size * 0.55f), !enabled ? IM_COL32(100, 90, 80, 255) : on || hover ? kLitInk : kTextInk);
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && !tip.empty()) ImGui::SetTooltip("%s", tip.c_str());
+    return clicked && enabled;
+  }
+  // The footer's big buttons: icon + label; the primary one in ember.
+  static bool actionButton(const char* id, const char* icon, const char* label, bool primary, ImVec2 size, bool enabled) {
+    ImGui::BeginDisabled(!enabled);
+    const bool clicked = ImGui::InvisibleButton(id, size);
+    ImGui::EndDisabled();
+    const bool hover = enabled && ImGui::IsItemHovered();
+    const ImVec2 a = ImGui::GetItemRectMin(), b = ImGui::GetItemRectMax();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    if (primary) {
+      const ImU32 top = hover ? IM_COL32(176, 86, 34, 255) : IM_COL32(150, 70, 28, 255), bottom = hover ? IM_COL32(128, 58, 22, 255) : IM_COL32(104, 46, 18, 255);
+      dl->AddRectFilledMultiColor(a, b, top, top, bottom, bottom);
+    } else {
+      dl->AddRectFilled(a, b, hover ? IM_COL32(52, 38, 28, 255) : kCardInk, 4.0f);
+    }
+    dl->AddRect(a, b, primary ? kEmberInk : hover ? kBronzeInk : kEdgeInk, 4.0f);
+    ImFont* font = uiFont(UiFont::Strong);
+    const ImVec2 ts = font->CalcTextSizeA(16.0f, FLT_MAX, 0.0f, label);
+    const float total = 18 + 8 + ts.x, x = std::round((a.x + b.x - total) * 0.5f), cy = (a.y + b.y) * 0.5f;
+    const ImU32 ink = !enabled ? IM_COL32(150, 136, 120, 255) : hover || primary ? kLitInk : kTextInk;
+    uiIcon(dl, icon, {x + 9, cy}, 18, ink);
+    dl->AddText(font, 16.0f, {x + 26, std::round(cy - ts.y * 0.5f)}, ink, label);
+    return clicked && enabled;
+  }
+
+  // The tabs of the page (the rail on its left).
+  enum class Tab { File, Map, Terrain, Decor, Units, Scene, Rules, World };
+  struct TabInfo {
+    Tab tab;
+    const char* key;  // the captures' "tab:<key>"
+    const char* icon;
+    const char* name;
+    const char* about;
+  };
+  static constexpr TabInfo kTabs[] = {
+      {Tab::File, "file", "folder-open", "Arquivo", "Abrir, criar e guardar as versões deste mapa."},
+      {Tab::Map, "map", "map", "Mapa", "Identidade, missão, recompensa, diálogos e tamanho."},
+      {Tab::Terrain, "terrain", "mountain", "Terreno", "Pintar os tiles e esculpir a elevação."},
+      {Tab::Decor, "decor", "castle", "Decoração", "Decorações 2D, paredes 3D e objetos 3D."},
+      {Tab::Units, "units", "users", "Unidades", "Heróis, inimigos, NPCs e invocações."},
+      {Tab::Scene, "scene", "sun-moon", "Cenário", "Ground, panorama e iluminação."},
+      {Tab::Rules, "rules", "scroll-text", "Regras", "Vitória, regras do mapa e da peça selecionada."},
+      {Tab::World, "world", "globe", "Mundo", "Local no mapa-múndi, Locais e encontros de estrada."}};
+  static constexpr float kRail = 80;
+  static const TabInfo& tabInfo(Tab t) {
+    for (const TabInfo& i : kTabs)
+      if (i.tab == t) return i;
+    return kTabs[0];
+  }
+  static Tab tabOf(Mode m) {
+    return m == Mode::Paint || m == Mode::Elevation ? Tab::Terrain : m == Mode::Decoration || m == Mode::Architecture ? Tab::Decor : Tab::Units;
+  }
+  // A brush tab opened from another brush: its first brush is armed (a click on the board does what the open tab shows).
+  void openTab(Tab t) {
+    tab_ = t;
+    if (t != Tab::Terrain && t != Tab::Decor && t != Tab::Units) return;
+    if (tabOf(mode_) == t) return;
+    turning_ = turningDeco_ = false;
+    mode_ = t == Tab::Terrain ? Mode::Paint : t == Tab::Decor ? Mode::Decoration : Mode::Player;
+    if (mode_ == Mode::Decoration && !meta(decoBrush_).model3d.empty() && !editor_.decorationOrder.empty()) decoBrush_ = editor_.decorationOrder.front();
+  }
+
   void drawEditor() {
     const ImGuiIO& io = ImGui::GetIO();
     ImGui::SetNextWindowPos({0, 0});
-    ImGui::SetNextWindowSizeConstraints({360, io.DisplaySize.y}, {io.DisplaySize.x * 0.6f, io.DisplaySize.y});
+    ImGui::SetNextWindowSizeConstraints({480, io.DisplaySize.y}, {io.DisplaySize.x * 0.6f, io.DisplaySize.y});
     ImGui::SetNextWindowSize({panelWidth_, io.DisplaySize.y}, ImGuiCond_FirstUseEver);
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(17, 17, 17, 242));
-    ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(74, 74, 74, 255));
-    ImGui::Begin("##mapeditor", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::Begin("##mapeditor", nullptr,
+                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar |
+                     ImGuiWindowFlags_NoScrollWithMouse);
+    ImGui::PopStyleVar(2);
     panelWidth_ = ImGui::GetWindowWidth();
-    ImGui::PushFont(uiFont(UiFont::Ui), 15.0f);
+    {  // the panel's right edge
+      const ImVec2 p = ImGui::GetWindowPos(), s = ImGui::GetWindowSize();
+      ImGui::GetWindowDrawList()->AddRectFilled({p.x + s.x - 2, p.y}, {p.x + s.x, p.y + s.y}, IM_COL32(120, 90, 56, 200));
+    }
+    const float spacing = ImGui::GetStyle().ItemSpacing.y;
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
     drawHeader();
-    // the page scrolls; the action bar (notes, Testar, Salvar mapa) stays at the bottom
-    const float footer = 92.0f + (bigNote_ ? 120.0f : 0.0f);
-    if (scrollTo_) ImGui::SetNextWindowScroll({0, *scrollTo_});
-    ImGui::BeginChild("##page", {0, -footer});
-    scrollTo_.reset();
-    drawToolbar();
-    ImGui::Separator();
-    drawSettings();
-    if (ImGui::CollapsingHeader("Ground e Panorama", ImGuiTreeNodeFlags_DefaultOpen)) drawGroundAndPanorama();
-    if (ImGui::CollapsingHeader("Iluminação", ImGuiTreeNodeFlags_DefaultOpen)) drawLighting();
-    drawSizeAndModes();
-    drawModePanel();
-    drawPreviewRow();
-    drawDecorationList();
-    drawUnits();
-    drawFiles();
+    drawBrushStrip();
+    // the rail | the page (scrolls); the action bar (notes, Testar, Salvar mapa) stays at the bottom
+    const float footer = 64.0f + (note_.empty() ? 0.0f : 50.0f) + (bigNote_ ? 120.0f : 0.0f);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, kRailInk);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 8});
+    ImGui::BeginChild("##rail", {kRail, -footer}, ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_NoScrollbar);
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor();
+    drawRail();
     ImGui::EndChild();
+    ImGui::SameLine(0, 0);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{20, 14});
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{8, spacing});
+    if (scrollTo_) ImGui::SetNextWindowScroll({0, *scrollTo_});
+    ImGui::BeginChild("##page", {0, -footer}, ImGuiChildFlags_AlwaysUseWindowPadding);
+    scrollTo_.reset();
+    drawPageTitle();
+    drawTab();
+    ImGui::Dummy({0, 16});
+    ImGui::EndChild();
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, kRailInk);
+    ImGui::BeginChild("##actions", {0, 0}, ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar(2);
+    {  // a bronze line over the action bar
+      const ImVec2 p = ImGui::GetWindowPos();
+      ImGui::GetWindowDrawList()->AddRectFilled(p, {p.x + ImGui::GetWindowWidth(), p.y + 1}, kEdgeInk);
+    }
     drawFooter();
-    ImGui::PopFont();
+    ImGui::EndChild();
+    ImGui::PopStyleVar();
     ImGui::End();
-    ImGui::PopStyleColor(2);
   }
 
+  // Voltar, the editor's name and the map being edited; Desfazer / Refazer (up to kHistory steps; Ctrl+Z / Ctrl+Shift+Z do the
+  // same), the preview and the technical grid, always visible.
   void drawHeader() {
     ImDrawList* dl = ImGui::GetWindowDrawList();
-    const ImVec2 at = ImGui::GetCursorScreenPos();
-    if (ImGui::InvisibleButton("##edback", {40, 40}) && callbacks_.back) callbacks_.back(draft_);
-    dl->AddRect(at, {at.x + 40, at.y + 40}, ImGui::IsItemHovered() ? IM_COL32(216, 216, 216, 255) : IM_COL32(74, 74, 74, 255));
-    iconChevronLeft(dl, {at.x + 20, at.y + 20}, 20, IM_COL32(240, 240, 240, 255));
-    spacedText(dl, uiFont(UiFont::Ui), 13.0f, {at.x + 52, at.y}, IM_COL32(180, 180, 180, 255), "MODO TESTE", 0.18f, false);
-    dl->AddText(uiFont(UiFont::Display), 24.0f, {at.x + 52, at.y + 16}, IM_COL32(240, 240, 240, 255), "Map Editor");
-    // Desfazer / Refazer stay on the top bar, always visible (up to kHistory steps; Ctrl+Z / Ctrl+Shift+Z do the same).
-    const float bw = 92.0f, gap = 6.0f, right = at.x + ImGui::GetContentRegionAvail().x;
-    ImGui::SetCursorScreenPos({right - bw * 2 - gap, at.y + 6});
-    ImGui::BeginDisabled(past_.empty());
-    if (ImGui::Button("Desfazer##top", {bw, 28})) undo();
-    ImGui::EndDisabled();
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) ImGui::SetTooltip("Desfaz a última ação (%d de até %d)", static_cast<int>(past_.size()), static_cast<int>(kHistory));
-    ImGui::SameLine(0, gap);
-    ImGui::BeginDisabled(future_.empty());
-    if (ImGui::Button("Refazer##top", {bw, 28})) redo();
-    ImGui::EndDisabled();
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) ImGui::SetTooltip("Refaz a ação desfeita (%d)", static_cast<int>(future_.size()));
-    ImGui::SetCursorScreenPos({at.x, at.y + 40});
-    ImGui::Dummy({1, 4});
+    const ImVec2 o = ImGui::GetCursorScreenPos();
+    const float w = ImGui::GetContentRegionAvail().x, h = 66;
+    dl->AddRectFilled(o, {o.x + w, o.y + h}, kRailInk);
+    dl->AddRectFilledMultiColor({o.x, o.y + h - 1}, {o.x + w, o.y + h}, kBronzeInk, IM_COL32(190, 150, 95, 40), IM_COL32(190, 150, 95, 40), kBronzeInk);
+    ImGui::SetCursorScreenPos({o.x + 14, o.y + 15});
+    if (iconButton("##edback", "chevron-left", "Voltar ao Modo teste", false, 36) && callbacks_.back) callbacks_.back(draft_);
+    const std::string title = draft_.value("title", ""), id = draft_.value("id", "");
+    dl->AddText(uiFont(UiFont::Strong), 21.0f, {o.x + 62, o.y + 11}, kTextInk, "Map Editor");
+    const float right = o.x + w - 14;
+    const float textRoom = right - 4 * 36 - 3 * 6 - 14 - (o.x + 62);
+    const std::string sub = title.empty() ? id : id.empty() ? title : title + " · " + id;
+    dl->AddText(uiFont(UiFont::Plain), 14.5f, {o.x + 62, o.y + 37}, kMutedInk, fitText(uiFont(UiFont::Plain), 14.5f, sub.empty() ? "Mapa novo" : sub, textRoom).c_str());
+    float x = right - 4 * 36 - 3 * 6 - 10;
+    ImGui::SetCursorScreenPos({x, o.y + 15});
+    if (iconButton("##undo", "undo-2", std::format("Desfazer a última ação ({} de até {})", past_.size(), kHistory), false, 36, !past_.empty())) undo();
+    ImGui::SetCursorScreenPos({x += 42, o.y + 15});
+    if (iconButton("##redo", "redo-2", std::format("Refazer a ação desfeita ({})", future_.size()), false, 36, !future_.empty())) redo();
+    ImGui::SetCursorScreenPos({x += 52, o.y + 15});
+    if (iconButton("##preview", showPreview_ ? "eye" : "eye-off", showPreview_ ? "Ocultar a prévia com os gráficos do jogo" : "Mostrar a prévia com os gráficos do jogo",
+                   showPreview_, 36)) {
+      showPreview_ = !showPreview_;
+      if (showPreview_) dirty_ = true, lastEdit_ = {};
+      else preview_.reset();
+    }
+    ImGui::SetCursorScreenPos({x += 42, o.y + 15});
+    if (iconButton("##technical", "grid-3x3", showTechnical_ ? "Ocultar o mapa técnico de edição" : "Mostrar o mapa técnico de edição", showTechnical_, 36))
+      showTechnical_ = !showTechnical_;
+    ImGui::SetCursorScreenPos({o.x, o.y + h});
   }
 
-  void drawToolbar() {
-    if (ImGui::Button("Novo")) {
+  // What a click on the board does now; a click on the strip opens its tab.
+  std::pair<std::string, std::string> brushSummary() const {
+    static const char* kElevation[3] = {"Elevar +1", "Baixar −1", "Nivelar"};
+    static const char* kWallTool[3] = {"clique", "traçar parede", "fechar sala"};
+    const std::string area = elevationRadius_ == 0 ? std::string("uma célula") : elevationRadius_ == 1 ? std::string("1 anel") : std::format("{} anéis", elevationRadius_);
+    switch (mode_) {
+      case Mode::Paint:
+        if (turning_) return {"Terreno", "Girar hex: cada clique vira o desenho 60°"};
+        return {"Terreno", std::format("{} · {}", cityMode_ ? std::string("City") : terrainName(brush_), variantName(brush_, variant_))};
+      case Mode::Elevation:
+        return {"Elevação", std::format("{} · {}{}", kElevation[std::clamp(elevationTool_, 0, 2)], area, elevationTool_ == 2 ? std::format(" · nível {}", elevationLevel_) : std::string())};
+      case Mode::Decoration:
+        return {"Decoração 2D", turningDeco_ ? std::string("Girar objeto: cada clique vira 60°") : decoName(decoBrush_)};
+      case Mode::Architecture:
+        if (turningDeco_) return {architectureDecorations_ ? "Objeto 3D" : "Parede 3D", "Girar peça 3D: cada clique vira 90°"};
+        if (architectureDecorations_) return {"Objeto 3D", decoName(decoBrush_)};
+        return {"Parede 3D", std::format("{} · {}", decoName(decoBrush_), kWallTool[std::clamp(wallTool_, 0, 2)])};
+      case Mode::Player:
+      case Mode::Enemy: {
+        const std::pair<std::string, std::string>& b = mode_ == Mode::Player ? allyBrush_ : enemyBrush_;
+        return {mode_ == Mode::Player ? "Herói" : "Inimigo", b.first.empty() ? className(b.second) : b.first + " · " + className(b.second)};
+      }
+      case Mode::Npc: {
+        std::string name = npcBrush_;
+        for (const auto& [id, n] : editor_.npcs)
+          if (id == npcBrush_) name = n;
+        return {"NPC", name};
+      }
+      case Mode::Summon:
+        return {summonNeutral_ ? "Invocação neutra" : "Invocação aliada", classLabel(summonBrush_)};
+    }
+    return {};
+  }
+  void drawBrushStrip() {
+    const auto [what, which] = brushSummary();
+    const ImVec2 o = ImGui::GetCursorScreenPos();
+    const float w = ImGui::GetContentRegionAvail().x, h = 48;
+    const bool clicked = ImGui::InvisibleButton("##brush", {w, h});
+    const bool hover = ImGui::IsItemHovered();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    dl->AddRectFilled(o, {o.x + w, o.y + h}, hover ? IM_COL32(32, 24, 18, 255) : IM_COL32(20, 16, 13, 255));
+    dl->AddRectFilled({o.x, o.y + h - 1}, {o.x + w, o.y + h}, kEdgeInk);
+    const Tab tab = tabOf(mode_);
+    dl->AddRectFilled({o.x + 14, o.y + 8}, {o.x + 46, o.y + 40}, IM_COL32(70, 36, 16, 255), 4.0f);
+    dl->AddRect({o.x + 14, o.y + 8}, {o.x + 46, o.y + 40}, kEmberInk, 4.0f);
+    uiIcon(dl, tabInfo(tab).icon, {o.x + 30, o.y + 24}, 18, kLitInk);
+    dl->AddText(uiFont(UiFont::Strong), 13.5f, {o.x + 58, o.y + 6}, kLabelInk, ("Pincel · " + what).c_str());
+    dl->AddText(uiFont(UiFont::Plain), 16.0f, {o.x + 58, o.y + 23}, kTextInk, fitText(uiFont(UiFont::Plain), 16.0f, which, w - 58 - 14).c_str());
+    if (hover) ImGui::SetTooltip("O que um clique no mapa faz agora. Clique para abrir a aba %s.", tabInfo(tab).name);
+    if (clicked) tab_ = tab;
+  }
+
+  void drawRail() {
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    for (const TabInfo& t : kTabs) {
+      const ImVec2 a = ImGui::GetCursorScreenPos();
+      const ImVec2 b{a.x + kRail, a.y + 64};
+      if (ImGui::InvisibleButton(std::format("##tab{}", t.key).c_str(), {kRail, 64})) openTab(t.tab);
+      const bool on = tab_ == t.tab, hover = ImGui::IsItemHovered();
+      if (on || hover) dl->AddRectFilled(a, b, on ? IM_COL32(36, 26, 19, 255) : IM_COL32(24, 18, 14, 255));
+      if (on) dl->AddRectFilled(a, {a.x + 3, b.y}, kEmberInk);
+      const ImU32 ink = on ? IM_COL32(255, 196, 140, 255) : hover ? kTextInk : IM_COL32(170, 156, 138, 255);
+      uiIcon(dl, t.icon, {a.x + kRail * 0.5f, a.y + 23}, 22, ink);
+      ImFont* font = uiFont(on ? UiFont::Strong : UiFont::Plain);
+      const ImVec2 ts = font->CalcTextSizeA(14.0f, FLT_MAX, 0.0f, t.name);
+      dl->AddText(font, 14.0f, {std::round(a.x + (kRail - ts.x) * 0.5f), a.y + 40}, ink, t.name);
+      if (hover) ImGui::SetTooltip("%s", t.about);
+    }
+  }
+  void drawPageTitle() {
+    const TabInfo& t = tabInfo(tab_);
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec2 at = ImGui::GetCursorScreenPos();
+    dl->AddText(uiFont(UiFont::Strong), 23.0f, at, kTextInk, t.name);
+    dl->AddText(uiFont(UiFont::Plain), 15.0f, {at.x, at.y + 31}, kMutedInk, t.about);
+    ImGui::Dummy({1, 54});
+  }
+
+  // Each tab: the page's sections, in order.
+  void drawTab() {
+    switch (tab_) {
+      case Tab::File:
+        section("Abrir");
+        drawOpen();
+        section(std::format("Versões salvas de \"{}\" ({})", draft_.value("id", ""), files_.size()).c_str());
+        drawFiles();
+        break;
+      case Tab::Map:
+        section("Identidade");
+        drawIdentity();
+        section("Missão");
+        drawMission();
+        section("Recompensa");
+        drawReward();
+        section("Diálogos");
+        drawDialogs();
+        section("Tamanho");
+        drawSize();
+        break;
+      case Tab::Terrain:
+        drawTerrainTab();
+        break;
+      case Tab::Decor:
+        drawDecorTab();
+        break;
+      case Tab::Units:
+        drawUnitsTab();
+        break;
+      case Tab::Scene:
+        section("Ground e Panorama");
+        drawGroundAndPanorama();
+        section("Iluminação");
+        drawLighting();
+        break;
+      case Tab::Rules:
+        section("Vitória");
+        drawVictory();
+        section("Regras do mapa");
+        drawMapFlags();
+        section("Peça selecionada");
+        drawRules(mode_ == Mode::Architecture);
+        break;
+      case Tab::World:
+        section("Local no mapa-múndi");
+        drawWorldLocation();
+        section("Campanha");
+        drawCampaignWindows();
+        break;
+    }
+  }
+
+  // Novo, the campaign's maps, the saved maps, the CityHubs.
+  void drawOpen() {
+    if (ImGui::Button("Novo mapa em branco")) {
       setDraft(blankDraft());
       note(std::format("Mapa novo em branco — cenário \"{}\", {}x{}.", draft_["id"].get<std::string>(), cols(), rows()));
     }
-    ImGui::SameLine();
-    if (ImGui::Button("Locais")) openLocais();
-    ImGui::SameLine();
-    if (ImGui::Button("R-Encounter")) showEncounters_ = true;
-    ImGui::SameLine();
-    if (ImGui::Button("Gerar terreno")) generateTerrain();
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Espalha barricadas, barrancos e terreno alto pelo mapa do tamanho atual — depois é só limpar o que não serve");
+    fieldLabel("Mapa da campanha");
     ImGui::SetNextItemWidth(-1);
     if (ImGui::BeginCombo("##campaignmap", "Carregar mapa da campanha…")) {
       LetterJump jump;
@@ -2004,6 +2353,7 @@ class MapEditorStage : public Stage {
       return mapTitleBefore(a->title, b->title) || (!mapTitleBefore(b->title, a->title) && a->id < b->id);
     });
     if (!pickable.empty()) {
+      fieldLabel("Mapa salvo");
       ImGui::SetNextItemWidth(-1);
       if (ImGui::BeginCombo("##savedmap", "Abrir mapa salvo…")) {
         const std::map<std::string, int> active = activeMaps();
@@ -2020,12 +2370,13 @@ class MapEditorStage : public Stage {
         jump.end();
         ImGui::EndCombo();
       }
-      if (ImGui::IsItemHovered()) ImGui::SetTooltip("Abre o save mais recente desse cenário — a lista de arquivos abaixo deixa escolher outro serial");
+      if (ImGui::IsItemHovered()) ImGui::SetTooltip("Abre o save mais recente desse cenário — a lista de versões abaixo deixa escolher outro serial");
     }
     const std::vector<MapRef> hubs = cityHubs();
     if (!hubs.empty()) {
+      fieldLabel("CityHubs");
       ImGui::SetNextItemWidth(-1);
-      if (ImGui::BeginCombo("##cityhubs", "CityHubs…")) {
+      if (ImGui::BeginCombo("##cityhubs", "Abrir hub…")) {
         LetterJump jump;
         jump.begin();
         for (const MapRef& m : hubs) {
@@ -2039,12 +2390,78 @@ class MapEditorStage : public Stage {
     }
   }
 
+  // Locais / R-Encounter: the campaign's own windows.
+  void drawCampaignWindows() {
+    if (ImGui::Button("Locais", {150, 0})) openLocais();
+    ImGui::SameLine();
+    hint("A progressão entre os locais da campanha, suas missões, vagas e andares.");
+    if (ImGui::Button("R-Encounter", {150, 0})) showEncounters_ = true;
+    ImGui::SameLine();
+    hint("Os encontros aleatórios de estrada de cada região.");
+  }
+
+  // Terreno: paint or sculpt, then the whole map's tools.
+  void drawTerrainTab() {
+    int pick = -1;
+    if (toggleRow({{"Pintar tiles", mode_ == Mode::Paint}, {"Elevação", mode_ == Mode::Elevation}}, pick)) turning_ = false, mode_ = pick == 0 ? Mode::Paint : Mode::Elevation;
+    ImGui::Dummy({0, 2});
+    drawModePanel();
+    section("Mapa inteiro");
+    drawReplaceBase();
+  }
+  // Decoração: 2D, 3D walls, 3D objects; the selected piece's rules; the placed list.
+  void drawDecorTab() {
+    const int current = mode_ == Mode::Decoration ? 0 : architectureDecorations_ ? 2 : 1;
+    int pick = -1;
+    if (toggleRow({{"Decoração 2D", current == 0}, {"Paredes 3D", current == 1}, {"Objetos 3D", current == 2}}, pick) && pick != current) {
+      turningDeco_ = false;
+      if (pick == 0) {
+        mode_ = Mode::Decoration;
+        if (!meta(decoBrush_).model3d.empty() && !editor_.decorationOrder.empty()) decoBrush_ = editor_.decorationOrder.front();
+      } else {
+        mode_ = Mode::Architecture;
+        architectureDecorations_ = pick == 2;
+        decoBrush_ = pick == 2 ? "prop-3d-tavern-table" : thickWalls_ ? "castle-3d-thick" : "wall-3d-stone";
+      }
+    }
+    ImGui::Dummy({0, 2});
+    drawModePanel();
+    hint("Na prévia: botão direito (ou esquerdo) numa decoração e arraste para mover.");
+    drawDecorationList();
+  }
+  // Unidades: the side to place, its brush, then every unit on the map.
+  void drawUnitsTab() {
+    static const std::pair<Mode, const char*> kSides[] = {{Mode::Player, "Herói"}, {Mode::Enemy, "Inimigo"}, {Mode::Npc, "NPC"}, {Mode::Summon, "Invocação"}};
+    std::vector<std::pair<std::string, bool>> items;
+    for (const auto& [m, label] : kSides) items.push_back({label, mode_ == m});
+    int pick = -1;
+    if (toggleRow(items, pick)) mode_ = kSides[pick].first;
+    ImGui::Dummy({0, 2});
+    if (mode_ == Mode::Player) {
+      fieldLabel("Adicionar heróis");
+      const float right = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
+      if (ImGui::SmallButton("Party completa")) addHeroes(editor_.heroes);
+      for (const auto& [name, classId] : editor_.heroes) {
+        flow(false, name.c_str(), right);
+        if (ImGui::SmallButton(name.c_str())) addHeroes({{name, classId}});
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", className(classId).c_str());
+      }
+      hint("O nível de cada um é editável na lista abaixo.");
+    }
+    drawModePanel();
+    hint("Na prévia: botão direito (ou esquerdo) numa unidade e arraste para mover; Delete com a unidade segura a remove.");
+    section("No mapa");
+    const bool any = !arr("playerSpawns").empty() || !arr("enemySpawns").empty() || !arr("neutralSpawns").empty();
+    if (any) drawUnits();
+    else hint("Nenhuma unidade no mapa ainda.");
+  }
+
   // A text field bound to a draft string.
   void textField(const char* label, const char* key, bool multiline = false, bool readOnly = false, std::function<std::string(const std::string&)> filter = {}) {
     std::string value = draft_.value(key, "");
     char buffer[4096];
     std::snprintf(buffer, sizeof(buffer), "%s", value.c_str());
-    ImGui::TextColored(ImColor(180, 180, 180), "%s", upperUtf8(label).c_str());
+    fieldLabel("%s", label);
     ImGui::SetNextItemWidth(-1);
     const ImGuiInputTextFlags flags = readOnly ? ImGuiInputTextFlags_ReadOnly : 0;
     const bool changed = multiline ? ImGui::InputTextMultiline(std::format("##{}", key).c_str(), buffer, sizeof(buffer), {-1, 64}, flags)
@@ -2066,8 +2483,9 @@ class MapEditorStage : public Stage {
   }
   void slider(const char* label, const char* key, float lo, float hi, float fallback) {
     float v = draft_.contains(key) && draft_[key].is_number() ? draft_[key].get<float>() : fallback;
-    ImGui::SetNextItemWidth(-110);
-    if (ImGui::SliderFloat(std::format("{}##{}", label, key).c_str(), &v, lo, hi, "%.2f")) beginEdit(), draft_[key] = std::round(v * 100.0) / 100.0;
+    fieldLabel("%s", label);
+    ImGui::SetNextItemWidth(-1);
+    if (ImGui::SliderFloat(std::format("##{}", key).c_str(), &v, lo, hi, "%.2f")) beginEdit(), draft_[key] = std::round(v * 100.0) / 100.0;
   }
   int intField(const char* label, int value, int lo, int hi, float width = 90) {
     ImGui::SetNextItemWidth(width);
@@ -2076,7 +2494,7 @@ class MapEditorStage : public Stage {
     return v;
   }
 
-  void drawSettings() {
+  void drawIdentity() {
     textField("Cenário alvo (Id)", "id", false, false, [](const std::string& s) { return stripScenarioId(s); });
     if (ImGui::IsItemHovered())
       ImGui::SetTooltip("O cenário da campanha que essa edição mira. Bate com o id de uma missão real (ex.: o-vau) pra poder ativar essa versão nela, ou qualquer id livre pra um mapa avulso.");
@@ -2085,7 +2503,7 @@ class MapEditorStage : public Stage {
     // Trilha
     {
       const std::string music = draft_.value("music", "");
-      ImGui::TextColored(ImColor(180, 180, 180), "TRILHA");
+      fieldLabel("Trilha");
       ImGui::SetNextItemWidth(-1);
       // The default names the track the mission's id plays (the user, 2026-10-20: it played the right one but never said which).
       const std::string byId = "Tema padrão: " + ::ember::music::forMissionId(draft_.value("id", "")).file;
@@ -2097,15 +2515,18 @@ class MapEditorStage : public Stage {
       }
       hint("Os arquivos de public/game/MUSIC e de content/music, pelo nome. Toca durante o briefing, a batalha e as telas de fim.");
     }
+  }
+  void drawMission() {
     textField("Objetivo", "objective");
     textField("Briefing", "briefing", true);
-    // Recompensa
+  }
+  void drawReward() {
     {
       const ember::Json reward = draft_.value("victoryReward", ember::Json::object());
       int ember = reward.value("ember", 0), rations = reward.value("rations", 0);
-      ImGui::TextColored(ImColor(180, 180, 180), "RECOMPENSA · GOLD");
+      fieldLabel("Gold");
       ImGui::SameLine(panelWidth_ * 0.5f);
-      ImGui::TextColored(ImColor(180, 180, 180), "RECOMPENSA · RAÇÕES");
+      fieldLabel("Rações");
       ImGui::SetNextItemWidth(panelWidth_ * 0.5f - 24);
       bool changed = ImGui::InputInt("##gold", &ember, 1, 10);
       ImGui::SameLine(panelWidth_ * 0.5f);
@@ -2117,7 +2538,7 @@ class MapEditorStage : public Stage {
         r["ember"] = std::max(0, ember), r["rations"] = std::max(0, rations);
         draft_["victoryReward"] = r;
       }
-      ImGui::TextColored(ImColor(180, 180, 180), "NPCS NECESSÁRIOS PARA A RECOMPENSA");
+      fieldLabel("NPCs que precisam sobreviver");
       std::vector<std::string> names;
       for (const ember::Json& s : arr("neutralSpawns"))
         if (s.contains("dialog") && !s["dialog"].is_null() && std::find(names.begin(), names.end(), s.value("name", "")) == names.end()) names.push_back(s.value("name", ""));
@@ -2141,9 +2562,11 @@ class MapEditorStage : public Stage {
       }
       hint("Pagamento ao concluir a vitória, com todos os inimigos derrotados e os NPCs indicados vivos.");
     }
-    // Diálogos de abertura / encerramento
+  }
+  // Diálogos de abertura / encerramento
+  void drawDialogs() {
     for (const auto& [label, key, target] : {std::tuple{"Diálogo de abertura", "introDialog", "intro"}, std::tuple{"Diálogo de encerramento", "outroDialog", "outro"}}) {
-      ImGui::TextColored(ImColor(180, 180, 180), "%s", upperUtf8(label).c_str());
+      fieldLabel("%s", label);
       const std::string enabledKey = std::string(key) + "Enabled";
       bool enabled = !(draft_.contains(enabledKey) && draft_[enabledKey].is_boolean() && !draft_[enabledKey].get<bool>());
       if (ImGui::Checkbox(("Ativado##" + std::string(target)).c_str(), &enabled)) beginEdit(), draft_[enabledKey] = enabled;
@@ -2151,14 +2574,15 @@ class MapEditorStage : public Stage {
       const bool has = draft_.contains(key) && !draft_[key].is_null();
       if (ImGui::SmallButton(((has ? "Editar diálogo##" : "Criar diálogo##") + std::string(target)).c_str())) openDialogEditor(target);
     }
-    // Vitória
+  }
+  void drawVictory() {
     {
       static const char* kWin[3][2] = {{"rout", "Derrote todos (rout)"}, {"boss", "Derrube o chefe (boss)"}, {"escape", "Transversal — alcance a saída (escape)"}};
       const std::string win = draft_.value("win", "rout");
       const char* shown = kWin[0][1];
       for (auto& w : kWin)
         if (win == w[0]) shown = w[1];
-      ImGui::TextColored(ImColor(180, 180, 180), "VITÓRIA");
+      fieldLabel("Condição de vitória");
       ImGui::SetNextItemWidth(-1);
       if (ImGui::BeginCombo("##win", shown)) {
         for (auto& w : kWin)
@@ -2166,7 +2590,9 @@ class MapEditorStage : public Stage {
         ImGui::EndCombo();
       }
     }
-    // Local no mapa-múndi (+ its planned slots)
+  }
+  // Local no mapa-múndi (+ its planned slots)
+  void drawWorldLocation() {
     {
       const std::string loc = draft_.value("locationId", "");
       auto label = [&](const ember::Locais::Base& l) {
@@ -2177,7 +2603,7 @@ class MapEditorStage : public Stage {
       std::string shown = "Nenhum — não aparece no mapa";
       for (const ember::Locais::Base& l : locais_.base)
         if (l.id == loc) shown = label(l);
-      ImGui::TextColored(ImColor(180, 180, 180), "LOCAL NO MAPA-MÚNDI");
+      fieldLabel("Local deste mapa");
       ImGui::SetNextItemWidth(-1);
       if (ImGui::BeginCombo("##location", shown.c_str())) {
         if (ImGui::Selectable("Nenhum — não aparece no mapa", loc.empty())) beginEdit(), draft_["locationId"] = "";
@@ -2189,7 +2615,7 @@ class MapEditorStage : public Stage {
         const ember::Locais::Base* l = nullptr;
         for (const ember::Locais::Base& b : locais_.base)
           if (b.id == loc) l = &b;
-        ImGui::TextColored(ImColor(180, 180, 180), "TELAS EM %s", upperUtf8(l ? l->name : loc).c_str());
+        fieldLabel("Telas em %s", (l ? l->name : loc).c_str());
         const int declared = locais_.slotsFor(loc);
         const int n = intField("##slots", declared, 0, 99, 80);
         if (n != declared) {
@@ -2208,6 +2634,8 @@ class MapEditorStage : public Stage {
         }
       }
     }
+  }
+  void drawMapFlags() {
     checkbox("Preservar posições iniciais (ignorar formação do grupo)", "lockPartyFormation");
     checkbox("É um hub (sem combate)", "hub");
     {
@@ -2240,8 +2668,9 @@ class MapEditorStage : public Stage {
       const bool hasOverride = draft_.contains("groundImage") && draft_["groundImage"].is_string();
       const std::string current = hasOverride ? draft_["groundImage"].get<std::string>() : std::string{};
       const std::string shown = !hasOverride ? "Ground padrão do Panorama" : current.empty() ? "Sem Ground" : current;
+      fieldLabel("Ground");
       ImGui::SetNextItemWidth(-1);
-      if (ImGui::BeginCombo("Ground", shown.c_str())) {
+      if (ImGui::BeginCombo("##Ground", shown.c_str())) {
         if (ImGui::Selectable("Ground padrão do Panorama##ground-default", !hasOverride)) beginEdit(), draft_.erase("groundImage");
         if (ImGui::Selectable("Sem Ground##ground-none", hasOverride && current.empty())) beginEdit(), draft_["groundImage"] = "";
         for (const std::string& file : groundImageChoices())
@@ -2262,8 +2691,9 @@ class MapEditorStage : public Stage {
       std::string shown = "Vazio preto", file;
       for (const auto& [id, label, f] : editor_.backgrounds)
         if (id == current) shown = label, file = f;
+      fieldLabel("Panorama");
       ImGui::SetNextItemWidth(-1);
-      if (ImGui::BeginCombo("Panorama", shown.c_str())) {
+      if (ImGui::BeginCombo("##Panorama", shown.c_str())) {
         if (ImGui::Selectable("Vazio preto", current.empty())) beginEdit(), draft_["backgroundImage"] = "";
         for (const auto& [id, label, f] : editor_.backgrounds)
           if (ImGui::Selectable(std::format("{}##{}", label, id).c_str(), id == current)) beginEdit(), draft_["backgroundImage"] = id;
@@ -2315,8 +2745,9 @@ class MapEditorStage : public Stage {
       static const char* kIndoor = "Interno (luz suave, sem sol direto)";
       static const char* kAboveGround = "Interna acima do solo (luz de fora só pelas janelas e portas)";
       static const char* kUnderground = "Subterrâneo (sem sol, lua e céu)";
-      ImGui::SetNextItemWidth(-110);
-      if (ImGui::BeginCombo("Ambiente", underground ? kUnderground : aboveGround ? kAboveGround : indoor ? kIndoor : kOutdoor)) {
+      fieldLabel("Ambiente");
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##Ambiente", underground ? kUnderground : aboveGround ? kAboveGround : indoor ? kIndoor : kOutdoor)) {
         if (ImGui::Selectable(kOutdoor, !indoor && !underground))
           beginEdit(), draft_["environment"] = "outdoor", draft_.erase("underground"), draft_.erase("aboveGround");
         if (ImGui::Selectable(kIndoor, indoor && !underground && !aboveGround))
@@ -2334,8 +2765,9 @@ class MapEditorStage : public Stage {
       std::string shown = tod;
       for (const auto& t : editor_.timeOfDay)
         if (t.id == tod) shown = t.label, moon = t.moon;
-      ImGui::SetNextItemWidth(-110);
-      if (ImGui::BeginCombo("Hora do dia", shown.c_str())) {
+      fieldLabel("Hora do dia");
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##Hora do dia", shown.c_str())) {
         for (const auto& t : editor_.timeOfDay)
           if (ImGui::Selectable(t.label.c_str(), t.id == tod)) beginEdit(), draft_["timeOfDay"] = t.id, draft_["sunIntensity"] = t.key, draft_["ambientIntensity"] = t.ambient;
         ImGui::EndCombo();
@@ -2349,8 +2781,9 @@ class MapEditorStage : public Stage {
       int shownPhase = tod == "darkNight" ? 0 : 4;
       for (int i = 0; i < 9; ++i)
         if (phase == ember::kMoonPhases[i]) shownPhase = i;
-      ImGui::SetNextItemWidth(-110);
-      if (ImGui::BeginCombo("Lua", kPhaseLabels[shownPhase])) {
+      fieldLabel("Lua");
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##Lua", kPhaseLabels[shownPhase])) {
         for (int i = 0; i < 9; ++i)
           if (ImGui::Selectable(kPhaseLabels[i], i == shownPhase)) beginEdit(), draft_["moonPhase"] = ember::kMoonPhases[i];
         ImGui::EndCombo();
@@ -2369,8 +2802,9 @@ class MapEditorStage : public Stage {
       const char* shown = kMist[0][1];
       for (auto& m : kMist)
         if (mist == m[0]) shown = m[1];
-      ImGui::SetNextItemWidth(-110);
-      if (ImGui::BeginCombo("Tipo de névoa", shown)) {
+      fieldLabel("Tipo de névoa");
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##Tipo de névoa", shown)) {
         for (auto& m : kMist)
           if (ImGui::Selectable(m[1], mist == m[0])) beginEdit(), draft_["mistType"] = m[0];
         ImGui::EndCombo();
@@ -2384,8 +2818,9 @@ class MapEditorStage : public Stage {
       std::string shown = "Automático (pelo nome do mapa)";
       for (const Volumetrics::Profile& p : profiles)
         if (p.name == current) shown = p.label;
-      ImGui::SetNextItemWidth(-110);
-      if (ImGui::BeginCombo("Clima", shown.c_str())) {
+      fieldLabel("Clima");
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##Clima", shown.c_str())) {
         if (ImGui::Selectable("Automático (pelo nome do mapa)", current.empty())) beginEdit(), draft_.erase("atmosphereProfile");
         for (const Volumetrics::Profile& p : profiles)
           if (ImGui::Selectable(p.label.c_str(), p.name == current)) beginEdit(), draft_["atmosphereProfile"] = p.name;
@@ -2407,62 +2842,42 @@ class MapEditorStage : public Stage {
     hint("A vista 3D mostra estes ajustes na prévia; Testar também usa a iluminação salva no mapa.");
   }
 
-  // A row of toggle buttons; true when one was pressed (its index in `pressed`).
   // The next small button on the same line when it still fits before `right` (the panel's edge), else on a new one.
   static void flow(bool first, const char* label, float right) {
     if (first) return;
     const float w = ImGui::CalcTextSize(label, nullptr, true).x + ImGui::GetStyle().FramePadding.x * 2;
     if (ImGui::GetItemRectMax().x + ImGui::GetStyle().ItemSpacing.x + w <= right) ImGui::SameLine();
   }
+  // A row of chips in the editor's look, wrapping at the page's edge; true when one was pressed (its index in `pressed`).
   static bool toggleRow(const std::vector<std::pair<std::string, bool>>& items, int& pressed) {
     bool any = false;
     const float right = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
+    ImDrawList* dl = ImGui::GetWindowDrawList();
     for (size_t k = 0; k < items.size(); ++k) {
-      flow(k == 0, items[k].first.c_str(), right);
-      if (items[k].second) ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(216, 216, 216, 255)), ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(17, 17, 17, 255));
-      if (ImGui::SmallButton(items[k].first.c_str())) pressed = static_cast<int>(k), any = true;
-      if (items[k].second) ImGui::PopStyleColor(2);
+      const char* label = items[k].first.c_str();
+      const ImVec2 ts = ImGui::CalcTextSize(label);
+      const ImVec2 box{std::round(ts.x + 24), std::round(ts.y + 10)};
+      if (k && ImGui::GetItemRectMax().x + 6 + box.x <= right) ImGui::SameLine(0, 6);
+      ImGui::PushID(label);
+      if (ImGui::InvisibleButton("##chip", box)) pressed = static_cast<int>(k), any = true;
+      ImGui::PopID();
+      const bool on = items[k].second, hover = ImGui::IsItemHovered();
+      const ImVec2 a = ImGui::GetItemRectMin(), b = ImGui::GetItemRectMax();
+      dl->AddRectFilled(a, b, on ? IM_COL32(96, 50, 22, 255) : hover ? IM_COL32(50, 37, 28, 255) : kCardInk, 4.0f);
+      dl->AddRect(a, b, on ? kEmberInk : hover ? kBronzeInk : kEdgeInk, 4.0f);
+      dl->AddText({std::round(a.x + 12), std::round(a.y + 5)}, on ? kLitInk : kTextInk, label);
     }
     return any;
   }
 
-  void drawSizeAndModes() {
-    ImGui::Separator();
-    const int c = intField("Col", cols(), editor_.minGrid, editor_.maxGrid);
-    ImGui::SameLine();
-    const int r = intField("Lin", rows(), editor_.minGrid, editor_.maxGrid);
+  void drawSize() {
+    const int c = intField("colunas", cols(), editor_.minGrid, editor_.maxGrid);
+    ImGui::SameLine(0, 16);
+    const int r = intField("linhas", rows(), editor_.minGrid, editor_.maxGrid);
     if (c != cols() || r != rows()) resize(c, r);
-    ImGui::SameLine();
+    fieldLabel("Grade do mapa técnico");
     int grid = -1;
     if (toggleRow({{"Hexágono", !gridSquare_}, {"Quadrado", gridSquare_}}, grid)) gridSquare_ = grid == 1;
-    // (No Água 3D brush: the game draws only its own water tiles; the user, 2026-10-30.)
-    static const std::pair<int, const char*> kModes[] = {{0, "Terreno"}, {1, "Elevação"}, {2, "Decoração"}, {3, "3D Walls"}, {4, "3D Decorations"},
-                                                         {5, "Herói"},   {6, "Inimigo"},  {7, "NPC"},       {8, "Invocação"}};
-    std::vector<std::pair<std::string, bool>> items;
-    for (const auto& [k, label] : kModes) {
-      const bool on = k == 3 ? mode_ == Mode::Architecture && !architectureDecorations_
-                      : k == 4 ? mode_ == Mode::Architecture && architectureDecorations_
-                               : mode_ == modeOf(k);
-      items.push_back({label, on});
-    }
-    int pressed = -1;
-    if (toggleRow(items, pressed)) {
-      turning_ = turningDeco_ = false;
-      mode_ = modeOf(pressed);
-      if (pressed == 3 || pressed == 4) {
-        architectureDecorations_ = pressed == 4;
-        decoBrush_ = pressed == 4 ? "prop-3d-tavern-table" : thickWalls_ ? "castle-3d-thick" : "wall-3d-stone";
-      }
-      if (pressed == 2 && !meta(decoBrush_).model3d.empty() && !editor_.decorationOrder.empty()) decoBrush_ = editor_.decorationOrder.front();
-    }
-    const float right = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
-    if (ImGui::SmallButton("Party completa")) addHeroes(editor_.heroes);
-    for (const auto& [name, classId] : editor_.heroes) {
-      flow(false, name.c_str(), right);
-      if (ImGui::SmallButton(name.c_str())) addHeroes({{name, classId}});
-      if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", className(classId).c_str());
-    }
-    hint("Nível de cada um é editável na lista abaixo.");
   }
   static Mode modeOf(int k) {
     static const Mode m[] = {Mode::Paint, Mode::Elevation, Mode::Decoration, Mode::Architecture, Mode::Architecture, Mode::Player, Mode::Enemy, Mode::Npc, Mode::Summon};
@@ -2508,7 +2923,7 @@ class MapEditorStage : public Stage {
   // places. Allies: the named heroes first, then every fighting class; enemies: every fighting class (summons, civilians and road
   // NPCs have their own brushes).
   void drawCharacters(bool allies) {
-    ImGui::TextColored(ImColor(180, 180, 180), "%s", allies ? "PERSONAGENS ALIADOS" : "PERSONAGENS INIMIGOS");
+    fieldLabel("%s", allies ? "Personagens aliados" : "Personagens inimigos");
     ImGui::SetNextItemWidth(-1);
     ImGui::InputTextWithHint("##unitsearch", "Procurar…", unitSearch_, sizeof(unitSearch_));
     std::vector<std::pair<std::string, std::string>> list;  // (a named hero's name or "", class)
@@ -2518,9 +2933,8 @@ class MapEditorStage : public Stage {
       if (!isSummon(c) && !isCivil(c) && !isNpc(c)) list.push_back({"", c});
     const std::string query = lower(unitSearch_);
     std::pair<std::string, std::string>& brush = allies ? allyBrush_ : enemyBrush_;
-    ImGui::Text("Pincel: %s", (brush.first.empty() ? className(brush.second) : brush.first).c_str());
-    ImGui::BeginChild("##characters", {-1, 220.0f}, ImGuiChildFlags_Borders);
-    const float cell = 64, per = std::max(1.0f, std::floor((ImGui::GetContentRegionAvail().x + 6) / (cell + 8)));
+    ImGui::BeginChild("##characters", {-1, 320.0f}, ImGuiChildFlags_Borders);
+    const float cell = 72, per = std::max(1.0f, std::floor((ImGui::GetContentRegionAvail().x + 6) / (cell + 8)));
     int k = 0;
     for (const auto& [name, classId] : list) {
       const std::string label = name.empty() ? className(classId) : std::format("{} · {}", name, className(classId));
@@ -2528,8 +2942,11 @@ class MapEditorStage : public Stage {
       if (k++ % static_cast<int>(per)) ImGui::SameLine();
       const auto cls = editor_.classes.find(classId);
       const std::string portrait = "/" + unitPortraitFile(name, cls == editor_.classes.end() ? classId : cls->second.sprite);
+      ImGui::BeginGroup();
       if (thumbButton(std::format("##u{}|{}", name, classId).c_str(), portrait, "#333333", cell, brush == std::pair{name, classId}, label))
         brush = {name, classId};
+      nameUnder(name.empty() ? className(classId) : name, ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+      ImGui::EndGroup();
     }
     ImGui::EndChild();
   }
@@ -2571,12 +2988,12 @@ class MapEditorStage : public Stage {
         hint("Os novos personagens têm animação de quatro quadros e diálogo próprio.");
       }
       if (mode_ == Mode::Summon) {
-        ImGui::TextColored(ImColor(180, 180, 180), "LADO");
+        fieldLabel("Lado");
         ImGui::SameLine();
         int pick = -1;
         if (toggleRow({{"Aliada", !summonNeutral_}, {"Neutra", summonNeutral_}}, pick)) summonNeutral_ = pick == 1;
         ImGui::SameLine();
-        ImGui::TextColored(ImColor(180, 180, 180), "TIPO");
+        fieldLabel("Tipo");
         ImGui::SameLine();
         ImGui::SetNextItemWidth(-1);
         if (ImGui::BeginCombo("##summon", classLabel(summonBrush_).c_str())) {
@@ -2657,7 +3074,7 @@ class MapEditorStage : public Stage {
       for (const TerrainEntry& t : editor_.terrains)
         if (t.id == brush_ && brush_ != "void") versions = &t.versions, swatch = t.swatch;
     if (versions) {
-      ImGui::TextColored(ImColor(180, 180, 180), "VERSÕES");
+      fieldLabel("Versões");
       // Each version as a preview of its tile with its number under it (the user, 2026-10-29: "colocar prévia de cada no editor").
       ImGui::BeginChild("##versions", {0, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
       constexpr float kPreview = 72;
@@ -2680,7 +3097,7 @@ class MapEditorStage : public Stage {
     if (brush_ == "hill") hint("Colina cria relevo. Use Elevação para esculpir vários níveis e ver o resultado na prévia 3D.");
     // Icelands
     ImGui::BeginChild("##icelands", {0, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
-    ImGui::TextColored(ImColor(180, 180, 180), "ICELANDS");
+    fieldLabel("Icelands");
     ImGui::SameLine();
     for (const TerrainEntry& t : editor_.terrains)
       if (t.id == "snow") {
@@ -2735,7 +3152,7 @@ class MapEditorStage : public Stage {
                                     "intransponível e bloqueia visão/tiro, não importa o terreno por baixo.");
     if (arch && !architectureDecorations_) {
       // The watchtower's kit (content/models/architecture.json) and the wall tools: a drag on the preview lays the whole run or room.
-      ImGui::TextColored(ImColor(180, 180, 180), "TORRE DE VIGIA");
+      fieldLabel("Torre de Vigia");
       static const std::pair<const char*, const char*> kKit[9] = {{"Parede", "ember-arch-watchtower-wall"}, {"Janela", "ember-arch-watchtower-window"},
                                                                   {"Seteira", "ember-arch-watchtower-slit"}, {"Tocha", "ember-arch-watchtower-wall-torch"},
                                                                   {"Portal", "ember-arch-watchtower-portal"}, {"Porta", "ember-arch-watchtower-door"},
@@ -2754,13 +3171,13 @@ class MapEditorStage : public Stage {
       kitButtons(kKit, 9);
       // The gothic parapet kit (the Stone Bridge's parapets in 3D, 2026-10-21): the guardians' side turns to the board's centre by
       // itself; pilasters stand at every run end and corner, the Pilastra piece puts one mid-run.
-      ImGui::TextColored(ImColor(180, 180, 180), "MURALHA GÓTICA");
+      fieldLabel("Muralha gótica");
       static const std::pair<const char*, const char*> kGothic[3] = {{"Parede gótica", "ember-arch-gothic-wall"}, {"Nicho com guardião", "ember-arch-gothic-niche"},
                                                                      {"Pilastra", "ember-arch-gothic-pier"}};
       kitButtons(kGothic, 3);
       // The Inn's kit (2026-10-22): plastered timber-framed walls, the casement window, the one-hex door (animated) and doorway, the
       // candle lantern; the window and the lantern turn to the room by themselves.
-      ImGui::TextColored(ImColor(180, 180, 180), "ESTALAGEM");
+      fieldLabel("Estalagem");
       static const std::pair<const char*, const char*> kInn[5] = {{"Parede", "ember-arch-inn-wall"}, {"Janela", "ember-arch-inn-window"},
                                                                   {"Porta", "ember-arch-inn-door"}, {"Vão", "ember-arch-inn-doorway"},
                                                                   {"Lampião", "ember-arch-inn-sconce"}};
@@ -2779,13 +3196,11 @@ class MapEditorStage : public Stage {
     }
     if (!arch) {
       hint("O dado em cada uma liga/desliga se ela pode sair no sorteio de \"Gerar terreno\" — aceso participa, apagado só entra no mapa se você colocar à mão.");
-      ImGui::SetNextItemWidth(170);
-      if (ImGui::BeginCombo("Decorações", decoSection_.c_str())) {
-        for (const std::string& s : editor_.decorationSections)
-          if (ImGui::Selectable(s.c_str(), s == decoSection_)) decoSection_ = s;
-        ImGui::EndCombo();
-      }
-      ImGui::SameLine();
+      // the catalog's sections as chips (every one in view), then the search
+      fieldLabel("Categorias");
+      std::vector<std::pair<std::string, bool>> chips;
+      for (const std::string& s : editor_.decorationSections) chips.push_back({s, s == decoSection_});
+      if (int pick = -1; toggleRow(chips, pick)) decoSection_ = editor_.decorationSections[pick];
       ImGui::SetNextItemWidth(-1);
       ImGui::InputTextWithHint("##decosearch", "Procurar…", search_, sizeof(search_));
     }
@@ -2795,17 +3210,13 @@ class MapEditorStage : public Stage {
       for (const std::string& id : architectureOptions())
         if (const std::string& s = editor_.decoSection[id]; !s.empty() && std::ranges::find(sections, s) == sections.end()) sections.push_back(s);
       std::sort(sections.begin() + 1, sections.end(), byName);
-      ImGui::SetNextItemWidth(170);
-      if (ImGui::BeginCombo("Objetos 3D", decoSection3d_.c_str())) {
-        for (const std::string& s : sections)
-          if (ImGui::Selectable(s.c_str(), s == decoSection3d_)) decoSection3d_ = s;
-        ImGui::EndCombo();
-      }
-      ImGui::SameLine();
+      fieldLabel("Categorias");
+      std::vector<std::pair<std::string, bool>> chips;
+      for (const std::string& s : sections) chips.push_back({s, s == decoSection3d_});
+      if (int pick = -1; toggleRow(chips, pick)) decoSection3d_ = sections[pick];
       ImGui::SetNextItemWidth(-1);
       ImGui::InputTextWithHint("##props3dsearch", "Procurar…", search3d_, sizeof(search3d_));
     }
-    if (const ember::CatalogDecoration* d = catalog_.decoration(decoBrush_)) ImGui::Text("Pincel: %s", d->name.c_str());
     // the palette
     std::vector<std::string> visible;
     if (arch) {
@@ -2826,8 +3237,8 @@ class MapEditorStage : public Stage {
         visible.push_back(id);
       }
     }
-    ImGui::BeginChild("##decos", {-1, arch ? 200.0f : 240.0f}, ImGuiChildFlags_Borders);
-    const float cell = 64, per = std::max(1.0f, std::floor((ImGui::GetContentRegionAvail().x + 6) / (cell + 8)));
+    ImGui::BeginChild("##decos", {-1, arch ? 300.0f : 380.0f}, ImGuiChildFlags_Borders);
+    const float cell = 76, per = std::max(1.0f, std::floor((ImGui::GetContentRegionAvail().x + 6) / (cell + 8)));
     int k = 0;
     for (const std::string& id : visible) {
       const DecoMeta& m = meta(id);
@@ -2838,6 +3249,7 @@ class MapEditorStage : public Stage {
       if (thumbButton(("##d" + id).c_str(), thumb, "#333333", cell, decoBrush_ == id, std::format("{} · {} hexes", decoName(id), catalog_.decoration(id) ? catalog_.decoration(id)->footprint.size() : 0),
                       model ? "3D" : nullptr))
         decoBrush_ = id, selected_.reset(), turningDeco_ = false;
+      const ImVec2 thumbMin = ImGui::GetItemRectMin(), thumbMax = ImGui::GetItemRectMax();
       if (!model) {
         // the dice: in Gerar terreno's draw or out of it
         const ImVec2 corner = ImGui::GetItemRectMax();
@@ -2854,6 +3266,7 @@ class MapEditorStage : public Stage {
         if (ImGui::IsItemHovered())
           ImGui::SetTooltip("%s", excluded ? "Fora do sorteio de \"Gerar terreno\" — clique pra incluir" : "No sorteio de \"Gerar terreno\" — clique pra excluir");
       }
+      nameUnder(decoName(id), thumbMin, thumbMax);
       ImGui::EndGroup();
       ++k;
     }
@@ -2865,7 +3278,7 @@ class MapEditorStage : public Stage {
   void drawRules(bool arch) {
     ember::Json* p = selectedPlacement();
     ImGui::BeginChild("##rules", {0, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
-    ImGui::TextColored(ImColor(180, 180, 180), "%s", arch ? "REGRAS DA PEÇA 3D" : "REGRAS DA DECORAÇÃO");
+    fieldLabel("%s", arch ? "Regras da peça 3D" : "Regras da decoração");
     ImGui::SameLine();
     if (p) hint("%s em %d,%d", decoName(p->value("id", "")).c_str(), p->value("x", 0), p->value("y", 0));
     else hint("%s", arch ? "clique numa peça 3D no mapa" : "clique numa decoração no mapa");
@@ -2918,7 +3331,7 @@ class MapEditorStage : public Stage {
     ImGui::EndChild();
     if (p && meta(p->value("id", "")).exitKind == "connector") {
       ImGui::BeginChild("##connector", {0, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
-      ImGui::TextColored(ImColor(180, 180, 180), "PASSAGEM DE ANDAR");
+      fieldLabel("Passagem de andar");
       hint("Leva para");
       const std::string target = p->contains("targetMapId") && (*p)["targetMapId"].is_string() ? (*p)["targetMapId"].get<std::string>() : "";
       std::string shown = "Escolha um mapa…";
@@ -2945,12 +3358,10 @@ class MapEditorStage : public Stage {
     }
   }
 
-  // "Prévia com os gráficos do jogo": Substituir base, Desfazer / Refazer, the preview and the technical grid switches.
-  void drawPreviewRow() {
-    ImGui::Separator();
-    ImGui::TextColored(ImColor(180, 180, 180), "PRÉVIA COM OS GRÁFICOS DO JOGO");
+  // Substituir base and Gerar terreno: the whole map at once.
+  void drawReplaceBase() {
     const int v = std::min(variant_, variantCount(brush_) - 1);
-    if (ImGui::SmallButton(std::format("Substituir base · {}", baseVersionLabel(brush_, v)).c_str())) {
+    if (ImGui::Button(std::format("Substituir base · {}", baseVersionLabel(brush_, v)).c_str())) {
       beginEdit();
       const int n = cols() * rows();
       draft_["baseTile"] = brush_, draft_["baseVariant"] = v;
@@ -2961,22 +3372,8 @@ class MapEditorStage : public Stage {
     }
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("Preenche todos os hexes com %s", baseVersionLabel(brush_, v).c_str());
     ImGui::SameLine();
-    ImGui::BeginDisabled(past_.empty());
-    if (ImGui::SmallButton("Desfazer")) undo();
-    ImGui::EndDisabled();
-    ImGui::SameLine();
-    ImGui::BeginDisabled(future_.empty());
-    if (ImGui::SmallButton("Refazer")) redo();
-    ImGui::EndDisabled();
-    if (ImGui::SmallButton(showPreview_ ? "Ocultar prévia" : "Mostrar prévia")) {
-      showPreview_ = !showPreview_;
-      if (showPreview_) dirty_ = true, lastEdit_ = {};
-      else preview_.reset();
-    }
-    ImGui::SameLine();
-    if (ImGui::SmallButton(showTechnical_ ? "Ocultar mapa técnico" : "Mostrar mapa técnico")) showTechnical_ = !showTechnical_;
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Mostrar ou ocultar a grade técnica de edição do mapa");
-    hint("Na prévia: botão direito (ou esquerdo) numa unidade ou decoração e arraste para mover; Delete com a unidade segura a remove.");
+    if (ImGui::Button("Gerar terreno")) generateTerrain();
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Espalha barricadas, barrancos e terreno alto pelo mapa do tamanho atual — depois é só limpar o que não serve");
   }
 
   // The technical grid: every hex in its terrain's colour, the art's serial, a red dot on its bottom side (the turn),
@@ -3113,7 +3510,7 @@ class MapEditorStage : public Stage {
       for (size_t k = 0; k < list.size(); ++k)
         if (isSummon(list[k].value("classId", "")) == summons) rowsOf.push_back(k);
       if (rowsOf.empty()) continue;
-      ImGui::TextColored(ImColor(180, 180, 180), "%s (%d)", upperUtf8(label).c_str(), static_cast<int>(rowsOf.size()));
+      fieldLabel("%s (%d)", label, static_cast<int>(rowsOf.size()));
       const bool enemy = std::string(key) == "enemySpawns", neutral = std::string(key) == "neutralSpawns";
       for (size_t k : rowsOf) {
         ember::Json& s = list[k];
@@ -3194,8 +3591,6 @@ class MapEditorStage : public Stage {
   // Arquivos de "<id>": every saved serial (ours and Ember's), Carregar / Ativar / apagar (ours only, two clicks).
   void drawFiles() {
     const std::string id = draft_.value("id", "");
-    ImGui::Separator();
-    ImGui::TextColored(ImColor(180, 180, 180), "ARQUIVOS DE \"%s\" (%d)", id.c_str(), static_cast<int>(files_.size()));
     const std::map<std::string, int> active = activeMaps();
     const std::optional<int> activeSerial = active.contains(id) ? std::optional(active.at(id)) : std::nullopt;
     if (files_.empty()) {
@@ -3270,12 +3665,10 @@ class MapEditorStage : public Stage {
       ImGui::EndChild();
       ImGui::PopStyleColor();
     }
-    const float w = (ImGui::GetContentRegionAvail().x - 8) / 2;
-    ImGui::BeginDisabled(playtest_.valid());
-    if (ImGui::Button(playtest_.valid() ? "Preparando…" : "Testar", {w, 26})) playtest();
-    ImGui::EndDisabled();
-    ImGui::SameLine();
-    if (ImGui::Button("Salvar mapa", {w, 26})) save();
+    const float w = std::floor((ImGui::GetContentRegionAvail().x - 10) / 2);
+    if (actionButton("##test", "play", playtest_.valid() ? "Preparando…" : "Testar", false, {w, 36}, !playtest_.valid())) playtest();
+    ImGui::SameLine(0, 10);
+    if (actionButton("##save", "save", "Salvar mapa", true, {w, 36}, true)) save();
   }
 
   // --- Locais (the campaign's locations, their missions, slots and floors) ------------------------------------------------
@@ -3345,7 +3738,7 @@ class MapEditorStage : public Stage {
       std::vector<std::string>& ids = order_[locId];
       const int planned = locais_.slotsFor(locId);
       ImGui::BeginChild("##loc", {0, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
-      ImGui::TextColored(ImColor(180, 180, 180), "%s", upperUtf8(std::format("{}. {}{}", li + 1, loc->name,
+      fieldLabel("%s", upperUtf8(std::format("{}. {}{}", li + 1, loc->name,
                                                                              planned > 0 ? std::format(" · {}/{}", ids.size(), planned)
                                                                              : !ids.empty() ? std::format(" · {}", ids.size())
                                                                                             : std::string(" · vazio")))
@@ -3551,7 +3944,7 @@ class MapEditorStage : public Stage {
       ember::EncounterRegion& region = locais_.regions[ri];
       ImGui::PushID(region.id.c_str());
       ImGui::BeginChild("##region", {0, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
-      ImGui::TextColored(ImColor(180, 180, 180), "%s · %d encontro%s", upperUtf8(region.name).c_str(), static_cast<int>(region.encounterIds.size()),
+      fieldLabel("%s · %d encontro%s", upperUtf8(region.name).c_str(), static_cast<int>(region.encounterIds.size()),
                          region.encounterIds.size() == 1 ? "" : "s");
       ImGui::SameLine(ImGui::GetContentRegionAvail().x - 60);
       const std::string key = "region:" + region.id;
@@ -3686,6 +4079,7 @@ class MapEditorStage : public Stage {
   std::set<std::string> shuffleExclude_;
   // the brushes
   Mode mode_ = Mode::Paint;
+  Tab tab_ = Tab::Terrain;
   std::string brush_ = "plains";
   int variant_ = 0;
   bool cityMode_ = false, turning_ = false, turningDeco_ = false;
