@@ -5,6 +5,7 @@
 //   ground/plains049/<role>.tex        the plains049 surface's photo maps (color, normal, rough)
 //   ground/layer/<key>/<role>.tex      each baked ground layer present in the set (color, normal, rough)
 //   sky/moon/<phase>.tex               the moon's phase art (Ember's icons, BC7 sRGB with alpha, 256 px)
+//   sky/andromeda/<file>.tex           star look 005's images (content/sky/andromeda: the galaxy's 4 tiles, the Milky Way, M33)
 //   backdrop/<file>.tex                every painted map backdrop (public/game/map-backgrounds, BC7 sRGB)
 // Roles: color = BC7 sRGB, normal = BC5 (X, Y of the stored normal), rough = BC7 linear (R used).
 
@@ -169,5 +170,10 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
 };
 
 inline std::string skyMoonAsset(std::string_view phase) { return "sky/moon/" + std::string(phase) + ".tex"; }
+// Céu de Andrômeda (star look 005): content/sky/andromeda/<file> (tools/scripts/sky/make_andromeda_sky.py), BC7 sRGB.
+inline constexpr const char* kAndromedaGalaxyTiles[4] = {"galaxy-v01-0.png", "galaxy-v01-1.png", "galaxy-v01-2.png", "galaxy-v01-3.png"};
+inline constexpr const char* kAndromedaMilkyWay = "milkyway-v01.png";
+inline constexpr const char* kAndromedaTriangulum = "triangulum-v01.png";
+inline std::string skyAndromedaAsset(std::string_view file) { return "sky/andromeda/" + std::string(file) + ".tex"; }
 
 }  // namespace ember

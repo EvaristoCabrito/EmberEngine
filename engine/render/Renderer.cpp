@@ -1261,6 +1261,11 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
     a.milkyWay = milkyWay_;
     a.magellanic[0] = magellanic_[0];
     a.magellanic[1] = magellanic_[1];
+    for (int i = 0; i < 4; ++i) a.galaxyMap[i] = andromedaGalaxy_[i];
+    a.milkyWayMap = andromedaMilkyWay_;
+    a.triangulumMap = andromedaTriangulum_;
+    a.skyMapSampler = materialSamplerIndex_;
+    a.galaxyStrength = andromedaStrength_;
     if (clouds_.enabled) {
       f.cloudFlags = 1u | (clouds_.shadows && lighting_.sunDisc ? 2u : 0u) | (clouds_.volumetric ? 4u : 0u);
       a.cloudCoverage = clouds_.coverage;

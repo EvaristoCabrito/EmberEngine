@@ -81,8 +81,16 @@ struct AtmosphereFrame {
   glm::vec3 galaxyCentre{0.0f, 0.0f, 1.0f};  // 432: the galactic centre, world
   float pad7 = 0.0f;                      // 444
   glm::vec4 magellanic[2]{};              // 448: the Large and the Small cloud: direction xyz, w = radius (radians; 0 = none)
+  // Céu de Andrômeda (star look 005, atmosphere.hlsli andromedaSky): the host galaxy's map (Gaia, 4 tiles), the Milky Way
+  // and Triangulum images (sampled; kNoTexture until resident), their repeating sampler, the images' strength (0 = none).
+  uint32_t galaxyMap[4] = {0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu};  // 480
+  uint32_t milkyWayMap = 0xFFFFFFFFu;     // 496
+  uint32_t triangulumMap = 0xFFFFFFFFu;   // 500
+  uint32_t skyMapSampler = 0;             // 504
+  float galaxyStrength = 0.0f;            // 508
 };
-static_assert(sizeof(AtmosphereFrame) == 480 && offsetof(AtmosphereFrame, moonIlluminance) == 336 &&
+static_assert(sizeof(AtmosphereFrame) == 512 && offsetof(AtmosphereFrame, galaxyMap) == 480 &&
+              offsetof(AtmosphereFrame, galaxyStrength) == 508 && offsetof(AtmosphereFrame, moonIlluminance) == 336 &&
               offsetof(AtmosphereFrame, moonDirection) == 240 && offsetof(AtmosphereFrame, volNoiseBase) == 352 &&
               offsetof(AtmosphereFrame, sunLook) == 376 && offsetof(AtmosphereFrame, volMarchSize) == 384 &&
               offsetof(AtmosphereFrame, starBuffer) == 400 && offsetof(AtmosphereFrame, galaxyPole) == 416 &&

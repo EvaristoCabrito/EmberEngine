@@ -316,6 +316,8 @@ class MapStage final : public Stage {
     shafts_ = std::clamp(options.shafts, 0, 1);
     spellsMenu_.load("content/fx/spell-looks.json", "content/fx.sprites.json");
     if (!starSky_.load("content/sky/stars.json")) logWarn("stars: content/sky/stars.json missing: the star look 'real' has no stars");
+    if (!andromedaSky_.load("content/sky/andromeda-stars.json"))
+      logWarn("stars: content/sky/andromeda-stars.json missing: the star look 'andrômeda' has no sky");
     layers_ = options.layers;
     data_ = ember::BoardData::load(options.boardData);
     std::optional<ember::MapDraft> draft = options.draftData ? options.draftData : ember::MapDraft::load(options.map);
@@ -443,6 +445,7 @@ class MapStage final : public Stage {
       // with the art loaded only outdoors its night showed the moon's glow with no disc, a brown smudge (the user, 2026-10-23).
       if (!underground())  // the map's night, or any night of the 24 h cycle
         for (const char* phase : ember::kMoonPhases) ground_.requestTexture(ember::skyMoonAsset(phase));  // 0.1 MB each
+      if (!underground() && starLook_ == 5) requestAndromedaSky();  // opened on look 005: the loading waits for its images
     }
     if (!scene_) {
       // Random encounters can be board-only maps with no scene file. Load their map-specific panoramas anyway.
@@ -947,9 +950,26 @@ class MapStage final : public Stage {
         for (size_t k = 0; k < std::min<size_t>(2, mc.size()); ++k)
           clouds4[k] = glm::vec4(starSky_.worldDirection(mc[k].ra, mc[k].dec, lst), glm::radians(mc[k].radiusDegrees));
         renderer.setStars(stars, starSky_.galacticPole(lst), starSky_.galacticCentre(lst), 1.0f, clouds4);
+      } else if (andromedaSky_.loaded() && starLook_ == 5 && !starsOff_) {
+        // Céu de Andrômeda (look 005): the world's own stars and the galaxy's frame turned to the hour as look 4's; its images
+        // (~200 MB on the GPU) are asked from the ground pack only once the look is chosen.
+        const bool mapNight = scene_ && ember::timeOfDay(scene_->timeOfDay).moon;
+        const float hour = clockOn() ? cycleHour(now_) : mapNight ? 22.0f + std::fmod(now_ / 600.0f, 2.0f) : 12.0f;
+        const float lst = andromedaSky_.siderealHours(hour);
+        const glm::vec4 none[2]{};
+        renderer.setStars(andromedaSky_.gpuStars(lst), andromedaSky_.galacticPole(lst), andromedaSky_.galacticCentre(lst), 0.0f, none);
+        requestAndromedaSky();
+        uint32_t galaxy[4];
+        for (int i = 0; i < 4; ++i) galaxy[i] = ground_.textureIndex(ember::skyAndromedaAsset(ember::kAndromedaGalaxyTiles[i]));
+        renderer.setAndromedaMaps(galaxy, ground_.textureIndex(ember::skyAndromedaAsset(ember::kAndromedaMilkyWay)),
+                                  ground_.textureIndex(ember::skyAndromedaAsset(ember::kAndromedaTriangulum)), 1.0f);
       } else {
         const glm::vec4 none[2]{};
         renderer.setStars({}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, 0.0f, none);
+      }
+      if (starLook_ != 5 || starsOff_) {
+        const uint32_t noGalaxy[4] = {kNoTextureIndex, kNoTextureIndex, kNoTextureIndex, kNoTextureIndex};
+        renderer.setAndromedaMaps(noGalaxy, kNoTextureIndex, kNoTextureIndex, 0.0f);
       }
       // Only against the real sky (Fundo = céu): with a painting behind the board the shader took the painting's own fire for
       // the sun and washed the whole scene in glare (the user, 2026-10-19: "super bright and sun on the sunset?").
@@ -1782,7 +1802,7 @@ class MapStage final : public Stage {
         static const char* kMoonLight[2] = {"físico", "cinema"};
         dropdown("Luar", moonLight_, 2, [](int i) { return std::string(kMoonLight[i]); });
       }
-      static const char* kStars[kStarLooks] = {"quadradas", "poucas", "muitas", "real"};
+      static const char* kStars[kStarLooks] = {"quadradas", "poucas", "muitas", "real", "andrômeda"};
       int star = starsOff_ ? 0 : starLook_;
       if (dropdown("Estrelas", star, kStarLooks + 1, [](int i) { return i == 0 ? std::string("OFF") : std::string(kStars[i - 1]); })) {
         starsOff_ = star == 0;
@@ -11927,9 +11947,19 @@ class MapStage final : public Stage {
   float exposure_ = 1.0f;  // the exposure in use (last frame's), for the painted flames' glow
   int moonPath_ = 0;       // moonPlacement()
   int moonLight_ = 1;      // the panel's "Luar" (light mode real): 0 físico (kFullMoonLux), 1 cinema (kCinemaMoonLux)
-  static constexpr int kStarLooks = 4;  // saved star looks (looks/stars/README.md); 4 = the real sky (render/StarSky.h)
+  static constexpr int kStarLooks = 5;  // saved star looks (looks/stars/README.md); 4 = the real sky (render/StarSky.h), 5 = Andrômeda
   int starLook_ = 4;
   StarSky starSky_;  // content/sky/stars.json: the real stars, turned to the hour
+  StarSky andromedaSky_;  // content/sky/andromeda-stars.json: look 005's own bright stars
+  bool andromedaRequested_ = false;  // look 005's images asked from the ground pack
+  // Look 005's images (~200 MB on the GPU), asked from the ground pack once, when the look is first in use.
+  void requestAndromedaSky() {
+    if (andromedaRequested_) return;
+    for (const char* file : ember::kAndromedaGalaxyTiles) ground_.requestTexture(ember::skyAndromedaAsset(file));
+    ground_.requestTexture(ember::skyAndromedaAsset(ember::kAndromedaMilkyWay));
+    ground_.requestTexture(ember::skyAndromedaAsset(ember::kAndromedaTriangulum));
+    andromedaRequested_ = true;
+  }
   int moonPhase_ = -1;  // index in ember::kMoonPhases; -1 = Ember's default (the full moon's art, the night's strength)
   // The disc's angular radius (degrees), chosen in the panel. 2.7 = Ember's disc as seen from its normal view; the
   // user found it "millions of km away" (2026-10-15), so the panel starts at the large one.

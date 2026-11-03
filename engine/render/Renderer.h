@@ -392,6 +392,14 @@ class Renderer {
     magellanic_[0] = magellanic[0];
     magellanic_[1] = magellanic[1];
   }
+  // Céu de Andrômeda (star look 005): the host galaxy's 4 map tiles, the Milky Way's and Triangulum's images (bindless indices;
+  // kNoTextureIndex = not resident yet), their strength (0 = none). Set every frame with setStars.
+  void setAndromedaMaps(const uint32_t galaxy[4], uint32_t milkyWay, uint32_t triangulum, float strength) {
+    for (int i = 0; i < 4; ++i) andromedaGalaxy_[i] = galaxy[i];
+    andromedaMilkyWay_ = milkyWay;
+    andromedaTriangulum_ = triangulum;
+    andromedaStrength_ = strength;
+  }
   // Clarão do sol e raios de luz, look 001 (shaders/sunglare.hlsl): the lens's glare round the sun or the moon and the
   // crepuscular rays from it, computed from the finished scene and added before the tonemap. Panels "Clarão", "Raios de luz".
   struct SunGlare {
@@ -541,6 +549,9 @@ class Renderer {
   glm::vec3 galaxyPole_{0.0f, 1.0f, 0.0f}, galaxyCentre_{0.0f, 0.0f, 1.0f};
   float milkyWay_ = 0.0f;
   glm::vec4 magellanic_[2]{};
+  uint32_t andromedaGalaxy_[4] = {0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu};  // setAndromedaMaps
+  uint32_t andromedaMilkyWay_ = 0xFFFFFFFFu, andromedaTriangulum_ = 0xFFFFFFFFu;
+  float andromedaStrength_ = 0.0f;
   // The cloud shadow map over the board (skyreflect.hlsl CSCloudShadow): R32F, the sun shadow's bounds, once a frame.
   static constexpr uint32_t kCloudShadowSize = 256;
   Image cloudShadow_;
