@@ -1469,7 +1469,7 @@ class MapStage final : public Stage {
 
   // The camera bar, top right: Ember's battle HUD (GameApp.tsx), copied 1:1 at the user's request (2026-10-15).
   // Normal / Tática (the 2D view), tilt down / up 5 deg, turn left / right 15 deg, back to the normal angle (leaves
-  // Tática; zoom and pan stay, like Ember's resetAngle). Each click glides.
+  // Tática; zoom stays, the pivot goes back over the character in play). Each click glides.
   void drawCameraBar() {
     const ImGuiIO& io = ImGui::GetIO();
     // The window's padding (room for the shadow) sits outside the 8 px inset.
@@ -1499,7 +1499,7 @@ class MapStage final : public Stage {
     ImGui::SameLine();
     if (plate("##reset", {kPlate, kPlate}, barIcon("rotate-ccw"))) {
       if (flat_) setFlat(false);
-      // The shortest way round to the normal turn; zoom and pan stay.
+      // The shortest way round to the normal turn; zoom stays.
       const float twoPi = 2.0f * std::numbers::pi_v<float>;
       yaw_ = homeYaw_ + twoPi * std::round((yaw_ - homeYaw_) / twoPi);
       pitch_ = homePitch_;
@@ -1527,6 +1527,14 @@ class MapStage final : public Stage {
   void setFlat(bool on) {
     if (on == flat_) return;
     flat_ = on;
+      // ... and back over the character in play (the user, 2026-11-03): the unit whose turn it is, in free roam the one picked;
+      // never onto a hex the fog hides. Zoom stays.
+      const bool turns = battle_ && !battle_->roaming() && turnUnit_ >= 0;
+      if (const int ui = turns ? sceneUnitOf(turnUnit_) : selected_; ui >= 0 && static_cast<size_t>(ui) < unitPos_.size() &&
+                                                                       unitOnLitHex(static_cast<size_t>(ui))) {
+        target_ = unitWorld(static_cast<size_t>(ui));
+        clampGoal();
+      }
     renderer_.volumetrics().invalidateHistory();  // a camera cut: the fog's history would smear across it
     if (on) return;
     const float twoPi = 2.0f * std::numbers::pi_v<float>;
@@ -8156,8 +8164,13 @@ class MapStage final : public Stage {
   static bool archerKind(const std::string& kind) {
     return kind == "venomArrow" || kind == "arrowRain" || kind == "explosiveArrow" || kind == "cripplingShot" || kind == "arrowStorm" || kind == "deathShot";
   }
-  // The effect version a scene unit's spell plays (the Magias menu: heroes and enemies choose apart).
-  int spellLook(const std::string& kind, size_t ui) const { return spellsMenu_.look(kind, scene_->units[ui].side != "player"); }
+  // The effect version a scene unit's spell plays (the Magias menu: heroes and enemies choose apart). The arrows are one for
+  // everyone (the user, 2026-11-02: every enemy's arrow the same as Neera's): Tiro Longo / Tiro Perfurante and the plain shot
+  // (which takes Tiro Longo's) always play the heroes' choice.
+  int spellLook(const std::string& kind, size_t ui) const {
+    const bool arrow = kind == "longShot" || kind == "piercing";
+    return spellsMenu_.look(kind, !arrow && scene_->units[ui].side != "player");
+  }
 
   bool hasPose(size_t ui, const std::string& pose) const {
     const ember::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;

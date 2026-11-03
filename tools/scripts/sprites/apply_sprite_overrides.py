@@ -32,6 +32,27 @@ def save(path, data, indent):
             f.write("\n")
 
 
+def apply_pingpong(over, roster):
+    """"pingpong": a looping pose of a hero's own clip played back and forth (0 .. n-1 .. 1, each frame its own time, like the
+    sets' pingpong poses) in place of round and round; the frame time read off its forward pace. Marked on the pose so a
+    second run does nothing."""
+    for pp in over.get("pingpong", []):
+        for h in roster["heroes"]:
+            if h.get("key") != pp["hero"]:
+                continue
+            for p in h["poses"]:
+                if p["pose"] not in pp["poses"] or p.get("pingpong"):
+                    continue
+                old, n = p["pace"], p["frames"]
+                # ticks a frame: the first whole cycle of the forward pace (from frame 0 until it comes back to 0)
+                back_at = next((i for i in range(1, len(old)) if old[i] == 0 and old[i - 1] != 0), len(old))
+                per = back_at / n
+                steps = list(range(n)) + list(range(n - 2, 0, -1))
+                p["pace"] = [steps[min(len(steps) - 1, math.floor(t / per))] for t in range(round(len(steps) * per))]
+                p["pingpong"] = True
+                print(f"{pp['hero']} {p['pose']}: back and forth, {n} frames at {per:.2f} ticks ({len(old)} -> {len(p['pace'])} ticks)")
+
+
 def main():
     over = load(os.path.join(ROOT, "content", "sprite-overrides.json"))
     manifest_path = os.path.join(ROOT, "build", "sprites", "battle.sprites.json")
@@ -194,6 +215,8 @@ def main():
             for p in dst["poses"]:
                 p["box"] = {k: round(v * cp["scale"], 5) for k, v in p["box"].items()}
             print(f"{cp['key']}: {st['hero']}'s {len(dst['poses'])} poses at x{cp['scale']}")
+
+    apply_pingpong(over, roster)
 
     # "speed": a pose's own clip played faster (its pace sampled `factor` times as fast, so the pose is that much shorter in
     # the fight); marked on the pose so a second run does nothing.

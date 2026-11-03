@@ -5,6 +5,9 @@
  "speed": [
   {"hero": "malrec", "poses": ["attack", "cast"], "factor": 2.0, "why": "the user, 2026-10-17: Malrec's casting and ATT are far too slow (his clips run 3.33 s at 10.8 fps, then the fight plays them at its pace: more than 5 s a cast)"}
  ],
+ "pingpong": [
+  {"hero": "familiar2", "poses": ["idle"], "why": "the user, 2026-11-03: the Familiar Maior's idle back and forth"}
+ ],
  "sets": [
   {
    "set": "salazar-v3",
