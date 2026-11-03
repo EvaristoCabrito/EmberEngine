@@ -313,7 +313,10 @@ float3 moonDisc(float3 dir, float pixelAngle, float3 radiance, float3 moonDirect
   const float4 coarse = gTextures[NonUniformResourceIndex(moonTexture)].SampleLevel(gSamplers[linearSampler],
                                                                                     0.5 + float2(p.x, -p.y) * 0.4, max(lod, 0.0) + 4.0);
   const float3 kLuma = float3(0.2126, 0.7152, 0.0722);
-  const float lit = smoothstep(0.0, 0.12, max(dot(art.rgb, kLuma), dot(coarse.rgb, kLuma) * 1.5));
+  // At the disc's rim the blurred copy takes in the bright face beside it and drew the art's dark outline as moon: a black ring
+  // over a bright sky (the user, 2026-11-03, with the word). There only the pixel's own light counts.
+  const float inner = 1.0 - smoothstep(0.80, 0.95, length(p));
+  const float lit = smoothstep(0.0, 0.12, max(dot(art.rgb, kLuma), dot(coarse.rgb, kLuma) * 1.5 * inner));
   return lerp(radiance, art.rgb * glow * air, art.a * lit);
 }
 

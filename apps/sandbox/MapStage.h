@@ -3272,7 +3272,23 @@ class MapStage final : public Stage {
         logWarn("scene: model {} is not in the mesh pack", asset);
         continue;
       }
-      const float k = m.height / std::max(h->boundsMax[1] - h->boundsMin[1], 1e-4f);
+      // A model gate: its frame in the whole model's place, then each leaf turned about its hinge (the model's own x at the leaf's
+      // outer edge) by the door's angle, both leaves towards the board's middle.
+      const ModelGate* gate = modelGateAt(static_cast<size_t>(&m - scene_->models.data()));
+      if (gate && (!meshes_.header(modelMeshes_.at(gate->parts->frame)) || !meshes_.header(modelMeshes_.at(gate->parts->leaves[0])) ||
+                   !meshes_.header(modelMeshes_.at(gate->parts->leaves[1]))))
+        gate = nullptr;  // its parts not in the mesh pack (or not in yet): the whole model, as before
+      float k = m.height / std::max(h->boundsMax[1] - h->boundsMin[1], 1e-4f);
+      // A gate fills the hexes it stands on from side to side, wall to wall (the user, 2026-11-03: at its own size it left a hole in
+      // the wall beside it): its width = the span of its hexes (the distance between the outer ones' centres, plus one hex).
+      if (gate && gate->state.cells.size() > 1) {
+        float far = 0.0f;
+        for (const auto& [ax, ay] : gate->state.cells)
+          for (const auto& [bx, by] : gate->state.cells)
+            far = std::max(far, static_cast<float>(std::hypot(board_->cell(ax, ay).x - board_->cell(bx, by).x, board_->cell(ax, ay).z - board_->cell(bx, by).z)));
+        const float n = static_cast<float>(gate->state.cells.size());
+        k = far * n / (n - 1.0f) / std::max(h->boundsMax[0] - h->boundsMin[0], 1e-4f);
+      }
       const glm::vec3 offset{-(h->boundsMin[0] + h->boundsMax[0]) * 0.5f * k, -h->boundsMin[1] * k, -(h->boundsMin[2] + h->boundsMax[2]) * 0.5f * k};
       const float c = std::cos(m.rotY), sn = std::sin(m.rotY);
       // three.js rotation about y: x' = x cos + z sin, z' = -x sin + z cos
@@ -3283,12 +3299,6 @@ class MapStage final : public Stage {
       inst.rows[2] = {-sn * k, 0, c * k, t.z};
       inst.mesh = modelMeshes_.at(asset);
       inst.scale = k;
-      // A model gate: its frame in the whole model's place, then each leaf turned about its hinge (the model's own x at the leaf's
-      // outer edge) by the door's angle, both leaves towards the board's middle.
-      const ModelGate* gate = modelGateAt(static_cast<size_t>(&m - scene_->models.data()));
-      if (gate && (!meshes_.header(modelMeshes_.at(gate->parts->frame)) || !meshes_.header(modelMeshes_.at(gate->parts->leaves[0])) ||
-                   !meshes_.header(modelMeshes_.at(gate->parts->leaves[1]))))
-        gate = nullptr;  // its parts not in the mesh pack (or not in yet): the whole model, as before
       if (gate) inst.mesh = modelMeshes_.at(gate->parts->frame);
       const uint32_t instanceIndex = static_cast<uint32_t>(instances.size());
       instances.push_back(inst);
@@ -4195,10 +4205,9 @@ class MapStage final : public Stage {
       l.moonDirection = placed.disc;
       l.moonTexture = ground_.textureIndex(ember::skyMoonAsset(phase));
       l.moonRadius = moonOff_ ? 0.0f : glm::radians(kMoonSizes[moonSize_]);
-      // The disc's radiance follows the moon's light (the physical sky's exposure is set by that light), never below
-      // Ember's glow: a bright disc under either "Luar" whose phase art still reads (at 0.9 x it burned to a white
-      // "super moon": the user, 2026-10-19).
-      l.moonGlow = std::max(2.3f, outside * 0.35f);
+      // The disc as drawn, whatever the moon's light (moonDiscGlow: it followed the light and burned white at a high "Intensidade
+      // da lua", the user, 2026-11-03).
+      l.moonGlow = moonDiscGlow();
     }
     return l;
   }
@@ -4291,10 +4300,15 @@ class MapStage final : public Stage {
       l.moonDirection = moonDir;
       l.moonTexture = ground_.textureIndex(ember::skyMoonAsset(phase));
       l.moonRadius = moonOff_ ? 0.0f : glm::radians(kMoonSizes[moonSize_]);
-      l.moonGlow = std::max(2.3f, moonLux * 0.35f);
+      l.moonGlow = moonDiscGlow();
     }
     return l;
   }
+  // The moon's disc on screen (the user, 2026-11-03, with the word: "intensidade da lua está totalmente bixado", the disc burned
+  // white, the blood moon in white patches): its art times this before the exposure, so the art's white lands at kMoonDiscWhite on
+  // the display whatever the moon's light and the hour's exposure (the light it gives the board is unchanged).
+  static constexpr float kMoonDiscWhite = 1.3f;
+  float moonDiscGlow() const { return kMoonDiscWhite / std::max(exposure_, 1e-6f); }
 
   // How many stops darker than the meter the camera exposes (Unreal's exposure compensation curve by scene
   // brightness): none in full daylight, up to 0.75 as the sun sinks (dawn, dusk), then 2.5 by a moonlit night and more
