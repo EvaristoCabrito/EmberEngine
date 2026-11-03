@@ -396,6 +396,7 @@ class MapStage final : public Stage {
         const std::string asset = modelAsset(m);
         if (!modelMeshes_.contains(asset)) modelMeshes_[asset] = meshes_.add(assetId(asset));
       }
+      addModelGateMeshes();
       buildArchitecture();
       logInfo("scene {}: {} cards, {} models, {} units, {} architecture pieces ({} built)", scene_->map, scene_->cards.size(),
               scene_->models.size(), scene_->units.size(), scene_->architecture, arch_.size());
@@ -1880,6 +1881,8 @@ class MapStage final : public Stage {
     scene_->backdrop = std::move(backdrop);
     for (const ember::SceneModel& m : scene_->models)
       if (const std::string asset = modelAsset(m); !modelMeshes_.contains(asset)) modelMeshes_[asset] = meshes_.add(assetId(asset));
+    addModelGateMeshes();
+    modelGates_.clear();  // a new scene: its gates are found again with the battle's cells
     buildArchitecture();
     arrangeScene();
     initUnits();
@@ -2411,6 +2414,7 @@ class MapStage final : public Stage {
   struct DoorState {
     float angle = 0.0f;      // radians open (0 closed .. kEmberDoorOpenRadians)
     bool passable = false;   // its cells walked and seen through
+    bool stopsShots = true;  // closed, its cells stop shots (a door); an iron gate's bars let them through
     std::vector<std::pair<int, int>> cells;
     // A locked door (ArchitectureDef::locked, 2026-10-30): shut, whoever stands beside it, until the battle's lock at its anchor hex
     // (kind doorDecor, this id) is picked open with a Gazua; then it opens for anyone like the others.
@@ -2856,7 +2860,7 @@ class MapStage final : public Stage {
   // swing open while anyone alive stands within a hex of the door and close again when nobody does; past half open its cells are
   // walked and seen through (the battle cells as they were before the door made them solid), closed they block again.
   void updateDoors(float time) {
-    if (doors_.empty()) return;
+    if (doors_.empty() && modelGates_.empty()) return;
     const float dt = lastDoorTime_ < 0.0f ? 0.0f : std::clamp(time - lastDoorTime_, 0.0f, 0.1f);
     lastDoorTime_ = time;
     bool moved = false;
@@ -2878,6 +2882,24 @@ class MapStage final : public Stage {
       const bool open = d.angle > static_cast<float>(ember::kEmberDoorOpenRadians) * 0.45f;
       if (open != d.passable) setDoorPassable(index, d, open);
     }
+    // The model gates: the same rule (anyone within a hex of its hexes opens it).
+    for (ModelGate& g : modelGates_) {
+      DoorState& d = g.state;
+      bool near = false;
+      if (battle_)
+        for (const ember::BattleUnit& u : battle_->units()) {
+          if (!u.alive) continue;
+          for (const auto& [cx, cy] : d.cells)
+            if (std::abs(u.x - cx) <= 1 && std::abs(u.y - cy) <= 1) near = true;
+        }
+      const float target = near ? static_cast<float>(ember::kEmberDoorOpenRadians) : 0.0f;
+      if (d.angle != target) {
+        d.angle += std::clamp(target - d.angle, -kDoorSpeed * dt, kDoorSpeed * dt);
+        moved = true;
+      }
+      const bool open = d.angle > static_cast<float>(ember::kEmberDoorOpenRadians) * 0.45f;
+      if (open != d.passable) setDoorPassable(SIZE_MAX, d, open);
+    }
     if (moved) placeModels();
   }
   void setDoorPassable(size_t index, DoorState& d, bool open) {
@@ -2891,7 +2913,8 @@ class MapStage final : public Stage {
         if (const auto it = doorCellsBefore_.find({x, y}); it != doorCellsBefore_.end()) battle_->setCell(y * L.cols + x, it->second);
       } else {
         ember::BattleCell c = battle_->cell(x, y);
-        c.passable = false, c.moveCost = 99, c.blocked = true, c.shot.blocksShot = true;
+        c.passable = false, c.moveCost = 99, c.blocked = true;
+        if (d.stopsShots) c.shot.blocksShot = true;
         battle_->setCell(y * L.cols + x, c);
       }
     }
@@ -3260,8 +3283,36 @@ class MapStage final : public Stage {
       inst.rows[2] = {-sn * k, 0, c * k, t.z};
       inst.mesh = modelMeshes_.at(asset);
       inst.scale = k;
+      // A model gate: its frame in the whole model's place, then each leaf turned about its hinge (the model's own x at the leaf's
+      // outer edge) by the door's angle, both leaves towards the board's middle.
+      const ModelGate* gate = modelGateAt(static_cast<size_t>(&m - scene_->models.data()));
+      if (gate && (!meshes_.header(modelMeshes_.at(gate->parts->frame)) || !meshes_.header(modelMeshes_.at(gate->parts->leaves[0])) ||
+                   !meshes_.header(modelMeshes_.at(gate->parts->leaves[1]))))
+        gate = nullptr;  // its parts not in the mesh pack (or not in yet): the whole model, as before
+      if (gate) inst.mesh = modelMeshes_.at(gate->parts->frame);
       const uint32_t instanceIndex = static_cast<uint32_t>(instances.size());
       instances.push_back(inst);
+      std::vector<uint32_t> leafInstances;
+      if (gate) {
+        const bool inwardPlusZ = sn * (boardCenter_.x - m.x) + c * (boardCenter_.z - m.z) > 0.0f;  // the model's +z, in the world
+        for (int side = 0; side < 2; ++side) {
+          const float hx = gate->parts->hingeX[side];
+          const float a = (hx < 0.0f ? 1.0f : -1.0f) * (inwardPlusZ ? -1.0f : 1.0f) * gate->state.angle;
+          const float ca = std::cos(a), sa = std::sin(a);
+          // The leaf in the model's space: x' = x cos + z sin, z' = -x sin + z cos about (hx, 0, 0); then the model's own place.
+          const float leaf[3][4] = {{ca, 0, sa, hx - hx * ca}, {0, 1, 0, 0}, {-sa, 0, ca, hx * sa}};
+          InstanceGpu li = inst;
+          for (int i = 0; i < 3; ++i) {
+            const float mr[4] = {inst.rows[i].x, inst.rows[i].y, inst.rows[i].z, inst.rows[i].w};
+            float out[4];
+            for (int j = 0; j < 4; ++j) out[j] = mr[0] * leaf[0][j] + mr[1] * leaf[1][j] + mr[2] * leaf[2][j] + (j == 3 ? mr[3] : 0.0f);
+            li.rows[i] = {out[0], out[1], out[2], out[3]};
+          }
+          li.mesh = modelMeshes_.at(gate->parts->leaves[side]);
+          leafInstances.push_back(static_cast<uint32_t>(instances.size()));
+          instances.push_back(li);
+        }
+      }
       // Discovery uses the object's footprint, not just a centre buried inside
       // its own sight-blocking canopy. Once any part is explored, keep the whole
       // object discoverable; tactical shading still reads the unchanged fog mask.
@@ -3278,6 +3329,7 @@ class MapStage final : public Stage {
           for (float z = -hz; z <= hz; z += 0.5f) append(x,z);
         std::sort(cells.begin(),cells.end(),[](const auto& a,const auto& b) { return a.r == b.r ? a.c < b.c : a.r < b.r; });
         cells.erase(std::unique(cells.begin(),cells.end()),cells.end());
+        for (uint32_t leaf : leafInstances) modelSightCells_.push_back({leaf, cells});  // a gate's leaves: the gate's hexes
         modelSightCells_.push_back({instanceIndex,std::move(cells)});
       }
       if (m.id == "ember-tavern-stone-hearth") hearthFireInstances_.push_back(instanceIndex);
@@ -4478,6 +4530,7 @@ class MapStage final : public Stage {
   // EmberEngine's own props set to "Bloquear caminho": export_battle.ts (Ember's data.ts) has no footprint for them, so
   // their cells are made solid here as Ember's hexprops makes a solid decoration's (impassable, cost 99, stops shots).
   void blockEmberProps() {
+    modelGates_.clear();
     const ember::EditorCatalog& catalog = architectureCatalog();
     const ember::HexLayout& L = board_->layout();
     size_t cells = 0;
@@ -4503,11 +4556,23 @@ class MapStage final : public Stage {
       const bool stopsShots = solidWall || barricade || has(d.id + " " + cd->name, {"pillar", "column", "coluna", "pilar"});
       const bool trunkOnly = object3d && has(d.id, {"tree"});
       const std::vector<ember::FootOffset> cellsOf = trunkOnly ? std::vector<ember::FootOffset>{{0, 0}} : ember::placedFootprint(*cd, d.x, d.y, d.rot);
+      // A model gate (kModelGates): shut like this, and open for anyone near it (updateDoors); found by its model at this anchor.
+      ModelGate* gate = nullptr;
+      if (cd->model && modelGateParts(cd->model->model) && scene_)
+        for (size_t i = 0; i < scene_->models.size() && !gate; ++i) {
+          const ember::SceneModel& m = scene_->models[i];
+          if (m.id == d.id && ember::hexAt(L, m.x, m.z) == std::pair<int, int>{d.x, d.y}) {
+            gate = &modelGates_.emplace_back(ModelGate{i, modelGateParts(cd->model->model), {}});
+            gate->state.stopsShots = false;
+            logInfo("battle: the gate {} at ({}, {}) opens like a door", d.id, d.x, d.y);
+          }
+        }
       for (const ember::FootOffset& f : cellsOf) {
         const int x = d.x + f.dx, y = d.y + f.dy;
         if (!ember::inBoard(L, x, y)) continue;
         ember::BattleCell c = battle_->cell(x, y);
-        if (cd->model3d == "door") doorCellsBefore_.try_emplace({x, y}, c);  // the animated door gives them back while open
+        if (cd->model3d == "door" || gate) doorCellsBefore_.try_emplace({x, y}, c);  // the animated door gives them back while open
+        if (gate) gate->state.cells.push_back({x, y});
         c.passable = false, c.moveCost = 99, c.blocked = true;
         if (stopsShots) c.shot.blocksShot = true;
         battle_->setCell(y * L.cols + x, c);
@@ -11371,6 +11436,44 @@ class MapStage final : public Stage {
   std::vector<glm::vec2> stairPieces_;  // the 3D stairs' centres (x, z): the 2D stairs card under one is not drawn
   std::vector<glm::vec4> groundHoles_;  // the down stairs' wells: ground cut away (x0, z0, x1, z1; Renderer::setGroundHoles)
   std::map<size_t, DoorState> doors_;  // ... each door's state, by arch_ index
+  // A model gate (the user, 2026-11-03, the iron gate: "Open, like the doors"): the model split into its frame and its two leaves
+  // (tools/scripts/models/split_glb_parts.py: the original's coordinates kept), drawn with the whole model's place and scale, each leaf
+  // turned about its hinge (the model's own units, x at the leaf's outer edge) by the door's angle, both towards the board's middle.
+  // It opens for anyone within a hex like the doors (updateDoors); closed, its hexes are solid; its bars never stop a shot.
+  struct ModelGateParts {
+    const char* model;  // the catalogue's model id (SceneModel::model)
+    const char* frame;
+    const char* leaves[2];
+    float hingeX[2];
+  };
+  static constexpr ModelGateParts kModelGates[] = {
+      {"ember-large-iron-gate", "meshes/ember/polyhaven/large_iron_gate-frame-v01.mesh",
+       {"meshes/ember/polyhaven/large_iron_gate-leaf-left-v01.mesh", "meshes/ember/polyhaven/large_iron_gate-leaf-right-v01.mesh"},
+       {-1.434f, 1.434f}},
+  };
+  static const ModelGateParts* modelGateParts(const std::string& model) {
+    for (const ModelGateParts& g : kModelGates)
+      if (model == g.model) return &g;
+    return nullptr;
+  }
+  struct ModelGate {
+    size_t model = 0;  // index in scene_->models
+    const ModelGateParts* parts = nullptr;
+    DoorState state;
+  };
+  std::vector<ModelGate> modelGates_;  // set by blockEmberProps (the battle's cells); without a battle the gate stays a whole model
+  const ModelGate* modelGateAt(size_t model) const {
+    for (const ModelGate& g : modelGates_)
+      if (g.model == model) return &g;
+    return nullptr;
+  }
+  // The gate parts' meshes, beside the whole model's (which still sets the scale and the base).
+  void addModelGateMeshes() {
+    for (const ember::SceneModel& m : scene_->models)
+      if (const ModelGateParts* g = modelGateParts(m.model))
+        for (const char* asset : {g->frame, g->leaves[0], g->leaves[1]})
+          if (!modelMeshes_.contains(asset)) modelMeshes_[asset] = meshes_.add(assetId(asset));
+  }
   static constexpr float kGlide = 10.0f;  // 1/s: ~90% of a move in 0.23 s, no overshoot
   // -8 deg to 89.5 deg (straight down). The eye itself never goes below kMinEyePitch (5 deg, nearly level: it would enter the
   // ground); under it the extra tilt lifts the line of sight instead, so the board sinks to the bottom of the frame and the sky
