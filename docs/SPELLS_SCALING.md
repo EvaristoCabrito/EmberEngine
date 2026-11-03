@@ -42,15 +42,15 @@ Nível a nível: 4: +0,04 peso do MAG, 5: +1 comprimento, 6: +0,04 peso do MAG, 
 
 ### Bola de Fogo
 
-Escala do nível 6 ao 20, uma melhoria pequena por nível: dano 2D6 → 6D6; alcance 5 → 13; área 3 hexes → 3 anéis.
+Escala do nível 6 ao 20, uma melhoria pequena por nível: dano 2D6 → 6D6; alcance 5 → 13; área 3 hexes → 2 anéis.
 
-Nível a nível: 7: +1 hex de alcance, 8: +1 dado, 9: +1 anel, 10: +1 hex de alcance, 11: +1 dado, 12: +1 hex de alcance, 13: +1 hex de alcance, 14: +1 anel, 15: +1 hex de alcance, 16: +1 dado, 17: +1 hex de alcance, 18: +1 anel, 19: +1 dado, 20: +1 hex de alcance.
+Nível a nível: 7: +1 hex de alcance, 8: +1 dado, 9: +1 anel, 10: +1 hex de alcance, 11: +1 dado, 12: +1 hex de alcance, 14: +1 hex de alcance, 15: +1 hex de alcance, 16: +1 dado, 17: +1 hex de alcance, 18: +1 anel, 19: +1 dado, 20: +1 hex de alcance.
 
 ### Veneno Cáustico
 
-Escala do nível 11 ao 25, uma melhoria pequena por nível: dano 1D10 → 3D10; alcance 7 → 13; área 3 hexes → 4 anéis; peso do MAG 1,5 → 1,8.
+Escala do nível 11 ao 25, uma melhoria pequena por nível: dano 1D10 → 3D10; alcance 7 → 13; área 3 hexes → 3 anéis; peso do MAG 1,5 → 1,8.
 
-Nível a nível: 12: +1 hex de alcance, 13: +1 anel, 14: +0,1 peso do MAG, 15: +1 dado, 16: +1 hex de alcance, 17: +1 anel, 18: +1 hex de alcance, 19: +0,1 peso do MAG, 20: +1 hex de alcance, 21: +1 anel, 22: +1 dado, 23: +0,1 peso do MAG, 24: +1 hex de alcance, 25: +1 anel.
+Nível a nível: 12: +1 hex de alcance, 13: +1 anel, 14: +0,1 peso do MAG, 15: +1 dado, 16: +1 hex de alcance, 17: +1 hex de alcance, 19: +1 anel, 20: +0,1 peso do MAG, 21: +1 hex de alcance, 22: +1 dado, 23: +1 anel, 24: +0,1 peso do MAG, 25: +1 hex de alcance.
 
 ### Relâmpago Maior
 
@@ -66,9 +66,9 @@ Nível a nível: 2: +0,05 peso do MAG, 3: +1 hex de alcance, 4: +1 dado, 5: +0,0
 
 ### Bênção
 
-Escala do nível 3 ao 17, uma melhoria pequena por nível: área 3 hexes → 2 anéis; acerto % 1 → 8; rodadas 3 → 8.
+Escala do nível 3 ao 17, uma melhoria pequena por nível: área 3 hexes → 1 anel; acerto % 1 → 8; rodadas 3 → 8.
 
-Nível a nível: 4: +1 acerto %, 5: +1 rodadas, 6: +1 acerto %, 7: +1 anel, 8: +1 rodadas, 9: +1 acerto %, 10: +1 acerto %, 11: +1 rodadas, 12: +1 acerto %, 13: +1 rodadas, 14: +1 anel, 15: +1 acerto %, 16: +1 rodadas, 17: +1 acerto %.
+Nível a nível: 4: +1 acerto %, 5: +1 rodadas, 6: +1 acerto %, 7: +1 rodadas, 8: +1 acerto %, 9: +1 anel, 11: +1 acerto %, 12: +1 rodadas, 13: +1 acerto %, 14: +1 rodadas, 15: +1 acerto %, 16: +1 rodadas, 17: +1 acerto %.
 
 ### Cura Média
 
@@ -84,9 +84,9 @@ Nível a nível: 6: +0,05 peso do MAG, 7: +1 dado, 8: +0,05 peso do MAG, 9: +1 c
 
 ### Expulsar Mortos-Vivos
 
-Escala do nível 6 ao 20, uma melhoria pequena por nível: dano 4D6 → 9D6; área 3 hexes → 5 anéis; peso do MAG 1,6 → 2,3.
+Escala do nível 6 ao 20, uma melhoria pequena por nível: dano 4D6 → 9D6; área 3 hexes → 4 anéis; peso do MAG 1,6 → 2,3.
 
-Nível a nível: 7: +1 anel, 8: +1 dado, 9: +0,175 peso do MAG, 10: +1 anel, 11: +1 dado, 12: +0,175 peso do MAG, 13: +1 anel, 14: +1 dado, 15: +0,175 peso do MAG, 16: +1 anel, 17: +1 dado, 18: +0,175 peso do MAG, 19: +1 anel, 20: +1 dado.
+Nível a nível: 7: +1 dado, 8: +1 anel, 9: +0,175 peso do MAG, 10: +1 dado, 11: +1 anel, 12: +0,175 peso do MAG, 14: +1 dado, 15: +1 anel, 16: +0,175 peso do MAG, 17: +1 dado, 18: +1 anel, 19: +0,175 peso do MAG, 20: +1 dado.
 
 ### Curar Doença
 
@@ -96,15 +96,15 @@ Nível a nível: 10: +1 hex de alcance, 17: +1 hex de alcance.
 
 ### Raio Divino
 
-Escala do nível 8 ao 22, uma melhoria pequena por nível: dano 2D4 → 5D4; alcance 6 → 13; área 3 hexes → 2 anéis; peso do MAG 1,4 → 1,7.
+Escala do nível 8 ao 22, uma melhoria pequena por nível: dano 2D4 → 5D4; alcance 6 → 13; área 3 hexes → 1 anel; peso do MAG 1,4 → 1,7.
 
-Nível a nível: 9: +1 hex de alcance, 10: +1 dado, 11: +0,1 peso do MAG, 12: +1 anel, 13: +1 hex de alcance, 14: +1 hex de alcance, 15: +1 hex de alcance, 16: +1 dado, 17: +0,1 peso do MAG, 18: +1 hex de alcance, 19: +1 anel, 20: +1 dado, 21: +0,1 peso do MAG, 22: +1 hex de alcance.
+Nível a nível: 9: +1 hex de alcance, 10: +1 dado, 11: +0,1 peso do MAG, 12: +1 hex de alcance, 13: +1 hex de alcance, 14: +1 anel, 16: +1 hex de alcance, 17: +1 dado, 18: +0,1 peso do MAG, 19: +1 hex de alcance, 20: +1 dado, 21: +0,1 peso do MAG, 22: +1 hex de alcance.
 
 ### Círculo de Cura
 
-Escala do nível 9 ao 23, uma melhoria pequena por nível: dano 1D8 → 4D8; alcance 4 → 10; área 3 hexes → 2 anéis; peso do MAG 1,2 → 1,5.
+Escala do nível 9 ao 23, uma melhoria pequena por nível: dano 1D8 → 4D8; alcance 4 → 10; área 3 hexes → 1 anel; peso do MAG 1,2 → 1,5.
 
-Nível a nível: 10: +1 hex de alcance, 11: +1 dado, 12: +0,1 peso do MAG, 13: +1 hex de alcance, 14: +1 anel, 15: +1 hex de alcance, 16: +1 dado, 17: +0,1 peso do MAG, 18: +1 hex de alcance, 19: +1 anel, 20: +1 hex de alcance, 21: +1 dado, 22: +0,1 peso do MAG, 23: +1 hex de alcance.
+Nível a nível: 10: +1 hex de alcance, 11: +1 dado, 12: +0,1 peso do MAG, 13: +1 hex de alcance, 14: +1 anel, 15: +1 hex de alcance, 17: +1 dado, 18: +0,1 peso do MAG, 19: +1 hex de alcance, 20: +1 hex de alcance, 21: +1 dado, 22: +0,1 peso do MAG, 23: +1 hex de alcance.
 
 ### Ressurreição
 
@@ -114,9 +114,9 @@ Nível a nível: 13: +0,1 peso do MAG, 14: +1 hex de alcance, 15: +1 dado, 16: +
 
 ### Julgamento
 
-Escala do nível 14 ao 28, uma melhoria pequena por nível: dano 2D8 → 5D8; alcance 6 → 10; área 3 hexes → 2 anéis; peso do MAG 1,8 → 2,4; peso contra mortos-vivos 1,5 → 1,75.
+Escala do nível 14 ao 28, uma melhoria pequena por nível: dano 2D8 → 5D8; alcance 6 → 10; área 3 hexes → 1 anel; peso do MAG 1,8 → 2,4; peso contra mortos-vivos 1,5 → 1,75.
 
-Nível a nível: 15: +1 hex de alcance, 16: +0,15 peso do MAG, 17: +1 dado, 18: +1 anel, 19: +1 hex de alcance, 20: +0,15 peso do MAG, 21: +1 dado, 22: +0,25 peso contra mortos-vivos, 23: +1 hex de alcance, 24: +0,15 peso do MAG, 25: +1 anel, 26: +1 dado, 27: +1 hex de alcance, 28: +0,15 peso do MAG.
+Nível a nível: 15: +1 hex de alcance, 16: +0,15 peso do MAG, 17: +1 dado, 18: +1 anel, 19: +1 hex de alcance, 20: +0,15 peso do MAG, 22: +1 dado, 23: +0,25 peso contra mortos-vivos, 24: +1 hex de alcance, 25: +0,15 peso do MAG, 26: +1 dado, 27: +1 hex de alcance, 28: +0,15 peso do MAG.
 
 ### Mãos Curativas
 
@@ -126,15 +126,15 @@ Nível a nível: 12: +0,05 peso do MAG, 13: +1 dado, 14: +0,05 peso do MAG, 15: 
 
 ### Aura de Proteção
 
-Escala do nível 15 ao 29, uma melhoria pequena por nível: área 3 hexes → 2 anéis; proteção % 20 → 36; rodadas 3 → 7.
+Escala do nível 15 ao 29, uma melhoria pequena por nível: área 3 hexes → 1 anel; proteção % 20 → 36; rodadas 3 → 7.
 
-Nível a nível: 16: +2 proteção %, 17: +1 rodadas, 18: +2 proteção %, 19: +1 anel, 20: +2 proteção %, 21: +1 rodadas, 22: +2 proteção %, 23: +2 proteção %, 24: +1 rodadas, 25: +2 proteção %, 26: +1 anel, 27: +2 proteção %, 28: +1 rodadas, 29: +2 proteção %.
+Nível a nível: 16: +2 proteção %, 17: +1 rodadas, 18: +2 proteção %, 19: +2 proteção %, 20: +1 rodadas, 21: +2 proteção %, 23: +1 anel, 24: +2 proteção %, 25: +1 rodadas, 26: +2 proteção %, 27: +2 proteção %, 28: +1 rodadas, 29: +2 proteção %.
 
 ### Presença Intimidante
 
-Escala do nível 15 ao 29, uma melhoria pequena por nível: área 3 hexes → 2 anéis; intimidação % 20 → 38; rodadas 3 → 6.
+Escala do nível 15 ao 29, uma melhoria pequena por nível: área 3 hexes → 1 anel; intimidação % 20 → 38; rodadas 3 → 6.
 
-Nível a nível: 16: +2 intimidação %, 17: +1 rodadas, 18: +2 intimidação %, 19: +2 intimidação %, 20: +1 anel, 21: +2 intimidação %, 22: +2 intimidação %, 23: +1 rodadas, 24: +2 intimidação %, 25: +2 intimidação %, 26: +1 anel, 27: +2 intimidação %, 28: +1 rodadas, 29: +2 intimidação %.
+Nível a nível: 16: +2 intimidação %, 17: +1 rodadas, 18: +2 intimidação %, 19: +2 intimidação %, 20: +2 intimidação %, 21: +1 anel, 23: +2 intimidação %, 24: +1 rodadas, 25: +2 intimidação %, 26: +2 intimidação %, 27: +2 intimidação %, 28: +1 rodadas, 29: +2 intimidação %.
 
 ### Ira Divina
 
@@ -156,9 +156,9 @@ Nível a nível: 3: +1 hex de alcance, 4: dado maior, 5: +1 dado, 6: +0,1 peso d
 
 ### Teia dos Sonhos
 
-Escala do nível 3 ao 17, uma melhoria pequena por nível: alcance 7 → 13; área 3 hexes → 2 anéis; chance de sono % 25 → 60.
+Escala do nível 3 ao 17, uma melhoria pequena por nível: alcance 7 → 13; área 3 hexes → 1 anel; chance de sono % 25 → 60.
 
-Nível a nível: 4: +5 chance de sono %, 5: +1 hex de alcance, 6: +5 chance de sono %, 7: +1 anel, 8: +5 chance de sono %, 9: +1 hex de alcance, 10: +1 hex de alcance, 11: +5 chance de sono %, 12: +1 hex de alcance, 13: +5 chance de sono %, 14: +1 anel, 15: +5 chance de sono %, 16: +1 hex de alcance, 17: +5 chance de sono %.
+Nível a nível: 4: +5 chance de sono %, 5: +1 hex de alcance, 6: +5 chance de sono %, 7: +1 hex de alcance, 8: +5 chance de sono %, 9: +1 hex de alcance, 11: +5 chance de sono %, 12: +1 anel, 13: +5 chance de sono %, 14: +1 hex de alcance, 15: +5 chance de sono %, 16: +1 hex de alcance, 17: +5 chance de sono %.
 
 ### Familiar Maior
 
@@ -192,9 +192,9 @@ Nível a nível: 8: +3 chance de errar %, 9: +1 hex de alcance, 10: +1 rodadas, 
 
 ### Detonar Invocação
 
-Escala do nível 9 ao 23, uma melhoria pequena por nível: dano 2D8 → 5D8; alcance 6 → 10; área 3 hexes → 2 anéis; peso do MAG 1,8 → 2,4.
+Escala do nível 9 ao 23, uma melhoria pequena por nível: dano 2D8 → 5D8; alcance 6 → 10; área 3 hexes → 1 anel; peso do MAG 1,8 → 2,4.
 
-Nível a nível: 10: +0,12 peso do MAG, 11: +1 hex de alcance, 12: +1 dado, 13: +1 anel, 14: +0,12 peso do MAG, 15: +1 hex de alcance, 16: +1 dado, 17: +0,12 peso do MAG, 18: +1 hex de alcance, 19: +0,12 peso do MAG, 20: +1 anel, 21: +1 dado, 22: +1 hex de alcance, 23: +0,12 peso do MAG.
+Nível a nível: 10: +0,12 peso do MAG, 11: +1 hex de alcance, 12: +1 dado, 13: +0,12 peso do MAG, 14: +1 hex de alcance, 15: +1 anel, 17: +0,12 peso do MAG, 18: +1 dado, 19: +1 hex de alcance, 20: +0,12 peso do MAG, 21: +1 dado, 22: +1 hex de alcance, 23: +0,12 peso do MAG.
 
 ### Numen (Arcanista e Necromante, T6)
 
@@ -210,9 +210,9 @@ Nível a nível: 12: -3 dano que a invocação recebe %, 13: -3 dano que a invoc
 
 ### Pesadelo
 
-Escala do nível 13 ao 27, uma melhoria pequena por nível: dano 2D8 → 4D8; alcance 6 → 13; área 3 hexes → 2 anéis; peso do MAG 1,5 → 1,8; chance de medo % 25 → 35; turnos de medo 1 → 2.
+Escala do nível 13 ao 27, uma melhoria pequena por nível: dano 2D8 → 4D8; alcance 6 → 13; área 3 hexes → 1 anel; peso do MAG 1,5 → 1,8; chance de medo % 25 → 35; turnos de medo 1 → 2.
 
-Nível a nível: 14: +1 hex de alcance, 15: +1 anel, 16: +1 dado, 17: +0,15 peso do MAG, 18: +1 hex de alcance, 19: +1 hex de alcance, 20: +1 hex de alcance, 21: +10 chance de medo %, 22: +1 turnos de medo, 23: +1 hex de alcance, 24: +1 anel, 25: +1 dado, 26: +0,15 peso do MAG, 27: +1 hex de alcance.
+Nível a nível: 14: +1 hex de alcance, 15: +1 dado, 16: +0,15 peso do MAG, 17: +1 hex de alcance, 18: +1 hex de alcance, 19: +1 anel, 21: +1 hex de alcance, 22: +10 chance de medo %, 23: +1 turnos de medo, 24: +1 hex de alcance, 25: +1 dado, 26: +0,15 peso do MAG, 27: +1 hex de alcance.
 
 ### Cão Zumbi (Necromante, T8)
 
@@ -258,9 +258,9 @@ Nível a nível: 17: +0,05 peso do MAG, 18: +1 hex de alcance, 19: +0,05 peso do
 
 ### Mortalha de Sombras
 
-Escala do nível 17 ao 31, uma melhoria pequena por nível: dano por turno 1D6 → 2D6; alcance 6 → 13; área 3 hexes → 2 anéis; redução % 20 → 35; rodadas 2 → 4.
+Escala do nível 17 ao 31, uma melhoria pequena por nível: dano por turno 1D6 → 2D6; alcance 6 → 13; área 3 hexes → 1 anel; redução % 20 → 35; rodadas 2 → 4.
 
-Nível a nível: 18: +1 hex de alcance, 19: +5 redução %, 20: +1 anel, 21: +1 rodadas, 22: +1 hex de alcance, 23: +1 hex de alcance, 24: +1 hex de alcance, 25: +5 redução %, 26: +1 dado por turno, 27: +1 hex de alcance, 28: +1 anel, 29: +1 rodadas, 30: +5 redução %, 31: +1 hex de alcance.
+Nível a nível: 18: +1 hex de alcance, 19: +5 redução %, 20: +1 rodadas, 21: +1 hex de alcance, 22: +1 hex de alcance, 23: +1 anel, 25: +1 hex de alcance, 26: +5 redução %, 27: +1 dado por turno, 28: +1 hex de alcance, 29: +1 rodadas, 30: +5 redução %, 31: +1 hex de alcance.
 
 ### Hemorragia
 
@@ -270,15 +270,15 @@ Nível a nível: 19: +0,05 peso do MAG, 20: +1 hex de alcance, 21: +0,05 peso do
 
 ### Silêncio Profano
 
-Escala do nível 19 ao 33, uma melhoria pequena por nível: dano 1D8 → 2D10; alcance 6 → 10; área 3 hexes → 2 anéis; peso do MAG 1,1 → 1,3; turnos 2 → 4.
+Escala do nível 19 ao 33, uma melhoria pequena por nível: dano 1D8 → 2D10; alcance 6 → 10; área 3 hexes → 1 anel; peso do MAG 1,1 → 1,3; turnos 2 → 4.
 
-Nível a nível: 20: +1 hex de alcance, 21: +0,05 peso do MAG, 22: +1 anel, 23: +1 turnos, 24: +1 hex de alcance, 25: +0,05 peso do MAG, 26: +1 dado, 27: dado maior, 28: +1 hex de alcance, 29: +0,05 peso do MAG, 30: +1 anel, 31: +1 turnos, 32: +1 hex de alcance, 33: +0,05 peso do MAG.
+Nível a nível: 20: +1 hex de alcance, 21: +0,05 peso do MAG, 22: +1 turnos, 23: +1 anel, 24: +1 hex de alcance, 25: +0,05 peso do MAG, 27: +1 dado, 28: dado maior, 29: +1 hex de alcance, 30: +0,05 peso do MAG, 31: +1 turnos, 32: +1 hex de alcance, 33: +0,05 peso do MAG.
 
 ### Peste Negra
 
-Escala do nível 21 ao 35, uma melhoria pequena por nível: dano 2D6 → 4D10; alcance 7 → 9; área 3 hexes → 2 anéis; peso do MAG 1,2 → 1,45; Veneno Mortal → Veneno Letal.
+Escala do nível 21 ao 35, uma melhoria pequena por nível: dano 2D6 → 4D10; alcance 7 → 9; área 3 hexes → 1 anel; peso do MAG 1,2 → 1,45; Veneno Mortal → Veneno Letal.
 
-Nível a nível: 22: +0,05 peso do MAG, 23: +1 hex de alcance, 24: +1 anel, 25: +1 dado, 26: +0,05 peso do MAG, 27: dado maior, 28: +0,05 peso do MAG, 29: veneno mais forte, 30: +1 hex de alcance, 31: +0,05 peso do MAG, 32: +1 anel, 33: +1 dado, 34: dado maior, 35: +0,05 peso do MAG.
+Nível a nível: 22: +0,05 peso do MAG, 23: +1 hex de alcance, 24: +1 dado, 25: dado maior, 26: +0,05 peso do MAG, 27: +1 anel, 29: +0,05 peso do MAG, 30: veneno mais forte, 31: +0,05 peso do MAG, 32: +1 hex de alcance, 33: +1 dado, 34: dado maior, 35: +0,05 peso do MAG.
 
 ### Maldição da Decadência
 
@@ -288,9 +288,9 @@ Nível a nível: 23: +0,05 peso do MAG, 24: +1 hex de alcance, 25: +10 teto %, 2
 
 ### Colheita de Almas
 
-Escala do nível 23 ao 37, uma melhoria pequena por nível: dano 3D6 → 4D8; alcance 6 → 13; área 3 hexes → 2 anéis; peso do MAG 1,7 → 1,9; alma % 10 → 14.
+Escala do nível 23 ao 37, uma melhoria pequena por nível: dano 3D6 → 4D8; alcance 6 → 13; área 3 hexes → 1 anel; peso do MAG 1,7 → 1,9; alma % 10 → 14.
 
-Nível a nível: 24: +1 hex de alcance, 25: +1 anel, 26: +0,1 peso do MAG, 27: +2 alma %, 28: +1 hex de alcance, 29: +1 hex de alcance, 30: +1 hex de alcance, 31: +1 dado, 32: dado maior, 33: +1 hex de alcance, 34: +1 anel, 35: +0,1 peso do MAG, 36: +2 alma %, 37: +1 hex de alcance.
+Nível a nível: 24: +1 hex de alcance, 25: +0,1 peso do MAG, 26: +2 alma %, 27: +1 hex de alcance, 28: +1 hex de alcance, 29: +1 anel, 31: +1 hex de alcance, 32: +1 dado, 33: dado maior, 34: +1 hex de alcance, 35: +0,1 peso do MAG, 36: +2 alma %, 37: +1 hex de alcance.
 
 ### Vazio Devorador
 
@@ -300,9 +300,9 @@ Nível a nível: 26: +1 hex de alcance, 27: +0,05 peso do MAG, 28: +5 dano extra
 
 ### Coluna de Fogo
 
-Escala do nível 15 ao 29, uma melhoria pequena por nível: dano 2D8 → 3D10; chão em chamas 1D6 → 2D6; alcance 6 → 11; área 3 hexes → 2 anéis; peso do MAG 2 → 2,3; rodadas 1 → 2.
+Escala do nível 15 ao 29, uma melhoria pequena por nível: dano 2D8 → 3D10; chão em chamas 1D6 → 2D6; alcance 6 → 11; área 3 hexes → 1 anel; peso do MAG 2 → 2,3; rodadas 1 → 2.
 
-Nível a nível: 16: +1 hex de alcance, 17: +0,1 peso do MAG, 18: +1 anel, 19: +1 hex de alcance, 20: +1 dado, 21: +1 rodadas, 22: +1 hex de alcance, 23: +0,1 peso do MAG, 24: +1 dado de fogo, 25: dado maior, 26: +1 hex de alcance, 27: +1 anel, 28: +0,1 peso do MAG, 29: +1 hex de alcance.
+Nível a nível: 16: +1 hex de alcance, 17: +0,1 peso do MAG, 18: +1 anel, 19: +1 hex de alcance, 20: +1 dado, 21: +1 rodadas, 23: +1 hex de alcance, 24: +0,1 peso do MAG, 25: +1 dado de fogo, 26: +1 hex de alcance, 27: dado maior, 28: +0,1 peso do MAG, 29: +1 hex de alcance.
 
 ### Lança de Gelo
 
@@ -312,21 +312,21 @@ Nível a nível: 16: +0,05 peso do MAG, 17: +1 hex de alcance, 18: +25 dano apó
 
 ### Tempestade Elétrica
 
-Escala do nível 16 ao 30, uma melhoria pequena por nível: dano 2D12 → 3D12; dano por turno 1D6 → 2D6; alcance 6 → 13; área 3 hexes → 2 anéis; bônus do eco 4 → 6; peso do MAG 1,8 → 2,1.
+Escala do nível 16 ao 30, uma melhoria pequena por nível: dano 2D12 → 3D12; dano por turno 1D6 → 2D6; alcance 6 → 13; área 3 hexes → 1 anel; bônus do eco 4 → 6; peso do MAG 1,8 → 2,1.
 
-Nível a nível: 17: +1 hex de alcance, 18: +0,1 peso do MAG, 19: +1 anel, 20: +1 hex de alcance, 21: +1 hex de alcance, 22: +1 dado, 23: +1 hex de alcance, 24: +0,1 peso do MAG, 25: +1 dado por turno, 26: +2 bônus do eco, 27: +1 hex de alcance, 28: +1 anel, 29: +0,1 peso do MAG, 30: +1 hex de alcance.
+Nível a nível: 17: +1 hex de alcance, 18: +0,1 peso do MAG, 19: +1 hex de alcance, 20: +1 hex de alcance, 21: +1 anel, 22: +1 dado, 24: +1 hex de alcance, 25: +0,1 peso do MAG, 26: +1 dado por turno, 27: +1 hex de alcance, 28: +2 bônus do eco, 29: +0,1 peso do MAG, 30: +1 hex de alcance.
 
 ### Meteoro
 
-Escala do nível 17 ao 31, uma melhoria pequena por nível: dano 4D6 → 5D8; dano do anel 2D6 → 3D6; alcance 8 → 13; área 3 hexes → 2 anéis; peso do MAG 3 → 3,3; peso do anel 2 → 2,4.
+Escala do nível 17 ao 31, uma melhoria pequena por nível: dano 4D6 → 5D8; dano do anel 2D6 → 3D6; alcance 8 → 13; área 3 hexes → 1 anel; peso do MAG 3 → 3,3; peso do anel 2 → 2,4.
 
-Nível a nível: 18: +1 hex de alcance, 19: +0,1 peso do MAG, 20: +1 anel, 21: +0,2 peso do anel, 22: +1 hex de alcance, 23: +1 dado, 24: +1 hex de alcance, 25: +0,1 peso do MAG, 26: +1 dado no anel, 27: dado maior, 28: +1 anel, 29: +0,2 peso do anel, 30: +1 hex de alcance, 31: +0,1 peso do MAG.
+Nível a nível: 18: +1 hex de alcance, 19: +0,1 peso do MAG, 20: +0,2 peso do anel, 21: +1 hex de alcance, 22: +1 anel, 23: +1 dado, 25: +1 hex de alcance, 26: +0,1 peso do MAG, 27: +1 dado no anel, 28: dado maior, 29: +0,2 peso do anel, 30: +1 hex de alcance, 31: +0,1 peso do MAG.
 
 ### Zero Absoluto
 
-Escala do nível 18 ao 32, uma melhoria pequena por nível: dano 3D8 → 4D10; alcance 6 → 10; área 3 hexes → 2 anéis; peso do MAG 2,2 → 2,5.
+Escala do nível 18 ao 32, uma melhoria pequena por nível: dano 3D8 → 4D10; alcance 6 → 10; área 3 hexes → 1 anel; peso do MAG 2,2 → 2,5.
 
-Nível a nível: 19: +0,05 peso do MAG, 20: +1 hex de alcance, 21: +1 anel, 22: +0,05 peso do MAG, 23: +1 hex de alcance, 24: +0,05 peso do MAG, 25: +1 dado, 26: dado maior, 27: +0,05 peso do MAG, 28: +1 hex de alcance, 29: +0,05 peso do MAG, 30: +1 anel, 31: +1 hex de alcance, 32: +0,05 peso do MAG.
+Nível a nível: 19: +0,05 peso do MAG, 20: +1 hex de alcance, 21: +0,05 peso do MAG, 22: +1 anel, 23: +1 hex de alcance, 24: +0,05 peso do MAG, 26: +1 dado, 27: +0,05 peso do MAG, 28: +1 hex de alcance, 29: dado maior, 30: +0,05 peso do MAG, 31: +1 hex de alcance, 32: +0,05 peso do MAG.
 
 ### Cadeia de Raios
 
@@ -336,9 +336,9 @@ Nível a nível: 20: +1 hex de alcance, 21: +0,05 peso do MAG, 22: +1 saltos, 23
 
 ### Erupção
 
-Escala do nível 21 ao 35, uma melhoria pequena por nível: dano 4D8 → 5D10; chão em chamas 1D8 → 2D10; área 3 hexes → 2 anéis; peso do MAG 2,6 → 2,9; rodadas 2 → 4.
+Escala do nível 21 ao 35, uma melhoria pequena por nível: dano 4D8 → 5D10; chão em chamas 1D8 → 2D10; área 3 hexes → 1 anel; peso do MAG 2,6 → 2,9; rodadas 2 → 4.
 
-Nível a nível: 22: +0,05 peso do MAG, 23: +1 anel, 24: +1 rodadas, 25: +0,05 peso do MAG, 26: +1 dado, 27: +0,05 peso do MAG, 28: +1 dado de fogo, 29: dado maior, 30: +0,05 peso do MAG, 31: dado de fogo maior, 32: +0,05 peso do MAG, 33: +1 anel, 34: +1 rodadas, 35: +0,05 peso do MAG.
+Nível a nível: 22: +0,05 peso do MAG, 23: +1 rodadas, 24: +0,05 peso do MAG, 25: +1 anel, 26: +1 dado, 27: +0,05 peso do MAG, 29: +1 dado de fogo, 30: +0,05 peso do MAG, 31: dado maior, 32: dado de fogo maior, 33: +0,05 peso do MAG, 34: +1 rodadas, 35: +0,05 peso do MAG.
 
 ### Vendaval Glacial
 
@@ -354,9 +354,9 @@ Nível a nível: 24: +0,1 peso do MAG, 25: +1 bônus, 26: +1 hex de alcance, 27:
 
 ### Brasa Primordial
 
-Escala do nível 25 ao 39, uma melhoria pequena por nível: dano 4D10 → 5D12; chão em chamas 2D8 → 3D10; alcance 7 → 10; área 3 hexes → 2 anéis; bônus 0 → 1; peso do MAG 3,4 → 3,7; rodadas 2 → 3.
+Escala do nível 25 ao 39, uma melhoria pequena por nível: dano 4D10 → 5D12; chão em chamas 2D8 → 3D10; alcance 7 → 10; área 3 hexes → 1 anel; bônus 0 → 1; peso do MAG 3,4 → 3,7; rodadas 2 → 3.
 
-Nível a nível: 26: +1 hex de alcance, 27: +0,1 peso do MAG, 28: +1 anel, 29: +1 dado, 30: +1 dado de fogo, 31: +1 rodadas, 32: +1 hex de alcance, 33: +0,1 peso do MAG, 34: dado maior, 35: dado de fogo maior, 36: +1 bônus, 37: +1 anel, 38: +1 hex de alcance, 39: +0,1 peso do MAG.
+Nível a nível: 26: +1 hex de alcance, 27: +0,1 peso do MAG, 28: +1 anel, 29: +1 dado, 30: +1 dado de fogo, 31: +1 rodadas, 33: +1 hex de alcance, 34: +0,1 peso do MAG, 35: dado maior, 36: dado de fogo maior, 37: +1 bônus, 38: +1 hex de alcance, 39: +0,1 peso do MAG.
 
 ### Tiro Longo
 
@@ -384,9 +384,9 @@ Nível a nível: 8: +1 hex de alcance, 9: dado maior, 10: +1 dado, 11: +1 hex de
 
 ### Chuva de Flechas
 
-Escala do nível 7 ao 21, uma melhoria pequena por nível: dano 1D4 → 2D6; alcance 6 → 13; área 3 hexes → 2 anéis; peso do arco 0,75 → 0,95.
+Escala do nível 7 ao 21, uma melhoria pequena por nível: dano 1D4 → 2D6; alcance 6 → 13; área 3 hexes → 1 anel; peso do arco 0,75 → 0,95.
 
-Nível a nível: 8: +1 hex de alcance, 9: +0,05 peso do arco, 10: +1 anel, 11: +1 hex de alcance, 12: +0,05 peso do arco, 13: +1 hex de alcance, 14: +1 hex de alcance, 15: +1 dado, 16: dado maior, 17: +0,05 peso do arco, 18: +1 hex de alcance, 19: +1 anel, 20: +0,05 peso do arco, 21: +1 hex de alcance.
+Nível a nível: 8: +1 hex de alcance, 9: +0,05 peso do arco, 10: +1 hex de alcance, 11: +1 hex de alcance, 12: +0,05 peso do arco, 13: +1 anel, 15: +1 hex de alcance, 16: +1 dado, 17: +0,05 peso do arco, 18: +1 hex de alcance, 19: dado maior, 20: +0,05 peso do arco, 21: +1 hex de alcance.
 
 ### Flecha Explosiva
 
@@ -402,9 +402,9 @@ Nível a nível: 13: +5 MOV retirado %, 14: +1 hex além do arco, 15: +0,1 peso 
 
 ### Tempestade de Flechas
 
-Escala do nível 13 ao 27, uma melhoria pequena por nível: dano 1D6 → 2D10; alcance 7 → 13; área 3 hexes → 2 anéis; peso do arco 0,9 → 1,3.
+Escala do nível 13 ao 27, uma melhoria pequena por nível: dano 1D6 → 2D10; alcance 7 → 13; área 3 hexes → 1 anel; peso do arco 0,9 → 1,3.
 
-Nível a nível: 14: +1 hex de alcance, 15: +0,1 peso do arco, 16: +1 anel, 17: dado maior, 18: +1 hex de alcance, 19: +0,1 peso do arco, 20: +1 hex de alcance, 21: +1 dado, 22: +1 hex de alcance, 23: +0,1 peso do arco, 24: +1 anel, 25: dado maior, 26: +1 hex de alcance, 27: +0,1 peso do arco.
+Nível a nível: 14: +1 hex de alcance, 15: +0,1 peso do arco, 16: dado maior, 17: +1 hex de alcance, 18: +1 hex de alcance, 19: +0,1 peso do arco, 21: +1 anel, 22: +1 dado, 23: +1 hex de alcance, 24: +0,1 peso do arco, 25: dado maior, 26: +1 hex de alcance, 27: +0,1 peso do arco.
 
 ### Tiro Mortal
 
@@ -414,9 +414,9 @@ Nível a nível: 16: +1 hex além do arco, 17: +0,15 peso do arco, 18: +2 execut
 
 ### Veneno Menor (plantas)
 
-Escala do nível 8 ao 22, uma melhoria pequena por nível: alcance 5 → 7; área 3 hexes → 2 anéis.
+Escala do nível 8 ao 22, uma melhoria pequena por nível: alcance 5 → 7; área 3 hexes → 1 anel.
 
-Nível a nível: 10: +1 hex de alcance, 14: +1 anel, 17: +1 hex de alcance, 21: +1 anel.
+Nível a nível: 11: +1 hex de alcance, 16: +1 anel, 20: +1 hex de alcance.
 
 ### Corte Duplo
 
@@ -426,9 +426,9 @@ Nível a nível: 2: +0,05 peso da arma, 3: +0,05 peso da arma, 4: +1 dado, 5: +0
 
 ### Provocar
 
-Escala do nível 3 ao 17, uma melhoria pequena por nível: alcance 4 → 10; raio 0 → 1; inimizade extra % 0 → 60; talento Fúria Contida (o guerreiro ganha +10% de ATK por 2 turnos).
+Escala do nível 3 ao 17, uma melhoria pequena por nível: alcance 4 → 10; inimizade extra % 0 → 60; talento Fúria Contida (o guerreiro ganha +10% de ATK por 2 turnos).
 
-Nível a nível: 4: +1 hex de alcance, 5: +10 inimizade extra %, 6: +1 hex de alcance, 7: +10 inimizade extra %, 8: +1 de raio, 9: +1 hex de alcance, 10: +10 inimizade extra %, 11: talento Fúria Contida, 12: +1 hex de alcance, 13: +10 inimizade extra %, 14: +1 hex de alcance, 15: +10 inimizade extra %, 16: +1 hex de alcance, 17: +10 inimizade extra %.
+Nível a nível: 4: +1 hex de alcance, 5: +10 inimizade extra %, 6: +1 hex de alcance, 7: +10 inimizade extra %, 8: talento Fúria Contida, 9: +1 hex de alcance, 11: +10 inimizade extra %, 12: +1 hex de alcance, 13: +10 inimizade extra %, 14: +1 hex de alcance, 15: +10 inimizade extra %, 16: +1 hex de alcance, 17: +10 inimizade extra %.
 
 ### Cleave
 
@@ -468,9 +468,9 @@ Nível a nível: 14: +0,05 peso da arma, 15: +5 DEF retirada %, 16: +0,05 peso d
 
 ### Grito de Guerra
 
-Escala do nível 15 ao 29, uma melhoria pequena por nível: raio 2 → 3; ATK dos aliados % 15 → 25; turnos 2 → 4; talento Terror (os inimigos no raio ficam com medo por 1 turno).
+Escala do nível 15 ao 29, uma melhoria pequena por nível: ATK dos aliados % 15 → 25; turnos 2 → 4; talento Terror (os inimigos no raio ficam com medo por 1 turno).
 
-Nível a nível: 16: +1 ATK dos aliados %, 17: +1 ATK dos aliados %, 18: +1 turnos, 19: +1 ATK dos aliados %, 20: +1 ATK dos aliados %, 21: +1 de raio, 22: +1 ATK dos aliados %, 23: +1 ATK dos aliados %, 24: talento Terror, 25: +1 ATK dos aliados %, 26: +1 ATK dos aliados %, 27: +1 turnos, 28: +1 ATK dos aliados %, 29: +1 ATK dos aliados %.
+Nível a nível: 16: +1 ATK dos aliados %, 17: +1 ATK dos aliados %, 18: +1 turnos, 19: +1 ATK dos aliados %, 20: +1 ATK dos aliados %, 21: +1 ATK dos aliados %, 23: talento Terror, 24: +1 ATK dos aliados %, 25: +1 ATK dos aliados %, 26: +1 ATK dos aliados %, 27: +1 turnos, 28: +1 ATK dos aliados %, 29: +1 ATK dos aliados %.
 
 ### Salto Devastador
 
@@ -546,9 +546,9 @@ Nível a nível: 16: +0,01 peso por hex arrastado, 17: +0,05 peso da arma, 18: d
 
 ### Vigília da Sentinela
 
-Escala do nível 17 ao 31, uma melhoria pequena por nível: dano 0 → 1D10; raio 1 → 2; bônus 0 → 3; peso do contra-golpe 1 → 1,6; talento Contra-Golpe Firme (quem a Vigília interrompe fica Desequilibrado (sem contra-ataque)).
+Escala do nível 17 ao 31, uma melhoria pequena por nível: dano 0 → 1D10; bônus 0 → 3; peso do contra-golpe 1 → 1,6; talento Contra-Golpe Firme (quem a Vigília interrompe fica Desequilibrado (sem contra-ataque)).
 
-Nível a nível: 18: +0,1 peso do contra-golpe, 19: +1 bônus, 20: dado maior, 21: +0,1 peso do contra-golpe, 22: +1 dado, 23: +0,1 peso do contra-golpe, 24: +1 bônus, 25: +1 de raio, 26: +0,1 peso do contra-golpe, 27: talento Contra-Golpe Firme, 28: +0,1 peso do contra-golpe, 29: dado maior, 30: +1 bônus, 31: +0,1 peso do contra-golpe.
+Nível a nível: 18: +0,1 peso do contra-golpe, 19: +1 bônus, 20: dado maior, 21: +0,1 peso do contra-golpe, 22: +1 dado, 23: +0,1 peso do contra-golpe, 25: +1 bônus, 26: +0,1 peso do contra-golpe, 27: talento Contra-Golpe Firme, 28: +0,1 peso do contra-golpe, 29: dado maior, 30: +1 bônus, 31: +0,1 peso do contra-golpe.
 
 ### Nuvem de Adagas
 

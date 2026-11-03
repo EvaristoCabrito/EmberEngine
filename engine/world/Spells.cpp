@@ -403,35 +403,35 @@ constexpr SpellTrack kSpellTracks[] = {
     {"lightning", 3, "r1 m0.1 d1 r1 m0.1 r1 r2 d1 r1 m0.1 r1 d1 m0.1 r1"},
     {"frost", 5, "l1 m0.05 d1 l1 m0.05 l1 d1 m0.05 l1 m0.05 l1 d1 m0.05 l1"},
     {"poisonBreath", 3, "m0.04 l1 m0.04 d1 m0.04 f2 m0.04 m0.04 l1 m0.04 d1 m0.04 f2 m0.04"},
-    {"fireball", 6, "r1 d1 a1 r1 d1 r1 r2 a1 r1 d1 r1 a1 d1 r1"},
-    {"causticVenom", 11, "r1 a1 m0.1 d1 r1 a1 r2 m0.1 r1 a1 d1 m0.1 r1 a1"},
+    {"fireball", 6, "r1 d1 a1 r1 d1 r1 - r2 r1 d1 r1 a1 d1 r1"},
+    {"causticVenom", 11, "r1 a1 m0.1 d1 r1 r2 - a1 m0.1 r1 d1 a1 m0.1 r1"},
     {"lightningTier3", 15, "m0.1 r1 d1 m0.1 r1 m0.1 r2 d1 m0.1 r1 m0.1 d1 r1 m0.1"},
     {"cureMinor", 1, "m0.05 r1 d1 m0.05 m0.05 r1 d1 m0.05 r1 m0.05 m0.05 d1 r1 m0.05"},
-    {"bless", 3, "p1 t1 p1 a1 t1 p1 p1 t1 p1 t1 a1 p1 t1 p1"},
+    {"bless", 3, "p1 t1 p1 t1 p1 a1 - p1 t1 p1 t1 p1 t1 p1"},
     {"cureWounds", 3, "m0.05 d1 m0.05 m0.05 r1 m0.05 d1 m0.05 m0.05 m0.05 r1 m0.05 d1 m0.05"},
     {"burningHands", 5, "m0.05 d1 m0.05 l1 f2 m0.05 d1 m0.05 m0.05 l1 f2 m0.05 d1 m0.05"},
-    {"turnUndead", 6, "a1 d1 m0.175 a1 d1 m0.175 a1 d1 m0.175 a1 d1 m0.175 a1 d1"},
+    {"turnUndead", 6, "d1 a1 m0.175 d1 a1 m0.175 - d1 a1 m0.175 d1 a1 m0.175 d1"},
     {"cureDisease", 6, "- - - r1 - - - - - - r1 - - -"},
-    {"divineBolt", 8, "r1 d1 m0.1 a1 r1 r2 r1 d1 m0.1 r1 a1 d1 m0.1 r1"},
-    {"circleOfHealing", 9, "r1 d1 m0.1 r1 a1 r1 d1 m0.1 r1 a1 r1 d1 m0.1 r1"},
+    {"divineBolt", 8, "r1 d1 m0.1 r1 r2 a1 - r1 d1 m0.1 r1 d1 m0.1 r1"},
+    {"circleOfHealing", 9, "r1 d1 m0.1 r1 a1 r1 - d1 m0.1 r1 r1 d1 m0.1 r1"},
     {"resurrection", 12, "m0.1 r1 d1 m0.1 m0.1 f2 r1 m0.1 d1 m0.1 m0.1 r1 d1 m0.1"},
-    {"judgment", 14, "r1 m0.15 d1 a1 r1 m0.15 d1 T0.25 r1 m0.15 a1 d1 r1 m0.15"},
+    {"judgment", 14, "r1 m0.15 d1 a1 r1 m0.15 - d1 T0.25 r1 m0.15 d1 r1 m0.15"},
     {"cureLight", 11, "m0.05 d1 m0.05 m0.05 r1 m0.05 d1 m0.05 m0.05 m0.05 r1 m0.05 d1 m0.05"},
-    {"auraOfProtection", 15, "p2 t1 p2 a1 p2 t1 p2 p2 t1 p2 a1 p2 t1 p2"},
-    {"intimidatingPresence", 15, "p2 t1 p2 p2 a1 p2 p2 t1 p2 p2 a1 p2 t1 p2"},
+    {"auraOfProtection", 15, "p2 t1 p2 p2 t1 p2 - a1 p2 t1 p2 p2 t1 p2"},
+    {"intimidatingPresence", 15, "p2 t1 p2 p2 p2 a1 - p2 t1 p2 p2 p2 t1 p2"},
     {"divineWrath", 18, "r1 d1 r1 d1 r1 r2 r1 d1 f2 r1 d1 r1 d1 r1"},
     {"summonFamiliar", 1, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
     {"phantasmalForce", 2, "r1 f2 d1 m0.1 r1 f2 r1 r2 f2 r1 d1 m0.1 f2 r1"},
-    {"webOfDreams", 3, "x5 r1 x5 a1 x5 r1 r2 x5 r1 x5 a1 x5 r1 x5"},
+    {"webOfDreams", 3, "x5 r1 x5 r2 x5 r1 - x5 a1 x5 r1 x5 r1 x5"},
     {"summonFamiliar2", 3, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
     {"placeSwap", 3, "- r1 - - - r1 - - r1 - - - r1 -"},
     {"arcaneReflection", 5, "p10 t1 Z1 p10 t1 x10 p10 x10 t1 x10 p10 t1 x10 p10"},
     {"summonFamiliar4", 6, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
     {"mirrorImage", 7, "p3 r1 R1 c1 p3 r1 R1 p3 r1 p3 c1 R1 r1 p3"},
-    {"detonateSummon", 9, "m0.12 r1 d1 a1 m0.12 r1 d1 m0.12 r1 m0.12 a1 d1 r1 m0.12"},
+    {"detonateSummon", 9, "m0.12 r1 d1 m0.12 r1 a1 - m0.12 d1 r1 m0.12 d1 r1 m0.12"},
     {"summonFamiliar3", 15, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
     {"sacrificeBond", 11, "p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3"},
-    {"nightmare", 13, "r1 a1 d1 m0.15 r1 r2 r1 p10 t1 r1 a1 d1 m0.15 r1"},
+    {"nightmare", 13, "r1 d1 m0.15 r1 r2 a1 - r1 p10 t1 r1 d1 m0.15 r1"},
     {"summonZombieDog", 20, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
     {"summonSwampDeer", 20, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
     {"empowerSummons", 15, "p1 p1 p1 R1 p1 p1 p1 p1 p1 p1 R1 p1 p1 p1"},
@@ -439,42 +439,42 @@ constexpr SpellTrack kSpellTracks[] = {
     {"markOfRuin", 15, "r1 p5 m0.05 r1 t1 d1 r1 p5 m0.05 f2 r1 p5 m0.05 r1"},
     {"creepingPlague", 15, "r1 m0.05 d1 r1 m0.05 v1 r1 s1 f2 m0.05 r1 d1 m0.05 r1"},
     {"lifeDrain", 16, "m0.05 r1 m0.05 f2 p25 m0.05 m0.05 d1 m0.05 r1 f2 m0.05 p25 m0.05"},
-    {"shroudOfShadows", 17, "r1 p5 a1 R1 r1 r2 r1 p5 k1 r1 a1 R1 p5 r1"},
+    {"shroudOfShadows", 17, "r1 p5 R1 r1 r2 a1 - r1 p5 k1 r1 R1 p5 r1"},
     {"hemorrhage", 18, "m0.05 r1 m0.05 k1 r1 m0.05 K2 u1 m0.05 r1 d1 m0.05 r1 m0.05"},
-    {"profaneSilence", 19, "r1 m0.05 a1 t1 r1 m0.05 d1 f2 r1 m0.05 a1 t1 r1 m0.05"},
-    {"blackPestilence", 21, "m0.05 r1 a1 d1 m0.05 f2 m0.05 v1 r1 m0.05 a1 d1 f2 m0.05"},
+    {"profaneSilence", 19, "r1 m0.05 t1 a1 r1 m0.05 - d1 f2 r1 m0.05 t1 r1 m0.05"},
+    {"blackPestilence", 21, "m0.05 r1 d1 f2 m0.05 a1 - m0.05 v1 m0.05 r1 d1 f2 m0.05"},
     {"curseOfDecay", 22, "m0.05 r1 p10 T0.1 m0.05 t1 d1 k1 K2 m0.05 r1 p10 T0.1 m0.05"},
-    {"soulHarvest", 23, "r1 a1 m0.1 p2 r1 r2 r1 d1 f2 r1 a1 m0.1 p2 r1"},
+    {"soulHarvest", 23, "r1 m0.1 p2 r1 r2 a1 - r1 d1 f2 r1 m0.1 p2 r1"},
     {"devouringVoid", 25, "r1 m0.05 p5 s5 r1 m0.05 d1 f2 r1 m0.05 p5 s5 r1 m0.05"},
-    {"pillarOfFlame", 15, "r1 m0.1 a1 r1 d1 R1 r1 m0.1 h1 f2 r1 a1 m0.1 r1"},
+    {"pillarOfFlame", 15, "r1 m0.1 a1 r1 d1 R1 - r1 m0.1 h1 r1 f2 m0.1 r1"},
     {"iceLance", 15, "m0.05 r1 p25 m0.05 r1 r2 m0.05 d1 f2 r1 m0.05 p25 r1 m0.05"},
-    {"thunderstorm", 16, "r1 m0.1 a1 r1 r2 d1 r1 m0.1 k1 b2 r1 a1 m0.1 r1"},
-    {"meteor", 17, "r1 m0.1 a1 M0.2 r2 d1 r1 m0.1 g1 f2 a1 M0.2 r1 m0.1"},
-    {"absoluteZero", 18, "m0.05 r1 a1 m0.05 r1 m0.05 d1 f2 m0.05 r1 m0.05 a1 r1 m0.05"},
+    {"thunderstorm", 16, "r1 m0.1 r2 r1 a1 d1 - r1 m0.1 k1 r1 b2 m0.1 r1"},
+    {"meteor", 17, "r1 m0.1 M0.2 r2 a1 d1 - r1 m0.1 g1 f2 M0.2 r1 m0.1"},
+    {"absoluteZero", 18, "m0.05 r1 m0.05 a1 r1 m0.05 - d1 m0.05 r1 f2 m0.05 r1 m0.05"},
     {"chainLightning", 19, "r1 m0.05 j1 e-0.025 r1 r2 m0.05 d1 l1 r1 j1 e-0.025 m0.05 r1"},
-    {"eruption", 21, "m0.05 a1 R1 m0.05 d1 m0.05 h1 f2 m0.05 H2 m0.05 a1 R1 m0.05"},
+    {"eruption", 21, "m0.05 R1 m0.05 a1 d1 m0.05 - h1 m0.05 f2 H2 m0.05 R1 m0.05"},
     {"glacialGale", 22, "m0.05 l1 m0.05 f2 m0.05 d1 m0.05 l1 P1 m0.05 f2 m0.05 l1 m0.05"},
     {"wrathOfTheSkies", 23, "m0.1 b1 r1 r2 m0.1 b1 r1 c1 d1 m0.1 b1 r1 m0.1 b1"},
-    {"primordialEmber", 25, "r1 m0.1 a1 d1 h1 R1 r1 m0.1 f2 H2 b1 a1 r1 m0.1"},
+    {"primordialEmber", 25, "r1 m0.1 a1 d1 h1 R1 - r1 m0.1 f2 H2 b1 r1 m0.1"},
     {"longShot", 1, "r1 b1 d1 f2 r1 b1 r2 d1 r1 b1 f2 d1 r1 b1"},
     {"venomArrow", 2, "r1 v1 m0.05 d1 f2 r1 v1 m0.05 r1 d1 f2 v1 m0.05 r1"},
     {"bloodyShot", 5, "m0.15 r1 m0.15 r1 r2 m0.15 r1 k1 m0.15 K2 r1 m0.15 r1 m0.15"},
     {"multiShot", 7, "r1 f2 d1 r1 f2 r2 r1 d1 c1 f2 r1 d1 f2 r1"},
-    {"arrowRain", 7, "r1 m0.05 a1 r1 m0.05 r2 r1 d1 f2 m0.05 r1 a1 m0.05 r1"},
+    {"arrowRain", 7, "r1 m0.05 r2 r1 m0.05 a1 - r1 d1 m0.05 r1 f2 m0.05 r1"},
     {"explosiveArrow", 10, "r1 m0.15 p5 d1 f2 r1 m0.15 p5 r1 d1 f2 m0.15 p5 r1"},
     {"cripplingShot", 12, "p5 r1 m0.1 p5 r1 d1 p5 m0.1 t1 r1 p5 m0.1 r1 p5"},
-    {"arrowStorm", 13, "r1 m0.1 a1 f2 r1 m0.1 r2 d1 r1 m0.1 a1 f2 r1 m0.1"},
+    {"arrowStorm", 13, "r1 m0.1 f2 r2 r1 m0.1 - a1 d1 r1 m0.1 f2 r1 m0.1"},
     {"deathShot", 15, "r1 m0.15 p2 f2 r1 m0.15 p2 d1 r1 m0.15 f2 p2 r1 m0.15"},
-    {"minorVenom", 8, "- r1 - - - a1 - - r1 - - - a1 -"},
+    {"minorVenom", 8, "- - r1 - - - - a1 - - - r1 - -"},
     {"doubleStrike", 1, "m0.05 m0.05 d1 m0.05 f2 m0.05 m0.05 Z1 m0.05 m0.05 d1 m0.05 f2 m0.05"},
-    {"provoke", 3, "r1 p10 r1 p10 a1 r1 p10 Z1 r1 p10 r1 p10 r1 p10"},
+    {"provoke", 3, "r1 p10 r1 p10 Z1 r1 - p10 r1 p10 r1 p10 r1 p10"},
     {"cleave", 4, "m0.05 m0.05 f2 m0.05 m0.05 d1 m0.05 m0.05 Z1 m0.05 m0.05 f2 m0.05 m0.05"},
     {"shieldBash", 4, "m0.05 f2 m0.05 d1 m0.05 f2 t1 m0.05 Z1 m0.05 f2 m0.05 f2 m0.05"},
     {"bullRush", 8, "m0.05 r1 f2 K2 m0.05 d1 k1 m0.05 Z1 m0.05 r1 f2 K2 m0.05"},
     {"executionerStrike", 8, "M0.15 m0.05 f2 p5 M0.15 d1 M0.15 m0.05 Z1 M0.15 f2 p5 m0.05 M0.15"},
     {"steelWhirlwind", 11, "m0.05 m0.05 d1 m0.05 f2 m0.05 m0.05 Z1 m0.05 m0.05 d1 m0.05 f2 m0.05"},
     {"guardBreak", 13, "m0.05 p5 m0.05 d1 m0.05 t1 m0.05 p5 m0.05 m0.05 Z1 m0.05 p5 m0.05"},
-    {"warCry", 15, "p1 p1 t1 p1 p1 a1 p1 p1 Z1 p1 p1 t1 p1 p1"},
+    {"warCry", 15, "p1 p1 t1 p1 p1 p1 - Z1 p1 p1 p1 t1 p1 p1"},
     {"leapingStrike", 17, "m0.1 r1 f2 m0.1 b1 m0.1 d1 Z1 m0.1 r1 m0.1 f2 b1 m0.1"},
     {"shoulderSmash", 11, "m0.05 c1 m0.05 f2 m0.05 d1 m0.05 Z1 m0.05 m0.05 c1 m0.05 f2 m0.05"},
     {"stampede", 18, "m0.05 r1 d1 m0.05 r1 m0.05 f2 Z1 m0.05 r1 m0.05 d1 r1 m0.05"},
@@ -487,7 +487,7 @@ constexpr SpellTrack kSpellTracks[] = {
     {"disarm", 11, "m0.05 p5 f2 m0.05 p5 d1 m0.05 t1 Z1 p5 m0.05 f2 p5 m0.05"},
     {"swapPost", 13, "m0.05 r1 f2 m0.05 b1 m0.05 d1 Z1 m0.05 r1 m0.05 f2 b1 m0.05"},
     {"impaleDrag", 15, "e0.01 m0.05 f2 e0.01 m0.05 l1 e0.01 d1 Z1 m0.05 e0.01 f2 m0.05 e0.01"},
-    {"sentinelVigil", 17, "m0.1 b1 f2 m0.1 d1 m0.1 b1 a1 m0.1 Z1 m0.1 f2 b1 m0.1"},
+    {"sentinelVigil", 17, "m0.1 b1 f2 m0.1 d1 m0.1 - b1 m0.1 Z1 m0.1 f2 b1 m0.1"},
     {"cloudOfDaggers", 8, "- - - c1 - - c1 - - - - - - -"},
 };
 // The talents (Z): name and what it does, PT / EN
@@ -815,7 +815,7 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
   } else if (kind == "crusaderOath") {
     n.pct = kOathAtkPct, n.spread = kOathHpPct;
   } else if (kind == "crusaderMantle") {
-    n.radius = 2;
+    n.radius = 1;  // (2 until the user, 2026-11-03: every AOE one radius smaller at its max)
     n.turns = 2;
     n.dice = 1, n.faces = 4;  // holy on every blow
   }
@@ -831,9 +831,10 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
     n.count = 3 + g.n('c');
     n.mul = 0.8, n.dice = 1, n.faces = 6;
   } else if (kind == "dispelMagic") {  // the user's own levels: radius 1, 2 from level 10
-    n.range = 6, n.radius = lv >= 10 ? 2 : 1;
+    n.range = 6, n.radius = 1;  // (2 from level 10 until the user, 2026-11-03: every AOE one radius smaller at its max)
   } else if (kind == "globeOfInvulnerability") {  // the user's own levels: radius 1 / 2 rounds / tiers 1-3, all one step up from 14
-    n.radius = lv >= 14 ? 2 : 1, n.rounds = lv >= 14 ? 3 : 2, n.pct = lv >= 14 ? 4 : 3;
+    // radius 1 at every level (2 from 14 until the user, 2026-11-03: every AOE one radius smaller at its max)
+    n.radius = 1, n.rounds = lv >= 14 ? 3 : 2, n.pct = lv >= 14 ? 4 : 3;
   }
   // Elementalista
   else if (kind == "pillarOfFlame") {
