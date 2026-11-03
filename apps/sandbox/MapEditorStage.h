@@ -2788,6 +2788,18 @@ class MapEditorStage : public Stage {
           if (ImGui::Selectable(kPhaseLabels[i], i == shownPhase)) beginEdit(), draft_["moonPhase"] = ember::kMoonPhases[i];
         ImGui::EndCombo();
       }
+      // The night sky this map shows (the user, 2026-11-03: "add to the editor"): the real stars, or the user's painting of
+      // Andromeda's sky (star look 005), saved with the map as "emberSky".
+      static const char* kSkyReal = "Estrelas reais";
+      static const char* kSkyAndromeda = "Andrômeda (pintura)";
+      const bool andromeda = draft_.value("emberSky", std::string()) == "andromeda";
+      fieldLabel("Céu");
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##Céu", andromeda ? kSkyAndromeda : kSkyReal)) {
+        if (ImGui::Selectable(kSkyReal, !andromeda)) beginEdit(), draft_.erase("emberSky");
+        if (ImGui::Selectable(kSkyAndromeda, andromeda)) beginEdit(), draft_["emberSky"] = "andromeda";
+        ImGui::EndCombo();
+      }
     }
     slider(moon ? "Intensidade da lua" : "Intensidade do sol", "sunIntensity", 0, 6, static_cast<float>(editor_.defaultSun));
     slider("Luz ambiente", "ambientIntensity", 0, 4, static_cast<float>(editor_.defaultAmbient));

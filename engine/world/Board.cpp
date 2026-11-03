@@ -164,6 +164,7 @@ std::optional<MapDraft> MapDraft::fromJson(const json& d) {
   m.fog = d.contains("fog") && d["fog"].is_boolean() && d["fog"].get<bool>();
   m.mistType = str(d, "mistType");
   m.atmosphereProfile = str(d, "atmosphereProfile");
+  m.sky = str(d, "emberSky");
   m.emberTiles = str(d, "emberTiles");
   m.emberFloor = str(d, "emberFloor");
   auto num = [&](const char* k, float fallback) { return d.contains(k) && d[k].is_number() ? d[k].get<float>() : fallback; };

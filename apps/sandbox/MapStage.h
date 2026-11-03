@@ -357,6 +357,8 @@ class MapStage final : public Stage {
         }
     renderer_.volumetrics().setProfile(atmosProfiles_[static_cast<size_t>(climaChoice_)], 0.0f);
     renderer_.volumetrics().invalidateHistory();
+    // The night sky the map carries (the Map Editor's "Céu"): Andrômeda = star look 005, the user's painting.
+    if (board_->draft().sky == "andromeda") starLook_ = 5;
     boardWidth_ = static_cast<float>(b.x1 - b.x0);
     boardDepth_ = static_cast<float>(b.z1 - b.z0);
     boardZ0_ = static_cast<float>(b.z0);

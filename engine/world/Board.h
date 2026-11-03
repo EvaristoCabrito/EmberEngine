@@ -109,6 +109,9 @@ struct MapDraft {
   // EmberEngine's own: the Atmosfera climate of this map (a profile's name in content/atmosphere/v1/profiles.json, picked
   // in the Map Editor); empty = the profile whose map keys name this map.
   std::string atmosphereProfile;
+  // EmberEngine's own: the night sky this map shows (the Map Editor's "Céu", 2026-11-03): "andromeda" = the user's painting
+  // (star look 005); empty = the real stars (look 004).
+  std::string sky;
   // EmberEngine's own: the set of EmberEngine ground tiles this map wears (GroundAssets.h kEmberGroundTiles); empty = the
   // set named by the map's id, if any.
   std::string emberTiles;
