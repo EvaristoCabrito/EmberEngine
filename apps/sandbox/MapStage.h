@@ -3287,7 +3287,8 @@ class MapStage final : public Stage {
           for (const auto& [bx, by] : gate->state.cells)
             far = std::max(far, static_cast<float>(std::hypot(board_->cell(ax, ay).x - board_->cell(bx, by).x, board_->cell(ax, ay).z - board_->cell(bx, by).z)));
         const float n = static_cast<float>(gate->state.cells.size());
-        k = far * n / (n - 1.0f) / std::max(h->boundsMax[0] - h->boundsMin[0], 1e-4f);
+        // ... and a quarter hex into the pilaster on each side (at exactly its hexes a slit stayed open beside it).
+        k = (far * n / (n - 1.0f) + 0.5f * far / (n - 1.0f)) / std::max(h->boundsMax[0] - h->boundsMin[0], 1e-4f);
       }
       const glm::vec3 offset{-(h->boundsMin[0] + h->boundsMax[0]) * 0.5f * k, -h->boundsMin[1] * k, -(h->boundsMin[2] + h->boundsMax[2]) * 0.5f * k};
       const float c = std::cos(m.rotY), sn = std::sin(m.rotY);

@@ -128,6 +128,10 @@ struct MapDraft {
   // EmberEngine's own: the board stands with no side walls under its edges (A Ponte de Pedra 026; the user, 2026-10-25: "a ponte não
   // deve ter laterais", the bridge suspended over the ground): BoardGround adds no closeBoardSides walls. Every other map: false.
   bool emberNoSides = false;
+  // EmberEngine's own: the board ends in a straight line, not the hexes' sawtooth (the cemetery; the user, 2026-11-03: "EU JA FALEI QUE
+  // EU NÃO QUERO MAPA COM BORDA HEXAGONAL", "Only the cemetery"): BoardGround cuts the smooth ground to the rectangle inside the hexes
+  // before standing its sides. Every other map: false.
+  bool emberStraightEdge = false;
   // EmberEngine's own: the board's floor image and side walls lie under its lowest DRY ground, not under the water's beds (Wisp Forest
   // Crossing 021; the user, 2026-10-29: "lower it like most others"): one pond took the whole board's edge 1.35 above its floor. The
   // beds stay inside the board, enclosed by its banks. Every other map: false (the lowest ground of all, water included).

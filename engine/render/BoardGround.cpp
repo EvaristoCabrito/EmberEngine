@@ -174,6 +174,13 @@ bool BoardGround::buildInto(Geometry& geo, const ember::Board& board) {
   // The walls are painted like the edge's lip (terrain.hlsl, push.wallFrom; the user: "deixar o preenchimento inteiro da mesma cor
   // que o resto das bordas"): the vertices from wallFrom on are theirs.
   uint32_t wallFrom = 0;
+  // A straight edge (MapDraft::emberStraightEdge, the cemetery; the user, 2026-11-03: "EU NÃO QUERO MAPA COM BORDA HEXAGONAL"): the
+  // smooth look's ground cut to the rectangle inside the hexes' sawtooth (pointy tops: the first and last rows' shoulders; odd rows
+  // shifted: the inner sides), its walls then standing along the straight cut.
+  if (board.draft().emberStraightEdge) {
+    const ember::HexLayout& L = board.layout();
+    ember::clipGroundToRect(looks[0], -L.ox, -L.oz - 0.5 * ember::kHexRadius, L.ox, L.oz + 0.5 * ember::kHexRadius);
+  }
   if (!board.draft().emberNoSides) {  // a suspended board (the bridge, MapDraft::emberNoSides) stands with no side walls
     const double low = board.lowestGround();
     wallFrom = static_cast<uint32_t>(looks[0].vertexCount());

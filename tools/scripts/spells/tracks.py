@@ -22,13 +22,13 @@ ours_learn = {k: int(l) for k, l in re.findall(r'\{\{"(\w+)", "[^"]+", \d+, "[^"
 S = {
     # --- Mago Negro --------------------------------------------------------------------------------------------------
     # at most 4 missiles (the user, 2026-10-20): 1 + 3 counts
-    "magicMissile": (1, dict(r=5, c=1, m=1.15), [("r", 1, 7), ("c", 1, 3), ("m", 0.05, 4)]),
-    "lightning": (3, dict(r=5, d=2, f=8, m=2.0), [("r", 1, 7), ("d", 1, 3), ("m", 0.1, 4)]),
+    "magicMissile": (1, dict(r=5, c=1, m=1.15), [("r", 1, 6), ("r", 2, 1), ("c", 1, 3), ("m", 0.05, 4)]),
+    "lightning": (3, dict(r=5, d=2, f=8, m=2.0), [("r", 1, 6), ("r", 2, 1), ("d", 1, 3), ("m", 0.1, 4)]),
     "frost": (5, dict(l=2, d=1, f=6, m=1.1), [("l", 1, 6), ("d", 1, 3), ("m", 0.05, 5)]),
     "poisonBreath": (3, dict(l=1, d=1, f=4, m=1.05), [("l", 1, 2), ("d", 1, 2), ("f", 2, 2), ("m", 0.04, 8)]),
-    "fireball": (6, dict(r=5, a=0, d=2, f=6), [("r", 1, 7), ("a", 1, 3), ("d", 1, 4)]),
-    "causticVenom": (11, dict(r=7, a=0, d=1, f=10, m=1.5), [("r", 1, 5), ("a", 1, 4), ("d", 1, 2), ("m", 0.1, 3)]),
-    "lightningTier3": (15, dict(r=7, d=3, f=12, m=3.0), [("r", 1, 5), ("d", 1, 3), ("m", 0.1, 6)]),
+    "fireball": (6, dict(r=5, a=0, d=2, f=6), [("r", 1, 6), ("r", 2, 1), ("a", 1, 3), ("d", 1, 4)]),
+    "causticVenom": (11, dict(r=7, a=0, d=1, f=10, m=1.5), [("r", 1, 4), ("r", 2, 1), ("a", 1, 4), ("d", 1, 2), ("m", 0.1, 3)]),
+    "lightningTier3": (15, dict(r=7, d=3, f=12, m=3.0), [("r", 1, 4), ("r", 2, 1), ("d", 1, 3), ("m", 0.1, 6)]),
     # --- Curandeiro / Paladino -----------------------------------------------------------------------------------------
     "cureMinor": (1, dict(r=2, d=1, f=6, m=1.0), [("r", 1, 4), ("d", 1, 3), ("m", 0.05, 7)]),
     "bless": (3, dict(a=0, p=1, t=3), [("a", 1, 2), ("p", 1, 7), ("t", 1, 5)]),
@@ -38,18 +38,18 @@ S = {
     # raio 5 at the end; the weight on MAG reaches the same 2.3 in 4 steps
     "turnUndead": (6, dict(a=0, d=4, f=6, m=1.6), [("a", 1, 5), ("d", 1, 5), ("m", 0.175, 4)]),
     "cureDisease": (6, dict(r=2), [("r", 1, 2)]),
-    "divineBolt": (8, dict(r=6, a=0, d=2, f=4, m=1.4), [("r", 1, 6), ("a", 1, 2), ("d", 1, 3), ("m", 0.1, 3)]),
+    "divineBolt": (8, dict(r=6, a=0, d=2, f=4, m=1.4), [("r", 1, 5), ("r", 2, 1), ("a", 1, 2), ("d", 1, 3), ("m", 0.1, 3)]),
     "circleOfHealing": (None, dict(r=4, a=0, d=1, f=8, m=1.2), [("r", 1, 6), ("a", 1, 2), ("d", 1, 3), ("m", 0.1, 3)]),
     "resurrection": (None, dict(r=1, d=2, f=8, m=1.5), [("r", 1, 3), ("d", 1, 3), ("f", 2, 1), ("m", 0.1, 7)]),
     "judgment": (None, dict(r=6, a=0, d=2, f=8, m=1.8, T=1.5), [("r", 1, 4), ("a", 1, 2), ("d", 1, 3), ("m", 0.15, 4), ("T", 0.25, 1)]),
     "cureLight": (11, dict(r=1, d=1, f=8, m=1.2), [("r", 1, 2), ("d", 1, 3), ("m", 0.05, 9)]),
     "auraOfProtection": (15, dict(a=0, p=20, t=3), [("a", 1, 2), ("p", 2, 8), ("t", 1, 4)]),
     "intimidatingPresence": (15, dict(a=0, p=20, t=3), [("a", 1, 2), ("p", 2, 9), ("t", 1, 3)]),
-    "divineWrath": (18, dict(r=4, d=1, f=10), [("r", 1, 8), ("d", 1, 5), ("f", 2, 1)]),
+    "divineWrath": (18, dict(r=4, d=1, f=10), [("r", 1, 7), ("r", 2, 1), ("d", 1, 5), ("f", 2, 1)]),
     # --- Conjurador / Necromante ---------------------------------------------------------------------------------------
     "summonFamiliar": (1, dict(r=2), [("r", 1, 6)]),
-    "phantasmalForce": (2, dict(r=6, d=1, f=4, m=1.0), [("r", 1, 6), ("f", 2, 4), ("d", 1, 2), ("m", 0.1, 2)]),
-    "webOfDreams": (3, dict(r=7, a=0, x=25), [("r", 1, 5), ("a", 1, 2), ("x", 5, 7)]),
+    "phantasmalForce": (2, dict(r=6, d=1, f=4, m=1.0), [("r", 1, 5), ("r", 2, 1), ("f", 2, 4), ("d", 1, 2), ("m", 0.1, 2)]),
+    "webOfDreams": (3, dict(r=7, a=0, x=25), [("r", 1, 4), ("r", 2, 1), ("a", 1, 2), ("x", 5, 7)]),
     "summonFamiliar2": (3, dict(r=2), [("r", 1, 6)]),
     # Fixed scaling anchors: learning now follows tier openings, but existing improvement levels stay unchanged.
     "placeSwap": (3, dict(r=6), [("r", 1, 4)]),
@@ -62,7 +62,7 @@ S = {
     "detonateSummon": (9, dict(r=6, a=0, d=2, f=8, m=1.8), [("r", 1, 4), ("a", 1, 2), ("d", 1, 3), ("m", 0.12, 5)]),
     "summonFamiliar3": (15, dict(r=2), [("r", 1, 6)]),  # Numen (the old Familiar Titã): the Arcanista's and the Necromante's T6 (the user, 2026-10-27)
     "sacrificeBond": (11, dict(p=100), [("p", -3, 14)]),
-    "nightmare": (13, dict(r=6, a=0, d=2, f=8, m=1.5, p=25, t=1), [("r", 1, 6), ("a", 1, 2), ("d", 1, 2), ("m", 0.15, 2), ("p", 10, 1), ("t", 1, 1)]),
+    "nightmare": (13, dict(r=6, a=0, d=2, f=8, m=1.5, p=25, t=1), [("r", 1, 5), ("r", 2, 1), ("a", 1, 2), ("d", 1, 2), ("m", 0.15, 2), ("p", 10, 1), ("t", 1, 1)]),
     "summonZombieDog": (20, dict(r=2), [("r", 1, 6)]),  # Cão Zumbi: the Necromante's T8, from 20 (the user, 2026-10-27)
     "summonSwampDeer": (None, dict(r=2), [("r", 1, 6)]),  # Cervo Azul do Pântano: the Arcanista's T8 (the user, 2026-10-27)
     "empowerSummons": (15, dict(p=25, R=3), [("p", 1, 12), ("R", 1, 2)]),
@@ -72,34 +72,34 @@ S = {
     "markOfRuin": (None, dict(r=6, d=1, f=6, m=1.15, p=20, t=3), [("r", 1, 5), ("p", 5, 3), ("m", 0.05, 3), ("t", 1, 1), ("d", 1, 1), ("f", 2, 1)]),
     "creepingPlague": (None, dict(r=6, d=1, f=8, m=1.3, v="greater", s=1), [("r", 1, 5), ("m", 0.05, 4), ("d", 1, 2), ("v", 1, 1), ("s", 1, 1), ("f", 2, 1)]),
     "lifeDrain": (None, dict(r=5, d=2, f=6, m=1.6, p=50), [("m", 0.05, 7), ("r", 1, 2), ("f", 2, 2), ("p", 25, 2), ("d", 1, 1)]),
-    "shroudOfShadows": (None, dict(r=6, a=0, k=1, K=6, R=2, p=20), [("r", 1, 6), ("a", 1, 2), ("p", 5, 3), ("R", 1, 2), ("k", 1, 1)]),
+    "shroudOfShadows": (None, dict(r=6, a=0, k=1, K=6, R=2, p=20), [("r", 1, 5), ("r", 2, 1), ("a", 1, 2), ("p", 5, 3), ("R", 1, 2), ("k", 1, 1)]),
     "hemorrhage": (None, dict(r=5, d=2, f=6, m=1.4, k=2, K=6, u=1), [("m", 0.05, 6), ("r", 1, 4), ("k", 1, 1), ("K", 2, 1), ("u", 1, 1), ("d", 1, 1)]),
     "profaneSilence": (None, dict(r=6, a=0, d=1, f=8, m=1.1, t=2), [("r", 1, 4), ("m", 0.05, 4), ("a", 1, 2), ("t", 1, 2), ("d", 1, 1), ("f", 2, 1)]),
     "blackPestilence": (None, dict(r=7, a=0, d=2, f=6, m=1.2, v="deadly"), [("m", 0.05, 5), ("r", 1, 2), ("a", 1, 2), ("d", 1, 2), ("f", 2, 2), ("v", 1, 1)]),
     "curseOfDecay": (None, dict(r=6, d=2, f=8, m=1.5, p=30, t=3, T=0.5, k=1, K=8), [("m", 0.05, 4), ("r", 1, 2), ("p", 10, 2), ("T", 0.1, 2), ("t", 1, 1), ("d", 1, 1), ("k", 1, 1), ("K", 2, 1)]),
-    "soulHarvest": (None, dict(r=6, a=0, d=3, f=6, m=1.7, p=10), [("r", 1, 6), ("a", 1, 2), ("m", 0.1, 2), ("p", 2, 2), ("d", 1, 1), ("f", 2, 1)]),
+    "soulHarvest": (None, dict(r=6, a=0, d=3, f=6, m=1.7, p=10), [("r", 1, 5), ("r", 2, 1), ("a", 1, 2), ("m", 0.1, 2), ("p", 2, 2), ("d", 1, 1), ("f", 2, 1)]),
     "devouringVoid": (None, dict(r=7, d=3, f=8, m=2.2, p=15, s=30), [("r", 1, 4), ("m", 0.05, 4), ("p", 5, 2), ("s", 5, 2), ("d", 1, 1), ("f", 2, 1)]),
     # --- Elementalista ---------------------------------------------------------------------------------------------------
     "pillarOfFlame": (None, dict(r=6, a=0, d=2, f=8, m=2.0, h=1, R=1), [("r", 1, 5), ("m", 0.1, 3), ("a", 1, 2), ("d", 1, 1), ("R", 1, 1), ("h", 1, 1), ("f", 2, 1)]),
-    "iceLance": (None, dict(r=7, d=2, f=10, m=2.4, p=50), [("r", 1, 5), ("m", 0.05, 5), ("p", 25, 2), ("d", 1, 1), ("f", 2, 1)]),
-    "thunderstorm": (None, dict(r=6, a=0, d=2, f=12, m=1.8, k=1, b=4), [("r", 1, 6), ("m", 0.1, 3), ("a", 1, 2), ("d", 1, 1), ("k", 1, 1), ("b", 2, 1)]),
-    "meteor": (None, dict(r=8, a=0, d=4, f=6, m=3.0, g=2, M=2.0), [("r", 1, 4), ("m", 0.1, 3), ("a", 1, 2), ("M", 0.2, 2), ("d", 1, 1), ("g", 1, 1), ("f", 2, 1)]),
+    "iceLance": (None, dict(r=7, d=2, f=10, m=2.4, p=50), [("r", 1, 4), ("r", 2, 1), ("m", 0.05, 5), ("p", 25, 2), ("d", 1, 1), ("f", 2, 1)]),
+    "thunderstorm": (None, dict(r=6, a=0, d=2, f=12, m=1.8, k=1, b=4), [("r", 1, 5), ("r", 2, 1), ("m", 0.1, 3), ("a", 1, 2), ("d", 1, 1), ("k", 1, 1), ("b", 2, 1)]),
+    "meteor": (None, dict(r=8, a=0, d=4, f=6, m=3.0, g=2, M=2.0), [("r", 1, 3), ("r", 2, 1), ("m", 0.1, 3), ("a", 1, 2), ("M", 0.2, 2), ("d", 1, 1), ("g", 1, 1), ("f", 2, 1)]),
     "absoluteZero": (None, dict(r=6, a=0, d=3, f=8, m=2.2), [("m", 0.05, 6), ("r", 1, 4), ("a", 1, 2), ("d", 1, 1), ("f", 2, 1)]),
-    "chainLightning": (None, dict(r=7, d=3, f=10, m=2.8, j=3, e=0.15, l=3), [("r", 1, 5), ("m", 0.05, 3), ("j", 1, 2), ("e", -0.025, 2), ("d", 1, 1), ("l", 1, 1)]),
+    "chainLightning": (None, dict(r=7, d=3, f=10, m=2.8, j=3, e=0.15, l=3), [("r", 1, 4), ("r", 2, 1), ("m", 0.05, 3), ("j", 1, 2), ("e", -0.025, 2), ("d", 1, 1), ("l", 1, 1)]),
     "eruption": (None, dict(a=0, d=4, f=8, m=2.6, h=1, H=8, R=2), [("m", 0.05, 6), ("a", 1, 2), ("R", 1, 2), ("d", 1, 1), ("h", 1, 1), ("f", 2, 1), ("H", 2, 1)]),
     "glacialGale": (None, dict(l=5, d=4, f=6, m=2.4, P=1), [("m", 0.05, 7), ("l", 1, 3), ("f", 2, 2), ("d", 1, 1), ("P", 1, 1)]),
-    "wrathOfTheSkies": (None, dict(r=8, d=3, f=12, m=2.6, c=4, b=0), [("r", 1, 4), ("m", 0.1, 4), ("b", 1, 4), ("c", 1, 1), ("d", 1, 1)]),
+    "wrathOfTheSkies": (None, dict(r=8, d=3, f=12, m=2.6, c=4, b=0), [("r", 1, 3), ("r", 2, 1), ("m", 0.1, 4), ("b", 1, 4), ("c", 1, 1), ("d", 1, 1)]),
     "primordialEmber": (None, dict(r=7, a=0, d=4, f=10, m=3.4, h=2, H=8, R=2), [("r", 1, 3), ("m", 0.1, 3), ("a", 1, 2), ("d", 1, 1), ("h", 1, 1), ("R", 1, 1), ("f", 2, 1), ("H", 2, 1), ("b", 1, 1)]),
     # --- Arqueira (bow skills: the dice are a bonus on the bow's roll; r on the shots = hexes past the bow, at most 4) -----------
-    "longShot": (1, dict(r=7, d=1, f=8, b=0), [("r", 1, 5), ("d", 1, 3), ("b", 1, 4), ("f", 2, 2)]),
+    "longShot": (1, dict(r=7, d=1, f=8, b=0), [("r", 1, 4), ("r", 2, 1), ("d", 1, 3), ("b", 1, 4), ("f", 2, 2)]),
     "venomArrow": (None, dict(r=0, d=1, f=4, m=1.0, v="lesser"), [("r", 1, 4), ("v", 1, 3), ("m", 0.05, 3), ("d", 1, 2), ("f", 2, 2)]),
-    "bloodyShot": (5, dict(r=6, m=1.5, k=1, K=6), [("r", 1, 6), ("m", 0.15, 6), ("k", 1, 1), ("K", 2, 1)]),
+    "bloodyShot": (5, dict(r=6, m=1.5, k=1, K=6), [("r", 1, 5), ("r", 2, 1), ("m", 0.15, 6), ("k", 1, 1), ("K", 2, 1)]),
     # at most 3 arrows (the user, 2026-10-20): 2 + 1 count
-    "multiShot": (7, dict(r=6, c=2, d=0, f=4), [("r", 1, 6), ("d", 1, 3), ("f", 2, 4), ("c", 1, 1)]),
-    "arrowRain": (None, dict(r=6, a=0, d=1, f=4, m=0.75), [("r", 1, 6), ("m", 0.05, 4), ("a", 1, 2), ("d", 1, 1), ("f", 2, 1)]),
+    "multiShot": (7, dict(r=6, c=2, d=0, f=4), [("r", 1, 5), ("r", 2, 1), ("d", 1, 3), ("f", 2, 4), ("c", 1, 1)]),
+    "arrowRain": (None, dict(r=6, a=0, d=1, f=4, m=0.75), [("r", 1, 5), ("r", 2, 1), ("m", 0.05, 4), ("a", 1, 2), ("d", 1, 1), ("f", 2, 1)]),
     "explosiveArrow": (None, dict(r=0, d=2, f=6, m=1.3, p=50), [("r", 1, 4), ("m", 0.15, 3), ("p", 5, 3), ("d", 1, 2), ("f", 2, 2)]),
     "cripplingShot": (None, dict(r=0, d=1, f=8, m=1.0, p=50, t=2), [("p", 5, 5), ("r", 1, 4), ("m", 0.1, 3), ("d", 1, 1), ("t", 1, 1)]),
-    "arrowStorm": (None, dict(r=7, a=0, d=1, f=6, m=0.9), [("r", 1, 5), ("m", 0.1, 4), ("a", 1, 2), ("f", 2, 2), ("d", 1, 1)]),
+    "arrowStorm": (None, dict(r=7, a=0, d=1, f=6, m=0.9), [("r", 1, 4), ("r", 2, 1), ("m", 0.1, 4), ("a", 1, 2), ("f", 2, 2), ("d", 1, 1)]),
     "deathShot": (None, dict(r=2, d=2, f=8, m=2.0, p=25), [("r", 1, 4), ("m", 0.15, 4), ("p", 2, 3), ("f", 2, 2), ("d", 1, 1)]),
     # --- the plants' venom (below the Veneno Cáustico in every number) ------------------------------------------------------
     "minorVenom": (8, dict(r=5, a=0), [("r", 1, 2), ("a", 1, 2)]),
@@ -355,6 +355,8 @@ def per_level(kind, pt):
 # does (spellExplain in Spells.cpp, read from there) followed by its scaling sentence.
 HELP = "content/data/help.json"
 RAW = io.open(HELP, encoding="utf-8", newline="").read()
+HELP_NL = "\r\n" if "\r\n" in RAW else "\n"  # a Windows checkout writes it with CRLF; it goes back with the line ends it came with
+RAW = RAW.replace("\r\n", "\n")
 d = json.loads(RAW)
 LAYOUT = next(((ind, end) for ind in (None, 1, 2, 4) for end in ("", "\n") if json.dumps(d, ensure_ascii=False, indent=ind) + end == RAW))
 ROW_KIND = {0: "bless", 1: "magicMissile", 2: "longShot", 3: "cureMinor", 4: "doubleStrike", 5: "provoke", 6: "piercingThrust",
@@ -456,7 +458,7 @@ for lang in ("pt", "en"):
             row[3] = setc(row[3], formula)
             row[4] = setc(row[4], effect)
             changed += 1
-io.open(HELP, "w", encoding="utf-8", newline="").write(json.dumps(d, ensure_ascii=False, indent=LAYOUT[0]) + LAYOUT[1])
+io.open(HELP, "w", encoding="utf-8", newline="").write((json.dumps(d, ensure_ascii=False, indent=LAYOUT[0]) + LAYOUT[1]).replace("\n", HELP_NL))
 print("Como jogar rows changed:", changed, "| with a track and no row there:", ", ".join(k for k in S if k not in seen))
 
 # docs/SPELLS_SCALING.md
@@ -498,7 +500,7 @@ Gerado por `tools/scripts/spells/tracks.py` (a tabela `kSpellTracks` em `engine/
 Regras do usuário (2026-10-20): baseado no AD&D 2ª edição, sem copiar os números (o Ember tem atributos, HP e teto de nível
 próprios); cada magia tem função e números únicos. A magia é aprendida no primeiro nível do tier dela para a classe e escala por
 15 níveis: o nível em que é aprendida e os 14 seguintes, **uma melhoria pequena por nível, nunca duas no mesmo nível**. O alcance
-nunca passa de 12 hexes (a visão do grupo). A área existe só nas magias de área: começa em 3 hexes (um corpo de tamanho 3) e cresce
+nunca passa de 13 hexes (12, a visão do grupo, até 2026-11-03: "max range for spells should be increased to 13"). A área existe só nas magias de área: começa em 3 hexes (um corpo de tamanho 3) e cresce
 um anel por vez, duas ou três vezes; o Veneno Cáustico tem a maior área do jogo (4 anéis), a Bola de Fogo a seguinte (3 anéis).
 O Ember Ashes I para no nível 30; uma magia aprendida depois do 16 continua a escala no Ember Ashes II (teto 60), que já está
 programado: os níveis além do 30 só não se alcançam ainda.

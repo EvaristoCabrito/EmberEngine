@@ -250,6 +250,56 @@ GroundGeometry buildSmoothGround(const Board& b) {
   return g;
 }
 
+void clipGroundToRect(GroundGeometry& g, double x0, double z0, double x1, double z1) {
+  if (g.indices.empty())
+    for (uint32_t v = 0; v < g.vertexCount(); ++v) g.indices.push_back(v);
+  const uint32_t stride = g.stride;
+  // Each of the four sides in turn: x >= x0, x <= x1, z >= z0, z <= z1 (inside when the value is >= 0).
+  const auto inside = [&](uint32_t v, int side) {
+    const double x = g.positions[size_t(v) * 3], z = g.positions[size_t(v) * 3 + 2];
+    switch (side) {
+      case 0: return x - x0;
+      case 1: return x1 - x;
+      case 2: return z - z0;
+      default: return z1 - z;
+    }
+  };
+  // A vertex where edge a-b crosses a side, made once per edge and side (both triangles sharing the edge get the same one).
+  std::map<std::array<uint32_t, 3>, uint32_t> made;
+  const auto cut = [&](uint32_t a, uint32_t b, int side) {
+    const uint32_t lo = std::min(a, b), hi = std::max(a, b);
+    if (const auto it = made.find({lo, hi, static_cast<uint32_t>(side)}); it != made.end()) return it->second;
+    const double da = inside(lo, side), db = inside(hi, side);
+    const float t = static_cast<float>(da / (da - db));
+    const uint32_t v = static_cast<uint32_t>(g.vertexCount());
+    for (int k = 0; k < 3; ++k) {
+      g.positions.push_back(g.positions[size_t(lo) * 3 + k] + t * (g.positions[size_t(hi) * 3 + k] - g.positions[size_t(lo) * 3 + k]));
+      g.normals.push_back(g.normals[size_t(lo) * 3 + k] + t * (g.normals[size_t(hi) * 3 + k] - g.normals[size_t(lo) * 3 + k]));
+    }
+    for (uint32_t k = 0; k < stride; ++k)
+      g.weights.push_back(g.weights[size_t(lo) * stride + k] + t * (g.weights[size_t(hi) * stride + k] - g.weights[size_t(lo) * stride + k]));
+    made[{lo, hi, static_cast<uint32_t>(side)}] = v;
+    return v;
+  };
+  std::vector<uint32_t> out;
+  out.reserve(g.indices.size());
+  for (size_t i = 0; i + 2 < g.indices.size(); i += 3) {
+    std::vector<uint32_t> poly = {g.indices[i], g.indices[i + 1], g.indices[i + 2]};
+    for (int side = 0; side < 4 && !poly.empty(); ++side) {  // Sutherland-Hodgman, one side at a time
+      std::vector<uint32_t> next;
+      for (size_t k = 0; k < poly.size(); ++k) {
+        const uint32_t a = poly[k], b = poly[(k + 1) % poly.size()];
+        const bool ia = inside(a, side) >= 0.0, ib = inside(b, side) >= 0.0;
+        if (ia) next.push_back(a);
+        if (ia != ib) next.push_back(cut(a, b, side));
+      }
+      poly = std::move(next);
+    }
+    for (size_t k = 1; k + 1 < poly.size(); ++k) out.insert(out.end(), {poly[0], poly[k], poly[k + 1]});  // a fan, the same winding
+  }
+  g.indices = std::move(out);
+}
+
 void closeBoardSides(GroundGeometry& g, double base) {
   if (g.indices.empty() || g.stride == 0) return;
   // Every open edge of the ground (used by one triangle only: the board's cut edge, a void's rim) and the vertex across from it.

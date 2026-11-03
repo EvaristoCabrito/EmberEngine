@@ -821,7 +821,7 @@ bool aimE2(const Battle& b, size_t caster, const std::string& kind, BattleHex ce
   if (kind == "turnUndead" || kind == "bless" || kind == "auraOfProtection" || kind == "intimidatingPresence")
     return cell == from ? yes() : no("Esta magia não precisa de alvo.");
   if (const SummonSpec* sp = summonSpec(kind)) {
-    const int reach = grownReach(kind, sp->range, u.level);  // a summoner's reach grows with its level too, up to 12, gradually
+    const int reach = grownReach(kind, sp->range, u.level);  // a summoner's reach grows with its level too, up to kReachCap (13), gradually
     if (d > reach) return no(std::format("Ponto de invocação fora de alcance (máximo {} hexes).", reach));
     if (!inBoardXY(b, cell.x, cell.y)) return no("O ponto de invocação fica fora do mapa.");
     const SummonData& data = summonData();

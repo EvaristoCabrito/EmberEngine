@@ -41,6 +41,10 @@ GroundGeometry buildHardGround(const Board& board);
 // The board's sides: walls from every open edge of an indexed ground (the smooth look's thin cut lip, a void's rim) straight down
 // to `base`, so a raised edge never shows a hole under it.
 void closeBoardSides(GroundGeometry& g, double base);
+// An indexed ground cut to the rectangle x0..x1, z0..z1 (each triangle clipped, the new vertices interpolated: position, normal,
+// weights), so a straight board edge replaces the hexes' sawtooth (MapDraft::emberStraightEdge); closeBoardSides after it stands the
+// sides along the straight cut.
+void clipGroundToRect(GroundGeometry& g, double x0, double z0, double x1, double z1);
 GroundGeometry buildTabletopGround(const Board& board);
 // Empty when the map has no water.
 WaterGeometry buildWater(const Board& board, EdgeStyle style);
