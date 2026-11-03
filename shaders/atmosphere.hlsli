@@ -238,94 +238,41 @@ float3 realStars(uint64_t atmosphere, float3 dir, float pixelAngle) {
   return radiance;
 }
 
-// --- Céu de Andrômeda (star look 5; looks/stars/README.md, tools/scripts/sky/make_andromeda_sky.py) -----------------------
-// The night of a world inside the Andromeda galaxy, from real images:
-//   the galaxy   Gaia EDR3's map of the whole sky (ESA/Gaia/DPAC), a spiral seen from inside: 1.8 billion stars, the bulge,
-//                the dust lanes; read mirrored about the galactic centre (none of the Earth's sky survives), in four tiles
-//   Milky Way    seen from outside, 2.5 million light years off: ESA's face-on map tilted as the Milky Way stands to Andromeda
-//                (we see Andromeda 21 deg off our own plane; 1 / 0.36 squash), 13 deg off the band (Andromeda's own tilt to
-//                us: 77 deg), about 3 deg across
-//   Triangulum   M33 by ESO's VST, 750 thousand light years off: about 5 deg across, 97 deg from the Milky Way
-//   M32, M110    Andromeda's own satellites, close: smooth elliptical glows (a Sérsic profile: ellipticals have no structure)
-//                beside the bulge
-//   the stars    the world's own bright stars (content/sky/andromeda-stars.json), drawn as look 4's catalogue
-// Places are galactic (l, b) in this sky's frame (galacticLB); sizes are the real angles at those distances.
-static const uint kGalaxyMapOffset = 480u, kMilkyWayMapOffset = 496u, kTriangulumMapOffset = 500u, kSkyMapSamplerOffset = 504u,
-                  kGalaxyStrengthOffset = 508u;
-static const float kGalaxyMapWidth = 16000.0, kGalaxyMapHeight = 8000.0, kGalaxyGutter = 32.0;  // make_andromeda_sky.py
+// --- Céu de Andrômeda (star look 5; looks/stars/README.md) ------------------------------------------------------------------
+// The user's painting of the sky of a world inside the Andromeda galaxy (Attachments/andromeda_ceu_repetivel.jpg, 5544 x 2048,
+// horizontally repeatable: content/sky/andromeda/ceu-andromeda-v01.jpg), the whole sky: it goes round the sky along the galaxy's
+// plane kPaintingRepeats times (galacticLB: l = 0, the galaxy's core, in the middle of the painting; once round, its 5544 px were
+// 2.3 x enlarged on screen and its stars blurred into blobs: the user, "too zoomed in"), its height at the same angular scale
+// (33 deg either side of the plane); past its top and bottom it goes on mirrored, fading into its own edge colour. It turns with
+// the hour as look 4's galaxy. Shown as painted: its colours are the sky's light at the display (the caller undoes the exposure).
+// (The earlier look 005, Gaia's map with Triangulum and M32 / M110, rejected by the user, is in commit 72d21200.)
+static const uint kGalaxyMapOffset = 480u, kSkyMapSamplerOffset = 504u, kGalaxyStrengthOffset = 508u;
 
-// A direction at galactic (l, b) (radians) in the frame of `pole` / `centre` (galacticLB's inverse).
-float3 galacticDirection(float l, float b, float3 pole, float3 centre) {
-  const float3 c = normalize(centre - pole * dot(centre, pole));
-  return cos(b) * (cos(l) * c + sin(l) * cross(pole, c)) + sin(b) * pole;
-}
-
-// The galaxy's map at (l, b): the tile holding it (each 8000 x 4000 plus its gutter), at the mip of one screen pixel.
-float3 galaxyMapAt(uint64_t atmosphere, float2 lb, float pixelAngle, uint samplerIndex) {
-  const float u = frac(0.5 + lb.x / (2.0 * kPi));  // mirrored: l grows to the left in Gaia's map
-  const float v = clamp(0.5 - lb.y / kPi, 0.0, 0.999999);
-  const float2 p = float2(u * kGalaxyMapWidth, v * kGalaxyMapHeight);
-  const uint col = p.x >= kGalaxyMapWidth * 0.5 ? 1u : 0u, row = p.y >= kGalaxyMapHeight * 0.5 ? 1u : 0u;
-  const uint tex = vk::RawBufferLoad<uint>(atmosphere + kGalaxyMapOffset + (row * 2u + col) * 4u);
-  if (tex == kNoTexture) return 0.0;
-  const float2 tileSize = float2(kGalaxyMapWidth, kGalaxyMapHeight) * 0.5;
-  const float2 local = (p - float2(col, row) * tileSize + kGalaxyGutter) / (tileSize + 2.0 * kGalaxyGutter);
-  const float lod = max(log2(max(pixelAngle * kGalaxyMapWidth / (2.0 * kPi), 1e-4)), 0.0);
-  return gTextures[NonUniformResourceIndex(tex)].SampleLevel(gSamplers[samplerIndex], local, lod).rgb;
-}
-
-// An image hung in the sky at `at`: `halfWidth` (radians) = half the image's width, turned by `turn`, its height squashed by
-// `squash` (a face-on disc seen at a slant); the image's black is the sky (it is added).
-float3 skyImageAt(uint tex, uint samplerIndex, float3 dir, float3 at, float3 pole, float halfWidth, float turn, float squash, float pixelAngle) {
-  const float c = dot(dir, at);
-  if (tex == kNoTexture || c < cos(halfWidth * 1.5)) return 0.0;
-  const float3 e1 = normalize(cross(pole, at)), e2 = cross(at, e1);
-  const float2 p = float2(dot(dir, e1), dot(dir, e2)) / (c * tan(halfWidth));  // +-1 at the image's sides
-  const float2 q = float2(p.x * cos(turn) + p.y * sin(turn), -p.x * sin(turn) + p.y * cos(turn));
-  uint width, height;
-  gTextures[NonUniformResourceIndex(tex)].GetDimensions(width, height);
-  const float2 uv = 0.5 + 0.5 * float2(q.x, -q.y / squash * float(width) / float(height));
-  if (any(abs(uv - 0.5) > 0.5)) return 0.0;
-  const float lod = max(log2(max(pixelAngle * float(width) / (2.0 * halfWidth), 1e-4)), 0.0);
-  return gTextures[NonUniformResourceIndex(tex)].SampleLevel(gSamplers[samplerIndex], uv, lod).rgb;
-}
-
-// An elliptical galaxy's glow at `at`: a Sérsic profile (index n), effective radius `re` (radians), axis ratio `q`, turned by
-// `turn`; 1 at re, its core softened inside 3 % of re.
-float sersicGlow(float3 dir, float3 at, float3 pole, float re, float n, float q, float turn) {
-  const float c = dot(dir, at);
-  if (c < cos(re * 10.0)) return 0.0;
-  const float3 e1 = normalize(cross(pole, at)), e2 = cross(at, e1);
-  const float2 p = float2(dot(dir, e1), dot(dir, e2)) / c;
-  const float2 r2 = float2(p.x * cos(turn) + p.y * sin(turn), (-p.x * sin(turn) + p.y * cos(turn)) / q);
-  const float r = sqrt(dot(r2, r2) + 0.0009 * re * re);
-  const float bn = 2.0 * n - 1.0 / 3.0;
-  return exp(-bn * (pow(r / re, 1.0 / n) - 1.0));
-}
-
+static const float kPaintingWhite = 0.8;  // the painting's light before the tonemap (1.6 burned its gold to orange)
+static const float kPaintingRepeats = 2.0;  // times round the sky
 float3 andromedaSky(uint64_t atmosphere, float3 dir, float pixelAngle) {
-  const float scale = vk::RawBufferLoad<float>(atmosphere + kStarScaleOffset);
-  float3 radiance = catalogStars(atmosphere, dir, pixelAngle, scale);
   const float strength = vk::RawBufferLoad<float>(atmosphere + kGalaxyStrengthOffset);
-  if (strength <= 0.0) return radiance;
+  const uint tex = vk::RawBufferLoad<uint>(atmosphere + kGalaxyMapOffset);
+  if (strength <= 0.0 || tex == kNoTexture) return 0.0;
   const float3 pole = vk::RawBufferLoad<float3>(atmosphere + kGalaxyPoleOffset);
   const float3 centre = vk::RawBufferLoad<float3>(atmosphere + kGalaxyCentreOffset);
   const uint samplerIndex = vk::RawBufferLoad<uint>(atmosphere + kSkyMapSamplerOffset);
-  const float k = scale * strength * 0.25;  // the map's white (the bulge's core) in the sky's raw radiance (0.1 read dark: 2026-11-03)
-  // The galaxy (decoded sRGB: linear light).
-  radiance += galaxyMapAt(atmosphere, galacticLB(dir, pole, centre), pixelAngle, samplerIndex) * k;
-  // The Milky Way and Triangulum.
-  const uint milkyWay = vk::RawBufferLoad<uint>(atmosphere + kMilkyWayMapOffset);
-  const uint triangulum = vk::RawBufferLoad<uint>(atmosphere + kTriangulumMapOffset);
-  radiance += skyImageAt(milkyWay, samplerIndex, dir, galacticDirection(radians(65.0), radians(13.0), pole, centre), pole,
-                         radians(1.6), radians(35.0), 0.36, pixelAngle) * k * 0.6;
-  radiance += skyImageAt(triangulum, samplerIndex, dir, galacticDirection(radians(160.0), radians(-12.0), pole, centre), pole,
-                         radians(2.7), radians(-10.0), 1.0, pixelAngle) * k * 0.6;
-  // M32 (compact, de Vaucouleurs: n 4) and M110 (diffuse dwarf: n 1.5), the warm light of old stars.
-  const float3 oldStars = float3(1.0, 0.86, 0.68);
-  radiance += oldStars * k * 0.007 * sersicGlow(dir, galacticDirection(radians(-14.0), radians(9.0), pole, centre), pole, radians(0.5), 4.0, 0.8, radians(20.0));
-  radiance += oldStars * k * 0.01 * sersicGlow(dir, galacticDirection(radians(22.0), radians(-24.0), pole, centre), pole, radians(1.6), 1.5, 0.5, radians(-35.0));
-  return radiance;
+  uint width, height;
+  gTextures[NonUniformResourceIndex(tex)].GetDimensions(width, height);
+  const float aspect = float(width) / float(height);
+  const float2 lb = galacticLB(dir, pole, centre);
+  const float u = frac(0.5 + lb.x / (2.0 * kPi) * kPaintingRepeats);
+  const float v = 0.5 - lb.y * aspect * kPaintingRepeats / (2.0 * kPi);  // the same angular scale as across
+  const float lod = max(log2(max(pixelAngle * float(width) * kPaintingRepeats / (2.0 * kPi), 1e-4)), 0.0);
+  // Past the top or the bottom: mirrored back in (the stars and haze go on), fading into the edge colour over half a height.
+  const float over = max(max(-v, v - 1.0), 0.0);
+  const float vIn = v < 0.0 ? -v : (v > 1.0 ? 2.0 - v : v);
+  float3 colour = gTextures[NonUniformResourceIndex(tex)].SampleLevel(gSamplers[samplerIndex], float2(u, clamp(vIn, 0.0005, 0.9995)), lod).rgb;
+  if (over > 0.0) {
+    const float3 edge = gTextures[NonUniformResourceIndex(tex)].SampleLevel(gSamplers[samplerIndex], float2(u, v < 0.5 ? 0.02 : 0.98), 6.0).rgb;  // inside: the sampler repeats
+    colour = lerp(colour, edge, smoothstep(0.0, 0.5, over));
+  }
+  return colour * strength;
 }
 
 // The moon as a light in the air: the Mie aureole round it (the forward lobe on the air's optical depth along the view, the
@@ -554,8 +501,10 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
         // Under the bright "Luar: cinema" moon the sky would drown the catalogue's stars: they rise with the moon's light, at
         // most 6 x (the eye sees more stars than a camera metering a moonlit ground does).
         const float boost = a.sunDisc != 0 ? 1.0 : clamp(dot(a.sunIlluminance, float3(0.2126, 0.7152, 0.0722)) * 0.4, 1.0, 6.0);
-        const float3 sky = a.starLook == 5u ? andromedaSky(f.atmosphere, dir, pixelAngle) : realStars(f.atmosphere, dir, pixelAngle);
-        radiance += sky * night * boost * air * a.skyScale;
+        if (a.starLook == 5u)  // the painting as painted: its light divided by the exposure applied below (kPaintingWhite: ACES's 1)
+          radiance += andromedaSky(f.atmosphere, dir, pixelAngle) * kPaintingWhite * night * air / max(f.exposure, 1e-6);
+        else
+          radiance += realStars(f.atmosphere, dir, pixelAngle) * night * boost * air * a.skyScale;
       } else {
         // The star looks were tuned against the dim moonlit sky of light mode 2; under a brighter moon ("Luar: cinema") the
         // sky would drown them, so they rise with the key light's strength, at most 12 x.

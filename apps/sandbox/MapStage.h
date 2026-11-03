@@ -951,18 +951,17 @@ class MapStage final : public Stage {
           clouds4[k] = glm::vec4(starSky_.worldDirection(mc[k].ra, mc[k].dec, lst), glm::radians(mc[k].radiusDegrees));
         renderer.setStars(stars, starSky_.galacticPole(lst), starSky_.galacticCentre(lst), 1.0f, clouds4);
       } else if (andromedaSky_.loaded() && starLook_ == 5 && !starsOff_) {
-        // Céu de Andrômeda (look 005): the world's own stars and the galaxy's frame turned to the hour as look 4's; its images
-        // (~200 MB on the GPU) are asked from the ground pack only once the look is chosen.
+        // Céu de Andrômeda (look 005): the user's painting as the whole sky, turned to the hour as look 4's galaxy frame (no
+        // catalogue stars: the painting has its own); asked from the ground pack only once the look is chosen.
         const bool mapNight = scene_ && ember::timeOfDay(scene_->timeOfDay).moon;
         const float hour = clockOn() ? cycleHour(now_) : mapNight ? 22.0f + std::fmod(now_ / 600.0f, 2.0f) : 12.0f;
         const float lst = andromedaSky_.siderealHours(hour);
         const glm::vec4 none[2]{};
-        renderer.setStars(andromedaSky_.gpuStars(lst), andromedaSky_.galacticPole(lst), andromedaSky_.galacticCentre(lst), 0.0f, none);
+        renderer.setStars({}, andromedaSky_.galacticPole(lst), andromedaSky_.galacticCentre(lst), 0.0f, none);
         requestAndromedaSky();
-        uint32_t galaxy[4];
-        for (int i = 0; i < 4; ++i) galaxy[i] = ground_.textureIndex(ember::skyAndromedaAsset(ember::kAndromedaGalaxyTiles[i]));
-        renderer.setAndromedaMaps(galaxy, ground_.textureIndex(ember::skyAndromedaAsset(ember::kAndromedaMilkyWay)),
-                                  ground_.textureIndex(ember::skyAndromedaAsset(ember::kAndromedaTriangulum)), 1.0f);
+        const uint32_t painting[4] = {ground_.textureIndex(ember::skyAndromedaAsset(ember::kAndromedaSkyPainting)), kNoTextureIndex,
+                                      kNoTextureIndex, kNoTextureIndex};
+        renderer.setAndromedaMaps(painting, kNoTextureIndex, kNoTextureIndex, 1.0f);
       } else {
         const glm::vec4 none[2]{};
         renderer.setStars({}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, 0.0f, none);
@@ -11952,12 +11951,10 @@ class MapStage final : public Stage {
   StarSky starSky_;  // content/sky/stars.json: the real stars, turned to the hour
   StarSky andromedaSky_;  // content/sky/andromeda-stars.json: look 005's own bright stars
   bool andromedaRequested_ = false;  // look 005's images asked from the ground pack
-  // Look 005's images (~200 MB on the GPU), asked from the ground pack once, when the look is first in use.
+  // Look 005's painting (~15 MB on the GPU), asked from the ground pack once, when the look is first in use.
   void requestAndromedaSky() {
     if (andromedaRequested_) return;
-    for (const char* file : ember::kAndromedaGalaxyTiles) ground_.requestTexture(ember::skyAndromedaAsset(file));
-    ground_.requestTexture(ember::skyAndromedaAsset(ember::kAndromedaMilkyWay));
-    ground_.requestTexture(ember::skyAndromedaAsset(ember::kAndromedaTriangulum));
+    ground_.requestTexture(ember::skyAndromedaAsset(ember::kAndromedaSkyPainting));
     andromedaRequested_ = true;
   }
   int moonPhase_ = -1;  // index in ember::kMoonPhases; -1 = Ember's default (the full moon's art, the night's strength)

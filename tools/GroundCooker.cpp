@@ -147,16 +147,10 @@ bool cookGround(JobSystem& jobs, const GroundCookOptions& options, std::vector<P
   }
   for (const char* phase : ember::kMoonPhases)
     work.push_back({ember::skyMoonAsset(phase), TextureFormat::Bc7Srgb, publicFile(options.artRoot, ember::moonPhaseIcon(phase)), {}});
-  // Céu de Andrômeda (star look 005): basic BC7 like the backdrops (the galaxy's tiles are 8064 x 4064 each).
-  {
-    std::vector<const char*> files(std::begin(ember::kAndromedaGalaxyTiles), std::end(ember::kAndromedaGalaxyTiles));
-    files.push_back(ember::kAndromedaMilkyWay);
-    files.push_back(ember::kAndromedaTriangulum);
-    for (const char* file : files) {
-      work.push_back({ember::skyAndromedaAsset(file), TextureFormat::Bc7Srgb, std::filesystem::path("content/sky/andromeda") / file, {}});
-      backdropAssets.push_back(work.back().asset);
-    }
-  }
+  // Céu de Andrômeda (star look 005): the user's sky painting, basic BC7 like the backdrops.
+  work.push_back({ember::skyAndromedaAsset(ember::kAndromedaSkyPainting), TextureFormat::Bc7Srgb,
+                  std::filesystem::path("content/sky/andromeda") / ember::kAndromedaSkyPainting, {}});
+  backdropAssets.push_back(work.back().asset);
   for (const ember::GroundLayerSource& layer : data->groundLayers) {
     if (layer.absent) continue;
     if (!layer.file.empty()) {  // EmberEngine's own tile, a project file (content/ground)
