@@ -169,7 +169,7 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
   const VfxDraw d = loadDraw();
   const MeshFrame f = loadFrame(push.frame);
   const VfxVertex v = vk::RawBufferLoad<VfxVertex>(push.vertices + uint64_t(d.firstVertex + vertex) * 32);
-  const Sight sight = tacticalSight(f, d.sightAt);
+  const Sight sight = tacticalSight(f, d.material == 20u ? v.position : d.sightAt);
   VSOut o;
   o.sight = sight.local;
   o.heat = 0.0;
@@ -539,7 +539,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
     // opacity; color.rgb = its colour; params1.rgb = the hot core's colour, params1.a = the ground ring's radius.
     const MeshFrame f = loadFrame(push.frame);
     const float t = d.params0.x, mode = d.params0.y, intensity = d.params0.z, opacity = d.params0.w;
-    if (mode < 0.5) {
+    if (mode < 0.5 || mode > 2.5) {
       // A shaft of light (an open cylinder, u around, v up): seen through as a volume, brightest where it faces the eye,
       // faded toward its top, with rays rising through it.
       const float facing = abs(dot(normalize(i.normal), normalize(f.cameraPosition - i.world)));
@@ -807,6 +807,35 @@ float4 PSMain(VSOut i) : SV_Target0 {
       c += gTextures[NonUniformResourceIndex(emissiveMap)].Sample(smp, i.uv).rgb * tint * d.params1.w * push.brightness;
     const float opacity = saturate(d.color.a);
     return float4(applyVolume(f, c, i.world) * i.sight * opacity, opacity);
+  } else if (d.material == 20u) {
+    // Analytic optical footprints: clean subpixel edges, no textures or noisy screen overlay.
+    const float2 q = i.uv * 2.0 - 1.0;
+    const float mode = d.params0.y;
+    float mask;
+    if (mode > 3.5) {
+      // An asymmetric, chipped carbon flake: crisp silhouette with pixel-width antialiasing.
+      // No white circular footprint, glow, smoke veil or grain texture.
+      const float edge = max(max(q.x * .8 + q.y * .5 - .55, -q.x * .9 + q.y * .25 - .48),
+                             max(-q.y - .62, q.x * .15 + q.y - .68));
+      const float aa = max(fwidth(edge), .015);
+      mask = 1.0 - smoothstep(-aa, aa, edge);
+    } else if (mode < 0.5) {
+      const float w = max(fwidth(q.x), 0.03);
+      mask = (1.0 - smoothstep(0.22, 0.22 + w, abs(q.x))) * pow(saturate(1.0 - q.y * q.y), 1.5);
+    } else if (mode < 1.5) {
+      const float r = length(q);
+      mask = exp(-r * r * 3.5) * (1.0 - smoothstep(0.65, 1.0, r));
+    } else {
+      const float r = length(q);
+      const float w = max(fwidth(r), 0.035);
+      mask = (1.0 - smoothstep(0.055, 0.055 + w, abs(r - 0.72))) * (1.0 - smoothstep(0.85, 1.0, r));
+    }
+    c = d.color.rgb;
+    if (mode < 2.5 || mode > 3.5) {
+      const MeshFrame f = loadFrame(push.frame);
+      c *= clamp(f.skyColor * f.ambientIntensity * 0.65 + f.sunColor * f.sunIntensity * 0.18, 0.025, 1.2);
+    }
+    a = d.color.a * mask;
   } else {
     // MeshBasicMaterial / LineBasicMaterial
     c = d.color.rgb;

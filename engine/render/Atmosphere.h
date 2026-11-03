@@ -50,7 +50,7 @@ struct AtmosphereFrame {
   float cloudShadow = 0.0f;
   float cloudScale = 1.0f;
   glm::vec2 cloudWind{0.0f};
-  uint32_t pad0 = 0;
+  float cloudGray = 0.0f;  // byte 300: white-to-grey cloud material; preserves the GPU record layout
   // The cloud shadow map over the board (Renderer cloudShadow_): world rect, sampled index (none = per-surface cover).
   glm::vec4 cloudShadowRect{0.0f};
   uint32_t cloudShadowMap = 0xFFFFFFFFu;
@@ -79,7 +79,7 @@ struct AtmosphereFrame {
   glm::vec3 galaxyPole{0.0f, 1.0f, 0.0f}; // 416: the north galactic pole, world
   float milkyWay = 1.0f;                  // 428: the band's strength (0 = none)
   glm::vec3 galaxyCentre{0.0f, 0.0f, 1.0f};  // 432: the galactic centre, world
-  float pad7 = 0.0f;                      // 444
+  float moonWhole = 0.0f;                 // 444: 1 = a full or blood moon, no dark side (atmosphere.hlsli moonDisc)
   glm::vec4 magellanic[2]{};              // 448: the Large and the Small cloud: direction xyz, w = radius (radians; 0 = none)
   // Céu de Andrômeda (star look 005, atmosphere.hlsli andromedaSky): the host galaxy's map (Gaia, 4 tiles), the Milky Way
   // and Triangulum images (sampled; kNoTexture until resident), their repeating sampler, the images' strength (0 = none).
@@ -89,6 +89,7 @@ struct AtmosphereFrame {
   uint32_t skyMapSampler = 0;             // 504
   float galaxyStrength = 0.0f;            // 508
 };
+static_assert(offsetof(AtmosphereFrame, cloudGray) == 300);
 static_assert(sizeof(AtmosphereFrame) == 512 && offsetof(AtmosphereFrame, galaxyMap) == 480 &&
               offsetof(AtmosphereFrame, galaxyStrength) == 508 && offsetof(AtmosphereFrame, moonIlluminance) == 336 &&
               offsetof(AtmosphereFrame, moonDirection) == 240 && offsetof(AtmosphereFrame, volNoiseBase) == 352 &&

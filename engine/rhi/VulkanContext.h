@@ -35,6 +35,7 @@ class VulkanContext {
   VkPhysicalDevice gpu = VK_NULL_HANDLE;
   VkPhysicalDeviceProperties gpuProperties{};
   VkDevice device = VK_NULL_HANDLE;
+  VkPipelineCache pipelineCache = VK_NULL_HANDLE;
   VkQueue queue = VK_NULL_HANDLE;
   uint32_t queueFamily = 0;
   // The GPU's copy engine (a transfer-only queue family) when it has one, so streaming copies run
@@ -54,6 +55,8 @@ class VulkanContext {
   void createInstance(const VulkanContextDesc& desc);
   void pickGpu();
   void createDevice();
+  void loadPipelineCache();
+  void savePipelineCache();
 
   VkDebugUtilsMessengerEXT messenger_ = VK_NULL_HANDLE;
   VkCommandPool immediatePool_ = VK_NULL_HANDLE;

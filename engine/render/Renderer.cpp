@@ -1235,6 +1235,7 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
     a.moonTexture = lighting_.moonRadius > 0.0f ? lighting_.moonTexture : 0xFFFFFFFFu;
     a.moonTanRadius = std::tan(lighting_.moonRadius);
     a.moonGlow = lighting_.moonGlow;
+    a.moonWhole = lighting_.moonWhole;
     const glm::vec3 sky = lighting_.skyColor;
     a.ambientTarget = lighting_.ambientIntensity * lighting_.exposure * (0.2126f * sky.r + 0.7152f * sky.g + 0.0722f * sky.b);
     // A negative target = keep the sky's own irradiance, times -target (the physical light mode; exposure included).
@@ -1269,6 +1270,7 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
     if (clouds_.enabled) {
       f.cloudFlags = 1u | (clouds_.shadows && lighting_.sunDisc ? 2u : 0u) | (clouds_.volumetric ? 4u : 0u);
       a.cloudCoverage = clouds_.coverage;
+      a.cloudGray = std::clamp(clouds_.gray, 0.0f, 1.0f);
       a.cloudAltitude = clouds_.altitude;
       a.cloudShadow = clouds_.shadow;
       a.cloudScale = clouds_.scale;

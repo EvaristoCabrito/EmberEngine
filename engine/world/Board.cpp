@@ -168,6 +168,11 @@ std::optional<MapDraft> MapDraft::fromJson(const json& d) {
   m.emberTiles = str(d, "emberTiles");
   m.emberFloor = str(d, "emberFloor");
   auto num = [&](const char* k, float fallback) { return d.contains(k) && d[k].is_number() ? d[k].get<float>() : fallback; };
+  m.cloudCoverage = std::clamp(num("cloudCoverage", -1.0f), -1.0f, 1.0f);
+  m.cloudGray = std::clamp(num("cloudGray", 0.0f), 0.0f, 1.0f);
+  m.weather = str(d, "weather");
+  m.weatherIntensity = std::clamp(num("weatherIntensity", 0.7f), 0.0f, 1.0f);
+  m.weatherWind = std::clamp(num("weatherWind", 0.35f), 0.0f, 1.0f);
   m.emberFloorDepth = num("emberFloorDepth", m.emberFloorDepth);
   m.emberFloorTile = num("emberFloorTile", m.emberFloorTile);
   m.emberWindFog = static_cast<int>(num("emberWindFog", 0.0f));

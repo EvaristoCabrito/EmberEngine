@@ -1,6 +1,9 @@
 #include "rhi/VulkanContext.h"
 
 #include <SDL3/SDL_vulkan.h>
+#include <SDL3/SDL_filesystem.h>
+#include <filesystem>
+#include <fstream>
 
 #include <cstring>
 #include <string>
@@ -101,10 +104,68 @@ VulkanContext::VulkanContext(const VulkanContextDesc& desc) {
   createInstance(desc);
   pickGpu();
   createDevice();
+  loadPipelineCache();
+}
+
+namespace {
+std::filesystem::path pipelineCachePath(const VkPhysicalDeviceProperties& gpu) {
+  std::string key = std::format("v1-{:04x}-{:04x}-", gpu.vendorID, gpu.deviceID);
+  for (uint8_t byte : gpu.pipelineCacheUUID) key += std::format("{:02x}", byte);
+  return std::filesystem::path(SDL_GetBasePath()) / "pipeline-cache" / (key + ".bin");
+}
+}
+
+void VulkanContext::loadPipelineCache() {
+  std::vector<uint8_t> bytes;
+  std::ifstream in(pipelineCachePath(gpuProperties), std::ios::binary | std::ios::ate);
+  if (in) {
+    const auto size = in.tellg();
+    if (size >= 32 && size <= 256 * 1024 * 1024) {
+      bytes.resize(static_cast<size_t>(size));
+      in.seekg(0);
+      if (!in.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()))) bytes.clear();
+      if (!bytes.empty()) {
+        uint32_t header[4];
+        std::memcpy(header, bytes.data(), sizeof(header));
+        if (header[0] < 32 || header[0] > bytes.size() || header[1] != VK_PIPELINE_CACHE_HEADER_VERSION_ONE ||
+            header[2] != gpuProperties.vendorID || header[3] != gpuProperties.deviceID ||
+            std::memcmp(bytes.data() + 16, gpuProperties.pipelineCacheUUID, VK_UUID_SIZE) != 0) bytes.clear();
+      }
+    }
+  }
+  VkPipelineCacheCreateInfo info{VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO};
+  info.initialDataSize = bytes.size();
+  info.pInitialData = bytes.empty() ? nullptr : bytes.data();
+  VkResult result = vkCreatePipelineCache(device, &info, nullptr, &pipelineCache);
+  if (result != VK_SUCCESS && !bytes.empty()) {
+    info.initialDataSize = 0; info.pInitialData = nullptr;
+    bytes.clear();
+    result = vkCreatePipelineCache(device, &info, nullptr, &pipelineCache);
+  }
+  VK_CHECK(result);
+  logInfo("pipeline cache: {} bytes restored for this GPU/driver", bytes.size());
+}
+
+void VulkanContext::savePipelineCache() {
+  size_t size = 0;
+  if (vkGetPipelineCacheData(device, pipelineCache, &size, nullptr) != VK_SUCCESS || size == 0) return;
+  std::vector<uint8_t> bytes(size);
+  if (vkGetPipelineCacheData(device, pipelineCache, &size, bytes.data()) != VK_SUCCESS) return;
+  const auto path = pipelineCachePath(gpuProperties);
+  std::error_code error;
+  std::filesystem::create_directories(path.parent_path(), error);
+  if (error) return;
+  std::ofstream out(path, std::ios::binary | std::ios::trunc);
+  if (out) out.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(size));
+  if (out) logInfo("pipeline cache: {} bytes saved", size);
 }
 
 VulkanContext::~VulkanContext() {
   if (device) vkDeviceWaitIdle(device);
+  if (pipelineCache) {
+    savePipelineCache();
+    vkDestroyPipelineCache(device, pipelineCache, nullptr);
+  }
   if (immediateFence_) vkDestroyFence(device, immediateFence_, nullptr);
   if (immediatePool_) vkDestroyCommandPool(device, immediatePool_, nullptr);
   if (allocator) vmaDestroyAllocator(allocator);

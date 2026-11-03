@@ -3,6 +3,7 @@
 #include <SDL3/SDL_filesystem.h>
 
 #include <array>
+#include <chrono>
 #include <fstream>
 
 #include "rhi/VulkanContext.h"
@@ -38,7 +39,11 @@ VkPipeline createComputePipeline(VulkanContext& context, VkPipelineLayout layout
   info.stage = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0, VK_SHADER_STAGE_COMPUTE_BIT, module, entry.c_str(), nullptr};
   info.layout = layout;
   VkPipeline pipeline;
-  VK_CHECK(vkCreateComputePipelines(context.device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline));
+  const auto started = std::chrono::steady_clock::now();
+  logInfo("pipeline compute: {} creating", shader);
+  VK_CHECK(vkCreateComputePipelines(context.device, context.pipelineCache, 1, &info, nullptr, &pipeline));
+  logInfo("pipeline compute: {} ready in {:.0f} ms", shader,
+          std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count());
   vkDestroyShaderModule(context.device, module, nullptr);
   return pipeline;
 }
@@ -131,7 +136,11 @@ VkPipeline createGraphicsPipeline(VulkanContext& context, VkPipelineLayout layou
   info.pDynamicState = &dynamic;
   info.layout = layout;
   VkPipeline pipeline;
-  VK_CHECK(vkCreateGraphicsPipelines(context.device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline));
+  const auto started = std::chrono::steady_clock::now();
+  logInfo("pipeline graphics: {} + {} creating", desc.vertexShader.empty() ? desc.meshShader : desc.vertexShader, desc.fragmentShader);
+  VK_CHECK(vkCreateGraphicsPipelines(context.device, context.pipelineCache, 1, &info, nullptr, &pipeline));
+  logInfo("pipeline graphics: {} + {} ready in {:.0f} ms", desc.vertexShader.empty() ? desc.meshShader : desc.vertexShader,
+          desc.fragmentShader, std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count());
   for (VkShaderModule module : modules) vkDestroyShaderModule(context.device, module, nullptr);
   return pipeline;
 }

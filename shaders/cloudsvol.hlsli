@@ -19,15 +19,22 @@
 // edge jumped the shadow: horizontal stripes under a high sun, 2026-10-19).
 float cloudVolLightDepth(CloudVolume v, float time, float3 p, float3 toLight, float dither) {
   const float layer = max(v.top - v.base, 1.0);
-  static const float kAt[6] = {0.02, 0.05, 0.1, 0.18, 0.3, 0.5};
-  static const float kGap[6] = {0.02, 0.03, 0.05, 0.1, 0.16, 0.3};
+  // Integrate the ACTUAL distance to the layer boundary. The former short fixed probe missed occluders
+  // at low sun angles, giving uniformly lit interiors instead of deep folds and a bright silver lining.
+  float span;
+  if (abs(toLight.y) > 0.015)
+    span = toLight.y > 0.0 ? (v.top - p.y) / toLight.y : (v.base - p.y) / toLight.y;
+  else span = layer * 4.0;
+  span = clamp(span, 0.0, layer * 6.0);
   float depth = 0.0;
-  [unroll] for (int i = 0; i < 6; ++i) {
-    const float t = layer * (kAt[i] + kGap[i] * (dither - 0.5));
-    depth += cloudVolDensity(v, time, p + toLight * t, true) * layer * kGap[i];
+  [loop] for (int i = 0; i < 7; ++i) {
+    // Quadratic intervals keep the finest samples at the visible surface, then cover the full light path.
+    const float u0 = float(i) / 7.0, u1 = float(i + 1) / 7.0;
+    const float from = span * u0 * u0, to = span * u1 * u1;
+    const float at = lerp(from, to, 0.5 + (dither - 0.5) * 0.2);
+    depth += cloudVolDensity(v, time, p + toLight * at, true) * (to - from);
   }
-  depth += cloudVolDensity(v, time, p + toLight * layer * 1.3, true) * layer * 0.5;  // the rest of the layer above
-  return depth * kCloudVolExtinction;
+  return depth * cloudVolumeExtinction(v);
 }
 
 // Wrenninge's multiple-scattering approximation: the single-scatter lobe repeated with attenuation, eccentricity and
@@ -116,7 +123,7 @@ CloudVolHit cloudVolMarch(MeshFrame f, AtmosphereFrame a, CloudVolume v, float3 
     }
     empty = 0;
     {
-      const float ext = density * kCloudVolExtinction;
+      const float ext = density * cloudVolumeExtinction(v);
       const float h = saturate((p.y - v.base) / layer);
       // Direct: the sun (and the moon) through the cloud above this point, scattered towards the eye.
       const float sunDepth = cloudVolLightDepth(v, f.time, p, sun, dither);
@@ -128,7 +135,7 @@ CloudVolHit cloudVolMarch(MeshFrame f, AtmosphereFrame a, CloudVolume v, float3 
       // Fill: the sky from above through the cloud over it (brighter at the top), the ground from below (at the base).
       // (a cumulus base is mid-grey, not black: the cloud's own multiple scattering carries the sky's light down through it)
       const float3 fill = skyUp * lerp(0.4, 0.85, h) * lerp(0.6, 1.0, exp(-sunDepth * 0.1)) + groundUp * lerp(0.3, 0.05, h);
-      const float3 radiance = (direct * powder + fill / kPi) * 0.9;  // albedo 0.9
+      const float3 radiance = (direct * powder + fill / kPi) * lerp(0.96, 0.86, v.gray);  // albedo 0.9
       // The slab, energy-conserving (Hillaire's analytic integration).
       const float slab = exp(-ext * dt);
       light += transmittance * (radiance - radiance * slab);

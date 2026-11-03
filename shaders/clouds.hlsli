@@ -27,6 +27,10 @@ struct CloudParams {
 };
 // AtmosphereFrame: cloudCoverage at byte 276 (after starLook), cloudWind at 292 (scene.hlsli / render/Atmosphere.h).
 static const uint kCloudParamsOffset = 276u;
+// Cloud-only material control: leaves clear sky, sun, moon and stars untouched.
+float cloudMaterialBrightness(MeshFrame f) {
+  return lerp(1.0, 0.3, saturate(vk::RawBufferLoad<float>(f.atmosphere + 300u)));
+}
 CloudParams loadCloudParams(MeshFrame f) {
   const float4 a = vk::RawBufferLoad<float4>(f.atmosphere + kCloudParamsOffset);
   const float2 w = vk::RawBufferLoad<float2>(f.atmosphere + kCloudParamsOffset + 16u);
@@ -49,7 +53,19 @@ CloudParams highSheet(CloudParams c) {
   return c;
 }
 
-float cloudHash(float2 p) { return frac(sin(dot(p, float2(127.1, 311.7))) * 43758.5453); }
+// An integer hash of the lattice cell (PCG-style): the old frac(sin(dot(p, ..)) * 43758) lost its precision at the
+// coordinates the far layer and the fine octaves reach (sin of tens of thousands), and the cells came out stepped and
+// correlated: straight-edged, blocky clouds (the user, 2026-11-03).
+float cloudHash(float2 p) {
+  uint2 q = uint2(int2(p));
+  uint h = q.x * 1664525u + q.y * 1013904223u + 0x9E3779B9u;
+  h ^= h >> 16;
+  h *= 0x7feb352du;
+  h ^= h >> 15;
+  h *= 0x846ca68bu;
+  h ^= h >> 16;
+  return float(h & 0xffffffu) / 16777216.0;
+}
 float cloudNoise(float2 p) {
   const float2 cell = floor(p), fr = frac(p);
   const float2 u = fr * fr * (3.0 - 2.0 * fr);
@@ -104,6 +120,7 @@ static const float kCloudVolExtinction = 0.35;   // per world unit at density 1 
 
 struct CloudVolume {
   float base, top;
+  float gray;      // optical thickness for grey weather, rather than a uniform dark tint
   float coverage;  // 0 .. 1
   float scale;     // world units per weather cell (one cloud)
   float2 wind;     // world units per second
@@ -113,6 +130,7 @@ CloudVolume loadCloudVolume(MeshFrame f) {
   CloudVolume v;
   const float4 a = vk::RawBufferLoad<float4>(f.atmosphere + kCloudParamsOffset);
   v.coverage = a.x;
+  v.gray = saturate(vk::RawBufferLoad<float>(f.atmosphere + 300u));
   v.scale = a.w;
   v.wind = vk::RawBufferLoad<float2>(f.atmosphere + kCloudParamsOffset + 16u);
   v.noiseBase = vk::RawBufferLoad<uint>(f.atmosphere + kVolNoiseBaseOffset);
@@ -122,6 +140,9 @@ CloudVolume loadCloudVolume(MeshFrame f) {
   v.top = vk::RawBufferLoad<float>(f.atmosphere + kVolTopOffset);
   return v;
 }
+
+// Natural cloud shading v02: grey weather has a longer optical path, while water droplets remain bright at lit rims.
+float cloudVolumeExtinction(CloudVolume v) { return kCloudVolExtinction * lerp(1.0, 1.7, v.gray); }
 
 float remap01(float x, float a, float b) { return saturate((x - a) / max(b - a, 1e-5)); }
 
@@ -153,10 +174,11 @@ float2 cloudWeather(CloudVolume v, float time, float2 xz) {
 // Where in its column the cloud lives (stratus low and flat, cumulus tall): a multiplier on the density by the relative
 // height h (0 at the base .. 1 at the top).
 float cloudHeightShape(float h, float kind) {
-  const float lowTop = lerp(0.35, 0.95, kind);
-  const float rise = smoothstep(0.0, 0.08 + 0.1 * kind, h);
-  const float fall = 1.0 - smoothstep(lowTop - 0.25, lowTop, h);
-  return rise * fall;
+  // Condensation base, a full body and a rounded crown. No constant-height hard slice through the billows.
+  const float crown = lerp(0.48, 0.98, kind);
+  const float base = smoothstep(0.0, lerp(0.09, 0.16, kind), h);
+  const float shoulder = 1.0 - smoothstep(crown * 0.52, crown, h);
+  return base * shoulder;
 }
 
 // The density at a world point, 0 .. 1. `cheap` = no detail erosion (the light march, the shadows). `lod` (0 near .. 1 far):
@@ -173,17 +195,21 @@ float cloudVolDensityLod(CloudVolume v, float time, float3 p, bool cheap, float 
   // Base shape: Perlin-Worley (r) with lower-frequency Worley (gba) as a fractal lift, drifting with the wind and leaning a
   // little with height (wind shear).
   const float cell = v.scale * 0.9;  // one base-noise tile = about one cloud
-  const float3 drift = float3(v.wind.x * time + h * 5.0, 0.0, v.wind.y * time);
-  const float3 uvw = (p + drift) / cell;
+  const float3 drift = float3(v.wind.x * time + h * h * 22.0, 0.0, v.wind.y * time + h * 7.0);
+  // Smooth world-space deformation breaks repeating columns without animated grain or extra texture reads.
+  const float3 domain = (p + drift) / cell;
+  const float3 uvw = domain + sin(domain.zxy * 1.73 + float3(1.2, 4.1, 2.7)) * 0.11;
   const float4 base = cloudNoiseBaseAt(v, uvw);
   const float lowFbm = base.g * 0.625 + base.b * 0.25 + base.a * 0.125;
-  float density = remap01(base.r, -(1.0 - lowFbm), 1.0) * shape;
-  // The weather carves the cloud: the column's cover decides how much of the noise survives (Schneider's remap).
-  density = remap01(density, 1.0 - cover, 1.0) * cover;
+  const float body = remap01(base.r, -(1.0 - lowFbm), 1.0);
+  // Carve the 3D body BEFORE applying its vertical envelope. Thresholding the envelope itself produced flat shelves.
+  float density = remap01(body, 1.0 - cover, 1.0) * cover * shape;
   if (density <= 0.001) return 0.0;
   // The cheap density (the light march, the shadows) is eroded by the detail's average, so the light sees a cloud of the
   // same size as the one drawn (un-eroded it was fatter and every surface read as deep inside: grey clouds, 2026-10-19).
-  if (cheap) return remap01(density, 0.28, 1.0);
+  // A conservative envelope for empty-space skipping: fine erosion can only remove matter.
+  // The old fixed 0.28 cutoff incorrectly classified thin visible fringes as empty air.
+  if (cheap) return density * 0.72;
   if (lod < 1.0) {
     // Detail: Worley fbm erodes the edges (wispy at the base, billowy towards the top), then a finer octave carves the
     // cauliflower's small bulges into the edge that survived (Horizon's two-level erosion). The tiles are large (68 and 45
@@ -191,7 +217,7 @@ float cloudVolDensityLod(CloudVolume v, float time, float3 p, bool cheap, float 
     const float4 d = cloudNoiseDetailAt(v, (p + drift * 1.3) / (cell * 0.18));
     const float detailFbm = d.r * 0.625 + d.g * 0.25 + d.b * 0.125;
     const float erosion = lerp(detailFbm, 1.0 - detailFbm, saturate(h * 6.0));
-    density = remap01(density, erosion * 0.5 * (1.0 - lod), 1.0);
+    density = remap01(density, erosion * lerp(0.38, 0.16, density) * (1.0 - lod), 1.0);
     const float fineWeight = 1.0 - saturate(lod / 0.4);
     if (fineWeight > 0.0 && density > 0.001 && density < 0.6) {
       const float4 d2 = cloudNoiseDetailAt(v, (p + drift * 1.7) / (cell * 0.12));
@@ -212,8 +238,8 @@ float cloudVolShadow(MeshFrame f, float3 position, float low) {
   if (t1 <= t0) return 1.0;
   const float dt = (t1 - t0) / 8.0;
   float depth = 0.0;
-  [unroll] for (int i = 0; i < 8; ++i) depth += cloudVolDensity(v, f.time, position + sun * (t0 + dt * (float(i) + 0.5)), true) * dt;
-  return 1.0 - shadow * low * (1.0 - exp(-depth * kCloudVolExtinction));
+  [loop] for (int i = 0; i < 8; ++i) depth += cloudVolDensity(v, f.time, position + sun * (t0 + dt * (float(i) + 0.5)), true) * dt;
+  return 1.0 - shadow * low * (1.0 - exp(-depth * cloudVolumeExtinction(v)));
 }
 
 // The sun through the low sheet onto `position`, computed from the cover field: 1 lit .. (1 - shadow) under a thick cloud.

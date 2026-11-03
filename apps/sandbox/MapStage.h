@@ -64,6 +64,7 @@
 #include "render/DebugUi.h"
 #include "render/FogLooks.h"
 #include "render/Renderer.h"
+#include "render/WeatherFx.h"
 #include "rhi/UploadQueue.h"
 #include "render/MeshScene.h"
 #include "BattleStatus.h"
@@ -191,7 +192,7 @@ struct MapStageOptions {
   // Every unit's poses (tools/scripts/data/export_heroes.ts output; empty = idle only): the map's own units
   // play the pose chosen in the panel, each from its own catalog entry (found by the scene unit's key).
   std::filesystem::path heroes;
-  int starLook = 3;  // the star field's saved look (looks/stars/README.md; also in the panel)
+  int starLook = 5;  // the star field's saved look (looks/stars/README.md; also in the panel); 5 = the galaxy painting
   // The battle's rules and units (tools/scripts/data/export_battle.ts output; empty = no combat).
   std::filesystem::path battle;
   // A free-roam map (an explore mission: the walkable Inn) set up from the save as GameApp startBattle does: companions not
@@ -326,6 +327,7 @@ class MapStage final : public Stage {
       return;
     }
     board_ = std::make_unique<ember::Board>(*data_, std::move(*draft));
+    setEditorWeather(board_->draft());
     if (!board_->loadRelief(options.artRoot) || !ground_.build(*board_)) {
       failed_ = true;
       return;
@@ -731,7 +733,13 @@ class MapStage final : public Stage {
     }
     laps.lap("effects");
     renderer.setEffects(effectList_);
-    renderer.setVfx(spellFx_.vfx());
+    if (board_ && !interiorMap() && !weatherKind_.empty() && weatherKind_ != "none") {
+      weatherFrame_ = spellFx_.vfx();
+      const float flash = WeatherFx::append(weatherFrame_, weatherKind_, weatherIntensity_, weatherWind_,
+          time, camera, cam_.target, [this](float x, float z) { return static_cast<float>(ember::groundHeightAt(*board_, look_, x, z)); });
+      if (flash > 0) lights_.push_back(classicLight(cam_.target + glm::vec3(0,18,0), {.78f,.86f,1.0f}, flash*12.0f, 65.0f, 1.25f));
+      renderer.setVfx(weatherFrame_);
+    } else renderer.setVfx(spellFx_.vfx());
     renderer.setLights(lights_);
     laps.lap("hand-over");
     // The renderer outlives the stage: a room's probes (and its gate request) stayed bound after leaving it, so the next map was shaded
@@ -937,6 +945,11 @@ class MapStage final : public Stage {
         clouds.coverage = 0.32f;
         clouds.scale = 420.0f;
       }
+      if (cloudCoverage_ >= 0.0f) {
+        clouds.coverage = cloudCoverage_;
+        clouds.enabled = clouds.enabled && cloudCoverage_ > 0.0f;
+      }
+      clouds.gray = cloudGray_;
       clouds.altitude += meanGround_;  // the sheet's height above the board's mean ground
       clouds.base += meanGround_;
       clouds.top += meanGround_;
@@ -1525,6 +1538,14 @@ class MapStage final : public Stage {
       const float twoPi = 2.0f * std::numbers::pi_v<float>;
       yaw_ = homeYaw_ + twoPi * std::round((yaw_ - homeYaw_) / twoPi);
       pitch_ = homePitch_;
+      // ... and back over the character in play (the user, 2026-11-03): the unit whose turn it is, in free roam the one picked;
+      // never onto a hex the fog hides. Zoom stays.
+      const bool turns = battle_ && !battle_->roaming() && turnUnit_ >= 0;
+      if (const int ui = turns ? sceneUnitOf(turnUnit_) : selected_; ui >= 0 && static_cast<size_t>(ui) < unitPos_.size() &&
+                                                                       unitOnLitHex(static_cast<size_t>(ui))) {
+        target_ = unitWorld(static_cast<size_t>(ui));
+        clampGoal();
+      }
     }
     if (!options_.editorClick) {  // a battle: Ember's Som and Opções (onPause: the battle's Esc menu) end the bar
       ImGui::SameLine();
@@ -1549,14 +1570,6 @@ class MapStage final : public Stage {
   void setFlat(bool on) {
     if (on == flat_) return;
     flat_ = on;
-      // ... and back over the character in play (the user, 2026-11-03): the unit whose turn it is, in free roam the one picked;
-      // never onto a hex the fog hides. Zoom stays.
-      const bool turns = battle_ && !battle_->roaming() && turnUnit_ >= 0;
-      if (const int ui = turns ? sceneUnitOf(turnUnit_) : selected_; ui >= 0 && static_cast<size_t>(ui) < unitPos_.size() &&
-                                                                       unitOnLitHex(static_cast<size_t>(ui))) {
-        target_ = unitWorld(static_cast<size_t>(ui));
-        clampGoal();
-      }
     renderer_.volumetrics().invalidateHistory();  // a camera cut: the fog's history would smear across it
     if (on) return;
     const float twoPi = 2.0f * std::numbers::pi_v<float>;
@@ -1830,6 +1843,15 @@ class MapStage final : public Stage {
     ImGui::End();
   }
 
+  // Weather edits update only precipitation. Keep the live board, camera, uploads and GPU resources intact.
+  void setEditorWeather(const ember::MapDraft& draft) {
+    weatherKind_ = draft.weather;
+    weatherIntensity_ = draft.weatherIntensity;
+    weatherWind_ = draft.weatherWind;
+    cloudCoverage_ = draft.cloudCoverage;
+    cloudGray_ = draft.cloudGray;
+  }
+
   // Where the camera looks (the map editor carries it over when its preview is rebuilt for an edit).
   struct View {
     glm::vec3 target{0.0f};
@@ -1870,6 +1892,7 @@ class MapStage final : public Stage {
     if (probeBusy_) jobs_.wait(probeJob_), probeBusy_ = false;  // the bake reads the old board's room
     if (!ground_.rebuild(*board)) return false;
     board_ = std::move(board);
+    setEditorWeather(board_->draft());
     double top = 0;
     for (const ember::Cell& c : board_->cells()) top = std::max(top, c.groundY);
     boardTop_ = static_cast<float>(top);
@@ -4133,6 +4156,7 @@ class MapStage final : public Stage {
       l.moonTexture = ground_.textureIndex(ember::skyMoonAsset(phase));
       l.moonRadius = moonOff_ ? 0.0f : glm::radians(kMoonSizes[moonSize_]);  // off: no disc (its light stays: "sol / lua")
       l.moonGlow = 2.3f;
+      l.moonWhole = moonWholePhase(phase) ? 1.0f : 0.0f;
     }
     return l;
   }
@@ -4209,6 +4233,7 @@ class MapStage final : public Stage {
       // The disc as drawn, whatever the moon's light (moonDiscGlow: it followed the light and burned white at a high "Intensidade
       // da lua", the user, 2026-11-03).
       l.moonGlow = moonDiscGlow();
+      l.moonWhole = moonWholePhase(phase) ? 1.0f : 0.0f;
     }
     return l;
   }
@@ -4300,6 +4325,7 @@ class MapStage final : public Stage {
     if (moonDir.y > -0.05f) {
       l.moonDirection = moonDir;
       l.moonTexture = ground_.textureIndex(ember::skyMoonAsset(phase));
+      l.moonWhole = moonWholePhase(phase) ? 1.0f : 0.0f;
       l.moonRadius = moonOff_ ? 0.0f : glm::radians(kMoonSizes[moonSize_]);
       l.moonGlow = moonDiscGlow();
     }
@@ -4308,8 +4334,10 @@ class MapStage final : public Stage {
   // The moon's disc on screen (the user, 2026-11-03, with the word: "intensidade da lua está totalmente bixado", the disc burned
   // white, the blood moon in white patches): its art times this before the exposure, so the art's white lands at kMoonDiscWhite on
   // the display whatever the moon's light and the hour's exposure (the light it gives the board is unchanged).
-  static constexpr float kMoonDiscWhite = 1.3f;
+  static constexpr float kMoonDiscWhite = 1.0f;  // 1.3 washed the blood moon's red toward white
   float moonDiscGlow() const { return kMoonDiscWhite / std::max(exposure_, 1e-6f); }
+  // A full or a blood moon: no dark side, its whole disc is drawn (atmosphere.hlsli moonDisc; the user, 2026-11-03: "CLEARLY WHITE SPOTS").
+  static bool moonWholePhase(std::string_view phase) { return phase == "full" || phase == "blood"; }
 
   // How many stops darker than the meter the camera exposes (Unreal's exposure compensation curve by scene
   // brightness): none in full daylight, up to 0.75 as the sun sinks (dawn, dusk), then 2.5 by a moonlit night and more
@@ -7884,8 +7912,16 @@ class MapStage final : public Stage {
       select(ci);
       if (p[0] == "spell" && p.size() > 2) startSpell(p[2]);
       if (p[0] == "attack") attackMode_ = true;
-      return logInfo("battle script: {} {}: {} hexes in reach, {} targets, aim {} of zone {}", p[0], p[1], reach_.size(), targets_.size(),
-                     spellAim_.size(), spellZone_.size());
+      // The spell's reach (its zone's farthest hex) and, aimed at that farthest hex, the radius of the area it would strike.
+      int farthest = 0, area = -1;
+      const ember::BattleUnit& cu = battle_->units()[cb];
+      ember::BattleHex far{cu.x, cu.y};
+      for (const ember::BattleHex& h : spellZone_)
+        if (const int d = ember::Battle::distance({cu.x, cu.y}, h); d > farthest) farthest = d, far = h;
+      if (p[0] == "spell" && p.size() > 2 && !spellZone_.empty())
+        for (const ember::BattleHex& h : ember::spellArea(*battle_, cb, p[2], far)) area = std::max(area, ember::Battle::distance(far, h));
+      return logInfo("battle script: {} {}: {} hexes in reach, {} targets, aim {} of zone {} (reach {} hexes, area radius {})", p[0], p[1],
+                     reach_.size(), targets_.size(), spellAim_.size(), spellZone_.size(), farthest, area);
     }
     ember::BattleUnit& caster = battle_->units()[cb];
     caster.acted = false, caster.moved = false;
@@ -11437,6 +11473,10 @@ class MapStage final : public Stage {
   std::pair<size_t, size_t> hudPreloaded_{0, 0};
   // The orbit camera: the goal above (yaw_ ... target_), the view on show gliding to it, its limits and steps.
   OrbitView cam_;
+  VfxFrame weatherFrame_;
+  std::string weatherKind_;
+  float weatherIntensity_ = 0.7f, weatherWind_ = 0.35f;
+  float cloudCoverage_ = -1.0f, cloudGray_ = 0.0f;
   Camera lastCamera_{};
   float aspect_ = 1.0f;
   struct PieceBox {
@@ -12067,7 +12107,7 @@ class MapStage final : public Stage {
   int moonPath_ = 0;       // moonPlacement()
   int moonLight_ = 1;      // the panel's "Luar" (light mode real): 0 físico (kFullMoonLux), 1 cinema (kCinemaMoonLux)
   static constexpr int kStarLooks = 5;  // saved star looks (looks/stars/README.md); 4 = the real sky (render/StarSky.h), 5 = Andrômeda
-  int starLook_ = 4;
+  int starLook_ = 5;  // the user's galaxy painting is the sky (2026-11-03: "STOP USING NORMAL STARS")
   StarSky starSky_;  // content/sky/stars.json: the real stars, turned to the hour
   StarSky andromedaSky_;  // content/sky/andromeda-stars.json: look 005's own bright stars
   bool andromedaRequested_ = false;  // look 005's images asked from the ground pack

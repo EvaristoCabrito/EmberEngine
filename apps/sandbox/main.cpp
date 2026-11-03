@@ -183,7 +183,7 @@ struct Options {
   float sceneTime = -1.0f;
   std::string moonPhase;
   int moonPath = 0;
-  int starLook = 4;  // --star-look N: 1..3 the saved random fields, 4 (default) the real sky (content/sky/stars.json)
+  int starLook = 5;  // --star-look N: 1..3 the saved random fields, 4 (default) the real sky (content/sky/stars.json)
   std::string heroes;
   std::string battleRules;
   std::string devGfx;  // captures: Dev Controls' switches from this file (DevGfx.h) applied to the map

@@ -131,6 +131,10 @@ const MeshHeader* MeshScene::header(MeshId id) const {
 bool MeshScene::placeable() const {
   for (const auto& mesh : meshes_)
     if (!mesh->failed && !(streamingGeometry() ? mesh->parsed : mesh->uploaded)) return false;
+  // Regional placement needs only mesh bounds and material slots. Waiting for every
+  // texture here blocks instance placement, sight initialization and enemy visibility
+  // when texture residency is limited by the GPU budget.
+  if (streamingGeometry()) return true;
   for (const auto& [id, texture] : textures_)
     if (!texture->failed && texture->index == kNoTextureIndex) return false;
   return true;

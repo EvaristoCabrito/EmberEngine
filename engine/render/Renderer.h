@@ -128,6 +128,7 @@ class Renderer {
     uint32_t moonTexture = 0xFFFFFFFFu;         // bindless sRGB + alpha; none = no disc
     float moonRadius = 0.0f;                    // angular radius, radians
     float moonGlow = 0.0f;                      // the disc's radiance = the art x this (before exposure)
+    float moonWhole = 0.0f;                     // 1 = a full or blood moon: no dark side, its whole disc drawn
     // Light mode "real" (ARCHITECTURE 7.6 step A): the sky's ambient is what the physical sky gives (lux), times
     // this multiplier (the map's ambient slider), instead of being scaled to ambientIntensity.
     bool physicalSky = false;
@@ -367,6 +368,7 @@ class Renderer {
   struct Clouds {
     bool enabled = false;
     bool shadows = true;        // the sheet shadows the board (by day: the key light is the sun)
+    float gray = 0.0f;          // 0 original white scattering, 1 dark grey cloud material
     float coverage = 0.4f;      // share of the sky covered (0 clear .. 1 overcast)
     float altitude = 450.0f;    // the sheet's world height (low: the camera sees the sky only near the horizon, where a
                                 // higher sheet shrinks every cloud into streaks; measured 2026-10-19 at 900 and 1200)

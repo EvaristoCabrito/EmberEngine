@@ -109,6 +109,11 @@ struct MapDraft {
   // EmberEngine's own: the Atmosfera climate of this map (a profile's name in content/atmosphere/v1/profiles.json, picked
   // in the Map Editor); empty = the profile whose map keys name this map.
   std::string atmosphereProfile;
+  // -1 preserves the renderer's existing cloud coverage on maps without an override.
+  float cloudCoverage = -1.0f, cloudGray = 0.0f;
+  // Precipitation is independent of regional fog. Missing weather preserves every existing map.
+  std::string weather;
+  float weatherIntensity = 0.7f, weatherWind = 0.35f;
   // EmberEngine's own: the night sky this map shows (the Map Editor's "Céu", 2026-11-03): "andromeda" = the user's painting
   // (star look 005); empty = the real stars (look 004).
   std::string sky;

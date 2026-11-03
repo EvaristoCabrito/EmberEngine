@@ -1172,11 +1172,24 @@ class MapEditorStage : public Stage {
     return out;
   }
 
+  // Compare all map content except the three live precipitation settings.
+  static ember::Json withoutPreviewWeather(ember::Json draft) {
+    for (const char* key : {"weather", "weatherIntensity", "weatherWind", "cloudCoverage", "cloudGray"}) draft.erase(key);
+    return draft;
+  }
+
   void rebuildPreview() {
     dirty_ = false;
     if (!data_) return;
     std::optional<ember::MapDraft> draft = ember::MapDraft::fromJson(nlohmann::json::parse(draft_.dump()));
     if (!draft) return note("O mapa não tem tabuleiro.");
+    ember::Json weatherBase = withoutPreviewWeather(draft_);
+    if (preview_ && weatherBase == previewWeatherBase_) {
+      preview_->setEditorWeather(*draft);
+      previewSettings_ = previewSettings(draft_);
+      return;  // Never destroy/rebuild the board or reset the camera for a weather edit.
+    }
+    previewWeatherBase_ = std::move(weatherBase);
     ember::Board board(*data_, *draft);
     board.loadRelief(base_.artRoot);
     std::map<std::string, int> skipped;
@@ -2086,7 +2099,7 @@ class MapEditorStage : public Stage {
       {Tab::Terrain, "terrain", "mountain", "Terreno", "Pintar os tiles e esculpir a elevação."},
       {Tab::Decor, "decor", "castle", "Decoração", "Decorações 2D, paredes 3D e objetos 3D."},
       {Tab::Units, "units", "users", "Unidades", "Heróis, inimigos, NPCs e invocações."},
-      {Tab::Scene, "scene", "sun-moon", "Cenário", "Ground, panorama e iluminação."},
+      {Tab::Scene, "scene", "sun-moon", "Cenário", "Ground, panorama, céu, iluminação, clima, nuvens e névoa."},
       {Tab::Rules, "rules", "scroll-text", "Regras", "Vitória, regras do mapa e da peça selecionada."},
       {Tab::World, "world", "globe", "Mundo", "Local no mapa-múndi, Locais e encontros de estrada."}};
   static constexpr float kRail = 80;
@@ -2101,6 +2114,7 @@ class MapEditorStage : public Stage {
   // A brush tab opened from another brush: its first brush is armed (a click on the board does what the open tab shows).
   void openTab(Tab t) {
     tab_ = t;
+    scrollTo_ = 0.0f;  // Every section opens at its first control.
     if (t != Tab::Terrain && t != Tab::Decor && t != Tab::Units) return;
     if (tabOf(mode_) == t) return;
     turning_ = turningDeco_ = false;
@@ -2132,7 +2146,7 @@ class MapEditorStage : public Stage {
     const float footer = 64.0f + (note_.empty() ? 0.0f : 50.0f) + (bigNote_ ? 120.0f : 0.0f);
     ImGui::PushStyleColor(ImGuiCol_ChildBg, kRailInk);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 8});
-    ImGui::BeginChild("##rail", {kRail, -footer}, ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_NoScrollbar);
+    ImGui::BeginChild("##rail", {kRail, -footer}, ImGuiChildFlags_AlwaysUseWindowPadding);
     ImGui::PopStyleVar();
     ImGui::PopStyleColor();
     drawRail();
@@ -2249,18 +2263,19 @@ class MapEditorStage : public Stage {
 
   void drawRail() {
     ImDrawList* dl = ImGui::GetWindowDrawList();
+    const float rowHeight = std::clamp(ImGui::GetContentRegionAvail().y / static_cast<float>(std::size(kTabs)), 36.0f, 64.0f);
     for (const TabInfo& t : kTabs) {
       const ImVec2 a = ImGui::GetCursorScreenPos();
-      const ImVec2 b{a.x + kRail, a.y + 64};
-      if (ImGui::InvisibleButton(std::format("##tab{}", t.key).c_str(), {kRail, 64})) openTab(t.tab);
+      const ImVec2 b{a.x + kRail, a.y + rowHeight};
+      if (ImGui::InvisibleButton(std::format("##tab{}", t.key).c_str(), {kRail, rowHeight})) openTab(t.tab);
       const bool on = tab_ == t.tab, hover = ImGui::IsItemHovered();
       if (on || hover) dl->AddRectFilled(a, b, on ? IM_COL32(36, 26, 19, 255) : IM_COL32(24, 18, 14, 255));
       if (on) dl->AddRectFilled(a, {a.x + 3, b.y}, kEmberInk);
       const ImU32 ink = on ? IM_COL32(255, 196, 140, 255) : hover ? kTextInk : IM_COL32(170, 156, 138, 255);
-      uiIcon(dl, t.icon, {a.x + kRail * 0.5f, a.y + 23}, 22, ink);
+      uiIcon(dl, t.icon, {a.x + kRail * 0.5f, a.y + rowHeight * 0.32f}, std::min(22.0f, rowHeight * 0.36f), ink);
       ImFont* font = uiFont(on ? UiFont::Strong : UiFont::Plain);
       const ImVec2 ts = font->CalcTextSizeA(14.0f, FLT_MAX, 0.0f, t.name);
-      dl->AddText(font, 14.0f, {std::round(a.x + (kRail - ts.x) * 0.5f), a.y + 40}, ink, t.name);
+      dl->AddText(font, 14.0f, {std::round(a.x + (kRail - ts.x) * 0.5f), a.y + rowHeight * 0.64f}, ink, t.name);
       if (hover) ImGui::SetTooltip("%s", t.about);
     }
   }
@@ -2306,7 +2321,7 @@ class MapEditorStage : public Stage {
       case Tab::Scene:
         section("Ground e Panorama");
         drawGroundAndPanorama();
-        section("Iluminação");
+        section("Ambiente, iluminação e clima");
         drawLighting();
         break;
       case Tab::Rules:
@@ -2732,6 +2747,44 @@ class MapEditorStage : public Stage {
     return files;
   }
 
+  void drawWeather() {
+    {
+      static const char* ids[] = {"none", "rain", "storm", "snow", "ash"};
+      static const char* labels[] = {"Sem precipitação", "Dia chuvoso", "Tempestade", "Neve", "Chuva de Cinzas"};
+      const std::string current = draft_.value("weather", std::string("none"));
+      int selected = 0;
+      for (int i = 0; i < 5; ++i) if (current == ids[i]) selected = i;
+      fieldLabel("Clima");
+      ImGui::SetNextItemWidth(-1);
+      // All choices stay visible: selecting one no longer hides the remaining climates in a closed menu.
+      for (int i = 0; i < 5; ++i)
+        if (ImGui::RadioButton(labels[i], selected == i)) {
+          beginEdit();
+          draft_["weather"] = ids[i];
+          selected = i;
+        }
+      ImGui::BeginDisabled(selected == 0);
+      slider("Intensidade do clima", "weatherIntensity", 0, 1, 0.7f);
+      slider("Vento do clima", "weatherWind", 0, 1, 0.35f);
+      ImGui::EndDisabled();
+    }
+    {
+      // Percentages are displayed directly; the saved normalized values feed both cloud renderers.
+      auto cloudSlider = [&](const char* label, const char* key, float fallback) {
+        float percent = std::clamp(draft_.value(key, fallback), 0.0f, 1.0f) * 100.0f;
+        fieldLabel(label);
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::SliderFloat((std::string("##") + key).c_str(), &percent, 0, 100, "%.0f%%")) {
+          beginEdit();
+          draft_[key] = percent / 100.0f;
+        }
+      };
+      cloudSlider("Densidade das nuvens", "cloudCoverage", 0.32f);
+      cloudSlider("Tom cinzento das nuvens", "cloudGray", 0.0f);
+      hint("%s", "Densidade: 0% sem nuvens, 100% céu encoberto. Tom: 0% brancas, 100% cinza-escuro.");
+    }
+  }
+
   void drawLighting() {
     {
       // Subterrâneo (the user, 2026-10-21): the only maps free of the sun, the moon and the sky; saved as "underground": true (an
@@ -2830,15 +2883,16 @@ class MapEditorStage : public Stage {
       std::string shown = "Automático (pelo nome do mapa)";
       for (const Volumetrics::Profile& p : profiles)
         if (p.name == current) shown = p.label;
-      fieldLabel("Clima");
+      fieldLabel("Perfil da névoa");
       ImGui::SetNextItemWidth(-1);
-      if (ImGui::BeginCombo("##Clima", shown.c_str())) {
+      if (ImGui::BeginCombo("##PerfilNeblina", shown.c_str())) {
         if (ImGui::Selectable("Automático (pelo nome do mapa)", current.empty())) beginEdit(), draft_.erase("atmosphereProfile");
         for (const Volumetrics::Profile& p : profiles)
           if (ImGui::Selectable(p.label.c_str(), p.name == current)) beginEdit(), draft_["atmosphereProfile"] = p.name;
         ImGui::EndCombo();
       }
     }
+    drawWeather();
     slider("Névoa", "mistIntensity", 0, 1, 0);
     slider("Vel. da névoa", "mistSpeed", 0.1f, 4, 1);
     slider("Wisps", "wispIntensity", 0, 1, 0);
@@ -3616,7 +3670,8 @@ class MapEditorStage : public Stage {
         ImGui::SameLine();
         hint("%s%s%s", f.file.filename().string().c_str(), f.own ? "" : " (Ember)",
                             activeSerial && *activeSerial == f.serial ? " · ativa na campanha" : f.serial == latest ? " · arquivo mais novo" : "");
-        ImGui::SameLine();
+        // The buttons on their own line: after the file name they ran past the panel's edge and Apagar was never seen.
+        ImGui::Indent(34);
         if (ImGui::SmallButton("Carregar")) openFile(f.file, std::format("Aberto {}.", f.file.filename().string()));
         ImGui::SameLine();
         ImGui::BeginDisabled(activeSerial && *activeSerial == f.serial);
@@ -3627,25 +3682,28 @@ class MapEditorStage : public Stage {
           prepare(f.file);
         }
         ImGui::EndDisabled();
-        if (f.own) {
+        // Ours, or an editor-made map's copy in Ember's folder (custom-*); never an original campaign map there.
+        if (f.own || id.starts_with("custom-")) {
           ImGui::SameLine();
           const std::string name = f.file.filename().string();
-          if (ImGui::SmallButton(armedDelete_ == name ? "Erase?" : "✕")) {
-            if (armedDelete_ != name) {
-              armedDelete_ = name;
-              note(std::format("Clique de novo no X pra apagar {} — isso não tem volta.", name));
+          if (ImGui::SmallButton(armedDelete_ == f.file.string() ? "Confirmar apagar" : "Apagar")) {
+            if (armedDelete_ != f.file.string()) {
+              armedDelete_ = f.file.string();
+              note(std::format("Clique de novo em Confirmar apagar pra apagar {} — isso não tem volta.", name));
             } else {
               armedDelete_.clear();
               std::error_code ec;
               std::filesystem::remove(f.file, ec);
               note(ec ? std::format("NÃO APAGOU {}: {}", name, ec.message()) : std::format("{} apagado.", name));
               if (activeSerial && *activeSerial == f.serial) setActive(id, std::nullopt);
+              ImGui::Unindent(34);
               ImGui::PopID();
               rescan();
               return;
             }
           }
         }
+        ImGui::Unindent(34);
         ImGui::PopID();
       }
     }
@@ -4059,6 +4117,7 @@ class MapEditorStage : public Stage {
   std::deque<ember::Json> past_, future_;
   std::chrono::steady_clock::time_point lastEdit_{};
   bool dirty_ = false;
+  ember::Json previewWeatherBase_;  // full last-applied draft excluding live weather settings
   ember::Json previewSettings_;  // the draft's settings the open preview was made with (previewSettings)
   // The brush stroke (Terreno / Elevação dragged over the preview): the hexes painted so far, the last one, the hexes raised.
   // Personagens: what a click in Herói / Inimigo places (a named hero's name or "", class), and the palette's search.

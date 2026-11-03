@@ -120,7 +120,17 @@ float3 skyRadiance(AtmosphereFrame a, float3 dir) {
   const float viewZenith = acos(clamp(dir.y, -1.0, 1.0));
   const float2 dh = normalize(dir.xz + float2(1e-6, 0.0)), sh = normalize(a.sunDirection.xz + float2(1e-6, 0.0));
   const float azimuthCos = dot(dh, sh);
-  return gTextures[NonUniformResourceIndex(a.skyView)].SampleLevel(gSamplers[a.linearSampler], skyViewUv(a, viewZenith, azimuthCos), 0).rgb;
+  const float3 sky = gTextures[NonUniformResourceIndex(a.skyView)].SampleLevel(gSamplers[a.linearSampler], skyViewUv(a, viewZenith, azimuthCos), 0).rgb;
+  // At the zenith every azimuth meets in one point, but the table's first row lies ~2 degrees off it and still differs by azimuth:
+  // looking straight up drew radial wedges converging there (the user, 2026-11-03). Within 12 degrees of the zenith the sky
+  // fades to the mean over the azimuths at that height.
+  const float zenithBlend = 1.0 - smoothstep(0.0, 0.21, viewZenith);
+  if (zenithBlend <= 0.0) return sky;
+  float3 mean = 0.0;
+  [unroll] for (int i = 0; i < 6; ++i)
+    mean += gTextures[NonUniformResourceIndex(a.skyView)].SampleLevel(gSamplers[a.linearSampler],
+                                                                       skyViewUv(a, viewZenith, cos(kPi * (float(i) + 0.5) / 6.0)), 0).rgb;
+  return lerp(sky, mean / 6.0, zenithBlend);
 }
 
 // The view direction through a pixel (centre at +0.5).
@@ -208,33 +218,8 @@ float3 realStars(uint64_t atmosphere, float3 dir, float pixelAngle) {
   float3 radiance = catalogStars(atmosphere, dir, pixelAngle, scale);
   // The dim field under the catalogue (look 003 at a tenth), the faint stars no one names.
   radiance += starField(3u, dir, pixelAngle) * 0.1;
-  // The Milky Way: galactic latitude b (from the pole) and longitude l (from the centre, about the pole).
-  const float milky = vk::RawBufferLoad<float>(atmosphere + kMilkyWayOffset);
-  if (milky > 0.0) {
-    const float3 pole = vk::RawBufferLoad<float3>(atmosphere + kGalaxyPoleOffset);
-    const float3 centre = vk::RawBufferLoad<float3>(atmosphere + kGalaxyCentreOffset);
-    const float2 lb = galacticLB(dir, pole, centre);
-    const float l = lb.x, b = lb.y;
-    // The band: a thin bright core in a wider halo, both thicker and brighter towards the centre (the bulge).
-    const float toCentre = exp(-l * l / 1.6);
-    const float width = radians(6.0) * (1.0 + 1.2 * toCentre);
-    float band = exp(-b * b / (width * width)) * (0.5 + 1.5 * toCentre) + 0.35 * exp(-b * b / (width * width * 9.0)) * (0.5 + toCentre);
-    // Its texture: patches of star clouds, and the dust lanes (the Great Rift from Cygnus to Centaurus, below the centre).
-    const float2 g = float2(l * 8.0, b * 14.0);
-    const float clouds = 0.55 + 0.9 * cloudNoise(g * 1.7 + 3.1) * cloudNoise(g * 0.7 + 9.4);
-    const float rift = smoothstep(0.35, 0.6, cloudNoise(g * 1.1 + float2(21.0, 4.0))) * smoothstep(radians(20.0), 0.0, abs(b - radians(1.5))) *
-                       smoothstep(-2.2, -0.2, l) * smoothstep(1.4, 0.3, l);
-    band *= clouds * (1.0 - 0.75 * rift);
-    radiance += band * milky * scale * 0.03 * float3(0.92, 0.9, 1.0);
-    // The Magellanic clouds: two soft patches of the same light.
-    [unroll] for (uint k = 0; k < 2; ++k) {
-      const float4 m = vk::RawBufferLoad<float4>(atmosphere + kMagellanicOffset + k * 16u);
-      if (m.w <= 0.0) continue;
-      const float angle = acos(clamp(dot(dir, m.xyz), -1.0, 1.0));
-      const float patch = exp(-angle * angle / (m.w * m.w)) * (0.6 + 0.8 * cloudNoise(dir.xz * 40.0 + dir.y * 17.0 + k * 5.0));
-      radiance += patch * milky * scale * (k == 0 ? 0.03 : 0.02) * float3(0.95, 0.93, 1.0);
-    }
-  }
+  // No Milky Way band nor Magellanic patches (the user, 2026-11-03): drawn as soft noise they read as white clouds flying
+  // across the sky.
   return radiance;
 }
 
@@ -249,7 +234,7 @@ float3 realStars(uint64_t atmosphere, float3 dir, float pixelAngle) {
 static const uint kGalaxyMapOffset = 480u, kSkyMapSamplerOffset = 504u, kGalaxyStrengthOffset = 508u;
 
 static const float kPaintingWhite = 0.8;  // the painting's light before the tonemap (1.6 burned its gold to orange)
-static const float kPaintingRepeats = 2.0;  // times round the sky
+static const float kPaintingRepeats = 1.0;  // times round the sky: the galaxy painting is a whole 2:1 sphere
 float3 andromedaSky(uint64_t atmosphere, float3 dir, float pixelAngle) {
   const float strength = vk::RawBufferLoad<float>(atmosphere + kGalaxyStrengthOffset);
   const uint tex = vk::RawBufferLoad<uint>(atmosphere + kGalaxyMapOffset);
@@ -294,7 +279,7 @@ float3 moonAureole(AtmosphereFrame a, float3 dir, float3 moonDirection, float3 m
 // one pixel's width (radians). Takes the moon's fields one by one: with the AtmosphereFrame passed by value, DXC
 // (Vulkan SDK 1.4.363.0) read moonTexture wrong inside the function (2026-10-15, found with raw buffer probes).
 float3 moonDisc(float3 dir, float pixelAngle, float3 radiance, float3 moonDirection, uint moonTexture, float tanRadius,
-                float glow, uint linearSampler, float3 air) {
+                float glow, uint linearSampler, float3 air, float whole) {
   const float c = dot(dir, moonDirection);
   if (moonTexture == kNoTexture || c <= 0.0) return radiance;
   const float3 right = normalize(cross(moonDirection, float3(0.0, 1.0, 0.0)));
@@ -316,7 +301,12 @@ float3 moonDisc(float3 dir, float pixelAngle, float3 radiance, float3 moonDirect
   // At the disc's rim the blurred copy takes in the bright face beside it and drew the art's dark outline as moon: a black ring
   // over a bright sky (the user, 2026-11-03, with the word). There only the pixel's own light counts.
   const float inner = 1.0 - smoothstep(0.80, 0.95, length(p));
-  const float lit = smoothstep(0.0, 0.12, max(dot(art.rgb, kLuma), dot(coarse.rgb, kLuma) * 1.5 * inner));
+  // Judged by the brightest channel, not the luminance: the blood moon's deep red seas have little luminance and were let through as
+  // the white glow behind them ("bLOOD MOON IS STILL WHITE", the user, 2026-11-03); only the phases' black dark side is let through.
+  const float artLight = max(art.r, max(art.g, art.b)), coarseLight = max(coarse.r, max(coarse.g, coarse.b));
+  // A full or blood moon (`whole`: AtmosphereFrame.moonWhole) has no dark side: all of its disc is moon, its darkest seas at the rim
+  // included (they let the glow through as white spots, the user, 2026-11-03: "CLEARLY WHITE SPOTS").
+  const float lit = whole > 0.5 ? 1.0 : smoothstep(0.0, 0.06, max(artLight, coarseLight * 1.5 * inner));
   return lerp(radiance, art.rgb * glow * air, art.a * lit);
 }
 
@@ -386,7 +376,7 @@ CloudHit cloudSheet(MeshFrame f, AtmosphereFrame a, CloudParams c, float3 origin
     const float phaseMoon = (0.72 * phaseHG(cm, 0.62) + 0.28 * phaseHG(cm, -0.18)) * 4.0 * kPi;
     direct += moonOnTop * phaseMoon * lerp(0.8, 1.35, powder) * bottom * 0.45;
   }
-  float3 color = albedo * (direct + fill / kPi);
+  float3 color = albedo * (direct + fill / kPi) * cloudMaterialBrightness(f);
   // Distance haze: towards the horizon the cloud takes the sky's own colour there.
   const float haze = 1.0 - exp(-t / 7000.0);
   color = lerp(color, clear, haze);
@@ -455,6 +445,8 @@ float4 cloudVolAt(MeshFrame f, float2 uv) {
   // than this).
   const float2 texel = vk::RawBufferLoad<float2>(f.atmosphere + kVolMarchSizeOffset);
   const float2 t = 1.0 / max(texel, 1.0);
+  // Plain weights: an edge-preserving weight kept the half-resolution texels' steps and the march's grain along every edge
+  // (blocky, speckled fringes, the user, 2026-11-03).
   float4 sum = 0.0;
   [unroll] for (int y = -1; y <= 1; ++y)
     [unroll] for (int x = -1; x <= 1; ++x) {
@@ -517,7 +509,7 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
     }
     if (a.moonTexture != kNoTexture) {
       radiance = moonDisc(dir, pixelAngle, radiance, a.moonDirection, a.moonTexture, a.moonTanRadius, a.moonGlow, a.linearSampler,
-                          transmittanceToTop(a, a.viewHeight, dir.y));
+                          transmittanceToTop(a, a.viewHeight, dir.y), vk::RawBufferLoad<float>(f.atmosphere + 444u));  // moonWhole
     }
     // The clouds last, over the stars and the moon (a thin veil over the moon, a thick cloud hiding the stars): the volumetric
     // layer marched this frame (cloudsvol.hlsl), or the sheets' light, on the sky's own scale.
