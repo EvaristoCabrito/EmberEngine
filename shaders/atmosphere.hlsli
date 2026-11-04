@@ -278,14 +278,17 @@ float3 moonAureole(AtmosphereFrame a, float3 dir, float3 moonDirection, float3 m
 // in the sky, its brightness the art x glow, seen through the air (`air`: transmittance towards it). `pixelAngle`:
 // one pixel's width (radians). Takes the moon's fields one by one: with the AtmosphereFrame passed by value, DXC
 // (Vulkan SDK 1.4.363.0) read moonTexture wrong inside the function (2026-10-15, found with raw buffer probes).
-float3 moonDisc(float3 dir, float pixelAngle, float3 radiance, float3 moonDirection, uint moonTexture, float tanRadius,
+// The moon is a solid body (the user, 2026-11-03: "COPY HOW THE WORLD ACTUALLY WORKS"): its whole disc hides what lies behind it
+// (the stars, the galaxy painting); its lit part shines with the art; its dark side adds nothing, so there only the air in front of
+// it shows. Returns rgb = the disc's light, a = how much of the sky behind it the disc hides (0 off the disc).
+float4 moonDisc(float3 dir, float pixelAngle, float3 moonDirection, uint moonTexture, float tanRadius,
                 float glow, uint linearSampler, float3 air, float whole) {
   const float c = dot(dir, moonDirection);
-  if (moonTexture == kNoTexture || c <= 0.0) return radiance;
+  if (moonTexture == kNoTexture || c <= 0.0) return 0.0;
   const float3 right = normalize(cross(moonDirection, float3(0.0, 1.0, 0.0)));
   const float3 up = cross(right, moonDirection);
   const float2 p = float2(dot(dir, right), dot(dir, up)) / (c * tanRadius);  // +-1 on the disc's edge
-  if (any(abs(p) > 1.25)) return radiance;
+  if (any(abs(p) > 1.25)) return 0.0;
   uint width, height;
   gTextures[NonUniformResourceIndex(moonTexture)].GetDimensions(width, height);
   const float lod = log2(max(pixelAngle * 0.4 * float(width) / tanRadius, 1e-4));
@@ -307,7 +310,7 @@ float3 moonDisc(float3 dir, float pixelAngle, float3 radiance, float3 moonDirect
   // A full or blood moon (`whole`: AtmosphereFrame.moonWhole) has no dark side: all of its disc is moon, its darkest seas at the rim
   // included (they let the glow through as white spots, the user, 2026-11-03: "CLEARLY WHITE SPOTS").
   const float lit = whole > 0.5 ? 1.0 : smoothstep(0.0, 0.06, max(artLight, coarseLight * 1.5 * inner));
-  return lerp(radiance, art.rgb * glow * air, art.a * lit);
+  return float4(art.rgb * glow * air * lit * art.a, art.a);
 }
 
 // Nuvens básicas (clouds.hlsli; the user: "tem que ser boa"): two cloud sheets seen from below along the ray from
@@ -490,6 +493,8 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
     }
     // Stars, fixed to the sky: at night, or fading in as the sun goes down (the saved look in starLook; 4 = the real sky).
     const float night = max(a.stars, a.sunDisc != 0 ? 1.0 - smoothstep(-0.12, 0.02, a.sunDirection.y) : 0.0);
+    // What lies beyond the air (the stars, the galaxy painting): the moon's disc hides it (moonDisc below).
+    const float3 inFront = radiance;
     if (night > 0.0) {
       const float3 air = transmittanceToTop(a, a.viewHeight, dir.y);
       if (a.starLook == 4u || a.starLook == 5u) {
@@ -508,8 +513,9 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
       }
     }
     if (a.moonTexture != kNoTexture) {
-      radiance = moonDisc(dir, pixelAngle, radiance, a.moonDirection, a.moonTexture, a.moonTanRadius, a.moonGlow, a.linearSampler,
-                          transmittanceToTop(a, a.viewHeight, dir.y), vk::RawBufferLoad<float>(f.atmosphere + 444u));  // moonWhole
+      const float4 disc = moonDisc(dir, pixelAngle, a.moonDirection, a.moonTexture, a.moonTanRadius, a.moonGlow, a.linearSampler,
+                                   transmittanceToTop(a, a.viewHeight, dir.y), vk::RawBufferLoad<float>(f.atmosphere + 444u));  // moonWhole
+      radiance = inFront + (radiance - inFront) * (1.0 - disc.a) + disc.rgb;
     }
     // The clouds last, over the stars and the moon (a thin veil over the moon, a thick cloud hiding the stars): the volumetric
     // layer marched this frame (cloudsvol.hlsl), or the sheets' light, on the sky's own scale.

@@ -2290,6 +2290,7 @@ class MapStage final : public Stage {
   static constexpr float kFlameEmit = 2.5f;           // Ember FLAME_EMIT
   // Light mode "real" (ARCHITECTURE 7.6 step A).
   static constexpr float kSunLux = 128000.0f;       // the sun above the atmosphere
+  static constexpr float kNightFill = 4.0f;  // the night sky's fill on shadowed sides, x the physical (two stops; realLighting)
   static constexpr float kFullMoonLux = 0.5f;       // a full moon (real 0.25, lifted so moonlit ground reads)
   // "Luar: cinema" (the user, 2026-10-19: "gostaria que luz do luar também"): under the camera's night darkening the physical
   // moon never showed on the ground (a capture of cemiterio: black beside the lanterns), so the cinema moon lights like a
@@ -4195,7 +4196,7 @@ class MapStage final : public Stage {
     }
     const glm::vec3 keyColor = t.moon ? Renderer::srgb(moon.color ? moon.color : t.keyColor) : glm::vec3(1.0f);
     const float moonLux = moonLight_ == 1 ? kCinemaMoonLux : kFullMoonLux;  // panel "Luar": físico / cinema
-    const float outside = (t.moon ? moonLux * moon.strength : kSunLux) * keyMul;  // the key light above the air
+    const float outside = (t.moon ? moonLux * realMoonShare(phase) : kSunLux) * keyMul;  // the key light above the air
     const float sinElevation = std::max(l.sunDirection.y, 0.0f);
     if (indoor) {
       l.sunColor = Renderer::srgb(t.moon && moon.color ? moon.color : t.keyColor);
@@ -4234,6 +4235,9 @@ class MapStage final : public Stage {
       // da lua", the user, 2026-11-03).
       l.moonGlow = moonDiscGlow();
       l.moonWhole = moonWholePhase(phase) ? 1.0f : 0.0f;
+      // The night's shadow side is never pure black (the user, 2026-11-04: "i will not take these black shadows"): the moonlit sky's
+      // fill, a sliver of the moon's own light, is raised two stops, so a figure or ground facing away from the moon keeps its form.
+      l.ambientMul = ambientMul * kNightFill;
     }
     return l;
   }
@@ -4252,7 +4256,7 @@ class MapStage final : public Stage {
       if (scene_->moonPhase == ember::kMoonPhases[i]) phase = i;
     // A map that chose no Lua: Noite escura takes the new moon (no moon, the whole starry sky), Noite clara the full moon (-1, as
     // before); the user, 2026-10-23: "Noite escura com lua nova quando o mapa não escolhe a fase; Noite clara com lua cheia".
-    if (phase < 0 && scene_ && scene_->moonPhase.empty() && scene_->timeOfDay == "darkNight") phase = 0;
+    // The user, 2026-11-03 ("EU QUERO A LUA"): Noite escura without a chosen Lua takes the full moon too, like every other hour.
     return phase;
   }
 
@@ -4281,7 +4285,7 @@ class MapStage final : public Stage {
     ember::lightDirection(azimuth + pi, -elevation * 0.9f, d);
     const glm::vec3 moonDir = glm::normalize(glm::vec3(d[0], d[1], d[2]));
     const glm::vec3 moonColor = Renderer::srgb(moon.color ? moon.color : 0x9fb4ffu);
-    const float moonLux = (moonLight_ == 1 ? kCinemaMoonLux : kFullMoonLux) * moon.strength;
+    const float moonLux = (moonLight_ == 1 ? kCinemaMoonLux : kFullMoonLux) * realMoonShare(phase);
     const auto through = [](glm::vec3 dir, glm::vec3 colour, float& lum) {
       const glm::vec3 c = atmosphereTransmittance(AtmosphereFrame{}, dir) * colour;
       lum = 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b;
@@ -4321,6 +4325,7 @@ class MapStage final : public Stage {
       l.sunIntensity = moonLux * moonLum;
       const float twilight = dayMeterAtHorizon * std::pow(10.0f, glm::degrees(elevation) / 2.4f);
       meterLux_ = twilight + l.sunIntensity * (std::max(moonDir.y, 0.05f) + 0.2f);
+      l.ambientMul = kNightFill;  // the night's shadow side never pure black (realLighting's rule)
     }
     if (moonDir.y > -0.05f) {
       l.moonDirection = moonDir;
@@ -4338,6 +4343,17 @@ class MapStage final : public Stage {
   float moonDiscGlow() const { return kMoonDiscWhite / std::max(exposure_, 1e-6f); }
   // A full or a blood moon: no dark side, its whole disc is drawn (atmosphere.hlsli moonDisc; the user, 2026-11-03: "CLEARLY WHITE SPOTS").
   static bool moonWholePhase(std::string_view phase) { return phase == "full" || phase == "blood"; }
+  // The moon's light by its phase as in the real world (the user, 2026-11-03: "COPY HOW THE WORLD ACTUALLY WORKS"): the full moon's
+  // share at phase angle a (degrees from full), Allen's law 10^(-0.4 (0.026 a + 4e-9 a^4)): a quarter ~9 %, a crescent ~1 %, the new
+  // moon ~0; a total eclipse (the blood moon) ~0.02 %.
+  static float realMoonShare(std::string_view phase) {
+    if (phase == "blood") return 2e-4f;
+    int i = 4;  // full
+    for (int k = 0; k < 8; ++k)
+      if (phase == ember::kMoonPhases[k]) i = k;
+    const float a = std::abs(180.0f - 45.0f * static_cast<float>(i));
+    return std::pow(10.0f, -0.4f * (0.026f * a + 4e-9f * a * a * a * a));
+  }
 
   // How many stops darker than the meter the camera exposes (Unreal's exposure compensation curve by scene
   // brightness): none in full daylight, up to 0.75 as the sun sinks (dawn, dusk), then 2.5 by a moonlit night and more

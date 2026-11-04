@@ -2829,9 +2829,9 @@ class MapEditorStage : public Stage {
       // refletir tudo isso"): the map's own moon in Modo teste and the editor; a campaign fight takes its day's phase instead.
       static const char* kPhaseLabels[9] = {"Nova", "Crescente", "Quarto crescente", "Gibosa crescente", "Cheia",
                                             "Gibosa minguante", "Quarto minguante", "Minguante", "Lua de sangue"};
-      // No Lua chosen: the moon the map gets by its hour (Noite escura: Nova; every other hour: Cheia).
+      // No Lua chosen: the full moon at every hour (the user, 2026-11-03: "EU QUERO A LUA").
       const std::string phase = draft_.value("moonPhase", std::string());
-      int shownPhase = tod == "darkNight" ? 0 : 4;
+      int shownPhase = 4;
       for (int i = 0; i < 9; ++i)
         if (phase == ember::kMoonPhases[i]) shownPhase = i;
       fieldLabel("Lua");
