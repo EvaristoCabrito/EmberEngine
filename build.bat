@@ -14,13 +14,7 @@ if not defined VULKAN_SDK (
 )
 echo Vulkan SDK: %VULKAN_SDK%
 
-rem A trava do panorama (o usuario, 23/10/2026): todos os mapas sao panoramas, sem excecao. O build para se o caminho do panorama
-rem sair do shader, se um mapa perder seu panorama ou se um valor travado mudar sem a trava ser atualizada a mando do usuario.
-python -I "%~dp0tools\scripts\check_panorama_lock.py"
-if errorlevel 1 (
-  echo [ERRO] Trava do panorama: build cancelado.
-  exit /b 1
-)
+rem (A trava do panorama de 23/10/2026 foi removida em 04/11/2026 a mando do usuario: nenhuma trava, nenhuma senha.)
 
 rem Visual Studio: pergunta ao vswhere; se nao der, tenta os caminhos comuns.
 set "VCVARS="

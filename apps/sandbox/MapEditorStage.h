@@ -1202,7 +1202,7 @@ class MapEditorStage : public Stage {
     options.map.clear(), options.scene.clear(), options.battle.clear();
     options.draftData = std::move(*draft);
     options.sceneData = std::move(scene);
-    options.clouds = 0; // The editor starts clear until an authored cloud look is chosen.
+    options.clouds = 1;  // the game's clouds (Nuvens RDR2) in the preview, as in play
     options.fog = 0;  // the editor shows the whole board
     options.spellsMenu = false;
     options.editorClick = [this](int x, int y) {
@@ -2764,6 +2764,22 @@ class MapEditorStage : public Stage {
           draft_["weather"] = ids[i];
           selected = i;
         }
+    }
+    {
+      // The map's clouds (the user, 2026-11-04: "keep only the cloud that responds to the sliders"): the density and the grey tone
+      // the game's clouds (Nuvens RDR2, MapStage cloudCoverage_ / cloudGray_) answer to. Percentages shown, saved as 0..1.
+      auto cloudSlider = [&](const char* label, const char* key, float fallback) {
+        float percent = std::clamp(draft_.value(key, fallback), 0.0f, 1.0f) * 100.0f;
+        fieldLabel(label);
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::SliderFloat((std::string("##") + key).c_str(), &percent, 0, 100, "%.0f%%")) {
+          beginEdit();
+          draft_[key] = percent / 100.0f;
+        }
+      };
+      cloudSlider("Densidade das nuvens", "cloudCoverage", 0.45f);
+      cloudSlider("Tom cinzento das nuvens", "cloudGray", 0.0f);
+      hint("%s", "Densidade: 0% sem nuvens, 100% céu encoberto. Tom: 0% brancas, 100% cinza-escuro.");
     }
     ImGui::BeginDisabled(draft_.value("weather", std::string("none")) == "none");
     slider("Intensidade do clima", "weatherIntensity", 0, 1, 0.7f);

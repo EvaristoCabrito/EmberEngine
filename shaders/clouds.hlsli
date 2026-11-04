@@ -249,6 +249,7 @@ float cloudShadowCompute(MeshFrame f, float3 position) {
   const float3 sun = f.sunDirection;
   const float low = smoothstep(0.06, 0.2, sun.y);
   if (low <= 0.0) return 1.0;
+  if (f.cloudFlags & 8u) return 1.0;  // Nuvens RDR2 (clouds_rdr2.hlsli kCloudRdr2): its own map covers the board; beyond it, none
   if (f.cloudFlags & kCloudVolumetric) return cloudVolShadow(f, position, low);
   const CloudParams c = loadCloudParams(f);
   const float h = max(c.altitude - position.y, 1.0);

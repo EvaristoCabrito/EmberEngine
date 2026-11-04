@@ -6,6 +6,7 @@
 // asks for: filtered importance sampling). lighting.hlsli skyReflection() reads it by roughness. 256 x 128 x 6 levels:
 // ~44k texels a frame.
 #include "cloudsvol.hlsli"
+#include "cloudsvol_rdr2.hlsli"
 
 struct Push {
   uint64_t frame;  // MeshFrame (its skyReflect = this map, sampled)
@@ -32,7 +33,11 @@ void CSBase(uint2 pixel : SV_DispatchThreadID) {
   if (dir.y >= 0.0) {
     // The sky (no sun disc: the sun's highlight is the direct specular's), with the clouds seen from the board.
     const float3 clear = skyRadiance(a, dir);
-    if (f.cloudFlags & kCloudVolumetric) {
+    if (f.cloudFlags & kCloudRdr2) {
+      // Nuvens RDR2: the same layer marched coarsely from the board's middle (the water and the metals see the same clouds).
+      const Rdr2Hit hit = rdr2March(f, a, loadRdr2(f), float3(0.0, 0.0, 0.0), dir, clear * a.skyScale, 28u, 3u, 2u, 0.5, float2(0.5, 0.5));
+      radiance = clear * hit.transmittance + hit.color / max(a.skyScale, 1e-4);
+    } else if (f.cloudFlags & kCloudVolumetric) {
       // The volumetric layer, marched coarsely (12 steps: the map is 256 x 128) from the board's middle.
       const CloudVolHit hit = cloudVolMarch(f, a, loadCloudVolume(f), float3(0.0, 0.0, 0.0), dir, clear * a.skyScale, 24u, 0.5);
       radiance = clear * hit.transmittance + hit.color / max(a.skyScale, 1e-4);

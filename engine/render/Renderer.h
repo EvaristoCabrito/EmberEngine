@@ -40,6 +40,7 @@ struct LocalLight {
 };
 class Swapchain;
 class DebugUi;
+class CloudsRdr2;
 
 // Frame renderer. Everything is drawn into the renderer's own HDR targets (scene colour in
 // half-float, reversed-Z depth); a final pass tonemaps into an 8-bit output image that is copied
@@ -383,9 +384,17 @@ class Renderer {
     // `top`, ray marched once a frame at half resolution (sky, reflections, shadows on the board all from its density).
     bool volumetric = false;
     float base = 380.0f, top = 640.0f;  // world heights (the caller adds the board's mean ground)
+    // Nuvens RDR2 (render/CloudsRdr2.h; the user, 2026-11-04: the Red Dead Redemption 2 clouds as the game's clouds): instead of
+    // the sheets and look 001, the talk's model: weather map, height profile per type, cumulonimbus growth, cirrus, octaves of
+    // scattering, temporal reconstruction, a blurred shadow map. `quality` 0 Ultra .. 3 Low changes only the resolution and
+    // the step counts, never the look.
+    bool rdr2 = false;
+    int quality = 0;
+    float anvilTop = 1100.0f, cirrusHeight = 2600.0f;  // world heights (the caller adds the mean ground)
+    float cirrusCoverage = 0.25f, kind = 0.65f, growth = 0.0f, rain = 0.0f, lightning = 0.0f;
   };
-  // No clouds in the game (the user, 2026-11-04: "remove all clouds"): whatever the caller asks, none is drawn.
-  void setClouds(const Clouds& clouds) { clouds_ = clouds; clouds_.enabled = false; }
+  void setClouds(const Clouds& clouds) { clouds_ = clouds; }
+  CloudsRdr2* cloudsRdr2() { return cloudsRdr2_.get(); }
   // The real night sky (render/StarSky.h; star look 4): the catalogue's stars as world directions this frame, the galactic frame
   // for the Milky Way (strength `milkyWay`, 0 = none), the two Magellanic clouds (direction, radius in radians; 0 = none).
   static constexpr uint32_t kMaxStars = 512;
@@ -695,6 +704,9 @@ class Renderer {
   // Atmosfera volumétrica v1 (last: it releases its bindless slots before the tables go).
   std::unique_ptr<Volumetrics> volumetrics_;
   bool volumetricsThisFrame_ = false;
+  // Nuvens RDR2 (made on first use; its passes run after the sky tables, before anything reads the cloud shadow).
+  std::unique_ptr<CloudsRdr2> cloudsRdr2_;
+  bool cloudsRdr2ThisFrame_ = false;
 };
 
 }  // namespace ember

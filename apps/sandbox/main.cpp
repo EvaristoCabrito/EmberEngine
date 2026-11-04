@@ -34,7 +34,7 @@
 //        [--cards N]: 0 vertical cards, 1 (default) cards leaning back with the camera's tilt, upright on screen (panel "Cards").
 //        [--water N]: the board's water (panel "Água"): 0 Ember's, 1 (default) look 001 "ember" (looks/water/README.md).
 //        [--sky-reflect N]: 0 OFF, 1 (default) the sky's reflection map on water and specular surfaces (panel "Reflexo do céu").
-//        [--clouds N]: 0 OFF, 1 the basic cloud sheet, 2 (default) the volumetric clouds, look 001: sky, reflections, shadows (panel "Nuvens").
+//        [--clouds N]: 0 OFF, 1 (default) the RDR2 clouds: sky, reflections, shadows (panel "Nuvens"); [--clouds-quality N] 0 Ultra .. 3 Baixa.
 //        [--glare N] [--shafts N]: 0 (default) OFF, 1 the sun's lens glare / its crepuscular rays, look 001 (panels "Clarão", "Raios de luz").
 //        [--moonlight N]: light mode real, at night: 0 the physical moon (0.5 lux), 1 (default) the cinema moon (panel "Luar").
 //        [--sun-disc N]: the sun's disc in the sky: 0 the real 0.26 deg radius, 1 (default) the moon's small disc with a corona (panel "Sol").
@@ -171,7 +171,8 @@ struct Options {
   int waterLook = 0;    // --water N: the panel's "Água", both waters of the map (0 padrão = as the map has it, 1 the original,
                         // 2..4 looks 001..003)
   int skyReflect = 1;   // --sky-reflect N: the panel's "Reflexo do céu" (0 OFF, 1 the sky's reflection map)
-  int clouds = 6;       // --clouds N: the panel's "Nuvens" (0 OFF, 1 básica, 2 volumétricas)
+  int clouds = 1;       // --clouds N: the panel's "Nuvens" (0 OFF, 1 RDR2: the game's clouds)
+  int cloudQuality = 0;  // --clouds-quality N: "Nuvens: qualidade" (0 Ultra, 1 Alta, 2 Média, 3 Baixa)
   int glare = 0;        // --glare N: the panel's "Clarão" (0 OFF, 1 look 001)
   int shafts = 0;       // --shafts N: the panel's "Raios de luz" (0 OFF, 1 look 001)
   float gameHour = -1.0f;  // --game-hour H: the sky follows this hour of the game clock (0..23), as a campaign fight does
@@ -296,6 +297,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--water" && hasValue) o.waterLook = std::atoi(argv[++i]);
     else if (arg == "--sky-reflect" && hasValue) o.skyReflect = std::atoi(argv[++i]);
     else if (arg == "--clouds" && hasValue) o.clouds = std::atoi(argv[++i]);
+    else if (arg == "--clouds-quality" && hasValue) o.cloudQuality = std::atoi(argv[++i]);
     else if (arg == "--glare" && hasValue) o.glare = std::atoi(argv[++i]);
     else if (arg == "--shafts" && hasValue) o.shafts = std::atoi(argv[++i]);
     else if (arg == "--moonlight" && hasValue) o.moonLight = std::atoi(argv[++i]);
@@ -705,6 +707,7 @@ MapStageOptions mapOptions(const Options& o) {
     m.waterLook = o.waterLook;
     m.skyReflect = o.skyReflect;
     m.clouds = o.clouds;
+    m.cloudQuality = o.cloudQuality;
     m.glare = o.glare;
     m.shafts = o.shafts;
     m.moonLight = o.moonLight;

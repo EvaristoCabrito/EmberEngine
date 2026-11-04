@@ -65,6 +65,7 @@
 #include "core/Jobs.h"
 #include "core/Log.h"
 #include "render/BoardGround.h"
+#include "render/CloudsRdr2.h"
 #include "render/DebugUi.h"
 #include "render/FogLooks.h"
 #include "render/Renderer.h"
@@ -169,7 +170,8 @@ struct MapStageOptions {
   // --water N), "Reflexo do céu" (0 OFF, 1 the sky's reflection map; --sky-reflect N) and "Nuvens" (0 OFF, 1 básica; --clouds N).
   int waterLook = 0;
   int skyReflect = 1;
-  int clouds = 6;     // "Nuvens": 0 OFF, 1 básica (the sheets), 2 volumétricas (look 001, the default; --clouds N)
+  int clouds = 1;     // "Nuvens": 0 OFF, 1 RDR2 (the game's clouds, the default; --clouds N)
+  int cloudQuality = 0;  // "Nuvens: qualidade": 0 Ultra (default), 1 Alta, 2 Média, 3 Baixa (--clouds-quality N)
   int moonLight = 1;  // the panel's "Luar" (light mode real): 0 físico, 1 cinema (--moonlight N)
   int hour = 0;       // the panel's "Hora": 0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3..10 fixed hours (--hour N)
   // The game's own clock (the campaign's / the test world map's gameHour, 0..23): ALL the light from outside follows it, on every map but
@@ -320,7 +322,8 @@ class MapStage final : public Stage {
     windFogChoice_ = std::clamp(options.windFog, 0, 1);
     waterLook_ = std::clamp(options.waterLook, 0, 4);
     skyReflect_ = std::clamp(options.skyReflect, 0, 1);
-    clouds_ = 0;  // no clouds in the game (the user, 2026-11-04)
+    clouds_ = options.clouds > 0 ? 1 : 0;  // Nuvens RDR2 (the user, 2026-11-04: the Red Dead clouds as the game's clouds)
+    cloudQuality_ = std::clamp(options.cloudQuality, 0, 3);
     dayCycle_ = std::clamp(options.hour, 0, 10);
     tempoConfig_ = options.tempoConfig;
     tempoTimeline_.configure(tempoConfig_, options.campaignMinute * 60000, true);
@@ -980,29 +983,50 @@ class MapStage final : public Stage {
     {
       Renderer::Clouds clouds;
       clouds.enabled = clouds_ >= 1;
-      clouds.volumetric = clouds_ >= 2;
-      if (clouds.volumetric) {
-        // Bigger clouds with wider clearings than the sheets' (a layer seen at the game's low angle closes up otherwise); the
-        // sheets ("básica") keep their own numbers.
-        clouds.coverage = 0.32f;
-        clouds.scale = 420.0f;
+      clouds.volumetric = false;
+      clouds.rdr2 = clouds_ >= 1;  // Nuvens RDR2 (render/CloudsRdr2.h): the game's clouds
+      clouds.quality = cloudQuality_;
+      // The panel's choices reached smoothly, about three seconds from one to the next (the user's prompt: "nada muda de
+      // repente de um quadro pro outro"); the draft's own coverage and the Tempo's weather, when on, take the choice's place.
+      {
+        static const float kCover[5] = {0.05f, 0.25f, 0.45f, 0.65f, 0.9f}, kKind[3] = {0.1f, 0.5f, 0.9f}, kGrowth[3] = {0.0f, 0.5f, 1.0f},
+                           kCirrus[3] = {0.0f, 0.25f, 0.6f}, kRain[2] = {0.0f, 1.0f}, kLightning[3] = {0.0f, 0.4f, 1.0f},
+                           kWind[3] = {0.3f, 1.0f, 2.5f};
+        float target[7] = {kCover[cloudCoverChoice_], kKind[cloudKindChoice_], kGrowth[cloudGrowthChoice_], kCirrus[cloudCirrusChoice_],
+                           kRain[cloudRainChoice_], kLightning[cloudLightningChoice_], kWind[cloudWindChoice_]};
+        if (cloudCoverage_ >= 0.0f) target[0] = cloudCoverage_;
+        target[4] = std::max(target[4], cloudGray_);  // the Map Editor's "Tom cinzento": darker, heavier clouds
+        if (tempoActive) target[0] = tempoEffects.coverage, target[4] = tempoEffects.gray;
+        const float dt = cloudSmoothedAt_ < 0.0f ? 100.0f : std::clamp(now_ - cloudSmoothedAt_, 0.0f, 0.1f);
+        cloudSmoothedAt_ = now_;
+        const float k = std::min(1.0f, dt * 0.35f);
+        for (int i = 0; i < 7; ++i) cloudNow_[i] += (target[i] - cloudNow_[i]) * k;
+        clouds.coverage = cloudNow_[0];
+        clouds.kind = cloudNow_[1];
+        clouds.growth = cloudNow_[2];
+        clouds.cirrusCoverage = cloudNow_[3];
+        clouds.rain = cloudNow_[4];
+        clouds.lightning = cloudNow_[5];
+        clouds.wind = glm::vec2(8.0f, 3.0f) * cloudNow_[6];
+        clouds.gray = clouds.rain;
       }
-      if (cloudCoverage_ >= 0.0f) {
-        clouds.coverage = cloudCoverage_;
-        clouds.enabled = clouds.enabled && cloudCoverage_ > 0.0f;
+      if (cloudCoverage_ >= 0.0f && cloudCoverage_ <= 0.0f) clouds.enabled = false;  // a draft that says "no clouds"
+      if (tempoActive) {
+        clouds.enabled = clouds_ > 0 && tempoEffects.coverage > 0;
+        clouds.base = tempoEffects.base;
+        clouds.top = tempoEffects.base + tempoEffects.thickness;
+        clouds.anvilTop = clouds.top + 460.0f;
+        clouds.altitude = tempoEffects.base + tempoEffects.thickness * .35f;
+        clouds.scale = tempoEffects.scale;
+        clouds.wind = {tempoEffects.windX, tempoEffects.windZ};
       }
-      clouds.gray = cloudGray_;
-      if(tempoActive) {
-        clouds.enabled=clouds_>0 && tempoEffects.coverage>0;
-        clouds.coverage=tempoEffects.coverage; clouds.gray=tempoEffects.gray;
-        clouds.base=tempoEffects.base; clouds.top=tempoEffects.base+tempoEffects.thickness;
-        clouds.altitude=tempoEffects.base+tempoEffects.thickness*.35f;
-        clouds.scale=tempoEffects.scale; clouds.wind={tempoEffects.windX,tempoEffects.windZ};
-      }
-      clouds.altitude += meanGround_;  // the sheet's height above the board's mean ground
+      clouds.altitude += meanGround_;  // the heights above the board's mean ground
       clouds.base += meanGround_;
       clouds.top += meanGround_;
+      clouds.anvilTop += meanGround_;
+      clouds.cirrusHeight += meanGround_;
       renderer.setClouds(clouds);
+      if (CloudsRdr2* rdr2 = renderer.cloudsRdr2()) cloudTiming_ = rdr2->timing(renderer.gpuTimer());
       // The real night sky (render/StarSky.h): the catalogue turned to this hour's sidereal time (the cycle's hour, or 22 h on a
       // map whose own time is night, 12 h by day: the stars then hide behind the daylight anyway).
       if (starSky_.loaded() && starLook_ == 4 && !starsOff_) {
@@ -1821,6 +1845,32 @@ class MapStage final : public Stage {
       static const char* kLook[2] = {"OFF", "001"};
       dropdown("Clarão", glare_, 2, [](int i) { return std::string(kLook[i]); });
       dropdown("Raios de luz", shafts_, 2, [](int i) { return std::string(kLook[i]); });
+    }
+    {
+      // Nuvens RDR2 (render/CloudsRdr2.h; the user, 2026-11-04: the Red Dead Redemption 2 clouds, named by their model, not a
+      // number). The weather's inputs stay here as choices until a weather exists (the user's prompt §6); the GPU times are
+      // shown as information only (§5).
+      static const char* kClouds[2] = {"OFF", "RDR2"};
+      dropdown("Nuvens", clouds_, 2, [](int i) { return std::string(kClouds[i]); });
+      if (clouds_ >= 1) {
+        dropdown("Nuvens: qualidade", cloudQuality_, 4, [](int i) { return std::string(CloudsRdr2::kQualityNames[i]); });
+        static const char* kCover[5] = {"limpo", "pouco", "médio", "muito", "fechado"};
+        dropdown("Nuvens: cobertura", cloudCoverChoice_, 5, [](int i) { return std::string(kCover[i]); });
+        static const char* kKind[3] = {"stratus", "misto", "cumulus"};
+        dropdown("Nuvens: tipo", cloudKindChoice_, 3, [](int i) { return std::string(kKind[i]); });
+        static const char* kGrowth[3] = {"OFF", "médio", "cumulonimbus"};
+        dropdown("Nuvens: crescimento", cloudGrowthChoice_, 3, [](int i) { return std::string(kGrowth[i]); });
+        static const char* kCirrus[3] = {"OFF", "pouco", "muito"};
+        dropdown("Nuvens: cirros", cloudCirrusChoice_, 3, [](int i) { return std::string(kCirrus[i]); });
+        static const char* kRain[2] = {"OFF", "chuva"};
+        dropdown("Nuvens: chuva", cloudRainChoice_, 2, [](int i) { return std::string(kRain[i]); });
+        static const char* kLightning[3] = {"OFF", "raros", "frequentes"};
+        dropdown("Nuvens: raios", cloudLightningChoice_, 3, [](int i) { return std::string(kLightning[i]); });
+        static const char* kWind[3] = {"calmo", "brisa", "vento"};
+        dropdown("Nuvens: vento", cloudWindChoice_, 3, [](int i) { return std::string(kWind[i]); });
+        ImGui::TextDisabled("RDR2: clima %.2f ms, marcha %.2f ms, temporal %.2f ms, sombra %.2f ms", cloudTiming_.weather, cloudTiming_.march,
+                            cloudTiming_.resolve, cloudTiming_.shadow);
+      }
     }
     {
       static const char* kModes[4] = {"protótipo", "Ember", "física", "real"};
@@ -11526,7 +11576,13 @@ class MapStage final : public Stage {
   // original, 2..4 looks 001..003 (shaders/water_lookNNN.hlsli).
   int waterLook_ = 0;
   int skyReflect_ = 1;   // the panel's "Reflexo do céu": 0 OFF (the SH sky), 1 the sky's reflection map (skyreflect.hlsl)
-  int clouds_ = 2;       // the panel's "Nuvens": 0 OFF, 1 básica (shaders/clouds.hlsli), 2 volumétricas (cloudsvol.hlsli, look 001)
+  int clouds_ = 1;       // the panel's "Nuvens": 0 OFF, 1 RDR2 (render/CloudsRdr2.h, the game's clouds)
+  // Nuvens RDR2: the quality preset and the weather's choices (the panel), their smoothed values and the last GPU times.
+  int cloudQuality_ = 0, cloudCoverChoice_ = 2, cloudKindChoice_ = 2, cloudGrowthChoice_ = 0, cloudCirrusChoice_ = 1, cloudRainChoice_ = 0,
+      cloudLightningChoice_ = 0, cloudWindChoice_ = 1;
+  float cloudNow_[7] = {0.45f, 0.9f, 0.0f, 0.25f, 0.0f, 0.0f, 1.0f};
+  float cloudSmoothedAt_ = -1.0f;
+  CloudsRdr2::Timing cloudTiming_{};
   int glare_ = 0;        // the panel's "Clarão": 0 OFF (default), 1 look 001 (shaders/sunglare.hlsl)
   int shafts_ = 0;       // the panel's "Raios de luz": 0 OFF (default), 1 look 001
   // Atmosfera volumétrica v1 (render/Volumetrics.h, docs/ATMOSPHERE.md): the panel's "Atmosfera" (0 OFF, 1 cinema,

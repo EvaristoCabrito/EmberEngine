@@ -537,8 +537,8 @@ same code on every map, with no per-map variant, scale, flag, mode or path, indo
 only in what stands in front of the sky (its panorama, ground, ceiling: §7.0) and in the game's hour. In the user's final words:
 the one atmosphere ("céu, lua, estrelas, nuvens e sol") is shared by every map but the Subterrâneo ones (no sky there); the
 campaign's clock, running with the game's time, dictates each map's hour, and the day / night and lunar cycles follow it without
-exception; a map's local hour setting (the panel's "Hora") exists only to test the system. Lock: `tools/scripts/
-check_sky_lock.py` + `content/sky/sky.locked.json` (not yet run by build.bat; wired only when the user says the sky is right).
+exception; a map's local hour setting (the panel's "Hora") exists only to test the system. (The sky lock script of 2026-10-23 was deleted on 2026-11-04 with every other lock, on the user's order: no locks, no
+password.)
 
 **What Engine2 does (the look reference; `src/render/stage.ts`, `moon.ts`, `diorama.html`).**
 - Six time-of-day presets per map (`timeOfDay`): day, noon, dawn, dusk, brightNight, darkNight: each a key light

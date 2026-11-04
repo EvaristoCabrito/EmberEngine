@@ -2,6 +2,8 @@
 
 #include <cstring>
 
+#include "render/CloudsRdr2.h"
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/packing.hpp>
 
@@ -860,6 +862,7 @@ Renderer::~Renderer() {
   destroyImage(context_, volumeIntegrated_);
   if (fogMaskIndex_ != kNoIndex) bindless_.removeSampledImage(fogMaskIndex_);
   destroyImage(context_, fogMask_);
+  cloudsRdr2_.reset();
   volumetrics_.reset();
 }
 
@@ -1299,6 +1302,43 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
         cloudShadowHeight_ = shadowCenter_.y;
         cloudShadowThisFrame_ = true;
       }
+    }
+    // Nuvens RDR2 (render/CloudsRdr2.h): the frame's clouds; the look-001 march and the 256-texel shadow map stay idle.
+    cloudsRdr2ThisFrame_ = false;
+    if (clouds_.enabled && clouds_.rdr2 && hasScene_) {
+      if (!cloudsRdr2_) cloudsRdr2_ = std::make_unique<CloudsRdr2>(context_, bindless_, materialSamplerIndex_, linearClampIndex_);
+      CloudsRdr2::Params p;
+      p.quality = clouds_.quality;
+      p.base = clouds_.base, p.top = clouds_.top, p.anvilTop = clouds_.anvilTop, p.cirrusHeight = clouds_.cirrusHeight;
+      p.coverage = clouds_.coverage, p.cirrusCoverage = clouds_.cirrusCoverage, p.kind = clouds_.kind, p.growth = clouds_.growth;
+      p.rain = clouds_.rain, p.lightning = clouds_.lightning, p.wind = clouds_.wind;
+      p.shadows = clouds_.shadows && lighting_.sunDisc && shadowRadius_ > 0.0f;
+      if (p.shadows) {
+        const float r = shadowRadius_;
+        p.shadowRect = {shadowCenter_.x - r, shadowCenter_.z - r, 0.5f / r, 0.5f / r};
+        p.shadowHeight = shadowCenter_.y;
+      }
+      p.shadowStrength = clouds_.shadow;
+      p.meanGround = shadowCenter_.y;
+      p.keyLux = 0.2126f * a.sunIlluminance.r + 0.7152f * a.sunIlluminance.g + 0.0722f * a.sunIlluminance.b;
+      const CloudsRdr2::Output out = cloudsRdr2_->prepare(cmd, frameIndex_, camera_, {size_.width, size_.height}, p, time,
+                                                          cloudNoiseBaseSampled_, cloudNoiseDetailSampled_);
+      a.cloudsRdr2 = out.record;
+      a.volMarch = out.colour;
+      a.volMarchSize = out.size;
+      a.volNoiseBase = cloudNoiseBaseSampled_;
+      a.volNoiseDetail = cloudNoiseDetailSampled_;
+      a.volSampler = materialSamplerIndex_;
+      a.volBase = clouds_.base;
+      a.volTop = clouds_.anvilTop;
+      f.cloudFlags = 1u | 4u | 8u | (out.shadowMap != kNoIndex ? 2u : 0u);
+      a.cloudShadowMap = out.shadowMap;
+      a.cloudShadowRect = p.shadowRect;
+      cloudMarchThisFrame_ = false;
+      cloudShadowThisFrame_ = false;
+      cloudsRdr2ThisFrame_ = true;
+    } else if (cloudsRdr2_) {
+      cloudsRdr2_->invalidate();
     }
     vkCmdUpdateBuffer(cmd, frame.atmosphereFrame.buffer, 0, sizeof(a), &a);
     f.atmosphere = bufferAddress(context_, frame.atmosphereFrame);
@@ -1899,8 +1939,8 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     gpuTimer_.end(cmd, scope);
   }
   // --- Nuvens volumétricas (cloudsvol.hlsl): the noise volumes once, then the layer marched at half resolution ----------------
-  if (hasScene_ && atmoThisFrame_ && cloudMarchThisFrame_) {
-    const uint32_t scope = gpuTimer_.begin(cmd, "clouds");
+  if (hasScene_ && atmoThisFrame_ && (cloudMarchThisFrame_ || cloudsRdr2ThisFrame_)) {
+    const uint32_t scope = gpuTimer_.begin(cmd, cloudsRdr2ThisFrame_ ? "cloud noise" : "clouds");
     const VkDeviceAddress frameAddress = bufferAddress(context_, frame.meshFrame);
     if (!cloudNoiseReady_) {
       cloudNoiseReady_ = true;
@@ -1919,19 +1959,23 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
                     VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
     }
-    // Last frame's sky may still read the march.
-    transition(cmd, cloudMarch_.image, cloudMarch_.aspect,
-               {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                VK_ACCESS_2_NONE, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cloudMarchPipeline_);
-    const uint32_t width = (size_.width + 1) / 2, height = (size_.height + 1) / 2;
-    const CloudVolPush march{frameAddress, cloudMarchStorage_, width, height, 1};
-    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(march), &march);
-    vkCmdDispatch(cmd, (width + 7) / 8, (height + 7) / 8, 1);
-    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
-                  VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
+    if (cloudMarchThisFrame_) {
+      // Last frame's sky may still read the march.
+      transition(cmd, cloudMarch_.image, cloudMarch_.aspect,
+                 {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                  VK_ACCESS_2_NONE, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cloudMarchPipeline_);
+      const uint32_t width = (size_.width + 1) / 2, height = (size_.height + 1) / 2;
+      const CloudVolPush march{frameAddress, cloudMarchStorage_, width, height, 1};
+      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(march), &march);
+      vkCmdDispatch(cmd, (width + 7) / 8, (height + 7) / 8, 1);
+      memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+                    VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
+    }
     gpuTimer_.end(cmd, scope);
   }
+  // --- Nuvens RDR2 (clouds_rdr2.hlsl): weather map, march, temporal resolve, the shadow map over the board ---------------------
+  if (hasScene_ && atmoThisFrame_ && cloudsRdr2ThisFrame_ && cloudsRdr2_) cloudsRdr2_->record(cmd, bufferAddress(context_, frame.meshFrame), gpuTimer_);
   // --- The cloud shadow map over the board (clouds.hlsli): the sun through the low sheet, once a frame ----------------------
   if (hasScene_ && atmoThisFrame_ && cloudShadowThisFrame_) {
     const uint32_t scope = gpuTimer_.begin(cmd, "cloud shadow");
