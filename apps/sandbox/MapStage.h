@@ -169,7 +169,6 @@ struct MapStageOptions {
   // --water N), "Reflexo do céu" (0 OFF, 1 the sky's reflection map; --sky-reflect N) and "Nuvens" (0 OFF, 1 básica; --clouds N).
   int waterLook = 0;
   int skyReflect = 1;
-  int cloudLook = -1; // explicit --cloud-look; editor stores this per map
   int clouds = 6;     // "Nuvens": 0 OFF, 1 básica (the sheets), 2 volumétricas (look 001, the default; --clouds N)
   int moonLight = 1;  // the panel's "Luar" (light mode real): 0 físico, 1 cinema (--moonlight N)
   int hour = 0;       // the panel's "Hora": 0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3..10 fixed hours (--hour N)
@@ -321,7 +320,7 @@ class MapStage final : public Stage {
     windFogChoice_ = std::clamp(options.windFog, 0, 1);
     waterLook_ = std::clamp(options.waterLook, 0, 4);
     skyReflect_ = std::clamp(options.skyReflect, 0, 1);
-    clouds_ = options.clouds == 6 ? 3 : std::clamp(options.clouds, 0, 3);
+    clouds_ = 0;  // no clouds in the game (the user, 2026-11-04)
     dayCycle_ = std::clamp(options.hour, 0, 10);
     tempoConfig_ = options.tempoConfig;
     tempoTimeline_.configure(tempoConfig_, options.campaignMinute * 60000, true);
@@ -343,7 +342,6 @@ class MapStage final : public Stage {
     }
     board_ = std::make_unique<ember::Board>(*data_, std::move(*draft));
     setEditorWeather(board_->draft());
-    if(options.cloudLook>=0)selectCloudLook(options.cloudLook);
     if (!board_->loadRelief(options.artRoot) || !ground_.build(*board_)) {
       failed_ = true;
       return;
@@ -457,7 +455,6 @@ class MapStage final : public Stage {
       loadMapPanoramas();
       // The newest panorama opens first on its map (aldeia: the user's fire panorama, 2026-10-19 "TERMINA").
       if (options.background < 0 && !panoramas_.empty()) background_ = 4 + static_cast<int>(panoramas_.size());
-      enforcePanorama("load");
       // Luz das janelas: by map id (each map its own diorama): the watchtower's roofed floors open with it; every other map OFF.
       windowLight_ = options.windowLight >= 0 ? std::clamp(options.windowLight, 0, 1) : windowLightMap() ? 1 : 0;
       // (The Atmosfera is never switched off by the light through the windows: the user, 2026-10-22, "remover essa regra do jogo, não
@@ -473,7 +470,6 @@ class MapStage final : public Stage {
       loadMapPanoramas();
       if (options.background >= 0) background_ = std::min(options.background, 4);
       else if (!panoramas_.empty()) background_ = 4 + static_cast<int>(panoramas_.size());
-      enforcePanorama("load");
     }
   }
 
@@ -983,10 +979,8 @@ class MapStage final : public Stage {
     renderer.setSkyReflection(skyReflect_ == 1);
     {
       Renderer::Clouds clouds;
-      clouds.savedLook = savedCloudLook_;
       clouds.enabled = clouds_ >= 1;
       clouds.volumetric = clouds_ >= 2;
-      clouds.look006 = clouds_ == 3;
       if (clouds.volumetric) {
         // Bigger clouds with wider clearings than the sheets' (a layer seen at the game's low angle closes up otherwise); the
         // sheets ("básica") keep their own numbers.
@@ -1004,14 +998,6 @@ class MapStage final : public Stage {
         clouds.base=tempoEffects.base; clouds.top=tempoEffects.base+tempoEffects.thickness;
         clouds.altitude=tempoEffects.base+tempoEffects.thickness*.35f;
         clouds.scale=tempoEffects.scale; clouds.wind={tempoEffects.windX,tempoEffects.windZ};
-        if(clouds.look006) {
-          clouds.coverage=static_cast<float>(tempoState.value(ember::tempo::Low));
-          clouds.middleCoverage=static_cast<float>(tempoState.value(ember::tempo::Middle));
-          clouds.highCoverage=static_cast<float>(tempoState.value(ember::tempo::High));
-          clouds.kind=static_cast<float>(tempoState.value(ember::tempo::Shape));
-          clouds.growth=static_cast<float>(tempoState.value(ember::tempo::Vertical));
-          clouds.rain=tempoEffects.rain;
-        }
       }
       clouds.altitude += meanGround_;  // the sheet's height above the board's mean ground
       clouds.base += meanGround_;
@@ -1765,13 +1751,12 @@ class MapStage final : public Stage {
       // terminar no horizonte onde começa o céu").
       // 4 = the painting aligned to the sky: cut at its horizon, its own sky matted out, turned under the sun (backdrop-fit.json).
       static const char* kBackgrounds[5] = {"imagem do mapa", "céu", "OFF", "imagem até o horizonte", "imagem alinhada ao céu"};
-      // The Fundo offers only the map's panoramas, on every map (the engine's own rule: enforcePanorama; the user, 2026-10-23: "não
-      // existe forma de alterar em nenhum mapa"). kBackgrounds names the refused choices only for the log.
-      (void)kBackgrounds;
-      if (!panoramas_.empty()) {
-        int choice = std::clamp(background_ - 5, 0, static_cast<int>(panoramas_.size()) - 1);
-        if (dropdown("Fundo", choice, static_cast<int>(panoramas_.size()), [](int i) { return std::format("panorama {:02}", i + 1); })) background_ = 5 + choice;
-        enforcePanorama("panel");
+      // The Fundo lists the five backgrounds and the map's panoramas (the engine's refusal of 2026-10-23, enforcePanorama, was removed
+      // on 2026-11-04 with every other lock on the user's order).
+      {
+        const int count = 5 + static_cast<int>(panoramas_.size());
+        int choice = std::clamp(background_, 0, count - 1);
+        if (dropdown("Fundo", choice, count, [](int i) { return i < 5 ? std::string(kBackgrounds[i]) : std::format("panorama {:02}", i - 4); })) background_ = choice;
       }
       if (board_ && !board_->draft().emberFloor.empty()) {
         static const char* kFloor[2] = {"OFF", "imagem"};
@@ -1852,24 +1837,8 @@ class MapStage final : public Stage {
       int selected=0;
       for(int i=0;i<5;++i)if(kToChoice[i]==atmosChoice_)selected=i;
       if(dropdown("Atmosfera", selected, 5, [](int i) { return std::string(kAtmos[i]); }))atmosChoice_=kToChoice[selected];
-      if (ImGui::TreeNode("Tempos GPU das nuvens")) {
-        double total=0.0;
-        for(const auto& pass:renderer_.gpuTimer().results()) {
-          const std::string_view name(pass.name);
-          if(name=="clouds" || name=="cloud shadow" || name=="sky reflect" || name.starts_with("cloud 006")) {
-            ImGui::Text("%s: %.3f ms",pass.name,pass.milliseconds);
-            total+=pass.milliseconds;
-          }
-        }
-        const double budget=atmosChoice_==1?3.0:atmosChoice_==2?2.2:atmosChoice_==4?1.5:0.9;
-        if(renderer_.gpuTimer().supported()) ImGui::Text("Nuvens atuais: %.3f ms / meta 006: %.1f ms (RX 6400, 1600x900)",total,budget);
-        else ImGui::TextUnformatted("Timestamps GPU indisponíveis");
-        ImGui::TreePop();
-      }
       if (atmosChoice_ > 0 && atmosProfiles_.size() > 1)
         dropdown("Clima", climaChoice_, static_cast<int>(atmosProfiles_.size()), [this](int i) { return atmosProfiles_[static_cast<size_t>(i)].label; });
-      static const char* kClouds[4] = {"OFF", "básica", "001", "006"};
-      dropdown("Nuvens", clouds_, 4, [](int i) { return std::string(kClouds[i]); });
     }
     tempoPanel_.draw(tempoConfig_, tempoTimeline_, tempoMillisecondsNow());
     {
@@ -1931,13 +1900,7 @@ class MapStage final : public Stage {
   }
 
   // Weather edits update only precipitation. Keep the live board, camera, uploads and GPU resources intact.
-  void selectCloudLook(int look){
-    look=std::clamp(look,0,6);savedCloudLook_=look>=1&&look<=5?look:0;
-    clouds_=look==0?0:look==6?3:2;
-  }
   void setEditorWeather(const ember::MapDraft& draft) {
-    if(draft.cloudLook>=0)selectCloudLook(draft.cloudLook);
-    else if(options_.editorClick)selectCloudLook(0);
     weatherKind_ = draft.weather;
     weatherIntensity_ = draft.weatherIntensity;
     weatherWind_ = draft.weatherWind;
@@ -11407,25 +11370,6 @@ class MapStage final : public Stage {
   std::vector<const ember::Hero*> unitCatalog_;       // per scene unit: its catalog entry (null = idle only)
   std::vector<std::pair<std::string, std::string>> poseChoices_;  // the panel's "Animação": pose id, label
   int poseChoice_ = 0;
-  // THE ONE FIXED RULE OF EVERY MAP, enforced by the engine itself (the user, 2026-10-23: "todos os mapas do jogo precisam ser assim,
-  // precisa escrever no engine: ele deve rejeitar automaticamente qualquer fundo que não seja panorama"; "o engine agora vai ter auto
-  // defesa contra sabotagem"): a map with panoramas never draws anything else behind the board. Any other Fundo (the cover-fit
-  // picture, the sky, black, the painting to the horizon, the sun-aligned painting) is rejected on the spot, logged as an error, and
-  // the map's newest panorama stays ("não erra o log, ele recusa alteração": the change is refused, nothing else). The panel's Fundo
-  // lists only the map's panoramas. A map with no panorama entry at all (content/data/backdrop-fit.json "panoramas") is the
-  // one case the engine cannot refuse: it says so once in the log.
-  void enforcePanorama(const char* where) {
-    if (!board_) return;
-    if (panoramas_.empty()) {
-      if (!std::string_view(where).starts_with("panel"))
-        logWarn("panorama rule: map '{}' has no painting at all (no panorama entry, no backdrop): nothing to draw behind the board", board_->draft().id);
-      return;
-    }
-    if (background_ < 5 || background_ >= 5 + static_cast<int>(panoramas_.size())) {
-      logInfo("panorama rule ({}): background {} refused on '{}': only its panoramas are drawn", where, background_, board_->draft().id);
-      background_ = 4 + static_cast<int>(panoramas_.size());
-    }
-  }
   std::optional<float> roomCentreAzimuth_;  // a room's panorama centre, fixed in the world once (see the Fundo code)
   // The board and its ground lowered together under the room's panorama and ceiling (the user, 2026-10-23: "desce o tabuleiro e
   // ground, sem mais perguntas"): the chosen panorama's `roomDrop` (backdrop-fit.json, world units; 0 = none). The painting and the
@@ -11582,7 +11526,6 @@ class MapStage final : public Stage {
   // original, 2..4 looks 001..003 (shaders/water_lookNNN.hlsli).
   int waterLook_ = 0;
   int skyReflect_ = 1;   // the panel's "Reflexo do céu": 0 OFF (the SH sky), 1 the sky's reflection map (skyreflect.hlsl)
-  int savedCloudLook_ = 0;
   int clouds_ = 2;       // the panel's "Nuvens": 0 OFF, 1 básica (shaders/clouds.hlsli), 2 volumétricas (cloudsvol.hlsli, look 001)
   int glare_ = 0;        // the panel's "Clarão": 0 OFF (default), 1 look 001 (shaders/sunglare.hlsl)
   int shafts_ = 0;       // the panel's "Raios de luz": 0 OFF (default), 1 look 001

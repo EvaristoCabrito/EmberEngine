@@ -229,9 +229,6 @@ float cloudVolDensityLod(CloudVolume v, float time, float3 p, bool cheap, float 
 }
 float cloudVolDensity(CloudVolume v, float time, float3 p, bool cheap) { return cloudVolDensityLod(v, time, p, cheap, 0.0); }
 
-// Cloud look 002 owns its density and shadow data; legacy look 001 stays unchanged.
-#include "clouds006_data.hlsli"
-
 // The sun through the volumetric layer onto `position`: the density along the light's path through the layer, 8 taps.
 float cloudVolShadow(MeshFrame f, float3 position, float low) {
   const float3 sun = f.sunDirection;
@@ -268,7 +265,6 @@ float cloudShadowSample(uint map, uint sampler, float2 uv) {
 // AtmosphereFrame: cloudShadowRect at byte 304, cloudShadowMap at 320 (read by offset: the moonTexture gotcha).
 float cloudShadow(MeshFrame f, float3 position) {
   if ((f.cloudFlags & kCloudShadows) == 0 || f.atmosphere == 0) return 1.0;
-  if(clouds006On(f))return cloud006Shadow(f,position);
   const uint map = vk::RawBufferLoad<uint>(f.atmosphere + 320u);
   if (map == kNoTexture) return cloudShadowCompute(f, position);
   const float4 rect = vk::RawBufferLoad<float4>(f.atmosphere + 304u);

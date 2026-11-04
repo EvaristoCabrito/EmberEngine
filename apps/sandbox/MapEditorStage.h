@@ -1181,7 +1181,6 @@ class MapEditorStage : public Stage {
   void rebuildPreview() {
     dirty_ = false;
     if (!data_) return;
-    if(!draft_.contains("cloudLook"))draft_["cloudLook"]=0;
     std::optional<ember::MapDraft> draft = ember::MapDraft::fromJson(nlohmann::json::parse(draft_.dump()));
     if (!draft) return note("O mapa não tem tabuleiro.");
     ember::Json weatherBase = withoutPreviewWeather(draft_);
@@ -2765,33 +2764,6 @@ class MapEditorStage : public Stage {
           draft_["weather"] = ids[i];
           selected = i;
         }
-    }
-    {
-      static constexpr const char* looks[]={"Sem nuvens","Nuvens 001","Nuvens 002","Nuvens 003","Nuvens 004","Nuvens 005","Nuvens 006"};
-      int selected=std::clamp(draft_.value("cloudLook",0),0,6);
-      fieldLabel("Nuvens");ImGui::SetNextItemWidth(-1);
-      if(ImGui::BeginCombo("##CloudLookPicker",looks[selected])){
-        for(int i=0;i<7;++i){
-          if(ImGui::Selectable(looks[i],selected==i)){beginEdit();draft_["cloudLook"]=i;selected=i;}
-          if(selected==i)ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-      }
-      ImGui::BeginDisabled(selected==0);
-      // Percentages are displayed directly; the saved normalized values feed both cloud renderers.
-      auto cloudSlider = [&](const char* label, const char* key, float fallback) {
-        float percent = std::clamp(draft_.value(key, fallback), 0.0f, 1.0f) * 100.0f;
-        fieldLabel(label);
-        ImGui::SetNextItemWidth(-1);
-        if (ImGui::SliderFloat((std::string("##") + key).c_str(), &percent, 0, 100, "%.0f%%")) {
-          beginEdit();
-          draft_[key] = percent / 100.0f;
-        }
-      };
-      cloudSlider("Densidade das nuvens", "cloudCoverage", 0.32f);
-      cloudSlider("Tom cinzento das nuvens", "cloudGray", 0.0f);
-      hint("%s", "Densidade: 0% sem nuvens, 100% céu encoberto. Tom: 0% brancas, 100% cinza-escuro.");
-      ImGui::EndDisabled();
     }
     ImGui::BeginDisabled(draft_.value("weather", std::string("none")) == "none");
     slider("Intensidade do clima", "weatherIntensity", 0, 1, 0.7f);

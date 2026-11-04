@@ -81,7 +81,6 @@ class Volumetrics {
   bool enabled() const { return enabled_; }
   // The level chosen (a ceiling when adaptive); a grid change waits for the GPU and remakes the volumes.
   void setQuality(Quality q);
-  void setClouds006(bool on) { clouds006_=on; }
   Quality quality() const { return quality_; }
   Quality effectiveQuality() const { return effective_; }
   void setAdaptive(bool on) { adaptive_ = on; }
@@ -153,8 +152,6 @@ class Volumetrics {
   glm::mat4 previousViewProjection_{1.0f};
   glm::vec3 previousEye_{0.0f}, previousForward_{0.0f, 0.0f, -1.0f};
   std::array<Buffer, kFramesInFlight> frames_{};
-  bool clouds006_=false;
-  VkPipeline material002_=VK_NULL_HANDLE, inject002_=VK_NULL_HANDLE, integrate002_=VK_NULL_HANDLE;
   VkPipeline inject_ = VK_NULL_HANDLE, integrate_ = VK_NULL_HANDLE;
 };
 

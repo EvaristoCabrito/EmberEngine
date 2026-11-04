@@ -1,5 +1,4 @@
 #include "render/Renderer.h"
-#include "render/Clouds006.h"
 
 #include <cstring>
 
@@ -861,9 +860,6 @@ Renderer::~Renderer() {
   destroyImage(context_, volumeIntegrated_);
   if (fogMaskIndex_ != kNoIndex) bindless_.removeSampledImage(fogMaskIndex_);
   destroyImage(context_, fogMask_);
-  clouds006_.reset();
-  for(auto* list:{&savedCloudMarch_,&savedCloudShadow_,&savedCloudReflection_})
-    for(auto pipeline:*list)vkDestroyPipeline(context_.device,pipeline,nullptr);
   volumetrics_.reset();
 }
 
@@ -1205,7 +1201,6 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
   // Atmosfera volumétrica v1 (render/Volumetrics.h): when on, it owns the volume every surface reads; the old haze
   // (volume.hlsl) then stays off. Integration point 2 of 3 (docs/ATMOSPHERE.md §4).
   Volumetrics::FrameOut vo;
-  volumetrics_->setClouds006(clouds_.look006);
   volumetricsThisFrame_ = hasScene_ && volumetrics_->prepare(camera_, time, cmd, frameIndex_, vo);
   // Volumetric fog: this frame's froxel volume (written below), last frame's for the history.
   volumeThisFrame_ = volumetric_.enabled && !volumetricsThisFrame_;
@@ -1278,7 +1273,7 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
     a.skyMapSampler = materialSamplerIndex_;
     a.galaxyStrength = andromedaStrength_;
     if (clouds_.enabled) {
-      f.cloudFlags = 1u | (clouds_.shadows && (lighting_.sunDisc || clouds_.look006) ? 2u : 0u) | (clouds_.volumetric ? 4u : 0u);
+      f.cloudFlags = 1u | (clouds_.shadows && lighting_.sunDisc ? 2u : 0u) | (clouds_.volumetric ? 4u : 0u);
       a.cloudCoverage = clouds_.coverage;
       a.cloudGray = std::clamp(clouds_.gray, 0.0f, 1.0f);
       a.cloudAltitude = clouds_.altitude;
@@ -1305,13 +1300,6 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
         cloudShadowThisFrame_ = true;
       }
     }
-    if(clouds_.enabled && clouds_.volumetric && clouds_.look006) {
-      if(!clouds006_)clouds006_=std::make_unique<Clouds006>(context_,bindless_);
-      const Clouds006::Weather weather{{clouds_.base,clouds_.top-clouds_.base,clouds_.coverage,clouds_.kind},
-        {clouds_.middleCoverage,clouds_.highCoverage,clouds_.growth,clouds_.rain},clouds_.wind};
-      const auto output=clouds006_->prepare(cmd,frameIndex_,camera_,{size_.width,size_.height},volumetrics_->quality(),weather,time);
-      a.clouds006=output.record;a.volMarch=output.colour;a.volMarchSize=output.size;f.cloudFlags|=8u;
-    } else if(clouds006_)clouds006_->invalidate();
     vkCmdUpdateBuffer(cmd, frame.atmosphereFrame.buffer, 0, sizeof(a), &a);
     f.atmosphere = bufferAddress(context_, frame.atmosphereFrame);
   }
@@ -1912,7 +1900,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   }
   // --- Nuvens volumétricas (cloudsvol.hlsl): the noise volumes once, then the layer marched at half resolution ----------------
   if (hasScene_ && atmoThisFrame_ && cloudMarchThisFrame_) {
-    const uint32_t scope = gpuTimer_.begin(cmd, clouds_.look006 ? "cloud 006 noise setup" : "clouds");
+    const uint32_t scope = gpuTimer_.begin(cmd, "clouds");
     const VkDeviceAddress frameAddress = bufferAddress(context_, frame.meshFrame);
     if (!cloudNoiseReady_) {
       cloudNoiseReady_ = true;
@@ -1931,31 +1919,21 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
                     VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
     }
-    if(!clouds_.look006) {
     // Last frame's sky may still read the march.
     transition(cmd, cloudMarch_.image, cloudMarch_.aspect,
                {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
                 VK_ACCESS_2_NONE, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
-    VkPipeline marchPipeline=cloudMarchPipeline_;
-    if(clouds_.savedLook>=1 && clouds_.savedLook<=5){
-      const auto i=static_cast<size_t>(clouds_.savedLook-1);
-      if(!savedCloudMarch_[i])savedCloudMarch_[i]=createComputePipeline(context_,bindless_.pipelineLayout(),std::format("cloud_legacy{:03}.CSMarch",clouds_.savedLook));
-      marchPipeline=savedCloudMarch_[i];
-    }
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, marchPipeline);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cloudMarchPipeline_);
     const uint32_t width = (size_.width + 1) / 2, height = (size_.height + 1) / 2;
     const CloudVolPush march{frameAddress, cloudMarchStorage_, width, height, 1};
     vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(march), &march);
     vkCmdDispatch(cmd, (width + 7) / 8, (height + 7) / 8, 1);
     memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
                   VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
-    }
     gpuTimer_.end(cmd, scope);
   }
-  if(hasScene_ && atmoThisFrame_ && cloudMarchThisFrame_ && clouds_.look006 && clouds006_)
-    clouds006_->record(cmd,bufferAddress(context_,frame.meshFrame),gpuTimer_);
   // --- The cloud shadow map over the board (clouds.hlsli): the sun through the low sheet, once a frame ----------------------
-  if (hasScene_ && atmoThisFrame_ && cloudShadowThisFrame_ && !clouds_.look006) {
+  if (hasScene_ && atmoThisFrame_ && cloudShadowThisFrame_) {
     const uint32_t scope = gpuTimer_.begin(cmd, "cloud shadow");
     if (!cloudShadowReady_) {
       cloudShadowReady_ = true;
@@ -1965,13 +1943,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     }
     memoryBarrier(cmd, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
                   VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT);
-    VkPipeline shadowPipeline=cloudShadowPipeline_;
-    if(clouds_.savedLook>=1 && clouds_.savedLook<=5){
-      const auto i=static_cast<size_t>(clouds_.savedLook-1);
-      if(!savedCloudShadow_[i])savedCloudShadow_[i]=createComputePipeline(context_,bindless_.pipelineLayout(),std::format("cloud_legacy{:03}_sky.CSCloudShadow",clouds_.savedLook));
-      shadowPipeline=savedCloudShadow_[i];
-    }
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, shadowPipeline);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cloudShadowPipeline_);
     uint32_t heightBits;
     std::memcpy(&heightBits, &cloudShadowHeight_, sizeof(heightBits));
     const SkyReflectPush push{bufferAddress(context_, frame.meshFrame), cloudShadowStorage_, heightBits, kCloudShadowSize, kCloudShadowSize};
@@ -1995,13 +1967,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
                   VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT);
     for (uint32_t level = 0; level < kSkyReflectLevels; ++level) {
       const uint32_t width = std::max(1u, kSkyReflectSize.width >> level), height = std::max(1u, kSkyReflectSize.height >> level);
-      VkPipeline reflectBase=skyReflectBasePipeline_;
-      if(clouds_.savedLook>=1 && clouds_.savedLook<=5){
-        const auto i=static_cast<size_t>(clouds_.savedLook-1);
-        if(!savedCloudReflection_[i])savedCloudReflection_[i]=createComputePipeline(context_,bindless_.pipelineLayout(),std::format("cloud_legacy{:03}_sky.CSBase",clouds_.savedLook));
-        reflectBase=savedCloudReflection_[i];
-      }
-      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, level == 0 ? reflectBase : skyReflectFilterPipeline_);
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, level == 0 ? skyReflectBasePipeline_ : skyReflectFilterPipeline_);
       const SkyReflectPush push{bufferAddress(context_, frame.meshFrame), skyReflectLevelIndices_[level], level, width, height};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
       vkCmdDispatch(cmd, (width + 7) / 8, (height + 7) / 8, 1);

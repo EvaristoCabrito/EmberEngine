@@ -171,7 +171,6 @@ struct Options {
   int waterLook = 0;    // --water N: the panel's "Água", both waters of the map (0 padrão = as the map has it, 1 the original,
                         // 2..4 looks 001..003)
   int skyReflect = 1;   // --sky-reflect N: the panel's "Reflexo do céu" (0 OFF, 1 the sky's reflection map)
-  int cloudLook = -1;
   int clouds = 6;       // --clouds N: the panel's "Nuvens" (0 OFF, 1 básica, 2 volumétricas)
   int glare = 0;        // --glare N: the panel's "Clarão" (0 OFF, 1 look 001)
   int shafts = 0;       // --shafts N: the panel's "Raios de luz" (0 OFF, 1 look 001)
@@ -296,7 +295,6 @@ Options parse(int argc, char** argv) {
     else if (arg == "--background" && hasValue) o.background = std::atoi(argv[++i]);
     else if (arg == "--water" && hasValue) o.waterLook = std::atoi(argv[++i]);
     else if (arg == "--sky-reflect" && hasValue) o.skyReflect = std::atoi(argv[++i]);
-    else if (arg == "--cloud-look" && hasValue) o.cloudLook=std::clamp(std::atoi(argv[++i]),0,6);
     else if (arg == "--clouds" && hasValue) o.clouds = std::atoi(argv[++i]);
     else if (arg == "--glare" && hasValue) o.glare = std::atoi(argv[++i]);
     else if (arg == "--shafts" && hasValue) o.shafts = std::atoi(argv[++i]);
@@ -707,7 +705,6 @@ MapStageOptions mapOptions(const Options& o) {
     m.waterLook = o.waterLook;
     m.skyReflect = o.skyReflect;
     m.clouds = o.clouds;
-    m.cloudLook = o.cloudLook;
     m.glare = o.glare;
     m.shafts = o.shafts;
     m.moonLight = o.moonLight;
