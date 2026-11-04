@@ -2844,13 +2844,13 @@ class MapEditorStage : public Stage {
       // The night sky this map shows (the user, 2026-11-03: "add to the editor"): the real stars, or the user's painting of
       // Andromeda's sky (star look 005), saved with the map as "emberSky".
       static const char* kSkyReal = "Estrelas reais";
-      static const char* kSkyAndromeda = "Andrômeda (pintura)";
-      const bool andromeda = draft_.value("emberSky", std::string()) == "andromeda";
+      static const char* kSkyAndromeda = "Andrômeda (padrão)";
+      const bool real = draft_.value("emberSky", std::string()) == "real";  // nothing saved = Andromeda, every map's default
       fieldLabel("Céu");
       ImGui::SetNextItemWidth(-1);
-      if (ImGui::BeginCombo("##Céu", andromeda ? kSkyAndromeda : kSkyReal)) {
-        if (ImGui::Selectable(kSkyReal, !andromeda)) beginEdit(), draft_.erase("emberSky");
-        if (ImGui::Selectable(kSkyAndromeda, andromeda)) beginEdit(), draft_["emberSky"] = "andromeda";
+      if (ImGui::BeginCombo("##Céu", real ? kSkyReal : kSkyAndromeda)) {
+        if (ImGui::Selectable(kSkyAndromeda, !real)) beginEdit(), draft_.erase("emberSky");
+        if (ImGui::Selectable(kSkyReal, real)) beginEdit(), draft_["emberSky"] = "real";
         ImGui::EndCombo();
       }
     }
