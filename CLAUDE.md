@@ -24,6 +24,14 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   remains. Stop only when truly nothing else can be done (one line). The standing rules still bind (never push, never delete without
   an order, never change the permission mode). THERE ARE NO LOCKS AND NO SECRET WORD ANYMORE (2026-11-04, below). Memory notes `tool-not-autonomy`, `do-the-work-no-permission`.
 
+- **THE DEFAULT SETUP; ONLY THE USER CHANGES SETTINGS; AGENTS ONLY ADD (the user, 2026-11-04 night: "ALL MAPS IN THE GAME ALL MAPS IN
+  THE EDITOR ALL NEW MAPS I EVER CREATED START WITH THIS SETUP UNLESS I CHANGE IT MANUALLY ONLY MANUAL CHANGES WILL TAKE EFFECT NOW YOU OR
+  ANY AGENT ARE FORBIDEN TO ALTER ANY SETTINGS ... ONLY ADD MORE ... NEVER REMOVE ... SAVE").** The setup: clouds = look 004 (MapStage
+  default `clouds_` 2 + `savedCloudLook_` 4; the Map Editor's Nuvens shows "Nuvens 004" for a map with no choice) and the sky = Andromeda
+  (star look 5). A map's saved choice stays until the user changes it by hand. No agent (Claude, Codex, any) changes a default, a
+  picker's list, a saved setting or a map's choice on its own; a new look / option is only ADDED as one more choice, never in place of
+  one; nothing is removed without the user's explicit order. Memory note `default-setup-only-manual-changes`.
+
 - **NEVER CHANGE THE PERMISSION MODE (the user, 2026-10-26: "EU MUDO E VOCE DESMUDA ... SALVE, PARE DE FAZER ISSO").** Manual /
   Aceitar edições / Auto / Plan is the user's choice: never `set_session_permission_mode` (any session), never `permissions.defaultMode`
   in any settings.json, never because of a complaint or a question about it. Answer in words; the user changes it in the app.
