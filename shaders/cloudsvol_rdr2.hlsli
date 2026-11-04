@@ -103,13 +103,22 @@ Rdr2Hit rdr2March(MeshFrame f, AtmosphereFrame a, Rdr2Clouds c, float3 origin, f
   // The step: long through clear air (a cheap density test), a quarter of it inside a cloud (the talk's adaptive step), back to
   // long after three empty samples. 0.0035 rad per fine step, never shorter than a sixtieth of the layer.
   const float dtMin = layer / 60.0, dtMax = layer * 0.5;
-  float t = t0 + clamp(t0 * 0.0035, dtMin, dtMax) * dither;
+  // Version 02 (2026-11-04, the user: the v01 clouds showed horizontal stripes, "needs to be remade fully"; v01 kept in
+  // shaders/kept/cloudsvol_rdr2-v01-20261104.hlsli): every sample lands at its own random place inside its step (v01 took
+  // the step's middle, so neighbouring pixels sampled the same slices and the slices showed as stripes). The offset is the
+  // blue noise plus an interleaved-gradient noise of the pixel (never the same for two neighbours), advanced by the golden
+  // ratio at each step; the temporal pass turns what is left into a smooth cloud.
+  const float2 px = uv * f.screenSize;
+  const float ign = frac(52.9829189 * frac(dot(px, float2(0.06711056, 0.00583715))));
+  const float r0 = frac(dither + ign);
+  float t = t0 + clamp(t0 * 0.0035, dtMin, dtMax) * r0;
   uint empty = 3u;
   for (uint i = 0u; i < steps && t < t1; ++i) {
+    const float r = frac(r0 + float(i) * 0.61803398875);
     const float fine = clamp(t * 0.0035, dtMin, dtMax) * (transmittance < 0.25 ? 2.0 : 1.0);
     const float coarse = fine * 4.0;
     float dt = min(empty >= 3u ? coarse : fine, t1 - t);
-    float3 p = origin + dir * (t + dt * 0.5);
+    float3 p = origin + dir * (t + dt * r);
     if (empty >= 3u) {
       // Clear air so far: test cheaply; on a hit, step back and take the fine step from there.
       if (rdr2Density(c, p, true, 0.0) <= 0.0) {
@@ -117,7 +126,7 @@ Rdr2Hit rdr2March(MeshFrame f, AtmosphereFrame a, Rdr2Clouds c, float3 origin, f
         continue;
       }
       dt = min(fine, t1 - t);
-      p = origin + dir * (t + dt * 0.5);
+      p = origin + dir * (t + dt * r);
     }
     t += dt;
     const float lod = saturate((t - 900.0) / 5500.0);
@@ -130,9 +139,9 @@ Rdr2Hit rdr2March(MeshFrame f, AtmosphereFrame a, Rdr2Clouds c, float3 origin, f
     const float ext = density * ext1;
     const float h = saturate((p.y - c.base) / layer);
     // Direct: the sun (and the moon) through the cloud towards this point.
-    const float sunDepth = rdr2LightDepthFrom(c, p, l.sunDir, lightTaps, dither);
+    const float sunDepth = rdr2LightDepthFrom(c, p, l.sunDir, lightTaps, r);
     float3 direct = l.sun * rdr2Scatter(sunDepth, cosSun, ext, octaves);
-    if (l.moonOn) direct += l.moon * rdr2Scatter(rdr2LightDepthFrom(c, p, l.moonDir, max(lightTaps / 2u, 2u), dither), cosMoon, ext, octaves);
+    if (l.moonOn) direct += l.moon * rdr2Scatter(rdr2LightDepthFrom(c, p, l.moonDir, max(lightTaps / 2u, 2u), r), cosMoon, ext, octaves);
     // Ambient: the sky from above, the key light's side of the sky, the ground from below; thinned deep inside.
     const float inside = exp(-sunDepth * 0.12);
     const float3 ambient = (l.skyUp * lerp(0.3, 0.9, h) + l.skySun * 0.18 * lerp(0.5, 1.0, h)) * lerp(0.55, 1.0, inside) +

@@ -220,7 +220,7 @@ float rdr2LightDepthFrom(Rdr2Clouds c, float3 position, float3 toLight, uint tap
   for (uint i = 0u; i < taps; ++i) {
     const float u0 = float(i) / float(taps), u1 = float(i + 1u) / float(taps);
     const float from = span * u0 * u0, to = span * u1 * u1;
-    const float at = t0 + lerp(from, to, 0.5 + (dither - 0.5) * 0.3);
+    const float at = t0 + lerp(from, to, frac(dither + float(i) * 0.7548776662));  // v02: the whole tap interval, a new place per tap (v01: +-15 % around the middle, banded)
     depth += rdr2Density(c, position + toLight * at, true, 0.0) * (to - from);
   }
   depth *= rdr2Extinction(c);
