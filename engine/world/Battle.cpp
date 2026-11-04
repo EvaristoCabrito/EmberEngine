@@ -381,6 +381,10 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
       for (int k = 0; k < 7; ++k) o.bag[k] = integer(u["bag"], kPotionIds[k]);
     if (u.contains("bag") && u["bag"].is_object()) o.lockpick = integer(u["bag"], "lockpick");
     o.diseased = yes(u, "diseased");
+    o.diseaseTier = u.value("diseaseTier", std::string("lesser"));
+    o.diseaseType = u.value("diseaseType", std::string("disease"));
+    o.poisonMinutesLeft = u.value("poisonMinutesLeft", -1);
+    o.diseaseMinutesLeft = u.value("diseaseMinutesLeft", -1);
     if (u.contains("diseaseBase") && u["diseaseBase"].is_object()) {
       const json& d = u["diseaseBase"];
       o.diseaseBase = BattleUnit::Stats{integer(d, "atk"), integer(d, "mag"), integer(d, "def"), integer(d, "dex"), integer(d, "mov")};

@@ -1,0 +1,64 @@
+diff --git a/apps/sandbox/MapEditorStage.h b/apps/sandbox/MapEditorStage.h
+index 5ea7a93c..f01258dc 100644
+--- a/apps/sandbox/MapEditorStage.h
++++ b/apps/sandbox/MapEditorStage.h
+@@ -2841,16 +2841,17 @@ class MapEditorStage : public Stage {
+           if (ImGui::Selectable(kPhaseLabels[i], i == shownPhase)) beginEdit(), draft_["moonPhase"] = ember::kMoonPhases[i];
+         ImGui::EndCombo();
+       }
+-      // The night sky this map shows (the user, 2026-11-03: "add to the editor"): the real stars, or the user's painting of
+-      // Andromeda's sky (star look 005), saved with the map as "emberSky".
++      // The night sky this map shows (the user, 2026-11-03: "add to the editor"; then "andromeda is the games default !!
++      // ALWAYS"): the user's painting of Andromeda's sky (star look 005) is every map's sky, also with no "emberSky" saved
++      // (MapStage starLook_ 5), so the editor shows it as the default, first.
++      static const char* kSkyAndromeda = "Andrômeda (padrão)";
+       static const char* kSkyReal = "Estrelas reais";
+-      static const char* kSkyAndromeda = "Andrômeda (pintura)";
+-      const bool andromeda = draft_.value("emberSky", std::string()) == "andromeda";
++      const bool real = draft_.value("emberSky", std::string()) == "real";
+       fieldLabel("Céu");
+       ImGui::SetNextItemWidth(-1);
+-      if (ImGui::BeginCombo("##Céu", andromeda ? kSkyAndromeda : kSkyReal)) {
+-        if (ImGui::Selectable(kSkyReal, !andromeda)) beginEdit(), draft_.erase("emberSky");
+-        if (ImGui::Selectable(kSkyAndromeda, andromeda)) beginEdit(), draft_["emberSky"] = "andromeda";
++      if (ImGui::BeginCombo("##Céu", real ? kSkyReal : kSkyAndromeda)) {
++        if (ImGui::Selectable(kSkyAndromeda, !real)) beginEdit(), draft_["emberSky"] = "andromeda";
++        if (ImGui::Selectable(kSkyReal, real)) beginEdit(), draft_["emberSky"] = "real";
+         ImGui::EndCombo();
+       }
+     }
+diff --git a/shaders/atmosphere.hlsli b/shaders/atmosphere.hlsli
+index fa39e8bd..d9437d73 100644
+--- a/shaders/atmosphere.hlsli
++++ b/shaders/atmosphere.hlsli
+@@ -244,19 +244,17 @@ float3 andromedaSky(uint64_t atmosphere, float3 dir, float pixelAngle) {
+   const uint samplerIndex = vk::RawBufferLoad<uint>(atmosphere + kSkyMapSamplerOffset);
+   uint width, height;
+   gTextures[NonUniformResourceIndex(tex)].GetDimensions(width, height);
+-  const float aspect = float(width) / float(height);
+-  const float2 lb = galacticLB(dir, pole, centre);
+-  const float u = frac(0.5 + lb.x / (2.0 * kPi) * kPaintingRepeats);
+-  const float v = 0.5 - lb.y * aspect * kPaintingRepeats / (2.0 * kPi);  // the same angular scale as across
+-  const float lod = max(log2(max(pixelAngle * float(width) * kPaintingRepeats / (2.0 * kPi), 1e-4)), 0.0);
+-  // Past the top or the bottom: mirrored back in (the stars and haze go on), fading into the edge colour over half a height.
+-  const float over = max(max(-v, v - 1.0), 0.0);
+-  const float vIn = v < 0.0 ? -v : (v > 1.0 ? 2.0 - v : v);
+-  float3 colour = gTextures[NonUniformResourceIndex(tex)].SampleLevel(gSamplers[samplerIndex], float2(u, clamp(vIn, 0.0005, 0.9995)), lod).rgb;
+-  if (over > 0.0) {
+-    const float3 edge = gTextures[NonUniformResourceIndex(tex)].SampleLevel(gSamplers[samplerIndex], float2(u, v < 0.5 ? 0.02 : 0.98), 6.0).rgb;  // inside: the sampler repeats
+-    colour = lerp(colour, edge, smoothstep(0.0, 0.5, over));
+-  }
++  // The painting is an equirectangular sky (2:1): its middle row is the horizon, its top row the zenith, its bottom row the nadir,
++  // its width once round (the user, 2026-11-04: "THERE WILL BE ONLY ONE IMAGE ceu_galaxia_8192x4096"). It turns about the vertical
++  // with the hour: the painting's centre (the galaxy's core) stands at the azimuth of the galactic centre of this hour. (Mapped along
++  // the tilted galactic plane before, the game's low camera saw the image's stretched top and bottom rows: red streaks, dark smears.)
++  const float spin = atan2(centre.x, centre.z);
++  const float azimuth = atan2(dir.x, dir.z) - spin;
++  const float elevation = asin(clamp(dir.y, -1.0, 1.0));
++  const float u = frac(0.5 + azimuth / (2.0 * kPi));
++  const float v = clamp(0.5 - elevation / kPi, 0.0005, 0.9995);
++  const float lod = max(log2(max(pixelAngle * float(width) / (2.0 * kPi), 1e-4)), 0.0);
++  const float3 colour = gTextures[NonUniformResourceIndex(tex)].SampleLevel(gSamplers[samplerIndex], float2(u, v), lod).rgb;
+   return colour * strength;
+ }
+ 

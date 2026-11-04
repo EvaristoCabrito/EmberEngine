@@ -111,6 +111,7 @@ struct MapDraft {
   std::string atmosphereProfile;
   // -1 preserves the renderer's existing cloud coverage on maps without an override.
   float cloudCoverage = -1.0f, cloudGray = 0.0f;
+  int cloudLook = -1; // -1 old map default; 0 off; 1..6 saved cloud looks
   // Precipitation is independent of regional fog. Missing weather preserves every existing map.
   std::string weather;
   float weatherIntensity = 0.7f, weatherWind = 0.35f;

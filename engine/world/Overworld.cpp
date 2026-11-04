@@ -1,3 +1,4 @@
+#include "world/CampaignTime.h"
 #include "world/Overworld.h"
 #include "world/Locais.h"
 
@@ -188,9 +189,9 @@ bool Overworld::load(const std::filesystem::path& file) {
   for (const Json& id : board.value("stoneBridgeMissionIds", Json::array())) stoneBridgeMissionIds_.push_back(id.get<std::string>());
   for (const Json& c : board["cells"]) {
     OverworldCell cell;
-    // Regra do jogo (o usuário, 2026-10-28): todo passo no mapa-múndi leva 6 horas (3 na grade de meio tamanho: "stepHours");
+    // Regra do jogo (o usuário, 2026-10-28): todo passo no mapa-múndi leva 6 horas, inclusive na grade de meio tamanho;
     // as horas de cada célula não são lidas.
-    cell.col = c.value("col", 0), cell.row = c.value("row", 0), cell.hours = board.value("stepHours", 6);
+    cell.col = c.value("col", 0), cell.row = c.value("row", 0), cell.hours = 6;
     cell.region = c.value("region", ""), cell.x = c.value("x", 0.0), cell.y = c.value("y", 0.0);
     for (const Json& e : c.value("encounters", Json::array())) cell.encounters.push_back(e.get<std::string>());
     cells_.push_back(std::move(cell));
@@ -867,8 +868,6 @@ Json Overworld::step(const Json& save, OverworldHex to, Mulberry32& rng, std::op
   Json out = save;
   out["overworldPos"] = Json{{"col", to.col}, {"row", to.row}};
   out["exploredHexes"] = std::move(exploredHexes);
-  out["gameClock"] = number(num(save, "gameClock").value_or(0.0) + elapsedDays);
-  out["gameHour"] = totalHours % 24;
   out["overworldMoveBudgetUsed"] = number(num(save, "overworldMoveBudgetUsed").value_or(0.0) + 1);
   out["heroHunger"] = std::move(heroHunger);
   out["heroDiseases"] = std::move(heroDiseases);
@@ -886,6 +885,7 @@ Json Overworld::step(const Json& save, OverworldHex to, Mulberry32& rng, std::op
   out["spellUses"] = std::move(spellUses);
   out["heroSkills"] = std::move(heroSkills);
   out["travelTrainingHours"] = std::move(trainingHours);
+  advanceCampaignMinutes(out, travelHours * 60);
   if (prayer > 1) out["roadPrayer"] = prayer - 1;
   else if (prayer == 1) out.erase("roadPrayer");
   return out;

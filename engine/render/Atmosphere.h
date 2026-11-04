@@ -88,9 +88,11 @@ struct AtmosphereFrame {
   uint32_t triangulumMap = 0xFFFFFFFFu;   // 500
   uint32_t skyMapSampler = 0;             // 504
   float galaxyStrength = 0.0f;            // 508
+  uint64_t clouds006 = 0;                // 512: cloud-owned record; atmosphere is read-only
+  uint64_t clouds006Pad = 0;
 };
 static_assert(offsetof(AtmosphereFrame, cloudGray) == 300);
-static_assert(sizeof(AtmosphereFrame) == 512 && offsetof(AtmosphereFrame, galaxyMap) == 480 &&
+static_assert(sizeof(AtmosphereFrame) == 528 && offsetof(AtmosphereFrame, clouds006) == 512 && offsetof(AtmosphereFrame, galaxyMap) == 480 &&
               offsetof(AtmosphereFrame, galaxyStrength) == 508 && offsetof(AtmosphereFrame, moonIlluminance) == 336 &&
               offsetof(AtmosphereFrame, moonDirection) == 240 && offsetof(AtmosphereFrame, volNoiseBase) == 352 &&
               offsetof(AtmosphereFrame, sunLook) == 376 && offsetof(AtmosphereFrame, volMarchSize) == 384 &&

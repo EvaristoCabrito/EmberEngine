@@ -253,6 +253,8 @@ struct BattleUnit {
   int bag[7] = {};  // potions carried, in kPotionIds order
   int lockpick = 0;  // Ember bag.lockpick (the sheet lists them: "Gazua")
   bool diseased = false;
+  std::string diseaseTier = "lesser", diseaseType = "disease";
+  int poisonMinutesLeft = -1, diseaseMinutesLeft = -1;
   struct Stats {
     int atk = 0, mag = 0, def = 0, dex = 0, mov = 0;
   };
@@ -668,6 +670,7 @@ class Battle {
   void startNewRound();
   // The unit's own turn begins: its movement pool is whole.
   void beginTurn(size_t unit);
+  void advanceConditionMinutes(int minutes);
   int round() const { return round_; }
   const std::vector<size_t>& turnOrder() const { return turnOrder_; }
   // Ember evaluateEnd: "defeat" once no hero stands (a summon does not count), "victory" once the mission was ended

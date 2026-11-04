@@ -29,13 +29,14 @@ namespace ember {
 
 class VulkanContext;
 class Bindless;
+class GpuTimer;
 
 class Volumetrics {
  public:
   static constexpr uint32_t kVersion = 1;
   static constexpr uint32_t kMaxVolumes = 16;
 
-  enum class Quality : int { Performance = 0, High = 1, Cinematic = 2 };
+  enum class Quality : int { Low = 0, Medium = 1, High = 2, Ultra = 3, Performance = Low, Cinematic = Ultra };
 
   // A regional profile. Distances in world units (one hex radius, about a metre).
   struct Profile {
@@ -80,6 +81,7 @@ class Volumetrics {
   bool enabled() const { return enabled_; }
   // The level chosen (a ceiling when adaptive); a grid change waits for the GPU and remakes the volumes.
   void setQuality(Quality q);
+  void setClouds006(bool on) { clouds006_=on; }
   Quality quality() const { return quality_; }
   Quality effectiveQuality() const { return effective_; }
   void setAdaptive(bool on) { adaptive_ = on; }
@@ -108,7 +110,7 @@ class Volumetrics {
   // will be. False when off: nothing recorded, the renderer keeps its own volume fields.
   bool prepare(const Camera& camera, float time, VkCommandBuffer cmd, uint32_t frameSlot, FrameOut& out);
   // The two compute passes (after the sun and card shadow maps, the light clusters and the fog mask are ready).
-  void record(VkCommandBuffer cmd, VkDeviceAddress meshFrame, uint32_t frameSlot);
+  void record(VkCommandBuffer cmd, VkDeviceAddress meshFrame, uint32_t frameSlot, GpuTimer* timer=nullptr);
 
  private:
   struct Level {
@@ -124,6 +126,9 @@ class Volumetrics {
     Image froxels[2], integrated;
     uint32_t froxelStorage[2] = {0xFFFFFFFFu, 0xFFFFFFFFu}, froxelSampled[2] = {0xFFFFFFFFu, 0xFFFFFFFFu};
     uint32_t integratedStorage = 0xFFFFFFFFu, integratedSampled = 0xFFFFFFFFu;
+    Image material[2], shadow[2];
+    uint32_t materialStorage[2]{}, materialSampled[2]{}, shadowStorage[2]{}, shadowSampled[2]{};
+    bool cloudReady=false;
     bool ready = false;  // layouts set
   };
   Set& set(Quality q);
@@ -132,7 +137,7 @@ class Volumetrics {
   VulkanContext& context_;
   Bindless& bindless_;
   bool enabled_ = false, adaptive_ = false;  // adaptive off by default: a level change restarts the history (user, 2026-10-16: flicker)
-  Quality quality_ = Quality::High, effective_ = Quality::High;
+  Quality quality_ = Quality::Low, effective_ = Quality::Low;
   int overBudgetFrames_ = 0, underBudgetFrames_ = 0;
   Profile current_, from_, target_;
   float blendSeconds_ = 0.0f, blendT_ = 1.0f;
@@ -141,13 +146,15 @@ class Volumetrics {
   bool tactical_ = false;
   float lastTime_ = -1.0f;
 
-  std::array<Set, 3> sets_{};
+  std::array<Set, 4> sets_{};
   Set* active_ = nullptr;  // the set this frame draws with
   uint32_t current_slot_ = 0, frameCounter_ = 0, framesSinceReset_ = 0;
   bool historyValid_ = false, thisFrame_ = false;
   glm::mat4 previousViewProjection_{1.0f};
   glm::vec3 previousEye_{0.0f}, previousForward_{0.0f, 0.0f, -1.0f};
   std::array<Buffer, kFramesInFlight> frames_{};
+  bool clouds006_=false;
+  VkPipeline material002_=VK_NULL_HANDLE, inject002_=VK_NULL_HANDLE, integrate002_=VK_NULL_HANDLE;
   VkPipeline inject_ = VK_NULL_HANDLE, integrate_ = VK_NULL_HANDLE;
 };
 

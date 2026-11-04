@@ -1,0 +1,42 @@
+diff --git a/shaders/cloudsvol.hlsli b/shaders/cloudsvol.hlsli
+index 38e2d9bb..60d2cf1e 100644
+--- a/shaders/cloudsvol.hlsli
++++ b/shaders/cloudsvol.hlsli
+@@ -87,8 +87,25 @@ CloudVolHit cloudVolMarch(MeshFrame f, AtmosphereFrame a, CloudVolume v, float3
+   const float3 sunOnTop = a.sunIlluminance * transmittanceToTop(a, a.viewHeight, sun.y) * saturate(sun.y * 8.0 + 0.2);
+   const float3 moonOnTop = moonOn ? moonLight * transmittanceToTop(a, a.viewHeight, moon.y) * saturate(moon.y * 8.0 + 0.2) : 0.0;
+   // Fill light: the sky from above (the raw up irradiance CSAmbient stored), the lit ground from below; top bright, base dark.
+-  const float3 skyUp = float3(vk::RawBufferLoad<float4>(a.ambient + 16).w, vk::RawBufferLoad<float4>(a.ambient + 32).w,
+-                              vk::RawBufferLoad<float4>(a.ambient + 48).w);
++  float3 skyUp = float3(vk::RawBufferLoad<float4>(a.ambient + 16).w, vk::RawBufferLoad<float4>(a.ambient + 32).w,
++                        vk::RawBufferLoad<float4>(a.ambient + 48).w);
++  // The galaxy painting is the night sky (star look 5): the clouds are lit by it, the light of the part of the galaxy behind
++  // them (the painting blurred over ~15 degrees around the ray): golden in front of the core, dark in front of the dark sky.
++  // Without it a night cloud was lit by nothing but the dim air and stood over the painting as a black hole (the user,
++  // 2026-11-03: "as sombras das nuvens está muito forte ... MAXIMO BLACK", "criar algo novo").
++  // Its whole glow (the painting averaged over the sky) lights every cloud too, so one in front of the dark part is a dim veil,
++  // not a hole.
++  float galaxyVeil = 0.0;
++  if (a.starLook == 5u) {
++    const float night = max(a.stars, a.sunDisc != 0 ? 1.0 - smoothstep(-0.12, 0.02, a.sunDirection.y) : 0.0);
++    if (night > 0.0) {
++      const float toSky = kPaintingWhite * night / max(f.exposure * a.skyScale, 1e-6);
++      const float3 behind = andromedaSky(f.atmosphere, dir, 0.26);
++      const float3 whole = andromedaSky(f.atmosphere, float3(0.0, 1.0, 0.0), 8.0);  // the top mip: the painting's mean
++      skyUp += (behind + whole * 2.0) * toSky * kPi;  // as irradiance from above: the fill gives back 0.4 .. 0.85 of it
++      galaxyVeil = 0.35 * night;  // at night a third of the painting shows through the clouds
++    }
++  }
+   const float3 sunOnGround = a.sunIlluminance * transmittanceToTop(a, a.viewHeight, sun.y) * saturate(sun.y);
+   const float3 groundUp = a.groundAlbedo * (skyUp + sunOnGround);
+   const float cosSun = dot(dir, sun), cosMoon = dot(dir, moon);
+@@ -156,6 +173,9 @@ CloudVolHit cloudVolMarch(MeshFrame f, AtmosphereFrame a, CloudVolume v, float3
+   const float horizon = smoothstep(0.004, 0.03, dir.y);
+   hit.color *= horizon;
+   hit.transmittance = lerp(1.0, hit.transmittance, horizon);
++  // The night veil (galaxy painting): the cloud lets part of the painting through and keeps the rest of its own light.
++  hit.color *= 1.0 - galaxyVeil;
++  hit.transmittance = lerp(hit.transmittance, 1.0, galaxyVeil);
+   return hit;
+ }
+ 

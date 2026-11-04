@@ -1,8 +1,8 @@
 """The Overworld's board at half the hex size (a test the user asked for, 2026-10-29: "scale down ... the movement grid by half").
 
 Reads content/data/overworld.json (left untouched) and writes content/data/overworld-half.json: the same painting, locations,
-missions and tables, the cells on a grid of hexes half as wide (hexSize 2.5, about four cells for every old one), every step 3
-hours (`stepHours`; the old step was 6). An old hex (col, row) has its centre on the new hex (2 col + (row & 1), 2 row), so the
+missions and tables, the cells on a grid of hexes half as wide (hexSize 2.5, about four cells for every old one), every step 6
+hours (`stepHours`; independent of grid size). An old hex (col, row) has its centre on the new hex (2 col + (row & 1), 2 row), so the
 start, the Inn, the Wisp Forest, every location and the early road keep their places; a new hex exists when its centre lies in
 an old cell and takes that cell's region and encounters. Overworld.h `kOverworldData` picks which file the game loads.
 
@@ -56,13 +56,13 @@ def main():
             if src is None:
                 continue
             cell = {k: v for k, v in src.items() if k not in ("col", "row", "x", "y", "hours")}
-            cells.append({"col": col, "row": row, "hours": 3, **cell, "x": x, "y": y})
+            cells.append({"col": col, "row": row, "hours": 6, **cell, "x": x, "y": y})
     for key in ("startHex", "ashenBlocked", "innHex", "wispHex"):
         if isinstance(board.get(key), dict):
             board[key] = half(board[key])
     board["westEdgeCol"] = 2 * board["westEdgeCol"]
     board["hexSize"] = NEW_SIZE
-    board["stepHours"] = 3
+    board["stepHours"] = 6
     board["cells"] = cells
     keys = {(c["col"], c["row"]) for c in cells}
     for loc in data["locations"]:

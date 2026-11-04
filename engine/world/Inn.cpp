@@ -1,3 +1,4 @@
+#include "world/CampaignTime.h"
 #include "world/Inn.h"
 
 #include <algorithm>
@@ -245,8 +246,8 @@ std::optional<Json> InnRules::passNight(const Json& save, const std::vector<std:
   }
   Json next = save;
   next["ember"] = ember(save) - cost;
-  next["gameClock"] = number(num(save, "gameClock").value_or(0) + 1);
-  if (has(child(save, "completed"), "thebridge")) next["gameHour"] = 8;
+  advanceCampaignMinutes(next, kMinutesPerDay);
+  if (has(child(save, "completed"), "thebridge")) { next["gameHour"] = 8; next["gameMinute"] = 0; }
   next["unitHp"] = std::move(unitHp);
   next["spellUses"] = Json::object();
   return next;

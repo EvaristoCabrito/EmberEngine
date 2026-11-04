@@ -1,3 +1,4 @@
+#include "world/CampaignTime.h"
 #include "world/Underworld.h"
 
 #include <algorithm>
@@ -82,10 +83,7 @@ bool Underworld::step(Json& save, OverworldHex to) const {
   // Time passes here as on the Overworld (the user, 2026-10-28: "we need the time and moon to count on the underworld map too"):
   // a step takes the Overworld's 6 hours on the campaign's clock, and every day crossed moves gameClock, which the moon follows.
   constexpr int kStepHours = 6;
-  const int totalHours = Overworld::campaignHour(save) + kStepHours;
-  const double days = (save.contains("gameClock") && save["gameClock"].is_number() ? save["gameClock"].get<double>() : 0.0) + totalHours / 24;
-  save["gameClock"] = days == std::floor(days) ? Json(static_cast<long long>(days)) : Json(days);
-  save["gameHour"] = totalHours % 24;
+  advanceCampaignMinutes(save, kStepHours * 60);
   return true;
 }
 

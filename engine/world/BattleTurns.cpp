@@ -1,3 +1,4 @@
+#include "world/CampaignTime.h"
 // Turns, enmity and the enemies' decisions (Ember src/game/engine.ts: sortByInitiative, activeTurnUnit,
 // startNewRound, beginUnitTurn, noteDamageEnmity / enmityTarget, runAiFor's plain branch; pathfinding.ts
 // terrainDistanceField). Cooker check-battle compares every enemy's decision with Ember's own runAiFor.
@@ -37,7 +38,32 @@ int Battle::activeUnit() const {
   return -1;
 }
 
+void Battle::advanceConditionMinutes(int minutes) {
+  if (minutes <= 0) return;
+  for (BattleUnit& u : units_) {
+    if (u.poisoned) {
+      if (u.poisonMinutesLeft < 0) u.poisonMinutesLeft = ailmentDays(u.poisonTier) * kMinutesPerDay;
+      if ((u.poisonMinutesLeft -= minutes) <= 0) {
+        u.poisoned = false; u.poisonTier.clear();
+        u.cond.poisonMag = 0; u.cond.plagueSpread = 0; u.cond.plagueBurst = false;
+      }
+    }
+    if (u.diseased) {
+      if (u.diseaseMinutesLeft < 0) u.diseaseMinutesLeft = ailmentDays(u.diseaseTier) * kMinutesPerDay;
+      if ((u.diseaseMinutesLeft -= minutes) <= 0) {
+        if (u.diseaseBase) {
+          const auto base = *u.diseaseBase;
+          u.atk = base.atk; u.mag = base.mag; u.def = base.def; u.dex = base.dex; u.mov = base.mov;
+          u.diseaseBase.reset();
+        }
+        u.diseased = false;
+      }
+    }
+  }
+}
+
 void Battle::startNewRound() {
+  advanceConditionMinutes(1);
   for (Enmity& e : enmity_) e.ve = capped(e.ve - kVolatileDecayPerRound);
   for (BattleUnit& u : units_) {
     u.moved = false, u.acted = false;

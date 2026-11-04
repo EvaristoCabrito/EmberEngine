@@ -227,7 +227,7 @@ bool potionTargetValid(const Battle& b, size_t actor, BattleHex cell, std::strin
 // the reason (applyPotion's own refusals included: full HP, not sick, spells full). It spends the actor's action.
 std::optional<BattleStep> usePotion(const Battle& b, size_t actor, const std::string& id, BattleHex cell, std::string* error = nullptr);
 // The disease's effect (maybeInflictDisease once its roll lands): 10% off atk / mag / def / dex / mov, kept to give back.
-void inflictDisease(BattleUnit& u);
+void inflictDisease(BattleUnit& u, const std::string& tier = "lesser", const std::string& type = "disease");
 // Ember reapplyGear: the stats again from its class at its level and its gear, less hunger and disease.
 void reapplyGear(BattleUnit& u);
 // Ember spawnUnit's stats for a hero brought into a fight hungry or sick (its own rounding, not reapplyGear's).

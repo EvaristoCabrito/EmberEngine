@@ -16,7 +16,9 @@ namespace ember {
 
 // GameApp startBattle: the roster's hp (unitHp), bags, heroDiseases, heroPoisons, heroHunger, and
 // hungerPenaltyFor(hungerStreak) for whoever is starving (spawnUnit), for every hero the save names.
-inline std::map<std::string, MapStageOptions::HeroState> heroStatesFromSave(const ember::Json& save) {
+inline std::map<std::string, MapStageOptions::HeroState> heroStatesFromSave(const ember::Json& input) {
+  ember::Json save = input;
+  syncAilmentDeadlines(save);
   std::map<std::string, MapStageOptions::HeroState> out;
   const double penalty = ember::Overworld::hungerPenalty(save.value("hungerStreak", 0.0));
   const ember::Json hp = save.value("unitHp", ember::Json::object()), bags = save.value("bags", ember::Json::object());
@@ -38,7 +40,15 @@ inline std::map<std::string, MapStageOptions::HeroState> heroStatesFromSave(cons
     } else if (bags.is_object() && save.contains("bags")) {
       s.starterBag = true;
     }
-    s.diseased = sick.contains(name) && sick[name] == true;
+    s.diseased = sick.contains(name) && sick[name] != false && !sick[name].is_null();
+    for (bool poison : {true, false}) {
+      const auto& timers = save[poison ? "heroPoisonTimers" : "heroDiseaseTimers"];
+      if (!timers.contains(name)) continue;
+      const auto& timer = timers[name];
+      const int left = static_cast<int>(std::max<std::int64_t>(0, timer.value("expiresAtMinute", campaignMinute(save)) - campaignMinute(save)));
+      if (poison) s.poisonMinutesLeft = left;
+      else { s.diseaseMinutesLeft = left; s.diseaseTier = timer.value("tier", std::string("lesser")); s.diseaseType = timer.value("type", std::string("disease")); }
+    }
     if (poisons.contains(name) && poisons[name].is_string()) s.poison = poisons[name].get<std::string>();
     else if (poisons.contains(name) && !poisons[name].is_null() && poisons[name] != false) s.poison = "lesser";
     if (const ember::Json& pts = save.value("statPointAllocations", ember::Json::object()); pts.is_object() && pts.contains(name) && pts[name].is_object()) {
@@ -60,10 +70,20 @@ inline void writeHeroConditions(ember::Json& save, const std::vector<HeroOutcome
     ember::Json& bag = save["bags"][h.name];
     if (!bag.is_object()) bag = ember::Json::object();
     for (int k = 0; k < 7; ++k) bag[ember::kPotionIds[k]] = h.bag[static_cast<size_t>(k)];
-    if (h.diseased) save["heroDiseases"][h.name] = true;
+    if (h.diseased) save["heroDiseases"][h.name] = h.diseaseTier == "lesser" ? ember::Json(true) : ember::Json(h.diseaseTier);
     else if (save["heroDiseases"].is_object()) save["heroDiseases"].erase(h.name);
     if (!h.poison.empty()) save["heroPoisons"][h.name] = h.poison;
     else if (save["heroPoisons"].is_object()) save["heroPoisons"].erase(h.name);
+    for (bool poison : {true, false}) {
+      auto& timers = save[poison ? "heroPoisonTimers" : "heroDiseaseTimers"];
+      if (!timers.is_object()) timers = ember::Json::object();
+      if (poison ? !h.poison.empty() : h.diseased) {
+        const auto tier = poison ? h.poison : h.diseaseTier;
+        const int left = poison ? h.poisonMinutesLeft : h.diseaseMinutesLeft;
+        timers[h.name] = {{"tier", tier}, {"type", poison ? "poison" : h.diseaseType},
+                         {"expiresAtMinute", campaignMinute(save) + (left >= 0 ? left : ailmentDays(tier) * kMinutesPerDay)}};
+      } else timers.erase(h.name);
+    }
     if (h.fullness) save["heroHunger"][h.name] = *h.fullness;
   }
   if (lootRations > 0) save["rations"] = save.value("rations", 0) + lootRations;

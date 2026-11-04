@@ -1,4 +1,6 @@
 #pragma once
+#include "TempoPanel.h"
+#include "world/TempoSave.h"
 
 // The campaign's world map, copied from Ember (src/game/OverworldMapScreen.tsx, GameApp's overworld handlers and
 // src/ember-ui/styles.css; user, 2026-10-15: "importar todos os menus corretamente"). Its rules are the C++ port in
@@ -86,6 +88,9 @@ class OverworldStage : public Stage {
     hasUnder_ = under_.load("content/data/underworld.json");
     hasCompanions_ = companions_.load("content/data/companions.json", "content/data/companions-pt.json");
     save_ = world_.fitSave(testSave_ ? *testSave_ : campaign_.activeSave());
+    ember::ensureTempoSave(save_);
+    worldTempoConfig_=testSave_?ember::tempoFromSave(save_):ember::tempoForCampaign(save_);
+    worldTempoTimeline_.configure(worldTempoConfig_,ember::campaignMilliseconds(save_),true);
     const ember::Json& pos = save_["overworldPos"];
     prevCol_ = pos.value("col", 0);
     partyX_ = -1;  // placed on the first frame
@@ -163,7 +168,10 @@ class OverworldStage : public Stage {
         }
         if (s.starts_with("pin:")) {  // "...;pin:<id>": a click on that location's pin, step hexes closed
           movementOpen_ = false;
-          const ember::Json& pos = save_["overworldPos"];
+          ember::ensureTempoSave(save_);
+    worldTempoConfig_=testSave_?ember::tempoFromSave(save_):ember::tempoForCampaign(save_);
+    worldTempoTimeline_.configure(worldTempoConfig_,ember::campaignMilliseconds(save_),true);
+    const ember::Json& pos = save_["overworldPos"];
           const int pc = pos.value("col", 0), pr = pos.value("row", 0);
           for (const ember::MapLocation& loc : world_.locations())
             if (loc.id == s.substr(4))
@@ -178,7 +186,10 @@ class OverworldStage : public Stage {
         const size_t comma = s.find(',');
         if (comma == std::string::npos) continue;
         const int c = std::stoi(s.substr(0, comma)), r = std::stoi(s.substr(comma + 1));
-        const ember::Json& pos = save_["overworldPos"];
+        ember::ensureTempoSave(save_);
+    worldTempoConfig_=testSave_?ember::tempoFromSave(save_):ember::tempoForCampaign(save_);
+    worldTempoTimeline_.configure(worldTempoConfig_,ember::campaignMilliseconds(save_),true);
+    const ember::Json& pos = save_["overworldPos"];
         const int fc = pos.value("col", 0), fr = pos.value("row", 0);
         const bool allowed = world_.canStep(save_, {fc, fr}, {c, r}, test());
         movementOpen_ = true;
@@ -232,6 +243,16 @@ class OverworldStage : public Stage {
 
   void frame(Renderer& renderer, VkExtent2D) override {
     ++frames_;
+    const auto dialogueNow=std::chrono::steady_clock::now();
+    if(lastDialogueTick_ && (convDialog_ || film_ || event_)) {
+      const auto ns=std::chrono::duration_cast<std::chrono::nanoseconds>(dialogueNow-*lastDialogueTick_).count();
+      const auto before=ember::campaignMinute(save_);
+      ember::setCampaignMilliseconds(save_,ember::campaignMilliseconds(save_)+dialogueRealtime_.consume(ns));
+      if(ember::campaignMinute(save_)!=before) { ember::syncAilmentDeadlines(save_); write(); }
+      if(!testSave_) campaign_.advanceClockTo(ember::campaignMilliseconds(save_));
+      else (*testSave_)["gameSubMinuteMs"]=save_.value("gameSubMinuteMs",0);
+    }
+    lastDialogueTick_=dialogueNow;
     if (frames_ == releaseUiAt_) releaseUiImages();
     if (!fx_) {  // a luz e a névoa das duas telas (render/WorldMapFx.h): o passe, as configurações e as pinturas, uma vez
       fx_.emplace(renderer.context(), renderer.bindless());
@@ -392,7 +413,10 @@ class OverworldStage : public Stage {
           if (!test()) save_ = world_.fitSave(campaign_.activeSave());
           notice_ = slots_->status();
           slots_.reset();
-          const ember::Json& pos = save_["overworldPos"];
+          ember::ensureTempoSave(save_);
+    worldTempoConfig_=testSave_?ember::tempoFromSave(save_):ember::tempoForCampaign(save_);
+    worldTempoTimeline_.configure(worldTempoConfig_,ember::campaignMilliseconds(save_),true);
+    const ember::Json& pos = save_["overworldPos"];
           prevCol_ = pos.value("col", 0), partyX_ = -1, centred_ = false;
           std::string id;
           if (save_.contains("battle") && save_["battle"].is_object()) id = save_["battle"].value("missionId", "");
@@ -653,6 +677,20 @@ class OverworldStage : public Stage {
     if (open_) drawLocationPanel(size);
     if (questLog_) drawQuestLog(size);
     if (party_) drawParty(size);
+    if (test() && tempoOpen_) {
+      veil(size,"##tempoveil");
+      beginPanel("##tempocontrols",size,620,std::min(size.y*.85f,760.0f));
+      const auto head=ImGui::GetCursorScreenPos();
+      title("Tempo",24.0f);
+      ImGui::SetCursorScreenPos({head.x+544,head.y});
+      if(closeButton("##closetempo")) tempoOpen_=false;
+      ImGui::SetCursorScreenPos({head.x,head.y+48});
+      ImGui::BeginChild("##tempobody",{572,std::max(160.0f,std::min(size.y*.85f,760.0f)-120)},0,ImGuiWindowFlags_NoBackground);
+      if(worldTempoPanel_.draw(worldTempoConfig_,worldTempoTimeline_,ember::campaignMilliseconds(save_))) {
+        ember::writeTempoSave(save_,worldTempoConfig_); write();
+      }
+      ImGui::EndChild(); endPanel();
+    }
     if (options_) drawOptions(size);
     if (fieldSpells_) drawFieldSpells(size);
     if (!warpHero_.empty()) drawWarpMenu(size);
@@ -782,9 +820,26 @@ class OverworldStage : public Stage {
         if (const UiImage* img = uiImage(paths_.artRoot / icon)) dd->AddImage(img->texture, {a.x + 4, a.y + 4}, {b.x - 4, b.y - 4});
       });
     }
+    // Campaign: read-only weather status. Editing belongs to Modo teste and the editor.
+    {
+      const auto weather=worldTempoTimeline_.at(ember::campaignMilliseconds(save_));
+      const char* state=!worldTempoConfig_.enabled?"Desligado":weather.value(ember::tempo::Rain)>.5?"Chuva forte":
+        weather.value(ember::tempo::Rain)>.05?"Chuva":weather.value(ember::tempo::Fog)>.2?"Neblina":
+        weather.value(ember::tempo::Low)>.7?"Nublado":weather.value(ember::tempo::Low)>.35?"Parcialmente nublado":"Limpo";
+      const auto label=std::format("TEMPO: {}",state);
+      const float w=ui->CalcTextSizeA(14.0f,FLT_MAX,0,label.c_str()).x+24;
+      place(w);
+      if(test()) {
+        if(emberTextPlate("##tempobutton",{w,h},label.c_str(),14.0f)) tempoOpen_=!tempoOpen_;
+      } else {
+        const auto at=ImGui::GetCursorScreenPos();
+        ImGui::Dummy({w,h});
+        ImGui::GetWindowDrawList()->AddText(ui,14.0f,{at.x+12,at.y+(h-16)*.5f},kMuted,label.c_str());
+      }
+    }
     // Clock
     {
-      const std::string text = std::format("Dia {} · {:02}:00", static_cast<long long>(num(save_, "gameClock", 0)), ember::Overworld::campaignHour(save_));
+      const std::string text = std::format("Dia {} · {:02}:{:02}", static_cast<long long>(num(save_, "gameClock", 0)), ember::Overworld::campaignHour(save_), save_.value("gameMinute", 0));
       const float w = 8 + 16 + 8 + ui->CalcTextSizeA(14.0f, FLT_MAX, 0.0f, text.c_str()).x + 8;
       place(w);
       emberPlate("##clock", {w, h}, [&](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32) {
@@ -1029,6 +1084,9 @@ class OverworldStage : public Stage {
     const float imgW = vw * zoomPercent / 100.0f;
     const float imgH = map ? imgW * static_cast<float>(map->height) / static_cast<float>(map->width) : vh * 0.7f;
     const float contentW = imgW + 16.0f, contentH = imgH + 16.0f;
+    ember::ensureTempoSave(save_);
+    worldTempoConfig_=testSave_?ember::tempoFromSave(save_):ember::tempoForCampaign(save_);
+    worldTempoTimeline_.configure(worldTempoConfig_,ember::campaignMilliseconds(save_),true);
     const ember::Json& pos = save_["overworldPos"];
     const int col = pos.value("col", 0), row = pos.value("row", 0);
     double px = 0, py = 0;
@@ -1259,6 +1317,9 @@ class OverworldStage : public Stage {
 
   void walkTo(int col, int row) {
     if (!movementOpen_) return;
+    ember::ensureTempoSave(save_);
+    worldTempoConfig_=testSave_?ember::tempoFromSave(save_):ember::tempoForCampaign(save_);
+    worldTempoTimeline_.configure(worldTempoConfig_,ember::campaignMilliseconds(save_),true);
     const ember::Json& pos = save_["overworldPos"];
     if (!world_.canStep(save_, {pos.value("col", 0), pos.value("row", 0)}, {col, row}, test())) return;
     movementOpen_ = false;
@@ -1272,7 +1333,10 @@ class OverworldStage : public Stage {
     if (walkable) {
       movementOpen_ = false;
       step(loc.col, loc.row);
-      const ember::Json& pos = save_["overworldPos"];
+      ember::ensureTempoSave(save_);
+    worldTempoConfig_=testSave_?ember::tempoFromSave(save_):ember::tempoForCampaign(save_);
+    worldTempoTimeline_.configure(worldTempoConfig_,ember::campaignMilliseconds(save_),true);
+    const ember::Json& pos = save_["overworldPos"];
       if (pos.value("col", 0) == loc.col && pos.value("row", 0) == loc.row && !event_ && !briefing_) enterLocation(loc, st);
       return;
     }
@@ -1572,6 +1636,9 @@ class OverworldStage : public Stage {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     ImFont* ui = uiFont(UiFont::Ui);
     const std::vector<std::string> heroes = partyHeroes();
+    ember::ensureTempoSave(save_);
+    worldTempoConfig_=testSave_?ember::tempoFromSave(save_):ember::tempoForCampaign(save_);
+    worldTempoTimeline_.configure(worldTempoConfig_,ember::campaignMilliseconds(save_),true);
     const ember::Json& pos = save_["overworldPos"];
     const ember::MapLocation* standing = world_.locationAt(pos.value("col", 0), pos.value("row", 0));
     std::string line;
@@ -1631,7 +1698,7 @@ class OverworldStage : public Stage {
   }
 
   void drawZoom(ImVec2 size) {
-    const bool inert = event_ || open_ || questLog_ || party_ || options_ || !save_.value("seenOverworldIntro", false);
+    const bool inert = tempoOpen_ || event_ || open_ || questLog_ || party_ || options_ || !save_.value("seenOverworldIntro", false);
     const bool changed = worldMapZoomBox(size, underworld_ ? underworldZoom_ : zoom_, inert, 4, 1, 4);
     if (changed) recentre_ = true;
   }
@@ -1787,6 +1854,13 @@ class OverworldStage : public Stage {
     const ImVec2 head = ImGui::GetCursorScreenPos();
     kicker(std::format("Grupo · {} {} · Líder: {}", heroes.size(), heroes.size() == 1 ? "membro" : "membros", leader()), 12.0f);
     title("Party", 24.0f);
+    const double played=testSave_?testSave_->value("realPlaySeconds",0.0):campaign_.realPlaySeconds();
+    const auto hours=static_cast<long long>(played/3600.0);
+    const int minutes=static_cast<int>(played/60.0)%60;
+    const std::string playTime=std::format("Total campaign time: {}h {:02}min",hours,minutes);
+    ImFont* clockFont=uiFont(UiFont::Ui);
+    const float clockWidth=clockFont->CalcTextSizeA(13.0f,FLT_MAX,0,playTime.c_str()).x;
+    ImGui::GetWindowDrawList()->AddText(clockFont,13.0f,{head.x+inner-clockWidth-48,head.y+31},kMuted,playTime.c_str());
     ImGui::SetCursorScreenPos({head.x + inner - 36, head.y});
     if (closeButton("##partyclose")) party_ = false;
     ImGui::SetCursorScreenPos({head.x, head.y + 64});
@@ -2809,7 +2883,13 @@ class OverworldStage : public Stage {
   bool warpRune_ = false;        // the crossing's picture is the rune's (Retornar), not Warp's gate
   float warpAt_ = -100, warpDuration_ = 0;  // the gate's picture over the map
   std::string convCompanion_, convLeader_;
+  ember::tempo::Config worldTempoConfig_{};
+  ember::tempo::Timeline worldTempoTimeline_;
+  ember::TempoPanel worldTempoPanel_;
+  bool tempoOpen_=false;
   std::optional<DialogScreen> convDialog_;
+  std::optional<std::chrono::steady_clock::time_point> lastDialogueTick_;
+  ember::RealtimeAccumulator dialogueRealtime_;
   std::optional<InnScreen> inn_;
   std::optional<InventoryScreen> inventory_;
   std::optional<CutsceneScreen> film_;

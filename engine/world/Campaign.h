@@ -86,6 +86,10 @@ class Campaign {
   bool writeSlot(int index, Json save);
   bool selectSlot(int index);
   // The active slot rewritten with `save` (writeSlot on lastSlot).
+  void addRealPlaySeconds(double seconds);
+  void advanceClockTo(std::int64_t milliseconds);
+  double realPlaySeconds() const;
+  bool flush() { return persist(); }
   bool saveActive(Json save) { return writeSlot(bank_.lastSlot, std::move(save)); }
 
   // Ember formatSaveDate (pt-BR, dateStyle medium + timeStyle short): "15 de out. de 2026, 21:40".

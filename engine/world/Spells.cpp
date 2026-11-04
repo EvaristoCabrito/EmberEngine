@@ -1,3 +1,4 @@
+#include "world/CampaignTime.h"
 #include "world/Spells.h"
 
 #include <algorithm>
@@ -1239,6 +1240,7 @@ constexpr double kSupportCe = 20, kSupportVe = 120;  // enmity.ts ENMITY.support
 // curePlayerDisease: poison gone, the disease's stats given back.
 void curePlayerDisease(BattleUnit& u) {
   u.poisoned = false;
+  u.poisonMinutesLeft = u.diseaseMinutesLeft = -1;
   u.poisonTier.clear();
   u.cond.poisonMag = 0, u.cond.plagueSpread = 0, u.cond.plagueBurst = false;
   if (!u.diseaseBase) {
@@ -1258,7 +1260,7 @@ void maybeInflictDisease(const BattleUnit& actor, BattleUnit& target, Mulberry32
                                                                                                              : 0;
   if (chance <= 0 || !target.alive || target.diseased) return;
   if (rng() >= chance) return;
-  inflictDisease(target);
+  inflictDisease(target, "lesser", c == "wardog" || c == "wardog2" ? "bite" : "rot");
 }
 
 // levelUpUnit: the next level's class stats (plus gear), the level's HP gain, and the tier uses it adds.
@@ -1496,7 +1498,7 @@ void applyPoison(BattleUnit& t, const std::string& tier, double mag, int spread,
   const PoisonTier* nt = poisonTier(tier);
   if (!nt) return;
   const PoisonTier* ot = t.poisoned ? poisonTier(t.poisonTier) : nullptr;
-  if (!ot || nt->rank >= ot->rank) t.poisonTier = tier;
+  if (!ot || nt->rank >= ot->rank) { t.poisonTier = tier; t.poisonMinutesLeft = ailmentDays(tier) * kMinutesPerDay; }
   t.poisoned = true;
   t.cond.poisonMag = std::max(t.cond.poisonMag, mag);
   t.cond.plagueSpread = std::max(t.cond.plagueSpread, spread);
@@ -3289,8 +3291,11 @@ std::optional<BattleStep> usePotion(const Battle& b, size_t actor, const std::st
   return s;
 }
 
-void inflictDisease(BattleUnit& u) {
+void inflictDisease(BattleUnit& u, const std::string& tier, const std::string& type) {
+  if (u.diseased) return;
+  u.diseaseTier = tier; u.diseaseType = type;
   u.diseased = true;
+  u.diseaseMinutesLeft = ailmentDays(u.diseaseTier) * kMinutesPerDay;
   u.diseaseBase = BattleUnit::Stats{u.atk, u.mag, u.def, u.dex, u.mov};
   auto pen = [](int n) { return static_cast<int>(jsRound(n * (1 - kDiseasePenalty))); };
   u.atk = pen(u.atk), u.mag = pen(u.mag), u.def = pen(u.def), u.dex = pen(u.dex);
@@ -4908,6 +4913,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
         const std::string nextId = next->id;
         if (!cur || nextId != foe.poisonTier) foe.cond.poisonMag = casterMag;
         else if (nextId == tierId) foe.cond.poisonMag = std::max(foe.cond.poisonMag, casterMag);
+        if (!cur || next->rank <= pt->rank) foe.poisonMinutesLeft = ailmentDays(nextId) * kMinutesPerDay;
         foe.poisonTier = nextId;
         foe.poisoned = true;
       }

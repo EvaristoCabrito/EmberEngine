@@ -14,7 +14,7 @@ class VulkanContext;
 // Results are therefore kFramesInFlight frames old.
 class GpuTimer {
  public:
-  static constexpr uint32_t kMaxScopes = 32;
+  static constexpr uint32_t kMaxScopes = 64;
 
   explicit GpuTimer(VulkanContext& context);
   ~GpuTimer();

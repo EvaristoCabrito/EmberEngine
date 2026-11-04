@@ -10,6 +10,7 @@
 
 #include "core/Log.h"
 #include "rhi/Bindless.h"
+#include "rhi/GpuTimer.h"
 #include "rhi/Pipeline.h"
 #include "rhi/VulkanContext.h"
 
@@ -53,7 +54,7 @@ struct VolumetricsFrame {
 };
 static_assert(sizeof(VolumetricsFrame) == 272);
 static_assert(sizeof(Volumetrics::LocalVolume) == 32);
-constexpr VkDeviceSize kRecordBytes = sizeof(VolumetricsFrame) + sizeof(Volumetrics::LocalVolume) * Volumetrics::kMaxVolumes;
+constexpr VkDeviceSize kRecordBytes = sizeof(VolumetricsFrame) + sizeof(Volumetrics::LocalVolume) * Volumetrics::kMaxVolumes + 16;
 
 struct Push {
   VkDeviceAddress frame;
@@ -92,7 +93,8 @@ Volumetrics::Level Volumetrics::level(Quality q) {
   switch (q) {
     // History weights: the jittered slices integrate over ~1 / (1 - w) frames; 0.94 = about 17 frames (the user saw the
     // far slabs boil at 0.9 on a low camera looking along the board, 2026-10-16).
-    case Quality::Cinematic: return {{192, 108, 96}, 4, 3, 0.94f, 2.5f};
+    case Quality::Ultra: return {{192, 108, 96}, 4, 3, 0.94f, 2.5f};
+    case Quality::Medium: return {{128, 72, 56}, 1, 1, 0.94f, 1.3f};
     case Quality::High: return {{160, 90, 64}, 1, 2, 0.94f, 1.6f};
     default: return {{96, 54, 48}, 1, 0, 0.95f, 1.0f};
   }
@@ -168,11 +170,15 @@ Volumetrics::Volumetrics(VulkanContext& context, Bindless& bindless) : context_(
   for (Buffer& b : frames_) b = createDeviceBuffer(context, kRecordBytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
   inject_ = createComputePipeline(context, bindless.pipelineLayout(), "volumetrics_v1.CSInject");
   integrate_ = createComputePipeline(context, bindless.pipelineLayout(), "volumetrics_v1.CSIntegrate");
+  material002_=createComputePipeline(context,bindless.pipelineLayout(),"volumetrics_clouds006.CSMaterial");
+  inject002_=createComputePipeline(context,bindless.pipelineLayout(),"volumetrics_clouds006.CSInject");
+  integrate002_=createComputePipeline(context,bindless.pipelineLayout(),"volumetrics_clouds006.CSIntegrate");
   target_ = from_ = current_;
 }
 
 Volumetrics::~Volumetrics() {
   for (Set& s : sets_) destroySet(s);
+  for(auto pipeline:{material002_,inject002_,integrate002_})vkDestroyPipeline(context_.device,pipeline,nullptr);
   vkDestroyPipeline(context_.device, inject_, nullptr);
   vkDestroyPipeline(context_.device, integrate_, nullptr);
   for (Buffer& b : frames_) destroyBuffer(context_, b);
@@ -208,6 +214,11 @@ void Volumetrics::destroySet(Set& s) {
   bindless_.removeStorageImage(s.integratedStorage);
   bindless_.removeSampledImage(s.integratedSampled);
   destroyImage(context_, s.integrated);
+  for(int i=0;i<2;++i)if(s.material[i].image) {
+    bindless_.removeStorageImage(s.materialStorage[i]);bindless_.removeSampledImage(s.materialSampled[i]);
+    bindless_.removeStorageImage(s.shadowStorage[i]);bindless_.removeSampledImage(s.shadowSampled[i]);
+    destroyImage(context_,s.material[i]);destroyImage(context_,s.shadow[i]);
+  }
   s.grid = glm::uvec3(0);
 }
 
@@ -274,6 +285,16 @@ bool Volumetrics::prepare(const Camera& camera, float time, VkCommandBuffer cmd,
   Set& s = set(effective_);
   if (active_ != &s) historyValid_ = false;  // another grid: its history is stale (or never written)
   active_ = &s;
+  if(clouds006_ && !s.material[0].image) {
+    const ImageDesc materialDesc{.format=VK_FORMAT_R16G16B16A16_SFLOAT,.extent={s.grid.x,s.grid.y},.usage=VK_IMAGE_USAGE_STORAGE_BIT|VK_IMAGE_USAGE_SAMPLED_BIT,.depth=s.grid.z};
+    ImageDesc shadowDesc=materialDesc;shadowDesc.format=VK_FORMAT_R16_SFLOAT;
+    for(int i=0;i<2;++i){
+      s.material[i]=createImage(context_,materialDesc);s.shadow[i]=createImage(context_,shadowDesc);
+      s.materialStorage[i]=bindless_.addStorageImage(s.material[i].view);s.materialSampled[i]=bindless_.addSampledImage(s.material[i].view,VK_IMAGE_LAYOUT_GENERAL);
+      s.shadowStorage[i]=bindless_.addStorageImage(s.shadow[i].view);s.shadowSampled[i]=bindless_.addSampledImage(s.shadow[i].view,VK_IMAGE_LAYOUT_GENERAL);
+    }
+    historyValid_=false;
+  }
   // The profile blend.
   const float dt = lastTime_ < 0.0f ? 0.0f : std::clamp(time - lastTime_, 0.0f, 0.25f);
   lastTime_ = time;
@@ -343,6 +364,10 @@ bool Volumetrics::prepare(const Camera& camera, float time, VkCommandBuffer cmd,
   std::array<std::byte, kRecordBytes> record{};
   std::memcpy(record.data(), &v, sizeof(v));
   if (!volumes_.empty()) std::memcpy(record.data() + sizeof(v), volumes_.data(), volumes_.size() * sizeof(LocalVolume));
+  if(clouds006_) {
+    const glm::uvec4 extra{s.materialStorage[current_slot_],s.materialSampled[current_slot_^1u],s.shadowStorage[current_slot_],s.shadowSampled[current_slot_^1u]};
+    std::memcpy(record.data()+784,&extra,sizeof(extra));
+  }
   // The previous frame's passes may still read this slot's record.
   barrier(cmd, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_MEMORY_READ_BIT, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
   vkCmdUpdateBuffer(cmd, frames_[frameSlot].buffer, 0, kRecordBytes, record.data());
@@ -354,7 +379,7 @@ bool Volumetrics::prepare(const Camera& camera, float time, VkCommandBuffer cmd,
   return true;
 }
 
-void Volumetrics::record(VkCommandBuffer cmd, VkDeviceAddress meshFrame, uint32_t frameSlot) {
+void Volumetrics::record(VkCommandBuffer cmd, VkDeviceAddress meshFrame, uint32_t frameSlot, GpuTimer* timer) {
   if (!thisFrame_ || !active_) return;
   Set& s = *active_;
   if (!s.ready) {
@@ -364,22 +389,39 @@ void Volumetrics::record(VkCommandBuffer cmd, VkDeviceAddress meshFrame, uint32_
                  {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE,
                   VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
   }
+  if(clouds006_&&!s.cloudReady) {
+    s.cloudReady=true;
+    for(Image* image:{&s.material[0],&s.material[1],&s.shadow[0],&s.shadow[1]})
+      transition(cmd,image->image,image->aspect,{VK_IMAGE_LAYOUT_UNDEFINED,VK_IMAGE_LAYOUT_GENERAL,VK_PIPELINE_STAGE_2_NONE,VK_ACCESS_2_NONE,VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT|VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
+  }
   // The record's upload, and the previous frame's surfaces still reading what is written now.
   barrier(cmd, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
           VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
           VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
           VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
   const Push push{meshFrame, bufferAddress(context_, frames_[frameSlot])};
-  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, inject_);
+  if(clouds006_) {
+    const uint32_t scope=timer?timer->begin(cmd,"fog 006 material and shadow"):UINT32_MAX;
+    vkCmdBindPipeline(cmd,VK_PIPELINE_BIND_POINT_COMPUTE,material002_);
+    vkCmdPushConstants(cmd,bindless_.pipelineLayout(),kPushStages,0,sizeof(push),&push);
+    vkCmdDispatch(cmd,(s.grid.x+7)/8,(s.grid.y+7)/8,s.grid.z);
+    barrier(cmd,VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
+    if(timer)timer->end(cmd,scope);
+  }
+  const uint32_t injectionScope=timer?timer->begin(cmd,"fog injection"):UINT32_MAX;
+  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, clouds006_?inject002_:inject_);
   vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
   vkCmdDispatch(cmd, (s.grid.x + 7) / 8, (s.grid.y + 7) / 8, s.grid.z);
   barrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
           VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
-  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, integrate_);
+  if(timer)timer->end(cmd,injectionScope);
+  const uint32_t integrationScope=timer?timer->begin(cmd,"fog integration"):UINT32_MAX;
+  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, clouds006_?integrate002_:integrate_);
   vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
   vkCmdDispatch(cmd, (s.grid.x + 7) / 8, (s.grid.y + 7) / 8, 1);
   barrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
           VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
+  if(timer)timer->end(cmd,integrationScope);
   historyValid_ = true;
 }
 

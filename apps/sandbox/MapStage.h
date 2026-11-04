@@ -1,3 +1,7 @@
+#include "world/CampaignTime.h"
+#include "world/TempoSave.h"
+#include "world/TempoConsumers.h"
+#include "TempoPanel.h"
 #pragma once
 
 // A real Ember map from the project's local game-data snapshot: its board and ground in both looks, its water, and its
@@ -165,7 +169,8 @@ struct MapStageOptions {
   // --water N), "Reflexo do céu" (0 OFF, 1 the sky's reflection map; --sky-reflect N) and "Nuvens" (0 OFF, 1 básica; --clouds N).
   int waterLook = 0;
   int skyReflect = 1;
-  int clouds = 2;     // "Nuvens": 0 OFF, 1 básica (the sheets), 2 volumétricas (look 001, the default; --clouds N)
+  int cloudLook = -1; // explicit --cloud-look; editor stores this per map
+  int clouds = 6;     // "Nuvens": 0 OFF, 1 básica (the sheets), 2 volumétricas (look 001, the default; --clouds N)
   int moonLight = 1;  // the panel's "Luar" (light mode real): 0 físico, 1 cinema (--moonlight N)
   int hour = 0;       // the panel's "Hora": 0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3..10 fixed hours (--hour N)
   // The game's own clock (the campaign's / the test world map's gameHour, 0..23): ALL the light from outside follows it, on every map but
@@ -174,6 +179,10 @@ struct MapStageOptions {
   // -1: no clock given (Modo teste, the Map Editor, captures): the map's own Hora do dia (ember::mapHour, the user, 2026-10-23: "no debug
   // o horário que estiver no mapa"), read live, so the editor's preview follows its dropdown.
   float gameHour = -1.0f;
+  std::int64_t campaignMinute = 480;
+  std::int64_t campaignSubMinuteMs = 0;
+  ember::tempo::Config tempoConfig{};
+  bool tempoModeOverride = false, tempoSeedOverride = false, tempoChaosOverride = false;
   int sunDisc = 1;    // the panel's "Sol": 0 real, 1 cinema (the disc the user had; default), 2 look 001 (--sun-disc N)
   int glare = 0;      // "Clarão": 0 OFF (default: the user never asked for it), 1 look 001 (--glare N)
   int shafts = 0;     // "Raios de luz": 0 OFF (default), 1 look 001 (--shafts N)
@@ -231,6 +240,8 @@ struct MapStageOptions {
     std::optional<std::array<int, 7>> bag;  // in ember::kPotionIds order
     bool starterBag = false;                // the save has bags but none for it: its class's starting bag
     bool diseased = false;
+    std::string diseaseTier = "lesser", diseaseType = "disease";
+    int poisonMinutesLeft = -1, diseaseMinutesLeft = -1;
     std::string poison;                     // heroPoisons' tier, empty = not poisoned
     std::optional<double> fullness;
     double hungerPenalty = 0;
@@ -261,6 +272,8 @@ struct HeroOutcome {
   int campHp = 0;            // after a victory: the HP it keeps (persistVictory: half the missing healed, or carried past a floor connector)
   std::array<int, 7> bag{};  // in ember::kPotionIds order
   bool diseased = false;
+  std::string diseaseTier = "lesser", diseaseType = "disease";
+  int poisonMinutesLeft = -1, diseaseMinutesLeft = -1;
   std::string poison;        // empty = not poisoned
   std::optional<double> fullness;
   // What the fight trained, per skill id of save.heroSkills (weapons "<type>Weapon", "healing", the resistances, Esquiva
@@ -299,7 +312,7 @@ class MapStage final : public Stage {
       if (fogLooks()[i].fogOfWar && options.fogLook == std::atoi(fogLooks()[i].number)) fogLook_ = i;
     pitch_ += glm::radians(options.tiltDegrees);
     flat_ = options.tatica;
-    atmosChoice_ = options.atmos >= 0 ? std::clamp(options.atmos, 0, 3) : 2;
+    atmosChoice_ = options.atmos >= 0 ? std::clamp(options.atmos, 0, 4) : 3;
     gridLook_ = 2;  // Show only tactical movement, route, target and cursor regions; no board-wide hex outlines.
     cardStance_ = std::clamp(options.cardStance, 0, 1);
     barsFade_ = std::clamp(options.barsFade, 0, 1);
@@ -308,8 +321,10 @@ class MapStage final : public Stage {
     windFogChoice_ = std::clamp(options.windFog, 0, 1);
     waterLook_ = std::clamp(options.waterLook, 0, 4);
     skyReflect_ = std::clamp(options.skyReflect, 0, 1);
-    clouds_ = std::clamp(options.clouds, 0, 2);
+    clouds_ = options.clouds == 6 ? 3 : std::clamp(options.clouds, 0, 3);
     dayCycle_ = std::clamp(options.hour, 0, 10);
+    tempoConfig_ = options.tempoConfig;
+    tempoTimeline_.configure(tempoConfig_, options.campaignMinute * 60000, true);
     gameHour_ = options.gameHour;  // < 0: the map's own hour (cycleHour)
     moonLight_ = std::clamp(options.moonLight, 0, 1);
     sunSize_ = std::clamp(options.sunDisc, 0, 2);
@@ -328,6 +343,7 @@ class MapStage final : public Stage {
     }
     board_ = std::make_unique<ember::Board>(*data_, std::move(*draft));
     setEditorWeather(board_->draft());
+    if(options.cloudLook>=0)selectCloudLook(options.cloudLook);
     if (!board_->loadRelief(options.artRoot) || !ground_.build(*board_)) {
       failed_ = true;
       return;
@@ -563,6 +579,17 @@ class MapStage final : public Stage {
     // critically damped glide every frame, so every input (drag, wheel, keys, the bar) moves without a jump.
     const float dt = std::min(std::chrono::duration<float>(std::chrono::steady_clock::now() - lastFrame_).count(), 0.1f);
     lastFrame_ = std::chrono::steady_clock::now();
+    const auto clockNow=std::chrono::steady_clock::now();
+    if (lastCampaignTick_ && !options_.editorClick && options_.sceneTime < 0 && !pauseOpen_ && loading().ready &&
+        ((battle_ && battle_->roaming()) || inputHeld || cutscene_ || holdTurns)) {
+      const auto before=campaignMinuteNow();
+      const auto ns=std::chrono::duration_cast<std::chrono::nanoseconds>(clockNow-*lastCampaignTick_).count();
+      explorationMilliseconds_ += campaignRealtime_.consume(ns);
+      const auto passed=campaignMinuteNow()-before;
+      if(battle_ && passed>0) battle_->advanceConditionMinutes(static_cast<int>(passed));
+      if(gameHour_>=0) gameHour_=static_cast<float>(campaignMillisecondsNow()%86400000)/3600000.0f;
+    }
+    lastCampaignTick_=clockNow;
     aspect_ = aspect;
     if (!captured_) {
       captured_ = true, homeYaw_ = yaw_, homePitch_ = pitch_, homeTarget_ = target_, homeDistance_ = distance_;
@@ -591,6 +618,7 @@ class MapStage final : public Stage {
       laps.lap("roaming");
       updateTurns();
     }
+    if(campaign_ && !testMode_ && !playtest_) campaign_->advanceClockTo(campaignMillisecondsNow());
     laps.lap("turns");
     updateHover();
     laps.lap("hover");
@@ -733,10 +761,27 @@ class MapStage final : public Stage {
     }
     laps.lap("effects");
     renderer.setEffects(effectList_);
-    if (board_ && !interiorMap() && !weatherKind_.empty() && weatherKind_ != "none") {
+    const bool tempoActive=tempoConfig_.enabled;
+    const auto tempoState=tempoActive?tempoNow():ember::tempo::Sample{};
+    const auto tempoEffects=ember::tempo::controls(tempoState);
+    WeatherFx::TempoMotion tempoMotion{{tempoEffects.windX,tempoEffects.windZ},tempoEffects.heavyRain,0,0};
+    if(tempoActive) {
+      const auto minute=ember::tempo::floorDiv(tempoMillisecondsNow(),60000);
+      if(minute!=lastLightningMinute_) {
+        const bool contiguous=lastLightningMinute_!=INT64_MIN && minute==lastLightningMinute_+1;
+        lastLightningMinute_=minute;
+        lightningAt_=contiguous && ember::tempo::lightningAtMinute(minute,tempoConfig_,tempoState) ? time : -1000.0f;
+      }
+      const float age=time-lightningAt_;
+      tempoMotion.flash=age>=0&&age<.10f?1-age/.10f:age>=.18f&&age<.24f?.5f*(1-(age-.18f)/.06f):0;
+      tempoMotion.lightningSeed=ember::tempo::hash(minute,tempoConfig_.seed,92);
+    } else { lastLightningMinute_=INT64_MIN; lightningAt_=-1000.0f; }
+    const std::string_view activeWeather=tempoActive?std::string_view("rain"):std::string_view(weatherKind_);
+    const float activeIntensity=tempoActive?tempoEffects.rain:weatherIntensity_;
+    if (board_ && !interiorMap() && !activeWeather.empty() && activeWeather != "none" && activeIntensity>0) {
       weatherFrame_ = spellFx_.vfx();
-      const float flash = WeatherFx::append(weatherFrame_, weatherKind_, weatherIntensity_, weatherWind_,
-          time, camera, cam_.target, [this](float x, float z) { return static_cast<float>(ember::groundHeightAt(*board_, look_, x, z)); });
+      const float flash = WeatherFx::append(weatherFrame_, activeWeather, activeIntensity, weatherWind_,
+          time, camera, cam_.target, [this](float x, float z) { return static_cast<float>(ember::groundHeightAt(*board_, look_, x, z)); }, tempoActive?&tempoMotion:nullptr);
       if (flash > 0) lights_.push_back(classicLight(cam_.target + glm::vec3(0,18,0), {.78f,.86f,1.0f}, flash*12.0f, 65.0f, 1.25f));
       renderer.setVfx(weatherFrame_);
     } else renderer.setVfx(spellFx_.vfx());
@@ -906,6 +951,7 @@ class MapStage final : public Stage {
     lighting.sunLook = sunSize_ == 2 ? 1u : 0u;
     // Tática looks from far above: no air between the eye and the board (Ember drops its distance fog there).
     if (flat_) lighting.kmPerUnit = 0.0f;
+    if(tempoActive) lighting.weatherMieScale=tempoEffects.mieScale;
     renderer.setMeshes(scene_ ? meshes_.view() : MeshSceneView{}, lighting);
     renderer.setTerrain(ground_.view(look_));
     renderer.setGroundClip(deckClip());
@@ -937,8 +983,10 @@ class MapStage final : public Stage {
     renderer.setSkyReflection(skyReflect_ == 1);
     {
       Renderer::Clouds clouds;
+      clouds.savedLook = savedCloudLook_;
       clouds.enabled = clouds_ >= 1;
-      clouds.volumetric = clouds_ == 2;  // look 001: the real 3D layer (cloudsvol.hlsli)
+      clouds.volumetric = clouds_ >= 2;
+      clouds.look006 = clouds_ == 3;
       if (clouds.volumetric) {
         // Bigger clouds with wider clearings than the sheets' (a layer seen at the game's low angle closes up otherwise); the
         // sheets ("básica") keep their own numbers.
@@ -950,6 +998,21 @@ class MapStage final : public Stage {
         clouds.enabled = clouds.enabled && cloudCoverage_ > 0.0f;
       }
       clouds.gray = cloudGray_;
+      if(tempoActive) {
+        clouds.enabled=clouds_>0 && tempoEffects.coverage>0;
+        clouds.coverage=tempoEffects.coverage; clouds.gray=tempoEffects.gray;
+        clouds.base=tempoEffects.base; clouds.top=tempoEffects.base+tempoEffects.thickness;
+        clouds.altitude=tempoEffects.base+tempoEffects.thickness*.35f;
+        clouds.scale=tempoEffects.scale; clouds.wind={tempoEffects.windX,tempoEffects.windZ};
+        if(clouds.look006) {
+          clouds.coverage=static_cast<float>(tempoState.value(ember::tempo::Low));
+          clouds.middleCoverage=static_cast<float>(tempoState.value(ember::tempo::Middle));
+          clouds.highCoverage=static_cast<float>(tempoState.value(ember::tempo::High));
+          clouds.kind=static_cast<float>(tempoState.value(ember::tempo::Shape));
+          clouds.growth=static_cast<float>(tempoState.value(ember::tempo::Vertical));
+          clouds.rain=tempoEffects.rain;
+        }
+      }
       clouds.altitude += meanGround_;  // the sheet's height above the board's mean ground
       clouds.base += meanGround_;
       clouds.top += meanGround_;
@@ -1114,10 +1177,16 @@ class MapStage final : public Stage {
     {
       Volumetrics& atmos = renderer.volumetrics();
       atmos.setEnabled(options_.volume && atmosChoice_ > 0);
-      static const Volumetrics::Quality kQualities[4] = {Volumetrics::Quality::High, Volumetrics::Quality::Cinematic, Volumetrics::Quality::High,
-                                                          Volumetrics::Quality::Performance};
-      atmos.setQuality(kQualities[std::clamp(atmosChoice_, 0, 3)]);
-      atmos.setProfile(atmosProfiles_[static_cast<size_t>(std::clamp<int>(climaChoice_, 0, static_cast<int>(atmosProfiles_.size()) - 1))], 1.5f);
+      static const Volumetrics::Quality kQualities[5] = {Volumetrics::Quality::High, Volumetrics::Quality::Cinematic, Volumetrics::Quality::High,
+                                                          Volumetrics::Quality::Low, Volumetrics::Quality::Medium};
+      atmos.setQuality(kQualities[std::clamp(atmosChoice_, 0, 4)]);
+      auto profile=atmosProfiles_[static_cast<size_t>(std::clamp<int>(climaChoice_, 0, static_cast<int>(atmosProfiles_.size()) - 1))];
+      if(tempoActive && !interiorMap()) {
+        profile.visibility/=tempoEffects.fogMultiplier;
+        profile.valley+=tempoEffects.valleyExtra;
+        profile.wind.x=tempoEffects.windX*.04f; profile.wind.z=tempoEffects.windZ*.04f;
+      }
+      atmos.setProfile(profile,tempoActive?0.0f:1.5f);
       atmos.setScene(meanGround_, flat_);
     }
     // The fog of war's mist: the numbered look on show (render/FogLooks.h; chosen in the Map panel).
@@ -1763,8 +1832,6 @@ class MapStage final : public Stage {
       // The sky's reflection map on every specular surface (water first), and the cloud sheet (sky, reflections, shadows).
       static const char* kReflect[2] = {"OFF", "céu real"};
       dropdown("Reflexo do céu", skyReflect_, 2, [](int i) { return std::string(kReflect[i]); });
-      static const char* kClouds[3] = {"OFF", "básica", "volumétricas"};
-      dropdown("Nuvens", clouds_, 3, [](int i) { return std::string(kClouds[i]); });
       // The lens's glare round the sun / moon and the crepuscular rays from it (sunglare.hlsl, look 001).
       static const char* kLook[2] = {"OFF", "001"};
       dropdown("Clarão", glare_, 2, [](int i) { return std::string(kLook[i]); });
@@ -1780,11 +1847,31 @@ class MapStage final : public Stage {
     }
     if (options_.volume) {
       // Atmosfera volumétrica v1 (docs/ATMOSPHERE.md): OFF, or its quality; then the region's profile.
-      static const char* kAtmos[4] = {"OFF", "cinema", "alta", "desempenho"};
-      dropdown("Atmosfera", atmosChoice_, 4, [](int i) { return std::string(kAtmos[i]); });
+      static const char* kAtmos[5] = {"OFF", "Leve (Low)", "Medium", "High", "Ultra"};
+      static constexpr int kToChoice[5] = {0,3,4,2,1};
+      int selected=0;
+      for(int i=0;i<5;++i)if(kToChoice[i]==atmosChoice_)selected=i;
+      if(dropdown("Atmosfera", selected, 5, [](int i) { return std::string(kAtmos[i]); }))atmosChoice_=kToChoice[selected];
+      if (ImGui::TreeNode("Tempos GPU das nuvens")) {
+        double total=0.0;
+        for(const auto& pass:renderer_.gpuTimer().results()) {
+          const std::string_view name(pass.name);
+          if(name=="clouds" || name=="cloud shadow" || name=="sky reflect" || name.starts_with("cloud 006")) {
+            ImGui::Text("%s: %.3f ms",pass.name,pass.milliseconds);
+            total+=pass.milliseconds;
+          }
+        }
+        const double budget=atmosChoice_==1?3.0:atmosChoice_==2?2.2:atmosChoice_==4?1.5:0.9;
+        if(renderer_.gpuTimer().supported()) ImGui::Text("Nuvens atuais: %.3f ms / meta 006: %.1f ms (RX 6400, 1600x900)",total,budget);
+        else ImGui::TextUnformatted("Timestamps GPU indisponíveis");
+        ImGui::TreePop();
+      }
       if (atmosChoice_ > 0 && atmosProfiles_.size() > 1)
         dropdown("Clima", climaChoice_, static_cast<int>(atmosProfiles_.size()), [this](int i) { return atmosProfiles_[static_cast<size_t>(i)].label; });
+      static const char* kClouds[4] = {"OFF", "básica", "001", "006"};
+      dropdown("Nuvens", clouds_, 4, [](int i) { return std::string(kClouds[i]); });
     }
+    tempoPanel_.draw(tempoConfig_, tempoTimeline_, tempoMillisecondsNow());
     {
       static const char* kLayers[4] = {"sol / lua", "sombras", "luz do céu", "tochas e fogo"};
       for (uint32_t i = 0; i < 4; ++i) {
@@ -1844,7 +1931,13 @@ class MapStage final : public Stage {
   }
 
   // Weather edits update only precipitation. Keep the live board, camera, uploads and GPU resources intact.
+  void selectCloudLook(int look){
+    look=std::clamp(look,0,6);savedCloudLook_=look>=1&&look<=5?look:0;
+    clouds_=look==0?0:look==6?3:2;
+  }
   void setEditorWeather(const ember::MapDraft& draft) {
+    if(draft.cloudLook>=0)selectCloudLook(draft.cloudLook);
+    else if(options_.editorClick)selectCloudLook(0);
     weatherKind_ = draft.weather;
     weatherIntensity_ = draft.weatherIntensity;
     weatherWind_ = draft.weatherWind;
@@ -2045,6 +2138,9 @@ class MapStage final : public Stage {
           if (u.side == "enemy" || u.mov - u.moveUsed <= 0) su["moved"] = true;
         }
     }
+    snap["campaignMinute"] = campaignMinuteNow();
+    snap["campaignMilliseconds"] = campaignMillisecondsNow();
+    ember::writeTempoSave(snap, tempoConfig_);
     snap["missionId"] = missionId_;
     snap["mapKey"] = mapKey_;
     snap["introDialogDone"] = true;
@@ -2070,6 +2166,14 @@ class MapStage final : public Stage {
     if (!battle_ || !snap.is_object()) return false;
     if (snap.value("missionId", std::string()) != missionId_ || (!mapKey_.empty() && snap.value("mapKey", mapKey_) != mapKey_)) return false;
     if (!battle_->applySnapshot(snap)) return false;
+    elapsedBattleMinutes_ = 0;
+    explorationMilliseconds_ = std::max<std::int64_t>(0, snap.value("campaignMilliseconds", snap.value("campaignMinute", options_.campaignMinute)*60000) - options_.campaignMinute*60000-options_.campaignSubMinuteMs);
+    if (gameHour_ >= 0) gameHour_ = static_cast<float>(campaignMinuteNow() % 1440) / 60.0f;
+    const auto savedTempo = options_.choicesPanel?ember::tempoFromSave(snap):ember::tempoForCampaign(snap);
+    if(!options_.tempoModeOverride) tempoConfig_.enabled = savedTempo.enabled;
+    if(!options_.tempoSeedOverride) tempoConfig_.seed = savedTempo.seed;
+    if(!options_.tempoChaosOverride) tempoConfig_.chaos = savedTempo.chaos;
+    tempoTimeline_.configure(tempoConfig_, campaignMinuteNow()*60000, true);
     syncSummons();  // the familiars summoned before the save get their cards back
     for (size_t i = 0; i < unitBattle_.size(); ++i) {
       if (unitBattle_[i] < 0) continue;
@@ -2214,6 +2318,8 @@ class MapStage final : public Stage {
         h.campHp = campHp(u);
         std::copy(std::begin(u.bag), std::end(u.bag), h.bag.begin());
         h.diseased = u.diseased;
+        h.diseaseTier = u.diseaseTier; h.diseaseType = u.diseaseType;
+        h.poisonMinutesLeft = u.poisonMinutesLeft; h.diseaseMinutesLeft = u.diseaseMinutesLeft;
         h.poison = u.poisoned ? (u.poisonTier.empty() ? "lesser" : u.poisonTier) : "";
         h.fullness = u.fullness;
         if (const auto start = skillsAtStart_.find(u.name); start != skillsAtStart_.end())
@@ -2237,6 +2343,8 @@ class MapStage final : public Stage {
     u.lockpick = s.lockpick;
     u.pointHp = s.points[0], u.pointAtk = s.points[1], u.pointMag = s.points[2], u.pointDef = s.points[3], u.pointDex = s.points[4];
     u.diseased = s.diseased;
+    u.diseaseTier = s.diseaseTier; u.diseaseType = s.diseaseType;
+    u.poisonMinutesLeft = s.poisonMinutesLeft; u.diseaseMinutesLeft = s.diseaseMinutesLeft;
     u.poisoned = !s.poison.empty(), u.poisonTier = s.poison;
     u.fullness = s.fullness;
     u.hungerPenaltyPct = s.hungerPenalty;
@@ -2244,6 +2352,29 @@ class MapStage final : public Stage {
     u.hp = s.hp && *s.hp > 0 ? std::min(u.maxHp, *s.hp) : u.maxHp;
   }
   // Rations Criar Comida e Água conjured in this fight (Ember lootRations).
+  std::int64_t tempoMillisecondsNow() const {
+    const auto day=campaignMinuteNow()/1440;
+    if(dayCycle_==1) return day*86400000+21600000+static_cast<std::int64_t>(now_*720000.0f);
+    if(dayCycle_==2) return day*86400000+21600000+static_cast<std::int64_t>(now_*60000.0f);
+    if(dayCycle_>=3) return day*86400000+static_cast<std::int64_t>(cycleHour(now_)*3600000.0f);
+    if(gameHour_<0 && scene_) return day*86400000+static_cast<std::int64_t>(ember::mapHour(scene_->timeOfDay)*3600000.0f);
+    return campaignMillisecondsNow();
+  }
+  const ember::tempo::Sample tempoNow() const { return tempoTimeline_.at(tempoMillisecondsNow()); }
+  ember::tempo::Config tempoConfig() const { return tempoConfig_; }
+  std::int64_t campaignMillisecondsNow() const {
+    return (options_.campaignMinute+elapsedBattleMinutes_)*60000+options_.campaignSubMinuteMs+explorationMilliseconds_;
+  }
+  std::int64_t campaignMinuteNow() const { return campaignMillisecondsNow()/60000; }
+  void mergeCampaignClock(ember::Json& save) {
+    const auto incoming=ember::campaignMilliseconds(save), now=campaignMillisecondsNow();
+    if(incoming>now) {
+      const auto before=campaignMinuteNow(); explorationMilliseconds_+=incoming-now;
+      if(battle_) battle_->advanceConditionMinutes(static_cast<int>(campaignMinuteNow()-before));
+    }
+    ember::setCampaignMilliseconds(save,campaignMillisecondsNow());
+    ember::syncAilmentDeadlines(save);
+  }
   int lootRations() const { return battle_ ? battle_->lootRations() : 0; }
   // What the chests opened in this fight gave (Ember lootEmber / lootWeapons / lootEquipment), folded into the save on a victory.
   int lootEmber() const { return battle_ ? battle_->lootEmber() : 0; }
@@ -2290,7 +2421,7 @@ class MapStage final : public Stage {
   static constexpr float kFlameEmit = 2.5f;           // Ember FLAME_EMIT
   // Light mode "real" (ARCHITECTURE 7.6 step A).
   static constexpr float kSunLux = 128000.0f;       // the sun above the atmosphere
-  static constexpr float kNightFill = 4.0f;  // the night sky's fill on shadowed sides, x the physical (two stops; realLighting)
+  static constexpr float kNightFill = 2.0f;  // the night sky's fill on shadowed sides, x the physical (one stop; 4 = two stops was "TOO BRIGHT", the user, 2026-11-04)
   static constexpr float kFullMoonLux = 0.5f;       // a full moon (real 0.25, lifted so moonlit ground reads)
   // "Luar: cinema" (the user, 2026-10-19: "gostaria que luz do luar também"): under the camera's night darkening the physical
   // moon never showed on the ground (a capture of cemiterio: black beside the lanterns), so the cinema moon lights like a
@@ -4236,7 +4367,7 @@ class MapStage final : public Stage {
       l.moonGlow = moonDiscGlow();
       l.moonWhole = moonWholePhase(phase) ? 1.0f : 0.0f;
       // The night's shadow side is never pure black (the user, 2026-11-04: "i will not take these black shadows"): the moonlit sky's
-      // fill, a sliver of the moon's own light, is raised two stops, so a figure or ground facing away from the moon keeps its form.
+      // fill, a sliver of the moon's own light, is raised one stop, so a figure or ground facing away from the moon keeps its form.
       l.ambientMul = ambientMul * kNightFill;
     }
     return l;
@@ -5730,6 +5861,8 @@ class MapStage final : public Stage {
     int active = battle_->activeUnit();
     if (active < 0) {
       battle_->startNewRound();
+      ++elapsedBattleMinutes_;
+      if (gameHour_ >= 0) gameHour_ = static_cast<float>(campaignMinuteNow() % 1440) / 60.0f;
       turnUnit_ = -1;
       active = battle_->activeUnit();
       if (active < 0) return;
@@ -10269,6 +10402,8 @@ class MapStage final : public Stage {
           // The campaign as it stands with this fight in it (GameApp's save-slot write from the battle).
           slotSave_ = campaign_->activeSave();
           slotSave_["pendingMission"] = missionId_;
+          ember::setCampaignMilliseconds(slotSave_, campaignMillisecondsNow());
+          ember::writeTempoSave(slotSave_, tempoConfig_);
           slotSave_["battle"] = captureSnapshot();
           for (const HeroOutcome& h : heroOutcomes()) {
             slotSave_["levels"][h.name] = h.level;
@@ -11447,12 +11582,13 @@ class MapStage final : public Stage {
   // original, 2..4 looks 001..003 (shaders/water_lookNNN.hlsli).
   int waterLook_ = 0;
   int skyReflect_ = 1;   // the panel's "Reflexo do céu": 0 OFF (the SH sky), 1 the sky's reflection map (skyreflect.hlsl)
+  int savedCloudLook_ = 0;
   int clouds_ = 2;       // the panel's "Nuvens": 0 OFF, 1 básica (shaders/clouds.hlsli), 2 volumétricas (cloudsvol.hlsli, look 001)
   int glare_ = 0;        // the panel's "Clarão": 0 OFF (default), 1 look 001 (shaders/sunglare.hlsl)
   int shafts_ = 0;       // the panel's "Raios de luz": 0 OFF (default), 1 look 001
   // Atmosfera volumétrica v1 (render/Volumetrics.h, docs/ATMOSPHERE.md): the panel's "Atmosfera" (0 OFF, 1 cinema,
   // 2 alta, 3 desempenho) and "Clima" (index into atmosProfiles_; the map's own profile by its key at first).
-  int atmosChoice_ = 2, climaChoice_ = 0;
+  int atmosChoice_ = 3, climaChoice_ = 0;
   std::vector<Volumetrics::Profile> atmosProfiles_;
   std::unordered_map<std::string, MeshId> modelMeshes_;
   std::vector<InstanceGpu> placedInstances_;
@@ -11478,6 +11614,15 @@ class MapStage final : public Stage {
   std::unique_ptr<ember::Board> board_;
   ember::EdgeStyle look_;
   MapStageOptions options_;
+  std::int64_t elapsedBattleMinutes_ = 0;
+  std::int64_t explorationMilliseconds_ = 0;
+  std::optional<std::chrono::steady_clock::time_point> lastCampaignTick_;
+  ember::RealtimeAccumulator campaignRealtime_;
+  ember::tempo::Config tempoConfig_{};
+  std::int64_t lastLightningMinute_=INT64_MIN;
+  float lightningAt_=-1000.0f;
+  ember::tempo::Timeline tempoTimeline_;
+  ember::TempoPanel tempoPanel_;
   bool failed_ = false;
   int readyFrames_ = 0;
   glm::vec3 target_{0.0f};

@@ -16,6 +16,17 @@ add_library(EmberTools STATIC
 target_include_directories(EmberTools PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(EmberTools PUBLIC EmberEngine PRIVATE zstd bc7 nlohmann_json meshoptimizer clusterlod cgltf stb)
 
+# Headless weather/clock regression: does not link the engine or initialize graphics.
+add_executable(TempoCheck TempoCheck.cpp)
+target_include_directories(TempoCheck PRIVATE ${CMAKE_SOURCE_DIR}/engine)
+target_link_libraries(TempoCheck PRIVATE nlohmann_json)
+add_executable(TurnClockCheck TurnClockCheck.cpp)
+target_link_libraries(TurnClockCheck PRIVATE EmberEngine)
+if(MSVC)
+  target_compile_options(TempoCheck PRIVATE /utf-8 /W4)
+  target_compile_options(TurnClockCheck PRIVATE /utf-8 /W4)
+endif()
+
 if(MSVC)
   target_compile_options(EmberTools PRIVATE /W4 /permissive- /utf-8 /Zc:__cplusplus)
 endif()

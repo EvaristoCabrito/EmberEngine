@@ -171,11 +171,14 @@ struct Options {
   int waterLook = 0;    // --water N: the panel's "Água", both waters of the map (0 padrão = as the map has it, 1 the original,
                         // 2..4 looks 001..003)
   int skyReflect = 1;   // --sky-reflect N: the panel's "Reflexo do céu" (0 OFF, 1 the sky's reflection map)
-  int clouds = 2;       // --clouds N: the panel's "Nuvens" (0 OFF, 1 básica, 2 volumétricas)
+  int cloudLook = -1;
+  int clouds = 6;       // --clouds N: the panel's "Nuvens" (0 OFF, 1 básica, 2 volumétricas)
   int glare = 0;        // --glare N: the panel's "Clarão" (0 OFF, 1 look 001)
   int shafts = 0;       // --shafts N: the panel's "Raios de luz" (0 OFF, 1 look 001)
   float gameHour = -1.0f;  // --game-hour H: the sky follows this hour of the game clock (0..23), as a campaign fight does
   int moonLight = 1;    // --moonlight N: the panel's "Luar" (0 físico, 1 cinema)
+  ember::tempo::Config tempoConfig{};
+  bool tempoModeOverride = false, tempoSeedOverride = false, tempoChaosOverride = false;
   int hour = 0;         // --hour N: the panel's "Hora" (0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3..10 amanhecer .. madrugada)
   int sunDisc = 1;      // --sun-disc N: the panel's "Sol" (0 real, 1 cinema, 2 look 001)
   bool mist = true;    // --mist 0: the fog of war's mist bank off (its mask and the volumetric atmosphere stay)
@@ -293,10 +296,23 @@ Options parse(int argc, char** argv) {
     else if (arg == "--background" && hasValue) o.background = std::atoi(argv[++i]);
     else if (arg == "--water" && hasValue) o.waterLook = std::atoi(argv[++i]);
     else if (arg == "--sky-reflect" && hasValue) o.skyReflect = std::atoi(argv[++i]);
+    else if (arg == "--cloud-look" && hasValue) o.cloudLook=std::clamp(std::atoi(argv[++i]),0,6);
     else if (arg == "--clouds" && hasValue) o.clouds = std::atoi(argv[++i]);
     else if (arg == "--glare" && hasValue) o.glare = std::atoi(argv[++i]);
     else if (arg == "--shafts" && hasValue) o.shafts = std::atoi(argv[++i]);
     else if (arg == "--moonlight" && hasValue) o.moonLight = std::atoi(argv[++i]);
+    else if (arg == "--weather-seed" && hasValue) {
+      o.tempoConfig.seed = static_cast<std::uint32_t>(std::strtoul(argv[++i], nullptr, 10));
+      o.tempoConfig.enabled = true; o.tempoSeedOverride = o.tempoModeOverride = true;
+    }
+    else if (arg == "--weather-chaos" && hasValue) {
+      const double x=std::atof(argv[++i]);
+      o.tempoConfig.chaos=std::isfinite(x)?static_cast<int>(std::clamp(x,0.0,1.0)*1000+0.5):500;
+      o.tempoChaosOverride=true;
+    }
+    else if (arg == "--weather" && hasValue) {
+      o.tempoConfig.enabled = std::string_view(argv[++i]) != "off"; o.tempoModeOverride=true;
+    }
     else if (arg == "--hour" && hasValue) o.hour = std::atoi(argv[++i]);
     else if (arg == "--sun-disc" && hasValue) o.sunDisc = std::atoi(argv[++i]);
     else if (arg == "--mist" && hasValue) o.mist = std::atoi(argv[++i]) != 0;
@@ -621,6 +637,9 @@ MapStageOptions mapOptions(const Options& o);
 // Modo teste: the session's heroes at its level (30) and the class path each chose on the Party screen; every hero knows every
 // spell of its class at that level (the user, 2026-10-23: "todas as magias para todos os personagens no debug").
 void applyTestHeroes(MapStageOptions& options, const ember::Json& tsave) {
+  options.campaignMinute = ember::campaignMinute(tsave);
+  options.campaignSubMinuteMs = tsave.value("gameSubMinuteMs", std::int64_t(0));
+  options.heroState = heroStatesFromSave(tsave);
   const ember::Json levels = tsave.value("levels", ember::Json::object());
   for (const auto& [name, level] : levels.items())
     if (level.is_number_integer()) options.heroProgress[name] = {level.get<int>(), 0}, options.fullSpells.insert(name);
@@ -688,10 +707,14 @@ MapStageOptions mapOptions(const Options& o) {
     m.waterLook = o.waterLook;
     m.skyReflect = o.skyReflect;
     m.clouds = o.clouds;
+    m.cloudLook = o.cloudLook;
     m.glare = o.glare;
     m.shafts = o.shafts;
     m.moonLight = o.moonLight;
     m.hour = o.hour;
+    m.tempoConfig = o.tempoConfig;
+    if (!o.tempoChaosOverride) m.tempoConfig.chaos=ember::tempoDefaults().chaos;
+    m.tempoModeOverride=o.tempoModeOverride; m.tempoSeedOverride=o.tempoSeedOverride; m.tempoChaosOverride=o.tempoChaosOverride;
     m.sunDisc = o.sunDisc;
     m.gameHour = o.gameHour;
     m.mist = o.mist;
@@ -733,6 +756,12 @@ void applySaveHeroes(MapStageOptions& options, const ember::Json& save) {
     for (const auto& [name, cls] : promotions.items())
       if (cls.is_string()) options.heroClass[name] = cls.get<std::string>();
   options.heroState = heroStatesFromSave(save);
+  options.campaignMinute = ember::campaignMinute(save);
+  options.campaignSubMinuteMs = save.value("gameSubMinuteMs", std::int64_t(0));
+  const auto tempo = ember::tempoForCampaign(save);
+  if (!options.tempoModeOverride) options.tempoConfig.enabled=tempo.enabled;
+  if (!options.tempoSeedOverride) options.tempoConfig.seed=tempo.seed;
+  if (!options.tempoChaosOverride) options.tempoConfig.chaos=tempo.chaos;
   if (const ember::Json scores = save.value("affinityScores", ember::Json::object()); scores.is_object())
     for (const auto& [pair, v] : scores.items())
       if (v.is_number()) options.affinityScores[pair] = v.get<double>();
@@ -894,7 +923,7 @@ int runCapture(const Options& o) {
       else applySaveHeroes(options, campaign.activeSave());  // the campaign's heroes as the save has them (levels, promotions, condition)
       // The sky: a campaign mission at the save's hour; Modo teste at the map's own (gameHour -1).
       if (!test) {
-        options.gameHour = static_cast<float>(ember::Overworld::campaignHour(campaign.activeSave()));
+        options.gameHour = static_cast<float>(ember::campaignMinute(campaign.activeSave()) % 1440) / 60.0f;
         if (options.moonPhase.empty()) options.moonPhase = ember::campaignMoonPhase(campaign.activeSave().value("gameClock", 0));
       }
       if (options.world) setUpExplore(options, test ? testSession->save : campaign.activeSave(), world, test, hasInterludeData ? &interludeData : nullptr);
@@ -1269,6 +1298,8 @@ int runWindow(const Options& o) {
   // Debug = the campaign but for the test save's three differences). Returns true on a victory.
   auto foldFight = [&](ember::Json& save, const MapStage& map, const std::string& missionId) {
     const bool victory = map.battleResult() == "victory";
+    ember::setCampaignMilliseconds(save, map.campaignMillisecondsNow());
+    ember::writeTempoSave(save, map.tempoConfig());
     if (victory) save["unitHp"] = ember::Json::object();  // persistVictory: unitHp is this fight's heroes, after the camp (campHp)
     for (const HeroOutcome& h : map.heroOutcomes()) {
       if (!victory || h.hp > 0) {  // persistVictory keeps the levels and XP of the heroes still standing
@@ -1380,7 +1411,11 @@ int runWindow(const Options& o) {
   // GameApp onQuit on an explore map: the map's mission completed, no pending mission or resumable fight left in the slot.
   auto markVisited = [&](const std::string& id, const MapStage* map = nullptr) {
     ember::Json save = campaign.activeSave();
-    if (map) ember::foldQuestProgress(save, map->questFound(), map->questKills());  // what the walk found stays found
+    if (map) {
+      ember::setCampaignMilliseconds(save,map->campaignMillisecondsNow());
+      writeHeroConditions(save,map->heroOutcomes(),0);
+      ember::foldQuestProgress(save, map->questFound(), map->questKills());
+    }  // what the walk found stays found
     ember::Json& done = save["completed"];
     if (!done.is_array()) done = ember::Json::array();
     if (std::find(done.begin(), done.end(), id) == done.end()) done.push_back(id);
@@ -1432,12 +1467,19 @@ int runWindow(const Options& o) {
   auto last = start;
   while (window.pumpEvents()) {
     window.pixelSize(width, height);
-    if (width == 0 || height == 0) continue;  // minimised
+    if (width == 0 || height == 0) { last = Clock::now(); continue; }  // minimised
     const auto now = Clock::now();
     const float dt = std::chrono::duration<float>(now - last).count();
     last = now;
     const float time = std::chrono::duration<float>(now - start).count();
     const bool resized = window.consumeResized();
+    if (stage && !curtain.up() && stage->loading().ready) {
+      const bool campaignScreen=dynamic_cast<OverworldStage*>(stage.get()) ||
+        (dynamic_cast<MapStage*>(stage.get()) && !playing.empty());
+      if(campaignScreen && !testSession && !inEditorTest) campaign.addRealPlaySeconds(dt);
+      if(testSession && (dynamic_cast<OverworldStage*>(stage.get()) || dynamic_cast<MapStage*>(stage.get())))
+        testSession->save["realPlaySeconds"]=testSession->save.value("realPlaySeconds",0.0)+dt;
+    }
     if (curtain.up() && stage) curtain.update(stage->loading(), clockNow(), dt);
     const bool presented = !resized && services.frame(ui, renderer, stage.get(), swapchain->extent(), dt,
                                                       [&] { return renderer.renderFrame(time); });
@@ -1647,7 +1689,7 @@ int runWindow(const Options& o) {
         // editor's Testar take the map's own Hora do dia (gameHour -1; the user, 2026-10-23: "no debug o horário que estiver no mapa").
         if (!playing.empty() && !testSession) {
           const ember::Json save = campaign.activeSave();
-          options.gameHour = static_cast<float>(ember::Overworld::campaignHour(save));
+          options.gameHour = static_cast<float>(ember::campaignMinute(save) % 1440) / 60.0f;
           // ... and its moon: the phase of the save's day (the world map's moon plate); Modo teste: the map's own Lua.
           if (options.moonPhase.empty()) options.moonPhase = ember::campaignMoonPhase(save.value("gameClock", 0));
         }
@@ -1704,6 +1746,7 @@ int runWindow(const Options& o) {
       backToTitle = false, openMap = false, openTestRpg = false, openSpells = false, openEditor = false;
     }
   }
+  if(hasCampaign) campaign.flush();
   const int testResult = o.measureSeconds > 0.0f && stage && !stage->passed() ? 3 : 0;
   AudioMixer::get().shutdown();  // before SDL closes with the window
   return testResult;

@@ -44,6 +44,8 @@ class DebugUi;
 // Frame renderer. Everything is drawn into the renderer's own HDR targets (scene colour in
 // half-float, reversed-Z depth); a final pass tonemaps into an 8-bit output image that is copied
 // to the window, or read back to disk for captures.
+class Clouds006;
+
 class Renderer {
  public:
   // `swapchain` may be null: the renderer then works off-screen (tools, automated captures).
@@ -117,6 +119,7 @@ class Renderer {
     // behind the board and the air between camera and surfaces (aerial perspective) is applied.
     bool atmosphere = false;
     glm::vec3 skyIlluminance{1.0f};  // the key light outside the air (colour x strength) that lights the sky
+    float weatherMieScale = 1.0f; // Tempo humidity/haze; 1 preserves the existing atmosphere
     float kmPerUnit = 0.025f;         // aerial perspective scale (km of air per world unit; a board ~1 km of air)
     float skyScale = 1.0f;            // the sky behind the board (dark at night)
     // Night (the key light is the moon): no sun disc, stars out, and the moon's disc with tonight's phase art.
@@ -367,6 +370,7 @@ class Renderer {
   // as soft shadows on the board by day. Panel "Nuvens"; off = no sheet anywhere.
   struct Clouds {
     bool enabled = false;
+    int savedLook = 0; // 0 unchanged current path; 1..5 immutable saved looks
     bool shadows = true;        // the sheet shadows the board (by day: the key light is the sun)
     float gray = 0.0f;          // 0 original white scattering, 1 dark grey cloud material
     float coverage = 0.4f;      // share of the sky covered (0 clear .. 1 overcast)
@@ -380,6 +384,8 @@ class Renderer {
     // Nuvens volumétricas, look 001 (shaders/cloudsvol.hlsli): instead of the sheets, a real 3D layer between `base` and
     // `top`, ray marched once a frame at half resolution (sky, reflections, shadows on the board all from its density).
     bool volumetric = false;
+    bool look006 = false;
+    float middleCoverage=.15f, highCoverage=.1f, kind=.7f, growth=0, rain=0;
     float base = 380.0f, top = 640.0f;  // world heights (the caller adds the board's mean ground)
   };
   void setClouds(const Clouds& clouds) { clouds_ = clouds; }
@@ -547,6 +553,7 @@ class Renderer {
   VkPipeline probePipeline_ = VK_NULL_HANDLE;
   std::vector<float> probeLux_;
   Clouds clouds_;
+  std::array<VkPipeline,5> savedCloudMarch_{},savedCloudShadow_{},savedCloudReflection_{};
   std::vector<GpuStar> stars_;  // the real night sky this frame (setStars), copied into frame.stars
   glm::vec3 galaxyPole_{0.0f, 1.0f, 0.0f}, galaxyCentre_{0.0f, 0.0f, 1.0f};
   float milkyWay_ = 0.0f;
@@ -691,6 +698,7 @@ class Renderer {
   uint64_t waitValue_ = 0;
   // Atmosfera volumétrica v1 (last: it releases its bindless slots before the tables go).
   std::unique_ptr<Volumetrics> volumetrics_;
+  std::unique_ptr<Clouds006> clouds006_;
   bool volumetricsThisFrame_ = false;
 };
 

@@ -37,30 +37,31 @@ class WeatherFx {
     if (d.gpu.vertexCount) f.draws.push_back(d);
   }
  public:
+  struct TempoMotion { glm::vec2 wind; float heavyRain=0, flash=0; uint32_t lightningSeed=0; };
   // Ground callback returns the actual elevation under each drop, including raised terrain.
   template<class Ground>
   static float append(VfxFrame& f, std::string_view kind, float intensity, float wind,
-                      float time, const Camera& camera, glm::vec3 center, Ground ground) {
+                      float time, const Camera& camera, glm::vec3 center, Ground ground, const TempoMotion* tempo=nullptr) {
     if ((kind != "rain" && kind != "storm" && kind != "snow" && kind != "ash") || !std::isfinite(time)) return 0;
     intensity = std::clamp(intensity, 0.0f, 1.0f);
     wind = std::clamp(wind, 0.0f, 1.0f);
     if (intensity <= 0) return 0;
     const bool snow = kind == "snow", storm = kind == "storm", ash = kind == "ash";
     const glm::vec3 up = glm::normalize(glm::cross(camera.right, camera.forward));
-    const float speed = ash ? .65f : snow ? 1.2f : storm ? 19.0f : 13.0f;
-    const glm::vec3 velocity{wind * (ash ? 1.4f : snow ? 2.0f : 7.0f), -speed, wind * 1.6f};
+    const float speed = ash ? .65f : snow ? 1.2f : tempo ? 13.0f+6.0f*tempo->heavyRain : storm ? 19.0f : 13.0f;
+    const glm::vec3 velocity=tempo ? glm::vec3(tempo->wind.x,-speed,tempo->wind.y) : glm::vec3(wind * (ash ? 1.4f : snow ? 2.0f : 7.0f), -speed, wind * 1.6f);
     const glm::vec3 axis = glm::normalize(velocity);
     glm::vec3 side = glm::cross(axis, camera.forward);
     side = glm::dot(side, side) < 0.001f ? camera.right : glm::normalize(side);
     auto drops = draw(f, ash ? 4.0f : snow ? 1.0f : 0.0f, ash ? glm::vec4(.23f,.215f,.20f,.8f) : snow ? glm::vec4(.85f,.88f,.9f,.8f) : glm::vec4(.56f,.64f,.7f,.35f));
     // 49 x 49 cells with two or three drops each: bounded independently of map size.
     const int cx = int(std::floor(center.x / 1.5f)), cz = int(std::floor(center.z / 1.5f));
-    const int layers = storm ? 3 : 2;
+    const int layers = tempo ? 3 : storm ? 3 : 2;
     for (int z = cz-24; z <= cz+24; ++z) for (int x = cx-24; x <= cx+24; ++x) {
       const uint32_t cell = uint32_t(x)*73856093u ^ uint32_t(z)*19349663u;
       for (int k = 0; k < layers; ++k) {
         const uint32_t seed = cell ^ uint32_t(k+1)*83492791u;
-        if (random(seed+1) > intensity) continue;
+        if (random(seed+1) > intensity * (tempo && k==2 ? tempo->heavyRain : 1.0f)) continue;
         const float life = fract(random(seed+2) + time * speed * (ash ? .65f + random(seed+9)*.7f : 1.0f) / 18.0f);
         const float h = (1.0f-life)*18.0f;
         glm::vec3 p{(float(x)+random(seed+3))*1.5f, 0, (float(z)+random(seed+4))*1.5f};
@@ -109,9 +110,9 @@ class WeatherFx {
     // Stable event positions (not camera-relative) avoid moving a bolt during a pan.
     const int event = int(std::floor(time/11.0f));
     const float age = std::fmod(time,11.0f) - (3.0f+random(uint32_t(event)+92)*3.0f);
-    const float flash = storm ? (age >= 0 && age < .10f ? 1.0f-age/ .10f : age >= .18f && age < .24f ? .5f*(1.0f-(age-.18f)/.06f) : 0) : 0;
+    const float flash = tempo ? tempo->flash : storm ? (age >= 0 && age < .10f ? 1.0f-age/ .10f : age >= .18f && age < .24f ? .5f*(1.0f-(age-.18f)/.06f) : 0) : 0;
     if (flash > 0) {
-      const uint32_t seed = uint32_t(event)*7919u;
+      const uint32_t seed = tempo ? tempo->lightningSeed : uint32_t(event)*7919u;
       glm::vec3 base{(random(seed+31)-.5f)*30,0,(random(seed+32)-.5f)*30};
       base.y = ground(base.x,base.z);
       auto bolt = draw(f,3,glm::vec4(.78f,.86f,1,flash*intensity));

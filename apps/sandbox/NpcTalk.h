@@ -135,6 +135,8 @@ struct NpcTalk {
   }
 
   void draw(MapStage& map) {
+    if (record && !testSave && !inn) save = record->activeSave();
+    map.mergeCampaignClock(saveRef());
     if (previous) previous();
     const ImVec2 size = ImGui::GetIO().DisplaySize;
     if (std::exchange(previewing, false)) runAction(map);

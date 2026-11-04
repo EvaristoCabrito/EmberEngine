@@ -46,6 +46,8 @@ nlohmann::json Battle::snapshot() const {
     s["bag"] = bag;
     s["lockpick"] = u.lockpick;
     s["diseased"] = u.diseased;
+    s["diseaseTier"] = u.diseaseTier; s["diseaseType"] = u.diseaseType;
+    s["poisonMinutesLeft"] = u.poisonMinutesLeft; s["diseaseMinutesLeft"] = u.diseaseMinutesLeft;
     s["diseaseBase"] = u.diseaseBase ? nlohmann::json{{"atk", u.diseaseBase->atk}, {"mag", u.diseaseBase->mag}, {"def", u.diseaseBase->def},
                                                        {"dex", u.diseaseBase->dex}, {"mov", u.diseaseBase->mov}}
                                      : nlohmann::json();
@@ -218,6 +220,10 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       else u.diseaseBase.reset();
     }
     u.poisoned = s.value("poisoned", u.poisoned);
+    u.diseaseTier = s.value("diseaseTier", std::string("lesser"));
+    u.diseaseType = s.value("diseaseType", std::string("disease"));
+    u.poisonMinutesLeft = s.value("poisonMinutesLeft", -1);
+    u.diseaseMinutesLeft = s.value("diseaseMinutesLeft", -1);
     if (s.contains("poisonTier")) u.poisonTier = s["poisonTier"].is_string() ? s["poisonTier"].get<std::string>() : std::string();
     if (s.contains("fullness")) {
       if (s["fullness"].is_number()) u.fullness = s["fullness"].get<double>();

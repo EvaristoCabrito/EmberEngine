@@ -1174,13 +1174,14 @@ class MapEditorStage : public Stage {
 
   // Compare all map content except the three live precipitation settings.
   static ember::Json withoutPreviewWeather(ember::Json draft) {
-    for (const char* key : {"weather", "weatherIntensity", "weatherWind", "cloudCoverage", "cloudGray"}) draft.erase(key);
+    for (const char* key : {"weather", "weatherIntensity", "weatherWind", "cloudCoverage", "cloudGray", "cloudLook"}) draft.erase(key);
     return draft;
   }
 
   void rebuildPreview() {
     dirty_ = false;
     if (!data_) return;
+    if(!draft_.contains("cloudLook"))draft_["cloudLook"]=0;
     std::optional<ember::MapDraft> draft = ember::MapDraft::fromJson(nlohmann::json::parse(draft_.dump()));
     if (!draft) return note("O mapa não tem tabuleiro.");
     ember::Json weatherBase = withoutPreviewWeather(draft_);
@@ -1202,6 +1203,7 @@ class MapEditorStage : public Stage {
     options.map.clear(), options.scene.clear(), options.battle.clear();
     options.draftData = std::move(*draft);
     options.sceneData = std::move(scene);
+    options.clouds = 0; // The editor starts clear until an authored cloud look is chosen.
     options.fog = 0;  // the editor shows the whole board
     options.spellsMenu = false;
     options.editorClick = [this](int x, int y) {
@@ -2763,12 +2765,19 @@ class MapEditorStage : public Stage {
           draft_["weather"] = ids[i];
           selected = i;
         }
-      ImGui::BeginDisabled(selected == 0);
-      slider("Intensidade do clima", "weatherIntensity", 0, 1, 0.7f);
-      slider("Vento do clima", "weatherWind", 0, 1, 0.35f);
-      ImGui::EndDisabled();
     }
     {
+      static constexpr const char* looks[]={"Sem nuvens","Nuvens 001","Nuvens 002","Nuvens 003","Nuvens 004","Nuvens 005","Nuvens 006"};
+      int selected=std::clamp(draft_.value("cloudLook",0),0,6);
+      fieldLabel("Nuvens");ImGui::SetNextItemWidth(-1);
+      if(ImGui::BeginCombo("##CloudLookPicker",looks[selected])){
+        for(int i=0;i<7;++i){
+          if(ImGui::Selectable(looks[i],selected==i)){beginEdit();draft_["cloudLook"]=i;selected=i;}
+          if(selected==i)ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+      }
+      ImGui::BeginDisabled(selected==0);
       // Percentages are displayed directly; the saved normalized values feed both cloud renderers.
       auto cloudSlider = [&](const char* label, const char* key, float fallback) {
         float percent = std::clamp(draft_.value(key, fallback), 0.0f, 1.0f) * 100.0f;
@@ -2782,7 +2791,12 @@ class MapEditorStage : public Stage {
       cloudSlider("Densidade das nuvens", "cloudCoverage", 0.32f);
       cloudSlider("Tom cinzento das nuvens", "cloudGray", 0.0f);
       hint("%s", "Densidade: 0% sem nuvens, 100% céu encoberto. Tom: 0% brancas, 100% cinza-escuro.");
+      ImGui::EndDisabled();
     }
+    ImGui::BeginDisabled(draft_.value("weather", std::string("none")) == "none");
+    slider("Intensidade do clima", "weatherIntensity", 0, 1, 0.7f);
+    slider("Vento do clima", "weatherWind", 0, 1, 0.35f);
+    ImGui::EndDisabled();
   }
 
   void drawLighting() {
@@ -2893,6 +2907,17 @@ class MapEditorStage : public Stage {
       }
     }
     drawWeather();
+    if (ImGui::TreeNode("Previsao do Tempo global")) {
+      ImGui::InputInt("Dia de teste", &tempoPreviewDay_);
+      ImGui::SliderInt("Hora de teste", &tempoPreviewHour_, 0, 23);
+      ImGui::SliderInt("Minuto de teste", &tempoPreviewMinute_, 0, 59);
+      tempoPreviewDay_ = std::clamp(tempoPreviewDay_, 0, 100000);
+      const auto milliseconds = (static_cast<std::int64_t>(tempoPreviewDay_)*1440+tempoPreviewHour_*60+tempoPreviewMinute_)*60000;
+      tempoPreviewTimeline_.configure(tempoPreviewConfig_,milliseconds,true);
+      tempoPreviewPanel_.draw(tempoPreviewConfig_,tempoPreviewTimeline_,milliseconds);
+      hint("%s", "Previsao global para testes; o perfil regional de nevoa continua independente.");
+      ImGui::TreePop();
+    }
     slider("Névoa", "mistIntensity", 0, 1, 0);
     slider("Vel. da névoa", "mistSpeed", 0.1f, 4, 1);
     slider("Wisps", "wispIntensity", 0, 1, 0);
@@ -4149,6 +4174,10 @@ class MapEditorStage : public Stage {
   char regionName_[96] = {};
   std::set<std::string> shuffleExclude_;
   // the brushes
+  ember::tempo::Config tempoPreviewConfig_{};
+  ember::tempo::Timeline tempoPreviewTimeline_;
+  ember::TempoPanel tempoPreviewPanel_;
+  int tempoPreviewDay_=0, tempoPreviewHour_=8, tempoPreviewMinute_=0;
   Mode mode_ = Mode::Paint;
   Tab tab_ = Tab::Terrain;
   std::string brush_ = "plains";

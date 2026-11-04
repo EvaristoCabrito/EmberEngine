@@ -1,3 +1,5 @@
+#include "world/CampaignTime.h"
+#include "world/TempoSave.h"
 #include "world/Campaign.h"
 
 #include <algorithm>
@@ -105,7 +107,7 @@ bool Campaign::open(const std::filesystem::path& data, const std::filesystem::pa
     bank_.muted = raw.value("muted", false) == true;
     const Json slots = raw.value("slots", Json::array());
     for (size_t i = 0; i < bank_.slots.size() && i < slots.size(); ++i)
-      if (slots[i].is_object() && occupied(slots[i])) bank_.slots[i] = slots[i];
+      if (slots[i].is_object() && occupied(slots[i])) { bank_.slots[i] = slots[i]; syncAilmentDeadlines(*bank_.slots[i]); ensureTempoSave(*bank_.slots[i]); }
     int last = raw.value("lastSlot", 0);
     last = std::clamp(last, 0, data_.slotCount - 1);
     if (!bank_.slots[static_cast<size_t>(last)]) {
@@ -122,7 +124,9 @@ bool Campaign::open(const std::filesystem::path& data, const std::filesystem::pa
 Json Campaign::emptySave() const {
   Json s = data_.emptySave;
   s["muted"] = bank_.muted;
+  syncAilmentDeadlines(s);
   s["updatedAt"] = nowMs();
+  ensureTempoSave(s);
   return s;
 }
 
@@ -198,8 +202,32 @@ SlotProgress Campaign::progress(const std::optional<Json>& slot) const {
   return {last ? last->title : lastId, "Campanha concluída"};
 }
 
+void Campaign::advanceClockTo(std::int64_t milliseconds) {
+  auto& slot=bank_.slots[static_cast<size_t>(bank_.lastSlot)];
+  if(!slot || milliseconds<=campaignMilliseconds(*slot)) return;
+  const auto previousMinute=campaignMinute(*slot);
+  setCampaignMilliseconds(*slot,milliseconds);
+  if(campaignMinute(*slot)!=previousMinute) syncAilmentDeadlines(*slot);
+}
+void Campaign::addRealPlaySeconds(double seconds) {
+  if (!std::isfinite(seconds) || seconds <= 0) return;
+  auto& slot=bank_.slots[static_cast<size_t>(bank_.lastSlot)];
+  if(slot) (*slot)["realPlaySeconds"]=slot->value("realPlaySeconds",0.0)+seconds;
+}
+double Campaign::realPlaySeconds() const {
+  const auto& slot=bank_.slots[static_cast<size_t>(bank_.lastSlot)];
+  return slot?slot->value("realPlaySeconds",0.0):0.0;
+}
 bool Campaign::writeSlot(int index, Json save) {
   const int i = std::clamp(index, 0, data_.slotCount - 1);
+  syncAilmentDeadlines(save);
+  ensureTempoSave(save);
+  const auto& previous=bank_.slots[static_cast<size_t>(i)];
+  if(previous && previous->value("campaignId",std::uint32_t(0))==save.value("campaignId",std::uint32_t(1))) {
+    save["realPlaySeconds"]=std::max(save.value("realPlaySeconds",0.0),previous->value("realPlaySeconds",0.0));
+    setCampaignMilliseconds(save,std::max(campaignMilliseconds(save),campaignMilliseconds(*previous)));
+    syncAilmentDeadlines(save);
+  }
   save["version"] = data_.saveVersion;
   save["muted"] = bank_.muted;
   save["updatedAt"] = nowMs();
