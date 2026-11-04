@@ -2768,10 +2768,12 @@ class MapEditorStage : public Stage {
     }
     {
       static constexpr const char* looks[]={"Sem nuvens","Nuvens 001","Nuvens 002","Nuvens 003","Nuvens 004","Nuvens 005","Nuvens 006","Nuvens RDR2"};
-      int selected=std::clamp(draft_.value("cloudLook",0),0,7);
+      int selected=std::clamp(draft_.value("cloudLook",4),0,7);
+      if(selected==6)selected=4;  // look 006 removed from the game (the user, 2026-11-04): such a map draws the default, 004
       fieldLabel("Nuvens");ImGui::SetNextItemWidth(-1);
       if(ImGui::BeginCombo("##CloudLookPicker",looks[selected])){
         for(int i=0;i<8;++i){
+          if(i==6)continue;
           if(ImGui::Selectable(looks[i],selected==i)){beginEdit();draft_["cloudLook"]=i;selected=i;}
           if(selected==i)ImGui::SetItemDefaultFocus();
         }

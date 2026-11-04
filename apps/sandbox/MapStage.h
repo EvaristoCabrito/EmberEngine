@@ -323,7 +323,10 @@ class MapStage final : public Stage {
     windFogChoice_ = std::clamp(options.windFog, 0, 1);
     waterLook_ = std::clamp(options.waterLook, 0, 4);
     skyReflect_ = std::clamp(options.skyReflect, 0, 1);
-    clouds_ = options.clouds == 6 ? 3 : std::clamp(options.clouds, 0, 4);  // 6 = the default: look 006
+    // 6 = the default = look 004 (the user, 2026-11-04: "keep nuvem 4 as default"); look 006 is never shown ("REMOVE CLOUD
+    // 006"): a request for it gets the default too.
+    clouds_ = options.clouds == 6 || options.clouds == 3 ? 2 : std::clamp(options.clouds, 0, 4);
+    if (options.clouds == 6 || options.clouds == 3) savedCloudLook_ = 4;
     cloudQuality_ = std::clamp(options.cloudQuality, 0, 3);
     dayCycle_ = std::clamp(options.hour, 0, 10);
     tempoConfig_ = options.tempoConfig;
@@ -1893,8 +1896,14 @@ class MapStage final : public Stage {
       // Nuvens RDR2 (render/CloudsRdr2.h; the user, 2026-11-04: the Red Dead Redemption 2 clouds, named by their model, not a
       // number). The weather's inputs stay here as choices until a weather exists (the user's prompt §6); the GPU times are
       // shown as information only (§5).
-      static const char* kClouds[5] = {"OFF", "básica", "001", "006", "RDR2"};
-      dropdown("Nuvens", clouds_, 5, [](int i) { return std::string(kClouds[i]); });
+      // The Map Editor's looks (the user, 2026-11-04): OFF, básica, 001 (the live layer), 002-005 (the saved looks), RDR2; look 006
+      // is never offered ("REMOVE CLOUD 006"). Choice 2 + n = the volumetric layer with saved look n (0 = the live 001).
+      static const char* kClouds[8] = {"OFF", "básica", "001", "002", "003", "004", "005", "RDR2"};
+      int cloudChoice = clouds_ == 4 ? 7 : clouds_ >= 2 ? 2 + (savedCloudLook_ >= 2 ? savedCloudLook_ - 1 : 0) : clouds_;
+      if (dropdown("Nuvens", cloudChoice, 8, [](int i) { return std::string(kClouds[i]); })) {
+        clouds_ = cloudChoice == 7 ? 4 : std::min(cloudChoice, 2);
+        savedCloudLook_ = cloudChoice >= 3 && cloudChoice <= 6 ? cloudChoice - 1 : 0;
+      }
       if (clouds_ == 4) {
         dropdown("Nuvens: qualidade", cloudQuality_, 4, [](int i) { return std::string(CloudsRdr2::kQualityNames[i]); });
         static const char* kCover[5] = {"limpo", "pouco", "médio", "muito", "fechado"};
@@ -2009,11 +2018,11 @@ class MapStage final : public Stage {
   // Weather edits update only precipitation. Keep the live board, camera, uploads and GPU resources intact.
   void selectCloudLook(int look){
     look=std::clamp(look,0,7);savedCloudLook_=look>=1&&look<=5?look:0;
-    clouds_=look==0?0:look==7?4:look==6?3:2;  // 7 = Nuvens RDR2
+    clouds_=look==0?0:look==7?4:2;  // 7 = Nuvens RDR2
+    if(look==6)savedCloudLook_=4;  // look 006 removed from the game (2026-11-04): such a map draws the default, 004
   }
   void setEditorWeather(const ember::MapDraft& draft) {
     if(draft.cloudLook>=0)selectCloudLook(draft.cloudLook);
-    else if(options_.editorClick)selectCloudLook(0);
     weatherKind_ = draft.weather;
     weatherIntensity_ = draft.weatherIntensity;
     weatherWind_ = draft.weatherWind;
@@ -11659,7 +11668,8 @@ class MapStage final : public Stage {
   int waterLook_ = 0;
   int skyReflect_ = 1;   // the panel's "Reflexo do céu": 0 OFF (the SH sky), 1 the sky's reflection map (skyreflect.hlsl)
   int savedCloudLook_ = 0;
-  int clouds_ = 3;       // the panel's "Nuvens": 0 OFF, 1 básica, 2 volumétricas (look 001), 3 look 006 (default), 4 RDR2
+  int clouds_ = 2;       // the panel's "Nuvens": 0 OFF, 1 básica, 2 volumétricas (savedCloudLook_ 0 = 001, 1-5 the saved looks; the
+                         // default is 004), 4 RDR2; 3 (006) never
   // Nuvens RDR2: the quality preset and the weather's choices (the panel), their smoothed values and the last GPU times.
   int cloudQuality_ = 0, cloudCoverChoice_ = 2, cloudKindChoice_ = 2, cloudGrowthChoice_ = 0, cloudCirrusChoice_ = 1, cloudRainChoice_ = 0,
       cloudLightningChoice_ = 0, cloudWindChoice_ = 1;
