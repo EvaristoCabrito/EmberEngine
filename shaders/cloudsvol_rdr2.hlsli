@@ -146,7 +146,7 @@ Rdr2Hit rdr2March(MeshFrame f, AtmosphereFrame a, Rdr2Clouds c, float3 origin, f
       const float localShadow = exp(-density * ext1 * min(d, 60.0) * 0.5);
       flash = float3(0.78, 0.84, 1.0) * c.flashStrength * falloff * localShadow * hgRdr2(dot(dir, toFlash / max(d, 1e-3)), 0.3) * 4.0 * kPi;
     }
-    const float3 radiance = (direct + ambient / kPi + flash) * lerp(0.97, 0.82, c.rain);  // albedo
+    const float3 radiance = (direct + ambient / kPi + flash) * lerp(0.97, 0.82, c.rain) * lerp(1.0, 0.3, saturate(vk::RawBufferLoad<float>(f.atmosphere + 300u)));  // albedo; the Map Editor's "Tom cinzento" below (AtmosphereFrame.cloudGray, byte 300; 2026-11-04)
     const float slab = exp(-ext * dt);
     light += transmittance * (radiance - radiance * slab);
     depthSum += t * transmittance * (1.0 - slab);

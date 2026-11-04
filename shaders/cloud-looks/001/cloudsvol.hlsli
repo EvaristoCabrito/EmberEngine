@@ -128,7 +128,7 @@ CloudVolHit cloudVolMarch(MeshFrame f, AtmosphereFrame a, CloudVolume v, float3 
       // Fill: the sky from above through the cloud over it (brighter at the top), the ground from below (at the base).
       // (a cumulus base is mid-grey, not black: the cloud's own multiple scattering carries the sky's light down through it)
       const float3 fill = skyUp * lerp(0.4, 0.85, h) * lerp(0.6, 1.0, exp(-sunDepth * 0.1)) + groundUp * lerp(0.3, 0.05, h);
-      const float3 radiance = (direct * powder + fill / kPi) * 0.9;  // albedo 0.9
+      const float3 radiance = (direct * powder + fill / kPi) * 0.9 * lerp(1.0, 0.3, saturate(vk::RawBufferLoad<float>(f.atmosphere + 300u)));  // albedo 0.9; the Map Editor's "Tom cinzento" (AtmosphereFrame.cloudGray, byte 300; 2026-11-04)
       // The slab, energy-conserving (Hillaire's analytic integration).
       const float slab = exp(-ext * dt);
       light += transmittance * (radiance - radiance * slab);
