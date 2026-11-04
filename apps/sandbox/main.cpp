@@ -172,7 +172,7 @@ struct Options {
                         // 2..4 looks 001..003)
   int skyReflect = 1;   // --sky-reflect N: the panel's "Reflexo do céu" (0 OFF, 1 the sky's reflection map)
   int cloudLook = -1;
-  int clouds = 1;       // --clouds N: the panel's "Nuvens" (0 OFF, 1 RDR2: the game's clouds)
+  int clouds = 6;       // --clouds N: the panel's "Nuvens" (0 OFF, 1 básica, 2 001, 3 006, 4 RDR2; 6 = the default: 006)
   int cloudQuality = 0;  // --clouds-quality N: "Nuvens: qualidade" (0 Ultra, 1 Alta, 2 Média, 3 Baixa)
   int glare = 0;        // --glare N: the panel's "Clarão" (0 OFF, 1 look 001)
   int shafts = 0;       // --shafts N: the panel's "Raios de luz" (0 OFF, 1 look 001)

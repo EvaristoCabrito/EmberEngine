@@ -2767,14 +2767,11 @@ class MapEditorStage : public Stage {
         }
     }
     {
-      // Nuvens 006 is never offered (the user, 2026-11-04: "eu nunca mais quero ver a nuvem 6"); a map saved with it shows 001.
       static constexpr const char* looks[]={"Sem nuvens","Nuvens 001","Nuvens 002","Nuvens 003","Nuvens 004","Nuvens 005","Nuvens 006","Nuvens RDR2"};
       int selected=std::clamp(draft_.value("cloudLook",0),0,7);
-      if(selected==6)selected=1;
       fieldLabel("Nuvens");ImGui::SetNextItemWidth(-1);
       if(ImGui::BeginCombo("##CloudLookPicker",looks[selected])){
         for(int i=0;i<8;++i){
-          if(i==6)continue;
           if(ImGui::Selectable(looks[i],selected==i)){beginEdit();draft_["cloudLook"]=i;selected=i;}
           if(selected==i)ImGui::SetItemDefaultFocus();
         }

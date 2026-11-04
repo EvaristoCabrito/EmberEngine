@@ -24,7 +24,8 @@ float3 cloud006Source(MeshFrame f,AtmosphereFrame a,float3 p,float3 dir,float de
  const float3 sky=float3(vk::RawBufferLoad<float4>(a.ambient+16).w,vk::RawBufferLoad<float4>(a.ambient+32).w,vk::RawBufferLoad<float4>(a.ambient+48).w);
  const float h=saturate((p.y-s.low.x)/max(s.low.y,1));
  const float3 fill=sky*lerp(.12,.8,h)*lerp(.35,1,exp(-optical*.15))/3.14159265;
- return (direct+fill)*.96*a.skyScale;
+ // The Map Editor's "Tom cinzento" (AtmosphereFrame.cloudGray, byte 300; 2026-11-04): 0 white .. 1 dark grey, as every look.
+ return (direct+fill)*.96*a.skyScale*lerp(1.0,0.3,saturate(vk::RawBufferLoad<float>(f.atmosphere+300u)));
 }
 float4 cloud006March(MeshFrame f,AtmosphereFrame a,float3 origin,float3 dir,uint steps,float jitter,out float depth,bool perspective=true){
  const Cloud006Frame s=cloud006Frame(f);depth=0;
