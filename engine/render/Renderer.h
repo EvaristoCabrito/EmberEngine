@@ -45,6 +45,7 @@ class CloudsRdr2;
 // Frame renderer. Everything is drawn into the renderer's own HDR targets (scene colour in
 // half-float, reversed-Z depth); a final pass tonemaps into an 8-bit output image that is copied
 // to the window, or read back to disk for captures.
+class Clouds006;
 
 class Renderer {
  public:
@@ -370,6 +371,7 @@ class Renderer {
   // as soft shadows on the board by day. Panel "Nuvens"; off = no sheet anywhere.
   struct Clouds {
     bool enabled = false;
+    int savedLook = 0; // 0 unchanged current path; 1..5 immutable saved looks
     bool shadows = true;        // the sheet shadows the board (by day: the key light is the sun)
     float gray = 0.0f;          // 0 original white scattering, 1 dark grey cloud material
     float coverage = 0.4f;      // share of the sky covered (0 clear .. 1 overcast)
@@ -383,6 +385,8 @@ class Renderer {
     // Nuvens volumétricas, look 001 (shaders/cloudsvol.hlsli): instead of the sheets, a real 3D layer between `base` and
     // `top`, ray marched once a frame at half resolution (sky, reflections, shadows on the board all from its density).
     bool volumetric = false;
+    bool look006 = false;
+    float middleCoverage=.15f, highCoverage=.1f;  // look 006 (its kind / growth / rain are the shared fields below)
     float base = 380.0f, top = 640.0f;  // world heights (the caller adds the board's mean ground)
     // Nuvens RDR2 (render/CloudsRdr2.h; the user, 2026-11-04: the Red Dead Redemption 2 clouds as the game's clouds): instead of
     // the sheets and look 001, the talk's model: weather map, height profile per type, cumulonimbus growth, cirrus, octaves of
@@ -559,6 +563,7 @@ class Renderer {
   VkPipeline probePipeline_ = VK_NULL_HANDLE;
   std::vector<float> probeLux_;
   Clouds clouds_;
+  std::array<VkPipeline,5> savedCloudMarch_{},savedCloudShadow_{},savedCloudReflection_{};
   std::vector<GpuStar> stars_;  // the real night sky this frame (setStars), copied into frame.stars
   glm::vec3 galaxyPole_{0.0f, 1.0f, 0.0f}, galaxyCentre_{0.0f, 0.0f, 1.0f};
   float milkyWay_ = 0.0f;
@@ -703,6 +708,7 @@ class Renderer {
   uint64_t waitValue_ = 0;
   // Atmosfera volumétrica v1 (last: it releases its bindless slots before the tables go).
   std::unique_ptr<Volumetrics> volumetrics_;
+  std::unique_ptr<Clouds006> clouds006_;
   bool volumetricsThisFrame_ = false;
   // Nuvens RDR2 (made on first use; its passes run after the sky tables, before anything reads the cloud shadow).
   std::unique_ptr<CloudsRdr2> cloudsRdr2_;

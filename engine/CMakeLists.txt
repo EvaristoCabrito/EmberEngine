@@ -16,6 +16,7 @@ add_library(EmberEngine STATIC
   rhi/GpuTimer.cpp
   rhi/UploadQueue.cpp
   render/CloudsRdr2.cpp
+  render/Clouds006.cpp
   render/Renderer.cpp
   render/DebugUi.cpp
   render/UiArt.cpp
