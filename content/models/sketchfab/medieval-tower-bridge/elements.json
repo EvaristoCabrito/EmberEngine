@@ -1,0 +1,35 @@
+[
+ {
+  "element": "Gate",
+  "file": "medieval-tower-bridge-gate-{level}-v01.glb",
+  "size_m": [
+   7.078,
+   0.1,
+   8.041
+  ],
+  "triangles": 254,
+  "copies": 1
+ },
+ {
+  "element": "Torch",
+  "file": "medieval-tower-bridge-torch-{level}-v01.glb",
+  "size_m": [
+   8.366,
+   13.972,
+   9.474
+  ],
+  "triangles": 616,
+  "copies": 1
+ },
+ {
+  "element": "TowerBridge",
+  "file": "medieval-tower-bridge-towerbridge-{level}-v01.glb",
+  "size_m": [
+   31.311,
+   125.616,
+   28.307
+  ],
+  "triangles": 5340,
+  "copies": 1
+ }
+]

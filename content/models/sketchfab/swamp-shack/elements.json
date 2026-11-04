@@ -1,0 +1,112 @@
+[
+ {
+  "element": "Dead_Tree.001",
+  "file": "swamp-shack-dead-tree-001-{level}-v01.glb",
+  "size_m": [
+   7.751,
+   8.703,
+   8.53
+  ],
+  "triangles": 33553,
+  "copies": 1
+ },
+ {
+  "element": "Dead_Tree.002",
+  "file": "swamp-shack-dead-tree-002-{level}-v01.glb",
+  "size_m": [
+   5.392,
+   5.895,
+   6.84
+  ],
+  "triangles": 57492,
+  "copies": 2
+ },
+ {
+  "element": "Dead_Tree.003",
+  "file": "swamp-shack-dead-tree-003-{level}-v01.glb",
+  "size_m": [
+   6.116,
+   6.884,
+   7.44
+  ],
+  "triangles": 32969,
+  "copies": 5
+ },
+ {
+  "element": "Foliage_DeadGrass",
+  "file": "swamp-shack-foliage-deadgrass-{level}-v01.glb",
+  "size_m": [
+   1.051,
+   0.71,
+   0.94
+  ],
+  "triangles": 30,
+  "copies": 1
+ },
+ {
+  "element": "GrassInstances_00",
+  "file": "swamp-shack-grassinstances-00-{level}-v01.glb",
+  "size_m": [
+   9.27,
+   7.611,
+   1.474
+  ],
+  "triangles": 5760,
+  "copies": 1
+ },
+ {
+  "element": "GrassInstances_01",
+  "file": "swamp-shack-grassinstances-01-{level}-v01.glb",
+  "size_m": [
+   8.277,
+   8.0,
+   1.573
+  ],
+  "triangles": 7470,
+  "copies": 1
+ },
+ {
+  "element": "GrassInstances_02",
+  "file": "swamp-shack-grassinstances-02-{level}-v01.glb",
+  "size_m": [
+   9.905,
+   8.061,
+   1.347
+  ],
+  "triangles": 5100,
+  "copies": 1
+ },
+ {
+  "element": "GrassInstances_03",
+  "file": "swamp-shack-grassinstances-03-{level}-v01.glb",
+  "size_m": [
+   7.005,
+   6.93,
+   1.567
+  ],
+  "triangles": 5670,
+  "copies": 1
+ },
+ {
+  "element": "Terrain",
+  "file": "swamp-shack-terrain-{level}-v01.glb",
+  "size_m": [
+   16.0,
+   16.0,
+   1.21
+  ],
+  "triangles": 8192,
+  "copies": 1
+ },
+ {
+  "element": "Water",
+  "file": "swamp-shack-water-{level}-v01.glb",
+  "size_m": [
+   16.0,
+   16.0,
+   0.0
+  ],
+  "triangles": 2,
+  "copies": 1
+ }
+]

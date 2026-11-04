@@ -1139,7 +1139,24 @@ int runWindow(const Options& o) {
   window.pixelSize(width, height);
   auto swapchain = std::make_unique<Swapchain>(context, width, height, true);
   DebugUi ui(context, window.handle(), Renderer::outputFormat());
-  Renderer renderer(context, swapchain.get(), swapchain->extent());
+  // The renderer is built on a worker: after a shader change the driver compiles a pipeline for up to a minute
+  // (water.PSMain: 30-55 s on the RX 6400; 2 ms once cached), and with the window's messages unanswered that long Windows
+  // reported the game as "not responding" (AppHangB1, 2026-11-04) and the user closed it as a crash. The main thread
+  // only pumps the window meanwhile (no Vulkan call of its own until the renderer exists); closing the window waits for
+  // the build to finish, then leaves.
+  std::unique_ptr<Renderer> rendererOwner;
+  {
+    auto building = std::async(std::launch::async, [&] {
+      return std::make_unique<Renderer>(context, swapchain.get(), swapchain->extent());
+    });
+    bool closed = false;
+    while (building.wait_for(std::chrono::milliseconds(10)) != std::future_status::ready) {
+      if (!closed && !window.pumpEvents()) closed = true;
+    }
+    rendererOwner = building.get();
+    if (closed) return 0;
+  }
+  Renderer& renderer = *rendererOwner;
   renderer.setUi(&ui);
   logInfo("startup: GPU ready at {:.0f} ms", bootMs());
   AudioMixer::get().setRoot(o.gameAssets);

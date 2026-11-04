@@ -281,44 +281,6 @@
       "blocks": false
     },
     {
-      "id": "ember-extra-broken-cart-wheel",
-      "name": "Roda de carroça quebrada 3D",
-      "kit": "extra",
-      "model": "ember-broken-cart-wheel",
-      "file": "/game/ember/extra/broken-cart-wheel-v01.glb",
-      "height": 1.186,
-      "width": 1.364,
-      "footprint": "one",
-      "section": "Objetos",
-      "blocks": false
-    },
-    {
-      "id": "ember-nature-dry-branch-pile",
-      "name": "Galhos secos empilhados 3D",
-      "kit": "nature",
-      "model": "ember-dry-branch-pile",
-      "file": "/game/ember/nature/dry-branch-pile-v01-photo.glb",
-      "height": 0.775,
-      "width": 2.46,
-      "footprint": "pair",
-      "section": "Natureza",
-      "blocks": false,
-      "triangles": 376
-    },
-    {
-      "id": "ember-nature-dry-bush",
-      "name": "Arbusto seco 3D",
-      "kit": "nature",
-      "model": "ember-dry-bush",
-      "file": "/game/ember/nature/dry-bush-v01-photo.glb",
-      "height": 1.301,
-      "width": 2.548,
-      "footprint": "pair",
-      "section": "Natureza",
-      "blocks": false,
-      "triangles": 1360
-    },
-    {
       "id": "ember-treasure-ceramic-jars",
       "name": "Jarras de cerâmica 3D",
       "kit": "treasure",
@@ -3582,6 +3544,30 @@
       "section": "Natureza · Wisp Forest",
       "blocks": true,
       "triangles": 2632
+    },
+    {
+      "id": "ember-polyhaven-wisp-tree-small-02-bare-v01",
+      "name": "Árvore seca sem folhas — Poly Haven",
+      "kit": "polyhaven-wisp-v02",
+      "model": "tree-small-02-bare-v01",
+      "file": "/game/ember/polyhaven-wisp-v02/tree_small_02_bare_v01.glb",
+      "height": 5.4,
+      "width": 2.6,
+      "footprint": "one",
+      "section": "Natureza",
+      "blocks": true
+    },
+    {
+      "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
+      "name": "Pinheiro seco sem copa — Poly Haven",
+      "kit": "polyhaven-wisp-v02",
+      "model": "fir-tree-01-bare-v01",
+      "file": "/game/ember/polyhaven-wisp-v02/fir_tree_01_bare_v01.glb",
+      "height": 19.5,
+      "width": 2.0,
+      "footprint": "one",
+      "section": "Natureza",
+      "blocks": true
     },
     {
       "id": "ember-smithsonian-cast-iron-cauldron",

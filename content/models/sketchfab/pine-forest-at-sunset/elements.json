@@ -1,0 +1,970 @@
+[
+ {
+  "element": "FlorasynthTree.001",
+  "file": "pine-forest-at-sunset-florasynthtree-001-{level}-v01.glb",
+  "size_m": [
+   7.032,
+   8.625,
+   12.663
+  ],
+  "triangles": 32558,
+  "copies": 1
+ },
+ {
+  "element": "FlorasynthTree.002",
+  "file": "pine-forest-at-sunset-florasynthtree-002-{level}-v01.glb",
+  "size_m": [
+   8.29,
+   9.184,
+   12.576
+  ],
+  "triangles": 35227,
+  "copies": 1
+ },
+ {
+  "element": "FlorasynthTree",
+  "file": "pine-forest-at-sunset-florasynthtree-{level}-v01.glb",
+  "size_m": [
+   7.824,
+   8.03,
+   12.233
+  ],
+  "triangles": 30766,
+  "copies": 1
+ },
+ {
+  "element": "grass_fine",
+  "file": "pine-forest-at-sunset-grass-fine-{level}-v01.glb",
+  "size_m": [
+   55.3,
+   53.3,
+   1.63
+  ],
+  "triangles": 15204,
+  "copies": 1
+ },
+ {
+  "element": "grass_lush",
+  "file": "pine-forest-at-sunset-grass-lush-{level}-v01.glb",
+  "size_m": [
+   55.686,
+   55.22,
+   1.501
+  ],
+  "triangles": 41496,
+  "copies": 1
+ },
+ {
+  "element": "log.001",
+  "file": "pine-forest-at-sunset-log-001-{level}-v01.glb",
+  "size_m": [
+   7.047,
+   2.538,
+   0.788
+  ],
+  "triangles": 52,
+  "copies": 1
+ },
+ {
+  "element": "log.002",
+  "file": "pine-forest-at-sunset-log-002-{level}-v01.glb",
+  "size_m": [
+   0.887,
+   7.175,
+   0.766
+  ],
+  "triangles": 52,
+  "copies": 1
+ },
+ {
+  "element": "log.003",
+  "file": "pine-forest-at-sunset-log-003-{level}-v01.glb",
+  "size_m": [
+   0.673,
+   7.749,
+   0.721
+  ],
+  "triangles": 52,
+  "copies": 1
+ },
+ {
+  "element": "log.004",
+  "file": "pine-forest-at-sunset-log-004-{level}-v01.glb",
+  "size_m": [
+   5.569,
+   6.231,
+   0.44
+  ],
+  "triangles": 52,
+  "copies": 1
+ },
+ {
+  "element": "log.005",
+  "file": "pine-forest-at-sunset-log-005-{level}-v01.glb",
+  "size_m": [
+   7.567,
+   2.912,
+   0.452
+  ],
+  "triangles": 52,
+  "copies": 1
+ },
+ {
+  "element": "log",
+  "file": "pine-forest-at-sunset-log-{level}-v01.glb",
+  "size_m": [
+   5.877,
+   6.695,
+   0.635
+  ],
+  "triangles": 52,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.001",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-001-{level}-v01.glb",
+  "size_m": [
+   5.46,
+   5.236,
+   9.106
+  ],
+  "triangles": 15821,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.002",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-002-{level}-v01.glb",
+  "size_m": [
+   5.105,
+   5.337,
+   8.549
+  ],
+  "triangles": 15339,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.003",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-003-{level}-v01.glb",
+  "size_m": [
+   3.519,
+   4.536,
+   5.43
+  ],
+  "triangles": 7357,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.004",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-004-{level}-v01.glb",
+  "size_m": [
+   4.574,
+   2.727,
+   2.562
+  ],
+  "triangles": 2129,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.005",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-005-{level}-v01.glb",
+  "size_m": [
+   4.906,
+   5.224,
+   8.734
+  ],
+  "triangles": 15213,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.006",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-006-{level}-v01.glb",
+  "size_m": [
+   5.34,
+   4.785,
+   8.338
+  ],
+  "triangles": 15286,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.007",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-007-{level}-v01.glb",
+  "size_m": [
+   4.446,
+   3.921,
+   7.652
+  ],
+  "triangles": 8380,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.008",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-008-{level}-v01.glb",
+  "size_m": [
+   5.431,
+   4.775,
+   8.214
+  ],
+  "triangles": 13355,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.009",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-009-{level}-v01.glb",
+  "size_m": [
+   4.951,
+   4.673,
+   8.201
+  ],
+  "triangles": 14241,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.010",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-010-{level}-v01.glb",
+  "size_m": [
+   2.893,
+   2.412,
+   2.861
+  ],
+  "triangles": 2413,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.011",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-011-{level}-v01.glb",
+  "size_m": [
+   4.157,
+   4.186,
+   7.507
+  ],
+  "triangles": 9447,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.012",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-012-{level}-v01.glb",
+  "size_m": [
+   3.986,
+   3.768,
+   6.956
+  ],
+  "triangles": 8129,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.013",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-013-{level}-v01.glb",
+  "size_m": [
+   4.024,
+   4.458,
+   8.055
+  ],
+  "triangles": 10990,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.014",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-014-{level}-v01.glb",
+  "size_m": [
+   4.371,
+   3.89,
+   4.285
+  ],
+  "triangles": 5822,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.015",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-015-{level}-v01.glb",
+  "size_m": [
+   4.154,
+   4.206,
+   7.872
+  ],
+  "triangles": 9751,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.016",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-016-{level}-v01.glb",
+  "size_m": [
+   4.418,
+   3.826,
+   7.735
+  ],
+  "triangles": 11751,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.017",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-017-{level}-v01.glb",
+  "size_m": [
+   3.612,
+   3.995,
+   7.201
+  ],
+  "triangles": 8796,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.018",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-018-{level}-v01.glb",
+  "size_m": [
+   3.221,
+   4.036,
+   5.46
+  ],
+  "triangles": 5782,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.019",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-019-{level}-v01.glb",
+  "size_m": [
+   4.603,
+   4.817,
+   7.529
+  ],
+  "triangles": 11511,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.020",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-020-{level}-v01.glb",
+  "size_m": [
+   3.514,
+   3.306,
+   6.005
+  ],
+  "triangles": 7080,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.021",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-021-{level}-v01.glb",
+  "size_m": [
+   3.608,
+   3.401,
+   5.825
+  ],
+  "triangles": 6129,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.022",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-022-{level}-v01.glb",
+  "size_m": [
+   4.123,
+   4.352,
+   7.336
+  ],
+  "triangles": 10238,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.023",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-023-{level}-v01.glb",
+  "size_m": [
+   3.877,
+   3.537,
+   6.812
+  ],
+  "triangles": 7328,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.024",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-024-{level}-v01.glb",
+  "size_m": [
+   4.468,
+   4.874,
+   3.559
+  ],
+  "triangles": 5564,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.025",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-025-{level}-v01.glb",
+  "size_m": [
+   4.602,
+   4.318,
+   4.213
+  ],
+  "triangles": 8436,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.026",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-026-{level}-v01.glb",
+  "size_m": [
+   3.413,
+   3.73,
+   5.056
+  ],
+  "triangles": 4959,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.027",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-027-{level}-v01.glb",
+  "size_m": [
+   3.247,
+   3.527,
+   6.455
+  ],
+  "triangles": 7204,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.028",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-028-{level}-v01.glb",
+  "size_m": [
+   4.077,
+   3.679,
+   4.547
+  ],
+  "triangles": 6588,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.029",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-029-{level}-v01.glb",
+  "size_m": [
+   3.751,
+   3.293,
+   4.793
+  ],
+  "triangles": 5713,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.030",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-030-{level}-v01.glb",
+  "size_m": [
+   3.093,
+   4.235,
+   4.644
+  ],
+  "triangles": 4974,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.031",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-031-{level}-v01.glb",
+  "size_m": [
+   3.28,
+   3.883,
+   4.232
+  ],
+  "triangles": 4775,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.032",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-032-{level}-v01.glb",
+  "size_m": [
+   3.262,
+   3.487,
+   2.86
+  ],
+  "triangles": 3526,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.033",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-033-{level}-v01.glb",
+  "size_m": [
+   3.853,
+   4.388,
+   4.676
+  ],
+  "triangles": 7167,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.034",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-034-{level}-v01.glb",
+  "size_m": [
+   2.936,
+   3.522,
+   3.045
+  ],
+  "triangles": 2748,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.035",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-035-{level}-v01.glb",
+  "size_m": [
+   4.352,
+   4.405,
+   6.318
+  ],
+  "triangles": 10077,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.036",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-036-{level}-v01.glb",
+  "size_m": [
+   3.235,
+   3.362,
+   2.043
+  ],
+  "triangles": 1770,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.037",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-037-{level}-v01.glb",
+  "size_m": [
+   3.373,
+   3.278,
+   3.537
+  ],
+  "triangles": 3945,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.038",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-038-{level}-v01.glb",
+  "size_m": [
+   3.87,
+   4.143,
+   4.331
+  ],
+  "triangles": 5958,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.039",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-039-{level}-v01.glb",
+  "size_m": [
+   1.672,
+   1.787,
+   1.916
+  ],
+  "triangles": 446,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.040",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-040-{level}-v01.glb",
+  "size_m": [
+   3.387,
+   3.649,
+   4.001
+  ],
+  "triangles": 5267,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.041",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-041-{level}-v01.glb",
+  "size_m": [
+   4.415,
+   4.355,
+   5.03
+  ],
+  "triangles": 9212,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.042",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-042-{level}-v01.glb",
+  "size_m": [
+   2.727,
+   2.627,
+   1.587
+  ],
+  "triangles": 1050,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.043",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-043-{level}-v01.glb",
+  "size_m": [
+   4.266,
+   3.767,
+   3.799
+  ],
+  "triangles": 6568,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.044",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-044-{level}-v01.glb",
+  "size_m": [
+   3.404,
+   2.86,
+   3.001
+  ],
+  "triangles": 1962,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.045",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-045-{level}-v01.glb",
+  "size_m": [
+   2.852,
+   3.398,
+   3.011
+  ],
+  "triangles": 3380,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.046",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-046-{level}-v01.glb",
+  "size_m": [
+   3.947,
+   4.152,
+   5.12
+  ],
+  "triangles": 8712,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.047",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-047-{level}-v01.glb",
+  "size_m": [
+   1.647,
+   2.659,
+   1.586
+  ],
+  "triangles": 1150,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.048",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-048-{level}-v01.glb",
+  "size_m": [
+   3.681,
+   2.709,
+   3.202
+  ],
+  "triangles": 4059,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.049",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-049-{level}-v01.glb",
+  "size_m": [
+   4.243,
+   4.259,
+   5.25
+  ],
+  "triangles": 10847,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.050",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-050-{level}-v01.glb",
+  "size_m": [
+   3.611,
+   3.579,
+   3.71
+  ],
+  "triangles": 5839,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.051",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-051-{level}-v01.glb",
+  "size_m": [
+   3.81,
+   4.089,
+   2.666
+  ],
+  "triangles": 2810,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.054",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-054-{level}-v01.glb",
+  "size_m": [
+   3.427,
+   2.994,
+   2.3
+  ],
+  "triangles": 2074,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.055",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-055-{level}-v01.glb",
+  "size_m": [
+   2.57,
+   2.106,
+   2.172
+  ],
+  "triangles": 1116,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.056",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-056-{level}-v01.glb",
+  "size_m": [
+   2.584,
+   2.398,
+   1.962
+  ],
+  "triangles": 1394,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.057",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-057-{level}-v01.glb",
+  "size_m": [
+   3.008,
+   2.726,
+   2.841
+  ],
+  "triangles": 2754,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.058",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-058-{level}-v01.glb",
+  "size_m": [
+   3.856,
+   3.562,
+   3.494
+  ],
+  "triangles": 5160,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.059",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-059-{level}-v01.glb",
+  "size_m": [
+   3.989,
+   3.729,
+   5.28
+  ],
+  "triangles": 9175,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.060",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-060-{level}-v01.glb",
+  "size_m": [
+   3.165,
+   2.974,
+   3.363
+  ],
+  "triangles": 2724,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.061",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-061-{level}-v01.glb",
+  "size_m": [
+   3.6,
+   3.148,
+   2.556
+  ],
+  "triangles": 3074,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.062",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-062-{level}-v01.glb",
+  "size_m": [
+   3.816,
+   3.477,
+   5.349
+  ],
+  "triangles": 9142,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.063",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-063-{level}-v01.glb",
+  "size_m": [
+   2.291,
+   2.251,
+   2.201
+  ],
+  "triangles": 904,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.064",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-064-{level}-v01.glb",
+  "size_m": [
+   3.895,
+   3.952,
+   4.285
+  ],
+  "triangles": 6441,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling.065",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-065-{level}-v01.glb",
+  "size_m": [
+   1.3,
+   0.731,
+   1.152
+  ],
+  "triangles": 426,
+  "copies": 1
+ },
+ {
+  "element": "Ponderosa Pine seedling",
+  "file": "pine-forest-at-sunset-ponderosa-pine-seedling-{level}-v01.glb",
+  "size_m": [
+   5.145,
+   4.989,
+   8.616
+  ],
+  "triangles": 14458,
+  "copies": 1
+ },
+ {
+  "element": "rock.001",
+  "file": "pine-forest-at-sunset-rock-001-{level}-v01.glb",
+  "size_m": [
+   1.689,
+   1.657,
+   0.743
+  ],
+  "triangles": 1280,
+  "copies": 7
+ },
+ {
+  "element": "rock.002",
+  "file": "pine-forest-at-sunset-rock-002-{level}-v01.glb",
+  "size_m": [
+   3.636,
+   3.263,
+   1.869
+  ],
+  "triangles": 1280,
+  "copies": 7
+ },
+ {
+  "element": "rock.003",
+  "file": "pine-forest-at-sunset-rock-003-{level}-v01.glb",
+  "size_m": [
+   3.863,
+   2.815,
+   2.242
+  ],
+  "triangles": 1280,
+  "copies": 7
+ },
+ {
+  "element": "rock.004",
+  "file": "pine-forest-at-sunset-rock-004-{level}-v01.glb",
+  "size_m": [
+   3.711,
+   3.768,
+   1.618
+  ],
+  "triangles": 1280,
+  "copies": 6
+ },
+ {
+  "element": "rock.005",
+  "file": "pine-forest-at-sunset-rock-005-{level}-v01.glb",
+  "size_m": [
+   1.351,
+   1.235,
+   0.752
+  ],
+  "triangles": 1280,
+  "copies": 6
+ },
+ {
+  "element": "rock.006",
+  "file": "pine-forest-at-sunset-rock-006-{level}-v01.glb",
+  "size_m": [
+   1.131,
+   1.195,
+   0.939
+  ],
+  "triangles": 1280,
+  "copies": 7
+ },
+ {
+  "element": "terrain",
+  "file": "pine-forest-at-sunset-terrain-{level}-v01.glb",
+  "size_m": [
+   260.0,
+   260.0,
+   2.33
+  ],
+  "triangles": 5408,
+  "copies": 1
+ },
+ {
+  "element": "tree_copy.001",
+  "file": "pine-forest-at-sunset-tree-copy-001-{level}-v01.glb",
+  "size_m": [
+   11.178,
+   11.127,
+   9.464
+  ],
+  "triangles": 2616,
+  "copies": 68
+ },
+ {
+  "element": "tree_copy.002",
+  "file": "pine-forest-at-sunset-tree-copy-002-{level}-v01.glb",
+  "size_m": [
+   11.76,
+   12.061,
+   12.846
+  ],
+  "triangles": 5586,
+  "copies": 90
+ },
+ {
+  "element": "tree_copy.003",
+  "file": "pine-forest-at-sunset-tree-copy-003-{level}-v01.glb",
+  "size_m": [
+   13.171,
+   13.454,
+   10.644
+  ],
+  "triangles": 2956,
+  "copies": 90
+ },
+ {
+  "element": "tree_copy.004",
+  "file": "pine-forest-at-sunset-tree-copy-004-{level}-v01.glb",
+  "size_m": [
+   9.718,
+   8.673,
+   13.295
+  ],
+  "triangles": 5847,
+  "copies": 62
+ },
+ {
+  "element": "tree_copy.005",
+  "file": "pine-forest-at-sunset-tree-copy-005-{level}-v01.glb",
+  "size_m": [
+   11.235,
+   9.871,
+   10.959
+  ],
+  "triangles": 2960,
+  "copies": 62
+ },
+ {
+  "element": "tree_copy.014",
+  "file": "pine-forest-at-sunset-tree-copy-014-{level}-v01.glb",
+  "size_m": [
+   11.413,
+   11.395,
+   13.217
+  ],
+  "triangles": 5662,
+  "copies": 68
+ }
+]

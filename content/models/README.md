@@ -115,7 +115,6 @@ Ids are `ember-<kit>-<name>`; sizes in units (w = widest side, h = height); tris
 | ember-extra-wooden-door | extra | extra/wooden-door-v01.glb | 1.52 × 2.90 | 948 | 5 dark planks, 3 iron straps with hinge knuckles + rivets, ring handle on a boss |
 | ember-extra-stone-doorway | extra | extra/stone-doorway-v01.glb | 2.84 × 3.51 | 324 | grey masonry jambs, lintel, keystone, mossy feet; crypt-masonry reveal set back, dark passage panel |
 | ember-extra-grave-marker | extra | extra/grave-marker-v01.glb | 1.96 × 1.53 | 2912 | round-topped mossy slab (union), chipped corner, 2 inscription grooves, tilted; earth mound |
-| ember-extra-broken-cart-wheel | extra | extra/broken-cart-wheel-v01.glb | 1.36 × 1.19 | 892 | rim with a 22% gap, 2 snapped spokes under it, iron hub; propped at 68°, 2 fragments on the ground |
 | ember-extra-firewood-stack | extra | extra/firewood-stack-v01.glb | 1.93 × 0.64 | 2296 | 12 split half-logs in 3 rows (bark vertex colour, pale cut faces), 2 rope ties with knots |
 | ember-extra-wooden-bucket | extra | extra/wooden-bucket-v01.glb | 0.65 × 0.97 | 944 | 16 faceted staves (lathe, real cavity), 2 iron hoops, ears, half-torus handle up |
 | ember-extra-torch-bracket | extra | extra/torch-bracket-v01.glb | 0.40 × 3.10 | 804 | rusted wall strap to the floor + plate, bolts, arm, ring; removable torch (shaft, burlap head, rope wraps), **unlit** |
@@ -149,8 +148,6 @@ light sources: a map light must be placed beside them.
 | ember-nature-colossal-dead-oak | Carvalho morto colossal 3D | nature/colossal-dead-oak-v01.glb | 7.58 × 6.58 | 1035940 | triple |
 | ember-nature-colossal-dead-oak-leafy | Carvalho morto colossal frondoso 3D | nature/colossal-dead-oak-leafy-v01.glb | 7.58 × 6.58 | 1035940 | triple |
 | ember-nature-dense-bush | Arbusto denso 3D | nature/dense-bush-v01.glb | 2.32 × 1.48 | 1920 | pair |
-| ember-nature-dry-branch-pile | Galhos secos empilhados 3D | nature/dry-branch-pile-v01.glb | 2.46 × 0.78 | 376 | pair, passável |
-| ember-nature-dry-bush | Arbusto seco 3D | nature/dry-bush-v01.glb | 2.55 × 1.30 | 1360 | pair, passável |
 | ember-nature-exposed-roots | Raízes expostas 3D | nature/exposed-roots-v01.glb | 2.73 × 1.04 | 7236 | pair, passável |
 | ember-nature-ferns | Samambaias 3D | nature/ferns-v01.glb | 1.57 × 0.96 | 288 | one, passável |
 | ember-nature-gray-boulder | Pedra cinza irregular 3D | nature/cracked-boulder-v02.glb | 2.78 × 1.82 | 20480 | pair |

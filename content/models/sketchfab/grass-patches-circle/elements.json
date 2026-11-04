@@ -1,0 +1,46 @@
+[
+ {
+  "element": "GrassEmitterCircleMesh.004|BR_MainGrass_Diff.071|Dupli|117_BR_MainGrass",
+  "file": "grass-patches-circle-grassemittercirclemesh-004-br-maingrass-diff-071-dupli-117-br-maingrass-{level}-v01.glb",
+  "size_m": [
+   11.165,
+   20.385,
+   2.879
+  ],
+  "triangles": 68676,
+  "copies": 1
+ },
+ {
+  "element": "GrassEmitterCircleMesh.004|BR_MainGrass_Diff.071|Dupli|117_BR_MainGrass_0.001",
+  "file": "grass-patches-circle-grassemittercirclemesh-004-br-maingrass-diff-071-dupli-117-br-maingrass-0-001-{level}-v01.glb",
+  "size_m": [
+   9.833,
+   12.684,
+   1.562
+  ],
+  "triangles": 61469,
+  "copies": 1
+ },
+ {
+  "element": "GrassEmitterCircleMesh.004|BR_MainGrass_Diff.071|Dupli|117_BR_MainGrass_0.002",
+  "file": "grass-patches-circle-grassemittercirclemesh-004-br-maingrass-diff-071-dupli-117-br-maingrass-0-002-{level}-v01.glb",
+  "size_m": [
+   9.036,
+   8.947,
+   1.046
+  ],
+  "triangles": 61182,
+  "copies": 1
+ },
+ {
+  "element": "GrassEmitterCircleMesh.004|BR_MainGrass_Diff.071|Dupli|117_BR_MainGrass_0.003",
+  "file": "grass-patches-circle-grassemittercirclemesh-004-br-maingrass-diff-071-dupli-117-br-maingrass-0-003-{level}-v01.glb",
+  "size_m": [
+   8.01,
+   10.273,
+   0.988
+  ],
+  "triangles": 12909,
+  "copies": 1
+ }
+]

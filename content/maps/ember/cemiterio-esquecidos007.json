@@ -9124,14 +9124,12 @@
         "y": 3,
         "blocksPath": true
       },
-      
       {
         "id": "ember-structures-scattered-blocks",
         "x": 23,
         "y": 3,
         "blocksPath": true
       },
-      
       {
         "id": "ember-structures-scattered-blocks",
         "x": 26,
@@ -9150,7 +9148,6 @@
         "y": 11,
         "blocksPath": true
       },
-      
       {
         "id": "stone-hut",
         "x": 43,
@@ -9672,12 +9669,6 @@
         "blocksPath": true
       },
       {
-        "id": "ember-nature-dry-branch-pile",
-        "x": 5,
-        "y": 7,
-        "blocksPath": true
-      },
-      {
         "id": "ember-forest-dead-tree",
         "x": 9,
         "y": 7,
@@ -9757,12 +9748,6 @@
         "id": "dead-tree",
         "x": 25,
         "y": 11,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-nature-dry-branch-pile",
-        "x": 3,
-        "y": 12,
         "blocksPath": true
       },
       {
@@ -9921,12 +9906,6 @@
         "blocksPath": true
       },
       {
-        "id": "ember-nature-dry-branch-pile",
-        "x": 11,
-        "y": 20,
-        "blocksPath": true
-      },
-      {
         "id": "wilds-dry-bush",
         "x": 18,
         "y": 20,
@@ -10012,12 +9991,6 @@
         "id": "ember-frost-snowy-dry-bush",
         "x": 9,
         "y": 28,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-nature-dry-branch-pile",
-        "x": 6,
-        "y": 30,
         "blocksPath": true
       },
       {

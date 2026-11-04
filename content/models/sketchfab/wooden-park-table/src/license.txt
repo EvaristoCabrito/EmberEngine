@@ -1,0 +1,8 @@
+Model Information:
+* title:	wooden table in a park scan
+* source:	https://sketchfab.com/3d-models/wooden-table-in-a-park-scan-57e3dfd5c9684b4ca3f7719c0c68c93b
+* author:	JabRomich (https://sketchfab.com/JabRomich)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works

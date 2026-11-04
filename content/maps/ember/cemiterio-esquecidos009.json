@@ -9662,12 +9662,6 @@
         "blocksPath": true
       },
       {
-        "id": "ember-nature-dry-branch-pile",
-        "x": 9,
-        "y": 7,
-        "blocksPath": true
-      },
-      {
         "id": "wilds-dead-oak",
         "x": 40,
         "y": 7,
@@ -9742,12 +9736,6 @@
         "blocksPath": true
       },
       {
-        "id": "ember-nature-dry-branch-pile",
-        "x": 12,
-        "y": 10,
-        "blocksPath": true
-      },
-      {
         "id": "ember-winter-frost-dead-tree",
         "x": 57,
         "y": 10,
@@ -9764,18 +9752,6 @@
         "id": "ember-forest-dead-tree",
         "x": 12,
         "y": 11,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-nature-dry-branch-pile",
-        "x": 58,
-        "y": 11,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-nature-dry-branch-pile",
-        "x": 25,
-        "y": 12,
         "blocksPath": true
       },
       {
@@ -9844,12 +9820,6 @@
       {
         "id": "wilds-twisted-tree",
         "x": 4,
-        "y": 17,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-nature-dry-branch-pile",
-        "x": 11,
         "y": 17,
         "blocksPath": true
       },
@@ -10031,12 +10001,6 @@
         "id": "ember-frost-snowy-dry-bush",
         "x": 11,
         "y": 28,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-nature-dry-branch-pile",
-        "x": 13,
-        "y": 30,
         "blocksPath": true
       },
       {
