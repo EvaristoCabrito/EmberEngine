@@ -234,7 +234,7 @@ float3 realStars(uint64_t atmosphere, float3 dir, float pixelAngle) {
 static const uint kGalaxyMapOffset = 480u, kSkyMapSamplerOffset = 504u, kGalaxyStrengthOffset = 508u;
 
 static const float kPaintingWhite = 0.8;  // the painting's light before the tonemap (1.6 burned its gold to orange)
-static const float kPaintingRepeats = 1.0;  // times round the sky: the galaxy painting is a whole 2:1 sphere
+static const float kPaintingRepeats = 2.0;  // times round the sky: twice, so one galaxy core is always up (once put it on the horizon at dusk)
 float3 andromedaSky(uint64_t atmosphere, float3 dir, float pixelAngle) {
   const float strength = vk::RawBufferLoad<float>(atmosphere + kGalaxyStrengthOffset);
   const uint tex = vk::RawBufferLoad<uint>(atmosphere + kGalaxyMapOffset);
