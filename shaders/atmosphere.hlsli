@@ -245,18 +245,15 @@ float3 andromedaSky(uint64_t atmosphere, float3 dir, float pixelAngle) {
   uint width, height;
   gTextures[NonUniformResourceIndex(tex)].GetDimensions(width, height);
   const float aspect = float(width) / float(height);
-  const float2 lb = galacticLB(dir, pole, centre);
-  const float u = frac(0.5 + lb.x / (2.0 * kPi) * kPaintingRepeats);
-  const float v = 0.5 - lb.y * aspect * kPaintingRepeats / (2.0 * kPi);  // the same angular scale as across
-  const float lod = max(log2(max(pixelAngle * float(width) * kPaintingRepeats / (2.0 * kPi), 1e-4)), 0.0);
-  // Past the top or the bottom: mirrored back in (the stars and haze go on), fading into the edge colour over half a height.
-  const float over = max(max(-v, v - 1.0), 0.0);
-  const float vIn = v < 0.0 ? -v : (v > 1.0 ? 2.0 - v : v);
-  float3 colour = gTextures[NonUniformResourceIndex(tex)].SampleLevel(gSamplers[samplerIndex], float2(u, clamp(vIn, 0.0005, 0.9995)), lod).rgb;
-  if (over > 0.0) {
-    const float3 edge = gTextures[NonUniformResourceIndex(tex)].SampleLevel(gSamplers[samplerIndex], float2(u, v < 0.5 ? 0.02 : 0.98), 6.0).rgb;  // inside: the sampler repeats
-    colour = lerp(colour, edge, smoothstep(0.0, 0.5, over));
-  }
+  // skylayer_b_panorama_q92 (the user, 2026-11-04) is a 360-degree sky panorama: across = the compass direction, down = from the
+  // zenith (its flat top row) to 30 deg under the horizon. Mapped as a dome round the eye: no band, no fold, no seam (the band
+  // mapping folded it into straight lines meeting at the galaxy's pole: the user, "ISSO NAO PODE EXISTIR NO JOGO").
+  const float azimuth = atan2(dir.x, dir.z) + atan2(centre.x, centre.z);  // turns with the hour like the stars
+  const float u = frac(azimuth / (2.0 * kPi));
+  const float elevation = asin(clamp(dir.y, -1.0, 1.0));
+  const float v = clamp((kPi * 0.5 - elevation) / (kPi * 2.0 / 3.0), 0.0005, 0.9995);
+  const float lod = max(log2(max(pixelAngle * float(width) / (2.0 * kPi), 1e-4)), 0.0);
+  const float3 colour = gTextures[NonUniformResourceIndex(tex)].SampleLevel(gSamplers[samplerIndex], float2(u, v), lod).rgb;
   return colour * strength;
 }
 
@@ -521,7 +518,10 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
     // layer marched this frame (cloudsvol.hlsl), or the sheets' light, on the sky's own scale.
     if (f.cloudFlags & kCloudVolumetric) {
       const float4 cloud = cloudVolAt(f, (float2(pixel) + 0.5) / f.screenSize);
-      radiance = radiance * cloud.a + cloud.rgb;
+      // No dark clouds (the user, 2026-11-04: "HOW MANY TIME MUST I SAY NO DARK CLOUDS"): against the Andromeda painting at night the
+      // moonlit cloud is near black, so it takes on part of the painted sky's light behind it (a veil, never a black blot).
+      const float3 veil = a.starLook == 5u ? radiance * (1.0 - cloud.a) * 0.6 * night : 0.0;
+      radiance = radiance * cloud.a + max(cloud.rgb, veil);
     } else {
       radiance = cloudsOverSky(f, a, f.cameraPosition, dir, clear * a.skyScale, radiance);
     }

@@ -11667,7 +11667,7 @@ class MapStage final : public Stage {
   // original, 2..4 looks 001..003 (shaders/water_lookNNN.hlsli).
   int waterLook_ = 0;
   int skyReflect_ = 1;   // the panel's "Reflexo do céu": 0 OFF (the SH sky), 1 the sky's reflection map (skyreflect.hlsl)
-  int savedCloudLook_ = 0;
+  int savedCloudLook_ = 4;  // Nuvens 004 = every map's default unless the map saves its own choice (the user, 2026-11-04)
   int clouds_ = 2;       // the panel's "Nuvens": 0 OFF, 1 básica, 2 volumétricas (savedCloudLook_ 0 = 001, 1-5 the saved looks; the
                          // default is 004), 4 RDR2; 3 (006) never
   // Nuvens RDR2: the quality preset and the weather's choices (the panel), their smoothed values and the last GPU times.
