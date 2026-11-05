@@ -1,6 +1,6 @@
 #pragma once
 
-// How Engine2's Dev Controls switches (DevGfxSettings.h) act on a map the game opens (MapStage), the way Engine2's battle
+// How Ember's Dev Controls switches (DevGfxSettings.h) act on a map the game opens (MapStage), the way Ember's battle
 // renderer read them every frame. A battle already open takes later changes through MapStage::applyGfx.
 
 #include "DevGfxSettings.h"
@@ -15,7 +15,7 @@ inline void DevGfx::apply(MapStageOptions& m, Renderer& renderer) const {
   if (!fogOfWar) m.fog = 0;
   if (!atmosphericFx) m.volume = false, m.airParticles = false;
   if (sunMoved) {
-    // Engine2's azimuth is where shadows fall on screen (+x right, +z down in the normal view); the sun stands opposite.
+    // Ember's azimuth is where shadows fall on screen (+x right, +z down in the normal view); the sun stands opposite.
     m.sunAzimuth = sunAzimuth + 180.0f;
     m.sunElevation = sunElevation;
   }

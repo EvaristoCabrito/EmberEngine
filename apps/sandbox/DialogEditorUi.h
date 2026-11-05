@@ -1,6 +1,6 @@
 #pragma once
 
-// The Map Editor's dialogue editor, copied from Engine2's src/editor/ember/DialogEditor.tsx: one DialogTree (the
+// The Map Editor's dialogue editor, copied from Ember's src/editor/ember/DialogEditor.tsx: one DialogTree (the
 // mission's opening, its closing, or one neutral unit's conversation) edited in a local copy until Salvar. Lines have a
 // speaker, a portrait (a unit's sprite), a text and either "Leva a" (the next line) or branching replies, each reply
 // with its next line and an affinity change (who answers, whose affinity moves, +3 / 0 / -3).
@@ -25,7 +25,7 @@ class DialogEditorUi {
     std::string id, label;  // sprite id, name shown
   };
   // `commit` gets the tree (null = no dialogue) and says whether it was saved; the window closes when it was.
-  void open(std::string title, const e2::Json& tree, std::function<bool(const e2::Json&)> commit) {
+  void open(std::string title, const ember::Json& tree, std::function<bool(const ember::Json&)> commit) {
     title_ = std::move(title), tree_ = tree, commit_ = std::move(commit);
     open_ = true, saveError_ = false, armedDelete_.clear();
     ImGui::OpenPopup("##dialogeditor");
@@ -53,7 +53,7 @@ class DialogEditorUi {
       return;
     }
     ImGui::SameLine();
-    if (!tree_.is_null() && ImGui::Button("Apagar diálogo")) tree_ = e2::Json();
+    if (!tree_.is_null() && ImGui::Button("Apagar diálogo")) tree_ = ember::Json();
     ImGui::SameLine();
     if (ImGui::Button("X##close")) {
       close();
@@ -70,18 +70,18 @@ class DialogEditorUi {
       ImGui::TextDisabled("Nenhum diálogo ainda.");
       if (ImGui::Button("Criar diálogo", {-1, 0})) addLine();
     } else {
-      e2::Json& lines = tree_["lines"];
+      ember::Json& lines = tree_["lines"];
       // Linha inicial
       ImGui::TextColored(ImColor(180, 180, 180), "LINHA INICIAL");
       ImGui::SetNextItemWidth(-1);
       if (ImGui::BeginCombo("##start", lineLabel(lineById(tree_.value("startId", "")), 30).c_str())) {
-        for (const e2::Json& l : lines)
+        for (const ember::Json& l : lines)
           if (ImGui::Selectable((lineLabel(&l, 30) + "##" + l.value("id", "")).c_str(), l.value("id", "") == tree_.value("startId", ""))) tree_["startId"] = l.value("id", "");
         ImGui::EndCombo();
       }
       std::string remove;
       for (size_t i = 0; i < lines.size(); ++i) {
-        e2::Json& line = lines[i];
+        ember::Json& line = lines[i];
         ImGui::PushID(static_cast<int>(i));
         ImGui::BeginChild("##line", {0, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
         text("##speaker", line, "speaker", "Quem fala", 200);
@@ -106,21 +106,21 @@ class DialogEditorUi {
         textBox("##text", line, "text", "Texto da linha");
         bool branching = line.contains("replies") && line["replies"].is_array();
         if (ImGui::Checkbox("Respostas ramificadas", &branching)) {
-          if (branching) line["replies"] = e2::Json::array({e2::Json{{"text", ""}}}), line.erase("next");
+          if (branching) line["replies"] = ember::Json::array({ember::Json{{"text", ""}}}), line.erase("next");
           else line.erase("replies");
         }
         if (branching) {
-          e2::Json& replies = line["replies"];
+          ember::Json& replies = line["replies"];
           ImGui::Indent();
           int move = 0, at = -1, drop = -1;
           for (size_t k = 0; k < replies.size(); ++k) {
-            e2::Json& reply = replies[k];
+            ember::Json& reply = replies[k];
             ImGui::PushID(static_cast<int>(k));
             text("##rtext", reply, "text", "Texto da resposta", 180);
             ImGui::SameLine();
             nextCombo("##rnext", reply, "(fim)", 20, nullptr, 150);
             ImGui::SameLine();
-            const e2::Json aff = reply.value("affinity", e2::Json::object());
+            const ember::Json aff = reply.value("affinity", ember::Json::object());
             std::string from = aff.value("from", std::string("Kael")), to = aff.value("to", std::string("Neera"));
             int delta = aff.value("delta", 0);
             bool changed = false;
@@ -146,7 +146,7 @@ class DialogEditorUi {
                 if (ImGui::Selectable(deltas[d], d == di)) delta = d == 0 ? 3 : d == 2 ? -3 : 0, changed = true;
               ImGui::EndCombo();
             }
-            if (changed) reply["affinity"] = e2::Json{{"from", from}, {"to", to}, {"delta", delta}};
+            if (changed) reply["affinity"] = ember::Json{{"from", from}, {"to", to}, {"delta", delta}};
             ImGui::SameLine();
             ImGui::BeginDisabled(k == 0);
             if (ImGui::SmallButton("↑")) move = -1, at = static_cast<int>(k);
@@ -162,9 +162,9 @@ class DialogEditorUi {
           if (at >= 0) std::swap(replies[static_cast<size_t>(at)], replies[static_cast<size_t>(at + move)]);
           if (drop >= 0) {
             replies.erase(static_cast<size_t>(drop));
-            if (replies.empty()) replies.push_back(e2::Json{{"text", ""}});
+            if (replies.empty()) replies.push_back(ember::Json{{"text", ""}});
           }
-          if (ImGui::SmallButton("+ resposta")) replies.push_back(e2::Json{{"text", ""}});
+          if (ImGui::SmallButton("+ resposta")) replies.push_back(ember::Json{{"text", ""}});
           ImGui::Unindent();
         } else {
           ImGui::TextColored(ImColor(180, 180, 180), "LEVA A");
@@ -191,14 +191,14 @@ class DialogEditorUi {
     for (int i = 0; i < 7; ++i) id += "0123456789abcdefghijklmnopqrstuvwxyz"[rng() % 36];
     return id;
   }
-  const e2::Json* lineById(const std::string& id) const {
+  const ember::Json* lineById(const std::string& id) const {
     if (tree_.is_null() || !tree_.contains("lines")) return nullptr;
-    for (const e2::Json& l : tree_["lines"])
+    for (const ember::Json& l : tree_["lines"])
       if (l.value("id", "") == id) return &l;
     return nullptr;
   }
   // "<speaker or (sem nome)> — <the first n characters of the text or (vazio)>"
-  static std::string lineLabel(const e2::Json* l, size_t n) {
+  static std::string lineLabel(const ember::Json* l, size_t n) {
     if (!l) return "";
     const std::string speaker = l->value("speaker", ""), text = l->value("text", "");
     std::string cut;
@@ -215,36 +215,36 @@ class DialogEditorUi {
     return (speaker.empty() ? std::string("(sem nome)") : speaker) + " — " + (cut.empty() ? std::string("(vazio)") : cut);
   }
   void addLine() {
-    e2::Json line = {{"id", randomId("line")}, {"speaker", ""}, {"text", ""}};
+    ember::Json line = {{"id", randomId("line")}, {"speaker", ""}, {"text", ""}};
     if (tree_.is_null() || !tree_.contains("lines") || tree_["lines"].empty()) {
-      tree_ = e2::Json{{"id", randomId("tree")}, {"startId", line["id"]}, {"lines", e2::Json::array({line})}};
+      tree_ = ember::Json{{"id", randomId("tree")}, {"startId", line["id"]}, {"lines", ember::Json::array({line})}};
       return;
     }
     // Chains onto the last line when it is still a dead end (no next, no replies).
-    e2::Json& lines = tree_["lines"];
-    e2::Json& last = lines.back();
+    ember::Json& lines = tree_["lines"];
+    ember::Json& last = lines.back();
     const bool deadEnd = !(last.contains("next") && last["next"].is_string() && !last["next"].get<std::string>().empty()) && !last.contains("replies");
     if (deadEnd) last["next"] = line["id"];
     lines.push_back(std::move(line));
   }
   void removeLine(const std::string& id) {
-    e2::Json kept = e2::Json::array();
-    for (const e2::Json& l : tree_["lines"])
+    ember::Json kept = ember::Json::array();
+    for (const ember::Json& l : tree_["lines"])
       if (l.value("id", "") != id) kept.push_back(l);
     if (kept.empty()) {
-      tree_ = e2::Json();
+      tree_ = ember::Json();
       return;
     }
     if (tree_.value("startId", "") == id) tree_["startId"] = kept[0].value("id", "");
     tree_["lines"] = kept;
   }
-  static void text(const char* id, e2::Json& o, const char* key, const char* hint, float width) {
+  static void text(const char* id, ember::Json& o, const char* key, const char* hint, float width) {
     char buffer[1024];
     std::snprintf(buffer, sizeof(buffer), "%s", o.value(key, "").c_str());
     ImGui::SetNextItemWidth(width);
     if (ImGui::InputTextWithHint(id, hint, buffer, sizeof(buffer))) o[key] = std::string(buffer);
   }
-  static void textBox(const char* id, e2::Json& o, const char* key, const char* hint) {
+  static void textBox(const char* id, ember::Json& o, const char* key, const char* hint) {
     char buffer[4096];
     std::snprintf(buffer, sizeof(buffer), "%s", o.value(key, "").c_str());
     if (ImGui::InputTextMultiline(id, buffer, sizeof(buffer), {-1, 64})) o[key] = std::string(buffer);
@@ -254,12 +254,12 @@ class DialogEditorUi {
     }
   }
   // The next line of `o` ("next": an id, or null for the end); `self` is left out of the choices.
-  void nextCombo(const char* id, e2::Json& o, const char* none, size_t n, const e2::Json* self, float width) {
+  void nextCombo(const char* id, ember::Json& o, const char* none, size_t n, const ember::Json* self, float width) {
     const std::string next = o.contains("next") && o["next"].is_string() ? o["next"].get<std::string>() : "";
     ImGui::SetNextItemWidth(width);
     if (ImGui::BeginCombo(id, next.empty() ? none : lineLabel(lineById(next), n).c_str())) {
       if (ImGui::Selectable(none, next.empty())) o["next"] = nullptr;
-      for (const e2::Json& l : tree_["lines"]) {
+      for (const ember::Json& l : tree_["lines"]) {
         if (self && l.value("id", "") == self->value("id", "")) continue;
         if (ImGui::Selectable((lineLabel(&l, n) + "##" + l.value("id", "")).c_str(), l.value("id", "") == next)) o["next"] = l.value("id", "");
       }
@@ -269,8 +269,8 @@ class DialogEditorUi {
 
   bool open_ = false, saveError_ = false;
   std::string title_, armedDelete_;
-  e2::Json tree_;
-  std::function<bool(const e2::Json&)> commit_;
+  ember::Json tree_;
+  std::function<bool(const ember::Json&)> commit_;
 };
 
 }  // namespace ember

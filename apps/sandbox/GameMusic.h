@@ -1,6 +1,6 @@
 #pragma once
 
-// Engine2's music per screen (src/game/audio.ts getTrack / menuElement and GameApp's music chain), as Stage::Music:
+// Ember's music per screen (src/game/audio.ts getTrack / menuElement and GameApp's music chain), as Stage::Music:
 // the title page's own <audio id="menu-music"> (index.html: the Ashera intro at base 1), the world map's piece, the
 // Inn's, and a mission's track for its briefing and battle (the battle file's `music`, export_battle.ts: the
 // mission's own file when it names one, else the theme for its id). Screens without music (films, test menus, the map
@@ -74,6 +74,9 @@ inline Stage::Music forMission(const MissionEntry& m) {
   if (!m.battle.empty()) {
     if (const auto it = known.find(m.battle); it != known.end()) return it->second;
     std::ifstream in(m.battle, std::ios::binary);
+    // Not made yet (a map saved in the editor is prepared after its briefing opens): the id's theme for now, the file's own track
+    // once it exists (cached, it kept the theme for the whole session: the editor's Trilha never played in the briefing).
+    if (!in) return forMissionId(m.draftId);
     const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
     return known[m.battle] = fromBattle(j, forMissionId(m.draftId));
   }

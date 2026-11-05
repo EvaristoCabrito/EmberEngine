@@ -1,8 +1,8 @@
 #pragma once
 
-// Engine2's Dev Controls switches (src/game/gfx/three/devGfx.ts) and graphics quality presets (graphicsQuality.ts):
+// Ember's Dev Controls switches (src/game/gfx/three/devGfx.ts) and graphics quality presets (graphicsQuality.ts):
 // the settings themselves, shared by Dev Controls (TestModeStage), the Opções window (EmberMenus.h) and the battle
-// (MapStage). Engine2 kept them in the browser's localStorage; here they live in %LOCALAPPDATA%\Ember\dev-gfx.json
+// (MapStage). Ember kept them in the browser's localStorage; here they live in %LOCALAPPDATA%\Ember\dev-gfx.json
 // (written whole through a temporary file and a rename). How they act on a map: DevGfx.h.
 //
 //   realShadows       the sun's shadow layer (lighting layer 2)
@@ -12,7 +12,7 @@
 //   fogOfWar          the fog of war on maps that use it (off: everything seen, every enemy shown)
 //   fogDebug          the fog's states as flat colours (renderer debug view 4)
 //   atmosphericFx     the map's mist, haze, wisps and dust motes
-//   sun               a fixed sun (Engine2's sliders: azimuth = the screen direction shadows fall, 0 right, 90 down;
+//   sun               a fixed sun (Ember's sliders: azimuth = the screen direction shadows fall, 0 right, 90 down;
 //                     elevation above the horizon) instead of the time of day's sun, once a slider is moved
 // Not in EmberEngine yet, so not offered: contact shadows, ambient occlusion, render scale (maxDpr), the moon's
 // sliders (the moon stands where MapStage's moon placement puts it).

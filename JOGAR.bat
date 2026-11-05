@@ -1,11 +1,10 @@
 @echo off
-rem JOGAR.bat - dois cliques e o jogo abre: sempre o ultimo build local (build\release\bin\Sandbox.exe),
-rem o mesmo que o Claude compila depois de cada mudanca. A arte vem de C:\EmberEngine\build.
+rem JOGAR.bat - dois cliques e o jogo abre com o build local do editor. A arte vem de C:\EmberEngine\build.
 setlocal EnableExtensions
 set "HERE=%~dp0"
 if "%HERE:~-1%"=="\" set "HERE=%HERE:~0,-1%"
-set "ART=C:\EmberEngine\build"
-set "EXE=C:\EmberEngine\build\release\bin\Sandbox.exe"
+set "ART=%~dp0build"
+set "EXE=%ART%\release\bin\Sandbox.exe"
 cd /d "%HERE%"
 
 if not exist "%EXE%" (
@@ -13,7 +12,32 @@ if not exist "%EXE%" (
   goto :fim
 )
 
-set "GROUND=%ART%\ground\ground-v40.pak"
+set "GROUND=%ART%\ground\ground-v67.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v66.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v65.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v64.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v61.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v60.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v59.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v58.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v57.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v56.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v55.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v54.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v53.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v52.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v51.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v50.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v49.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v48.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v47.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v46.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v45.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v44.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v43.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v42.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v41.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v40.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v38.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v37.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v36.pak"
@@ -52,7 +76,22 @@ if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v4.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v3.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v2.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground.pak"
-set "MESHES=%ART%\meshes\props-v8.pak"
+set "MESHES=%ART%\meshes\props-v37.pak"
+if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v36.pak"
+if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v35.pak"
+if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v34.pak"
+if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v33.pak"
+if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v32.pak"
+if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v17.pak"
+if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v16.pak"
+if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v15.pak"
+if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v14.pak"
+if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v13.pak"
+if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v12.pak"
+if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v11.pak"
+if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v10.pak"
+if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v9.pak"
+if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v8.pak"
 if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v6.pak"
 if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v5.pak"
 if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v4.pak"
@@ -69,9 +108,9 @@ move /y "%ART%\sprites\battle-new.pak" "%ART%\sprites\battle.pak" >nul
 set "SPRITES=%ART%\sprites\battle.pak"
 if not exist "%SPRITES%" set "SPRITES=%ART%\sprites\battle-v2.pak"
 set "HEROES="
-if exist "%ART%\engine2-scenes\roster.json" set "HEROES=--heroes %ART%\engine2-scenes\roster.json"
+if exist "%ART%\scenes\roster.json" set "HEROES=--heroes %ART%\scenes\roster.json"
 
-for %%P in ("%GROUND%" "%SPRITES%" "%MESHES%" "%ART%\engine2-scenes" "%HERE%\content\maps\ember" "%HERE%\content\game\public" "%HERE%\content\engine2\battle-rules.json") do (
+for %%P in ("%GROUND%" "%SPRITES%" "%MESHES%" "%ART%\scenes" "%HERE%\content\maps\ember" "%HERE%\content\assets" "%HERE%\content\data\battle-rules.json") do (
   if not exist %%P (
     echo Falta %%~P
     echo Tire uma foto desta tela e mande para o Claude.
@@ -80,7 +119,7 @@ for %%P in ("%GROUND%" "%SPRITES%" "%MESHES%" "%ART%\engine2-scenes" "%HERE%\con
 )
 
 echo Abrindo o Ember...
-"%EXE%" --title --ground "%GROUND%" --sprites "%SPRITES%" --meshes "%MESHES%" --scenes "%ART%\engine2-scenes" --maps "%HERE%\content\maps\ember" --game-assets "%HERE%\content\game\public" %HEROES% > "%HERE%\JOGAR-log.txt" 2>&1
+"%EXE%" --title --ground "%GROUND%" --sprites "%SPRITES%" --meshes "%MESHES%" --scenes "%ART%\scenes" --maps "%HERE%\content\maps\ember" --game-assets "%HERE%\content\assets" %HEROES% > "%HERE%\JOGAR-log.txt" 2>&1
 set "RUNERR=%ERRORLEVEL%"
 if not "%RUNERR%"=="0" (
   echo.

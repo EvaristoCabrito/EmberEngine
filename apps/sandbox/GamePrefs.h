@@ -1,8 +1,8 @@
 #pragma once
 
-// The player's choices (Engine2 src/game/gamePreferences.ts + audio.ts), kept in %LOCALAPPDATA%\Ember\game-preferences.json,
-// and the interface's language: tr() is Engine2's uiText (its English dictionary, content/engine2/ui-text.json from
-// tools/scripts/engine2/export_help.ts, or the English a screen gives inline); translated() is its translatedText for
+// The player's choices (Ember src/game/gamePreferences.ts + audio.ts), kept in %LOCALAPPDATA%\Ember\game-preferences.json,
+// and the interface's language: tr() is Ember's uiText (its English dictionary, content/data/ui-text.json from
+// tools/scripts/data/export_help.ts, or the English a screen gives inline); translated() is its translatedText for
 // dialogue lines. The Opções window (EmberMenus.h) changes them.
 
 #include <algorithm>
@@ -34,6 +34,14 @@ struct GamePrefs {
   // Saved as "characterArt"; a file with only the old "characters" keeps an explicit "leve", its "alta" (the old default)
   // becomes the new default.
   std::string characters = "media";
+  // Opções > Gráficos > Luz do grupo (the user, 2026-10-28: "o efeito pode existir guardado para depois"): on the world map at
+  // night, a soft circle of light around the party and the rest of the map darker. OFF by default.
+  bool partyLight = false;
+  // Opções > Gráficos > Texturas 3D (the user, 2026-10-29: Alta 2K, Média 1K, Leve 512, all from the one cooked file, capped at 2K):
+  // the largest size any 3D object's texture loads at; a smaller texture keeps its own size. Default Alta (what every map showed
+  // before). Read when a map opens; MeshScene streams within it, the characters' sprites served first. Saved as "meshTextures"; a
+  // file with only the old "textures3d" keeps its look ("media" was the cooked size = Alta, "leve" one size under = Média).
+  std::string textures3d = "alta";
 
   static std::filesystem::path path() {
     const char* base = std::getenv("LOCALAPPDATA");
@@ -60,13 +68,18 @@ struct GamePrefs {
     const std::string art = j.value("characterArt", std::string());
     if (art == "alta" || art == "media" || art == "leve") p.characters = art;
     else if (j.value("characters", std::string()) == "leve") p.characters = "leve";
+    p.partyLight = j.value("partyLight", p.partyLight);
+    const std::string tex = j.value("meshTextures", std::string());
+    if (tex == "alta" || tex == "media" || tex == "leve") p.textures3d = tex;
+    else if (j.value("textures3d", std::string()) == "leve") p.textures3d = "media";
     return p;
   }
   bool save() const {
     const nlohmann::json j = {{"muted", muted},           {"cutsceneEnabled", cutsceneEnabled}, {"music", music},
                               {"sfx", sfx},               {"cutscene", cutscene},               {"uiLanguage", uiLanguage},
                               {"dialogueLanguage", dialogueLanguage}, {"subtitleLanguage", subtitleLanguage},
-                              {"subtitles", subtitles},   {"dialogueScale", dialogueScale},     {"characterArt", characters}};
+                              {"subtitles", subtitles},   {"dialogueScale", dialogueScale},     {"characterArt", characters},
+                              {"partyLight", partyLight}, {"meshTextures", textures3d}};
     std::error_code ec;
     std::filesystem::create_directories(path().parent_path(), ec);
     const std::filesystem::path tmp = path().string() + ".tmp";
@@ -89,10 +102,10 @@ inline GamePrefs& gamePrefs() {
 // --- the interface's language (gamePreferences.ts uiText / translatedText) ----------------------------------------------
 
 inline bool uiEnglish() { return gamePrefs().uiLanguage == "en"; }
-// Engine2's dictionary (content/engine2/ui-text.json, export_help.ts): Portuguese -> English.
+// Ember's dictionary (content/data/ui-text.json, export_help.ts): Portuguese -> English.
 inline const nlohmann::json& uiDictionary() {
   static const nlohmann::json dict = [] {
-    std::ifstream in("content/engine2/ui-text.json", std::ios::binary);
+    std::ifstream in("content/data/ui-text.json", std::ios::binary);
     const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
     return j.is_object() && j.contains("english") && j["english"].is_object() ? j["english"] : nlohmann::json::object();
   }();
