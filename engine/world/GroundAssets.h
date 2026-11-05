@@ -172,7 +172,7 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
 inline std::string skyMoonAsset(std::string_view phase) { return "sky/moon/" + std::string(phase) + ".tex"; }
 // Céu de Andrômeda (star look 005): the user's painting of the sky, horizontally repeatable (Attachments/andromeda_ceu_repetivel.jpg,
 // 5544 x 2048), content/sky/andromeda/<file>, BC7 sRGB.
-inline constexpr const char* kAndromedaSkyPainting = "skylayer-b-panorama-q92-v01.jpg";  // the user's 8192 x 4096 sky (2026-11-03): the sky
+inline constexpr const char* kAndromedaSkyPainting = "andromeda-sky-360-v01.png";  // andromeda_sky_360_8192x4096 (the user, 2026-11-05: "o céu padrão"); was skylayer-b-panorama-q92-v01.jpg  // the user's 8192 x 4096 sky (2026-11-03): the sky
 inline std::string skyAndromedaAsset(std::string_view file) { return "sky/andromeda/" + std::string(file) + ".tex"; }
 
 }  // namespace ember
