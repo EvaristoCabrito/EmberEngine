@@ -39,6 +39,9 @@
 #include <string_view>
 #include <vector>
 
+#include "world/Atmos2.h"
+#include <chrono>
+#include <cmath>
 #include "world/SceneBuilder.h"
 #include "world/MapDressing.h"
 #include "ArchitectureCooker.h"
@@ -480,6 +483,124 @@ int checkDressCommand(const std::vector<std::string_view>& args) {
   return ember::checkDress(std::filesystem::path(args[1]), tables, catalog) == 0 ? 0 : 1;
 }
 
+
+// Atmos 2 (docs/ATMOS2.md): the living atmosphere's offline spin-up and acceptance tests.
+int atmos2Spinup(const std::vector<std::string_view>& args) {
+  if (args.empty()) { ember::logError("usage: Cooker atmos2-spinup <out.bin> [days=75]"); return 1; }
+  const int days = args.size() > 1 ? std::stoi(std::string(args[1])) : 75;
+  ember::atmos2::Core core;
+  core.coldStart();
+  const auto t0 = std::chrono::steady_clock::now();
+  const std::int64_t steps = static_cast<std::int64_t>(days) * 86400 / static_cast<std::int64_t>(ember::atmos2::kDt);
+  for (std::int64_t s = 0; s < steps; ++s) {
+    core.tick();
+    if (!core.finite()) { ember::logError("atmos2-spinup: NaN at step {} (day {:.2f})", core.step(), core.worldSeconds() / 86400.0); return 2; }
+    if (s % 4800 == 4799)
+      ember::logInfo("atmos2-spinup: day {:.0f}: mass {:.2f} hPa, max wind {:.1f} m/s, absorbed {:.1f} / emitted {:.1f} W/m2", core.worldSeconds() / 86400.0,
+                     core.totalMass(), core.maxWind(), core.meanAbsorbed(), core.meanEmitted());
+  }
+  const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+  if (!core.save(std::string(args[0]))) { ember::logError("atmos2-spinup: cannot write {}", args[0]); return 1; }
+  ember::logInfo("atmos2-spinup: {} steps ({} days) in {:.1f} s = {:.2f} ms a step; state {} at step {}", steps, days, ms / 1000.0, ms / static_cast<double>(steps), args[0], core.step());
+  return 0;
+}
+
+int atmos2Test(const std::vector<std::string_view>& args) {
+  if (args.empty()) { ember::logError("usage: Cooker atmos2-test <state.bin> [days=90]"); return 1; }
+  const int days = args.size() > 1 ? std::stoi(std::string(args[1])) : 90;
+  ember::atmos2::Core a, b;
+  if (!a.load(std::string(args[0]))) { ember::logError("atmos2-test: cannot read {}", args[0]); return 1; }
+  b = a;
+  bool pass = true;
+  // Repeatable: two runs from the same state give the same bits
+  a.run(200); b.run(200);
+  const bool sameBits = a.exportState() == b.exportState();
+  ember::logInfo("atmos2-test repeatable (200 steps, same bits): {}", sameBits ? "PASS" : "FAIL");
+  pass &= sameBits;
+  // Round trip: export -> import -> export identical
+  ember::atmos2::Core c;
+  const bool roundTrip = c.importState(a.exportState()) && c.exportState() == a.exportState();
+  ember::logInfo("atmos2-test state round trip: {}", roundTrip ? "PASS" : "FAIL");
+  pass &= roundTrip;
+  // Stable: N days, no NaN, jets between 40 and 100 m/s; energy balance; moving storms at 45 deg; speed
+  const std::int64_t steps = static_cast<std::int64_t>(days) * 86400 / static_cast<std::int64_t>(ember::atmos2::kDt);
+  const int row45 = static_cast<int>((45.0 - ember::atmos2::kLatSouth) / ember::atmos2::kDlat);
+  std::vector<double> psMin(ember::atmos2::kNx, 1e9), psMax(ember::atmos2::kNx, -1e9), psMean(ember::atmos2::kNx, -1.0);
+  double absorbed = 0.0, emitted = 0.0, maxWind = 0.0, worstMs = 0.0, totalMs = 0.0;
+  int lowCentreFirst = -1, lowCentreLast = -1;
+  std::int64_t eastward = 0, westward = 0;
+  int prevCentre = -1;
+  for (std::int64_t s = 0; s < steps; ++s) {
+    const auto t0 = std::chrono::steady_clock::now();
+    a.tick();
+    const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+    totalMs += ms; worstMs = std::max(worstMs, ms);
+    if (!a.finite()) { ember::logError("atmos2-test: NaN at step {} (day {:.2f})", a.step(), a.worldSeconds() / 86400.0); return 2; }
+    if (s % 20 == 0) {  // every hour
+      maxWind = std::max(maxWind, a.maxWind());
+      absorbed += a.meanAbsorbed(); emitted += a.meanEmitted();
+      int centre = 0; double lowest = 1e9;
+      for (int i = 0; i < ember::atmos2::kNx; ++i) {
+        const double p = a.ps()[static_cast<size_t>(row45 * ember::atmos2::kNx + i)];
+        psMin[static_cast<size_t>(i)] = std::min(psMin[static_cast<size_t>(i)], p); psMax[static_cast<size_t>(i)] = std::max(psMax[static_cast<size_t>(i)], p);
+        double& mean = psMean[static_cast<size_t>(i)];
+        mean = mean < 0.0 ? p : mean + (p - mean) / 240.0;  // a 10-day running mean
+        const double anomaly = p - mean;
+        if (anomaly < lowest) { lowest = anomaly; centre = i; }
+      }
+      if (prevCentre >= 0) {
+        const int d = ((centre - prevCentre) % ember::atmos2::kNx + ember::atmos2::kNx + ember::atmos2::kNx / 2) % ember::atmos2::kNx - ember::atmos2::kNx / 2;
+        if (d > 0 && d < 8) ++eastward; else if (d < 0 && d > -8) ++westward;
+      }
+      prevCentre = centre;
+      if (lowCentreFirst < 0) lowCentreFirst = centre;
+      lowCentreLast = centre;
+    }
+  }
+  const double hours = static_cast<double>(steps / 20);
+  double maxSwing = 0.0;
+  for (int i = 0; i < ember::atmos2::kNx; ++i) maxSwing = std::max(maxSwing, psMax[static_cast<size_t>(i)] - psMin[static_cast<size_t>(i)]);
+  const bool stable = maxWind >= 40.0 && maxWind <= 100.0;
+  const bool energy = std::abs(absorbed / hours - emitted / hours) <= 5.0;
+  const bool storms = maxSwing > 3.0 && eastward > westward;
+  const bool speed = totalMs / static_cast<double>(steps) < 3.0;
+  ember::logInfo("atmos2-test stable ({} days, no NaN; strongest wind {:.1f} m/s, want 40..100): {}", days, maxWind, stable ? "PASS" : "FAIL");
+  ember::logInfo("atmos2-test energy balance (absorbed {:.1f}, emitted {:.1f} W/m2, within 5): {}", absorbed / hours, emitted / hours, energy ? "PASS" : "FAIL");
+  ember::logInfo("atmos2-test moving storms at 45 deg (ps swing {:.1f} hPa > 3; low centre moved east {} h, west {} h; first cell {}, last {}): {}", maxSwing, eastward, westward, lowCentreFirst, lowCentreLast, storms ? "PASS" : "FAIL");
+  ember::logInfo("atmos2-test speed ({:.2f} ms a step, worst {:.2f}; under 3): {}", totalMs / static_cast<double>(steps), worstMs, speed ? "PASS" : "FAIL");
+  {
+    static const char* kParts[10] = {"transport", "forces", "continuity", "vertical", "radiation", "surface", "convection", "phase", "rain", "smoothing"};
+    std::string prof;
+    for (int i = 0; i < 10; ++i) prof += std::format("{} {:.2f}  ", kParts[i], a.profile_[static_cast<size_t>(i)] / static_cast<double>(steps + 200));
+    ember::logInfo("atmos2-test ms a step by part: {}", prof);
+  }
+  pass &= stable && energy && storms && speed;
+  ember::logInfo("atmos2-test: {}", pass ? "PASS" : "FAIL");
+  return pass ? 0 : 3;
+}
+
+// The weather at one point, hour by hour: what the game would read.
+int atmos2Sample(const std::vector<std::string_view>& args) {
+  if (args.size() < 3) { ember::logError("usage: Cooker atmos2-sample <state.bin> <lon> <lat> [hours=48]"); return 1; }
+  ember::atmos2::Core core;
+  if (!core.load(std::string(args[0]))) { ember::logError("atmos2-sample: cannot read {}", args[0]); return 1; }
+  const double lon = std::stod(std::string(args[1])), lat = std::stod(std::string(args[2]));
+  const int hours = args.size() > 3 ? std::stoi(std::string(args[3])) : 48;
+  const int i = ((static_cast<int>(std::floor((lon + 180.0) / ember::atmos2::kDlon)) % ember::atmos2::kNx) + ember::atmos2::kNx) % ember::atmos2::kNx;
+  const int j = std::min(ember::atmos2::kNy - 1, std::max(0, static_cast<int>(std::floor((lat - ember::atmos2::kLatSouth) / ember::atmos2::kDlat))));
+  const int cell = j * ember::atmos2::kNx + i;
+  ember::logInfo("atmos2-sample: cell ({}, {}) {} at {} m", i, j, core.land()[static_cast<size_t>(cell)] ? "land" : "sea", core.terrain()[static_cast<size_t>(cell)]);
+  for (int h = 0; h < hours; ++h) {
+    core.run(20);
+    const size_t s = static_cast<size_t>(cell);
+    ember::logInfo("h {:3}: T {:5.1f} C  Ts {:5.1f}  rh {:.2f}  ps {:6.1f}  wind {:5.1f} m/s  cover {:.2f}/{:.2f}  rain {:.2f} mm/h  conv {:.2f}  wet {:.2f}", h,
+                   core.surfaceAirTemperature(cell) - 273.15, core.ts()[s] - 273.15, core.relativeHumidity(ember::atmos2::kLow, cell), core.ps()[s],
+                   std::hypot(core.layer(0).u[s], core.layer(0).v[s]), core.cloudCover(0, cell), core.cloudCover(1, cell), core.diagnostics().rain[s],
+                   core.diagnostics().convection[s], core.wet()[s]);
+  }
+  return 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -501,6 +622,9 @@ int main(int argc, char** argv) {
   if (command == "check-battle") return checkBattleCommand(args);
   if (command == "check-battle-export") return checkBattleExportCommand(args);
   if (command == "prepare-map") return prepareMapCommand(args);
+  if (command == "atmos2-spinup") return atmos2Spinup(args);
+  if (command == "atmos2-test") return atmos2Test(args);
+  if (command == "atmos2-sample") return atmos2Sample(args);
   if (command == "export-battle") return exportBattleCommand(args);
   if (command == "export-scene") return exportSceneCommand(args);
   if (command == "check-campaign") return checkCampaignCommand(args);

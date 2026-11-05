@@ -1,6 +1,7 @@
 #pragma once
 #include "TempoPanel.h"
 #include "world/TempoConsumers.h"
+#include "world/Atmos2Service.h"
 #include "world/TempoSave.h"
 
 // The campaign's world map, copied from Ember (src/game/OverworldMapScreen.tsx, GameApp's overworld handlers and
@@ -823,8 +824,9 @@ class OverworldStage : public Stage {
     }
     // Campaign: read-only weather status. Editing belongs to Modo teste and the editor.
     {
-      const auto weather=worldTempoTimeline_.at(ember::campaignMilliseconds(save_));
-      const char* state=!worldTempoConfig_.enabled?"Desligado":weather.value(ember::tempo::Rain)>.5?"Chuva forte":
+      const auto weather=worldSampleNow();
+      const bool snowing=weather.value(ember::tempo::Rain)>.05 && weather.value(ember::tempo::Temperature)<.5;
+      const char* state=!worldTempoConfig_.enabled?"Desligado":snowing?"Neve":weather.value(ember::tempo::HeavyRain)>.3&&weather.value(ember::tempo::Lightning)>.05?"Tempestade":weather.value(ember::tempo::Rain)>.5?"Chuva forte":
         weather.value(ember::tempo::Rain)>.05?"Chuva":weather.value(ember::tempo::Fog)>.2?"Neblina":
         weather.value(ember::tempo::Low)>.7?"Nublado":weather.value(ember::tempo::Low)>.35?"Parcialmente nublado":"Limpo";
       const auto label=std::format("TEMPO: {}",state);
@@ -1447,7 +1449,7 @@ class OverworldStage : public Stage {
     // sempre ligado (a previsão do jogo nunca desliga): a chave "enabled" do painel de teste não para o clima da pintura
     ember::tempo::Config always = worldTempoConfig_;
     always.enabled = true;
-    const ember::tempo::Sample s = ember::tempo::at(ember::campaignMilliseconds(save_), always);
+    const ember::tempo::Sample s = worldSampleNow();
     const ember::tempo::Controls k = ember::tempo::controls(s);
     const float rain = std::clamp(std::max(k.rain, k.heavyRain * 0.8f), 0.0f, 1.0f), cover = std::clamp(k.coverage, 0.0f, 1.0f);
     if (shownRain_ < 0.0f) shownRain_ = rain, shownCover_ = cover;
@@ -1470,6 +1472,22 @@ class OverworldStage : public Stage {
       if (strike) w.flash = age < 0.10f ? 1.0f - age / 0.10f : age >= 0.18f && age < 0.24f ? 0.5f * (1.0f - (age - 0.18f) / 0.06f) : 0.0f;
     }
     return w;
+  }
+
+  // A previsão de agora: a Atmos 2 (atmosfera viva, docs/ATMOS2.md) na posição do grupo e na hora da campanha quando ela roda e
+  // está ligada; senão o Tempo semeado. A posição do grupo (o hex do mapa-múndi) vira longitude / latitude (content/atmos2/config.json).
+  ember::tempo::Sample worldSampleNow() const {
+    auto& atmos = ember::atmos2::Service::instance();
+    const auto ms = ember::campaignMilliseconds(save_);
+    if (atmos.running() && atmos.enabled()) {
+      const ember::Json& pos = save_["overworldPos"];
+      atmos.setOverworldHex(pos.value("col", 0), pos.value("row", 0));
+      atmos.setGameTime(ms);
+      return ember::atmos2::Service::toTempo(atmos.sample(ms));
+    }
+    ember::tempo::Config always = worldTempoConfig_;
+    always.enabled = true;
+    return ember::tempo::at(ms, always);
   }
 
   // What one explored hex clears: a soft circle (radius 9 % of the image, solid to 65 %) around it; a hex within two hex steps

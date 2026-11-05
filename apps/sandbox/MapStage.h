@@ -1,6 +1,7 @@
 #include "world/CampaignTime.h"
 #include "world/TempoSave.h"
 #include "world/TempoConsumers.h"
+#include "world/Atmos2Service.h"
 #include "TempoPanel.h"
 #pragma once
 
@@ -796,6 +797,7 @@ class MapStage final : public Stage {
     const bool tempoActive=tempoConfig_.enabled;
     const auto tempoState=tempoActive?tempoNow():ember::tempo::Sample{};
     const auto tempoEffects=ember::tempo::controls(tempoState);
+    ember::atmos2::Service::instance().setGameTime(tempoMillisecondsNow());
     WeatherFx::TempoMotion tempoMotion{{tempoEffects.windX,tempoEffects.windZ},tempoEffects.heavyRain,0,0};
     if(tempoActive) {
       const auto minute=ember::tempo::floorDiv(tempoMillisecondsNow(),60000);
@@ -812,18 +814,29 @@ class MapStage final : public Stage {
     // TER EFEITOS DE CLIMA"); the Tempo's natural weather drives a map that chose none. Before, the Tempo (on by default) replaced
     // the map's choice by its own rain, so no Clima button did anything.
     const bool mapWeather = !weatherKind_.empty() && weatherKind_ != "none";
-    const std::string_view activeWeather = mapWeather ? std::string_view(weatherKind_) : tempoActive ? std::string_view("rain") : std::string_view();
-    const float activeIntensity = mapWeather ? weatherIntensity_ : tempoActive ? tempoEffects.rain : 0.0f;
+    // The forecast's own kind (the user, 2026-11-05: "cadê chuva fraca, cadê neve, cadê tempestade, vento?"): snow when the air is
+    // under 0.5 C, a storm when the rain is heavy or lightning is about, else rain; the wind of the forecast. Before, the natural
+    // weather always handed over "rain" at the map's own wind slider.
+    const float tempoTemperature = static_cast<float>(tempoState.value(ember::tempo::Temperature));
+    const bool tempoRaining = tempoEffects.rain > 0.0f || tempoEffects.heavyRain > 0.0f;
+    const std::string_view tempoKind = !tempoActive || !tempoRaining ? std::string_view()
+        : tempoTemperature < 0.5f ? std::string_view("snow")
+        : (tempoEffects.heavyRain > 0.3f || tempoEffects.lightning > 0.05f) ? std::string_view("storm") : std::string_view("rain");
+    const float tempoIntensity = std::clamp(std::max(tempoEffects.rain, tempoEffects.heavyRain), 0.0f, 1.0f);
+    const float tempoWind = std::clamp(static_cast<float>(tempoState.value(ember::tempo::WindSpeed)) / 20.0f, 0.05f, 1.0f);
+    const std::string_view activeWeather = mapWeather ? std::string_view(weatherKind_) : tempoKind;
+    const float activeIntensity = mapWeather ? weatherIntensity_ : tempoIntensity;
+    const float activeWind = mapWeather ? weatherWind_ : tempoWind;
     if (board_ && !interiorMap() && !activeWeather.empty() && activeWeather != "none" && activeIntensity>0) {
       weatherFrame_ = spellFx_.vfx();
-      const float flash = WeatherFx::append(weatherFrame_, activeWeather, activeIntensity, weatherWind_,
+      const float flash = WeatherFx::append(weatherFrame_, activeWeather, activeIntensity, activeWind,
           time, camera, cam_.target, [this](float x, float z) { return static_cast<float>(ember::groundHeightAt(*board_, look_, x, z)); }, tempoActive && !mapWeather ? &tempoMotion : nullptr);
       if (flash > 0) lights_.push_back(classicLight(cam_.target + glm::vec3(0,18,0), {.78f,.86f,1.0f}, flash*12.0f, 65.0f, 1.25f));
       renderer.setVfx(weatherFrame_);
     } else renderer.setVfx(spellFx_.vfx());
       if (time - weatherLogAt_ > 5.0f) {  // what the weather hands over (a diagnostic line every 5 s)
         weatherLogAt_ = time;
-        logInfo("weather: {} x{:.2f} wind {:.2f}: {} draws, {} vertices (spells {} draws)", activeWeather, activeIntensity, weatherWind_,
+        logInfo("weather: {} x{:.2f} wind {:.2f}: {} draws, {} vertices (spells {} draws)", activeWeather, activeIntensity, activeWind,
                 weatherFrame_.draws.size(), weatherFrame_.vertices.size(), spellFx_.vfx().draws.size());
       }
     renderer.setLights(lights_);
@@ -2043,6 +2056,21 @@ class MapStage final : public Stage {
           })) {
         noFog_ = look == 0;
         if (!noFog_) fogLook_ = static_cast<uint32_t>(look - 1);
+    {
+      auto& atmos = ember::atmos2::Service::instance();
+      if (atmos.running()) {
+        int on = atmos.enabled() ? 1 : 0;
+        static const char* kAtmos2[2] = {"OFF (Tempo semeado)", "viva"};
+        if (dropdown("Atmos 2", on, 2, [](int i) { return std::string(kAtmos2[i]); })) atmos.setEnabled(on == 1);
+        if (atmos.enabled()) {
+          const auto w = atmos.sample(tempoMillisecondsNow());
+          ImGui::TextWrapped("%s · %.1f C (sensação %.1f) · umidade %.0f%% · vento %.1f m/s · chuva %.2f mm/h · nuvens %.0f%%/%.0f%% · visibilidade %.1f km · passo %lld%s",
+                             atmos.stateLabel(w).c_str(), w.airTemperatureC, w.feelsLikeC, w.humidity * 100.0, std::hypot(w.windLowX, w.windLowZ), w.rainMmPerHour,
+                             w.coverLow * 100.0, w.coverHigh * 100.0, w.visibilityKm, static_cast<long long>(w.step),
+                             atmos.behindSteps() > 1 ? std::format(" (alcançando: faltam {})", atmos.behindSteps()).c_str() : "");
+        }
+      }
+    }
       }
     }
     ImGui::PopItemWidth();
@@ -2480,7 +2508,12 @@ class MapStage final : public Stage {
     if(gameHour_<0 && scene_) return day*86400000+static_cast<std::int64_t>(ember::mapHour(scene_->timeOfDay)*3600000.0f);
     return campaignMillisecondsNow();
   }
-  const ember::tempo::Sample tempoNow() const { return tempoTimeline_.at(tempoMillisecondsNow()); }
+  // The weather now: Atmos 2 (the living atmosphere, docs/ATMOS2.md) when it runs and is on, else the seeded Tempo of world/Tempo.h.
+  const ember::tempo::Sample tempoNow() const {
+    const auto& atmos = ember::atmos2::Service::instance();
+    if (atmos.running() && atmos.enabled()) return ember::atmos2::Service::toTempo(atmos.sample(tempoMillisecondsNow()));
+    return tempoTimeline_.at(tempoMillisecondsNow());
+  }
   ember::tempo::Config tempoConfig() const { return tempoConfig_; }
   std::int64_t campaignMillisecondsNow() const {
     return (options_.campaignMinute+elapsedBattleMinutes_)*60000+options_.campaignSubMinuteMs+explorationMilliseconds_;

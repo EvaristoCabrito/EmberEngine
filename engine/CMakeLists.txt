@@ -82,6 +82,8 @@ add_library(EmberEngine STATIC
   world/Locais.cpp
   world/Overworld.cpp
   world/Underworld.cpp
+  world/Atmos2.cpp
+  world/Atmos2Service.cpp
   world/Inn.cpp
   world/Quests.cpp
   world/Companions.cpp

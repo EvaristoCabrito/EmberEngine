@@ -1,0 +1,7 @@
+{
+  "comment": "Atmos 2 (docs/ATMOS2.md): where the realm lies on the planet. The world map's hex (col, row) becomes lon = originLon + col * degreesPerCol, lat = originLat - row * degreesPerRow.",
+  "originLon": -8.0,
+  "originLat": 46.0,
+  "degreesPerCol": 0.05,
+  "degreesPerRow": 0.045
+}

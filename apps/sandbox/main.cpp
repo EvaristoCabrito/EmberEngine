@@ -56,6 +56,7 @@
 // A capture exits with code 2 if the Vulkan validation layer reported any error.
 
 #include <SDL3/SDL.h>
+#include "world/Atmos2Service.h"
 #include <imgui.h>
 
 #include <algorithm>
@@ -117,6 +118,7 @@ using Clock = std::chrono::steady_clock;
 constexpr double kFrameBudgetMs = 1000.0 / 60.0;
 
 struct Options {
+  int atmos2 = 1;  // Atmos 2: -1 not started, 0 OFF, 1 viva (default)
   std::string capture;
   std::string stream;
   std::string verify;
@@ -299,6 +301,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--sky-reflect" && hasValue) o.skyReflect = std::atoi(argv[++i]);
     else if (arg == "--cloud-look" && hasValue) o.cloudLook=std::clamp(std::atoi(argv[++i]),0,7);
     else if (arg == "--clouds" && hasValue) o.clouds = std::atoi(argv[++i]);
+    else if (arg == "--atmos2" && hasValue) o.atmos2 = std::atoi(argv[++i]);  // -1 never started, 0 started but OFF, 1 on (default)
     else if (arg == "--clouds-quality" && hasValue) o.cloudQuality = std::atoi(argv[++i]);
     else if (arg == "--glare" && hasValue) o.glare = std::atoi(argv[++i]);
     else if (arg == "--shafts" && hasValue) o.shafts = std::atoi(argv[++i]);
@@ -1090,6 +1093,12 @@ int runCapture(const Options& o) {
 
 int runWindow(const Options& o) {
   const auto bootStart = Clock::now();
+  // Atmos 2, the living atmosphere (docs/ATMOS2.md): one planet for the whole game, stepping only with the game's clock.
+  {
+    auto& atmos = ember::atmos2::Service::instance();
+    if (o.atmos2 >= 0 && !atmos.start("content/atmos2/state-v01.bin", "content/atmos2/config.json")) ember::logWarn("atmos2: not started");
+    atmos.setEnabled(o.atmos2 != 0);
+  }
   const auto bootMs = [&] { return std::chrono::duration<double, std::milli>(Clock::now() - bootStart).count(); };
   const bool titleMode = o.title || (o.map.empty() && !o.battle && o.sprites.empty() && o.meshes.empty() && o.stream.empty());
   // The campaign's save bank (save.ts) and the world map's rules (overworld.ts), Ember's tables.
@@ -1768,6 +1777,7 @@ int runWindow(const Options& o) {
   }
   if(hasCampaign) campaign.flush();
   const int testResult = o.measureSeconds > 0.0f && stage && !stage->passed() ? 3 : 0;
+  ember::atmos2::Service::instance().stop();
   AudioMixer::get().shutdown();  // before SDL closes with the window
   return testResult;
 }
