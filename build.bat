@@ -51,6 +51,9 @@ if errorlevel 1 (
   echo [ERRO] cmake --preset %CONFIG% falhou.
   exit /b 1
 )
+rem Todo objeto do jogo precisa ter os cabecalhos registrados no ninja (senao mudar um .h nao recompila nada; 2026-11-05):
+rem um objeto sem registro (compilado fora desta pasta e copiado) e posto de lado e compilado de novo.
+python -I "%~dp0tools\scripts\check_build_deps.py" "%~dp0build\%CONFIG%"
 echo Compilando %CONFIG%...
 cmake --build --preset %CONFIG%
 if errorlevel 1 (
