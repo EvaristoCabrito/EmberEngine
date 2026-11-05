@@ -1091,7 +1091,7 @@ class MapStage final : public Stage {
         const float hour = clockOn() ? cycleHour(now_) : mapNight ? 22.0f + std::fmod(now_ / 600.0f, 2.0f) : 12.0f;
         const float lst = andromedaSky_.siderealHours(hour);
         const glm::vec4 none[2]{};
-        renderer.setStars({}, andromedaSky_.galacticPole(lst), andromedaSky_.galacticCentre(lst), 0.0f, none);
+        renderer.setStars(andromedaSky_.gpuStars(lst), andromedaSky_.galacticPole(lst), andromedaSky_.galacticCentre(lst), 0.0f, none);  // its own bright stars over the painting (the user, 2026-11-04: both sets)
         requestAndromedaSky();
         const uint32_t painting[4] = {ground_.textureIndex(ember::skyAndromedaAsset(ember::kAndromedaSkyPainting)), kNoTextureIndex,
                                       kNoTextureIndex, kNoTextureIndex};

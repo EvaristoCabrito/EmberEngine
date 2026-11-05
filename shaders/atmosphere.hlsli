@@ -503,7 +503,7 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
         const float boost = a.sunDisc != 0 ? 1.0 : clamp(dot(a.sunIlluminance, float3(0.2126, 0.7152, 0.0722)) * 0.4, 1.0, 6.0);
         if (a.starLook == 5u)  // the painting as painted: its light divided by the exposure applied below (kPaintingWhite: ACES's 1)
           radiance += andromedaSky(f.atmosphere, dir, pixelAngle) * kPaintingWhite * night * air / max(f.exposure, 1e-6);
-        else
+        // both sets (the user, 2026-11-04): the painting, then the stars over it
           radiance += realStars(f.atmosphere, dir, pixelAngle) * night * boost * air * a.skyScale;
       } else {
         // The star looks were tuned against the dim moonlit sky of light mode 2; under a brighter moon ("Luar: cinema") the
