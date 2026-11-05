@@ -2841,7 +2841,9 @@ class MapEditorStage : public Stage {
       ImGui::SetNextItemWidth(-1);
       if (ImGui::BeginCombo("##Hora do dia", shown.c_str())) {
         for (const auto& t : editor_.timeOfDay)
-          if (ImGui::Selectable(t.label.c_str(), t.id == tod)) beginEdit(), draft_["timeOfDay"] = t.id, draft_["sunIntensity"] = t.key, draft_["ambientIntensity"] = t.ambient;
+          if (ImGui::Selectable(t.label.c_str(), t.id == tod))
+            beginEdit(), draft_["timeOfDay"] = t.id, draft_["sunIntensity"] = t.key, draft_["ambientIntensity"] = t.ambient,
+                draft_["timeOfDayManual"] = true;  // chosen by hand: it wins over the default night (MapStage, MapDraft::timeOfDayManual)
         ImGui::EndCombo();
       }
       // The moon's nine phases, the blood moon included (the user, 2026-10-23: "temos 9 fases, incluindo bloodmoon o editor tem que

@@ -142,6 +142,9 @@ struct MapDraft {
   // Crossing 021; the user, 2026-10-29: "lower it like most others"): one pond took the whole board's edge 1.35 above its floor. The
   // beds stay inside the board, enclosed by its banks. Every other map: false (the lowest ground of all, water included).
   bool emberFloorOverWater = false;
+  // The map's time of day was chosen by hand in the Map Editor (the user, 2026-11-05: night by default "unless I change it
+  // manually"): the map opens at its own hour, not at the default 22 h.
+  bool timeOfDayManual = false;
   // EmberEngine's own: an underground map ("Subterrâneo" in the Map Editor's Ambiente; the user, 2026-10-21): the only maps free of
   // the sun, the moon and the sky. Every other map takes the game's real clock (real sun, real moon).
   bool underground = false;
