@@ -126,6 +126,7 @@ WorldMapConfig WorldMapConfig::load(const std::filesystem::path& file, bool unde
   c.vignetteSoft = g.value("vignetteSoftness", c.vignetteSoft);
   c.shoulder = g.value("shoulder", c.shoulder);
   c.hourEase = j.value("hourEaseSeconds", c.hourEase);
+  c.fixedHour = j.value("fixedHour", c.fixedHour);
   if (const nlohmann::json hours = j.value("hours", nlohmann::json::array()); hours.is_array() && !hours.empty()) {
     c.keys.clear();
     for (const nlohmann::json& k : hours) {

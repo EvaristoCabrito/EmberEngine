@@ -96,6 +96,8 @@ struct WorldMapConfig {
   float lowScale = 18, lowSpeed = 0.025f, lowHeight = 1, lowThreshold = 0.32f;
   float vignette = 0.45f, vignetteRadius = 0.55f, vignetteSoft = 0.6f, shoulder = 1;
   float hourEase = 2.5f;  // segundos para a luz passar de uma hora à outra na tela (sem saltos)
+  // Submundo: a hora fixa do look (o usuário, 2026-11-05: "ignorar a superfície"); < 0 = a hora do relógio da superfície.
+  float fixedHour = -1;
   // Submundo: o ciclo dos seres (horas do relógio da campanha) e as cores.
   float wakeHour = 6, riseHours = 2, glowHours = 8, fadeHours = 3, periodHours = 20;
   glm::vec3 glowColor{0.35f, 0.9f, 0.8f};

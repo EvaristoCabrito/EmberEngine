@@ -1402,12 +1402,14 @@ class OverworldStage : public Stage {
     d.time = now_;
     const double days = num(save_, "gameClock", 0), hour = ember::Overworld::campaignHour(save_);
     if (underworld_ && !c.luts.empty()) {
-      // O look 2D no ciclo invertido (2026-10-28): a mesma hora do relógio, a floração na noite da superfície.
-      const WorldMapFx::LutMix lm = WorldMapFx::lutMix(c, static_cast<float>(hour));
+      // O look 2D no ciclo invertido (2026-10-28): a mesma hora do relógio, a floração na noite da superfície. Com "fixedHour" no
+      // arquivo (o usuário, 2026-11-05: "ignorar a superfície") o Submundo fica sempre nessa hora, o relógio não o muda.
+      const float lookHour = c.fixedHour >= 0.0f ? c.fixedHour : static_cast<float>(hour);
+      const WorldMapFx::LutMix lm = WorldMapFx::lutMix(c, lookHour);
       if (lm.a >= 0 && lm.b >= 0 && size_t(lm.a) < fxLuts_[1].size() && size_t(lm.b) < fxLuts_[1].size()) d.lutA = fxLuts_[1][lm.a], d.lutB = fxLuts_[1][lm.b];
       for (int i = 0; i < WorldMapFx::Draw::kTextures; ++i) d.tex[i] = fxTex_[1][i];
-      d.glow = WorldMapFx::bloomAt(c, static_cast<float>(hour));
-      d.params = WorldMapFx::underworldLookParams(c, static_cast<float>(hour));
+      d.glow = WorldMapFx::bloomAt(c, lookHour);
+      d.params = WorldMapFx::underworldLookParams(c, lookHour);
     } else if (underworld_) {
       // O relógio da campanha nunca para: o ciclo corre junto com ele e o Submundo abre no ponto da hora atual.
       d.glow = WorldMapFx::underworldGlow(c, days * 24.0 + hour);

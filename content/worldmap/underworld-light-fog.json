@@ -1,6 +1,7 @@
 {
   "_": "Submundo: o look 2D no ciclo invertido (render/WorldMapFx.h underworldLookParams, shaders/worldmap.hlsl underworldLook; o usuário, 2026-10-28, a especificação colada). Sem sol, sem lua, sem céu. O mesmo relógio da superfície: de dia os cogumelos gigantes absorvem (dormente: carvão e ardósia, só o ember dos Ferreiros Cinzentos acende o leste), no entardecer acordam numa onda (os mais velhos primeiro: a máscara 'fungal', R = idade / força, claro = acende antes), na noite da superfície a floração (teal, azul-esverdeado, violeta), no amanhecer apagam das bordas para dentro. 'lut' é por hora da SUPERFÍCIE (tools/scripts/worldmap/make_luts.py: underworld-dormant / -awakening / -bloom). As máscaras ('masks', pintadas pelo usuário, PNG na proporção do atlas; um caminho vazio = aquela parte desligada): fungal (R = idade / força), plants (plantas que se alimentam do brilho), windows (janelas das casas nos cogumelos, cor permitida), ember (R = força: mais fundo, mais quente), heat (zonas de tremor de calor), water (o Mar de Vidro), spores (as Marchas Fúngicas). creatures = mariposas / vagalumes (strength 0 = sem). Sem 'lut' o passe antigo (cycle / glow / dark / caveFog) volta. enabled false = a imagem lisa.",
   "enabled": true,
+  "fixedHour": 22,
   "mask": "",
   "lut": [
     {"hour": 4.5,  "file": "content/worldmap/lut/underworld-bloom-v01.png"},
