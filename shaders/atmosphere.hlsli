@@ -250,10 +250,11 @@ float3 andromedaSky(uint64_t atmosphere, float3 dir, float pixelAngle) {
   // mapping folded it into straight lines meeting at the galaxy's pole: the user, "ISSO NAO PODE EXISTIR NO JOGO").
   const float azimuth = atan2(dir.x, dir.z) + atan2(centre.x, centre.z);  // turns with the hour like the stars
   const float u = frac(azimuth / (2.0 * kPi));
-  // andromeda_sky_360_8192x4096 (the user, 2026-11-05: "EU CRIEI UMA IMAGEM PARA SER PERFEITA, NÃO INVENTA NADA") is a full
-  // 360 x 180 equirectangular panorama: its top row the zenith, its bottom row the nadir, the horizon its middle row.
+  // andromeda_sky_360_8192x4096 (the user, 2026-11-05: "EU CRIEI UMA IMAGEM PARA SER PERFEITA, NÃO INVENTA NADA") is the sky and
+  // only the sky ("é o céu, única e exclusivamente o céu, não tem nada de 360 graus ao redor do planeta"): the whole image on the
+  // dome above the ground, its top row the zenith, its bottom row the horizon, its width once round.
   const float elevation = asin(clamp(dir.y, -1.0, 1.0));
-  const float v = clamp((kPi * 0.5 - elevation) / kPi, 0.0005, 0.9995);
+  const float v = clamp((kPi * 0.5 - elevation) / (kPi * 0.5), 0.0005, 0.9995);
   const float lod = max(log2(max(pixelAngle * float(width) / (2.0 * kPi), 1e-4)), 0.0);
   const float3 colour = gTextures[NonUniformResourceIndex(tex)].SampleLevel(gSamplers[samplerIndex], float2(u, v), lod).rgb;
   return colour * strength;
