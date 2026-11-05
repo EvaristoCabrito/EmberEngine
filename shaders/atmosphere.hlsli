@@ -250,11 +250,28 @@ float3 andromedaSky(uint64_t atmosphere, float3 dir, float pixelAngle) {
   // mapping folded it into straight lines meeting at the galaxy's pole: the user, "ISSO NAO PODE EXISTIR NO JOGO").
   const float azimuth = atan2(dir.x, dir.z) + atan2(centre.x, centre.z);  // turns with the hour like the stars
   const float u = frac(azimuth / (2.0 * kPi));
+  // andromeda_sky_360_8192x4096 (the user, 2026-11-05: "EU CRIEI UMA IMAGEM PARA SER PERFEITA, NÃO INVENTA NADA") is a full
+  // 360 x 180 equirectangular panorama: its top row the zenith, its bottom row the nadir, the horizon its middle row.
   const float elevation = asin(clamp(dir.y, -1.0, 1.0));
-  const float v = clamp((kPi * 0.5 - elevation) / (kPi * 2.0 / 3.0), 0.0005, 0.9995);
+  const float v = clamp((kPi * 0.5 - elevation) / kPi, 0.0005, 0.9995);
   const float lod = max(log2(max(pixelAngle * float(width) / (2.0 * kPi), 1e-4)), 0.0);
   const float3 colour = gTextures[NonUniformResourceIndex(tex)].SampleLevel(gSamplers[samplerIndex], float2(u, v), lod).rgb;
   return colour * strength;
+}
+
+// The HDR value the tonemap (aces.hlsli acesFilmic, then linearToSrgb) turns into `display` (linear, 0..1): the inverse of three.js's
+// ACES fit, so the screen shows the painting's own pixels, neither brighter nor darker (the user, 2026-11-05: "a imagem normal é
+// muito menos brilhante", "sem nada em cima").
+float3 acesFilmicInverse(float3 display) {
+  const float3x3 outputInv = float3x3(0.6430382, 0.3111868, 0.0457755, 0.0592687, 0.9314365, 0.0092949, 0.0059619, 0.0639290, 0.9301184);
+  const float3x3 inputInv = float3x3(1.7647410, -0.6757777, -0.0889633, -0.1470279, 1.1602515, -0.0132237, -0.0363368, -0.1624364, 1.1987733);
+  const float3 y = clamp(mul(outputInv, saturate(display)), 0.0, 1.0);
+  // rrtAndOdtFit(x) = y  <=>  (1 - 0.983729 y) x^2 + (0.0245786 - 0.4329510 y) x - (0.000090537 + 0.238081 y) = 0
+  const float3 qa = max(1.0 - 0.983729 * y, 1e-4);
+  const float3 qb = 0.0245786 - 0.4329510 * y;
+  const float3 qc = -(0.000090537 + 0.238081 * y);
+  const float3 x = (-qb + sqrt(max(qb * qb - 4.0 * qa * qc, 0.0))) / (2.0 * qa);
+  return max(mul(inputInv, x), 0.0) * 0.6;
 }
 
 // The moon as a light in the air: the Mie aureole round it (the forward lobe on the air's optical depth along the view, the
@@ -498,9 +515,11 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
         // Under the bright "Luar: cinema" moon the sky would drown the catalogue's stars: they rise with the moon's light, at
         // most 6 x (the eye sees more stars than a camera metering a moonlit ground does).
         const float boost = a.sunDisc != 0 ? 1.0 : clamp(dot(a.sunIlluminance, float3(0.2126, 0.7152, 0.0722)) * 0.4, 1.0, 6.0);
-        if (a.starLook == 5u)  // the painting as painted: its light divided by the exposure applied below (kPaintingWhite: ACES's 1)
-          radiance += andromedaSky(f.atmosphere, dir, pixelAngle) * kPaintingWhite * night * air / max(f.exposure, 1e-6);
-        // both sets (the user, 2026-11-04): the painting, then the stars over it
+        // Andromeda (look 5): the painting's own pixels on screen, nothing over or under it (the user, 2026-11-05: "sem nada em
+        // cima"): no air, no stars of ours, no brightening: the tonemap undone (acesFilmicInverse) and the exposure divided out.
+        if (a.starLook == 5u)
+          radiance = lerp(radiance, acesFilmicInverse(andromedaSky(f.atmosphere, dir, pixelAngle)) / max(f.exposure, 1e-6), night);
+        else
           radiance += realStars(f.atmosphere, dir, pixelAngle) * night * boost * air * a.skyScale;
       } else {
         // The star looks were tuned against the dim moonlit sky of light mode 2; under a brighter moon ("Luar: cinema") the
