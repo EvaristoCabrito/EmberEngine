@@ -821,6 +821,11 @@ class MapStage final : public Stage {
       if (flash > 0) lights_.push_back(classicLight(cam_.target + glm::vec3(0,18,0), {.78f,.86f,1.0f}, flash*12.0f, 65.0f, 1.25f));
       renderer.setVfx(weatherFrame_);
     } else renderer.setVfx(spellFx_.vfx());
+      if (time - weatherLogAt_ > 5.0f) {  // what the weather hands over (a diagnostic line every 5 s)
+        weatherLogAt_ = time;
+        logInfo("weather: {} x{:.2f} wind {:.2f}: {} draws, {} vertices (spells {} draws)", activeWeather, activeIntensity, weatherWind_,
+                weatherFrame_.draws.size(), weatherFrame_.vertices.size(), spellFx_.vfx().draws.size());
+      }
     renderer.setLights(lights_);
     laps.lap("hand-over");
     // The renderer outlives the stage: a room's probes (and its gate request) stayed bound after leaving it, so the next map was shaded
@@ -11853,6 +11858,7 @@ class MapStage final : public Stage {
       if (const ModelGateParts* g = modelGateParts(m.model))
         for (const char* asset : {g->frame, g->leaves[0], g->leaves[1]})
           if (!modelMeshes_.contains(asset)) modelMeshes_[asset] = meshes_.add(assetId(asset));
+  float weatherLogAt_ = -100.0f;
   }
   static constexpr float kGlide = 10.0f;  // 1/s: ~90% of a move in 0.23 s, no overshoot
   // -8 deg to 89.5 deg (straight down). The eye itself never goes below kMinEyePitch (5 deg, nearly level: it would enter the
