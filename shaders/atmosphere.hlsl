@@ -182,11 +182,24 @@ void shBasis(float3 n, out float b[9]) {
 void CSAmbient(uint thread : SV_GroupIndex) {
   const AtmosphereFrame a = loadAtmo();
   const float weight = 4.0 * kPi / kAmbientDirections;
+  // Andromeda's sky (star look 5) at night is the sky that lights the world (atmosphere.hlsli andromedaSkyLight): the dome's
+  // directions read the painting (a mip as wide as one direction's share of the sphere) in place of the physical sky.
+  const float exposure = loadFrame(push.frame).exposure;
+  const float galaxyNight = a.starLook == 5u ? andromedaNight(a.stars, a.sunDisc, a.sunDirection.y) : 0.0;
+  static const float kDirectionAngle = 0.055;  // sqrt(4 pi / 4096): one direction's width
   // First the irradiance on the ground from the sky, so the ground below the horizon can be lit by it.
-  float3 up = 0.0;
+  float3 up = 0.0, galaxy = 0.0;
   for (uint k = thread; k < kAmbientDirections; k += kAmbientThreads) {
     const float3 d = sphereDirection(k, kAmbientDirections);
-    if (d.y > 0.0) up += skyRadiance(a, d) * d.y * weight;
+    if (d.y > 0.0) {
+      float3 sky = skyRadiance(a, d);
+      if (galaxyNight > 0.0) {
+        const float3 g = andromedaSkyLight(push.atmosphere, exposure, a.skyScale, d, kDirectionAngle);
+        galaxy += g * d.y * weight;
+        sky = lerp(sky, g, galaxyNight);
+      }
+      up += sky * d.y * weight;
+    }
   }
   gUp[thread] = up;
   GroupMemoryBarrierWithGroupSync();
@@ -194,15 +207,29 @@ void CSAmbient(uint thread : SV_GroupIndex) {
     if (thread < s) gUp[thread] += gUp[thread + s];
     GroupMemoryBarrierWithGroupSync();
   }
+  const float3 skyUp = gUp[0];
+  // The galaxy's own sum through the same shared array (one more would pass the GPU's 32 KB of shared memory).
+  GroupMemoryBarrierWithGroupSync();
+  gUp[thread] = galaxy;
+  GroupMemoryBarrierWithGroupSync();
+  for (uint s = kAmbientThreads / 2; s > 0; s >>= 1) {
+    if (thread < s) gUp[thread] += gUp[thread + s];
+    GroupMemoryBarrierWithGroupSync();
+  }
+  const float3 galaxyUp = gUp[0];
   float3 sunOnGround = a.sunIlluminance * transmittanceToTop(a, a.viewHeight, a.sunDirection.y) * saturate(a.sunDirection.y);
   const float3 moonDir = atmoMoonDirection(push.atmosphere);
   sunOnGround += atmoMoonLight(push.atmosphere) * transmittanceToTop(a, a.viewHeight, moonDir.y) * saturate(moonDir.y);
-  const float3 groundRadiance = a.groundAlbedo / kPi * (gUp[0] + sunOnGround);
+  const float3 groundRadiance = a.groundAlbedo / kPi * (skyUp + sunOnGround);
   float3 sh[9];
   [unroll] for (uint c = 0; c < 9; ++c) sh[c] = 0.0;
   for (uint k = thread; k < kAmbientDirections; k += kAmbientThreads) {
     const float3 d = sphereDirection(k, kAmbientDirections);
-    const float3 radiance = d.y > 0.0 ? skyRadiance(a, d) : groundRadiance;
+    float3 radiance = groundRadiance;
+    if (d.y > 0.0) {
+      radiance = skyRadiance(a, d);
+      if (galaxyNight > 0.0) radiance = lerp(radiance, andromedaSkyLight(push.atmosphere, exposure, a.skyScale, d, kDirectionAngle), galaxyNight);
+    }
     float b[9];
     shBasis(d, b);
     [unroll] for (uint c = 0; c < 9; ++c) sh[c] += radiance * b[c] * weight;
@@ -227,8 +254,9 @@ void CSAmbient(uint thread : SV_GroupIndex) {
                                             : -a.ambientTarget;
   // The w's carry what else reads the sky: the scale (first), then the raw sky irradiance on an upward face (the cloud
   // sheet's fill light, the reflection map's ground), both read by skyReflection / cloudsOverSky.
-  const float extra[4] = {scale, gUp[0].r, gUp[0].g, gUp[0].b};
-  [unroll] for (uint c = 0; c < 9; ++c) vk::RawBufferStore<float4>(a.ambient + c * 16, float4(e[c] * scale, c < 4 ? extra[c] : 0.0));
+  // Then (records 4..6) the galaxy's own irradiance on an upward face, raw: the ground to the horizon (skyBackground) reads it.
+  const float extra[7] = {scale, skyUp.r, skyUp.g, skyUp.b, galaxyUp.r, galaxyUp.g, galaxyUp.b};
+  [unroll] for (uint c = 0; c < 9; ++c) vk::RawBufferStore<float4>(a.ambient + c * 16, float4(e[c] * scale, c < 7 ? extra[c] : 0.0));
   // After them, the sky's own irradiance, unscaled (no exposure, no map multiplier): the room's light probes (probes.hlsl) light
   // a room from the real sky whatever the ambient above lets the other passes see.
   [unroll] for (uint c = 0; c < 9; ++c) vk::RawBufferStore<float4>(a.ambient + 144u + c * 16, float4(e[c], 0.0));

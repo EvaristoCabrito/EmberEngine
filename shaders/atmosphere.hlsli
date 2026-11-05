@@ -274,6 +274,19 @@ float3 acesFilmicInverse(float3 display) {
   return max(mul(inputInv, x), 0.0) * 0.6;
 }
 
+// Andromeda's sky as a light (the user, 2026-11-05: "não existe breu", "tem uma porra de uma galáxia brilhante", "usa o mundo real"):
+// at night the painting IS the sky, so it lights the world as a real sky does: every surface receives the dome's radiance
+// integrated over the hemisphere it faces (atmosphere.hlsl CSAmbient: the SH ambient, the ground to the horizon; skyreflect.hlsl:
+// what water and metals mirror). Its radiance in the sky's raw units (as skyRadiance) is the painting's pixels as the player sees
+// them with the tonemap, the exposure and the sky's scale undone, so the lit world and the visible sky agree: a ground of albedo
+// 0.25 under a uniform sky shows at a quarter of the sky's brightness, dark but never black. `night` = skyBackground's own weight.
+float andromedaNight(float stars, uint sunDisc, float sunY) {
+  return max(stars, sunDisc != 0 ? 1.0 - smoothstep(-0.12, 0.02, sunY) : 0.0);
+}
+float3 andromedaSkyLight(uint64_t atmosphere, float exposure, float skyScale, float3 dir, float pixelAngle) {
+  return acesFilmicInverse(andromedaSky(atmosphere, dir, pixelAngle)) / max(exposure * max(skyScale, 1e-4), 1e-6);
+}
+
 // The moon as a light in the air: the Mie aureole round it (the forward lobe on the air's optical depth along the view, the
 // same law as the sun's) and the glow at the disc's rim. The user, 2026-10-19: "a lua não aparenta emanar a luz".
 float3 moonAureole(AtmosphereFrame a, float3 dir, float3 moonDirection, float3 moonLight, float moonTanRadius) {
@@ -544,6 +557,12 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
     } else {
       radiance = cloudsOverSky(f, a, f.cameraPosition, dir, clear * a.skyScale, radiance);
     }
+  } else if (a.starLook == 5u) {
+    // Below the horizon at night: the ground out to the horizon lit by the galaxy's sky (Lambert on its irradiance, which
+    // CSAmbient leaves in the w's of the ambient records 4..6), as the real ground under a bright night sky.
+    const float3 galaxyUp = float3(vk::RawBufferLoad<float4>(a.ambient + 64u).w, vk::RawBufferLoad<float4>(a.ambient + 80u).w,
+                                   vk::RawBufferLoad<float4>(a.ambient + 96u).w);
+    radiance += a.groundAlbedo / kPi * galaxyUp * andromedaNight(a.stars, a.sunDisc, a.sunDirection.y) * a.skyScale;
   }
   return radiance * f.exposure;
 }

@@ -32,7 +32,10 @@ void CSBase(uint2 pixel : SV_DispatchThreadID) {
   float3 radiance;
   if (dir.y >= 0.0) {
     // The sky (no sun disc: the sun's highlight is the direct specular's), with the clouds seen from the board.
-    const float3 clear = skyRadiance(a, dir);
+    float3 clear = skyRadiance(a, dir);
+    // Andromeda's sky at night (atmosphere.hlsli andromedaSkyLight): the water and the metals mirror the painting.
+    if (a.starLook == 5u)
+      clear = lerp(clear, andromedaSkyLight(f.atmosphere, f.exposure, a.skyScale, dir, 0.025), andromedaNight(a.stars, a.sunDisc, a.sunDirection.y));
     if (f.cloudFlags & kCloudRdr2) {
       // Nuvens RDR2: the same layer marched coarsely from the board's middle (the water and the metals see the same clouds).
       const Rdr2Hit hit = rdr2March(f, a, loadRdr2(f), float3(0.0, 0.0, 0.0), dir, clear * a.skyScale, 28u, 3u, 2u, 0.5, float2(0.5, 0.5));
