@@ -99,6 +99,10 @@
     ],
     "watchtower-beacon": [
       "watchtower-entry-panorama-v02.png"
+    ],
+    "ashen-forest-crossing": [
+      "ashen-forest-panorama-v06-wide-alpha.png",
+      "ashen-forest-panorama-v06-wide-alpha.png#cinzas"
     ]
   },
   "paintings": {
@@ -563,6 +567,39 @@
       "groundTile": 16.0,
       "groundFar": 300.0,
       "groundFromDegrees": 3.0
+    },
+    "ashen-forest-panorama-v06-wide-alpha.png": {
+      "horizon": 0.36,
+      "bottom": 1.0,
+      "skyTop": 0.0,
+      "degreesPerHeight": 45.0,
+      "bottomDegrees": 28.0,
+      "spanDegrees": 360.0,
+      "glowColumn": 0.5,
+      "horizonDegrees": 1.5,
+      "alphaSky": true,
+      "ground": "ashen-crossing-ground-v03-single-road.png",
+      "groundTile": 1024.0,
+      "groundFar": 600.0,
+      "groundFromDegrees": 3.0,
+      "groundDepth": 0.0
+    },
+    "ashen-forest-panorama-v06-wide-alpha.png#cinzas": {
+      "horizon": 0.36,
+      "bottom": 1.0,
+      "skyTop": 0.0,
+      "degreesPerHeight": 45.0,
+      "bottomDegrees": 28.0,
+      "spanDegrees": 360.0,
+      "glowColumn": 0.5,
+      "horizonDegrees": 1.5,
+      "alphaSky": true,
+      "ground": "bosque-ground-v01.jpg",
+      "groundTile": 16.0,
+      "groundFar": 300.0,
+      "groundFromDegrees": 3.0,
+      "groundDepth": 0.0,
+      "_note": "Ashen Forest Crossing 007 (2026-11-05): the same painting over the Bosque Morto's forest-floor photo at real size; the white 1024-unit road images are gone from this fit"
     }
   }
 }

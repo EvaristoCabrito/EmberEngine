@@ -2,6 +2,7 @@
   "aldeia": 19,
   "bosque": 13,
   "custom-mw10gqyi": 1,
+  "custom-mw1k9ub6": 1,
   "estalagem": 10,
   "estalagem-andar-2": 8,
   "fortaleza": 8,
@@ -28,5 +29,6 @@
   "watchtower-gate-floor": 10,
   "wisp-forest": 11,
   "wisp-forest-2": 7,
-  "wisp-forest-crossing": 31
+  "wisp-forest-crossing": 32,
+  "ashen-forest-crossing": 7
 }
