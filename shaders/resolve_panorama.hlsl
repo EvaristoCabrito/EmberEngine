@@ -384,7 +384,16 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
     // Atmosfera volumétrica v1: the fog lies between the camera and the painting (nothing when it is off).
     return float4(volumeOverBackground(f, gTextures[NonUniformResourceIndex(push.background)].SampleLevel(gSamplers[f.materialSampler], uv, 0).rgb, pixel), 1.0);
   }
-  if (f.atmosphere != 0) return float4(skyWithAir(f, pixel), 1.0);
+  if (f.atmosphere != 0) {
+    // A map with no painting and no ground image (resolve_panorama.hlsl only; the Inn's resolve.hlsl is untouched): the one sky above
+    // the horizon; below it BLACK, never the atmosphere's lit ground (the sky tables' Lambert ground under the galaxy's light came out
+    // pink / mauve around every such board; the user, 2026-11-05: "chão rosa, o tempo todo, tudo rosa ... Tira essa merda dessa cor",
+    // "Essa porra é preta? ... Sem escolha"). The sky itself is not touched: only what stood in front of it below the horizon.
+    const AtmosphereFrame a = loadAtmosphere(f);
+    const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);
+    if (dir.y < 0.0) return float4(0.0, 0.0, 0.0, 1.0);
+    return float4(skyWithAir(f, pixel), 1.0);
+  }
   return push.clearColor;
 }
 
