@@ -530,11 +530,13 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
     // The moon as a light in the air (always: physics, not a look): its aureole and the glow at its rim. At night the key light
     // is the moon (sunDisc 0: a.sunIlluminance is its light, a.sunDirection its disc since 2026-10-19); in the 24 h cycle it is
     // the sky's second light (moonIlluminance).
+    float3 aureole = 0.0;  // kept apart: the Andromeda painting replaces the night sky, never the moon's own glow
     {
       const float3 moonLight = a.sunDisc == 0 ? a.sunIlluminance : atmoMoonLight(f.atmosphere);
       const float3 moonDir = a.moonTexture != kNoTexture ? atmoMoonDirection(f.atmosphere) : a.sunDirection;
       if (dot(moonLight, 1.0) > 0.0 && moonDir.y > -0.05)
-        radiance += moonAureole(a, dir, moonDir, moonLight, a.moonTexture != kNoTexture ? a.moonTanRadius : 0.0) * a.skyScale;
+        aureole = moonAureole(a, dir, moonDir, moonLight, a.moonTexture != kNoTexture ? a.moonTanRadius : 0.0) * a.skyScale;
+      radiance += aureole;
     }
     // Stars, fixed to the sky: at night, or fading in as the sun goes down (the saved look in starLook; 4 = the real sky).
     const float night = max(a.stars, a.sunDisc != 0 ? 1.0 - smoothstep(-0.12, 0.02, a.sunDirection.y) : 0.0);
@@ -552,7 +554,8 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
         {
           float lensScale;
           const float3 paintDir = paintingDirection(f, a, dir, lensScale);
-          radiance = lerp(radiance, acesFilmicInverse(andromedaSky(f.atmosphere, paintDir, pixelAngle * lensScale)) / max(f.exposure, 1e-6), night);
+          // The painting in place of the sky, the moon's glow (its aureole: physics, its own light in the air) kept over it.
+          radiance = lerp(radiance, acesFilmicInverse(andromedaSky(f.atmosphere, paintDir, pixelAngle * lensScale)) / max(f.exposure, 1e-6), night) + aureole * night;
         }
         else
           radiance += realStars(f.atmosphere, dir, pixelAngle) * night * boost * air * a.skyScale;
@@ -563,6 +566,9 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
         radiance += starField(a.starLook, dir, pixelAngle) * night * starBoost * air;
       }
     }
+    // The sky behind the clouds without the moon's disc: the veil below lends a cloud the painted sky's light, never the moon's
+    // disc (it showed the moon through the clouds, in front of them).
+    const float3 behindNoDisc = radiance;
     if (a.moonTexture != kNoTexture) {
       const float4 disc = moonDisc(dir, pixelAngle, a.moonDirection, a.moonTexture, a.moonTanRadius, a.moonGlow, a.linearSampler,
                                    transmittanceToTop(a, a.viewHeight, dir.y), vk::RawBufferLoad<float>(f.atmosphere + 444u));  // moonWhole
@@ -574,7 +580,7 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
       const float4 cloud = cloudVolAt(f, (float2(pixel) + 0.5) / f.screenSize);
       // No dark clouds (the user, 2026-11-04: "HOW MANY TIME MUST I SAY NO DARK CLOUDS"): against the Andromeda painting at night the
       // moonlit cloud is near black, so it takes on part of the painted sky's light behind it (a veil, never a black blot).
-      const float3 veil = a.starLook == 5u ? radiance * (1.0 - cloud.a) * 0.6 * night : 0.0;
+      const float3 veil = a.starLook == 5u ? behindNoDisc * (1.0 - cloud.a) * 0.6 * night : 0.0;
       radiance = radiance * cloud.a + max(cloud.rgb, veil);
     } else {
       radiance = cloudsOverSky(f, a, f.cameraPosition, dir, clear * a.skyScale, radiance);
