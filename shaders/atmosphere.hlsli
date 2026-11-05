@@ -488,6 +488,24 @@ float4 cloudVolAt(MeshFrame f, float2 uv) {
 
 // What shows where nothing was drawn: the sky (outdoors), the sun's disc by day, stars at night (or once the sun is
 // down) and the moon's disc, the clouds over them.
+// The direction the painting is read along (the user, 2026-11-05: "a imagem do jeito que eu coloquei", "não é esticada"): the game's
+// 30 deg lens is a telephoto that showed the 360 x 180 panorama 2-3 x magnified; the painting alone is seen through a panorama
+// viewer's lens (kPaintingLensDeg vertical, the screen's own width ratio), round the same centre of view, so it shows as the image
+// shows in a panorama viewer: one image pixel about one screen pixel at 1440p, never stretched. Board, moon, clouds: the game's lens.
+static const float kPaintingLensDeg = 60.0;
+float3 paintingDirection(MeshFrame f, AtmosphereFrame a, float3 dir, out float lensScale) {
+  const float3 c = skyDirection(f, a, f.screenSize * 0.5);
+  const float3 top = skyDirection(f, a, float2(f.screenSize.x * 0.5, 0.0));
+  const float3 side = skyDirection(f, a, float2(f.screenSize.x, f.screenSize.y * 0.5));
+  const float3 upAxis = top / dot(top, c) - c, sideAxis = side / dot(side, c) - c;
+  const float tanV = length(upAxis), tanH = length(sideAxis);
+  const float3 onPlane = dir / max(dot(dir, c), 1e-4) - c;
+  const float x = dot(onPlane, sideAxis) / (tanH * tanH), y = dot(onPlane, upAxis) / (tanV * tanV);
+  const float tanW = tan(radians(kPaintingLensDeg) * 0.5);
+  lensScale = tanW / max(tanV, 1e-4);
+  return normalize(c + x * tanW * (tanH / tanV) * normalize(sideAxis) + y * tanW * normalize(upAxis));
+}
+
 float3 skyBackground(MeshFrame f, uint2 pixel) {
   const AtmosphereFrame a = loadAtmosphere(f);
   const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);
@@ -531,7 +549,11 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
         // Andromeda (look 5): the painting's own pixels on screen, nothing over or under it (the user, 2026-11-05: "sem nada em
         // cima"): no air, no stars of ours, no brightening: the tonemap undone (acesFilmicInverse) and the exposure divided out.
         if (a.starLook == 5u)
-          radiance = lerp(radiance, acesFilmicInverse(andromedaSky(f.atmosphere, dir, pixelAngle)) / max(f.exposure, 1e-6), night);
+        {
+          float lensScale;
+          const float3 paintDir = paintingDirection(f, a, dir, lensScale);
+          radiance = lerp(radiance, acesFilmicInverse(andromedaSky(f.atmosphere, paintDir, pixelAngle * lensScale)) / max(f.exposure, 1e-6), night);
+        }
         else
           radiance += realStars(f.atmosphere, dir, pixelAngle) * night * boost * air * a.skyScale;
       } else {
