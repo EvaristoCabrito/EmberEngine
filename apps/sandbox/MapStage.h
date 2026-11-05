@@ -174,7 +174,7 @@ struct MapStageOptions {
   int clouds = 6;     // "Nuvens": 0 OFF, 1 básica, 2 volumétricas (look 001), 3 look 006, 4 RDR2; 6 = the default (look 006)
   int cloudQuality = 0;  // RDR2 only: 0 Ultra (default), 1 Alta, 2 Média, 3 Baixa (--clouds-quality N)
   int moonLight = 1;  // the panel's "Luar" (light mode real): 0 físico, 1 cinema (--moonlight N)
-  int hour = 0;       // the panel's "Hora": 0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3..10 fixed hours (--hour N)
+  int hour = -1;      // the panel's "Hora": 0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3..10 fixed hours (--hour N); -1 = the default (MapStage)
   // The game's own clock (the campaign's / the test world map's gameHour, 0..23): ALL the light from outside follows it, on every map but
   // the underground ones (the user, 2026-10-21: "TODA a luz externa do jogo segue o relógio de 24 horas", "SOL REAL LUA REAL LUZ REAL HORA
   // REAL NÃO EXISTE OUTRA OPÇÃO"; the map's time of day and its sun / ambient sliders only decorate and test). The panel's Hora is a test.
@@ -328,7 +328,10 @@ class MapStage final : public Stage {
     clouds_ = options.clouds == 6 || options.clouds == 3 ? 2 : std::clamp(options.clouds, 0, 4);
     if (options.clouds == 6 || options.clouds == 3) savedCloudLook_ = 4;
     cloudQuality_ = std::clamp(options.cloudQuality, 0, 3);
-    dayCycle_ = std::clamp(options.hour, 0, 10);
+    // The default setup (the user, 2026-11-05: "todo o mapa padrão deve começar com a nuvem 4, Andrômeda, à noite, com pelo menos meia
+    // lua"): a map opened without the game's clock (Modo teste, the Map Editor) starts at 22 h (the panel's fixed hour 9) with the full
+    // moon unless the map chose its Lua; the campaign's clock still sets the hour of a campaign map. The panel's Hora changes it.
+    dayCycle_ = options.hour >= 0 ? std::clamp(options.hour, 0, 10) : options.gameHour < 0.0f ? 9 : 0;
     tempoConfig_ = options.tempoConfig;
     tempoTimeline_.configure(tempoConfig_, options.campaignMinute * 60000, true);
     gameHour_ = options.gameHour;  // < 0: the map's own hour (cycleHour)
@@ -4498,7 +4501,15 @@ class MapStage final : public Stage {
     float d[3];
     ember::lightDirection(azimuth, elevation, d);
     const glm::vec3 sun = glm::normalize(glm::vec3(d[0], d[1], d[2]));
-    ember::lightDirection(azimuth + pi, -elevation * 0.9f, d);
+    // The real moon (the user, 2026-11-05: "exatamente igual ao comportamento real de uma Lua real"): it runs the sun's path
+    // lagging the sun by its elongation, which its phase sets (moonElongation: new 0 deg, first quarter 90, full 180, last
+    // quarter 270; the sky turns 15 deg an hour). So the new moon rises and sets with the sun, the first quarter rises at noon
+    // and sets at midnight, the full moon rises at sunset, the last quarter rises at midnight and stands in the morning's
+    // daylight sky. The full moon stays exactly where it was (opposite the sun, its path 0.9 of the sun's height).
+    const float moonHour = hour - moonElongation(phase) / 15.0f;
+    const float moonElevation = 0.9f * glm::radians(62.0f) * std::sin(2.0f * pi * (moonHour - 6.0f) / 24.0f);
+    const float moonAzimuth = -0.95f + pi * (moonHour - 12.0f) / 12.0f;
+    ember::lightDirection(moonAzimuth, moonElevation, d);
     const glm::vec3 moonDir = glm::normalize(glm::vec3(d[0], d[1], d[2]));
     const glm::vec3 moonColor = Renderer::srgb(moon.color ? moon.color : 0x9fb4ffu);
     const float moonLux = (moonLight_ == 1 ? kCinemaMoonLux : kFullMoonLux) * realMoonShare(phase);
@@ -4536,9 +4547,20 @@ class MapStage final : public Stage {
       l.sunIntensity = kSunLux * sunLum;
       meterLux_ = std::max(l.sunIntensity * std::max(sun.y, 0.05f) + 0.2f * l.sunIntensity, dayMeterAtHorizon);
     } else {
-      l.sunDirection = moonDir.y > 0.05f ? moonDir : glm::normalize(glm::vec3(moonDir.x, 0.05f, moonDir.z));
-      l.sunColor = moonLit;
-      l.sunIntensity = moonLux * moonLum;
+      // A night with the moon down (or too thin a crescent) is never black on the surface (the user, 2026-11-05: "não existe breu no
+      // mundo ... só no subterrâneo"): the clear night sky itself (starlight + airglow) gives about 0.002 lux, 1/125 of the full
+      // moon's 0.25, on the same scale as the moon here; it comes from the whole sky (the key light from above).
+      const float nightSkyLux = (moonLight_ == 1 ? kCinemaMoonLux : kFullMoonLux) / 125.0f;
+      const float moonKey = moonDir.y > 0.0f ? moonLux * moonLum : 0.0f;
+      if (moonKey >= nightSkyLux) {
+        l.sunDirection = moonDir.y > 0.05f ? moonDir : glm::normalize(glm::vec3(moonDir.x, 0.05f, moonDir.z));
+        l.sunColor = moonLit;
+        l.sunIntensity = moonKey;
+      } else {
+        l.sunDirection = glm::vec3(0.0f, 1.0f, 0.0f);
+        l.sunColor = moonColor;
+        l.sunIntensity = nightSkyLux;
+      }
       const float twilight = dayMeterAtHorizon * std::pow(10.0f, glm::degrees(elevation) / 2.4f);
       meterLux_ = twilight + l.sunIntensity * (std::max(moonDir.y, 0.05f) + 0.2f);
       l.ambientMul = kNightFill;  // the night's shadow side never pure black (realLighting's rule)
@@ -4546,9 +4568,10 @@ class MapStage final : public Stage {
     if (moonDir.y > -0.05f) {
       l.moonDirection = moonDir;
       l.moonTexture = ground_.textureIndex(ember::skyMoonAsset(phase));
-      l.moonWhole = moonWholePhase(phase) ? 1.0f : 0.0f;
+      l.moonWhole = realMoonFlag(phase);
       l.moonRadius = moonOff_ ? 0.0f : glm::radians(kMoonSizes[moonSize_]);
-      l.moonGlow = moonDiscGlow();
+      // At night the disc's display white as before; by day the sunlit rock's own radiance (pale over the blue sky).
+      l.moonGlow = std::min(moonDiscGlow(), kSunLux * kMoonAlbedo / pi);
     }
     return l;
   }
@@ -4604,6 +4627,22 @@ class MapStage final : public Stage {
   }
 
   // The map's units find their own catalog entry by key. The panel's poses: those at least one of the map's units
+  // The real moon's elongation, degrees east of the sun, by its phase (new 0, first quarter 90, full 180, last quarter 270); the
+  // blood moon is a full moon in the Earth's shadow.
+  static float moonElongation(std::string_view phase) {
+    for (int k = 0; k < 8; ++k)
+      if (phase == ember::kMoonPhases[k]) return 45.0f * static_cast<float>(k);
+    return 180.0f;
+  }
+  // AtmosphereFrame.moonWhole for the 24 h cycle's real moon: 1 = full / blood (no dark side), 2 = waxing, 3 = waning: the disc's
+  // lit side is turned toward the sun (atmosphere.hlsli moonDisc), as on the real moon. 0 = the art upright (the map presets).
+  static float realMoonFlag(std::string_view phase) {
+    if (moonWholePhase(phase)) return 1.0f;
+    return moonElongation(phase) < 180.0f ? 2.0f : 3.0f;
+  }
+  // The moon's surface by day: lit by the sun like grey rock (its albedo 0.12), so in a daylight sky it shows pale over the blue,
+  // as the real one does; at night the disc's display white (moonDiscGlow) is far below this and stays as it was.
+  static constexpr float kMoonAlbedo = 0.12f;
   // has, in the catalog's order of first appearance with its label, the idle ("Parado") first.
   void setUpPoses(const std::filesystem::path& path) {
     if (catalog_.empty()) {  // (read once: the editor's edits match the scene's units again on the same catalog)

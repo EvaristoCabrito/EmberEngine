@@ -310,12 +310,20 @@ float3 moonAureole(AtmosphereFrame a, float3 dir, float3 moonDirection, float3 m
 // (the stars, the galaxy painting); its lit part shines with the art; its dark side adds nothing, so there only the air in front of
 // it shows. Returns rgb = the disc's light, a = how much of the sky behind it the disc hides (0 off the disc).
 float4 moonDisc(float3 dir, float pixelAngle, float3 moonDirection, uint moonTexture, float tanRadius,
-                float glow, uint linearSampler, float3 air, float whole) {
+                float glow, uint linearSampler, float3 air, float whole, float3 sunDirection) {
   const float c = dot(dir, moonDirection);
   if (moonTexture == kNoTexture || c <= 0.0) return 0.0;
   const float3 right = normalize(cross(moonDirection, float3(0.0, 1.0, 0.0)));
   const float3 up = cross(right, moonDirection);
-  const float2 p = float2(dot(dir, right), dot(dir, up)) / (c * tanRadius);  // +-1 on the disc's edge
+  float2 p = float2(dot(dir, right), dot(dir, up)) / (c * tanRadius);  // +-1 on the disc's edge
+  // The real moon (the 24 h cycle, `whole` 2 waxing / 3 waning; the user, 2026-11-05): its lit side faces the sun. The art is lit
+  // on its right when waxing, on its left when waning; it is turned so that side points at the sun across the sky.
+  if (whole > 1.5) {
+    float2 toSun = float2(dot(sunDirection, right), dot(sunDirection, up));
+    toSun = dot(toSun, toSun) > 1e-8 ? normalize(toSun) : float2(1.0, 0.0);
+    if (whole > 2.5) toSun = -toSun;
+    p = float2(toSun.x * p.x + toSun.y * p.y, -toSun.y * p.x + toSun.x * p.y);
+  }
   if (any(abs(p) > 1.25)) return 0.0;
   uint width, height;
   gTextures[NonUniformResourceIndex(moonTexture)].GetDimensions(width, height);
@@ -337,7 +345,7 @@ float4 moonDisc(float3 dir, float pixelAngle, float3 moonDirection, uint moonTex
   const float artLight = max(art.r, max(art.g, art.b)), coarseLight = max(coarse.r, max(coarse.g, coarse.b));
   // A full or blood moon (`whole`: AtmosphereFrame.moonWhole) has no dark side: all of its disc is moon, its darkest seas at the rim
   // included (they let the glow through as white spots, the user, 2026-11-03: "CLEARLY WHITE SPOTS").
-  const float lit = whole > 0.5 ? 1.0 : smoothstep(0.0, 0.06, max(artLight, coarseLight * 1.5 * inner));
+  const float lit = whole > 0.5 && whole < 1.5 ? 1.0 : smoothstep(0.0, 0.06, max(artLight, coarseLight * 1.5 * inner));
   return float4(art.rgb * glow * air * lit * art.a, art.a);
 }
 
@@ -509,6 +517,57 @@ float3 paintingDirection(MeshFrame f, AtmosphereFrame a, float3 dir, out float l
 
 float3 skyBackground(MeshFrame f, uint2 pixel) {
   const AtmosphereFrame a = loadAtmosphere(f);
+// The moon's own glow (the user, 2026-11-05: "the moon has her own glow light"): the veil the eye sees round a bright light in the
+// dark, CIE's disability glare (the Stiles-Holladay term, Vos 2003): L_veil = 10 E / theta^2, theta in degrees from the moon, E the
+// illuminance the moon gives the eye: its phase's light (a crescent glows a hundredth of the full moon), through the air and
+// through the cloud in front of it. Drawn outside the disc (the disc keeps its craters); by day the exposure leaves it unseen, as
+// in the real world. Raw radiance, before the exposure (like the disc).
+float3 moonGlare(MeshFrame f, AtmosphereFrame a, float3 dir) {
+  if (a.moonTexture == kNoTexture) return 0.0;
+  const float3 moonDir = a.moonDirection;
+  if (moonDir.y < -0.02) return 0.0;
+  // The moon's light at the eye: the night key (preset maps) or the 24 h cycle's moon (stored at a tenth for the sky: x 10).
+  const float3 moonLight = a.sunDisc == 0 ? a.sunIlluminance : atmoMoonLight(f.atmosphere) * 10.0;
+  float3 e = moonLight * transmittanceToTop(a, a.viewHeight, max(moonDir.y, 0.0));
+  if (dot(e, 1.0) <= 0.0) return 0.0;
+  // A cloud in front of the moon takes its glare away (its transmittance where the moon stands on the screen).
+  if (f.cloudFlags & kCloudVolumetric) {
+    const float4 clip = mul(float4(f.cameraPosition + moonDir * 1000.0, 1.0), f.viewProjection);
+    if (clip.w > 0.0) {
+      const float2 uv = clip.xy / clip.w * 0.5 + 0.5;
+      if (all(uv >= 0.0) && all(uv <= 1.0)) e *= saturate(cloudVolAt(f, uv).a);
+    }
+  }
+  const float r = atan(max(a.moonTanRadius, 1e-4));
+  const float angle = acos(clamp(dot(dir, moonDir), -1.0, 1.0));
+  const float degreesOff = max(degrees(angle), degrees(r));
+  // From just inside the disc's edge (the user, 2026-11-05: "black circles around the moon"): the art's dark outline at the rim and
+  // any gap between the disc and its glow read as a black ring; the real full moon is bright to its limb.
+  return e * (10.0 / (degreesOff * degreesOff)) * smoothstep(r * 0.86, r, angle);
+}
+
+// A cloud in front of the moon glows (the user, 2026-11-05: the moon's own light; a moonlit cloud is never a dark blot): the moon's
+// light scattered forward by the cloud's droplets (Henyey-Greenstein, g 0.85), the share the cloud takes out of the beam (1 - its
+// transmittance `cloudT`) reaching the eye as a diffuse glow (a thick cloud lets through 1 / (1 + 0.75 tau (1 - g)) of it). The
+// saved cloud looks light their clouds by the sky's tenth of the moon; this is the rest of its light.
+float3 moonThroughCloud(MeshFrame f, AtmosphereFrame a, float3 dir, float cloudT) {
+  // (a map's own night preset lights its clouds with the moon as the key light already: nothing to add there)
+  if (a.moonTexture == kNoTexture || cloudT >= 0.999 || a.sunDisc == 0) return 0.0;
+  const float3 moonDir = a.moonDirection;
+  if (moonDir.y < -0.02) return 0.0;
+  const float3 moonLight = atmoMoonLight(f.atmosphere) * 9.0;  // the 24 h cycle's moon: its tenth is in the look already
+  const float3 e = moonLight * transmittanceToTop(a, a.viewHeight, max(moonDir.y, 0.0));
+  const float g = 0.85, c = dot(dir, moonDir);
+  const float hg = (1.0 - g * g) / (4.0 * kPi * pow(max(1.0 + g * g - 2.0 * g * c, 1e-4), 1.5));
+  // Thin cloud scatters the beam once, forward (the silver edges by the moon: tau e^-tau of it, by the phase); thick cloud scatters
+  // it many times and lets out a diffuse glow, the same every way (its diffuse transmission 1 / (1 + 0.75 tau (1 - g)), less the
+  // direct and the single-scattered parts, over pi).
+  const float tau = -log(max(cloudT, 1e-4));
+  const float single = tau * cloudT;
+  const float diffuse = max(1.0 / (1.0 + 0.75 * tau * (1.0 - g)) - cloudT - single, 0.0);
+  return e * (single * hg + diffuse / kPi);
+}
+
   const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);
   const float3 clear = skyRadiance(a, dir);
   float3 radiance = clear * a.skyScale;
@@ -572,7 +631,8 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
     const float3 behindNoDisc = radiance;
     if (a.moonTexture != kNoTexture) {
       const float4 disc = moonDisc(dir, pixelAngle, a.moonDirection, a.moonTexture, a.moonTanRadius, a.moonGlow, a.linearSampler,
-                                   transmittanceToTop(a, a.viewHeight, dir.y), vk::RawBufferLoad<float>(f.atmosphere + 444u));  // moonWhole
+                                   transmittanceToTop(a, a.viewHeight, dir.y), vk::RawBufferLoad<float>(f.atmosphere + 444u),  // moonWhole
+                                   a.sunDirection);
       radiance = inFront + (radiance - inFront) * (1.0 - disc.a) + disc.rgb;
     }
     // The clouds last, over the stars and the moon (a thin veil over the moon, a thick cloud hiding the stars): the volumetric
@@ -582,12 +642,13 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
       // No dark clouds (the user, 2026-11-04: "HOW MANY TIME MUST I SAY NO DARK CLOUDS"): against the Andromeda painting at night the
       // moonlit cloud is near black, so it takes on part of the painted sky's light behind it (a veil, never a black blot).
       const float3 veil = a.starLook == 5u ? behindNoDisc * (1.0 - cloud.a) * 0.6 * night : 0.0;
-      radiance = radiance * cloud.a + max(cloud.rgb, veil);
+      radiance = radiance * cloud.a + max(cloud.rgb, veil) + moonThroughCloud(f, a, dir, saturate(cloud.a));
     } else {
       radiance = cloudsOverSky(f, a, f.cameraPosition, dir, clear * a.skyScale, radiance);
     }
   } else if (a.starLook == 5u) {
     // Below the horizon at night: the ground out to the horizon lit by the galaxy's sky (Lambert on its irradiance, which
+    radiance += moonGlare(f, a, dir);
     // CSAmbient leaves in the w's of the ambient records 4..6), as the real ground under a bright night sky.
     const float3 galaxyUp = float3(vk::RawBufferLoad<float4>(a.ambient + 64u).w, vk::RawBufferLoad<float4>(a.ambient + 80u).w,
                                    vk::RawBufferLoad<float4>(a.ambient + 96u).w);

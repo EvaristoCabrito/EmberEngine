@@ -506,9 +506,12 @@ class MapEditorStage : public Stage {
     d["autoTactics"] = true;
     d["fog"] = false;
     d["environment"] = "outdoor";
+    // A new map starts at night with the full moon (the user, 2026-11-05: the default setup "à noite, com pelo menos meia lua").
     d["timeOfDay"] = "day";
     d["sunIntensity"] = editor_.defaultSun;
     d["ambientIntensity"] = editor_.defaultAmbient;
+    for (const auto& t : editor_.timeOfDay)
+      if (t.id == "brightNight") d["timeOfDay"] = t.id, d["sunIntensity"] = t.key, d["ambientIntensity"] = t.ambient;
     d["mistIntensity"] = 0.2;
     d["mistSpeed"] = 1;
     d["mistType"] = "none";

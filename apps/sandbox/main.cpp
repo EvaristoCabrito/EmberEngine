@@ -180,7 +180,7 @@ struct Options {
   int moonLight = 1;    // --moonlight N: the panel's "Luar" (0 físico, 1 cinema)
   ember::tempo::Config tempoConfig{};
   bool tempoModeOverride = false, tempoSeedOverride = false, tempoChaosOverride = false;
-  int hour = 0;         // --hour N: the panel's "Hora" (0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3..10 amanhecer .. madrugada)
+  int hour = -1;        // --hour N (-1: the default setup, MapStage): the panel's "Hora" (0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3..10 amanhecer .. madrugada)
   int sunDisc = 1;      // --sun-disc N: the panel's "Sol" (0 real, 1 cinema, 2 look 001)
   bool mist = true;    // --mist 0: the fog of war's mist bank off (its mask and the volumetric atmosphere stay)
   int lighting = 3;
