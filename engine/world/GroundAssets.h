@@ -58,6 +58,15 @@ inline constexpr EmberGroundVariant kEmberGroundVariants[] = {
     {"plains", "ember-plains-grass-v3-seamless", "content/ground/plains-grass-ground-v03-seamless.png", 74, 4.0f},
 };
 inline constexpr EmberGroundTile kEmberGroundTiles[] = {
+    {"ashen-white-v03", "plains", "ember-ashen-white-v03-plains", "content/ground/ashen-crossing-white-ash-world-v03.png", 176.0f, true},
+    {"ashen-white-v03", "woods", "ember-ashen-white-v03-woods", "content/ground/ashen-crossing-white-ash-world-v03.png", 176.0f, true},
+    {"ashen-white-v03", "hill", "ember-ashen-white-v03-hill", "content/ground/ashen-crossing-white-ash-world-v03.png", 176.0f, true},
+    {"ashen-white-v03", "ruins", "ember-ashen-white-v03-ruins", "content/ground/ashen-crossing-white-ash-world-v03.png", 176.0f, true},
+    // Ashen Crossing 004: new map-specific material; previous versions keep their existing ground.
+    {"ashen-crossing004-pale-v02", "plains", "ember-ashen-crossing004-plains", "content/ground/ashen-crossing004-world-ground-v02.png", 176.0f, true},
+    {"ashen-crossing004-pale-v02", "woods", "ember-ashen-crossing004-woods", "content/ground/ashen-crossing004-world-ground-v02.png", 176.0f, true},
+    {"ashen-crossing004-pale-v02", "hill", "ember-ashen-crossing004-hill", "content/ground/ashen-crossing004-world-ground-v02.png", 176.0f, true},
+    {"ashen-crossing004-pale-v02", "ruins", "ember-ashen-crossing004-ruins", "content/ground/ashen-crossing004-world-ground-v02.png", 176.0f, true},
     {"cemiterio-v01", "plains", "ember-cemiterio-relva-neve-v01", "content/ground/cemiterio-relva-neve-v01.png", 4.5f},  // cemi01: snow over dead grass
     {"cemiterio-v01", "snow", "ember-cemiterio-trilha-v01", "content/ground/cemiterio-trilha-v01.png", 5.0f},        // cemi02: trodden slush, the paths
     {"cemiterio-v01", "nave", "ember-cemiterio-lajes-v01", "content/ground/cemiterio-lajes-v01.png", 3.6f},          // cemi03: setts, frost in the joints
@@ -76,6 +85,12 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"deep-ashen-v01", "woods", "ember-deep-ashen-charred-v01", "content/ground/deep-ashen-forest-ash-tile-v01.png", 4.5f},
     {"deep-ashen-v01", "hill", "ember-deep-ashen-slope-v01", "content/ground/deep-ashen-forest-ash-tile-v01.png", 4.5f},
     {"deep-ashen-v01", "plains", "ember-deep-ashen-loose-ash-v01", "content/ground/deep-ashen-forest-loose-ash-tile-v01.png", 4.0f},
+    // Ashen Forest Crossing 007 (2026-11-05, the user: "o chão dessa floresta é cinza! Usa o cinza!", "não existe um único tile
+    // cor-de-rosa nesse jogo ... não importa a luz"): the dark charred ground on every hex (woods, slopes, clearings); every
+    // lighter ash tile went pink under the evening light. The road is the board's own "ruins" stone art (no override).
+    {"ashen-road-v01", "woods", "ember-ashen-road-v01-charred", "content/ground/deep-ashen-forest-ash-tile-v01.png", 4.5f},
+    {"ashen-road-v01", "hill", "ember-ashen-road-v01-slope", "content/ground/deep-ashen-forest-ash-tile-v01.png", 4.5f},
+    {"ashen-road-v01", "plains", "ember-ashen-road-v01-loose-ash", "content/ground/deep-ashen-forest-ash-tile-v01.png", 4.5f},
     // Bosque Morto: damp moss for woods, leaf litter for clearings, exposed roots for raised ground.
     {"bosque-morto-v01", "woods", "ember-bosque-morto-moss-v01", "content/ground/bosque-morto-moss-v01.png", 4.5f},
     {"bosque-morto-v01", "plains", "ember-bosque-morto-litter-v01", "content/ground/bosque-morto-litter-v01.png", 4.0f},

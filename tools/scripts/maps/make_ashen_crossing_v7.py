@@ -102,14 +102,14 @@ def main():
     for cell in rims:
         tile[cell], elev[cell] = "hill", 1
     for cell in road:
-        tile[cell] = "plains"
+        tile[cell] = "ruins"  # the road: the trodden pale-ash tile (ashen-road-v01 "ruins"), lighter than the charred mat around it
     for cell in causeway:
         tile[cell], elev[cell] = "ruins", 0  # the old stone causeway, the one way over
     # clearings: the camp by the south edge, the brigands' bank, the cultists' bank, the zombies' burnt clearing, the waystation
-    camp_s, bank_s, bank_n, clearing_e, waystation, wolves_w, passage = (21, 60), (22, 38), (24, 25), (35, 47), (34, 16), (8, 46), (28, 5)
+    camp_s, bank_s, bank_n, clearing_e, waystation, wolves_w, passage = (21, 60), (22, 38), (26, 19), (35, 47), (12, 22), (8, 46), (28, 5)
     for centre_cell, rad in ((camp_s, 3), (bank_s, 4), (bank_n, 4), (clearing_e, 4), (wolves_w, 3), (passage, 3)):
         for cell in ring(centre_cell, rad):
-            if cell not in ravine and cell not in rims:
+            if cell not in ravine and cell not in rims and cell not in road:
                 tile[cell] = "plains"
     for cell in ring(waystation, 2):
         tile[cell], elev[cell] = "ruins", 1
@@ -161,10 +161,11 @@ def main():
     foe("Vigia do Acampamento", "archer", (21, 40), 8)
     foe("Vigia do Acampamento", "archer", (25, 36), 8)
     # the cultists' watch on the north bank
-    foe("Guardião das Cinzas", "cultistV2", (23, 26), 9)
-    foe("Guardião das Cinzas", "cultistV2", (26, 24), 9)
-    foe("Sentinela do Norte", "miliciaV2", (24, 23), 8)
-    foe("Sentinela do Norte", "miliciaV2", (22, 24), 8)
+    # (well north of the causeway: the party crosses first, then meets them; the user, 2026-11-05: never a crowd of foes at once)
+    foe("Guardião das Cinzas", "cultistV2", (25, 20), 9)
+    foe("Guardião das Cinzas", "cultistV2", (28, 18), 9)
+    foe("Sentinela do Norte", "miliciaV2", (26, 17), 8)
+    foe("Sentinela do Norte", "miliciaV2", (24, 18), 8)
     # the wolf pack in the western woods, off the road
     for _ in range(3):
         foe("Lobo das Cinzas", "mordavianWolfFinal", wolves_w, 8, radius=3)
@@ -172,8 +173,8 @@ def main():
     for _ in range(4):
         foe("Errante das Cinzas", "zombie", clearing_e, 8, radius=3)
     # the ruined waystation
-    foe("Errante Calcinado", "zombie", (33, 16), 8)
-    foe("Errante Calcinado", "zombie", (36, 17), 8)
+    foe("Errante Calcinado", "zombie", (11, 22), 8)
+    foe("Errante Calcinado", "zombie", (14, 23), 8)
     # the keepers of the passage, at the road's end
     foe("Guardião da Passagem", "cultistV2", (27, 9), 10)
     foe("Guardião da Passagem", "cultistV2", (30, 8), 10)
@@ -246,29 +247,29 @@ def main():
     put_near("ember-polyhaven-treasure-chest", (23, 41), 3, chestTier="better")
     put_near("ember-polyhaven-wooden-lantern-01", (21, 38), 2, blocksPath=False)
     # the cultists' watch
-    put_near("ember-watchtower-signal-brazier-v01", (24, 24), 2, blocksPath=True)
-    put_near("ember-dungeon-bone-pile", (25, 27), 2, blocksPath=False)
-    put_near("ember-polyhaven-crate-chest", (21, 23), 3, blocksPath=True)
+    put_near("ember-watchtower-signal-brazier-v01", (26, 18), 2, blocksPath=True)
+    put_near("ember-dungeon-bone-pile", (27, 21), 2, blocksPath=False)
+    put_near("ember-polyhaven-crate-chest", (23, 17), 3, blocksPath=True)
     # the burnt clearing: bones and a stump ring
     put_near("ember-dungeon-bone-pile", clearing_e, 2, blocksPath=False)
     put_near("ember-dungeon-bone-pile", (37, 49), 2, blocksPath=False)
     put_near("ember-wisp-revisited-broken-stump", (33, 45), 2, blocksPath=True)
     put_near("ember-polyhaven-treasure-chest", (38, 45), 3, chestTier="good")
     # the ruined waystation: a broken arch, pillars, a well, a chest
-    put_near("ember-dungeon-broken-arch", (34, 15), 2, blocksPath=True)
-    put_near("ember-dungeon-pillar", (32, 17), 2, blocksPath=True)
-    put_near("ember-dungeon-pillar-v02", (36, 15), 2, blocksPath=True)
-    put_near("ember-city-well", (35, 18), 2, blocksPath=True)
-    put_near("ember-treasure-iron-banded-chest", (34, 17), 3, chestTier="better")
+    put_near("ember-dungeon-broken-arch", (12, 21), 2, blocksPath=True)
+    put_near("ember-dungeon-pillar", (10, 23), 2, blocksPath=True)
+    put_near("ember-dungeon-pillar-v02", (14, 21), 2, blocksPath=True)
+    put_near("ember-city-well", (13, 24), 2, blocksPath=True)
+    put_near("ember-treasure-iron-banded-chest", (12, 23), 3, chestTier="better")
     # the passage: braziers at the mouth
     put_near("ember-watchtower-signal-brazier-v02", (26, 6), 2, blocksPath=True)
     put_near("ember-watchtower-signal-brazier-v02", (30, 6), 2, blocksPath=True)
     put_near("ember-dungeon-bone-pile", (29, 9), 2, blocksPath=False)
 
     # the charred forest: 3D trees on the woods, never on the road's edge, with groves and gaps
-    kinds = [("ember-wisp-revisited-tall-burnt-pine-v02", 5), ("ember-wisp-revisited-hollow-snag-v02", 3), ("ember-wisp-revisited-lightning-split-v02", 3),
-             ("tree-3d-dead-oak", 2), ("tree-3d-dead-snag", 2), ("tree-3d-twisted-stump", 1), ("ember-bosque-morto-giant-dead-oak", 1),
-             ("ember-bosque-morto-hollow-snag", 2), ("ember-polyhaven-wisp-fir-tree-01-bare-v01", 3), ("ember-wisp-revisited-giant-dead-oak-v02", 1)]
+    # only the clean trunks without branches (the user, 2026-11-05: "puta árvore mal feita ... tá cheio de árvore boa, sem galho")
+    kinds = [("ember-wisp-revisited-tall-burnt-pine-v02", 5), ("ember-wisp-revisited-hollow-snag-v02", 3), ("ember-bosque-morto-hollow-snag", 3),
+             ("ember-polyhaven-dead-tree-trunk-02", 2), ("ember-wisp-revisited-broken-stump", 1)]
     kinds = [(k, w) for k, w in kinds if k in decs and is3d(k)]
 
     def pick():
@@ -296,9 +297,12 @@ def main():
     cand = [k for k, t in tile.items() if t == "woods"]
     rng.shuffle(cand)
     for cell in cand:
-        if not free(cell) or near_road(cell, 1) or cell in rims or rng.random() > density(cell):
+        # (the user, 2026-11-05: "não dá nem pra andar nessa bosta, olha quanta árvore", "para de encher de árvore": at most 60 trees, 3 hexes apart, 2 off the road)
+        if len(trees) >= 60:
+            break
+        if not free(cell) or near_road(cell, 2) or cell in rims or rng.random() > density(cell):
             continue
-        if any(hexdist(cell, t) < 2 for t in trees if abs(t[0] - cell[0]) <= 2 and abs(t[1] - cell[1]) <= 2):
+        if any(hexdist(cell, t) < 3 for t in trees if abs(t[0] - cell[0]) <= 3 and abs(t[1] - cell[1]) <= 3):
             continue
         if put(pick(), cell, blocksPath=True):
             trees.append(cell)
@@ -329,7 +333,8 @@ def main():
     d["heights"] = [0] * n if isinstance(d0.get("heights"), list) else d0.get("heights")
     d["decorations"] = added
     d["playerSpawns"], d["enemySpawns"], d["neutralSpawns"] = player_spawns, enemies, []
-    d["emberTiles"] = "deep-ashen-v01"  # the Deep Ashen Forest's dark tiles: charred woods, loose ash on the road (the white ones are gone)
+    d["emberTiles"] = "bosque-morto-v04"  # the Bosque Morto's ash ground (the user, 2026-11-05: "tem as cinzas perfeitas, usa aquelas cinzas"); the road is the ruins stone art
+    d["timeOfDay"] = "day"  # the map's own test hour by day: 006's dusk light turned every grey ash tile pink (the user, 2026-11-05)
     d.pop("groundImage", None)  # the ground around the board comes from the panorama's own fit (bosque-ground-v01.jpg, backdrop-fit.json)
     d["briefing"] = ("A estrada de carroças das cinzas nasce no acampamento ao sul e morre na passagem do norte. No meio, a ravina de cinza "
                      "corta a floresta de lado a lado: a única travessia é a velha calçada de pedra, e os brigantes acamparam na sua margem. "

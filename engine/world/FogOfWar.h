@@ -29,8 +29,7 @@
 namespace ember {
 
 inline constexpr uint8_t kFogUnseen = 0, kFogExplored = 1, kFogVisible = 2;
-inline constexpr int kSightRadius = 15;           // the user, 2026-10-18: 9 (Ember's SIGHT_RADIUS 7), then 12 ("aumentar o line of sight"), then 15 (2026-11-05: "line of sight to 15");
-                                                  // the weather takes hexes off it (MapStage::sightRadius: chuva 1, tempestade 2, cinzas 3, neve 4)
+inline constexpr int kSightRadius = 12;           // the user, 2026-10-18: 9 (Ember's SIGHT_RADIUS 7), then 12 ("aumentar o line of sight")
 // Ground the party has left stays drawn as in sight for this long, then darkens to remembered (the user, 2026-10-18: "a
 // área que o grupo deixou continua clara como vista por 3 minutos, depois escurece"). The look only: what the party sees
 // (enemies drawn, combat starting, aims) is still the sight of this moment.

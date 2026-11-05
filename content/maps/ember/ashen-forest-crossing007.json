@@ -1,6 +1,6 @@
 {
   "serial": 7,
-  "savedAt": 1793917010660,
+  "savedAt": 1793918707409,
   "draft": {
     "id": "ashen-forest-crossing",
     "index": 7,
@@ -14,7 +14,7 @@
     "autoTactics": false,
     "fog": true,
     "environment": "outdoor",
-    "timeOfDay": "dusk",
+    "timeOfDay": "day",
     "sunIntensity": 2.4,
     "ambientIntensity": 1.1,
     "mistType": "vignette3",
@@ -276,52 +276,8 @@
       "woods",
       "plains",
       "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "plains",
-      "plains",
-      "plains",
+      "ruins",
+      "ruins",
       "plains",
       "plains",
       "plains",
@@ -364,52 +320,9 @@
       "woods",
       "woods",
       "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "plains",
-      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "plains",
       "plains",
       "woods",
@@ -447,233 +360,6 @@
       "woods",
       "woods",
       "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "plains",
-      "plains",
-      "plains",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "plains",
-      "plains",
-      "plains",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "plains",
-      "plains",
-      "plains",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "plains",
-      "plains",
-      "plains",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "plains",
-      "plains",
-      "plains",
-      "woods",
-      "woods",
-      "woods",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "plains",
-      "plains",
-      "plains",
       "woods",
       "woods",
       "woods",
@@ -715,101 +401,13 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
       "woods",
       "woods",
-      "plains",
-      "ruins",
-      "ruins",
-      "ruins",
-      "ruins",
-      "plains",
       "woods",
       "woods",
       "woods",
       "woods",
       "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "plains",
-      "plains",
-      "plains",
-      "woods",
-      "plains",
-      "ruins",
-      "ruins",
-      "ruins",
-      "ruins",
-      "ruins",
-      "plains",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "plains",
-      "plains",
-      "plains",
-      "woods",
-      "plains",
-      "ruins",
       "ruins",
       "ruins",
       "ruins",
@@ -849,9 +447,653 @@
       "woods",
       "woods",
       "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "ruins",
+      "ruins",
+      "ruins",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "ruins",
+      "ruins",
+      "ruins",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "ruins",
+      "ruins",
+      "ruins",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "ruins",
+      "ruins",
+      "ruins",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "ruins",
+      "ruins",
+      "ruins",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "ruins",
+      "ruins",
+      "ruins",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "plains",
+      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
       "plains",
       "plains",
       "plains",
+      "ruins",
+      "ruins",
+      "ruins",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
+      "plains",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
+      "ruins",
+      "plains",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
+      "ruins",
+      "ruins",
+      "plains",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "plains",
+      "plains",
+      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
+      "ruins",
+      "plains",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "plains",
+      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
+      "woods",
       "woods",
       "plains",
       "ruins",
@@ -868,6 +1110,10 @@
       "woods",
       "woods",
       "woods",
+      "ruins",
+      "ruins",
+      "ruins",
+      "ruins",
       "woods",
       "woods",
       "woods",
@@ -896,136 +1142,6 @@
       "plains",
       "plains",
       "plains",
-      "woods",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "plains",
-      "plains",
-      "plains",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
       "plains",
       "woods",
       "woods",
@@ -1037,6 +1153,10 @@
       "woods",
       "woods",
       "woods",
+      "ruins",
+      "ruins",
+      "ruins",
+      "ruins",
       "woods",
       "woods",
       "woods",
@@ -1062,71 +1182,6 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
       "woods",
       "woods",
       "woods",
@@ -1142,6 +1197,10 @@
       "woods",
       "woods",
       "woods",
+      "ruins",
+      "ruins",
+      "ruins",
+      "ruins",
       "woods",
       "woods",
       "woods",
@@ -1149,38 +1208,6 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
       "woods",
       "woods",
       "woods",
@@ -1194,22 +1221,6 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
-      "woods",
       "woods",
       "woods",
       "woods",
@@ -1229,6 +1240,9 @@
       "woods",
       "woods",
       "woods",
+      "ruins",
+      "ruins",
+      "ruins",
       "woods",
       "woods",
       "woods",
@@ -1238,14 +1252,6 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "woods",
       "woods",
       "woods",
       "woods",
@@ -1278,17 +1284,11 @@
       "woods",
       "woods",
       "woods",
+      "ruins",
+      "ruins",
+      "ruins",
       "woods",
       "woods",
-      "woods",
-      "woods",
-      "woods",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
       "woods",
       "woods",
       "woods",
@@ -1349,50 +1349,6 @@
       "hill",
       "hill",
       "hill",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "ruins",
-      "ruins",
-      "ruins",
-      "ruins",
-      "ruins",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
       "plains",
       "plains",
       "plains",
@@ -1525,6 +1481,50 @@
       "plains",
       "plains",
       "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
+      "ruins",
+      "ruins",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
+      "plains",
       "hill",
       "hill",
       "hill",
@@ -1590,10 +1590,10 @@
       "woods",
       "plains",
       "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "plains",
-      "plains",
-      "plains",
-      "plains",
       "woods",
       "woods",
       "woods",
@@ -1632,13 +1632,13 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
       "plains",
       "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "plains",
       "plains",
-      "plains",
       "woods",
       "woods",
       "woods",
@@ -1675,14 +1675,14 @@
       "woods",
       "woods",
       "woods",
-      "plains",
       "plains",
       "plains",
       "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "plains",
       "plains",
-      "plains",
-      "plains",
       "woods",
       "woods",
       "woods",
@@ -1719,15 +1719,15 @@
       "woods",
       "woods",
       "woods",
-      "plains",
       "plains",
       "plains",
       "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "plains",
       "plains",
       "plains",
-      "plains",
-      "plains",
       "woods",
       "woods",
       "woods",
@@ -1763,11 +1763,11 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
       "plains",
       "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "plains",
       "plains",
       "plains",
@@ -1809,12 +1809,12 @@
       "woods",
       "woods",
       "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "plains",
       "plains",
       "plains",
-      "plains",
-      "plains",
-      "plains",
       "woods",
       "woods",
       "woods",
@@ -1852,12 +1852,12 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "plains",
       "plains",
       "plains",
-      "plains",
       "woods",
       "woods",
       "woods",
@@ -1896,12 +1896,12 @@
       "woods",
       "woods",
       "woods",
-      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "plains",
       "plains",
       "plains",
-      "plains",
-      "plains",
       "woods",
       "woods",
       "woods",
@@ -1940,9 +1940,9 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "woods",
       "woods",
       "woods",
@@ -1985,9 +1985,9 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "woods",
       "woods",
       "woods",
@@ -2029,9 +2029,9 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "woods",
       "woods",
       "woods",
@@ -2074,9 +2074,9 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "woods",
       "woods",
       "woods",
@@ -2118,9 +2118,9 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "woods",
       "woods",
       "woods",
@@ -2163,9 +2163,9 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "woods",
       "woods",
       "woods",
@@ -2206,9 +2206,9 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "woods",
       "woods",
       "woods",
@@ -2250,9 +2250,9 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "woods",
       "woods",
       "woods",
@@ -2293,9 +2293,9 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "woods",
       "woods",
       "woods",
@@ -2337,9 +2337,9 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "woods",
       "woods",
       "woods",
@@ -2379,10 +2379,10 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
+      "ruins",
       "woods",
       "woods",
       "woods",
@@ -2423,10 +2423,10 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
-      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
+      "ruins",
       "woods",
       "woods",
       "woods",
@@ -2467,9 +2467,9 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "woods",
       "woods",
       "woods",
@@ -2511,9 +2511,9 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "woods",
       "woods",
       "woods",
@@ -2555,9 +2555,9 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
-      "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "plains",
       "plains",
       "woods",
@@ -2600,11 +2600,11 @@
       "woods",
       "woods",
       "woods",
+      "ruins",
+      "ruins",
+      "ruins",
       "plains",
       "plains",
-      "plains",
-      "plains",
-      "plains",
       "woods",
       "woods",
       "woods",
@@ -2643,12 +2643,12 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
       "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "plains",
       "plains",
-      "plains",
       "woods",
       "woods",
       "woods",
@@ -2687,13 +2687,13 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
       "plains",
       "plains",
+      "ruins",
+      "ruins",
+      "ruins",
       "plains",
       "plains",
-      "plains",
       "woods",
       "woods",
       "woods",
@@ -2731,10 +2731,10 @@
       "woods",
       "woods",
       "woods",
-      "plains",
-      "plains",
       "plains",
       "plains",
+      "ruins",
+      "ruins",
       "plains",
       "plains",
       "woods",
@@ -9132,182 +9132,11 @@
       0,
       0,
       0,
-      1,
-      1,
-      1,
-      1,
-      1,
-      1,
-      1,
-      1,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
       0,
       0,
       0,
       1,
       1,
-      1,
-      1,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      1,
-      1,
-      1,
-      1,
-      1,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      1,
-      1,
-      1,
-      1,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
       1,
       1,
       1,
@@ -9545,6 +9374,9 @@
       0,
       0,
       0,
+      1,
+      1,
+      1,
       0,
       0,
       0,
@@ -9553,6 +9385,174 @@
       0,
       0,
       0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
       0,
       0,
       0,
@@ -11917,20 +11917,20 @@
       },
       {
         "id": "ember-watchtower-signal-brazier-v01",
-        "x": 24,
-        "y": 25,
+        "x": 26,
+        "y": 19,
         "blocksPath": true
       },
       {
         "id": "ember-dungeon-bone-pile",
-        "x": 25,
-        "y": 27,
+        "x": 27,
+        "y": 21,
         "blocksPath": false
       },
       {
         "id": "ember-polyhaven-crate-chest",
-        "x": 22,
-        "y": 22,
+        "x": 24,
+        "y": 16,
         "blocksPath": true
       },
       {
@@ -11959,32 +11959,32 @@
       },
       {
         "id": "ember-dungeon-broken-arch",
-        "x": 35,
-        "y": 14,
+        "x": 13,
+        "y": 20,
         "blocksPath": true
       },
       {
         "id": "ember-dungeon-pillar",
-        "x": 31,
-        "y": 17,
+        "x": 9,
+        "y": 23,
         "blocksPath": true
       },
       {
         "id": "ember-dungeon-pillar-v02",
-        "x": 36,
-        "y": 15,
+        "x": 14,
+        "y": 21,
         "blocksPath": true
       },
       {
         "id": "ember-city-well",
-        "x": 34,
-        "y": 19,
+        "x": 12,
+        "y": 25,
         "blocksPath": true
       },
       {
         "id": "ember-treasure-iron-banded-chest",
-        "x": 34,
-        "y": 17,
+        "x": 12,
+        "y": 23,
         "chestTier": "better"
       },
       {
@@ -12006,2715 +12006,411 @@
         "blocksPath": false
       },
       {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 14,
-        "y": 45,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 28,
-        "y": 44,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 15,
-        "y": 57,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 37,
-        "y": 61,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 42,
-        "y": 12,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 33,
-        "y": 8,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 2,
-        "y": 5,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 9,
-        "y": 10,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 20,
-        "y": 16,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 24,
-        "y": 0,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-giant-dead-oak-v02",
-        "x": 30,
-        "y": 35,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 18,
-        "y": 45,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 26,
-        "y": 57,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-twisted-stump",
-        "x": 32,
-        "y": 52,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 16,
-        "y": 39,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 29,
-        "y": 37,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 12,
-        "y": 51,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 40,
-        "y": 5,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 24,
-        "y": 20,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 21,
-        "y": 5,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 7,
-        "y": 26,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 35,
-        "y": 52,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 13,
-        "y": 7,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 3,
-        "y": 48,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 13,
-        "y": 26,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 17,
-        "y": 3,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 11,
-        "y": 55,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 38,
-        "y": 40,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 42,
-        "y": 42,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 11,
-        "y": 43,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 18,
-        "y": 18,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-giant-dead-oak-v02",
-        "x": 10,
-        "y": 18,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 31,
-        "y": 22,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 39,
-        "y": 16,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 40,
-        "y": 15,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 25,
-        "y": 44,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 27,
-        "y": 51,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-giant-dead-oak",
-        "x": 21,
-        "y": 19,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 37,
-        "y": 38,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 10,
-        "y": 6,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 12,
-        "y": 48,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 30,
-        "y": 56,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 31,
-        "y": 26,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 38,
-        "y": 57,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 40,
-        "y": 56,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-giant-dead-oak",
-        "x": 41,
-        "y": 8,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 30,
-        "y": 43,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 13,
-        "y": 5,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 37,
-        "y": 28,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-twisted-stump",
-        "x": 27,
-        "y": 48,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 11,
-        "y": 2,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 14,
-        "y": 13,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 25,
-        "y": 1,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-twisted-stump",
-        "x": 34,
-        "y": 55,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 20,
-        "y": 48,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 21,
-        "y": 14,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 14,
-        "y": 53,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 42,
-        "y": 10,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 29,
-        "y": 63,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 17,
-        "y": 8,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 4,
-        "y": 35,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 39,
-        "y": 43,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 26,
-        "y": 53,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 16,
-        "y": 20,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 11,
-        "y": 20,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 43,
-        "y": 28,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 16,
-        "y": 14,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 14,
-        "y": 11,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 24,
-        "y": 2,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 42,
-        "y": 53,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 37,
-        "y": 52,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 18,
-        "y": 1,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 19,
-        "y": 6,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 3,
-        "y": 43,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-twisted-stump",
-        "x": 19,
-        "y": 9,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 18,
-        "y": 48,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 6,
-        "y": 1,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 42,
-        "y": 0,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 10,
-        "y": 58,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 37,
-        "y": 9,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 23,
-        "y": 54,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-giant-dead-oak",
-        "x": 23,
-        "y": 7,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 41,
-        "y": 57,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 28,
-        "y": 1,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 7,
-        "y": 6,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 16,
-        "y": 59,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 4,
-        "y": 27,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-giant-dead-oak-v02",
-        "x": 35,
-        "y": 26,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-giant-dead-oak",
-        "x": 28,
-        "y": 60,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 10,
-        "y": 62,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-twisted-stump",
-        "x": 2,
-        "y": 0,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 21,
-        "y": 12,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 36,
-        "y": 58,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 6,
-        "y": 9,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 5,
-        "y": 6,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-giant-dead-oak",
-        "x": 42,
-        "y": 39,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 15,
-        "y": 8,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 2,
-        "y": 10,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 8,
-        "y": 62,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 34,
-        "y": 20,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 34,
-        "y": 42,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 9,
-        "y": 24,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 20,
-        "y": 22,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 30,
-        "y": 46,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 7,
-        "y": 50,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 4,
-        "y": 25,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-giant-dead-oak-v02",
-        "x": 5,
-        "y": 20,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 43,
-        "y": 50,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 35,
-        "y": 1,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 25,
-        "y": 41,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 41,
-        "y": 46,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 8,
-        "y": 53,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 10,
-        "y": 39,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 14,
-        "y": 18,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 13,
-        "y": 62,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 37,
-        "y": 0,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 28,
-        "y": 35,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 34,
-        "y": 39,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-giant-dead-oak-v02",
-        "x": 14,
-        "y": 3,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 14,
-        "y": 24,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 15,
-        "y": 41,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 11,
-        "y": 41,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 32,
-        "y": 2,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-giant-dead-oak-v02",
-        "x": 10,
-        "y": 60,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 4,
-        "y": 53,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-giant-dead-oak",
-        "x": 13,
-        "y": 0,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 41,
-        "y": 50,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 4,
-        "y": 11,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 12,
-        "y": 18,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-giant-dead-oak-v02",
-        "x": 8,
-        "y": 38,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 21,
-        "y": 2,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 26,
-        "y": 37,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 23,
-        "y": 63,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 31,
-        "y": 41,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 32,
-        "y": 43,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 1,
-        "y": 44,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 1,
-        "y": 40,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 30,
-        "y": 52,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 39,
-        "y": 49,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 37,
-        "y": 11,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 13,
-        "y": 22,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 23,
-        "y": 57,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 4,
-        "y": 9,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 40,
-        "y": 10,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 40,
-        "y": 59,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 37,
-        "y": 22,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 38,
-        "y": 2,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 20,
-        "y": 27,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 12,
-        "y": 3,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 33,
-        "y": 63,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-giant-dead-oak-v02",
+        "id": "ember-polyhaven-dead-tree-trunk-02",
         "x": 22,
-        "y": 9,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 15,
-        "y": 50,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-giant-dead-oak-v02",
-        "x": 31,
-        "y": 48,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 20,
-        "y": 20,
+        "y": 15,
         "blocksPath": true
       },
       {
         "id": "ember-bosque-morto-hollow-snag",
-        "x": 13,
-        "y": 37,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 28,
-        "y": 39,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 11,
-        "y": 11,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 35,
-        "y": 24,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 13,
-        "y": 42,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 39,
-        "y": 4,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-twisted-stump",
-        "x": 12,
+        "x": 0,
         "y": 53,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 34,
-        "y": 6,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-twisted-stump",
-        "x": 31,
-        "y": 59,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 12,
-        "y": 15,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 25,
-        "y": 19,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-twisted-stump",
-        "x": 3,
-        "y": 2,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 25,
-        "y": 49,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 40,
-        "y": 52,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 32,
-        "y": 24,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 25,
-        "y": 51,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 43,
-        "y": 63,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 17,
-        "y": 62,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 32,
-        "y": 38,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 14,
-        "y": 61,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 26,
-        "y": 60,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 35,
-        "y": 11,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 25,
-        "y": 63,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-giant-dead-oak-v02",
-        "x": 16,
-        "y": 51,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 39,
-        "y": 12,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 40,
-        "y": 0,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 36,
-        "y": 63,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 41,
-        "y": 62,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 2,
-        "y": 37,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 24,
-        "y": 59,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 32,
-        "y": 54,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 21,
-        "y": 8,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-giant-dead-oak-v02",
-        "x": 41,
-        "y": 37,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 39,
-        "y": 45,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-giant-dead-oak",
-        "x": 36,
-        "y": 42,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 31,
-        "y": 62,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 3,
-        "y": 24,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 9,
-        "y": 56,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-giant-dead-oak",
-        "x": 14,
-        "y": 20,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 11,
-        "y": 57,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 11,
-        "y": 52,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 0,
-        "y": 25,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 43,
-        "y": 4,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 43,
-        "y": 18,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 29,
-        "y": 25,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 30,
-        "y": 14,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 8,
-        "y": 15,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 6,
-        "y": 35,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 8,
-        "y": 7,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 9,
-        "y": 41,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 0,
-        "y": 7,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 37,
-        "y": 7,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 16,
-        "y": 53,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 8,
-        "y": 5,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 31,
-        "y": 9,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 39,
-        "y": 21,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 7,
-        "y": 3,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 17,
-        "y": 12,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 2,
-        "y": 22,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 14,
-        "y": 55,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 2,
-        "y": 14,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 8,
-        "y": 18,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 6,
-        "y": 59,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 15,
-        "y": 17,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-twisted-stump",
-        "x": 11,
-        "y": 13,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 37,
-        "y": 25,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 13,
-        "y": 44,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 0,
-        "y": 15,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 13,
-        "y": 9,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 31,
-        "y": 0,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 43,
-        "y": 44,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 39,
-        "y": 60,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 36,
-        "y": 56,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 32,
-        "y": 50,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 9,
-        "y": 37,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 33,
-        "y": 37,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 1,
-        "y": 50,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 43,
-        "y": 14,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 41,
-        "y": 54,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 1,
-        "y": 59,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 35,
-        "y": 35,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 32,
-        "y": 28,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 1,
-        "y": 38,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 32,
-        "y": 20,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 27,
-        "y": 62,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 22,
-        "y": 1,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 19,
-        "y": 26,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 35,
-        "y": 3,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 5,
-        "y": 13,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 34,
-        "y": 4,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 0,
-        "y": 3,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-giant-dead-oak",
-        "x": 25,
-        "y": 17,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-twisted-stump",
-        "x": 33,
-        "y": 26,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-giant-dead-oak-v02",
-        "x": 35,
-        "y": 60,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 3,
-        "y": 28,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-giant-dead-oak-v02",
-        "x": 23,
-        "y": 17,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 11,
-        "y": 9,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 5,
-        "y": 37,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 6,
-        "y": 18,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 17,
-        "y": 27,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 10,
-        "y": 4,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 43,
-        "y": 56,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 4,
-        "y": 3,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 5,
-        "y": 39,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 3,
-        "y": 17,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 14,
-        "y": 16,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 41,
-        "y": 17,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 39,
-        "y": 38,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 31,
-        "y": 13,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 2,
-        "y": 45,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-twisted-stump",
-        "x": 34,
-        "y": 22,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-giant-dead-oak-v02",
-        "x": 5,
-        "y": 57,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 5,
-        "y": 16,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 17,
-        "y": 37,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 8,
-        "y": 13,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 9,
-        "y": 22,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-twisted-stump",
-        "x": 34,
-        "y": 12,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 24,
-        "y": 5,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 0,
-        "y": 52,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 1,
-        "y": 63,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 13,
-        "y": 40,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 29,
-        "y": 54,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 35,
-        "y": 37,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 38,
-        "y": 53,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 17,
-        "y": 44,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 29,
-        "y": 42,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 18,
-        "y": 15,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 9,
-        "y": 0,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 34,
-        "y": 0,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 33,
-        "y": 58,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 25,
-        "y": 56,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 43,
-        "y": 21,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 39,
-        "y": 35,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 35,
-        "y": 28,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 5,
-        "y": 0,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 37,
-        "y": 14,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 43,
-        "y": 59,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 22,
-        "y": 56,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 40,
-        "y": 23,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 35,
-        "y": 62,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-twisted-stump",
-        "x": 16,
-        "y": 26,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 27,
-        "y": 42,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 18,
-        "y": 21,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 23,
-        "y": 12,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 11,
-        "y": 7,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-giant-dead-oak-v02",
-        "x": 17,
-        "y": 0,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 32,
-        "y": 5,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 30,
-        "y": 39,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 24,
-        "y": 11,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 40,
-        "y": 41,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 26,
-        "y": 39,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 4,
-        "y": 63,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 17,
-        "y": 5,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 6,
-        "y": 61,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 4,
-        "y": 45,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 40,
-        "y": 13,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 34,
-        "y": 10,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 24,
-        "y": 15,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 29,
-        "y": 27,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 26,
-        "y": 46,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-giant-dead-oak-v02",
-        "x": 3,
-        "y": 8,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 37,
-        "y": 35,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 14,
-        "y": 58,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 12,
-        "y": 59,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 5,
-        "y": 60,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 7,
-        "y": 57,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 10,
-        "y": 15,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 4,
-        "y": 14,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 28,
-        "y": 46,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 2,
-        "y": 41,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 43,
-        "y": 16,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 14,
-        "y": 39,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 25,
-        "y": 54,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 0,
-        "y": 5,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 20,
-        "y": 0,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 10,
-        "y": 28,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-giant-dead-oak-v02",
-        "x": 33,
-        "y": 56,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 32,
-        "y": 35,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 14,
-        "y": 63,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 7,
-        "y": 22,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 17,
-        "y": 41,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 1,
-        "y": 47,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 15,
-        "y": 36,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 30,
-        "y": 50,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 17,
-        "y": 35,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 15,
-        "y": 0,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 9,
-        "y": 20,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 15,
-        "y": 5,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 28,
-        "y": 58,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 42,
-        "y": 47,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 0,
-        "y": 57,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 39,
-        "y": 62,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 43,
-        "y": 1,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 32,
-        "y": 11,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 14,
-        "y": 43,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 11,
-        "y": 22,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 28,
-        "y": 49,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-giant-dead-oak",
-        "x": 29,
-        "y": 61,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 7,
-        "y": 12,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 11,
-        "y": 36,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 16,
-        "y": 22,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 33,
-        "y": 40,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 38,
-        "y": 51,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 13,
-        "y": 56,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 16,
-        "y": 55,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-twisted-stump",
-        "x": 9,
-        "y": 35,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 0,
-        "y": 22,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 36,
-        "y": 19,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 20,
-        "y": 24,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 42,
-        "y": 61,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-giant-dead-oak-v02",
-        "x": 21,
-        "y": 17,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 34,
-        "y": 57,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 0,
-        "y": 28,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 0,
-        "y": 62,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 25,
-        "y": 9,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 24,
-        "y": 52,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 38,
-        "y": 19,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 3,
-        "y": 59,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-twisted-stump",
-        "x": 2,
-        "y": 56,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 5,
-        "y": 41,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 23,
-        "y": 4,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 18,
-        "y": 63,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 11,
-        "y": 5,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-twisted-stump",
-        "x": 16,
-        "y": 10,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 35,
-        "y": 21,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 16,
-        "y": 48,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-twisted-stump",
-        "x": 40,
-        "y": 18,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 41,
-        "y": 21,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 42,
-        "y": 26,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 8,
-        "y": 60,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 29,
-        "y": 59,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 25,
-        "y": 7,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 33,
-        "y": 61,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 18,
-        "y": 11,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 4,
-        "y": 56,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 31,
-        "y": 57,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 33,
-        "y": 53,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 16,
-        "y": 46,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 43,
-        "y": 35,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-giant-dead-oak",
-        "x": 19,
-        "y": 4,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 39,
-        "y": 27,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 24,
-        "y": 61,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 16,
-        "y": 2,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 27,
-        "y": 55,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 37,
-        "y": 54,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 25,
-        "y": 3,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 13,
-        "y": 35,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 12,
-        "y": 24,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 43,
-        "y": 23,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 8,
-        "y": 36,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 6,
-        "y": 52,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 28,
-        "y": 28,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 3,
-        "y": 50,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-giant-dead-oak",
-        "x": 40,
-        "y": 39,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 18,
-        "y": 51,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 7,
-        "y": 14,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 8,
-        "y": 27,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 16,
-        "y": 24,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 35,
-        "y": 9,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 39,
-        "y": 14,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 10,
-        "y": 8,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-giant-dead-oak",
-        "x": 18,
-        "y": 13,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 42,
-        "y": 2,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 36,
-        "y": 40,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 0,
-        "y": 46,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 0,
-        "y": 48,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 30,
-        "y": 12,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 23,
-        "y": 14,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 23,
-        "y": 43,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-giant-dead-oak-v02",
-        "x": 11,
-        "y": 61,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 4,
-        "y": 47,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 10,
-        "y": 12,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 35,
-        "y": 5,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 20,
-        "y": 18,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-polyhaven-wisp-fir-tree-01-bare-v01",
-        "x": 9,
-        "y": 2,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 13,
-        "y": 12,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-giant-dead-oak",
-        "x": 38,
-        "y": 42,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 6,
-        "y": 54,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 21,
-        "y": 10,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 4,
-        "y": 49,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 1,
-        "y": 54,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-snag",
-        "x": 41,
-        "y": 44,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 0,
-        "y": 35,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-twisted-stump",
-        "x": 37,
-        "y": 59,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-giant-dead-oak",
-        "x": 10,
-        "y": 54,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 15,
-        "y": 28,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-hollow-snag",
-        "x": 9,
-        "y": 51,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-bosque-morto-giant-dead-oak",
-        "x": 41,
-        "y": 48,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 21,
-        "y": 21,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 24,
-        "y": 13,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-hollow-snag-v02",
-        "x": 3,
-        "y": 12,
-        "blocksPath": true
-      },
-      {
-        "id": "tree-3d-dead-oak",
-        "x": 34,
-        "y": 2,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 18,
-        "y": 23,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-lightning-split-v02",
-        "x": 38,
-        "y": 55,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
-        "x": 31,
-        "y": 45,
         "blocksPath": true
       },
       {
         "id": "ember-polyhaven-dead-tree-trunk-02",
-        "x": 30,
+        "x": 35,
+        "y": 23,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 43,
+        "y": 51,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-polyhaven-dead-tree-trunk-02",
+        "x": 21,
+        "y": 24,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 11,
+        "y": 2,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-bosque-morto-hollow-snag",
+        "x": 20,
+        "y": 13,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-hollow-snag-v02",
+        "x": 21,
+        "y": 4,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 24,
+        "y": 0,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 34,
+        "y": 27,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-hollow-snag-v02",
+        "x": 10,
+        "y": 6,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-hollow-snag-v02",
+        "x": 31,
+        "y": 35,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-bosque-morto-hollow-snag",
+        "x": 21,
         "y": 21,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 16,
+        "y": 13,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-hollow-snag-v02",
+        "x": 32,
+        "y": 43,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 6,
+        "y": 53,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-polyhaven-dead-tree-trunk-02",
+        "x": 14,
+        "y": 56,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-bosque-morto-hollow-snag",
+        "x": 14,
+        "y": 8,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 1,
+        "y": 45,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-hollow-snag-v02",
+        "x": 13,
+        "y": 41,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 15,
+        "y": 49,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-hollow-snag-v02",
+        "x": 11,
+        "y": 42,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 9,
+        "y": 10,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-bosque-morto-hollow-snag",
+        "x": 6,
+        "y": 41,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 24,
+        "y": 54,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-bosque-morto-hollow-snag",
+        "x": 40,
+        "y": 46,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-polyhaven-dead-tree-trunk-02",
+        "x": 2,
+        "y": 5,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-polyhaven-dead-tree-trunk-02",
+        "x": 14,
+        "y": 11,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-bosque-morto-hollow-snag",
+        "x": 4,
+        "y": 37,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 26,
+        "y": 49,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-hollow-snag-v02",
+        "x": 11,
+        "y": 56,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 17,
+        "y": 3,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-hollow-snag-v02",
+        "x": 38,
+        "y": 51,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-broken-stump",
+        "x": 29,
+        "y": 27,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-hollow-snag-v02",
+        "x": 36,
+        "y": 38,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-hollow-snag-v02",
+        "x": 38,
+        "y": 28,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-hollow-snag-v02",
+        "x": 9,
+        "y": 18,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 32,
+        "y": 26,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-bosque-morto-hollow-snag",
+        "x": 18,
+        "y": 17,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-bosque-morto-hollow-snag",
+        "x": 28,
+        "y": 37,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-hollow-snag-v02",
+        "x": 35,
+        "y": 42,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 28,
+        "y": 54,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-hollow-snag-v02",
+        "x": 28,
+        "y": 40,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-hollow-snag-v02",
+        "x": 40,
+        "y": 41,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 27,
+        "y": 59,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-polyhaven-dead-tree-trunk-02",
+        "x": 33,
+        "y": 7,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 9,
+        "y": 35,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 36,
+        "y": 19,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 2,
+        "y": 48,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-hollow-snag-v02",
+        "x": 19,
+        "y": 6,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 8,
+        "y": 39,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-polyhaven-dead-tree-trunk-02",
+        "x": 33,
+        "y": 54,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 41,
+        "y": 49,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-bosque-morto-hollow-snag",
+        "x": 42,
+        "y": 62,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-bosque-morto-hollow-snag",
+        "x": 14,
+        "y": 4,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 19,
+        "y": 9,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-hollow-snag-v02",
+        "x": 36,
+        "y": 5,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 9,
+        "y": 61,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-tall-burnt-pine-v02",
+        "x": 28,
+        "y": 1,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-hollow-snag-v02",
+        "x": 33,
+        "y": 38,
+        "blocksPath": true
+      },
+      {
+        "id": "ember-wisp-revisited-broken-stump",
+        "x": 17,
+        "y": 57,
         "blocksPath": false
       },
       {
         "id": "ember-wisp-revisited-ash-leaf-tile",
         "x": 22,
-        "y": 54,
+        "y": 43,
         "blocksPath": false
       },
       {
         "id": "ember-wisp-revisited-ash-leaf-tile",
-        "x": 29,
-        "y": 13,
+        "x": 28,
+        "y": 26,
+        "blocksPath": false
+      },
+      {
+        "id": "ember-wisp-revisited-rotted-hollow-log-v02",
+        "x": 17,
+        "y": 56,
+        "blocksPath": false
+      },
+      {
+        "id": "ember-wisp-revisited-ash-leaf-tile",
+        "x": 18,
+        "y": 52,
+        "blocksPath": false
+      },
+      {
+        "id": "ember-polyhaven-dead-tree-trunk-02",
+        "x": 21,
+        "y": 28,
+        "blocksPath": false
+      },
+      {
+        "id": "ember-wisp-revisited-broken-stump",
+        "x": 18,
+        "y": 58,
+        "blocksPath": false
+      },
+      {
+        "id": "ember-wisp-revisited-ash-leaf-tile",
+        "x": 30,
+        "y": 16,
         "blocksPath": false
       },
       {
@@ -14724,15 +12420,33 @@
         "blocksPath": false
       },
       {
-        "id": "ember-wisp-revisited-broken-stump",
-        "x": 24,
-        "y": 46,
+        "id": "ember-wisp-revisited-rotted-hollow-log-v02",
+        "x": 19,
+        "y": 45,
+        "blocksPath": false
+      },
+      {
+        "id": "ember-polyhaven-dead-tree-trunk-02",
+        "x": 21,
+        "y": 48,
         "blocksPath": false
       },
       {
         "id": "ember-wisp-revisited-ash-leaf-tile",
-        "x": 21,
-        "y": 56,
+        "x": 29,
+        "y": 24,
+        "blocksPath": false
+      },
+      {
+        "id": "ember-wisp-revisited-broken-stump",
+        "x": 31,
+        "y": 20,
+        "blocksPath": false
+      },
+      {
+        "id": "ember-wisp-revisited-broken-stump",
+        "x": 30,
+        "y": 17,
         "blocksPath": false
       },
       {
@@ -14742,39 +12456,45 @@
         "blocksPath": false
       },
       {
+        "id": "ember-wisp-revisited-ash-leaf-tile",
+        "x": 25,
+        "y": 13,
+        "blocksPath": false
+      },
+      {
+        "id": "ember-wisp-revisited-rotted-hollow-log-v02",
+        "x": 20,
+        "y": 47,
+        "blocksPath": false
+      },
+      {
         "id": "ember-polyhaven-dead-tree-trunk-02",
+        "x": 22,
+        "y": 54,
+        "blocksPath": false
+      },
+      {
+        "id": "ember-wisp-revisited-rotted-hollow-log-v02",
         "x": 24,
         "y": 47,
         "blocksPath": false
       },
       {
         "id": "ember-wisp-revisited-rotted-hollow-log-v02",
-        "x": 29,
-        "y": 15,
-        "blocksPath": false
-      },
-      {
-        "id": "ember-wisp-revisited-ash-leaf-tile",
-        "x": 25,
-        "y": 14,
+        "x": 23,
+        "y": 25,
         "blocksPath": false
       },
       {
         "id": "ember-wisp-revisited-broken-stump",
-        "x": 25,
+        "x": 29,
         "y": 13,
         "blocksPath": false
       },
       {
         "id": "ember-wisp-revisited-ash-leaf-tile",
-        "x": 24,
-        "y": 49,
-        "blocksPath": false
-      },
-      {
-        "id": "ember-wisp-revisited-rotted-hollow-log-v02",
-        "x": 29,
-        "y": 14,
+        "x": 20,
+        "y": 50,
         "blocksPath": false
       }
     ],
@@ -14862,29 +12582,29 @@
       {
         "name": "Guardião das Cinzas",
         "classId": "cultistV2",
-        "x": 23,
-        "y": 26,
+        "x": 25,
+        "y": 20,
         "level": 9
       },
       {
         "name": "Guardião das Cinzas",
         "classId": "cultistV2",
-        "x": 26,
-        "y": 24,
+        "x": 28,
+        "y": 18,
         "level": 9
       },
       {
         "name": "Sentinela do Norte",
         "classId": "miliciaV2",
-        "x": 24,
-        "y": 23,
+        "x": 26,
+        "y": 17,
         "level": 8
       },
       {
         "name": "Sentinela do Norte",
         "classId": "miliciaV2",
-        "x": 22,
-        "y": 24,
+        "x": 24,
+        "y": 18,
         "level": 8
       },
       {
@@ -14939,15 +12659,15 @@
       {
         "name": "Errante Calcinado",
         "classId": "zombie",
-        "x": 33,
-        "y": 16,
+        "x": 11,
+        "y": 22,
         "level": 8
       },
       {
         "name": "Errante Calcinado",
         "classId": "zombie",
-        "x": 36,
-        "y": 17,
+        "x": 14,
+        "y": 23,
         "level": 8
       },
       {
@@ -14973,7 +12693,7 @@
       }
     ],
     "neutralSpawns": [],
-    "emberTiles": "deep-ashen-v01",
+    "emberTiles": "bosque-morto-v04",
     "weather": "ash",
     "weatherIntensity": 0.4,
     "weatherWind": 0.2,

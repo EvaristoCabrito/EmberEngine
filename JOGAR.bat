@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 rem JOGAR.bat - dois cliques e o jogo abre com o build local do editor. A arte vem de C:\EmberEngine\build.
 setlocal EnableExtensions
 set "HERE=%~dp0"
@@ -12,7 +12,10 @@ if not exist "%EXE%" (
   goto :fim
 )
 
-set "GROUND=%ART%\ground\ground-v67.pak"
+set "GROUND=%ART%\ground\ground-v72.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v69.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v68.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v67.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v66.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v65.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v64.pak"
