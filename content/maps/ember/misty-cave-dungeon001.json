@@ -1231,13 +1231,6 @@
         "level": 13
       },
       {
-        "name": "Birolho",
-        "classId": "birolho",
-        "x": 23,
-        "y": 10,
-        "level": 14
-      },
-      {
         "name": "Piqueiro",
         "classId": "basePikeman",
         "x": 24,

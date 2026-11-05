@@ -1,0 +1,250 @@
+[0/2] Re-checking globbed directories...
+-- GLOB mismatch!
+The following files were added:
+  +C:/EmberEngine/shaders/clouds008_light.hlsli
+  +C:/EmberEngine/shaders/clouds008_shape.hlsli
+[1/2] Re-running CMake...
+CMake Warning at C:/Program Files/CMake/share/cmake-4.4/Modules/FindVulkan.cmake:712 (message):
+  Library dxc for Debug configuration is missing, imported target Vulkan::dxc
+  may not be able to link when targeting this build configuration due to
+  incompatible MSVC ABI.  Consider re-installing the Vulkan SDK and request
+  debug libraries to fix this warning.
+Call Stack (most recent call first):
+  C:/Program Files/CMake/share/cmake-4.4/Modules/FindVulkan.cmake:730 (_Vulkan_set_library_component_found)
+  CMakeLists.txt:10 (find_package)
+
+
+-- Could NOT find PkgConfig (missing: PKG_CONFIG_EXECUTABLE) 
+-- Could NOT find LibUSB (missing: LibUSB_LIBRARY LibUSB_INCLUDE_PATH) (found version "LibUSB_VERSION-NOTFOUND")
+-- 
+-- SDL3 was configured with the following options:
+-- 
+-- Platform: Windows-10.0.26200
+-- 64-bit:   TRUE
+-- Compiler: C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe
+-- Revision: SDL-3.4.18-release-3.4.18
+-- Vendor:   
+-- 
+-- Subsystems:
+--   Audio:    ON
+--   Video:    ON
+--   GPU:      ON
+--   Render:   ON
+--   Camera:   ON
+--   Joystick: ON
+--   Haptic:   ON
+--   Hidapi:   ON
+--   Power:    ON
+--   Sensor:   ON
+--   Dialog:   ON
+--   Tray:     ON
+-- 
+-- Options:
+--   SDL_ALSA                    (Wanted: OFF): OFF
+--   SDL_ALSA_SHARED             (Wanted: OFF): OFF
+--   SDL_ALTIVEC                 (Wanted: OFF): OFF
+--   SDL_ARMNEON                 (Wanted: OFF): OFF
+--   SDL_ASAN                    (Wanted: OFF): OFF
+--   SDL_ASSEMBLY                (Wanted: ON): ON
+--   SDL_ASSERTIONS              (Wanted: auto): auto
+--   SDL_AVX                     (Wanted: ON): ON
+--   SDL_AVX2                    (Wanted: ON): ON
+--   SDL_AVX512F                 (Wanted: ON): ON
+--   SDL_BACKGROUNDING_SIGNAL    (Wanted: OFF): OFF
+--   SDL_CCACHE                  (Wanted: OFF): OFF
+--   SDL_CLANG_TIDY              (Wanted: OFF): OFF
+--   SDL_CLOCK_GETTIME           (Wanted: OFF): OFF
+--   SDL_COCOA                   (Wanted: OFF): OFF
+--   SDL_DBUS                    (Wanted: OFF): OFF
+--   SDL_DEPS_SHARED             (Wanted: ON): OFF
+--   SDL_DIRECTX                 (Wanted: ON): ON
+--   SDL_DISKAUDIO               (Wanted: ON): ON
+--   SDL_DLOPEN_NOTES            (Wanted: OFF): OFF
+--   SDL_DUMMYAUDIO              (Wanted: ON): ON
+--   SDL_DUMMYCAMERA             (Wanted: ON): ON
+--   SDL_DUMMYVIDEO              (Wanted: ON): ON
+--   SDL_EXAMPLES                (Wanted: OFF): OFF
+--   SDL_EXAMPLES_LINK_SHARED    (Wanted: OFF): OFF
+--   SDL_FOREGROUNDING_SIGNAL    (Wanted: OFF): OFF
+--   SDL_FRIBIDI                 (Wanted: OFF): OFF
+--   SDL_FRIBIDI_SHARED          (Wanted: OFF): OFF
+--   SDL_GCC_ATOMICS             (Wanted: OFF): OFF
+--   SDL_HIDAPI                  (Wanted: ON): ON
+--   SDL_HIDAPI_JOYSTICK         (Wanted: ON): ON
+--   SDL_HIDAPI_LIBUSB           (Wanted: ON): OFF
+--   SDL_HIDAPI_LIBUSB_SHARED    (Wanted: ON): OFF
+--   SDL_IBUS                    (Wanted: OFF): OFF
+--   SDL_INSTALL                 (Wanted: OFF): OFF
+--   SDL_INSTALL_TESTS           (Wanted: OFF): OFF
+--   SDL_JACK                    (Wanted: OFF): OFF
+--   SDL_JACK_SHARED             (Wanted: OFF): OFF
+--   SDL_KMSDRM                  (Wanted: OFF): OFF
+--   SDL_KMSDRM_SHARED           (Wanted: OFF): OFF
+--   SDL_LASX                    (Wanted: OFF): OFF
+--   SDL_LIBC                    (Wanted: ON): ON
+--   SDL_LIBICONV                (Wanted: OFF): OFF
+--   SDL_LIBTHAI                 (Wanted: OFF): OFF
+--   SDL_LIBTHAI_SHARED          (Wanted: OFF): OFF
+--   SDL_LIBUDEV                 (Wanted: ON): OFF
+--   SDL_LIBURING                (Wanted: OFF): OFF
+--   SDL_LSX                     (Wanted: OFF): OFF
+--   SDL_METAL                   (Wanted: OFF): OFF
+--   SDL_MMX                     (Wanted: ON): OFF
+--   SDL_OFFSCREEN               (Wanted: ON): ON
+--   SDL_OPENGL                  (Wanted: ON): ON
+--   SDL_OPENGLES                (Wanted: ON): ON
+--   SDL_OPENVR                  (Wanted: OFF): OFF
+--   SDL_OSS                     (Wanted: OFF): OFF
+--   SDL_PIPEWIRE                (Wanted: OFF): OFF
+--   SDL_PIPEWIRE_SHARED         (Wanted: OFF): OFF
+--   SDL_PTHREADS                (Wanted: OFF): OFF
+--   SDL_PTHREADS_SEM            (Wanted: OFF): OFF
+--   SDL_PULSEAUDIO              (Wanted: OFF): OFF
+--   SDL_PULSEAUDIO_SHARED       (Wanted: OFF): OFF
+--   SDL_RENDER_D3D              (Wanted: ON): ON
+--   SDL_RENDER_D3D11            (Wanted: ON): ON
+--   SDL_RENDER_D3D12            (Wanted: ON): ON
+--   SDL_RENDER_GPU              (Wanted: ON): ON
+--   SDL_RENDER_METAL            (Wanted: OFF): OFF
+--   SDL_RENDER_VULKAN           (Wanted: ON): ON
+--   SDL_ROCKCHIP                (Wanted: OFF): OFF
+--   SDL_RPATH                   (Wanted: OFF): OFF
+--   SDL_RPI                     (Wanted: OFF): OFF
+--   SDL_SNDIO                   (Wanted: OFF): OFF
+--   SDL_SNDIO_SHARED            (Wanted: OFF): OFF
+--   SDL_SSE                     (Wanted: ON): ON
+--   SDL_SSE2                    (Wanted: ON): ON
+--   SDL_SSE3                    (Wanted: ON): ON
+--   SDL_SSE4_1                  (Wanted: ON): ON
+--   SDL_SSE4_2                  (Wanted: ON): ON
+--   SDL_SYSTEM_ICONV            (Wanted: OFF): OFF
+--   SDL_TESTS                   (Wanted: OFF): OFF
+--   SDL_TESTS_LINK_SHARED       (Wanted: OFF): OFF
+--   SDL_UNINSTALL               (Wanted: OFF): OFF
+--   SDL_VIRTUAL_JOYSTICK        (Wanted: ON): ON
+--   SDL_VIVANTE                 (Wanted: OFF): OFF
+--   SDL_VULKAN                  (Wanted: ON): ON
+--   SDL_WASAPI                  (Wanted: ON): ON
+--   SDL_WAYLAND                 (Wanted: OFF): OFF
+--   SDL_WAYLAND_LIBDECOR        (Wanted: OFF): OFF
+--   SDL_WAYLAND_LIBDECOR_SHARED (Wanted: OFF): OFF
+--   SDL_WAYLAND_SHARED          (Wanted: OFF): OFF
+--   SDL_X11                     (Wanted: OFF): OFF
+--   SDL_X11_SHARED              (Wanted: OFF): OFF
+--   SDL_X11_XCURSOR             (Wanted: OFF): OFF
+--   SDL_X11_XDBE                (Wanted: OFF): OFF
+--   SDL_X11_XFIXES              (Wanted: OFF): OFF
+--   SDL_X11_XINPUT              (Wanted: OFF): OFF
+--   SDL_X11_XRANDR              (Wanted: OFF): OFF
+--   SDL_X11_XSCRNSAVER          (Wanted: OFF): OFF
+--   SDL_X11_XSHAPE              (Wanted: OFF): OFF
+--   SDL_X11_XSYNC               (Wanted: OFF): OFF
+--   SDL_X11_XTEST               (Wanted: OFF): OFF
+--   SDL_XINPUT                  (Wanted: ON): ON
+-- 
+--  Build Shared Library: OFF
+--  Build Static Library: ON
+-- 
+-- Enabled backends:
+--   Video drivers: dummy offscreen windows
+--   Render drivers: d3d d3d11 d3d12 gpu ogl ogl_es2 vulkan
+--   GPU drivers: d3d12 vulkan
+--   Audio drivers: disk dsound dummy wasapi
+--   Joystick drivers: dinput gameinput hidapi rawinput virtual wgi xinput
+--   Camera drivers: dummy mediafoundation
+-- 
+CMake Warning at C:/Program Files/CMake/share/cmake-4.4/Modules/FindVulkan.cmake:712 (message):
+  Library dxc for Debug configuration is missing, imported target Vulkan::dxc
+  may not be able to link when targeting this build configuration due to
+  incompatible MSVC ABI.  Consider re-installing the Vulkan SDK and request
+  debug libraries to fix this warning.
+Call Stack (most recent call first):
+  C:/Program Files/CMake/share/cmake-4.4/Modules/FindVulkan.cmake:730 (_Vulkan_set_library_component_found)
+  build/release/_deps/volk-src/CMakeLists.txt:78 (find_package)
+
+
+volk: using Vulkan_INCLUDE_DIRS from FindVulkan module
+-- GLM: Version 1.0.3
+-- GLM: Build with C++ features auto detection
+-- Using plutovg submodule.
+-- ZSTD VERSION: 1.5.7
+-- CMAKE_INSTALL_PREFIX: C:/Program Files (x86)/EmberEngine
+-- CMAKE_INSTALL_LIBDIR: lib
+-- ZSTD_LEGACY_SUPPORT not defined!
+-- ZSTD_MULTITHREAD_SUPPORT is enabled
+-- Opus package version from git repo: 1.6.1
+-- Opus project version: 1.6.1
+-- Performing Test VLA_SUPPORTED -- failed to compile
+-- Check SIMD support by compiler
+-- The following features have been enabled:
+
+ * OPUS_ENABLE_FLOAT_API, compile with the floating point API (for machines with float library).
+ * OPUS_HARDENING, run-time checks that are cheap and safe for use in production.
+ * OPUS_USE_ALLOCA, use alloca for stack arrays (on non-C99 compilers).
+ * OPUS_STACK_PROTECTOR, use stack protection.
+ * OPUS_X86_MAY_HAVE_SSE, does runtime check for SSE1 support.
+ * OPUS_X86_MAY_HAVE_SSE2, does runtime check for SSE2 support.
+ * OPUS_X86_MAY_HAVE_SSE4_1, does runtime check for SSE4.1 support.
+ * OPUS_X86_MAY_HAVE_AVX2, does runtime check for AVX FMA AVX2 support.
+ * OPUS_X86_PRESUME_SSE, assume target CPU has SSE1 support (override runtime check).
+ * OPUS_X86_PRESUME_SSE2, assume target CPU has SSE2 support (override runtime check).
+
+-- The following OPTIONAL packages have been found:
+
+ * Threads
+ * Git
+
+-- The following REQUIRED packages have been found:
+
+ * Vulkan
+
+-- The following features have been disabled:
+
+ * OPUS_BUILD_SHARED_LIBRARY, build shared library.
+ * OPUS_BUILD_TESTING, build tests.
+ * OPUS_CUSTOM_MODES, enable non-Opus modes, e.g. 44.1 kHz & 2^n frames.
+ * OPUS_BUILD_PROGRAMS, build programs.
+ * OPUS_DISABLE_INTRINSICS, disable all intrinsics optimizations.
+ * OPUS_FIXED_POINT, compile as fixed-point (for machines without a fast enough FPU).
+ * OPUS_FLOAT_APPROX, enable floating point approximations (Ensure your platform supports IEEE 754 before enabling).
+ * OPUS_ASSERTIONS, additional software error checking.
+ * OPUS_FUZZING, causes the encoder to make random decisions (do not use in production).
+ * OPUS_CHECK_ASM, enable bit-exactness checks between optimized and c implementations.
+ * OPUS_DNN_FLOAT_DEBUG, Run DNN computations as float for debugging purposes.
+ * OPUS_INSTALL_PKG_CONFIG_MODULE, install pkg-config module.
+ * OPUS_INSTALL_CMAKE_CONFIG_MODULE, install CMake package config module.
+ * OPUS_DRED, enable DRED.
+ * OPUS_OSCE, enable OSCE.
+ * OPUS_STATIC_RUNTIME, build with static runtime library.
+ * OPUS_FIXED_POINT_DEBUG, debug fixed-point implementation.
+ * OPUS_VAR_ARRAYS, use variable length arrays for stack arrays.
+ * OPUS_NONTHREADSAFE_PSEUDOSTACK, use a non threadsafe pseudostack when neither variable length arrays or alloca is supported.
+ * OPUS_FAST_MATH, enable fast math (unsupported and discouraged use, as code is not well tested with this build option).
+ * OPUS_X86_PRESUME_SSE4_1, assume target CPU has SSE4.1 support (override runtime check).
+ * OPUS_X86_PRESUME_AVX2, assume target CPU has AVX FMA AVX2 support (override runtime check).
+
+-- The following OPTIONAL packages have not been found:
+
+ * LibUSB
+
+-- Configuring done (1.5s)
+-- Generating done (0.6s)
+-- Build files have been written to: C:/EmberEngine/build/release
+[0/4] Re-checking globbed directories...
+[1/291] Generating CXX dyndep file CMakeFiles\webm_reader.dir\CXX.dd
+[2/288] Generating CXX dyndep file _deps\sdl3-build\CMakeFiles\SDL3-static.dir\CXX.dd
+[3/283] Generating CXX dyndep file CMakeFiles\imgui.dir\CXX.dd
+[4/275] Generating CXX dyndep file _deps\meshoptimizer-build\CMakeFiles\meshoptimizer.dir\CXX.dd
+[5/253] Scanning C:\EmberEngine\engine\render\CloudsRdr2.cpp for CXX dependencies
+[6/253] Scanning C:\EmberEngine\engine\render\Clouds008.cpp for CXX dependencies
+[7/253] Scanning C:\EmberEngine\engine\world\Board.cpp for CXX dependencies
+[8/253] Scanning C:\EmberEngine\engine\render\Renderer.cpp for CXX dependencies
+[9/253] Generating CXX dyndep file engine\CMakeFiles\EmberEngine.dir\CXX.dd
+[10/167] Building CXX object engine\CMakeFiles\EmberEngine.dir\render\Clouds008.cpp.obj
+FAILED: [code=2] engine/CMakeFiles/EmberEngine.dir/render/Clouds008.cpp.obj 
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\cl.exe"  /nologo /TP -DGLM_FORCE_DEPTH_ZERO_TO_ONE -DGLM_FORCE_RADIANS -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS -DIMGUI_IMPL_VULKAN_USE_VOLK -DLUNASVG_BUILD_STATIC -DNOMINMAX -DVK_NO_PROTOTYPES -DVMA_DYNAMIC_VULKAN_FUNCTIONS=1 -DVMA_STATIC_VULKAN_FUNCTIONS=0 -DWIN32_LEAN_AND_MEAN -IC:\EmberEngine\engine -IC:\EmberEngine\build\release\_deps\sdl3-build\include-revision -IC:\EmberEngine\build\release\_deps\sdl3-src\include -IC:\EmberEngine\build\release\_deps\volk-src -IC:\VulkanSDK\1.4.363.0\include -IC:\EmberEngine\build\release\_deps\glm-src -IC:\EmberEngine\build\release\_deps\zstd-src\build\cmake\..\..\lib -IC:\EmberEngine\build\release\_deps\meshoptimizer-src\src -IC:\EmberEngine\build\release\_deps\lunasvg-src\include -IC:\EmberEngine\build\release\_deps\opus-src\include -external:IC:\EmberEngine\build\release\_deps\vma-src\include -external:IC:\EmberEngine\build\release\_deps\stb-src -external:IC:\EmberEngine\build\release\_deps\imgui-src -external:IC:\EmberEngine\build\release\_deps\imgui-src\backends -external:IC:\EmberEngine\build\release\_deps\nlohmann_json-src\single_include -external:IC:\EmberEngine\build\release\_deps\meshoptimizer-src\demo -external:IC:\EmberEngine\build\release\_deps\dav1d-src\include -external:IC:\EmberEngine\build\release\_deps\libwebm-src -external:W0 /DWIN32 /D_WINDOWS /EHsc /O2 /Ob1 /DNDEBUG -std:c++20 -MD -Z7 /W4 /permissive- /utf-8 /Zc:__cplusplus /showIncludes @engine\CMakeFiles\EmberEngine.dir\render\Clouds008.cpp.obj.modmap /Foengine\CMakeFiles\EmberEngine.dir\render\Clouds008.cpp.obj /Fdengine\CMakeFiles\EmberEngine.dir\EmberEngine.pdb /FS -c C:\EmberEngine\engine\render\Clouds008.cpp
+C:\EmberEngine\engine\render\Clouds008.cpp(107): error C3861: 'vkCheck': identificador não encontrado
+[11/167] Building CXX object engine\CMakeFiles\EmberEngine.dir\render\CloudsRdr2.cpp.obj
+[12/167] Building CXX object engine\CMakeFiles\EmberEngine.dir\world\Board.cpp.obj
+[13/167] Building CXX object engine\CMakeFiles\EmberEngine.dir\render\Renderer.cpp.obj
+ninja: build stopped: subcommand failed.

@@ -1,0 +1,202 @@
+[0/2] Re-checking globbed directories...
+[1/150] Shader triangle.VSMain
+[2/150] Shader triangle.PSMain
+[3/150] Shader tonemap.VSMain
+[4/150] Shader tonemap.PSMain
+[5/150] Shader worldmap.VSMain
+[6/150] Shader ground.VSMain
+[7/150] Shader ground.PSMain
+[8/150] Shader sprites.VSMain
+[9/150] Shader sprites.PSDepth
+[10/150] Shader worldmap.PSMain
+[11/150] Shader sprites.PSShadow
+[12/150] Shader sprites.VSShadow
+[13/150] Shader sprites_standing.VSMain
+[14/150] Shader sprites_standing.PSDepth
+[15/150] Shader effects.VSMain
+[16/150] Shader vfx.VSMain
+[17/150] Shader sprites.PSMain
+[18/150] Shader hiz.CSDownsample
+[19/150] Shader sprites_standing.PSMain
+[20/150] Shader bloom.CSUp
+[21/150] Shader bloom.CSDown
+[22/150] Shader effects.PSMain
+[23/150] Shader atmosphere.CSTransmittance
+[24/150] Shader atmosphere.CSMultiScattering
+[25/150] Shader atmosphere.CSSkyView
+[26/150] Shader atmosphere.CSAerial
+[27/150] Shader atmosphere.CSAmbient
+[28/150] Shader skyreflect.CSFilter
+[29/150] Shader skyreflect.CSCloudShadow
+[30/150] Shader volumetrics_clouds006.CSMaterial
+[31/150] Shader probes.CSRelight
+[32/150] Shader volumetrics_clouds006.CSInject
+[33/150] Shader volumetrics_clouds006.CSIntegrate
+[34/150] Shader skyreflect.CSBase
+[35/150] Shader cloud_legacy001.CSMarch
+[36/150] Shader cloud_legacy001.CSNoiseDetail
+[37/150] Shader cloud_legacy001.CSNoiseBase
+[38/150] Shader cloud_legacy001_sky.CSCloudShadow
+[39/150] Shader cloud_legacy001_sky.CSBase
+[40/150] Shader cloud_legacy002.CSMarch
+[41/150] Shader cloud_legacy002.CSNoiseDetail
+[42/150] Shader cloud_legacy002.CSNoiseBase
+[43/150] Shader cloud_legacy002_sky.CSCloudShadow
+[44/150] Shader cloud_legacy002_sky.CSBase
+[45/150] Shader cloud_legacy003.CSMarch
+[46/150] Shader cloud_legacy003_sky.CSBase
+[47/150] Shader cloud_legacy003_sky.CSCloudShadow
+[48/150] Shader cloud_legacy003.CSNoiseDetail
+[49/150] Shader cloud_legacy003.CSNoiseBase
+[50/150] Shader cloud_legacy004.CSMarch
+[51/150] Shader vfx.PSMain
+[52/150] Shader cloud_legacy004_sky.CSCloudShadow
+[53/150] Shader cloud_legacy004_sky.CSBase
+[54/150] Shader cloud_legacy004.CSNoiseDetail
+[55/150] Shader cloud_legacy004.CSNoiseBase
+[56/150] Shader cloud_legacy005.CSMarch
+[57/150] Shader cloud_legacy005_sky.CSCloudShadow
+[58/150] Shader clouds006.CSWeather
+[59/150] Shader cloud_legacy005_sky.CSBase
+[60/150] Shader clouds006.CSHeight
+[61/150] Shader clouds006.CSFilter
+[62/150] Shader clouds006.CSEsm
+[63/150] Shader cloud_legacy005.CSNoiseDetail
+[64/150] Shader clouds006.CSResolve
+[65/150] Shader cloud_legacy005.CSNoiseBase
+[66/150] Shader clouds006.CSAtlas
+[67/150] Shader clouds006.CSMarch
+[68/150] Shader clouds006.CSDisplacement
+[69/150] Shader clouds006.CSProbes
+[70/150] Shader clouds006.CSCube
+[71/150] Shader clouds006.CSWater
+[72/150] Shader clouds_rdr2.CSWeather
+[73/150] Shader cloudsvol.CSMarch
+[74/150] Shader clouds_rdr2.CSResolve
+[75/150] Shader clouds_rdr2.CSShadow
+[76/150] Shader clouds_rdr2.CSMarch
+[77/150] Shader clouds_rdr2.CSShadowBlur
+[78/150] Shader clouds_rdr2.CSAtlas
+[79/150] Shader clouds_rdr2.CSHeight
+[80/150] Shader clouds_rdr2.CSDisplacement
+[81/150] Shader clouds_rdr2.CSShadowMip
+[82/150] Shader cloudsvol.CSNoiseDetail
+[83/150] Shader cloudsvol.CSNoiseBase
+[84/150] Shader clouds_rdr2.CSAmbient
+[85/150] Shader clouds008.CSWeather
+[86/150] Shader clouds_rdr2.CSCube
+[87/150] Shader clouds_rdr2.CSWater
+[88/150] Shader clouds_rdr2.CSProbes
+[89/150] Shader clouds008.CSResolve
+[90/150] Shader clouds008.CSShadowBlur
+[91/150] Shader clouds008.CSShadow
+[92/150] Shader clouds008.CSAtlas
+[93/150] Shader clouds008.CSHeight
+[94/150] Shader clouds008.CSMarch
+[95/150] Shader clouds008.CSDisplacement
+[96/150] Shader clouds008.CSShadowMip
+[97/150] Shader clouds008.CSAmbient
+[98/150] Shader sunglare.CSGlare
+[99/150] Shader volume.CSInject
+[100/150] Shader volume.CSIntegrate
+[101/150] Shader clouds008.CSCube
+[102/150] Shader clouds008.CSWater
+[103/150] Shader clouds008.CSProbes
+[104/150] Shader volumetrics_v1.CSIntegrate
+[105/150] Shader volumetrics_v1.CSInject
+[106/150] Shader fog_look001.CSComposite
+[107/150] Shader fog_look001.CSMarch
+[108/150] Shader fog_look006.CSComposite
+[109/150] Shader fog_look006.CSMarch
+[110/150] Shader fog_look003.CSComposite
+[111/150] Shader fog_look003.CSMarch
+[112/150] Shader fog_look008.CSComposite
+[113/150] Shader fog_look008.CSMarch
+[114/150] Shader fog_look009.CSComposite
+[115/150] Shader fog_look009.CSMarch
+[116/150] Shader fog_look010.CSComposite
+[117/150] Shader fog_look010.CSMarch
+[118/150] Shader fog_look004.CSComposite
+[119/150] Shader fog_look004.CSMarch
+[120/150] Shader fog_look005.CSComposite
+[121/150] Shader fog_look005.CSMarch
+[122/150] Shader fog_look007.CSComposite
+[123/150] Shader fog_look007.CSMarch
+[124/150] Shader cull.CSInstancesEarly
+[125/150] Shader cull.CSInstancesLate
+[126/150] Shader cull.CSPrepare
+[127/150] Shader cull.CSPrepareDraw
+[128/150] Shader cull.CSTraverse
+[129/150] Shader meshlet.ASMain
+[130/150] Shader meshlet.MSMain
+[131/150] Shader meshlet.PSMain
+[132/150] Shader meshlet.PSShadow
+[133/150] Shader resolve.CSSky
+[134/150] Shader terrain.VSMain
+[135/150] Shader resolve_panorama.CSSky
+[136/150] Shader terrain.VSShadow
+[137/150] Shader terrain.PSShadow
+[138/150] Shader water.VSMain
+[139/150] Shader terrain.PSMain
+[140/150] Shader lights.CSClusters
+[141/150] Shader fog_look002.CSMarch
+[142/150] Shader fog_look002.CSComposite
+[143/150] Shader resolve.CSResolve
+[144/150] Shader resolve_panorama.CSResolve
+[145/150] Shader water.PSMain
+[146/150] Scanning C:\EmberEngine\apps\sandbox\main.cpp for CXX dependencies
+[147/150] Generating CXX dyndep file apps\sandbox\CMakeFiles\Sandbox.dir\CXX.dd
+[148/150] Building CXX object apps\sandbox\CMakeFiles\Sandbox.dir\main.cpp.obj
+C:\EmberEngine\apps\sandbox\BattleStage.h(346): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\GamePrefs.h(47): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\engine\render/UiArt.h(206): warning C4996: 'std::filesystem::u8path': warning STL4021: The std::filesystem::u8path() overloads are deprecated in C++20. The constructors of std::filesystem::path provide equivalent functionality via construction from u8string, u8string_view, or iterators with value_type char8_t. You can define _SILENCE_CXX20_U8PATH_DEPRECATION_WARNING or _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS to suppress this warning.
+C:\EmberEngine\apps\sandbox\QuestLog.h(110): warning C4244: 'inicializando': conversão de 'int' para 'float', possível perda de dados
+C:\EmberEngine\apps\sandbox\QuestLog.h(110): warning C4244: 'inicializando': conversão de 'int' para 'const float', possível perda de dados
+C:\EmberEngine\apps\sandbox\DevGfxSettings.h(69): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapStage.h(576): warning C4244: '=': conversão de 'genTypeT' para 'T', possível perda de dados
+        with
+        [
+            genTypeT=double
+        ]
+        and
+        [
+            T=float
+        ]
+C:\EmberEngine\apps\sandbox\MapStage.h(577): warning C4244: '=': conversão de 'genTypeT' para 'T', possível perda de dados
+        with
+        [
+            genTypeT=double
+        ]
+        and
+        [
+            T=float
+        ]
+C:\EmberEngine\apps\sandbox\MapStage.h(1008): warning C4456: a declaração de 'dt' oculta uma declaração local anterior
+C:\EmberEngine\apps\sandbox\MapStage.h(584): note: consulte a declaração de 'dt'
+C:\EmberEngine\apps\sandbox\MapStage.h(569): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapStage.h(1279): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapStage.h(3285): warning C4459: a declaração de 'kStep' oculta uma declaração global
+C:\EmberEngine\engine\world/Hex.h(20): note: consulte a declaração de 'ember::kStep'
+C:\EmberEngine\apps\sandbox\MapStage.h(3721): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapStage.h(4241): warning C4189: 'hero': variável local é inicializada mas não referenciada
+C:\EmberEngine\apps\sandbox\MapStage.h(7639): warning C4456: a declaração de 'steps' oculta uma declaração local anterior
+C:\EmberEngine\apps\sandbox\MapStage.h(7584): note: consulte a declaração de 'steps'
+C:\EmberEngine\apps\sandbox\MapStage.h(11365): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\LoadingScreens.h(78): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\CutsceneScreen.h(126): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\CutsceneScreen.h(127): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\InnScreen.h(357): warning C4458: a declaração de 'id' oculta o membro da classe
+C:\EmberEngine\apps\sandbox\InnScreen.h(370): note: consulte a declaração de 'ember::InnScreen::drawQuests::<lambda_1>::id'
+C:\EmberEngine\apps\sandbox\OverworldStage.h(1462): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\OverworldStage.h(1495): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(158): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(187): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(697): warning C4100: 'point': parâmetro não referenciado
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(1909): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(2699): warning C4996: 'std::filesystem::u8path': warning STL4021: The std::filesystem::u8path() overloads are deprecated in C++20. The constructors of std::filesystem::path provide equivalent functionality via construction from u8string, u8string_view, or iterators with value_type char8_t. You can define _SILENCE_CXX20_U8PATH_DEPRECATION_WARNING or _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS to suppress this warning.
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(2720): warning C4996: 'std::filesystem::u8path': warning STL4021: The std::filesystem::u8path() overloads are deprecated in C++20. The constructors of std::filesystem::path provide equivalent functionality via construction from u8string, u8string_view, or iterators with value_type char8_t. You can define _SILENCE_CXX20_U8PATH_DEPRECATION_WARNING or _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS to suppress this warning.
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(2721): warning C4996: 'std::filesystem::u8path': warning STL4021: The std::filesystem::u8path() overloads are deprecated in C++20. The constructors of std::filesystem::path provide equivalent functionality via construction from u8string, u8string_view, or iterators with value_type char8_t. You can define _SILENCE_CXX20_U8PATH_DEPRECATION_WARNING or _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS to suppress this warning.
+C:\EmberEngine\apps\sandbox\TestModeStage.h(673): warning C4244: 'inicializando': conversão de 'int' para 'float', possível perda de dados
+C:\EmberEngine\apps\sandbox\TestModeStage.h(673): warning C4244: 'inicializando': conversão de 'int' para 'const float', possível perda de dados
+C:\EmberEngine\apps\sandbox\main.cpp(995): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+[149/150] Linking CXX executable bin\Sandbox.exe

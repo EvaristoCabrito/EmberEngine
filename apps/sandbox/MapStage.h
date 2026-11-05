@@ -67,6 +67,7 @@
 #include "core/Log.h"
 #include "render/BoardGround.h"
 #include "render/CloudsRdr2.h"
+#include "render/Clouds008.h"
 #include "render/DebugUi.h"
 #include "render/FogLooks.h"
 #include "render/Renderer.h"
@@ -330,9 +331,9 @@ class MapStage final : public Stage {
     if (options.clouds == 6 || options.clouds == 3) savedCloudLook_ = 4;
     cloudQuality_ = std::clamp(options.cloudQuality, 0, 3);
     // The default setup (the user, 2026-11-05: "todo o mapa padrão deve começar com a nuvem 4, Andrômeda, à noite, com pelo menos meia
-    // lua"): a map opened without the game's clock (Modo teste, the Map Editor) starts at 22 h (the panel's fixed hour 9) with the full
+    // lua"): a map opened without the game's clock (Modo teste, the Map Editor) starts at 19:30 (the panel's "lua nascendo", 11) with the full
     // moon unless the map chose its Lua; the campaign's clock still sets the hour of a campaign map. The panel's Hora changes it.
-    dayCycle_ = options.hour >= 0 ? std::clamp(options.hour, 0, 10) : options.gameHour < 0.0f ? 9 : 0;
+    dayCycle_ = options.hour >= 0 ? std::clamp(options.hour, 0, 11) : options.gameHour < 0.0f ? 11 : 0;
     tempoConfig_ = options.tempoConfig;
     tempoTimeline_.configure(tempoConfig_, options.campaignMinute * 60000, true);
     gameHour_ = options.gameHour;  // < 0: the map's own hour (cycleHour)
@@ -389,7 +390,6 @@ class MapStage final : public Stage {
     if (board_->draft().sky == "real") starLook_ = 4;
     // A time of day chosen by hand (the Map Editor's Hora do dia) wins over the default night: the map's own hour ("Hora: do mapa").
     if (options.hour < 0 && options.gameHour < 0.0f && board_->draft().timeOfDayManual) dayCycle_ = 0;
-    boardWidth_ = static_cast<float>(b.x1 - b.x0);
     // The world's clock runs on EVERY map (the user, 2026-11-05: "O mundo tem um relógio que avança segundo por segundo. O céu, a
     // iluminação, as sombras e o clima acompanham esse relógio continuamente, durante todas as 24 horas"): a map opened without the
     // campaign's clock (Modo teste, the Map Editor's preview, the editor's Testar) starts at its own hour (the Hora do dia chosen by
@@ -407,6 +407,7 @@ class MapStage final : public Stage {
       dayCycle_ = 0;
       logInfo("world clock: this map has no campaign clock: it starts at {} and runs from there", worldClockText());
     }
+    boardWidth_ = static_cast<float>(b.x1 - b.x0);
     boardDepth_ = static_cast<float>(b.z1 - b.z0);
     boardZ0_ = static_cast<float>(b.z0);
     // The sun's shadow covers the board's bounding sphere (ground from y = 0 to its highest cell).
@@ -458,7 +459,8 @@ class MapStage final : public Stage {
       if (!options.battle.empty()) setUpBattle(options.battle);
       pinUnitArt();
       preloadHud();
-      if (std::string own = ember::emberBackdrop(board_->draft().id); !own.empty()) scene_->backdrop = std::move(own);  // the user's art
+      if (std::string own = ember::emberBackdrop(board_->draft().id); !own.empty() && !board_->draft().backgroundImage)
+        scene_->backdrop = std::move(own);  // An explicitly saved panorama takes precedence over the map's older painting.
       if (!scene_->backdrop.empty()) ground_.requestTexture(ember::backdropAsset(scene_->backdrop));
       // A map with a painting opens with it aligned to the sky (4; the user's "si por favor", 2026-10-19); "imagem até o horizonte"
       // (3) stays an experiment in the panel ("you will need some smarter edition for this to work"); without a painting, the sky.
@@ -795,9 +797,9 @@ class MapStage final : public Stage {
     laps.lap("effects");
     renderer.setEffects(effectList_);
     const bool tempoActive=tempoConfig_.enabled;
+    ember::atmos2::Service::instance().setGameTime(tempoMillisecondsNow());
     const auto tempoState=tempoActive?tempoNow():ember::tempo::Sample{};
     const auto tempoEffects=ember::tempo::controls(tempoState);
-    ember::atmos2::Service::instance().setGameTime(tempoMillisecondsNow());
     WeatherFx::TempoMotion tempoMotion{{tempoEffects.windX,tempoEffects.windZ},tempoEffects.heavyRain,0,0};
     if(tempoActive) {
       const auto minute=ember::tempo::floorDiv(tempoMillisecondsNow(),60000);
@@ -832,13 +834,20 @@ class MapStage final : public Stage {
       const float flash = WeatherFx::append(weatherFrame_, activeWeather, activeIntensity, activeWind,
           time, camera, cam_.target, [this](float x, float z) { return static_cast<float>(ember::groundHeightAt(*board_, look_, x, z)); }, tempoActive && !mapWeather ? &tempoMotion : nullptr);
       if (flash > 0) lights_.push_back(classicLight(cam_.target + glm::vec3(0,18,0), {.78f,.86f,1.0f}, flash*12.0f, 65.0f, 1.25f));
-      renderer.setVfx(weatherFrame_);
-    } else renderer.setVfx(spellFx_.vfx());
       if (time - weatherLogAt_ > 5.0f) {  // what the weather hands over (a diagnostic line every 5 s)
         weatherLogAt_ = time;
         logInfo("weather: {} x{:.2f} wind {:.2f}: {} draws, {} vertices (spells {} draws)", activeWeather, activeIntensity, activeWind,
                 weatherFrame_.draws.size(), weatherFrame_.vertices.size(), spellFx_.vfx().draws.size());
       }
+      renderer.setVfx(weatherFrame_);
+    } else renderer.setVfx(spellFx_.vfx());
+    // Crossing 004's local ashfall is additional to automatic campaign precipitation.
+    if (tempoActive && board_ && !interiorMap() && (board_->draft().emberTiles == "ashen-crossing004-pale-v02" || board_->draft().emberTiles == "ashen-white-v03") && weatherKind_ == "ash") {
+      if (activeWeather.empty() || activeWeather == "none" || activeIntensity <= 0) weatherFrame_ = spellFx_.vfx();
+      WeatherFx::append(weatherFrame_, "ash", weatherIntensity_, weatherWind_, time, camera, cam_.target,
+          [this](float x, float z) { return static_cast<float>(ember::groundHeightAt(*board_, look_, x, z)); });
+      renderer.setVfx(weatherFrame_);
+    }
     renderer.setLights(lights_);
     laps.lap("hand-over");
     // The renderer outlives the stage: a room's probes (and its gate request) stayed bound after leaving it, so the next map was shaded
@@ -1039,7 +1048,10 @@ class MapStage final : public Stage {
       Renderer::Clouds clouds;
       clouds.savedLook = savedCloudLook_;
       clouds.enabled = clouds_ >= 1;
-      clouds.rdr2 = clouds_ == 4;  // Nuvens RDR2 (render/CloudsRdr2.h): one choice among the others
+      clouds.look008 = clouds_ == 5;
+      if(clouds.look008)clouds.savedLook=0;
+      const bool cloud008Manual=clouds.look008 && (!tempoActive || options_.choicesPanel || static_cast<bool>(options_.editorClick));
+      clouds.rdr2 = clouds_ == 4 || clouds_ == 5;  // Nuvens RDR2 (render/CloudsRdr2.h): one choice among the others
       clouds.volumetric = clouds_ == 2 || clouds_ == 3;
       clouds.look006 = clouds_ == 3;
       if (clouds.rdr2) {
@@ -1052,13 +1064,22 @@ class MapStage final : public Stage {
                              kWind[3] = {0.3f, 1.0f, 2.5f};
           float target[7] = {kCover[cloudCoverChoice_], kKind[cloudKindChoice_], kGrowth[cloudGrowthChoice_], kCirrus[cloudCirrusChoice_],
                              kRain[cloudRainChoice_], kLightning[cloudLightningChoice_], kWind[cloudWindChoice_]};
+          if(cloud008Manual){target[0]=cloud008Coverage_;target[1]=cloud008Kind_;target[6]=cloud008Wind_;}
           if (cloudCoverage_ >= 0.0f) target[0] = cloudCoverage_;
             if (tempoActive) target[0] = tempoEffects.coverage, target[4] = tempoEffects.gray;
+          if(cloud008Manual){target[0]=cloudCoverage_>=0?cloudCoverage_:cloud008Coverage_;target[1]=cloud008Kind_;target[6]=cloud008Wind_;}
+          else if(clouds.look008 && tempoActive){
+            target[0]=cloudCoverage_>=0?cloudCoverage_:tempoEffects.coverage;
+            target[1]=static_cast<float>(tempoState.value(ember::tempo::Shape));
+            target[2]=static_cast<float>(tempoState.value(ember::tempo::Vertical));
+            target[3]=static_cast<float>(tempoState.value(ember::tempo::High));
+            target[4]=tempoEffects.rain;
+          }
           const float dt = cloudSmoothedAt_ < 0.0f ? 100.0f : std::clamp(now_ - cloudSmoothedAt_, 0.0f, 0.1f);
           cloudSmoothedAt_ = now_;
           const float k = std::min(1.0f, dt * 0.35f);
           for (int i = 0; i < 7; ++i) cloudNow_[i] += (target[i] - cloudNow_[i]) * k;
-        if (cloudCoverage_ >= 0.0f && !tempoActive) cloudNow_[0] = cloudCoverage_;  // the Densidade slider acts at once (2026-11-04)
+        if (cloudCoverage_ >= 0.0f && !tempoActive && !clouds.look008) cloudNow_[0] = cloudCoverage_;  // the Densidade slider acts at once (2026-11-04)
           clouds.coverage = cloudNow_[0];
           clouds.kind = cloudNow_[1];
           clouds.growth = cloudNow_[2];
@@ -1113,13 +1134,31 @@ class MapStage final : public Stage {
         clouds.gray = cloudGray_;
         clouds.enabled = clouds_ > 0 && cloudCoverage_ > 0.0f;
       }
+      if(clouds.look008){
+        clouds.coverage=cloudNow_[0];
+        if(cloud008Manual){
+          clouds.base=cloud008Base_;clouds.top=cloud008Base_+cloud008Thickness_;
+          clouds.anvilTop=clouds.top+clouds.growth*cloud008Thickness_*1.5f;
+          clouds.wind=glm::vec2(8.f,3.f)*cloudNow_[6];
+        }else if(tempoActive){
+          clouds.middleCoverage=static_cast<float>(tempoState.value(ember::tempo::Middle));
+          clouds.anvilTop=clouds.top+clouds.growth*(clouds.top-clouds.base)*1.5f;
+        }
+        if(cloud008Manual || cloudCoverage_>=0){
+          const float fade=std::clamp(cloudNow_[0]*4.f,0.f,1.f);
+          clouds.middleCoverage*=fade;clouds.cirrusCoverage*=fade;
+        }
+        clouds.enabled=clouds_>0 && std::max({clouds.coverage,clouds.middleCoverage,clouds.cirrusCoverage})>.0005f;
+        clouds.cirrusHeight=std::max(2600.f,clouds.anvilTop+1200.f);
+      }
       clouds.altitude += meanGround_;  // the heights above the board's mean ground
       clouds.base += meanGround_;
       clouds.top += meanGround_;
       clouds.anvilTop += meanGround_;
       clouds.cirrusHeight += meanGround_;
       renderer.setClouds(clouds);
-      if (CloudsRdr2* rdr2 = renderer.cloudsRdr2()) cloudTiming_ = rdr2->timing(renderer.gpuTimer());
+      if(clouds.look008) {if(auto* c=renderer.clouds008())cloudTiming_=c->timing(renderer.gpuTimer());}
+      else if (CloudsRdr2* rdr2 = renderer.cloudsRdr2()) cloudTiming_ = rdr2->timing(renderer.gpuTimer());
       // The real night sky (render/StarSky.h): the catalogue turned to this hour's sidereal time (the cycle's hour, or 22 h on a
       // map whose own time is night, 12 h by day: the stars then hide behind the daylight anyway).
       if (starSky_.loaded() && starLook_ == 4 && !starsOff_) {
@@ -1898,9 +1937,9 @@ class MapStage final : public Stage {
         dropdown("Luz das janelas", windowLight_, 2, [](int i) { return std::string(kWindowLight[i]); });
       }
       if (lightingMode_ == 3 && !darkIndoor()) {
-        const char* const kHours[11] = {gameHour_ >= 0.0f ? "do jogo" : "do mapa", "ciclo rápido", "ciclo lento", "amanhecer", "manhã", "meio-dia",
-                                         "tarde", "pôr do sol", "crepúsculo", "noite", "madrugada"};
-        dropdown("Hora", dayCycle_, 11, [&kHours](int i) { return std::string(kHours[i]); });
+        const char* const kHours[12] = {gameHour_ >= 0.0f ? "do jogo" : "do mapa", "ciclo rápido", "ciclo lento", "amanhecer", "manhã", "meio-dia",
+                                         "tarde", "pôr do sol", "crepúsculo", "noite", "madrugada", "lua nascendo"};
+        dropdown("Hora", dayCycle_, 12, [&kHours](int i) { return std::string(kHours[i]); });
       }
       static const char* kStance[2] = {"em pé", "para a câmera"};
       dropdown("Cards", cardStance_, 2, [](int i) { return std::string(kStance[i]); });
@@ -1944,20 +1983,29 @@ class MapStage final : public Stage {
       // Nuvens RDR2 (render/CloudsRdr2.h; the user, 2026-11-04: the Red Dead Redemption 2 clouds, named by their model, not a
       // number). The weather's inputs stay here as choices until a weather exists (the user's prompt §6); the GPU times are
       // shown as information only (§5).
-      // The Map Editor's looks (the user, 2026-11-04): OFF, básica, 001 (the live layer), 002-005 (the saved looks), RDR2; look 006
-      // is never offered ("REMOVE CLOUD 006"). Choice 2 + n = the volumetric layer with saved look n (0 = the live 001).
-      static const char* kClouds[8] = {"OFF", "básica", "001", "002", "003", "004", "005", "RDR2"};
-      int cloudChoice = clouds_ == 4 ? 7 : clouds_ >= 2 ? 2 + (savedCloudLook_ >= 2 ? savedCloudLook_ - 1 : 0) : clouds_;
-      if (dropdown("Nuvens", cloudChoice, 8, [](int i) { return std::string(kClouds[i]); })) {
-        clouds_ = cloudChoice == 7 ? 4 : std::min(cloudChoice, 2);
+      // The Map Editor's looks (the user, 2026-11-04): OFF, básica, 001 (the live layer), 002-005 (the saved looks), RDR2, 008; look
+      // 006 is never offered ("REMOVE CLOUD 006"). Choice 2 + n = the volumetric layer with saved look n (0 = the live 001).
+      static const char* kClouds[9] = {"OFF", "básica", "001", "002", "003", "004", "005", "RDR2", "008 — nova"};
+      int cloudChoice = clouds_ == 5 ? 8 : clouds_ == 4 ? 7 : clouds_ >= 2 ? 2 + (savedCloudLook_ >= 2 ? savedCloudLook_ - 1 : 0) : clouds_;
+      if (dropdown("Nuvens", cloudChoice, 9, [](int i) { return std::string(kClouds[i]); })) {
+        clouds_ = cloudChoice == 8 ? 5 : cloudChoice == 7 ? 4 : std::min(cloudChoice, 2);
         savedCloudLook_ = cloudChoice >= 3 && cloudChoice <= 6 ? cloudChoice - 1 : 0;
       }
-      if (clouds_ == 4) {
+      if(clouds_==5){
+        ImGui::SliderFloat("Cobertura 008",&cloud008Coverage_,0.f,1.f,"%.2f");
+        ImGui::SliderFloat("Tipo 008 (stratus / cumulus)",&cloud008Kind_,0.f,1.f,"%.2f");
+        ImGui::SliderFloat("Base 008",&cloud008Base_,80.f,1800.f,"%.0f");
+        ImGui::SliderFloat("Espessura 008",&cloud008Thickness_,60.f,1400.f,"%.0f");
+        ImGui::SliderFloat("Vento 008",&cloud008Wind_,0.f,3.f,"%.2f");
+      }
+      if (clouds_ == 4 || clouds_ == 5) {
         dropdown("Nuvens: qualidade", cloudQuality_, 4, [](int i) { return std::string(CloudsRdr2::kQualityNames[i]); });
+        if(clouds_==4){
         static const char* kCover[5] = {"limpo", "pouco", "médio", "muito", "fechado"};
         dropdown("Nuvens: cobertura", cloudCoverChoice_, 5, [](int i) { return std::string(kCover[i]); });
         static const char* kKind[3] = {"stratus", "misto", "cumulus"};
         dropdown("Nuvens: tipo", cloudKindChoice_, 3, [](int i) { return std::string(kKind[i]); });
+        }
         static const char* kGrowth[3] = {"OFF", "médio", "cumulonimbus"};
         dropdown("Nuvens: crescimento", cloudGrowthChoice_, 3, [](int i) { return std::string(kGrowth[i]); });
         static const char* kCirrus[3] = {"OFF", "pouco", "muito"};
@@ -1966,10 +2014,13 @@ class MapStage final : public Stage {
         dropdown("Nuvens: chuva", cloudRainChoice_, 2, [](int i) { return std::string(kRain[i]); });
         static const char* kLightning[3] = {"OFF", "raros", "frequentes"};
         dropdown("Nuvens: raios", cloudLightningChoice_, 3, [](int i) { return std::string(kLightning[i]); });
+        if(clouds_==4){
         static const char* kWind[3] = {"calmo", "brisa", "vento"};
         dropdown("Nuvens: vento", cloudWindChoice_, 3, [](int i) { return std::string(kWind[i]); });
-        ImGui::TextDisabled("RDR2: clima %.2f ms, marcha %.2f ms, temporal %.2f ms, sombra %.2f ms", cloudTiming_.weather, cloudTiming_.march,
+        }
+        ImGui::TextDisabled("%s: mapa %.2f ms, marcha %.2f ms, temporal %.2f ms, sombra %.2f ms", clouds_==5?"008":"RDR2", cloudTiming_.weather, cloudTiming_.march,
                             cloudTiming_.resolve, cloudTiming_.shadow);
+        if(clouds_==5)ImGui::TextDisabled("008: reflexos %.2f ms",cloudTiming_.reflections);
       }
     }
     {
@@ -2005,6 +2056,21 @@ class MapStage final : public Stage {
         dropdown("Clima", climaChoice_, static_cast<int>(atmosProfiles_.size()), [this](int i) { return atmosProfiles_[static_cast<size_t>(i)].label; });
     }
     tempoPanel_.draw(tempoConfig_, tempoTimeline_, tempoMillisecondsNow());
+    {
+      auto& atmos = ember::atmos2::Service::instance();
+      if (atmos.running()) {
+        int on = atmos.enabled() ? 1 : 0;
+        static const char* kAtmos2[2] = {"OFF (Tempo semeado)", "viva"};
+        if (dropdown("Atmos 2", on, 2, [](int i) { return std::string(kAtmos2[i]); })) atmos.setEnabled(on == 1);
+        if (atmos.enabled()) {
+          const auto w = atmos.sample(tempoMillisecondsNow());
+          ImGui::TextWrapped("%s · %.1f C (sensação %.1f) · umidade %.0f%% · vento %.1f m/s · chuva %.2f mm/h · nuvens %.0f%%/%.0f%% · visibilidade %.1f km · passo %lld%s",
+                             atmos.stateLabel(w).c_str(), w.airTemperatureC, w.feelsLikeC, w.humidity * 100.0, std::hypot(w.windLowX, w.windLowZ), w.rainMmPerHour,
+                             w.coverLow * 100.0, w.coverHigh * 100.0, w.visibilityKm, static_cast<long long>(w.step),
+                             atmos.behindSteps() > 1 ? std::format(" (alcançando: faltam {})", atmos.behindSteps()).c_str() : "");
+        }
+      }
+    }
     {
       static const char* kLayers[4] = {"sol / lua", "sombras", "luz do céu", "tochas e fogo"};
       for (uint32_t i = 0; i < 4; ++i) {
@@ -2056,21 +2122,6 @@ class MapStage final : public Stage {
           })) {
         noFog_ = look == 0;
         if (!noFog_) fogLook_ = static_cast<uint32_t>(look - 1);
-    {
-      auto& atmos = ember::atmos2::Service::instance();
-      if (atmos.running()) {
-        int on = atmos.enabled() ? 1 : 0;
-        static const char* kAtmos2[2] = {"OFF (Tempo semeado)", "viva"};
-        if (dropdown("Atmos 2", on, 2, [](int i) { return std::string(kAtmos2[i]); })) atmos.setEnabled(on == 1);
-        if (atmos.enabled()) {
-          const auto w = atmos.sample(tempoMillisecondsNow());
-          ImGui::TextWrapped("%s · %.1f C (sensação %.1f) · umidade %.0f%% · vento %.1f m/s · chuva %.2f mm/h · nuvens %.0f%%/%.0f%% · visibilidade %.1f km · passo %lld%s",
-                             atmos.stateLabel(w).c_str(), w.airTemperatureC, w.feelsLikeC, w.humidity * 100.0, std::hypot(w.windLowX, w.windLowZ), w.rainMmPerHour,
-                             w.coverLow * 100.0, w.coverHigh * 100.0, w.visibilityKm, static_cast<long long>(w.step),
-                             atmos.behindSteps() > 1 ? std::format(" (alcançando: faltam {})", atmos.behindSteps()).c_str() : "");
-        }
-      }
-    }
       }
     }
     ImGui::PopItemWidth();
@@ -2080,8 +2131,8 @@ class MapStage final : public Stage {
 
   // Weather edits update only precipitation. Keep the live board, camera, uploads and GPU resources intact.
   void selectCloudLook(int look){
-    look=std::clamp(look,0,7);savedCloudLook_=look>=1&&look<=5?look:0;
-    clouds_=look==0?0:look==7?4:2;  // 7 = Nuvens RDR2
+    look=std::clamp(look,0,8);savedCloudLook_=look>=1&&look<=5?look:0;
+    clouds_=look==0?0:look==8?5:look==7?4:2;  // 7 = Nuvens RDR2
     if(look==6)savedCloudLook_=4;  // look 006 removed from the game (2026-11-04): such a map draws the default, 004
   }
   void setEditorWeather(const ember::MapDraft& draft) {
@@ -2519,6 +2570,11 @@ class MapStage final : public Stage {
     return (options_.campaignMinute+elapsedBattleMinutes_)*60000+options_.campaignSubMinuteMs+explorationMilliseconds_;
   }
   std::int64_t campaignMinuteNow() const { return campaignMillisecondsNow()/60000; }
+  // "15:23:10": the world's clock, for the plates and the log.
+  std::string worldClockText() const {
+    const std::int64_t s = (campaignMillisecondsNow() / 1000) % 86400;
+    return std::format("{:02}:{:02}:{:02}", s / 3600, (s / 60) % 60, s % 60);
+  }
   void mergeCampaignClock(ember::Json& save) {
     const auto incoming=ember::campaignMilliseconds(save), now=campaignMillisecondsNow();
     if(incoming>now) {
@@ -2570,11 +2626,6 @@ class MapStage final : public Stage {
   float flatY(float z) const { return boardTop_ + kFlatLift + (z - boardZ0_) * kFlatRowStep; }
   // The camera bar (Ember GameApp.tsx + ember-plate): 28 px plates (size-7), 4 px apart (gap-1), 8 px from the
   // corner (inset-x-2, top 0.5rem), 10 px text; the window's padding leaves room for the shadow and glow.
-  // "15:23:10": the world's clock, for the plates and the log.
-  std::string worldClockText() const {
-    const std::int64_t s = (campaignMillisecondsNow() / 1000) % 86400;
-    return std::format("{:02}:{:02}:{:02}", s / 3600, (s / 60) % 60, s % 60);
-  }
   static constexpr float kPlate = 28.0f, kBarGap = 4.0f, kBarInset = 8.0f, kPlateText = 12.0f, kPlateGlow = 10.0f;
   static constexpr float kFlameEmit = 2.5f;           // Ember FLAME_EMIT
   // Light mode "real" (ARCHITECTURE 7.6 step A).
@@ -4557,10 +4608,12 @@ class MapStage final : public Stage {
     if (dayCycle_ == 0) return gameHour_;  // the game's clock (clockOn())
     // amanhecer / pôr do sol: the disc ~6 deg up (at 6.0 / 18.0 it sits half under the horizon and the camera, metering
     // the dark ground, blows the sky out: the user's "super bright", 2026-10-19); crepúsculo: the sun 6 deg down.
-    static constexpr float kFixed[8] = {6.35f, 9.0f, 12.0f, 15.0f, 17.65f, 18.6f, 22.0f, 3.0f};
+    // "lua nascendo" (19:30, added 2026-11-05: the default setup's hour): full night (the sun 24 deg down) with the full moon
+    // rising low (21 deg up), where a camera looking at the horizon sees it (at 22 h it stands 48 deg up, above the view).
+    static constexpr float kFixed[9] = {6.35f, 9.0f, 12.0f, 15.0f, 17.65f, 18.6f, 22.0f, 3.0f, 19.5f};
     if (dayCycle_ == 1) return std::fmod(6.0f + time * 24.0f / 120.0f, 24.0f);    // ciclo rápido: a day in 2 minutes
     if (dayCycle_ == 2) return std::fmod(6.0f + time * 24.0f / 1440.0f, 24.0f);   // ciclo lento: a day in 24 minutes
-    return kFixed[std::clamp(dayCycle_ - 3, 0, 7)];
+    return kFixed[std::clamp(dayCycle_ - 3, 0, 8)];
   }
   Renderer::Lighting cycleLighting(float time, const ember::Moonlight& moon, const char* phase) const {
     Renderer::Lighting l;
@@ -4632,7 +4685,7 @@ class MapStage final : public Stage {
         l.sunIntensity = nightSkyLux;
       }
       const float twilight = dayMeterAtHorizon * std::pow(10.0f, glm::degrees(elevation) / 2.4f);
-      meterLux_ = twilight + l.sunIntensity * (std::max(moonDir.y, 0.05f) + 0.2f);
+      meterLux_ = twilight + l.sunIntensity * (std::max(l.sunDirection.y, 0.05f) + 0.2f);
       l.ambientMul = kNightFill;  // the night's shadow side never pure black (realLighting's rule)
     }
     if (moonDir.y > -0.05f) {
@@ -4652,6 +4705,22 @@ class MapStage final : public Stage {
   float moonDiscGlow() const { return kMoonDiscWhite / std::max(exposure_, 1e-6f); }
   // A full or a blood moon: no dark side, its whole disc is drawn (atmosphere.hlsli moonDisc; the user, 2026-11-03: "CLEARLY WHITE SPOTS").
   static bool moonWholePhase(std::string_view phase) { return phase == "full" || phase == "blood"; }
+  // The real moon's elongation, degrees east of the sun, by its phase (new 0, first quarter 90, full 180, last quarter 270); the
+  // blood moon is a full moon in the Earth's shadow.
+  static float moonElongation(std::string_view phase) {
+    for (int k = 0; k < 8; ++k)
+      if (phase == ember::kMoonPhases[k]) return 45.0f * static_cast<float>(k);
+    return 180.0f;
+  }
+  // AtmosphereFrame.moonWhole for the 24 h cycle's real moon: 1 = full / blood (no dark side), 2 = waxing, 3 = waning: the disc's
+  // lit side is turned toward the sun (atmosphere.hlsli moonDisc), as on the real moon. 0 = the art upright (the map presets).
+  static float realMoonFlag(std::string_view phase) {
+    if (moonWholePhase(phase)) return 1.0f;
+    return moonElongation(phase) < 180.0f ? 2.0f : 3.0f;
+  }
+  // The moon's surface by day: lit by the sun like grey rock (its albedo 0.12), so in a daylight sky it shows pale over the blue,
+  // as the real one does; at night the disc's display white (moonDiscGlow) is far below this and stays as it was.
+  static constexpr float kMoonAlbedo = 0.12f;
   // The moon's light by its phase as in the real world (the user, 2026-11-03: "COPY HOW THE WORLD ACTUALLY WORKS"): the full moon's
   // share at phase angle a (degrees from full), Allen's law 10^(-0.4 (0.026 a + 4e-9 a^4)): a quarter ~9 %, a crescent ~1 %, the new
   // moon ~0; a total eclipse (the blood moon) ~0.02 %.
@@ -4697,22 +4766,6 @@ class MapStage final : public Stage {
   }
 
   // The map's units find their own catalog entry by key. The panel's poses: those at least one of the map's units
-  // The real moon's elongation, degrees east of the sun, by its phase (new 0, first quarter 90, full 180, last quarter 270); the
-  // blood moon is a full moon in the Earth's shadow.
-  static float moonElongation(std::string_view phase) {
-    for (int k = 0; k < 8; ++k)
-      if (phase == ember::kMoonPhases[k]) return 45.0f * static_cast<float>(k);
-    return 180.0f;
-  }
-  // AtmosphereFrame.moonWhole for the 24 h cycle's real moon: 1 = full / blood (no dark side), 2 = waxing, 3 = waning: the disc's
-  // lit side is turned toward the sun (atmosphere.hlsli moonDisc), as on the real moon. 0 = the art upright (the map presets).
-  static float realMoonFlag(std::string_view phase) {
-    if (moonWholePhase(phase)) return 1.0f;
-    return moonElongation(phase) < 180.0f ? 2.0f : 3.0f;
-  }
-  // The moon's surface by day: lit by the sun like grey rock (its albedo 0.12), so in a daylight sky it shows pale over the blue,
-  // as the real one does; at night the disc's display white (moonDiscGlow) is far below this and stays as it was.
-  static constexpr float kMoonAlbedo = 0.12f;
   // has, in the catalog's order of first appearance with its label, the idle ("Parado") first.
   void setUpPoses(const std::filesystem::path& path) {
     if (catalog_.empty()) {  // (read once: the editor's edits match the scene's units again on the same catalog)
@@ -6149,9 +6202,30 @@ class MapStage final : public Stage {
   // movement; once no enemy is in sight (fallen or out of view) the party roams again (the user, 2026-10-17: "free
   // movement switch back and forth"). Ember roamed the whole mission; its free reach stays (Battle::reachable while
   // roaming), and like Ember the reach is not washed over the board (a box says it is free movement).
-  static constexpr int kRoamSight = ember::kSightRadius;  // without fog of war: an enemy this many hexes from the party is met (the same 12 as the fog's sight; was 6)
+  // The party's sight this moment: kSightRadius (15) less the weather's penalty (the user, 2026-11-05: "1 penalty to weak rain, 2
+  // penalty to strong rain, 3 penalty to ashes and 4 penalty to snow"): the map's own Clima (rain 1, storm 2, ash 3, snow 4), else
+  // the Tempo's natural rain (heavy 2, light 1). Indoors the weather does not fall: no penalty. Never under 1.
+  int weatherSightPenalty() const {
+    if (!board_ || interiorMap()) return 0;
+    const bool mapWeather = !weatherKind_.empty() && weatherKind_ != "none";
+    if (mapWeather) {
+      if (weatherIntensity_ <= 0) return 0;
+      if (weatherKind_ == "rain") return 1;
+      if (weatherKind_ == "storm") return 2;
+      if (weatherKind_ == "ash") return 3;
+      if (weatherKind_ == "snow") return 4;
+      return 0;
+    }
+    if (!tempoConfig_.enabled) return 0;
+    const auto t = ember::tempo::controls(tempoNow());
+    if (t.heavyRain > 0.0f) return 2;
+    if (t.rain > 0.0f) return 1;
+    return 0;
+  }
+  int sightRadius() const { return std::max(1, ember::kSightRadius - weatherSightPenalty()); }
+  int roamSight() const { return sightRadius(); }  // without fog of war: an enemy this many hexes from the party is met (the same as the fog's sight; was 6)
 
-  // The living enemies the party sees right now (fog: on a hex in sight; without fog: within kRoamSight of a hero).
+  // The living enemies the party sees right now (fog: on a hex in sight; without fog: within roamSight() of a hero).
   std::vector<int> enemiesInSight() const {
     const ember::HexLayout& L = board_->layout();
     // The party's eyes where its feet are now (mid-walk too).
@@ -6172,7 +6246,7 @@ class MapStage final : public Stage {
         const size_t i = static_cast<size_t>(ember::indexOf(L, e.x, e.y));
         seen = litHex(i);  // what is drawn is in sight: an enemy on lit ground starts the fight, as the player sees it
       } else {
-        seen = std::any_of(eyes.begin(), eyes.end(), [&](ember::BattleHex h) { return ember::Battle::distance(h, {e.x, e.y}) <= kRoamSight; });
+        seen = std::any_of(eyes.begin(), eyes.end(), [&](ember::BattleHex h) { return ember::Battle::distance(h, {e.x, e.y}) <= roamSight(); });
       }
       if (seen) met.push_back(static_cast<int>(b));
     }
@@ -11432,7 +11506,7 @@ class MapStage final : public Stage {
         int inRange = 0, seen = 0;
         for (int y = 0; y < L.rows; ++y)
           for (int x = 0; x < L.cols; ++x)
-            if (ember::hexDistance({c, r}, {x, y}) <= ember::kSightRadius) ++inRange, seen += fog_->sightReaches({c, r}, {x, y}) ? 1 : 0;
+            if (ember::hexDistance({c, r}, {x, y}) <= sightRadius()) ++inRange, seen += fog_->sightReaches({c, r}, {x, y}) ? 1 : 0;
         logInfo("sight: {} at ({}, {}) sees {} of the {} hexes in range ({} hidden by ground or what stands on it)", u.name, c, r, seen,
                 inRange, inRange - seen);
       }
@@ -11496,7 +11570,7 @@ class MapStage final : public Stage {
 
   void relight(const std::vector<ember::HexPoint>& party) {
     std::vector<ember::Eye> eyes;
-    for (const ember::HexPoint& p : party) eyes.push_back({p, ember::kSightRadius});
+    for (const ember::HexPoint& p : party) eyes.push_back({p, sightRadius()});
     fog_->relight(eyes);
   }
 
@@ -11785,6 +11859,7 @@ class MapStage final : public Stage {
       cloudLightningChoice_ = 0, cloudWindChoice_ = 1;
   float cloudNow_[7] = {0.45f, 0.9f, 0.0f, 0.25f, 0.0f, 0.0f, 1.0f};
   float cloudSmoothedAt_ = -1.0f;
+  float cloud008Coverage_=.65f,cloud008Kind_=.75f,cloud008Base_=380.f,cloud008Thickness_=440.f,cloud008Wind_=1.f;
   CloudsRdr2::Timing cloudTiming_{};
   int glare_ = 0;        // the panel's "Clarão": 0 OFF (default), 1 look 001 (shaders/sunglare.hlsl)
   int shafts_ = 0;       // the panel's "Raios de luz": 0 OFF (default), 1 look 001
@@ -11837,6 +11912,7 @@ class MapStage final : public Stage {
   // The orbit camera: the goal above (yaw_ ... target_), the view on show gliding to it, its limits and steps.
   OrbitView cam_;
   VfxFrame weatherFrame_;
+  float weatherLogAt_ = -100.0f;
   std::string weatherKind_;
   float weatherIntensity_ = 0.7f, weatherWind_ = 0.35f;
   float cloudCoverage_ = -1.0f, cloudGray_ = 0.0f;
@@ -11891,7 +11967,6 @@ class MapStage final : public Stage {
       if (const ModelGateParts* g = modelGateParts(m.model))
         for (const char* asset : {g->frame, g->leaves[0], g->leaves[1]})
           if (!modelMeshes_.contains(asset)) modelMeshes_[asset] = meshes_.add(assetId(asset));
-  float weatherLogAt_ = -100.0f;
   }
   static constexpr float kGlide = 10.0f;  // 1/s: ~90% of a move in 0.23 s, no overshoot
   // -8 deg to 89.5 deg (straight down). The eye itself never goes below kMinEyePitch (5 deg, nearly level: it would enter the

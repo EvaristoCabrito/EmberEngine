@@ -1,0 +1,6 @@
+[0/2] Re-checking globbed directories...
+[1/96] Scanning C:\EmberEngine\engine\render\Clouds008.cpp for CXX dependencies
+[2/96] Generating CXX dyndep file engine\CMakeFiles\EmberEngine.dir\CXX.dd
+[3/6] Building CXX object engine\CMakeFiles\EmberEngine.dir\render\Clouds008.cpp.obj
+[4/6] Linking CXX static library engine\EmberEngine.lib
+[5/6] Linking CXX executable bin\Sandbox.exe

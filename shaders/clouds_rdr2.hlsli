@@ -45,6 +45,9 @@ static const uint kR2Flash = 192u;         // float4: the lightning flash this f
 static const uint kR2Screen = 208u;        // float4: screen width, screen height, history valid (1 / 0), mean ground y
 static const uint kR2Shadow = 224u;        // float4: shadow rect x0, z0, 1 / width, 1 / height (over the board)
 static const uint kR2ShadowInfo = 240u;    // float4: shadow map size, shadow strength, shadow height (world y), light steps
+static const uint kR2Textures=272u, kR2Maps=288u, kR2Indirect=304u, kR2Temporal=320u,
+                  kR2Middle=336u, kR2ProbeRect=352u, kR2Probes=368u, kR2Ambient=376u,
+                  kR2Flashes=384u, kR2Controls=448u;
 static const uint kR2BlueAddress = 256u;   // uint64: device address of the 64 x 64 blue noise (floats)
 
 uint64_t rdr2Record(MeshFrame f) { return vk::RawBufferLoad<uint64_t>(f.atmosphere + kRdr2RecordOffset); }
@@ -59,6 +62,9 @@ struct Rdr2Clouds {
   float3 flash;
   float flashStrength;
   float meanGround;
+  uint heightMap, displacement, middleMap;
+  float4 middle;
+  uint64_t record;
 };
 Rdr2Clouds loadRdr2(MeshFrame f) {
   const uint64_t r = vk::RawBufferLoad<uint64_t>(f.atmosphere + kRdr2RecordOffset);
@@ -81,6 +87,11 @@ Rdr2Clouds loadRdr2(MeshFrame f) {
   const float4 flash = vk::RawBufferLoad<float4>(r + kR2Flash);
   c.flash = flash.xyz, c.flashStrength = flash.w;
   c.meanGround = vk::RawBufferLoad<float4>(r + kR2Screen).w;
+  c.record=r;
+  c.heightMap=vk::RawBufferLoad<uint4>(r+kR2Textures).w;
+  const uint4 maps=vk::RawBufferLoad<uint4>(r+kR2Maps);
+  c.displacement=maps.y;c.middleMap=maps.z;
+  c.middle=vk::RawBufferLoad<float4>(r+kR2Middle);
   return c;
 }
 
@@ -137,10 +148,11 @@ float rdr2EdgeSoftness(float kind, float h) { return lerp(0.55, 0.28, kind) * le
 
 // --- The displacement field (two samples of a 2D map, xz and xy planes in the talk; here the drifting 2D value noise) -------
 float3 rdr2Displace(Rdr2Clouds c, float3 p, float scale) {
-  const float2 q1 = (p.xz + c.wind * c.time * 0.35) / scale;
-  const float2 q2 = (p.xy + float2(c.wind.x * c.time * 0.2, 0.0)) / scale;
-  const float dx = cloudNoise(q1 + 7.3) - 0.5, dz = cloudNoise(q1 * 1.3 + 41.1) - 0.5, dy = cloudNoise(q2 + 19.7) - 0.5;
-  return float3(dx, dy * 0.5, dz) * scale * 0.9;
+  const float2 q1=frac((p.xz+c.wind*c.time*.35)/scale);
+  const float2 q2=frac((p.xy+float2(c.wind.x*c.time*.2,0))/scale);
+  const float2 d0=gTextures[NonUniformResourceIndex(c.displacement)].SampleLevel(gSamplers[c.samplerRepeat],q1,0).rg;
+  const float2 d1=gTextures[NonUniformResourceIndex(c.displacement)].SampleLevel(gSamplers[c.samplerRepeat],q2,0).rg;
+  return float3(d0.x,d1.x*.5,d0.y)*scale*.45;
 }
 
 // --- The low layer's column: its local top (the cumulonimbus climbs above the layer's top) and relative height -------------
@@ -149,16 +161,20 @@ float rdr2ColumnTop(Rdr2Clouds c, float growthHere) { return lerp(c.top, c.anvil
 // The density at a world point, 0 .. 1. `cheap` = no detail erosion (the light march, the shadows, the reflection map's
 // march); `lod` 0 near .. 1 far (the fine erosion fades out before the coarse one: far clouds sampled at long steps alias
 // into grain otherwise).
-float rdr2Density(Rdr2Clouds c, float3 p, bool cheap, float lod) {
+float rdr2LayerDensity(Rdr2Clouds c, float3 p, bool cheap, float lod, bool middle) {
   const float4 w = rdr2Weather(c, p.xz);
-  const float cover = w.r;
+  const float2 middleUv=(p.xz-c.worldRect.xy)*c.worldRect.zw;
+  const float middleCover=middle?gTextures[NonUniformResourceIndex(c.middleMap)].SampleLevel(gSamplers[c.samplerClamp],saturate(middleUv),0).r:0;
+  const float cover = middle?middleCover:w.r;
   if (cover <= 0.004) return 0.0;
-  const float growthHere = saturate(w.a) * c.growth;
-  const float columnTop = rdr2ColumnTop(c, growthHere);
-  const float h = (p.y - c.base) / max(columnTop - c.base, 1.0);
+  const float growthHere = middle?0.0:saturate(w.a)*c.growth;
+  const float base=middle?c.middle.x:c.base;
+  const float columnTop = middle?c.middle.y:rdr2ColumnTop(c,growthHere);
+  const float h = (p.y-base)/max(columnTop-base,1.0);
   if (h <= 0.0 || h >= 1.0) return 0.0;
-  const float kind = saturate(w.g);
-  const float profile = rdr2HeightProfile(h, kind, growthHere);
+  const float kind = middle?0.5:saturate(w.g);
+  const float4 strip=gTextures[NonUniformResourceIndex(c.heightMap)].SampleLevel(gSamplers[c.samplerClamp],float2(.5,h),0);
+  const float profile = middle?rdr2HeightProfile(h,kind,0):lerp(strip.w,rdr2HeightProfile(h,kind,growthHere),saturate(abs(kind-c.kind)*2+growthHere));
   if (profile <= 0.002) return 0.0;
   // The 3D body: Perlin-Worley (r) lifted by the lower-frequency Worley (gba), drifting with the wind, sheared with the
   // height, displaced by the 2D field so no two columns repeat the lattice.
@@ -176,7 +192,7 @@ float rdr2Density(Rdr2Clouds c, float3 p, bool cheap, float lod) {
   if (density <= 0.002) return 0.0;
   if (cheap) return density * 0.74;  // the light sees the eroded cloud's size (the erosion below removes about this much)
   if (lod < 1.0) {
-    const float soft = rdr2EdgeSoftness(kind, h);
+    const float soft = middle?rdr2EdgeSoftness(kind,h):strip.z;
     const float4 d = rdr2DetailSample(c, (p + drift * 1.25 + rdr2Displace(c, p, 420.0) * 0.5) / (cell * 0.16));
     const float detailFbm = d.r * 0.625 + d.g * 0.25 + d.b * 0.125;
     const float erosion = lerp(detailFbm, 1.0 - detailFbm, saturate(h * 5.0));  // wispy at the base, billowy at the top
@@ -191,8 +207,12 @@ float rdr2Density(Rdr2Clouds c, float3 p, bool cheap, float lod) {
   return saturate(density);
 }
 
+float rdr2Density(Rdr2Clouds c,float3 p,bool cheap,float lod) {
+  return saturate(rdr2LayerDensity(c,p,cheap,lod,false)+rdr2LayerDensity(c,p,cheap,lod,true));
+}
+
 // Extinction per world unit at density 1 (a unit is ~25 m of air: a cumulus is opaque within a few units; rain thickens it).
-float rdr2Extinction(Rdr2Clouds c) { return 0.33 * lerp(1.0, 1.6, c.rain); }
+float rdr2Extinction(Rdr2Clouds c) { return 0.035 * lerp(1.0, 1.6, c.rain); }
 
 // --- The cirrus sheet: a 2D density at the cirrus height, streaks along the wind, thin (optical depth under 1) ---------------
 float rdr2Cirrus(Rdr2Clouds c, float2 xz) {
@@ -211,10 +231,10 @@ float rdr2Cirrus(Rdr2Clouds c, float2 xz) {
 // --- The shadow the layer throws: the optical depth along the light from `position` up through the low layer (cheap density,
 // `taps` samples spaced quadratically: the first ones near the base, where the light leaves the cloud) and the cirrus sheet.
 float rdr2LightDepthFrom(Rdr2Clouds c, float3 position, float3 toLight, uint taps, float dither) {
-  if (toLight.y <= 0.02) return 0.0;
-  const float t0 = max((c.base - position.y) / toLight.y, 0.0);
-  const float t1 = (c.anvilTop - position.y) / toLight.y;
-  if (t1 <= t0) return 0.0;
+  if (abs(toLight.y)<0.005) return 0.0;
+  const float upper=max(c.anvilTop,c.middle.y);
+  const float enter=(c.base-position.y)/toLight.y, leave=(upper-position.y)/toLight.y;
+  const float t0=max(min(enter,leave),0.0),t1=max(max(enter,leave),0.0);
   const float span = t1 - t0;
   float depth = 0.0;
   for (uint i = 0u; i < taps; ++i) {

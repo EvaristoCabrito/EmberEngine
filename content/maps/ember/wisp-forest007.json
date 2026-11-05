@@ -1328,14 +1328,6 @@
     ],
     "enemySpawns": [
       {
-        "name": "Inimigo 1",
-        "classId": "birolho2",
-        "x": 15,
-        "y": 4,
-        "useClassSprite": true,
-        "level": 1
-      },
-      {
         "name": "Inimigo 2",
         "classId": "captain",
         "x": 5,

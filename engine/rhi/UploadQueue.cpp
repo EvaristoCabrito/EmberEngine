@@ -88,6 +88,9 @@ void UploadQueue::reclaim() {
 
 bool UploadQueue::reserve(uint64_t bytes, uint64_t& offset) {
   const uint64_t size = alignUp(bytes);
+  // An empty ring has no live reservations: discard the old write position. Otherwise an 8192-square BC7 mip
+  // (exactly 64 MiB) can never fit a 64 MiB ring after a smaller upload, permanently blocking the whole queue.
+  if (used_ == 0) head_ = 0;
   // Data never wraps: a reservation that would cross the end starts again at 0, and the skipped end
   // counts as used until this submission finishes. The ring is first-in, first-out, so with
   // used_ + total <= capacity the space from head_ onwards is free.

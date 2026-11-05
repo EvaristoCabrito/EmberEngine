@@ -43,9 +43,22 @@ struct Rdr2Frame {
   glm::vec4 shadowInfo{0.0f};     // 240: shadow size, strength, height, light taps
   uint64_t blueNoiseAddress = 0;  // 256
   uint64_t pad = 0;               // 264
+  glm::uvec4 textures{0};         // 272: raw depth, history depth, resolved depth, height strip
+  glm::uvec4 maps{0};             // 288: height atlas, displacement, middle weather, water colour
+  glm::uvec4 indirect{0};         // 304: cube array, previous water, shadow levels, ray stride
+  glm::vec4 temporal{0};          // 320: elapsed time, valid history, indirect period, flash count
+  glm::vec4 middle{0};            // 336: base, top, coverage, reserved
+  glm::vec4 probeRect{0};         // 352: x0,z0,1/width,1/height
+  uint64_t probes = 0;            // 368: 32 x 32 x 9 float4 SH irradiance, unscaled
+  uint64_t ambient = 0;           // 376: reduced clear-sky illumination
+  std::array<glm::vec4, 4> flashes{}; // 384: simultaneous lightning positions/strengths
+  glm::vec4 controls{0};          // 448: shadow strength, shadow receiver height, reserved
+
 };
-static_assert(sizeof(Rdr2Frame) == 272 && offsetof(Rdr2Frame, layer) == 32 && offsetof(Rdr2Frame, previousViewProj) == 96 &&
-              offsetof(Rdr2Frame, steps) == 160 && offsetof(Rdr2Frame, shadowInfo) == 240 && offsetof(Rdr2Frame, blueNoiseAddress) == 256);
+static_assert(sizeof(Rdr2Frame) == 464 && offsetof(Rdr2Frame, layer) == 32 && offsetof(Rdr2Frame, previousViewProj) == 96 &&
+              offsetof(Rdr2Frame, steps) == 160 && offsetof(Rdr2Frame, shadowInfo) == 240 && offsetof(Rdr2Frame, blueNoiseAddress) == 256 && offsetof(Rdr2Frame, textures) == 272 &&
+              offsetof(Rdr2Frame, temporal) == 320 && offsetof(Rdr2Frame, probes) == 368 &&
+              offsetof(Rdr2Frame, flashes) == 384 && offsetof(Rdr2Frame, controls) == 448);
 
 class CloudsRdr2 {
  public:
@@ -55,7 +68,7 @@ class CloudsRdr2 {
     int quality = 0;              // 0 Ultra (default), 1 High, 2 Medium, 3 Low
     float base = 380.0f, top = 640.0f, anvilTop = 1100.0f, cirrusHeight = 2600.0f;  // world y (the caller adds the mean ground)
     float coverage = 0.45f;       // the low layer, 0 clear .. 1 overcast
-    float cirrusCoverage = 0.25f;
+    float cirrusCoverage = 0.25f, middleCoverage = 0.15f;
     float kind = 0.65f;           // 0 stratus .. 1 cumulus
     float growth = 0.0f;          // 0 .. 1 towards the cumulonimbus
     float rain = 0.0f;            // 0 .. 1: darker, denser
@@ -75,7 +88,7 @@ class CloudsRdr2 {
     uint32_t shadowMap = 0xFFFFFFFFu;  // the blurred shadow map (sampled), or none
   };
   struct Timing {  // the last frame's GPU scopes (the panel shows them as information)
-    double weather = 0.0, march = 0.0, resolve = 0.0, shadow = 0.0;
+    double weather = 0.0, march = 0.0, resolve = 0.0, shadow = 0.0, height = 0.0, ambient = 0.0, probes = 0.0, reflections = 0.0;
   };
 
   CloudsRdr2(VulkanContext& context, Bindless& bindless, uint32_t samplerRepeat, uint32_t samplerClamp);
@@ -95,6 +108,9 @@ class CloudsRdr2 {
     Image image;
     uint32_t sampled = 0xFFFFFFFFu, storage = 0xFFFFFFFFu;
     uint32_t width = 0, height = 0;
+    std::array<VkImageView, 6> views{};
+    std::array<uint32_t, 6> mipStorage{};
+    uint32_t levels = 1, layers = 1;
     bool ready = false;  // transitioned to GENERAL once
   };
   Texture make(uint32_t width, uint32_t height, VkFormat format);
@@ -106,10 +122,13 @@ class CloudsRdr2 {
   Bindless& bindless_;
   uint32_t samplerRepeat_, samplerClamp_;
   Texture weather_, march_, resolved_[2], shadowRaw_, shadowTemp_, shadow_;
-  Buffer blue_;
+  Texture depth_, historyDepth_[2], height_, atlas_, displacement_, middle_, cube_, water_[2];
+  Buffer blue_, probes_, ambient_;
   std::array<Buffer, kFramesInFlight> records_{};
   VkPipeline weatherPipeline_ = VK_NULL_HANDLE, marchPipeline_ = VK_NULL_HANDLE, resolvePipeline_ = VK_NULL_HANDLE,
              shadowPipeline_ = VK_NULL_HANDLE, blurPipeline_ = VK_NULL_HANDLE;
+  VkPipeline atlasPipeline_{}, heightPipeline_{}, displacementPipeline_{}, mipPipeline_{}, ambientPipeline_{},
+             probesPipeline_{}, cubePipeline_{}, waterPipeline_{};
   glm::uvec2 screen_{0};
   int quality_ = -1;
   uint32_t weatherSize_ = 0, shadowSize_ = 0;
@@ -120,6 +139,12 @@ class CloudsRdr2 {
   VkDeviceAddress recordAddress_ = 0;
   // Lightning: when the next flash strikes, where, and when the current one began.
   float nextFlash_ = -1.0f, flashBegan_ = -100.0f;
+  float previousTime_ = -1.0f;
+  glm::vec3 previousEye_{0}, previousForward_{0,0,-1};
+  Params previousParams_{};
+  std::array<float,4> flashStarted_{{-100,-100,-100,-100}};
+  std::array<glm::vec3,4> flashPositions_{};
+  uint32_t flashSlot_ = 0;
   glm::vec3 flashAt_{0.0f};
   uint32_t flashSeed_ = 20261104u;
   Timing timing_{};

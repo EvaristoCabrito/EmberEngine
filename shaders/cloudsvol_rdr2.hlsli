@@ -2,7 +2,7 @@
 // with the light, as the talk has it:
 //   scattering     single scattering with one transmittance for every colour (Beer: T = exp(-extinction x distance)), plus
 //                  Wrenninge's multiple-scattering octaves: each octave repeats the light with the absorption, the phase's g
-//                  and the weight halved (3 octaves on Ultra, 2 below)
+//                  and the weight halved (3 identical octaves in every preset)
 //   phase          Henyey-Greenstein in octaves (g 0.8 then halved), floored by a Lambert 1 / pi x rescale(backMin, backMax,
 //                  extinction): HG gives no convincing back-scatter, so a dense cloud lit from behind the eye still reads
 //                  (the talk's visual adjustment, not physics)
@@ -29,7 +29,7 @@ float rdr2Phase(float cosTheta, float extinction, uint octaves, uint octave) {
   const float g = 0.8 * pow(0.5, float(octave));
   const float hg = hgRdr2(cosTheta, g);
   // BACK_SCATTER_MIN / MAX in extinction (per unit): a thin wisp keeps its forward lobe, a dense body goes diffuse.
-  const float back = (1.0 / kPi) * rescale(0.02, 0.28, extinction) * 0.25;
+  const float back = (1.0 / kPi) * rescale(0.02, 0.28, extinction);
   return max(hg, back);
 }
 
@@ -60,18 +60,19 @@ Rdr2Lights rdr2Lights(MeshFrame f, AtmosphereFrame a) {
   Rdr2Lights l;
   l.sunDir = a.sunDirection;
   l.moonDir = atmoMoonDirection(f.atmosphere);
-  const float3 moonLight = atmoMoonLight(f.atmosphere);
+  const float3 moonLight = a.sunDisc==0?a.sunIlluminance:atmoMoonLight(f.atmosphere);
+  if(a.sunDisc==0) l.moonDir=a.sunDirection;
   l.moonOn = dot(moonLight, 1.0) > 0.0 && l.moonDir.y > -0.1;
-  l.sun = a.sunIlluminance * transmittanceToTop(a, a.viewHeight, l.sunDir.y) * saturate(l.sunDir.y * 8.0 + 0.2);
+  l.sun = (a.sunDisc==0?float3(0,0,0):a.sunIlluminance) * transmittanceToTop(a, a.viewHeight, l.sunDir.y) * saturate(l.sunDir.y * 8.0 + 0.2);
   l.moon = l.moonOn ? moonLight * transmittanceToTop(a, a.viewHeight, l.moonDir.y) * saturate(l.moonDir.y * 8.0 + 0.2) : 0.0;
-  l.skyUp = float3(vk::RawBufferLoad<float4>(a.ambient + 16).w, vk::RawBufferLoad<float4>(a.ambient + 32).w,
-                   vk::RawBufferLoad<float4>(a.ambient + 48).w);
+  const uint64_t ambient=vk::RawBufferLoad<uint64_t>(rdr2Record(f)+kR2Ambient);
+  l.skyUp=vk::RawBufferLoad<float4>(ambient).rgb;
   // The ambient weighted towards the key light's side (the talk's paraboloid mean, weighted to the sun / moon): the sky's
   // radiance 25 degrees up on the key light's azimuth, on the raw scale.
   const float3 key = l.sunDir.y > -0.05 ? l.sunDir : l.moonDir;
   const float2 az = normalize(key.xz + float2(1e-4, 0.0));
   const float3 side = normalize(float3(az.x * 0.9, 0.42, az.y * 0.9));
-  l.skySun = skyRadiance(a, side) * a.skyScale * kPi;  // irradiance-like, as skyUp is
+  l.skySun = vk::RawBufferLoad<float4>(ambient+16u).rgb;  // irradiance-like, as skyUp is
   const float3 sunOnGround = a.sunIlluminance * transmittanceToTop(a, a.viewHeight, l.sunDir.y) * saturate(l.sunDir.y);
   l.groundUp = a.groundAlbedo * (l.skyUp + sunOnGround);
   return l;
@@ -82,17 +83,17 @@ Rdr2Lights rdr2Lights(MeshFrame f, AtmosphereFrame a) {
 // sky's scale (the haze colour). `dither` (0..1): the blue-noise offset of this pixel this frame. `octaves` / `lightTaps`:
 // the preset's. `uv`: the pixel on screen (the aerial table).
 Rdr2Hit rdr2March(MeshFrame f, AtmosphereFrame a, Rdr2Clouds c, float3 origin, float3 dir, float3 clear, uint steps, uint lightTaps,
-                  uint octaves, float dither, float2 uv) {
+                  uint octaves, float dither, float2 uv, bool perspective=true, bool simple=false) {
   Rdr2Hit none;
   none.color = 0.0;
   none.transmittance = 1.0;
   none.depth = 0.0;
-  if (dir.y <= 0.003 || origin.y >= c.anvilTop) return none;
+  if (dir.y <= 0.003) return none;
   const float tBase = max((c.base - origin.y) / dir.y, 0.0);
-  const float tTop = (c.anvilTop - origin.y) / dir.y;
+  const float tTop = (max(c.anvilTop,c.middle.y) - origin.y) / dir.y;
   static const float kFar = 9000.0;
   const float t0 = tBase, t1 = min(tTop, kFar);
-  if (t1 <= t0) return none;
+
   const Rdr2Lights l = rdr2Lights(f, a);
   const float ext1 = rdr2Extinction(c);
   const float cosSun = dot(dir, l.sunDir), cosMoon = dot(dir, l.moonDir);
@@ -102,7 +103,7 @@ Rdr2Hit rdr2March(MeshFrame f, AtmosphereFrame a, Rdr2Clouds c, float3 origin, f
   float depthSum = 0.0, depthWeight = 0.0;
   // The step: long through clear air (a cheap density test), a quarter of it inside a cloud (the talk's adaptive step), back to
   // long after three empty samples. 0.0035 rad per fine step, never shorter than a sixtieth of the layer.
-  const float dtMin = layer / 60.0, dtMax = layer * 0.5;
+  const float dtMin = layer / 256.0, dtMax = layer / 48.0;
   // Version 02 (2026-11-04, the user: the v01 clouds showed horizontal stripes, "needs to be remade fully"; v01 kept in
   // shaders/kept/cloudsvol_rdr2-v01-20261104.hlsli): every sample lands at its own random place inside its step (v01 took
   // the step's middle, so neighbouring pixels sampled the same slices and the slices showed as stripes). The offset is the
@@ -111,11 +112,13 @@ Rdr2Hit rdr2March(MeshFrame f, AtmosphereFrame a, Rdr2Clouds c, float3 origin, f
   const float2 px = uv * f.screenSize;
   const float ign = frac(52.9829189 * frac(dot(px, float2(0.06711056, 0.00583715))));
   const float r0 = frac(dither + ign);
-  float t = t0 + clamp(t0 * 0.0035, dtMin, dtMax) * r0;
+  float t = t0;
   uint empty = 3u;
   for (uint i = 0u; i < steps && t < t1; ++i) {
     const float r = frac(r0 + float(i) * 0.61803398875);
-    const float fine = clamp(t * 0.0035, dtMin, dtMax) * (transmittance < 0.25 ? 2.0 : 1.0);
+    // Cover the complete interval even at Low: an exhausted iteration budget must never cut off the layer.
+    const float budgetStep=max((t1-t)/max(float(steps-i),1.0),dtMin);
+    const float fine=max(clamp(t*.001,dtMin,dtMax),budgetStep);
     const float coarse = fine * 4.0;
     float dt = min(empty >= 3u ? coarse : fine, t1 - t);
     float3 p = origin + dir * (t + dt * r);
@@ -130,7 +133,7 @@ Rdr2Hit rdr2March(MeshFrame f, AtmosphereFrame a, Rdr2Clouds c, float3 origin, f
     }
     t += dt;
     const float lod = saturate((t - 900.0) / 5500.0);
-    const float density = rdr2Density(c, p, false, lod);
+    const float density = rdr2Density(c, p, simple, lod);
     if (density <= 0.002) {
       ++empty;
       continue;
@@ -146,19 +149,30 @@ Rdr2Hit rdr2March(MeshFrame f, AtmosphereFrame a, Rdr2Clouds c, float3 origin, f
     const float inside = exp(-sunDepth * 0.12);
     const float3 ambient = (l.skyUp * lerp(0.3, 0.9, h) + l.skySun * 0.18 * lerp(0.5, 1.0, h)) * lerp(0.55, 1.0, inside) +
                            l.groundUp * lerp(0.32, 0.04, h);
-    // Lightning: a flash inside the layer this frame.
-    float3 flash = 0.0;
-    if (c.flashStrength > 0.0) {
-      const float3 toFlash = c.flash - p;
-      const float d = length(toFlash);
-      const float falloff = exp(-d / 320.0) / max(d * d * 1e-4, 1.0);
-      const float localShadow = exp(-density * ext1 * min(d, 60.0) * 0.5);
-      flash = float3(0.78, 0.84, 1.0) * c.flashStrength * falloff * localShadow * hgRdr2(dot(dir, toFlash / max(d, 1e-3)), 0.3) * 4.0 * kPi;
+    // A list of simultaneous flashes, supplied by weather; high-frequency flashes bypass history in resolve.
+    float3 flash=0;
+    const uint flashCount=simple?0u:uint(vk::RawBufferLoad<float4>(c.record+kR2Temporal).w);
+    for(uint j=0;j<flashCount;++j) {
+      const float4 bolt=vk::RawBufferLoad<float4>(c.record+kR2Flashes+j*16u);
+      const float3 toFlash=bolt.xyz-p;
+      const float d=length(toFlash);
+      const float falloff=exp(-d/320.0)/max(d*d*1e-4,1.0);
+      flash+=float3(.78,.84,1)*bolt.w*falloff*exp(-density*ext1*min(d,60.0)*.5)*
+          hgRdr2(dot(dir,toFlash/max(d,1e-3)),.3)*4*kPi;
     }
-    const float3 radiance = (direct + ambient / kPi + flash) * lerp(0.97, 0.82, c.rain) * lerp(1.0, 0.3, saturate(vk::RawBufferLoad<float>(f.atmosphere + 300u)));  // albedo; the Map Editor's "Tom cinzento" below (AtmosphereFrame.cloudGray, byte 300; 2026-11-04)
+    // Primary and secondary bows are scattering sources; rain is the droplet-density input.
+    float3 rainbow=0;
+    if(!simple && c.rain>0 && l.sunDir.y>0) {
+      const float angle=acos(clamp(dot(-dir,l.sunDir),-1,1));
+      const float3 primary=exp(-pow((angle-float3(.735,.724,.712))/.009,2));
+      const float3 secondary=exp(-pow((angle-float3(.886,.899,.912))/.012,2))*.3;
+      rainbow=l.sun*(primary+secondary)*c.rain*.12*exp(-sunDepth);
+    }
+    const float3 radiance=(direct+ambient/kPi+flash+rainbow)*lerp(.97,.82,c.rain)*
+        lerp(1.0,.3,saturate(vk::RawBufferLoad<float>(f.atmosphere+300u)));
     const float slab = exp(-ext * dt);
     light += transmittance * (radiance - radiance * slab);
-    depthSum += t * transmittance * (1.0 - slab);
+    depthSum += length(p-origin) * transmittance * (1.0 - slab);
     depthWeight += transmittance * (1.0 - slab);
     transmittance *= slab;
     if (transmittance < 0.008) break;
@@ -188,12 +202,11 @@ Rdr2Hit rdr2March(MeshFrame f, AtmosphereFrame a, Rdr2Clouds c, float3 origin, f
   // Aerial perspective: the far cloud hazes into the sky's own colour there, by the atmosphere's own transmittance for that
   // distance (the aerial table's far slices).
   const float covered = 1.0 - transmittance;
-  if (depthWeight > 0.0) {
+  if (perspective && depthWeight > 0.0 && a.kmPerUnit>0.0) {
     const float w = hit.depth * a.kmPerUnit / a.aerialMaxKm;
     const float3 uvw = float3(uv, saturate(w) - 0.5 / 32.0);
-    const float airT = a.kmPerUnit > 0.0 ? gTextures3D[NonUniformResourceIndex(a.aerial)].SampleLevel(gSamplers[a.linearSampler], saturate(uvw), 0).a : 1.0;
-    const float haze = saturate(1.0 - airT) * 0.55 + (1.0 - exp(-hit.depth / 12000.0)) * 0.45;
-    hit.color = lerp(light, clear * covered, haze);
+    const float4 air=gTextures3D[NonUniformResourceIndex(a.aerial)].SampleLevel(gSamplers[a.linearSampler],saturate(uvw),0);
+    hit.color=light*air.a+air.rgb*a.skyScale*covered;
   } else {
     hit.color = light;
   }

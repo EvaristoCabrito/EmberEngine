@@ -1,0 +1,14 @@
+[0/2] Re-checking globbed directories...
+[1/14] Shader clouds008.CSResolve
+[2/14] Shader clouds008.CSWeather
+[3/14] Shader clouds008.CSShadowBlur
+[4/14] Shader clouds008.CSAtlas
+[5/14] Shader clouds008.CSShadow
+[6/14] Shader clouds008.CSHeight
+[7/14] Shader clouds008.CSDisplacement
+[8/14] Shader clouds008.CSShadowMip
+[9/14] Shader clouds008.CSAmbient
+[10/14] Shader clouds008.CSMarch
+[11/14] Shader clouds008.CSCube
+[12/14] Shader clouds008.CSProbes
+[13/14] Shader clouds008.CSWater

@@ -1,0 +1,4564 @@
+#pragma once
+
+// Ember's Map Editor (Modo teste > Map Editor), copied from src/editor/ember/MapEditorScreen.tsx (+ MapPreview3D.tsx,
+// DialogEditor.tsx): the map's settings, lighting and size on the left, the board in the game's own renderer on the
+// right (MapStage with the draft in memory), rebuilt a moment after every edit. The draft is Ember's MapDraft JSON,
+// kept whole (every field it carries survives a save).
+//
+//   Novo / Locais / R-Encounter / Gerar terreno / Carregar mapa da campanha / Abrir mapa salvo / CityHubs
+//   the mission: id, title, place, music, objective, briefing, reward (gold, rations, NPCs that must live), opening and
+//               closing dialogues, victory, world-map location (and its planned slots), the switches; lighting
+//   Terreno     paint a terrain with one of its versions (Versões, City, Icelands), turn a hex's art (Girar hex)
+//   Elevação    raise / lower / level a hex and its rings
+
+//   Decoração   the props by section; a click places on the anchor hex or selects one there (Delete removes it),
+//               Girar objeto turns it; the dice keep a prop out of Gerar terreno; the selected prop's rules
+//               (Bloquear caminho, Alto terreno) and a floor connector's target (Passagem de andar)
+//   3D Walls / 3D Decorations   regular / thick walls, doors (Abrir porta / Fechar passagem), horizontal / vertical
+//   Herói / Inimigo / NPC / Invocação   add / remove units; the lists edit name, class, level, a neutral's dialogue
+//   the preview: press a unit or a prop and drag it to another hex (Delete while holding a unit removes it); the
+//               technical grid (hex or square) turns hexes and props
+//   Desfazer / Refazer (10 steps), Substituir base, the saved files (Carregar / Ativar / apagar), Testar, Salvar.
+//
+// Saves go to content/maps/ember/<id><serial>.json (Ember's format and serials; Ember's folder untouched); Locais /
+// R-Encounter to content/maps/locais.json and random-encounters.json (world/Locais.h); Ativar to content/maps/active.json.
+// Not here (Ember's own left them out or they have no meaning here): the elemental 2D FX, Exportar, the browser-local
+// versions.
+
+#include <SDL3/SDL.h>
+#include <imgui.h>
+
+#include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <cstdarg>
+#include <cstdio>
+#include <deque>
+#include <filesystem>
+#include <format>
+#include <fstream>
+#include <functional>
+#include <future>
+#include <map>
+#include <memory>
+#include <numbers>
+#include <optional>
+#include <random>
+#include <regex>
+#include <set>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include "CampaignUi.h"
+#include "DialogEditorUi.h"
+#include "MapExport.h"
+#include "MapStage.h"
+#include "Portraits.h"
+#include "Stage.h"
+#include "core/Log.h"
+#include "render/Renderer.h"
+#include "render/UiArt.h"
+#include "rhi/VulkanContext.h"
+#include "world/Battle.h"
+#include "world/Board.h"
+#include "world/Campaign.h"
+#include "world/Combat.h"
+#include "world/CutsceneScript.h"
+#include "world/Locais.h"
+#include "world/MapDressing.h"
+#include "world/Overworld.h"
+#include "world/SceneBuilder.h"
+
+namespace ember {
+
+class MapEditorStage : public Stage {
+ public:
+  struct Callbacks {
+    // Voltar: the test menu; Testar: the prepared test battle. Both hand over the draft as it stands (main.cpp reopens
+    // the editor on it, as GameApp keeps editorDraft across a playtest).
+    std::function<void(const ember::Json& draft)> back;
+    std::function<void(const MissionEntry&, const ember::Json& draft)> play;
+    // Locais / R-Encounter were written: the campaign and the world map take them at once (Ember: "aplicada à campanha").
+    std::function<void()> locaisSaved;
+  };
+  struct Services {
+    VulkanContext& context;
+    Renderer& renderer;
+    AssetManager& assets;
+    JobSystem& jobs;
+  };
+
+  // `base`: the map options every preview starts from (sprite budget, Ember's folder, heroes); `draft`: the map to
+  // reopen (the one being edited before a test took the screen), else a new blank map.
+  MapEditorStage(Services services, MapStageOptions base, CampaignPaths paths, const ember::Campaign& campaign, Callbacks callbacks,
+                 std::optional<ember::Json> draft = std::nullopt)
+      : services_(services), base_(std::move(base)), paths_(std::move(paths)), campaign_(campaign), callbacks_(std::move(callbacks)) {
+    data_ = ember::BoardData::load(base_.boardData);
+    if (!catalog_.load(kCatalog)) note("Sem o catálogo do editor (content/data/editor-catalog.json).");
+    editor_ = loadEditorTables(kCatalog);
+    if (!dress_.load(kCatalog)) note("O catálogo do editor não tem as tabelas de Gerar terreno (export_editor_catalog.ts).");
+    locais_ = ember::Locais::load(kCatalog);
+    order_ = locais_.editorOrder();
+    shuffleExclude_ = loadShuffleExclude();
+    draft_ = draft ? *draft : blankDraft();
+    // MapEditorScreen's mount: summons and civilians placed as enemies move to the neutral list; walls under a
+    // watchtower entrance go.
+    moveMisplacedEnemies();
+    if (draft_.contains("decorations") && draft_["decorations"].is_array())
+      draft_["decorations"] = ember::removeWallsUnderWatchtowerEntrances(draft_["decorations"], dress_, catalog_);
+    dirty_ = true;
+    scan_ = std::async(std::launch::async, [maps = paths_.maps] { return scanSaved(maps); });
+  }
+  ~MapEditorStage() override {
+    if (playtest_.valid()) playtest_.wait();
+    for (auto& f : exports_) f.wait();
+    if (scan_.valid()) scan_.wait();
+    vkDeviceWaitIdle(services_.context.device);
+  }
+
+  // The draft as it stands (main.cpp keeps it across a test battle).
+  const ember::Json& draft() const { return draft_; }
+  // Captures: clicks as the board would get them, "mode:arg:x,y;..." (paint:<terrain>, raise, lower, deco:<id>,
+  // arch:<id>, water:<level>, turn, hero, enemy, npc, summon), "gen" (Gerar terreno), "tech" (the technical grid),
+  // "locais" / "encounters" / "dialog:intro" (those windows), "save"; then the preview as it stands.
+  // (Applied a second into the run, so the preview is rebuilt over a live one, as an edit does.)
+  void previewEdits(const std::string& script) { script_ = script; }
+  void runScript(const std::string& script) {
+    size_t at = 0;
+    while (at < script.size()) {
+      const size_t end = std::min(script.find(';', at), script.size());
+      const std::string step = script.substr(at, end - at);
+      at = end + 1;
+      if (step == "save") {
+        save();
+        continue;
+      }
+      if (step == "test") {
+        playtest();
+        continue;
+      }
+      if (step == "gen") {
+        generateTerrain(0x5eed);
+        continue;
+      }
+      if (step == "tech") {
+        showTechnical_ = true;
+        continue;
+      }
+      if (step == "locais") {
+        openLocais();
+        continue;
+      }
+      if (step == "encounters") {
+        showEncounters_ = true;
+        continue;
+      }
+      if (step.starts_with("drag:")) {  // drag:x,y>x,y: the preview's press on a unit / prop and its drop elsewhere
+        int ax = 0, ay = 0, bx = 0, by = 0;
+        if (std::sscanf(step.c_str() + 5, "%d,%d>%d,%d", &ax, &ay, &bx, &by) == 4 && grab(ax, ay, false)) release(std::pair{bx, by}, true);
+        continue;
+      }
+      if (step.starts_with("scroll:")) {  // the page scrolled down this far (captures of its lower sections)
+        scrollTo_ = static_cast<float>(std::atof(step.c_str() + 7));
+        continue;
+      }
+      if (step.starts_with("mode:")) {  // a brush's panel opened: paint water deco arch props hero summon
+        const std::string m = step.substr(5);
+        mode_ = m == "deco" ? Mode::Decoration : m == "arch" || m == "props" ? Mode::Architecture : m == "hero" ? Mode::Player
+                : m == "summon" ? Mode::Summon : m == "elev" ? Mode::Elevation : Mode::Paint;
+        architectureDecorations_ = m == "props";
+        if (m == "arch" || m == "props") decoBrush_ = m == "props" ? "prop-3d-tavern-table" : "wall-3d-stone";
+        tab_ = tabOf(mode_);
+        continue;
+      }
+      if (step.starts_with("dialog:")) {
+        pendingDialog_ = step.substr(7);
+        continue;
+      }
+      if (step.starts_with("cutscene:")) {  // the Cutscenes tab with that script open
+        openTab(Tab::Cutscenes);
+        refreshCutscenes();
+        openCutscene(step.substr(9));
+        continue;
+      }
+      if (step.starts_with("tab:")) {  // a tab of the page opened: file map terrain decor units cutscenes scene rules world
+        for (const TabInfo& t : kTabs)
+          if (step.substr(4) == t.key) openTab(t.tab);
+        continue;
+      }
+      const size_t c1 = step.find(':'), c2 = step.rfind(':');
+      if (c1 == std::string::npos) continue;
+      const std::string mode = step.substr(0, c1), arg = c1 == c2 ? std::string() : step.substr(c1 + 1, c2 - c1 - 1);
+      int x = 0, y = 0;
+      if (std::sscanf(step.c_str() + c2 + 1, "%d,%d", &x, &y) != 2) continue;
+      turning_ = turningDeco_ = false;
+      if (mode == "paint") mode_ = Mode::Paint, brush_ = arg, variant_ = 0;
+      else if (mode == "raise" || mode == "lower") mode_ = Mode::Elevation, elevationTool_ = mode == "raise" ? 0 : 1, elevationRadius_ = arg.empty() ? 0 : std::atoi(arg.c_str());
+      else if (mode == "deco") mode_ = Mode::Decoration, decoBrush_ = arg;
+      else if (mode == "arch") mode_ = Mode::Architecture, decoBrush_ = arg, architectureDecorations_ = meta(arg).props3d;
+      else if (mode == "turn") mode_ = Mode::Decoration, turningDeco_ = true;
+      else if (mode == "hero") mode_ = Mode::Player;
+      else if (mode == "enemy") mode_ = Mode::Enemy;
+      else if (mode == "npc") mode_ = Mode::Npc;
+      else if (mode == "summon") mode_ = Mode::Summon;
+      lastEdit_ = {};
+      tab_ = tabOf(mode_);
+      onCellClick(x, y, std::nullopt);
+    }
+  }
+  bool done() const override {  // captures: the preview and its art, a Testar finished
+    return frames_ > 240 && !playtest_.valid() && std::none_of(exports_.begin(), exports_.end(), [](const std::future<std::string>& f) { return f.valid(); });
+  }
+
+  void frame(Renderer& renderer, VkExtent2D size) override {
+    ++frames_;
+    if (frames_ == 60 && !script_.empty()) runScript(std::exchange(script_, {}));
+    // A brush stroke follows the mouse over the ground.
+    if (stroking_ && preview_)
+      if (const std::optional<std::pair<int, int>> h = preview_->groundHexUnderMouse(); h && h != strokeLast_) strokeTo(*h);
+    // A click on the board (reported by the preview) is applied between frames.
+    if (pendingClick_) {
+      const auto [x, y] = *pendingClick_;
+      pendingClick_.reset();
+      onCellClick(x, y, std::exchange(pendingPoint_, std::nullopt));
+    }
+    if (pendingRelease_) {
+      const auto [hex, moved] = *pendingRelease_;
+      pendingRelease_.reset();
+      release(hex, moved);
+    }
+    // The saved maps on disk (both folders), read in the background.
+    if (scan_.valid() && scan_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+      try {
+        saved_ = scan_.get();
+      } catch (const std::exception& e) {
+        logError("map editor: reading the saved maps failed: {}", e.what());
+      }
+      refreshFiles();
+      std::string hubs;
+      for (const MapRef& m : cityHubs()) hubs += (hubs.empty() ? "" : ", ") + m.id;
+      logInfo("map editor: {} saved maps; CityHubs: {}", saved_.size(), hubs);
+    }
+    // The preview follows the draft a moment after the last edit (Ember setPreviewMission).
+    const auto now = std::chrono::steady_clock::now();
+    if (dirty_ && showPreview_ && !stroking_ && now - lastEdit_ > std::chrono::milliseconds(120)) rebuildPreview();
+    // Testar finished preparing: the battle opens.
+    if (playtest_.valid() && playtest_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+      std::optional<MissionEntry> entry = playtest_.get();
+      if (entry && callbacks_.play) callbacks_.play(*entry, draft_);
+      else if (!entry) note(playtestError_);
+    }
+    for (auto it = exports_.begin(); it != exports_.end();)
+      if (it->valid() && it->wait_for(std::chrono::seconds(0)) == std::future_status::ready) note(it->get()), it = exports_.erase(it);
+      else ++it;
+    // the rings: the hex under the mouse, the selected prop's hexes (dioramaView setHover / setSelection)
+    hover_ = preview_ && showPreview_ ? preview_->hexUnderMouse() : std::nullopt;
+    if (preview_) preview_->setEditorMarks(rings());
+    if (preview_ && showPreview_) preview_->frame(renderer, size);
+    else {
+      renderer.setScene(Camera{}, {});
+      renderer.setMeshes(MeshSceneView{});
+      renderer.setTerrain({});
+      renderer.setWater({});
+      renderer.setLights({});
+      renderer.setBackground(Renderer::kBlackBackground);
+    }
+  }
+
+  void event(const SDL_Event& e) override {
+    if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && !(ImGui::GetCurrentContext() && ImGui::GetIO().WantTextInput)) {
+      const bool ctrl = (e.key.mod & SDL_KMOD_CTRL) != 0;
+      if (ctrl && e.key.key == SDLK_Z) return (e.key.mod & SDL_KMOD_SHIFT) ? redo() : undo();
+      if (ctrl && e.key.key == SDLK_Y) return redo();
+      if (e.key.key == SDLK_DELETE) {
+        // MapPreviewCanvas: Delete while a unit is held removes it; otherwise the selected prop goes.
+        if (heldUnit_) return deleteHeldUnit();
+        return removeSelectedDecoration();
+      }
+      if (e.key.key == SDLK_ESCAPE) return;  // the preview's pause menu is not part of the editor
+    }
+    if (preview_ && showPreview_) preview_->event(e);
+  }
+
+  void drawPanel() override {
+    if (preview_ && showPreview_) preview_->drawPanel();  // the camera bar
+    pushLook();
+    drawEditor();
+    if (showTechnical_) drawTechnicalMap();
+    if (showLocations_) drawLocais();
+    if (showEncounters_) drawEncounters();
+    if (!pendingDialog_.empty()) openDialogEditor(std::exchange(pendingDialog_, {}));
+    dialogUi_.draw(portraits(), editor_.affinityHeroes);
+    drawHoverTip();
+    popLook();
+  }
+
+ private:
+  static constexpr const char* kCatalog = "content/data/editor-catalog.json";
+  struct HeldUnit {
+    std::string key;  // playerSpawns / enemySpawns / neutralSpawns
+    size_t index = 0;
+  };
+  struct BigNote {
+    bool ok = true;
+    std::string title;
+    std::vector<std::string> lines;
+  };
+  static constexpr const char* kEntrance = "watchtower-stone-open-door-2hex";
+
+  // --- Ember tables (editor-catalog.json "editor") ------------------------------------------------------------------
+
+  struct Version {
+    int variant = 0;
+    std::string label, thumb;
+  };
+  struct TerrainEntry {
+    std::string id, name, swatch, hint, thumb;
+    int variantCount = 1;
+    double height = 0;
+    bool passable = true;
+    std::vector<Version> versions;
+  };
+  struct ClassEntry {
+    std::string name, role, sprite;
+    bool summon = false;
+  };
+  struct DecoMeta {
+    std::string model3d, exitKind, doorStyle, wallTexture, art;
+    bool props3d = false, thickWall = false, solidHouse = false, solidCart = false, chest = false;
+  };
+  struct MissionInfo {
+    std::string id, title;
+    int index = 0;
+    bool hub = false;
+  };
+  struct EditorTables {
+    int minGrid = 3, maxGrid = 160, testLevel = 15, enemyLevel0 = 1, maxLevel = 30;
+    std::vector<int> enemyLevels;
+    std::vector<TerrainEntry> terrains;
+    std::map<std::string, TerrainEntry> terrainInfo;  // every terrain id: name, height, variant count
+    std::map<std::string, std::vector<std::string>> variantNames;
+    std::vector<Version> city;
+    std::vector<std::string> decorationOrder, decorationSections, architectureOrder;
+    std::map<std::string, std::string> decoSection, decoTile, decoThumb;
+    std::set<std::string> decoBlocks;
+    std::map<std::string, DecoMeta> decoMeta;
+    std::map<std::string, std::pair<std::string, std::string>> doorVariants;  // style: open, closed
+    std::map<std::string, ClassEntry> classes;
+    std::vector<std::string> classOrder;
+    std::vector<std::pair<std::string, std::string>> heroes;  // name, classId
+    std::vector<std::pair<std::string, std::string>> namedNonHeroes;
+    std::vector<std::pair<std::string, std::string>> npcs;  // id, name
+    std::map<std::string, ember::Json> npcSpawn;               // id: encounterNpcSpawn (name, classId, dialog, ...)
+    std::vector<std::string> affinityHeroes;
+    std::vector<MissionInfo> missions;
+    std::map<std::string, int> watchtowerFloors;
+    struct Tod {
+      std::string id, label;
+      bool moon = false;
+      double key = 0, ambient = 0;
+    };
+    std::vector<Tod> timeOfDay;
+    double defaultSun = 3.5, defaultAmbient = 1.4, defaultBloom = 0.9;
+    std::vector<std::tuple<std::string, std::string, std::string>> backgrounds;  // id, label, file
+    std::vector<std::string> music;
+  };
+
+  static EditorTables loadEditorTables(const std::filesystem::path& file) {
+    EditorTables t;
+    std::ifstream in(file, std::ios::binary);
+    const ember::Json j = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
+    if (!j.is_object() || !j.contains("editor")) return t;
+    const ember::Json& e = j["editor"];
+    auto s = [](const ember::Json& o, const char* k) { return o.contains(k) && o[k].is_string() ? o[k].get<std::string>() : std::string(); };
+    t.minGrid = e.value("minGrid", 3), t.maxGrid = e.value("maxGrid", 160), t.testLevel = e.value("defaultTestLevel", 15), t.enemyLevel0 = e.value("enemyLevel0", 1);
+    t.maxLevel = e.value("maxLevel", 30);
+    for (const ember::Json& l : e.value("enemyLevels", ember::Json::array())) t.enemyLevels.push_back(l.get<int>());
+    for (const ember::Json& tr : e["terrains"]) {
+      TerrainEntry te{s(tr, "id"), s(tr, "name"), s(tr, "swatch"), s(tr, "hint"), {}, tr.value("variantCount", 1), tr.value("height", 0.0), true, {}};
+      std::set<int> hidden;
+      for (const ember::Json& h : tr["hidden"]) hidden.insert(h.get<int>());
+      for (const ember::Json& v : tr["versions"])
+        if (!hidden.contains(v.value("variant", 0))) te.versions.push_back({v.value("variant", 0), s(v, "label"), s(v, "thumb")});
+      if (te.id == "plains") {
+        te.versions.erase(std::remove_if(te.versions.begin(), te.versions.end(), [](const Version& v) { return v.variant == 56; }), te.versions.end());
+        const auto addVersionIfMissing = [&](int variant, std::string label, std::string thumb) {
+          if (std::none_of(te.versions.begin(), te.versions.end(), [&](const Version& v) { return v.variant == variant; }))
+            te.versions.push_back({variant, std::move(label), std::move(thumb)});
+        };
+        addVersionIfMissing(70, "", "content/ground/plains-grass-ground-v01.png");
+        addVersionIfMissing(71, "", "content/ground/plains-grass-ground-v02-seamless.png");
+        addVersionIfMissing(72, "", "content/ground/plains-grass-ground-v03.png");
+        addVersionIfMissing(73, "", "content/ground/plains-grass-ground-v01-seamless.png");
+        addVersionIfMissing(74, "", "content/ground/plains-grass-ground-v03-seamless.png");
+        int label = 1;
+        for (Version& v : te.versions) v.label = std::format("{:03}", label++);
+        te.variantCount = std::max(te.variantCount, 75);
+      }
+      if (e.contains("terrainThumb") && e["terrainThumb"].contains(te.id) && e["terrainThumb"][te.id].is_string()) te.thumb = e["terrainThumb"][te.id].get<std::string>();
+      if (te.id == "plains") {
+        te.swatch = "#5f8c28";
+        te.thumb = "content/ground/plains-grass-ground-v01.png";
+      }
+      // The water looks as versions of Água (render/BoardGround.h waterLookOfVariant; the user, 2026-10-26): variants 31..33 =
+      // Água 01..03, 34 = Água original (every other water tile draws 03, the default); the ground under them the 001 tile's.
+      if (te.id == "water") {
+        const std::string thumb = te.versions.empty() ? std::string() : te.versions.front().thumb;
+        for (int k = 0; k < 3; ++k) te.versions.push_back({kWaterLookFirstVariant + k, std::format("Água 0{}", k + 1), thumb});
+        te.versions.push_back({kWaterOriginalVariant, "Água original", thumb});
+        te.variantCount = std::max(te.variantCount, kWaterOriginalVariant + 1);
+      }
+      t.terrains.push_back(std::move(te));
+    }
+    for (const auto& [id, ti] : e["terrainInfo"].items())
+      t.terrainInfo[id] = TerrainEntry{id, s(ti, "name"), {}, {}, {}, ti.value("variantCount", 1), ti.value("height", 0.0), ti.value("passable", true), {}};
+    if (auto plains = t.terrainInfo.find("plains"); plains != t.terrainInfo.end()) plains->second.variantCount = std::max(plains->second.variantCount, 75);
+    const ember::Json tileVariantNamesTable = e.value("tileVariantNames", ember::Json::object());  // a copy: items() of a temporary dangles
+    for (const auto& [id, names] : tileVariantNamesTable.items())
+      for (const ember::Json& n : names) t.variantNames[id].push_back(n.is_string() ? n.get<std::string>() : std::string());
+    std::vector<std::string>& plainsNames = t.variantNames["plains"];
+    plainsNames.resize(std::max<size_t>(plainsNames.size(), 75));
+    plainsNames[56].clear();
+    plainsNames[57] = "Planície real 008";
+    plainsNames[58] = "Planície real 009";
+    plainsNames[66] = "Planície natural · I";
+    plainsNames[67] = "Planície natural · II";
+    plainsNames[68] = "Planície rala · rara";
+    plainsNames[69] = "Vau · grama verde";
+    plainsNames[70] = "Capim denso de planície";
+    plainsNames[71] = "Capim de planície · V2 seamless";
+    plainsNames[72] = "Capim de planície · V3";
+    plainsNames[73] = "Capim de planície · V1 seamless";
+    plainsNames[74] = "Capim de planície · V3 seamless";
+    if (auto water = t.terrainInfo.find("water"); water != t.terrainInfo.end())
+      water->second.variantCount = std::max(water->second.variantCount, kWaterOriginalVariant + 1);
+    std::vector<std::string>& waterNames = t.variantNames["water"];
+    waterNames.resize(std::max<size_t>(waterNames.size(), kWaterOriginalVariant + 1));
+    for (int k = 0; k < 3; ++k) waterNames[kWaterLookFirstVariant + k] = std::format("Água 0{}", k + 1);
+    waterNames[kWaterOriginalVariant] = "Água original";
+    for (const ember::Json& v : e["city"]) t.city.push_back({v.value("variant", 0), s(v, "label"), s(v, "thumb")});
+    for (const ember::Json& id : e["decorationOrder"]) t.decorationOrder.push_back(id.get<std::string>());
+    for (const ember::Json& id : e["decorationSections"]) t.decorationSections.push_back(id.get<std::string>());
+    for (const ember::Json& id : e.value("architectureOrder", ember::Json::array())) t.architectureOrder.push_back(id.get<std::string>());
+    for (const auto& [id, d] : e["decorationInfo"].items()) {
+      t.decoSection[id] = s(d, "section");
+      if (d["tile"].is_string()) t.decoTile[id] = d["tile"].get<std::string>();
+      t.decoThumb[id] = s(d, "thumb");
+      if (d.value("blocksByDefault", false)) t.decoBlocks.insert(id);
+    }
+    const ember::Json decoMetaTable = e.value("decoMeta", ember::Json::object());  // a copy: items() of a temporary dangles
+    for (const auto& [id, d] : decoMetaTable.items())
+      t.decoMeta[id] = DecoMeta{s(d, "model3d"),          s(d, "exitKind"),          s(d, "doorStyle"),         s(d, "wallTexture"), s(d, "art"),
+                                d.value("props3d", false), d.value("thickWall", false), d.value("solidHouse", false), d.value("solidCart", false),
+                                d.value("chest", false)};
+    const ember::Json doorVariantsTable = e.value("doorVariants", ember::Json::object());  // a copy: items() of a temporary dangles
+    for (const auto& [style, v] : doorVariantsTable.items()) t.doorVariants[style] = {s(v, "open"), s(v, "closed")};
+    for (const auto& [id, c] : e["classes"].items()) t.classes[id] = {s(c, "name"), s(c, "role"), {}, c.value("summon", false)};
+    const ember::Json classSpriteTable = e.value("classSprite", ember::Json::object());  // a copy: items() of a temporary dangles
+    for (const auto& [id, sprite] : classSpriteTable.items())
+      if (sprite.is_string()) t.classes[id].sprite = sprite.get<std::string>();
+    for (const ember::Json& id : e["classOrder"]) t.classOrder.push_back(id.get<std::string>());
+    for (const ember::Json& h : e["editorHeroes"]) t.heroes.push_back({s(h, "name"), s(h, "classId")});
+    for (const ember::Json& h : e.value("namedNonHeroes", ember::Json::array())) t.namedNonHeroes.push_back({s(h, "name"), s(h, "classId")});
+    for (const ember::Json& n : e["npcs"]) {
+      t.npcs.push_back({s(n, "id"), s(n, "name")});
+      if (n.contains("spawn") && n["spawn"].is_object()) t.npcSpawn[s(n, "id")] = n["spawn"];
+    }
+    for (const ember::Json& h : e.value("affinityHeroes", ember::Json::array())) t.affinityHeroes.push_back(h.get<std::string>());
+    for (const ember::Json& m : e.value("missions", ember::Json::array())) t.missions.push_back({s(m, "id"), s(m, "title"), m.value("index", 0), m.value("hub", false)});
+    const ember::Json watchtowerFloorsTable = e.value("watchtowerFloors", ember::Json::object());  // a copy: items() of a temporary dangles
+    for (const auto& [id, f] : watchtowerFloorsTable.items()) t.watchtowerFloors[id] = f.get<int>();
+    for (const auto& [id, v] : e["timeOfDay"].items()) t.timeOfDay.push_back({id, s(v, "label"), v.value("moon", false), v.value("key", 0.0), v.value("ambient", 0.0)});
+    t.defaultSun = e["defaults"].value("sun", 3.5), t.defaultAmbient = e["defaults"].value("ambient", 1.4), t.defaultBloom = e["defaults"].value("bloom", 0.9);
+    for (const ember::Json& b : e["backgrounds"]) t.backgrounds.emplace_back(s(b, "id"), s(b, "label"), s(b, "file"));
+    for (const ember::Json& m : e["music"]) t.music.push_back(m.get<std::string>());
+    return t;
+  }
+
+  const DecoMeta& meta(const std::string& id) const {
+    static const DecoMeta none;
+    const auto it = editor_.decoMeta.find(id);
+    return it == editor_.decoMeta.end() ? none : it->second;
+  }
+  std::string decoName(const std::string& id) const {
+    const ember::CatalogDecoration* d = catalog_.decoration(id);
+    return d ? d->name : id;
+  }
+  int enemyLevelFor(int index) const {
+    if (editor_.enemyLevels.empty()) return editor_.enemyLevel0;
+    return editor_.enemyLevels[static_cast<size_t>(std::clamp(index, 0, static_cast<int>(editor_.enemyLevels.size()) - 1))];
+  }
+
+  // --- the draft --------------------------------------------------------------------------------------------------------
+
+  static std::string base36Now() {
+    std::string out;
+    for (long long v = static_cast<long long>(ember::Campaign::nowMs()); v > 0; v /= 36) out.insert(out.begin(), "0123456789abcdefghijklmnopqrstuvwxyz"[v % 36]);
+    return out;
+  }
+
+  // MapEditorScreen blankDraft: 20 x 20 plains, the day's light.
+  ember::Json blankDraft() const {
+    const int cols = 20, rows = 20, n = cols * rows;
+    ember::Json d;
+    d["id"] = "custom-" + base36Now();
+    d["index"] = 0;
+    d["title"] = "Mapa sem nome";
+    d["place"] = "";
+    d["briefing"] = "";
+    d["objective"] = "Derrote todos os inimigos";
+    d["win"] = "rout";
+    d["hub"] = false;
+    d["autoTactics"] = true;
+    d["fog"] = false;
+    d["environment"] = "outdoor";
+    // A new map starts at night with the full moon (the user, 2026-11-05: the default setup "à noite, com pelo menos meia lua").
+    d["timeOfDay"] = "day";
+    d["sunIntensity"] = editor_.defaultSun;
+    d["ambientIntensity"] = editor_.defaultAmbient;
+    for (const auto& t : editor_.timeOfDay)
+      if (t.id == "brightNight") d["timeOfDay"] = t.id, d["sunIntensity"] = t.key, d["ambientIntensity"] = t.ambient;
+    d["mistIntensity"] = 0.2;
+    d["mistSpeed"] = 1;
+    d["mistType"] = "none";
+    d["bloomIntensity"] = editor_.defaultBloom;
+    d["wispIntensity"] = 0.02;
+    d["wispSpeed"] = 1;
+    d["wispColor"] = 0xffa552;
+    d["locationId"] = "";
+    d["cols"] = cols;
+    d["rows"] = rows;
+    d["tiles"] = ember::Json(std::vector<std::string>(n, "plains"));
+    d["tileVariants"] = ember::Json(std::vector<int>(n, 0));
+    d["baseTile"] = "plains";
+    d["baseVariant"] = 0;
+    d["tileRots"] = ember::Json(std::vector<int>(n, 0));
+    d["music"] = "";
+    d["decorations"] = ember::Json::array();
+    d["elementalFx"] = ember::Json::array();
+    d["playerSpawns"] = ember::Json::array();
+    d["enemySpawns"] = ember::Json::array();
+    d["neutralSpawns"] = ember::Json::array();
+    return d;
+  }
+
+  void moveMisplacedEnemies() {
+    ember::Json& enemies = arr("enemySpawns");
+    ember::Json kept = ember::Json::array(), moved = ember::Json::array();
+    for (const ember::Json& s : enemies) (isSummon(s.value("classId", "")) || isCivil(s.value("classId", "")) ? moved : kept).push_back(s);
+    if (moved.empty()) return;
+    draft_["enemySpawns"] = kept;
+    for (const ember::Json& s : moved) arr("neutralSpawns").push_back(s);
+  }
+
+  int cols() const { return draft_.value("cols", 0); }
+  int rows() const { return draft_.value("rows", 0); }
+  ember::Json& arr(const char* key) {
+    if (!draft_.contains(key) || !draft_[key].is_array()) draft_[key] = ember::Json::array();
+    return draft_[key];
+  }
+  std::string tileAt(int i) const {
+    return draft_.contains("tiles") && i >= 0 && i < static_cast<int>(draft_["tiles"].size()) && draft_["tiles"][i].is_string() ? draft_["tiles"][i].get<std::string>()
+                                                                                                                              : std::string("plains");
+  }
+  int intAt(const char* key, int i, int fallback = 0) const {
+    return draft_.contains(key) && draft_[key].is_array() && i >= 0 && i < static_cast<int>(draft_[key].size()) && draft_[key][i].is_number()
+               ? draft_[key][i].get<int>()
+               : fallback;
+  }
+  // An array of the board's size, filled with `fill` where missing (JS Array.from({length}, (_, i) => a?.[i] ?? fill)).
+  ember::Json& boardArray(const char* key, const ember::Json& fill) {
+    ember::Json& a = arr(key);
+    while (static_cast<int>(a.size()) < cols() * rows()) a.push_back(fill);
+    return a;
+  }
+
+  // Every edit goes through here: history (a burst within 600 ms is one step, Ember's coalescing), then the preview.
+  void beginEdit() {
+    const auto now = std::chrono::steady_clock::now();
+    if ((now - lastEdit_ > std::chrono::milliseconds(600) || past_.empty()) && !strokeEdited_) {
+      past_.push_back(draft_);
+      if (past_.size() > kHistory) past_.pop_front();
+      future_.clear();
+    }
+    strokeEdited_ = stroking_;  // a whole stroke is one step, however slow the drag
+    lastEdit_ = now;
+    dirty_ = true;
+  }
+  void undo() {
+    if (past_.empty()) return;
+    future_.push_front(draft_);
+    if (future_.size() > kHistory) future_.pop_back();
+    draft_ = past_.back();
+    past_.pop_back();
+    dirty_ = true, lastEdit_ = {};
+  }
+  void redo() {
+    if (future_.empty()) return;
+    past_.push_back(draft_);
+    draft_ = future_.front();
+    future_.pop_front();
+    dirty_ = true, lastEdit_ = {};
+  }
+  void setDraft(ember::Json d) {
+    beginEdit();
+    draft_ = std::move(d);
+    selected_.reset(), heldUnit_.reset();
+    refreshFiles();
+  }
+  void note(std::string text) { note_ = std::move(text); }
+
+  // data.ts placedFootprint for a draft placement.
+  std::vector<ember::FootOffset> footprintOf(const ember::Json& p) const {
+    const ember::CatalogDecoration* def = catalog_.decoration(p.value("id", ""));
+    if (!def) return {};
+    const double rot = p.contains("rot") && p["rot"].is_number() ? p["rot"].get<double>() : 0.0;
+    return ember::placedFootprint(*def, p.value("x", 0), p.value("y", 0), rot);
+  }
+  bool covers(const ember::Json& p, int x, int y) const {
+    for (const ember::FootOffset& f : footprintOf(p))
+      if (p.value("x", 0) + f.dx == x && p.value("y", 0) + f.dy == y) return true;
+    return false;
+  }
+  static bool samePlacement(const ember::Json& a, const ember::Json& b) {
+    return a.value("id", "") == b.value("id", "") && a.value("x", 0) == b.value("x", 0) && a.value("y", 0) == b.value("y", 0) && a.value("rot", 0) == b.value("rot", 0);
+  }
+  // previewDecorationCells: the hexes the other props cover; an entrance replaces walls and waypoints under it.
+  std::set<std::pair<int, int>> otherCells(const ember::Json& placements, const ember::Json& candidate) const {
+    std::set<std::pair<int, int>> mine;
+    for (const ember::FootOffset& f : footprintOf(candidate)) mine.insert({candidate.value("x", 0) + f.dx, candidate.value("y", 0) + f.dy});
+    const bool waypoint = !meta(candidate.value("id", "")).exitKind.empty();
+    std::set<std::pair<int, int>> out;
+    for (const ember::Json& p : placements) {
+      bool overlaps = false;
+      for (const ember::FootOffset& f : footprintOf(p)) overlaps = overlaps || mine.contains({p.value("x", 0) + f.dx, p.value("y", 0) + f.dy});
+      if (overlaps) {
+        const DecoMeta& m = meta(p.value("id", ""));
+        if (candidate.value("id", "") == kEntrance && (m.model3d == "wall" || !m.exitKind.empty())) continue;
+        if (waypoint && p.value("id", "") == kEntrance) continue;
+      }
+      for (const ember::FootOffset& f : footprintOf(p)) out.insert({p.value("x", 0) + f.dx, p.value("y", 0) + f.dy});
+    }
+    return out;
+  }
+  // findPreviewDecoration: the exact placement, else (a connector) whatever connector stands on that hex.
+  std::optional<size_t> findDecoration(const ember::Json& sel) const {
+    if (!draft_.contains("decorations")) return std::nullopt;
+    const ember::Json& decos = draft_["decorations"];
+    for (size_t i = 0; i < decos.size(); ++i)
+      if (samePlacement(decos[i], sel)) return i;
+    const std::string kind = meta(sel.value("id", "")).exitKind;
+    if (kind != "connector") {
+      std::vector<size_t> matches;
+      for (size_t i = 0; i < decos.size(); ++i)
+        if (decos[i].value("id", "") == sel.value("id", "")) matches.push_back(i);
+      if (!kind.empty() && matches.size() == 1) return matches[0];
+      return std::nullopt;
+    }
+    for (size_t i = 0; i < decos.size(); ++i)
+      if (decos[i].value("x", 0) == sel.value("x", 0) && decos[i].value("y", 0) == sel.value("y", 0) && meta(decos[i].value("id", "")).exitKind == "connector") return i;
+    return std::nullopt;
+  }
+  void cleanEntrances() { draft_["decorations"] = ember::removeWallsUnderWatchtowerEntrances(arr("decorations"), dress_, catalog_); }
+  // baseForDraft: the ground a stamped terrain falls back to.
+  std::pair<std::string, int> baseOf() const {
+    std::string tile = draft_.contains("baseTile") && draft_["baseTile"].is_string() ? draft_["baseTile"].get<std::string>() : tileAt(0);
+    const int maxVariant = std::max(1, variantCount(tile)) - 1;
+    const int v = draft_.contains("baseVariant") && draft_["baseVariant"].is_number() ? draft_["baseVariant"].get<int>() : intAt("tileVariants", 0);
+    return {tile, std::clamp(v, 0, maxVariant)};
+  }
+  int variantCount(const std::string& terrain) const {
+    const auto it = editor_.terrainInfo.find(terrain);
+    return it == editor_.terrainInfo.end() ? 1 : it->second.variantCount;
+  }
+  std::string terrainName(const std::string& id) const {
+    const auto it = editor_.terrainInfo.find(id);
+    return it == editor_.terrainInfo.end() ? id : it->second.name;
+  }
+  bool passable(const std::string& id) const {
+    const auto it = editor_.terrainInfo.find(id);
+    return it != editor_.terrainInfo.end() && it->second.passable;
+  }
+  static std::string lower(std::string s) {
+    for (char& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    if (s.starts_with("\xC3\x81")) s.replace(0, 2, "\xC3\xA1");  // Água
+    return s;
+  }
+  std::string variantName(const std::string& terrain, int v) const {
+    const auto it = editor_.variantNames.find(terrain);
+    if (it != editor_.variantNames.end() && v >= 0 && v < static_cast<int>(it->second.size()) && !it->second[static_cast<size_t>(v)].empty())
+      return it->second[static_cast<size_t>(v)];
+    return std::format("{} {:03}", terrainName(terrain), v + 1);
+  }
+  // baseVersionLabel: the terrain's name and the picker's number / label.
+  std::string baseVersionLabel(const std::string& terrain, int v) const {
+    if (terrain == "plains" && !editor_.city.empty() && v == editor_.city[0].variant) return "City · Stone paving";
+    if (terrain == "plains" && v == 61) return "City · Indoor wood";
+    for (const TerrainEntry& t : editor_.terrains)
+      if (t.id == terrain)
+        for (const Version& ver : t.versions)
+          if (ver.variant == v) return terrainName(terrain) + " " + ver.label;
+    return std::format("{} {:03}", terrainName(terrain), v + 1);
+  }
+
+  // --- the board's clicks (MapEditorScreen onCellClick) ------------------------------------------------------------------
+
+  void onCellClick(int x, int y, std::optional<glm::vec3> point) {
+    if (x < 0 || y < 0 || x >= cols() || y >= rows()) return;
+    heldUnit_.reset();
+    if (tab_ == Tab::Cutscenes) {  // the Cutscenes tab: a click on the preview picks a hex for the armed "Mover" step, never edits the map
+      if (cutPickStep_ && *cutPickStep_ < static_cast<int>(cutSteps().size())) {
+        ember::Json& st = cutSteps()[*cutPickStep_];
+        st["to"] = ember::Json::array({x, y});
+        cutDirty_ = true;
+        note(std::format("Passo {}: destino {},{}.", *cutPickStep_ + 1, x, y));
+      }
+      cutPickStep_.reset();
+      return;
+    }
+    const int i = y * cols() + x;
+    if (mode_ == Mode::Elevation) return elevate(x, y);
+    if (mode_ == Mode::Paint) {
+      if (turning_) {
+        beginEdit();
+        ember::Json& rots = boardArray("tileRots", 0);
+        rots[i] = (rots[i].is_number() ? rots[i].get<int>() + 1 : 1) % 6;
+        const int now = rots[i].get<int>() * 60;
+        return note(std::format("{} em {},{}: girado para {}°{}.", terrainName(tileAt(i)), x, y, now, now == 0 ? " (de volta ao original)" : ""));
+      }
+      return setTile(i, brush_);
+    }
+    if (mode_ == Mode::Decoration || mode_ == Mode::Architecture) {
+      if (turningDeco_) return turnDecoration(x, y);
+      const ember::Json& decos = arr("decorations");
+      const bool existing = std::any_of(decos.begin(), decos.end(), [&](const ember::Json& p) { return covers(p, x, y); });
+      if (const auto t = editor_.decoTile.find(decoBrush_); !existing && t != editor_.decoTile.end())
+        note(std::format("{} sobre {} — {}.", decoName(decoBrush_), lower(terrainName(t->second)), passable(t->second) ? "dá pra subir em cima" : "não se atravessa"));
+      return toggleDecoration(x, y);
+    }
+    toggleSpawn(x, y);
+  }
+
+  void setTile(int i, const std::string& t) {
+    const int x = i % cols(), y = i / cols();
+    // Painting under a prop is allowed, but said out loud: the terrain decides whether that house can be climbed.
+    for (const ember::Json& p : arr("decorations")) {
+      const auto tile = editor_.decoTile.find(p.value("id", ""));
+      if (tile == editor_.decoTile.end() || !covers(p, x, y)) continue;
+      if (t != tile->second)
+        note(std::format("{} agora está sobre {} — {}. O terreno manda, não o desenho.", decoName(p.value("id", "")), lower(terrainName(t)),
+                         passable(t) ? "dá pra andar por cima" : "não se atravessa"));
+      break;
+    }
+    beginEdit();
+    draft_["tiles"][i] = t;
+    boardArray("tileVariants", 0)[i] = std::min(variant_, variantCount(t) - 1);
+  }
+
+  // Elevação: the hex and `radius` rings around it raised, lowered or set to a level (0..12); void is left alone.
+  void elevate(int x, int y) {
+    beginEdit();
+    const int n = cols() * rows();
+    ember::Json& elev = arr("terrainElevations");
+    for (int k = 0; k < n; ++k) {
+      const auto it = editor_.terrainInfo.find(tileAt(k));
+      const double h = it == editor_.terrainInfo.end() ? 0.0 : it->second.height;
+      if (k >= static_cast<int>(elev.size())) elev.push_back(h);
+      else if (!elev[k].is_number()) elev[k] = h;
+    }
+    std::vector<std::pair<int, int>> frontier{{x, y}};
+    std::set<int> visited;
+    for (int ring = 0; ring <= elevationRadius_; ++ring) {
+      std::vector<std::pair<int, int>> next;
+      for (const auto& [cx, cy] : frontier) {
+        if (cx < 0 || cy < 0 || cx >= cols() || cy >= rows()) continue;
+        const int k = cy * cols() + cx;
+        if (!visited.insert(k).second) continue;
+        if (tileAt(k) != "void" && (!stroking_ || elevationTool_ == 2 || strokeRaised_.insert(k).second))  // a stroke raises a hex once
+          elev[k] = elevationTool_ == 2 ? static_cast<double>(elevationLevel_) : std::clamp(elev[k].get<double>() + (elevationTool_ == 0 ? 1.0 : -1.0), 0.0, 12.0);
+        for (const ember::OverworldHex& nb : ember::Overworld::neighbors(cx, cy)) next.push_back({nb.col, nb.row});
+      }
+      frontier = std::move(next);
+    }
+  }
+
+  // toggleDecoration: a click on a placed prop selects it (another 3D piece over a 3D piece replaces it); elsewhere the
+  // brush is placed on the anchor hex (refused when its footprint would land on another prop); a Waypoint shares hexes.
+  void toggleDecoration(int x, int y) {
+    ember::Json& decos = arr("decorations");
+    std::optional<size_t> clicked;
+    for (size_t k = 0; k < decos.size() && !clicked; ++k)
+      if (covers(decos[k], x, y)) clicked = k;
+    const DecoMeta& brush = meta(decoBrush_);
+    // The kit's 3D stairs over a stairs waypoint (the floor connector stays for the rules; the game draws the 3D piece in place of
+    // its card): a click on the waypoint lays the stairs on exactly its hexes.
+    if (clicked && decoBrush_.starts_with("ember-arch-watchtower-stairs-") && !meta(decos[*clicked].value("id", "")).exitKind.empty()) {
+      const ember::Json c = decos[*clicked];
+      std::set<std::pair<int, int>> want;
+      for (const auto& cell : cellsOf(c)) want.insert(cell);
+      for (int rot = 0; rot < 4; ++rot) {
+        const ember::Json candidate = {{"id", decoBrush_}, {"x", c.value("x", 0)}, {"y", c.value("y", 0)}, {"rot", rot}};
+        std::set<std::pair<int, int>> got;
+        for (const auto& cell : cellsOf(candidate)) got.insert(cell);
+        if (got != want) continue;
+        for (const ember::Json& o : decos)
+          if (o.value("id", "").starts_with("ember-arch-watchtower-stairs-") && o.value("x", -1) == c.value("x", 0) && o.value("y", -1) == c.value("y", 0))
+            return note("Essa escada já tem a sua peça 3D.");
+        beginEdit();
+        ember::Json placed = candidate;
+        placed["wallOrientation"] = rot % 2 ? "vertical" : "horizontal";
+        arr("decorations").push_back(std::move(placed));
+        selected_.reset();
+        return note(std::format("{} sobre a passagem em {},{} (a passagem continua; o jogo desenha a escada 3D no lugar da carta).", decoName(decoBrush_),
+                                c.value("x", 0), c.value("y", 0)));
+      }
+      return note("A peça de escada não cabe nas casas dessa passagem.");
+    }
+    if (clicked) {
+      const ember::Json c = decos[*clicked];
+      const DecoMeta& cm = meta(c.value("id", ""));
+      if (!cm.model3d.empty() && !brush.model3d.empty() && c.value("id", "") != decoBrush_) {
+        beginEdit();
+        ember::Json replacement = c;
+        replacement["id"] = decoBrush_, replacement["rot"] = wallVertical_ ? 1 : 0, replacement["wallOrientation"] = wallVertical_ ? "vertical" : "horizontal";
+        replacement.erase("blocksPath"), replacement.erase("yieldsHighGround");
+        decos[*clicked] = replacement;
+        cleanEntrances();
+        selected_.reset();
+        return note(std::format("{} colocada em {},{}.", decoName(decoBrush_), c.value("x", 0), c.value("y", 0)));
+      }
+      const bool brushIsWaypoint = !brush.exitKind.empty();
+      const bool entranceOverWaypoint = decoBrush_ == kEntrance && !cm.exitKind.empty();
+      if (!entranceOverWaypoint && (!brushIsWaypoint || (!cm.exitKind.empty() && c.value("x", 0) == x && c.value("y", 0) == y))) {
+        select(c);
+        return note(std::format("{} selecionada. Pressione Delete para remover.", decoName(c.value("id", ""))));
+      }
+    }
+    const ember::CatalogDecoration* def = catalog_.decoration(decoBrush_);
+    if (!def) return;
+    ember::Json placed = {{"id", decoBrush_}, {"x", x}, {"y", y}};
+    if (!brush.model3d.empty()) placed["rot"] = wallVertical_ ? 1 : 0, placed["wallOrientation"] = wallVertical_ ? "vertical" : "horizontal";
+    else if (editor_.decoBlocks.contains(decoBrush_)) placed["blocksPath"] = true;
+    const std::set<std::pair<int, int>> covered = otherCells(decos, placed);
+    for (const ember::FootOffset& f : footprintOf(placed))
+      if (brush.exitKind.empty() && covered.contains({x + f.dx, y + f.dy})) return;
+    beginEdit();
+    if (const auto t = editor_.decoTile.find(decoBrush_); t != editor_.decoTile.end())
+      for (const ember::FootOffset& f : def->footprint) {
+        const int cx = x + f.dx, cy = y + f.dy;
+        if (cx >= 0 && cy >= 0 && cx < cols() && cy < rows()) draft_["tiles"][cy * cols() + cx] = t->second;
+      }
+    arr("decorations").push_back(std::move(placed));
+    cleanEntrances();
+  }
+
+  // A placed prop picked (a click, the preview's press): it opens its palette section with its brush armed.
+  void select(const ember::Json& p) {
+    selected_ = ember::Json{{"id", p.value("id", "")}, {"x", p.value("x", 0)}, {"y", p.value("y", 0)}, {"rot", p.value("rot", 0)}};
+    const std::string id = p.value("id", "");
+    if (!catalog_.decoration(id)) return;
+    const bool model = !meta(id).model3d.empty();
+    if (!model || mode_ != Mode::Architecture) decoBrush_ = id;
+    if (model) mode_ = Mode::Architecture;
+    else if (mode_ == Mode::Architecture) mode_ = Mode::Decoration;
+    if (tab_ != Tab::Rules) tab_ = Tab::Decor;
+    if (const auto s = editor_.decoSection.find(id); s != editor_.decoSection.end()) decoSection_ = s->second;
+  }
+
+  // Restores the base ground under a prop that stamped its own terrain, over `cells`.
+  void unstamp(const std::string& id, const std::vector<std::pair<int, int>>& cells) {
+    const auto t = editor_.decoTile.find(id);
+    if (t == editor_.decoTile.end()) return;
+    const auto [baseTile, baseVariant] = baseOf();
+    for (const auto& [cx, cy] : cells) {
+      if (cx < 0 || cy < 0 || cx >= cols() || cy >= rows()) continue;
+      const int k = cy * cols() + cx;
+      if (tileAt(k) != t->second) continue;
+      draft_["tiles"][k] = baseTile;
+      boardArray("tileVariants", 0)[k] = baseVariant;
+      boardArray("tileRots", 0)[k] = 0;
+    }
+  }
+  void stamp(const std::string& id, const std::vector<std::pair<int, int>>& cells) {
+    const auto t = editor_.decoTile.find(id);
+    if (t == editor_.decoTile.end()) return;
+    for (const auto& [cx, cy] : cells)
+      if (cx >= 0 && cy >= 0 && cx < cols() && cy < rows()) draft_["tiles"][cy * cols() + cx] = t->second;
+  }
+  std::vector<std::pair<int, int>> cellsOf(const ember::Json& p) const {
+    std::vector<std::pair<int, int>> out;
+    for (const ember::FootOffset& f : footprintOf(p)) out.push_back({p.value("x", 0) + f.dx, p.value("y", 0) + f.dy});
+    return out;
+  }
+
+  // turnDecoration: the prop under the hex a sixth of a turn (a 3D piece a quarter), footprint and stamped terrain
+  // with it; refused when it would land on another prop.
+  void turnDecoration(int x, int y) {
+    ember::Json& decos = arr("decorations");
+    for (size_t k = 0; k < decos.size(); ++k) {
+      const ember::Json hit = decos[k];
+      if (!covers(hit, x, y)) continue;
+      const DecoMeta& m = meta(hit.value("id", ""));
+      if (!catalog_.decoration(hit.value("id", ""))) return;
+      const bool model = !m.model3d.empty();
+      ember::Json turned = hit;
+      const int rot = (hit.value("rot", 0) + 1) % (model ? 4 : 6);
+      turned["rot"] = rot;
+      if (model) turned["wallOrientation"] = rot % 2 ? "vertical" : "horizontal";
+      if (m.exitKind.empty()) {
+        ember::Json others = ember::Json::array();
+        for (size_t o = 0; o < decos.size(); ++o)
+          if (o != k) others.push_back(decos[o]);
+        const std::set<std::pair<int, int>> taken = otherCells(others, turned);
+        for (const auto& c : cellsOf(turned))
+          if (taken.contains(c)) return note(std::format("{} nao cabe girada aqui — bateria em outra decoracao.", decoName(hit.value("id", ""))));
+      }
+      beginEdit();
+      unstamp(hit.value("id", ""), cellsOf(hit));
+      stamp(hit.value("id", ""), cellsOf(turned));
+      note(std::format("{} em {},{}: girada para {}°{}.", decoName(hit.value("id", "")), hit.value("x", 0), hit.value("y", 0), rot * (model ? 90 : 60),
+                       rot == 0 ? " (de volta ao original)" : ""));
+      decos[k] = turned;
+      if (model) selected_ = ember::Json{{"id", turned["id"]}, {"x", turned["x"]}, {"y", turned["y"]}, {"rot", rot}};
+      cleanEntrances();
+      return;
+    }
+    note("Nao ha decoracao nessa casa pra girar.");
+  }
+
+  void removeSelectedDecoration() {
+    if (!selected_) return note("Clique em qualquer hex da decoração e então pressione Delete.");
+    const std::optional<size_t> k = findDecoration(*selected_);
+    selected_.reset();
+    if (!k) return note("Essa decoração já não está no mapa.");
+    beginEdit();
+    const ember::Json hit = arr("decorations")[*k];
+    unstamp(hit.value("id", ""), cellsOf(hit));
+    note(std::format("{} removida.", decoName(hit.value("id", ""))));
+    arr("decorations").erase(*k);
+  }
+
+  // The selected placement's rule switches (off = the key absent, as Ember writes it).
+  void toggleDecorationRule(const char* flag) {
+    if (!selected_) return note("Clique em qualquer hex de uma decoração no mapa antes de mudar as regras dela.");
+    const std::optional<size_t> k = findDecoration(*selected_);
+    if (!k) return note("Essa decoração já não está no mapa.");
+    beginEdit();
+    ember::Json& p = arr("decorations")[*k];
+    const bool on = !(p.contains(flag) && p[flag].is_boolean() && p[flag].get<bool>());
+    if (on) p[flag] = true;
+    else p.erase(flag);
+    note(std::format("{}: {} {}.", decoName(p.value("id", "")), std::string(flag) == "blocksPath" ? "Bloquear caminho" : "Alto terreno", on ? "ligado" : "desligado"));
+  }
+  ember::Json* selectedPlacement() {
+    if (!selected_) return nullptr;
+    const std::optional<size_t> k = findDecoration(*selected_);
+    return k ? &arr("decorations")[*k] : nullptr;
+  }
+
+  // toggleSpawn: the side's brush lifts whoever stands on the hex on that side, else drops a new unit there.
+  void toggleSpawn(int x, int y) {
+    const char* key = mode_ == Mode::Enemy  ? "enemySpawns"
+                      : mode_ == Mode::Npc  ? "neutralSpawns"
+                      : mode_ == Mode::Summon ? (summonNeutral_ ? "neutralSpawns" : "playerSpawns")
+                                              : "playerSpawns";
+    ember::Json& list = arr(key);
+    beginEdit();
+    for (size_t k = 0; k < list.size(); ++k)
+      if (list[k].value("x", -1) == x && list[k].value("y", -1) == y) {
+        list.erase(k);
+        return;
+      }
+    int summons = 0;
+    for (const ember::Json& s : list)
+      if (isSummon(s.value("classId", ""))) ++summons;
+    const int plain = static_cast<int>(list.size()) - summons;
+    ember::Json spawn;
+    if (mode_ == Mode::Summon) {
+      spawn = {{"name", std::format("{} {}", className(summonBrush_), summons + 1)}, {"classId", summonBrush_}, {"x", x}, {"y", y},
+               {"level", std::string(key) == "playerSpawns" ? editor_.testLevel : editor_.enemyLevel0}};
+    } else if (mode_ == Mode::Player) {  // the Personagens brush: a named hero keeps its name, a class is "Herói N"
+      spawn = {{"name", allyBrush_.first.empty() ? std::format("Herói {}", plain + 1) : allyBrush_.first}, {"classId", allyBrush_.second}, {"x", x}, {"y", y},
+               {"level", editor_.testLevel}};
+    } else if (mode_ == Mode::Npc) {
+      if (npcBrush_ == "breadLady" || !editor_.npcSpawn.contains(npcBrush_)) {
+        spawn = {{"name", std::format("Civil {}", plain + 1)}, {"classId", "breadLady"}, {"x", x}, {"y", y}, {"level", editor_.enemyLevel0}};
+      } else {
+        spawn = editor_.npcSpawn.at(npcBrush_);
+        spawn["x"] = x, spawn["y"] = y, spawn["level"] = editor_.enemyLevel0;
+      }
+    } else {
+      spawn = {{"name", std::format("Inimigo {}", plain + 1)}, {"classId", enemyBrush_.second}, {"x", x}, {"y", y}, {"level", editor_.enemyLevel0}};
+    }
+    list.push_back(std::move(spawn));
+  }
+
+  bool isSummon(const std::string& classId) const {
+    const auto it = editor_.classes.find(classId);
+    return it != editor_.classes.end() && it->second.summon;
+  }
+  bool isCivil(const std::string& classId) const {
+    const auto it = editor_.classes.find(classId);
+    return it != editor_.classes.end() && it->second.role.starts_with("Civil");
+  }
+  // A road NPC's class (the NPC brush's characters): an NPC, never a foe.
+  bool isNpc(const std::string& classId) const {
+    for (const auto& [id, spawn] : editor_.npcSpawn)
+      if (spawn.value("classId", std::string()) == classId) return true;
+    return false;
+  }
+  std::string className(const std::string& classId) const {
+    const auto it = editor_.classes.find(classId);
+    return it == editor_.classes.end() ? classId : it->second.name;
+  }
+  // Type-to-jump in an open unit list (the user, 2026-10-20): a letter pressed scrolls to the first entry starting with it, the
+  // same letter again to the next one. begin() once per frame inside the open combo, then item(label) right after each entry.
+  struct LetterJump {
+    char letter = 0;                // pressed this frame (lower case), 0 = none
+    int seen = 0, target = -1;      // entries starting with it so far; the one to land on
+    inline static char last = 0;    // the letter of the last jump and which match it landed on (cycles on the same letter)
+    inline static int lastMatch = -1;
+    void begin() {
+      letter = 0, seen = 0, target = -1;
+      for (int k = 0; k < 26; ++k)
+        if (ImGui::IsKeyPressed(static_cast<ImGuiKey>(ImGuiKey_A + k), false)) letter = static_cast<char>('a' + k);
+      if (!letter) return;
+      lastMatch = letter == last ? lastMatch + 1 : 0, last = letter;
+      target = lastMatch;
+    }
+    // The label's first letter, accents folded (Á À Â Ã → a, É Ê → e, Í → i, Ó Ô Õ → o, Ú → u, Ç → c).
+    static char initial(const std::string& s) {
+      if (s.empty()) return 0;
+      const unsigned char c = static_cast<unsigned char>(s[0]);
+      if (c < 0x80) return static_cast<char>(c >= 'A' && c <= 'Z' ? c + ('a' - 'A') : c);
+      if (c == 0xC3 && s.size() > 1) {
+        const unsigned char d = static_cast<unsigned char>(s[1]) | 0x20;  // upper and lower case share the low bits
+        if (d >= 0xA0 && d <= 0xA5) return 'a';
+        if (d == 0xA7) return 'c';
+        if (d >= 0xA8 && d <= 0xAB) return 'e';
+        if (d >= 0xAC && d <= 0xAF) return 'i';
+        if (d >= 0xB2 && d <= 0xB6) return 'o';
+        if (d >= 0xB9 && d <= 0xBC) return 'u';
+      }
+      return 0;
+    }
+    void item(const std::string& label) {
+      if (!letter || initial(label) != letter) return;
+      if (seen++ == target) ImGui::SetScrollHereY(0.0f);
+    }
+    // After the list: no entry that far (cycled past the last one) starts over at the first.
+    void end() {
+      if (letter && seen > 0 && target >= seen) lastMatch = -1, last = 0;
+    }
+  };
+  // A picker's label for a class: a named hero's own name for their class, else "Name · role".
+  std::string classLabel(const std::string& classId) const {
+    for (const auto& [name, c] : editor_.heroes)
+      if (c == classId) return name;
+    for (const auto& [name, c] : editor_.namedNonHeroes)
+      if (c == classId) return name;
+    const auto it = editor_.classes.find(classId);
+    return it == editor_.classes.end() ? classId : it->second.name + " · " + it->second.role;
+  }
+
+  // addHeroes: each hero not on the board yet, on the bottom row from the left, skipping taken hexes.
+  void addHeroes(const std::vector<std::pair<std::string, std::string>>& heroes) {
+    std::set<std::pair<int, int>> occupied;
+    for (const char* key : {"playerSpawns", "enemySpawns", "neutralSpawns"})
+      for (const ember::Json& s : arr(key)) occupied.insert({s.value("x", 0), s.value("y", 0)});
+    std::set<std::string> already;
+    for (const ember::Json& s : arr("playerSpawns")) already.insert(s.value("name", ""));
+    std::vector<std::string> added, skipped;
+    ember::Json put = ember::Json::array();
+    int x = 0;
+    const int y = rows() - 1;
+    for (const auto& [name, classId] : heroes) {
+      if (already.contains(name)) {
+        skipped.push_back(name);
+        continue;
+      }
+      while (x < cols() && occupied.contains({x, y})) ++x;
+      if (x >= cols()) break;
+      put.push_back({{"name", name}, {"classId", classId}, {"x", x}, {"y", y}, {"level", editor_.testLevel}});
+      added.push_back(name);
+      occupied.insert({x, y});
+      ++x;
+    }
+    auto join = [](const std::vector<std::string>& v) {
+      std::string s;
+      for (const std::string& n : v) s += (s.empty() ? "" : ", ") + n;
+      return s;
+    };
+    if (!added.empty()) {
+      beginEdit();
+      for (const ember::Json& s : put) arr("playerSpawns").push_back(s);
+      note(skipped.empty() ? std::format("{} na linha de baixo.", join(added))
+                           : std::format("{} na linha de baixo ({} já estava lá).", join(added), join(skipped)));
+    } else {
+      std::vector<std::string> names;
+      for (const auto& h : heroes) names.push_back(h.first);
+      note(std::format("{} já {} no mapa.", join(names), heroes.size() > 1 ? "estavam" : "estava"));
+    }
+  }
+
+  // resize: the board grows or shrinks from the bottom-right; new cells take the base; props, water, units off the
+  // board go.
+  void resize(int c, int r) {
+    c = std::clamp(c, editor_.minGrid, editor_.maxGrid), r = std::clamp(r, editor_.minGrid, editor_.maxGrid);
+    if (c == cols() && r == rows()) return;
+    beginEdit();
+    const auto [baseTile, baseVariant] = baseOf();
+    const int oc = cols(), orows = rows();
+    auto get = [&](const char* key, int i) -> ember::Json { return draft_.contains(key) && draft_[key].is_array() && i < static_cast<int>(draft_[key].size()) ? draft_[key][i] : ember::Json(); };
+    const bool hadElev = draft_.contains("terrainElevations") && draft_["terrainElevations"].is_array();
+    ember::Json tiles = ember::Json::array(), variants = ember::Json::array(), rots = ember::Json::array(), elev = ember::Json::array();
+    for (int y = 0; y < r; ++y)
+      for (int x = 0; x < c; ++x) {
+        const bool in = y < orows && x < oc;
+        const int i = y * oc + x;
+        tiles.push_back(in && get("tiles", i).is_string() ? get("tiles", i) : ember::Json(baseTile));
+        variants.push_back(in && get("tileVariants", i).is_number() ? get("tileVariants", i) : ember::Json(baseVariant));
+        rots.push_back(in && get("tileRots", i).is_number() ? get("tileRots", i) : ember::Json(0));
+        const auto info = editor_.terrainInfo.find(in && get("tiles", i).is_string() ? get("tiles", i).get<std::string>() : baseTile);
+        elev.push_back(in ? (get("terrainElevations", i).is_number() ? get("terrainElevations", i) : ember::Json(info != editor_.terrainInfo.end() ? info->second.height : 0.0))
+                          : ember::Json(0));
+      }
+    draft_["cols"] = c, draft_["rows"] = r;
+    draft_["tiles"] = tiles, draft_["tileVariants"] = variants, draft_["tileRots"] = rots;
+    if (hadElev) draft_["terrainElevations"] = elev;
+    // The Água 3D sheet is gone from the game (the user, 2026-10-30: "só a água normal do jogo"): its fields leave a resized map.
+    for (const char* key : {"waterLevels", "waterFootprints", "waterPatches"}) draft_.erase(key);
+    ember::Json decos = ember::Json::array();
+    for (const ember::Json& p : arr("decorations")) {
+      const ember::CatalogDecoration* def = catalog_.decoration(p.value("id", ""));
+      if (!def) continue;
+      bool inside = true;
+      for (const ember::FootOffset& f : def->footprint) {
+        const int x = p.value("x", 0) + f.dx, y = p.value("y", 0) + f.dy;
+        if (x < 0 || y < 0 || x >= c || y >= r) inside = false;
+      }
+      if (inside) decos.push_back(p);
+    }
+    draft_["decorations"] = decos;
+    ember::Json fx = ember::Json::array();
+    for (const ember::Json& p : arr("elementalFx"))
+      if (p.value("x", -1) >= 0 && p.value("y", -1) >= 0 && p.value("x", 0) < c && p.value("y", 0) < r) fx.push_back(p);
+    draft_["elementalFx"] = fx;
+    for (const char* key : {"playerSpawns", "enemySpawns", "neutralSpawns"}) {
+      ember::Json kept = ember::Json::array();
+      for (const ember::Json& s : arr(key))
+        if (s.value("x", 0) < c && s.value("y", 0) < r) kept.push_back(s);
+      draft_[key] = kept;
+    }
+  }
+
+  // Gerar terreno (world/MapDressing.h, checked against Ember's dressMap): replaces the props, keeps the units.
+  void generateTerrain(uint32_t seed = 0) {
+    std::mt19937 rng(seed ? seed : std::random_device{}());
+    std::uniform_real_distribution<double> uniform(0.0, 1.0);
+    const ember::DressResult r = ember::dressDraft(draft_, dress_, catalog_, shuffleExclude_, [&] { return uniform(rng); });
+    beginEdit();
+    draft_["tiles"] = r.tiles;
+    draft_["tileVariants"] = r.tileVariants;
+    ember::Json rots = ember::Json::array();
+    for (size_t i = 0; i < r.tiles.size(); ++i) rots.push_back(intAt("tileRots", static_cast<int>(i)));
+    draft_["tileRots"] = rots;
+    draft_["decorations"] = r.decorations;
+    selected_.reset();
+    // the note counts terrains in the order they first appear (a JS Map)
+    std::vector<std::pair<std::string, int>> counts;
+    for (const std::string& t : r.tiles) {
+      if (t == "plains") continue;
+      auto it = std::find_if(counts.begin(), counts.end(), [&](const auto& c) { return c.first == t; });
+      if (it == counts.end()) counts.push_back({t, 1});
+      else ++it->second;
+    }
+    std::string summary;
+    for (const auto& [t, n] : counts) summary += (summary.empty() ? "" : ", ") + std::format("{} {}", n, lower(terrainName(t)));
+    note(std::format("Gerado em {}x{}: {}{} — apague o que não servir.", cols(), rows(), summary.empty() ? "nada" : summary,
+                     r.decorations.empty() ? "" : std::format(", {} decoração(ões)", r.decorations.size())));
+  }
+
+  // --- the preview --------------------------------------------------------------------------------------------------
+
+  // What a preview can take on the open map (MapStage::applyEditorDraft): the board's cells and what stands on them. Any other
+  // field (size, light, background, tiles set, ...) opens the preview again.
+  static ember::Json previewSettings(const ember::Json& draft) {
+    ember::Json out = draft;
+    for (const char* key : {"tiles", "tileVariants", "tileRots", "terrainElevations", "waterLevels", "waterFootprints", "waterPatches", "decorations",
+                            "playerSpawns", "enemySpawns", "neutralSpawns"})
+      out.erase(key);
+    return out;
+  }
+
+  // Compare all map content except the three live precipitation settings.
+  static ember::Json withoutPreviewWeather(ember::Json draft) {
+    for (const char* key : {"weather", "weatherIntensity", "weatherWind", "cloudCoverage", "cloudGray", "cloudLook"}) draft.erase(key);
+    return draft;
+  }
+
+  void rebuildPreview() {
+    dirty_ = false;
+    if (!data_) return;
+    // An absent map choice inherits the established default. Opening a preview must not save OFF into the draft.
+    std::optional<ember::MapDraft> draft = ember::MapDraft::fromJson(nlohmann::json::parse(draft_.dump()));
+    if (!draft) return note("O mapa não tem tabuleiro.");
+    ember::Json weatherBase = withoutPreviewWeather(draft_);
+    if (preview_ && weatherBase == previewWeatherBase_) {
+      preview_->setEditorWeather(*draft);
+      previewSettings_ = previewSettings(draft_);
+      return;  // Never destroy/rebuild the board or reset the camera for a weather edit.
+    }
+    previewWeatherBase_ = std::move(weatherBase);
+    ember::Board board(*data_, *draft);
+    board.loadRelief(base_.artRoot);
+    std::map<std::string, int> skipped;
+    ember::SceneData scene = ember::buildScene(board, catalog_, &skipped);
+    // An edit of the cells or of what stands on them goes onto the open preview: nothing reloads, nothing blinks.
+    ember::Json settings = previewSettings(draft_);
+    if (preview_ && settings == previewSettings_ && preview_->applyEditorDraft(*draft, scene)) return;
+    previewSettings_ = std::move(settings);
+    MapStageOptions options = base_;
+    options.map.clear(), options.scene.clear(), options.battle.clear();
+    options.draftData = std::move(*draft);
+    options.sceneData = std::move(scene);
+    options.clouds = 6;  // the game's default clouds in the preview; the draft's own Nuvens choice (cloudLook) wins
+    options.fog = 0;  // the editor shows the whole board
+    options.spellsMenu = false;
+    options.editorClick = [this](int x, int y) {
+      pendingClick_ = std::make_pair(x, y);
+      pendingPoint_ = preview_ ? preview_->lastPickPoint() : std::nullopt;
+    };
+    options.editorGrab = [this](int x, int y, bool left) { return grab(x, y, left); };
+    options.editorRelease = [this](std::optional<std::pair<int, int>> hex, bool moved) { pendingRelease_ = std::make_pair(hex, moved); };
+    std::optional<MapStage::View> view;
+    if (preview_) view = preview_->view();
+    vkDeviceWaitIdle(services_.context.device);
+    preview_.reset();
+    preview_ = std::make_unique<MapStage>(services_.context, services_.renderer, services_.assets, services_.jobs, options);
+    if (preview_->failed()) {
+      preview_.reset();
+      return note("A prévia não abriu (veja o log).");
+    }
+    if (view) preview_->setView(*view);
+  }
+
+  // MapPreviewCanvas onPointerDownCapture: a unit (any side) or a prop under the press is picked up; the left button only
+  // when Girar objeto is not armed.
+  bool grab(int x, int y, bool left) {
+    // Terreno / Elevação (the user, 2026-10-29: "impossible to do it one by one"): the left press paints its hex and the drag every hex
+    // the mouse crosses, until the button lets go; the preview takes the whole stroke then.
+    if (left && strokeBrush()) {
+      const std::optional<std::pair<int, int>> ground = preview_ ? preview_->groundHexUnderMouse() : std::nullopt;
+      stroking_ = true, strokeEdited_ = false;
+      strokeCells_.clear(), strokeRaised_.clear(), strokeLast_.reset();
+      heldUnit_.reset(), heldDeco_.reset();
+      strokeTo(ground.value_or(std::pair{x, y}));
+      return true;
+    }
+    if (left && turningDeco_) return false;
+    // The wall tools (3D Walls > Traçar parede / Fechar sala): the left press starts the run; release() lays it.
+    if (left && mode_ == Mode::Architecture && !architectureDecorations_ && wallTool_ != 0) {
+      wallDragFrom_ = std::make_pair(x, y);
+      heldUnit_.reset(), heldDeco_.reset();
+      return true;
+    }
+    for (const char* key : {"playerSpawns", "enemySpawns", "neutralSpawns"}) {
+      const ember::Json& list = arr(key);
+      for (size_t k = 0; k < list.size(); ++k)
+        if (list[k].value("x", -1) == x && list[k].value("y", -1) == y) {
+          heldUnit_ = HeldUnit{key, k};
+          heldDeco_.reset();
+          selected_.reset();
+          note(std::format("{}: pressione Delete para remover, ou arraste para outro hex pra mover.", list[k].value("name", "")));
+          return true;
+        }
+    }
+    const ember::Json& decos = arr("decorations");
+    std::optional<size_t> hit;
+    for (size_t k = 0; k < decos.size(); ++k)
+      if (covers(decos[k], x, y) && (!hit || (!meta(decos[k].value("id", "")).exitKind.empty() && meta(decos[*hit].value("id", "")).exitKind.empty()))) hit = k;
+    if (!hit) return false;
+    heldUnit_.reset();
+    const ember::Json& p = decos[*hit];
+    heldDeco_ = ember::Json{{"id", p.value("id", "")}, {"x", p.value("x", 0)}, {"y", p.value("y", 0)}, {"rot", p.value("rot", 0)}};
+    select(p);
+    note(std::format("{} selecionada. Arraste até um hex vazio da prévia para movê-la.", decoName(p.value("id", ""))));
+    return true;
+  }
+
+  // The press let go: a drag drops the held unit / prop on the hex under the pointer; a plain press keeps the unit held
+  // (Delete removes it).
+  void release(std::optional<std::pair<int, int>> hex, bool moved) {
+    if (stroking_) {
+      stroking_ = strokeEdited_ = false;
+      strokeRaised_.clear(), strokeLast_.reset();
+      if (dirty_) lastEdit_ = {};  // the preview takes the stroke at once
+      return;
+    }
+    if (wallDragFrom_) {
+      const std::pair<int, int> from = *wallDragFrom_;
+      wallDragFrom_.reset();
+      if (!moved || !hex) return onCellClick(from.first, from.second, std::nullopt);  // a plain click: one piece, as always
+      return layWalls(wallCells(from, *hex));
+    }
+    if (heldUnit_) {
+      if (!moved) return;
+      const HeldUnit held = *heldUnit_;
+      heldUnit_.reset();
+      if (hex) placeUnit(held, hex->first, hex->second);
+      return;
+    }
+    if (heldDeco_) {
+      const ember::Json held = *heldDeco_;
+      heldDeco_.reset();
+      if (moved && hex) placeDecoration(held, hex->first, hex->second);
+    }
+  }
+  bool strokeBrush() const { return (mode_ == Mode::Paint && !turning_) || mode_ == Mode::Elevation; }
+  // The stroke on to `to`: every hex on the line from the last one (a quick drag skips none), each painted once a stroke.
+  void strokeTo(std::pair<int, int> to) {
+    std::vector<std::pair<int, int>> cells;
+    if (strokeLast_)
+      for (const ember::BattleHex& h : ember::hexLine(ember::BattleHex{strokeLast_->first, strokeLast_->second}, ember::BattleHex{to.first, to.second}))
+        cells.push_back({h.x, h.y});
+    else
+      cells.push_back(to);
+    strokeLast_ = to;
+    for (const auto& [x, y] : cells)
+      if (x >= 0 && y >= 0 && x < cols() && y < rows() && strokeCells_.insert(y * cols() + x).second) onCellClick(x, y, std::nullopt);
+  }
+
+  // placePreviewUnit: refused onto a hex another unit holds.
+  void placeUnit(const HeldUnit& held, int x, int y) {
+    for (const char* key : {"playerSpawns", "enemySpawns", "neutralSpawns"}) {
+      const ember::Json& list = arr(key);
+      for (size_t k = 0; k < list.size(); ++k)
+        if (!(held.key == key && held.index == k) && list[k].value("x", -1) == x && list[k].value("y", -1) == y)
+          return note("Esse hex já tem uma unidade. Escolha um hex vazio.");
+    }
+    ember::Json& list = arr(held.key.c_str());
+    if (held.index >= list.size()) return note("Essa unidade não existe mais. Arraste outra na prévia.");
+    beginEdit();
+    list[held.index]["x"] = x, list[held.index]["y"] = y;
+    note(std::format("{} movido para {},{}.", list[held.index].value("name", ""), x, y));
+  }
+  void deleteHeldUnit() {
+    const HeldUnit held = *heldUnit_;
+    heldUnit_.reset();
+    ember::Json& list = arr(held.key.c_str());
+    if (held.index >= list.size()) return;
+    beginEdit();
+    note(std::format("{} removido do mapa.", list[held.index].value("name", "")));
+    list.erase(held.index);
+  }
+  // placePreviewDecoration: refused off the board or onto another prop; the stamped terrain moves with it.
+  void placeDecoration(const ember::Json& sel, int x, int y) {
+    const std::optional<size_t> k = findDecoration(sel);
+    if (!k) return note("Essa decoração já não está no mapa.");
+    ember::Json& decos = arr("decorations");
+    const ember::Json hit = decos[*k];
+    if (hit.value("x", 0) == x && hit.value("y", 0) == y) return;
+    ember::Json moved = hit;
+    moved["x"] = x, moved["y"] = y;
+    const std::string name = decoName(hit.value("id", ""));
+    for (const auto& [cx, cy] : cellsOf(moved))
+      if (cx < 0 || cy < 0 || cx >= cols() || cy >= rows()) return note(std::format("{} não cabe aí — sairia do mapa.", name));
+    ember::Json others = ember::Json::array();
+    for (size_t o = 0; o < decos.size(); ++o)
+      if (o != *k) others.push_back(decos[o]);
+    const std::set<std::pair<int, int>> taken = otherCells(others, moved);
+    for (const auto& c : cellsOf(moved))
+      if (taken.contains(c)) return note(std::format("{} não cabe aí — bateria em outra decoração.", name));
+    beginEdit();
+    unstamp(hit.value("id", ""), cellsOf(hit));
+    stamp(hit.value("id", ""), cellsOf(moved));
+    decos[*k] = moved;
+    selected_ = ember::Json{{"id", moved["id"]}, {"x", x}, {"y", y}, {"rot", moved.value("rot", 0)}};
+    note(std::format("{} movida para {},{}.", name, x, y));
+    cleanEntrances();
+  }
+
+  // --- the wall tools (2026-10-21, the user: "update the editor to make it easier to use these 3D walls, segments, corners and
+  // windows"): a drag lays a whole run of the armed wall brush, or the four walls of a room; a wall under the run is replaced by the
+  // brush (a window brush over a wall = a window), anything else is left alone. Walls join by themselves (MapStage buildArchitecture)
+  // and a window's splay turns to the room by itself, so a piece's orientation is only its run's.
+  struct WallCell {
+    int x = 0, y = 0;
+    bool vertical = false;
+  };
+  // Traçar parede: the straight run from `from` to `to` along the longer axis; Fechar sala: the rectangle's four sides.
+  std::vector<WallCell> wallCells(std::pair<int, int> from, std::pair<int, int> to) const {
+    std::vector<WallCell> out;
+    const int x0 = std::min(from.first, to.first), x1 = std::max(from.first, to.first), y0 = std::min(from.second, to.second), y1 = std::max(from.second, to.second);
+    if (wallTool_ == 2 && x1 > x0 && y1 > y0) {
+      for (int x = x0; x <= x1; ++x) out.push_back({x, y0, false}), out.push_back({x, y1, false});
+      for (int y = y0 + 1; y < y1; ++y) out.push_back({x0, y, true}), out.push_back({x1, y, true});
+      return out;
+    }
+    const int dx = x1 - x0, dy = y1 - y0;
+    // A diagonal drag (both ways at least 2 and within a factor of two of each other) lays a diagonal run: one step in x and one
+    // in y per piece, the pieces joining corner to corner (MapStage buildArchitecture), then straight along the longer way.
+    if (dx >= 2 && dy >= 2 && dx <= 2 * dy && dy <= 2 * dx) {
+      const int sx = to.first >= from.first ? 1 : -1, sy = to.second >= from.second ? 1 : -1, n = std::min(dx, dy);
+      for (int i = 0; i <= n; ++i) out.push_back({from.first + i * sx, from.second + i * sy, dy > dx});
+      for (int i = n + 1; i <= std::max(dx, dy); ++i)
+        out.push_back(dx > dy ? WallCell{from.first + i * sx, from.second + n * sy, false} : WallCell{from.first + n * sx, from.second + i * sy, true});
+      return out;
+    }
+    if (dx >= dy)
+      for (int x = x0; x <= x1; ++x) out.push_back({x, from.second, false});
+    else
+      for (int y = y0; y <= y1; ++y) out.push_back({from.first, y, true});
+    return out;
+  }
+  void layWalls(const std::vector<WallCell>& cells) {
+    const DecoMeta& brush = meta(decoBrush_);
+    if (brush.model3d.empty() || !catalog_.decoration(decoBrush_)) return note("Arme uma peça 3D de parede antes de traçar.");
+    ember::Json& decos = arr("decorations");
+    int placed = 0, replaced = 0, kept = 0;
+    bool editing = false;
+    auto edit = [&] {
+      if (!editing) beginEdit(), editing = true;
+    };
+    for (const WallCell& c : cells) {
+      if (c.x < 0 || c.y < 0 || c.x >= cols() || c.y >= rows()) continue;
+      std::optional<size_t> hit;
+      for (size_t k = 0; k < decos.size() && !hit; ++k)
+        if (covers(decos[k], c.x, c.y)) hit = k;
+      if (hit) {
+        const ember::Json old = decos[*hit];
+        const DecoMeta& om = meta(old.value("id", ""));
+        const bool wallPiece = !om.model3d.empty() && !om.props3d && om.exitKind.empty() && old.value("id", "") != kEntrance && catalog_.decoration(old.value("id", "")) &&
+                               catalog_.decoration(old.value("id", ""))->footprint.size() == 1;
+        if (!wallPiece || old.value("id", "") == decoBrush_) {
+          ++kept;
+          continue;
+        }
+        edit();
+        ember::Json replacement = old;
+        replacement["id"] = decoBrush_, replacement["rot"] = c.vertical ? 1 : 0, replacement["wallOrientation"] = c.vertical ? "vertical" : "horizontal";
+        replacement.erase("blocksPath"), replacement.erase("yieldsHighGround");
+        decos[*hit] = replacement;
+        ++replaced;
+        continue;
+      }
+      edit();
+      decos.push_back(ember::Json{{"id", decoBrush_}, {"x", c.x}, {"y", c.y}, {"rot", c.vertical ? 1 : 0}, {"wallOrientation", c.vertical ? "vertical" : "horizontal"}});
+      ++placed;
+    }
+    if (editing) cleanEntrances();
+    selected_.reset();
+    note(std::format("{}: {} colocada(s), {} trocada(s), {} casa(s) ocupada(s) mantida(s).", decoName(decoBrush_), placed, replaced, kept));
+  }
+
+  // dioramaView's rings: the hovered hex (warm), every hex of the selected prop (cool), the wall run being dragged (amber).
+  std::vector<Renderer::GroundMark> rings() const {
+    std::vector<Renderer::GroundMark> out;
+    auto add = [&](int x, int y, ImU32 color) {
+      if (x >= 0 && y >= 0 && x < cols() && y < rows()) out.push_back({static_cast<uint32_t>(y * cols() + x), color, 0.97f, 0.8f});
+    };
+    if (selected_)
+      for (const auto& [x, y] : cellsOf(*selected_)) add(x, y, IM_COL32(120, 200, 255, 230));
+    if (wallDragFrom_ && hover_)
+      for (const WallCell& c : wallCells(*wallDragFrom_, *hover_)) add(c.x, c.y, IM_COL32(255, 170, 60, 240));
+    if (stroking_)  // the stroke so far (the preview takes it when the button lets go)
+      for (const int k : strokeCells_) add(k % cols(), k / cols(), IM_COL32(150, 230, 120, 230));
+    if (hover_) add(hover_->first, hover_->second, IM_COL32(255, 214, 140, 230));
+    return out;
+  }
+  // The hovered hex's terrain, art and level by the cursor (MapPreviewCanvas hoverTile).
+  void drawHoverTip() {
+    if (!hover_ || ImGui::GetIO().WantCaptureMouse || heldUnit_ || heldDeco_) return;
+    const int i = hover_->second * cols() + hover_->first;
+    const std::string t = tileAt(i);
+    const auto info = editor_.terrainInfo.find(t);
+    if (info == editor_.terrainInfo.end()) return;
+    const double level = draft_.contains("terrainElevations") && draft_["terrainElevations"].is_array() && i < static_cast<int>(draft_["terrainElevations"].size()) &&
+                                 draft_["terrainElevations"][i].is_number()
+                             ? draft_["terrainElevations"][i].get<double>()
+                             : info->second.height;
+    ImGui::SetTooltip("%s — %s · Nível %g", info->second.name.c_str(), variantName(t, intAt("tileVariants", i)).c_str(), level);
+  }
+
+  // --- saved maps: the files on disk ---------------------------------------------------------------------------------------
+
+  struct SavedFile {
+    int serial = 0;
+    std::filesystem::path file;
+    bool own = false;  // content/maps/ember (else Ember's folder, read-only)
+    long long savedAt = 0;
+  };
+  struct Scenario {
+    std::string id, title;
+    int index = 0;
+    bool hub = false;
+    std::vector<SavedFile> files;      // by serial
+    std::vector<std::string> floors;   // the maps its floor connectors lead to (newest draft's targetMapId)
+  };
+  // Every map id saved in Ember's folder and in ours, with its newest draft's title / index / hub.
+  static std::map<std::string, Scenario> scanSaved(const std::filesystem::path& classicMaps) {
+    std::map<std::string, Scenario> out;
+    std::map<std::string, std::pair<int, std::filesystem::path>> newest;
+    for (const auto& [dir, own] : {std::pair{classicMaps, false}, std::pair{savedMapsDir(), true}}) {
+      std::error_code ec;
+      if (!std::filesystem::is_directory(dir, ec)) continue;
+      for (const auto& e : std::filesystem::directory_iterator(dir, ec)) {
+        if (e.path().extension() != ".json") continue;
+        const std::string stem = e.path().stem().string();
+        std::ifstream in(e.path(), std::ios::binary);
+        const ember::Json j = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
+        if (!j.is_object()) continue;
+        const ember::Json& d = j.contains("draft") ? j["draft"] : j;
+        if (!d.is_object() || !d.contains("id") || !d["id"].is_string()) continue;
+        const std::string id = d["id"].get<std::string>();
+        const int serial = j.contains("serial") && j["serial"].is_number() ? j["serial"].get<int>() : 0;
+        Scenario& s = out[id];
+        s.id = id;
+        s.files.push_back({serial, e.path(), own, j.contains("savedAt") && j["savedAt"].is_number() ? j["savedAt"].get<long long>() : 0LL});
+        if (!newest.contains(id) || serial >= newest[id].first) {
+          newest[id] = {serial, e.path()};
+          s.title = d.contains("title") && d["title"].is_string() ? d["title"].get<std::string>() : id;
+          s.index = d.contains("index") && d["index"].is_number() ? d["index"].get<int>() : 0;
+          s.hub = d.contains("hub") && d["hub"].is_boolean() && d["hub"].get<bool>();
+          s.floors.clear();
+          if (d.contains("decorations") && d["decorations"].is_array())
+            for (const ember::Json& deco : d["decorations"])
+              if (deco.is_object() && deco.contains("targetMapId") && deco["targetMapId"].is_string() && !deco["targetMapId"].get<std::string>().empty())
+                s.floors.push_back(deco["targetMapId"].get<std::string>());
+        }
+      }
+    }
+    for (auto& [id, s] : out) std::sort(s.files.begin(), s.files.end(), [](const SavedFile& a, const SavedFile& b) { return a.serial < b.serial || (a.serial == b.serial && !a.own); });
+    return out;
+  }
+  void rescan() {
+    if (scan_.valid()) return;
+    scan_ = std::async(std::launch::async, [maps = paths_.maps] { return scanSaved(maps); });
+  }
+  void refreshFiles() {
+    files_.clear();
+    const auto it = saved_.find(draft_.value("id", ""));
+    if (it != saved_.end()) files_ = it->second.files;
+  }
+  // The newest file of an id (the highest serial; ours over Ember's on a tie).
+  std::optional<std::filesystem::path> newestFile(const std::string& id) const {
+    const auto it = saved_.find(id);
+    if (it == saved_.end() || it->second.files.empty()) return std::nullopt;
+    return it->second.files.back().file;
+  }
+  static ember::Json readDraft(const std::filesystem::path& file) {
+    std::ifstream in(file, std::ios::binary);
+    const ember::Json j = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
+    if (!j.is_object()) return ember::Json();
+    return j.contains("draft") ? j["draft"] : j;
+  }
+  std::map<std::string, int> activeMaps() const {
+    std::map<std::string, int> out;
+    std::ifstream in(activeMapsFile(), std::ios::binary);
+    const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+    if (j.is_object())
+      for (const auto& [id, s] : j.items())
+        if (s.is_number_integer()) out[id] = s.get<int>();
+    return out;
+  }
+  void setActive(const std::string& id, std::optional<int> serial) {
+    nlohmann::json j = nlohmann::json::object();
+    for (const auto& [k, v] : activeMaps()) j[k] = v;
+    if (serial) j[id] = *serial;
+    else j.erase(id);
+    std::error_code ec;
+    std::filesystem::create_directories(activeMapsFile().parent_path(), ec);
+    std::ofstream(activeMapsFile(), std::ios::binary | std::ios::trunc) << j.dump(2) << "\n";
+  }
+
+  // normalizeScenarioId / stripScenarioId: lowercase ASCII letters and digits, dashes, at most 64 (accents dropped).
+  static std::string stripScenarioId(const std::string& id) {
+    std::string out;
+    for (size_t i = 0; i < id.size(); ++i) {
+      unsigned char c = static_cast<unsigned char>(id[i]);
+      if (c == 0xC3 && i + 1 < id.size()) {  // Latin-1 letters: their base letter (NFD without the marks)
+        static const char* base = "AAAAAAACEEEEIIIIDNOOOOOxOUUUUYTsaaaaaaaceeeeiiiidnooooo/ouuuuyty";
+        const unsigned char d = static_cast<unsigned char>(id[++i]);
+        c = d >= 0x80 && d <= 0xBF ? static_cast<unsigned char>(base[d - 0x80]) : '-';
+      } else if (c >= 0x80) {
+        c = '-';
+      }
+      if (std::isalnum(c)) out += static_cast<char>(std::tolower(c));
+      else if (out.empty() || out.back() != '-') out += '-';
+    }
+    if (out.size() > 64) out.resize(64);
+    return out;
+  }
+  static std::string scenarioId(const std::string& id) {
+    std::string out = stripScenarioId(id);
+    while (!out.empty() && out.front() == '-') out.erase(out.begin());
+    while (!out.empty() && out.back() == '-') out.pop_back();
+    return out.empty() ? "scenario" : out;
+  }
+
+  // Salvar (doSave): Ember's map file ({serial, savedAt, draft}, 2-space JSON) as the next serial of the id, counted
+  // over Ember's maps and ours; it becomes the id's active version. The game's scene and rules for it are prepared in
+  // the background (Ember's exporters, a few seconds). Ember's folder is never written.
+  bool save(std::optional<ember::Json> toSave = std::nullopt) {
+    ember::Json d = toSave ? *toSave : draft_;
+    d["id"] = scenarioId(d.value("id", "scenario"));
+    if (d["id"] == "thebridge") d["title"] = "A Ponte de Pedra";
+    if (d != draft_) draft_ = d, dirty_ = true;
+    const std::string id = d["id"].get<std::string>();
+    const int serial = std::max(highestMapSerial(savedMapsDir(), id), highestMapSerial(paths_.maps, id)) + 1;
+    const std::filesystem::path file = savedMapsDir() / std::format("{}{:03}.json", id, serial);
+    std::error_code ec;
+    std::filesystem::create_directories(savedMapsDir(), ec);
+    ember::Json out;
+    out["serial"] = serial;
+    out["savedAt"] = static_cast<long long>(ember::Campaign::nowMs());
+    out["draft"] = d;
+    out["draft"]["decorations"] = ember::removeWallsUnderWatchtowerEntrances(d.value("decorations", ember::Json::array()), dress_, catalog_);
+    const std::filesystem::path tmp = file.string() + ".tmp";
+    {
+      std::ofstream f(tmp, std::ios::binary | std::ios::trunc);
+      f << out.dump(2) << "\n";
+      if (!f) {
+        note("NÃO SALVO: não foi possível gravar " + file.generic_string() + ". O rascunho continua aberto.");
+        return false;
+      }
+    }
+    std::filesystem::rename(tmp, file, ec);
+    std::ifstream back(file, std::ios::binary);
+    const ember::Json saved = ec ? ember::Json() : ember::Json::parse(back, nullptr, false);
+    if (saved.is_discarded() || !saved.is_object() || saved.value("serial", 0) != serial || saved["draft"] != out["draft"]) {
+      note("NÃO SALVO: o arquivo gravado não confere (" + file.generic_string() + "). O rascunho continua aberto.");
+      return false;
+    }
+    setActive(id, serial);
+    note(std::format("Salvo: {} (v{:03}). Preparando para o jogo…", file.filename().string(), serial));
+    prepare(file);
+    rescan();
+    return true;
+  }
+  // One prepared map is shared by campaign and Modo teste.
+  void prepare(const std::filesystem::path& file) {
+    const std::string stem = file.stem().string();
+    const std::filesystem::path ember = base_.artRoot.parent_path();
+    exports_.push_back(std::async(std::launch::async, [paths = paths_, file, stem, ember]() -> std::string {
+      const std::filesystem::path log = std::filesystem::path("build/editor") / (stem + ".log");
+      const MapExportResult c = exportMap(file, stem, paths, ember, log);
+      if (!c.ok) return "Salvo, mas a preparação para a campanha falhou (" + c.error + ").";
+      return "Salvo " + stem + ": campanha e Modo Teste usam esta mesma versão.";
+    }));
+  }
+
+  // mapstore draftToMission then missionToDraft (Carregar mapa da campanha): the board repaired (watchtower walls, rock
+  // columns), test levels (heroes 15, foes by the mission's index), the location it is placed in.
+  ember::Json missionToDraft(ember::Json d) const {
+    const int n = d.value("cols", 0) * d.value("rows", 0);
+    std::vector<std::string> tiles;
+    for (const ember::Json& t : d.value("tiles", ember::Json::array())) tiles.push_back(t.is_string() ? t.get<std::string>() : "plains");
+    tiles.resize(static_cast<size_t>(n), "plains");
+    const std::string id = d.value("id", "");
+    const std::optional<std::string> base = d.contains("baseTile") && d["baseTile"].is_string() ? std::optional(d["baseTile"].get<std::string>()) : std::nullopt;
+    if (const auto f = editor_.watchtowerFloors.find(id); f != editor_.watchtowerFloors.end())
+      d["title"] = std::regex_replace(d.value("title", ""), std::regex("^(?:Andar|Subsolo)\\s+[IVX\\d-]+"), std::format("Andar {}", f->second),
+                                      std::regex_constants::format_first_only);
+    if (id == "thebridge") d["title"] = "A Ponte de Pedra";
+    const ember::Json decos = ember::closeWatchtowerWalls(id, tiles, d.value("cols", 0), d.value("rows", 0), d.value("decorations", ember::Json::array()), dress_, catalog_);
+    tiles = ember::clearRockColumnTiles(tiles, d.value("cols", 0), d.value("rows", 0), decos, base, dress_, catalog_);
+    tiles = ember::clearRockColumnTiles(tiles, d.value("cols", 0), d.value("rows", 0), decos, base, dress_, catalog_);
+    d["tiles"] = tiles;
+    d["decorations"] = decos;
+    const int index = d.value("index", 0);
+    ember::Json variants = ember::Json::array(), rots = ember::Json::array();
+    for (int i = 0; i < n; ++i) {
+      const ember::Json& v = d.contains("tileVariants") && d["tileVariants"].is_array() && i < static_cast<int>(d["tileVariants"].size()) ? d["tileVariants"][i] : ember::Json();
+      const ember::Json& r = d.contains("tileRots") && d["tileRots"].is_array() && i < static_cast<int>(d["tileRots"].size()) ? d["tileRots"][i] : ember::Json();
+      variants.push_back(v.is_number() ? v : ember::Json(0)), rots.push_back(r.is_number() ? r : ember::Json(0));
+    }
+    d["tileVariants"] = variants, d["tileRots"] = rots;
+    auto levels = [&](const char* key, int level) {
+      if (!d.contains(key) || !d[key].is_array()) return;
+      for (ember::Json& s : d[key]) {
+        if (s.value("classId", "") == "butcher") s["classId"] = "punisher";
+        s["level"] = level;
+      }
+    };
+    levels("playerSpawns", editor_.testLevel);
+    levels("enemySpawns", enemyLevelFor(index));
+    levels("neutralSpawns", enemyLevelFor(index));
+    d["hub"] = d.contains("hub") && d["hub"].is_boolean() && d["hub"].get<bool>();
+    d["autoTactics"] = !(d.contains("autoTactics") && d["autoTactics"].is_boolean() && !d["autoTactics"].get<bool>());
+    d["fog"] = d.contains("fog") && d["fog"].is_boolean() && d["fog"].get<bool>();
+    d["environment"] = d.value("environment", "outdoor") == "indoor" ? "indoor" : "outdoor";
+    static const std::set<std::string> tods = {"noon", "dawn", "dusk", "brightNight", "darkNight"};
+    d["timeOfDay"] = tods.contains(d.value("timeOfDay", "")) ? d["timeOfDay"].get<std::string>() : "day";
+    auto number = [&](const char* key, double fallback) {
+      if (!d.contains(key) || !d[key].is_number()) d[key] = fallback;
+    };
+    number("sunIntensity", editor_.defaultSun), number("ambientIntensity", editor_.defaultAmbient), number("bloomIntensity", editor_.defaultBloom);
+    number("mistIntensity", 0.2), number("mistSpeed", 1), number("wispIntensity", 0.02), number("wispSpeed", 1), number("wispColor", 0xffa552);
+    if (!d.contains("mistType") || !d["mistType"].is_string()) d["mistType"] = "none";
+    if (!d.contains("music") || !d["music"].is_string()) d["music"] = "";
+    if (!d.contains("elementalFx") || !d["elementalFx"].is_array()) d["elementalFx"] = ember::Json::array();
+    if (!d.contains("neutralSpawns") || !d["neutralSpawns"].is_array()) d["neutralSpawns"] = ember::Json::array();
+    d["locationId"] = locationOf(id);
+    return d;
+  }
+  std::string locationOf(const std::string& missionId) const {
+    for (const ember::Locais::Base& l : locais_.locations())
+      if (std::find(l.missionIds.begin(), l.missionIds.end(), missionId) != l.missionIds.end()) return l.id;
+    return "";
+  }
+  void loadCampaignMap(const std::string& id) {
+    const std::optional<std::filesystem::path> file = newestFile(id);
+    if (!file) return note("Esse mapa não tem arquivo salvo.");
+    ember::Json d = missionToDraft(readDraft(*file));
+    if (d.is_null()) return note("Não consegui ler " + file->generic_string() + ".");
+    setDraft(d);
+    note(std::format("Carregado \"{}\" ({}) no editor — {}x{}.", d.value("title", ""), id, cols(), rows()));
+  }
+  void openFile(const std::filesystem::path& file, const std::string& what) {
+    const ember::Json d = readDraft(file);
+    if (!d.is_object()) return note("Não consegui ler " + file.generic_string() + ".");
+    setDraft(d);
+    note(what);
+  }
+
+  // Testar uses the same campaign map preparation and battle rules. The caller supplies the test save, which provides
+  // the full level-30 party; the draft does not get a separate level-15 battle export.
+  void playtest() {
+    if (playtest_.valid()) return;
+    const std::string id = scenarioId(draft_.value("id", "scenario"));
+    const std::filesystem::path dir = std::filesystem::path("build/editor/playtest");
+    ember::Json file;
+    file["serial"] = 0;
+    file["savedAt"] = static_cast<long long>(ember::Campaign::nowMs());
+    file["draft"] = draft_;
+    file["draft"]["id"] = id;
+    const std::filesystem::path ember = base_.artRoot.parent_path();
+    const std::string title = draft_.value("title", id), place = draft_.value("place", ""), briefing = draft_.value("briefing", ""),
+                      objective = draft_.value("objective", "");
+    CampaignPaths previewPaths = paths_;
+    previewPaths.campaign = dir;
+    note("Testando — Encerrar teste nas Opções traz o mapa de volta como está.");
+    playtest_ = std::async(std::launch::async, [this, dir, id, file, ember, paths = std::move(previewPaths), title, place, briefing, objective]() -> std::optional<MissionEntry> {
+      std::error_code ec;
+      std::filesystem::create_directories(dir, ec);
+      const std::filesystem::path source = dir / (id + ".draft.json");
+      {
+        std::ofstream f(source, std::ios::binary | std::ios::trunc);
+        f << file.dump(2) << "\n";
+      }
+      const MapExportResult r = exportMap(source, id, paths, ember, dir / (id + ".log"));
+      if (!r.ok) {
+        playtestError_ = "O teste não pôde ser preparado (" + r.error + ").";
+        return std::nullopt;
+      }
+      MissionEntry e;
+      e.id = id, e.title = title, e.place = place, e.briefing = briefing, e.objective = objective, e.draftId = id;
+      e.map = r.map, e.scene = r.scene, e.battle = r.battle;
+      return e;
+    });
+  }
+
+  // --- the lists Ember's pickers show ---------------------------------------------------------------------------------
+
+  struct MapRef {
+    std::string id, title;
+    int index = 0;
+  };
+  // missionById: Ember's mission table, else the newest saved draft.
+  std::optional<MissionInfo> missionInfo(const std::string& id) const {
+    if (id == draft_.value("id", "")) return MissionInfo{id, draft_.value("title", id), draft_.value("index", 0), draft_.value("hub", false)};
+    for (const MissionInfo& m : editor_.missions)
+      if (m.id == id) return m;
+    if (const auto it = saved_.find(id); it != saved_.end()) return MissionInfo{id, it->second.title, it->second.index, it->second.hub};
+    return std::nullopt;
+  }
+  static bool byName(const std::string& a, const std::string& b) { return lower(a) < lower(b); }
+  static std::string mapNameKey(const std::string& name) {
+    std::string key;
+    for (size_t i = 0; i < name.size(); ++i) {
+      const unsigned char c = static_cast<unsigned char>(name[i]);
+      if (c == 0xC3 && i + 1 < name.size()) {
+        const unsigned char d = static_cast<unsigned char>(name[++i]) | 0x20;
+        if (d >= 0xA0 && d <= 0xA5) key.push_back('a');
+        else if (d == 0xA7) key.push_back('c');
+        else if (d >= 0xA8 && d <= 0xAB) key.push_back('e');
+        else if (d >= 0xAC && d <= 0xAF) key.push_back('i');
+        else if (d >= 0xB2 && d <= 0xB6) key.push_back('o');
+        else if (d >= 0xB9 && d <= 0xBC) key.push_back('u');
+        else key.append(name, i - 1, 2);
+      } else {
+        key.push_back(static_cast<char>(std::tolower(c)));
+      }
+    }
+    return key;
+  }
+  static bool mapTitleBefore(const std::string& a, const std::string& b) { return mapNameKey(a) < mapNameKey(b); }
+  static void sortRefs(std::vector<MapRef>& v) {
+    std::sort(v.begin(), v.end(), [](const MapRef& a, const MapRef& b) {
+      return mapTitleBefore(a.title, b.title) || (!mapTitleBefore(b.title, a.title) && a.id < b.id);
+    });
+  }
+  std::set<std::string> campaignIds() const {
+    std::set<std::string> ids;
+    for (const std::string& loc : locais_.locationOrder) {
+      const auto it = order_.find(loc);
+      if (it != order_.end()) ids.insert(it->second.begin(), it->second.end());
+      else
+        for (const ember::Locais::Base& b : locais_.base)
+          if (b.id == loc) ids.insert(b.missionIds.begin(), b.missionIds.end());
+    }
+    return ids;
+  }
+  // Only missions placed in a Local (not hubs): "Carregar mapa da campanha".
+  std::vector<MapRef> campaignRefs() const {
+    std::vector<MapRef> out;
+    for (const std::string& id : campaignIds())
+      if (const auto m = missionInfo(id); m && !m->hub) out.push_back({id, m->title, m->index});
+    sortRefs(out);
+    return out;
+  }
+  // Reserve maps: saved but in no Local, and Ember's missions given to none (Locais "Adicionar mapa", R-Encounter).
+  std::vector<MapRef> reserveRefs() const {
+    const std::set<std::string> campaign = campaignIds();
+    std::map<std::string, MapRef> known;
+    for (const auto& [id, s] : saved_)
+      if (!campaign.contains(id)) known[id] = {id, s.title, s.index};
+    for (const MissionInfo& m : editor_.missions)
+      if (!m.hub && !campaign.contains(m.id) && !known.contains(m.id)) known[m.id] = {m.id, m.title, m.index};
+    std::vector<MapRef> out;
+    for (auto& [id, r] : known) out.push_back(r);
+    sortRefs(out);
+    return out;
+  }
+  // The hub maps (the Inn, towns) and every floor their connectors lead to, floor after floor (the Inn's second floor is no
+  // hub and sits in no Local: it is reached only by its stairs, so the editor lists it here with its Inn).
+  std::vector<MapRef> cityHubs() const {
+    std::map<std::string, MapRef> hubs;
+    for (const MissionInfo& m : editor_.missions)
+      if (m.hub) hubs[m.id] = {m.id, m.title, m.index};
+    for (const auto& [id, s] : saved_)
+      if (s.hub) hubs[id] = {id, s.title, s.index};
+    std::vector<std::string> todo;
+    for (const auto& [id, r] : hubs) todo.push_back(id);
+    while (!todo.empty()) {
+      const std::string id = todo.back();
+      todo.pop_back();
+      const auto it = saved_.find(id);
+      if (it == saved_.end()) continue;
+      for (const std::string& floor : it->second.floors)
+        if (!hubs.contains(floor))
+          if (const std::optional<MissionInfo> m = missionInfo(floor); m && saved_.contains(floor)) hubs[floor] = {floor, m->title, m->index}, todo.push_back(floor);
+    }
+    std::vector<MapRef> out;
+    for (auto& [id, r] : hubs) out.push_back(r);
+    sortRefs(out);
+    return out;
+  }
+  // Every saved map, campaign or reserve, by name: a floor connector's target.
+  std::vector<MapRef> connectorTargets() const {
+    std::vector<MapRef> out = campaignRefs(), reserve = reserveRefs();
+    out.insert(out.end(), reserve.begin(), reserve.end());
+    std::sort(out.begin(), out.end(), [](const MapRef& a, const MapRef& b) {
+      return mapTitleBefore(a.title, b.title) || (!mapTitleBefore(b.title, a.title) && a.id < b.id);
+    });
+    return out;
+  }
+
+  // The dialogue editor's portrait picker: the heroes by their own names, then one entry per other sprite.
+  std::vector<DialogEditorUi::Portrait> portraits() const {
+    std::set<std::string> seen;
+    std::vector<DialogEditorUi::Portrait> heroes, rest;
+    for (const auto& [name, classId] : editor_.heroes) {
+      const auto it = editor_.classes.find(classId);
+      if (it == editor_.classes.end() || it->second.sprite.empty() || !seen.insert(it->second.sprite).second) continue;
+      heroes.push_back({it->second.sprite, name});
+    }
+    for (const std::string& c : editor_.classOrder) {
+      const auto it = editor_.classes.find(c);
+      if (it == editor_.classes.end() || it->second.sprite.empty() || !seen.insert(it->second.sprite).second) continue;
+      rest.push_back({it->second.sprite, it->second.name});
+    }
+    auto sorter = [](const DialogEditorUi::Portrait& a, const DialogEditorUi::Portrait& b) { return byName(a.label, b.label); };
+    std::sort(heroes.begin(), heroes.end(), sorter), std::sort(rest.begin(), rest.end(), sorter);
+    heroes.insert(heroes.end(), rest.begin(), rest.end());
+    return heroes;
+  }
+  // Opens the dialogue editor on the mission's intro / outro or a neutral unit's conversation ("spawn:<index>").
+  void openDialogEditor(const std::string& target) {
+    std::string title;
+    ember::Json tree;
+    std::function<bool(const ember::Json&)> commit;
+    if (target == "intro" || target == "outro") {
+      const std::string key = target == "intro" ? "introDialog" : "outroDialog";
+      title = target == "intro" ? "Diálogo de abertura" : "Diálogo de encerramento";
+      tree = draft_.contains(key) ? draft_[key] : ember::Json();
+      commit = [this, key](const ember::Json& t) {
+        ember::Json next = draft_;
+        if (t.is_null()) next.erase(key);
+        else next[key] = t;
+        beginEdit();
+        draft_ = next;
+        return save(next);
+      };
+    } else if (target.starts_with("spawn:")) {
+      const size_t index = static_cast<size_t>(std::atoi(target.c_str() + 6));
+      const ember::Json& list = arr("neutralSpawns");
+      if (index >= list.size()) return;
+      title = "Diálogo — " + list[index].value("name", "unidade");
+      tree = list[index].contains("dialog") ? list[index]["dialog"] : ember::Json();
+      commit = [this, index](const ember::Json& t) {
+        ember::Json next = draft_;
+        if (index >= next["neutralSpawns"].size()) return false;
+        if (t.is_null()) next["neutralSpawns"][index].erase("dialog");
+        else next["neutralSpawns"][index]["dialog"] = t;
+        beginEdit();
+        draft_ = next;
+        return save(next);
+      };
+    } else {
+      return;
+    }
+    dialogUi_.open(title, tree, std::move(commit));
+  }
+
+  // The dice: props Gerar terreno leaves out (Ember localStorage "ember-deco-shuffle-exclude").
+  static std::filesystem::path shuffleExcludeFile() {
+    const char* local = std::getenv("LOCALAPPDATA");
+    return (local && *local ? std::filesystem::path(local) : std::filesystem::current_path()) / "Ember" / "editor-deco-shuffle-exclude.json";
+  }
+  static std::set<std::string> loadShuffleExclude() {
+    std::ifstream in(shuffleExcludeFile(), std::ios::binary);
+    const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+    std::set<std::string> out;
+    if (j.is_array())
+      for (const nlohmann::json& s : j)
+        if (s.is_string()) out.insert(s.get<std::string>());
+    return out;
+  }
+  void toggleShuffleExclude(const std::string& id) {
+    if (!shuffleExclude_.erase(id)) shuffleExclude_.insert(id);
+    std::error_code ec;
+    std::filesystem::create_directories(shuffleExcludeFile().parent_path(), ec);
+    std::ofstream(shuffleExcludeFile(), std::ios::binary | std::ios::trunc) << nlohmann::json(std::vector<std::string>(shuffleExclude_.begin(), shuffleExclude_.end())).dump();
+  }
+
+  // --- the panel (MapEditorScreen's page, left of the board) ---------------------------------------------------------------
+
+  enum class Mode { Paint, Elevation, Decoration, Architecture, Player, Enemy, Npc, Summon };
+
+  // Ember's muted help lines (text-muted), wrapped at the panel's edge.
+  static void hint(const char* fmt, ...) IM_FMTARGS(1) {
+    va_list args;
+    va_start(args, fmt);
+    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+    ImGui::TextWrappedV(fmt, args);
+    ImGui::PopStyleColor();
+    va_end(args);
+  }
+
+  // --- the editor's look (the user, 2026-10-31: "something more customized and organized", "uma fonte mais fácil de ler") ---------
+  // The game's dark bronze and ember on every widget, Segoe UI 16 (Semibold for titles and labels); a rail of tabs on the left of
+  // the page, the brush a click on the board uses and the actions (Testar, Salvar mapa) always in view.
+
+  static constexpr ImU32 kPanelInk = IM_COL32(15, 12, 10, 246), kRailInk = IM_COL32(9, 7, 6, 255), kCardInk = IM_COL32(26, 20, 16, 255);
+  static constexpr ImU32 kBronzeInk = IM_COL32(190, 150, 95, 255), kBronzeDimInk = IM_COL32(190, 150, 95, 60), kEmberInk = IM_COL32(236, 128, 52, 255);
+  static constexpr ImU32 kEdgeInk = IM_COL32(88, 68, 48, 255), kTextInk = IM_COL32(236, 228, 216, 255), kLabelInk = IM_COL32(204, 176, 136, 255);
+  static constexpr ImU32 kMutedInk = IM_COL32(150, 138, 122, 255), kLitInk = IM_COL32(255, 224, 186, 255);
+  static constexpr std::pair<ImGuiCol, ImU32> kLook[] = {
+      {ImGuiCol_Text, kTextInk},
+      {ImGuiCol_TextDisabled, kMutedInk},
+      {ImGuiCol_WindowBg, kPanelInk},
+      {ImGuiCol_ChildBg, IM_COL32(0, 0, 0, 0)},
+      {ImGuiCol_PopupBg, IM_COL32(20, 16, 13, 250)},
+      {ImGuiCol_Border, kEdgeInk},
+      {ImGuiCol_BorderShadow, IM_COL32(0, 0, 0, 0)},
+      {ImGuiCol_FrameBg, IM_COL32(30, 24, 19, 255)},
+      {ImGuiCol_FrameBgHovered, IM_COL32(46, 35, 27, 255)},
+      {ImGuiCol_FrameBgActive, IM_COL32(60, 43, 30, 255)},
+      {ImGuiCol_TitleBg, IM_COL32(20, 16, 13, 255)},
+      {ImGuiCol_TitleBgActive, IM_COL32(48, 32, 21, 255)},
+      {ImGuiCol_TitleBgCollapsed, IM_COL32(20, 16, 13, 255)},
+      {ImGuiCol_ScrollbarBg, IM_COL32(0, 0, 0, 60)},
+      {ImGuiCol_ScrollbarGrab, IM_COL32(96, 74, 50, 255)},
+      {ImGuiCol_ScrollbarGrabHovered, IM_COL32(132, 98, 62, 255)},
+      {ImGuiCol_ScrollbarGrabActive, IM_COL32(172, 124, 72, 255)},
+      {ImGuiCol_CheckMark, IM_COL32(242, 146, 64, 255)},
+      {ImGuiCol_SliderGrab, IM_COL32(200, 120, 56, 255)},
+      {ImGuiCol_SliderGrabActive, IM_COL32(242, 150, 70, 255)},
+      {ImGuiCol_Button, IM_COL32(42, 32, 25, 255)},
+      {ImGuiCol_ButtonHovered, IM_COL32(74, 51, 34, 255)},
+      {ImGuiCol_ButtonActive, IM_COL32(114, 66, 36, 255)},
+      {ImGuiCol_Header, IM_COL32(62, 43, 29, 255)},
+      {ImGuiCol_HeaderHovered, IM_COL32(86, 59, 37, 255)},
+      {ImGuiCol_HeaderActive, IM_COL32(112, 72, 40, 255)},
+      {ImGuiCol_Separator, kEdgeInk},
+      {ImGuiCol_ResizeGrip, IM_COL32(120, 88, 56, 90)},
+      {ImGuiCol_ResizeGripHovered, IM_COL32(190, 150, 95, 170)},
+      {ImGuiCol_ResizeGripActive, IM_COL32(236, 128, 52, 220)},
+      {ImGuiCol_TextSelectedBg, IM_COL32(200, 120, 56, 110)}};
+  static constexpr int kLookVars = 9;
+  // Every window the editor draws (the panel, Locais, R-Encounter, the technical map, the dialog editor) wears it.
+  static void pushLook() {
+    for (const auto& [c, v] : kLook) ImGui::PushStyleColor(c, v);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 4.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, 4.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_GrabRounding, 3.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarRounding, 6.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarSize, 12.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{9.0f, 5.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{8.0f, 7.0f});
+    ImGui::PushFont(uiFont(UiFont::Plain), 16.0f);
+  }
+  static void popLook() {
+    ImGui::PopFont();
+    ImGui::PopStyleVar(kLookVars);
+    ImGui::PopStyleColor(static_cast<int>(std::size(kLook)));
+  }
+
+  // A field's name above it: Segoe UI Semibold in the label colour.
+  static void fieldLabel(const char* fmt, ...) IM_FMTARGS(1) {
+    va_list args;
+    va_start(args, fmt);
+    ImGui::PushFont(uiFont(UiFont::Strong), 14.0f);
+    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::ColorConvertU32ToFloat4(kLabelInk));
+    ImGui::TextV(fmt, args);
+    ImGui::PopStyleColor();
+    ImGui::PopFont();
+    va_end(args);
+  }
+  // A section of a tab: its title and a bronze rule fading to the right.
+  static void section(const char* title) {
+    ImGui::Dummy({0, 8});
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec2 at = ImGui::GetCursorScreenPos();
+    const float w = ImGui::GetContentRegionAvail().x;
+    ImFont* font = uiFont(UiFont::Strong);
+    const ImVec2 ts = font->CalcTextSizeA(16.5f, FLT_MAX, 0.0f, title);
+    dl->AddText(font, 16.5f, at, kBronzeInk, title);
+    const float y = std::round(at.y + ts.y * 0.58f);
+    if (at.x + ts.x + 12 < at.x + w)
+      dl->AddRectFilledMultiColor({at.x + ts.x + 12, y}, {at.x + w, y + 1}, kBronzeDimInk, IM_COL32(190, 150, 95, 0), IM_COL32(190, 150, 95, 0), kBronzeDimInk);
+    ImGui::Dummy({w, ts.y + 2});
+  }
+  // `text` cut to `width` with an ellipsis.
+  static std::string fitText(ImFont* font, float size, const std::string& text, float width) {
+    if (font->CalcTextSizeA(size, FLT_MAX, 0.0f, text.c_str()).x <= width) return text;
+    std::string s = text;
+    while (!s.empty()) {
+      size_t cut = s.size() - 1;
+      while (cut > 0 && (static_cast<unsigned char>(s[cut]) & 0xC0) == 0x80) --cut;  // a whole UTF-8 character
+      s.resize(cut);
+      if (font->CalcTextSizeA(size, FLT_MAX, 0.0f, (s + "…").c_str()).x <= width) return s + "…";
+    }
+    return {};
+  }
+  // A thumbnail's name under it ([a, b]), cut to its width; the space it takes is reserved.
+  static void nameUnder(const std::string& name, ImVec2 a, ImVec2 b) {
+    const float cell = b.x - a.x;
+    const ImVec2 at{a.x, b.y + 3};
+    ImFont* font = uiFont(UiFont::Plain);
+    const std::string shown = fitText(font, 13.0f, name, cell);
+    const float tw = font->CalcTextSizeA(13.0f, FLT_MAX, 0.0f, shown.c_str()).x;
+    ImGui::GetWindowDrawList()->AddText(font, 13.0f, {std::round(at.x + (cell - tw) * 0.5f), at.y}, kMutedInk, shown.c_str());
+    ImGui::SetCursorScreenPos(at);
+    ImGui::Dummy({cell, 16});
+  }
+  // A square icon button; `on` = a switch that is lit.
+  static bool iconButton(const char* id, const char* icon, const std::string& tip, bool on, float size = 34, bool enabled = true) {
+    ImGui::BeginDisabled(!enabled);
+    const bool clicked = ImGui::InvisibleButton(id, {size, size});
+    ImGui::EndDisabled();
+    const bool hover = enabled && ImGui::IsItemHovered();
+    const ImVec2 a = ImGui::GetItemRectMin(), b = ImGui::GetItemRectMax();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    dl->AddRectFilled(a, b, on ? IM_COL32(92, 50, 24, 255) : hover ? IM_COL32(52, 38, 28, 255) : kCardInk, 4.0f);
+    dl->AddRect(a, b, on ? kEmberInk : hover ? kBronzeInk : kEdgeInk, 4.0f);
+    uiIcon(dl, icon, {(a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f}, std::round(size * 0.55f), !enabled ? IM_COL32(100, 90, 80, 255) : on || hover ? kLitInk : kTextInk);
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && !tip.empty()) ImGui::SetTooltip("%s", tip.c_str());
+    return clicked && enabled;
+  }
+  // The footer's big buttons: icon + label; the primary one in ember.
+  static bool actionButton(const char* id, const char* icon, const char* label, bool primary, ImVec2 size, bool enabled) {
+    ImGui::BeginDisabled(!enabled);
+    const bool clicked = ImGui::InvisibleButton(id, size);
+    ImGui::EndDisabled();
+    const bool hover = enabled && ImGui::IsItemHovered();
+    const ImVec2 a = ImGui::GetItemRectMin(), b = ImGui::GetItemRectMax();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    if (primary) {
+      const ImU32 top = hover ? IM_COL32(176, 86, 34, 255) : IM_COL32(150, 70, 28, 255), bottom = hover ? IM_COL32(128, 58, 22, 255) : IM_COL32(104, 46, 18, 255);
+      dl->AddRectFilledMultiColor(a, b, top, top, bottom, bottom);
+    } else {
+      dl->AddRectFilled(a, b, hover ? IM_COL32(52, 38, 28, 255) : kCardInk, 4.0f);
+    }
+    dl->AddRect(a, b, primary ? kEmberInk : hover ? kBronzeInk : kEdgeInk, 4.0f);
+    ImFont* font = uiFont(UiFont::Strong);
+    const ImVec2 ts = font->CalcTextSizeA(16.0f, FLT_MAX, 0.0f, label);
+    const float total = 18 + 8 + ts.x, x = std::round((a.x + b.x - total) * 0.5f), cy = (a.y + b.y) * 0.5f;
+    const ImU32 ink = !enabled ? IM_COL32(150, 136, 120, 255) : hover || primary ? kLitInk : kTextInk;
+    uiIcon(dl, icon, {x + 9, cy}, 18, ink);
+    dl->AddText(font, 16.0f, {x + 26, std::round(cy - ts.y * 0.5f)}, ink, label);
+    return clicked && enabled;
+  }
+
+  // The tabs of the page (the rail on its left).
+  enum class Tab { File, Map, Terrain, Decor, Units, Cutscenes, Scene, Rules, World };
+  struct TabInfo {
+    Tab tab;
+    const char* key;  // the captures' "tab:<key>"
+    const char* icon;
+    const char* name;
+    const char* about;
+  };
+  static constexpr TabInfo kTabs[] = {
+      {Tab::File, "file", "folder-open", "Arquivo", "Abrir, criar e guardar as versões deste mapa."},
+      {Tab::Map, "map", "map", "Mapa", "Identidade, missão, recompensa, diálogos e tamanho."},
+      {Tab::Terrain, "terrain", "mountain", "Terreno", "Pintar os tiles e esculpir a elevação."},
+      {Tab::Decor, "decor", "castle", "Decoração", "Decorações 2D, paredes 3D e objetos 3D."},
+      {Tab::Units, "units", "users", "Unidades", "Heróis, inimigos, NPCs e invocações."},
+      {Tab::Cutscenes, "cutscenes", "clapperboard", "Cutscenes", "Cenas no mapa: atores, passos (mover, virar, falar, esperar) e a cena de abertura."},
+      {Tab::Scene, "scene", "sun-moon", "Cenário", "Ground, panorama, céu, iluminação, clima, nuvens e névoa."},
+      {Tab::Rules, "rules", "scroll-text", "Regras", "Vitória, regras do mapa e da peça selecionada."},
+      {Tab::World, "world", "globe", "Mundo", "Local no mapa-múndi, Locais e encontros de estrada."}};
+  static constexpr float kRail = 80;
+  static const TabInfo& tabInfo(Tab t) {
+    for (const TabInfo& i : kTabs)
+      if (i.tab == t) return i;
+    return kTabs[0];
+  }
+  static Tab tabOf(Mode m) {
+    return m == Mode::Paint || m == Mode::Elevation ? Tab::Terrain : m == Mode::Decoration || m == Mode::Architecture ? Tab::Decor : Tab::Units;
+  }
+  // A brush tab opened from another brush: its first brush is armed (a click on the board does what the open tab shows).
+  void openTab(Tab t) {
+    tab_ = t;
+    scrollTo_ = 0.0f;  // Every section opens at its first control.
+    if (t != Tab::Terrain && t != Tab::Decor && t != Tab::Units) return;
+    if (tabOf(mode_) == t) return;
+    turning_ = turningDeco_ = false;
+    mode_ = t == Tab::Terrain ? Mode::Paint : t == Tab::Decor ? Mode::Decoration : Mode::Player;
+    if (mode_ == Mode::Decoration && !meta(decoBrush_).model3d.empty() && !editor_.decorationOrder.empty()) decoBrush_ = editor_.decorationOrder.front();
+  }
+
+  void drawEditor() {
+    const ImGuiIO& io = ImGui::GetIO();
+    ImGui::SetNextWindowPos({0, 0});
+    ImGui::SetNextWindowSizeConstraints({480, io.DisplaySize.y}, {io.DisplaySize.x * 0.6f, io.DisplaySize.y});
+    ImGui::SetNextWindowSize({panelWidth_, io.DisplaySize.y}, ImGuiCond_FirstUseEver);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::Begin("##mapeditor", nullptr,
+                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar |
+                     ImGuiWindowFlags_NoScrollWithMouse);
+    ImGui::PopStyleVar(2);
+    panelWidth_ = ImGui::GetWindowWidth();
+    {  // the panel's right edge
+      const ImVec2 p = ImGui::GetWindowPos(), s = ImGui::GetWindowSize();
+      ImGui::GetWindowDrawList()->AddRectFilled({p.x + s.x - 2, p.y}, {p.x + s.x, p.y + s.y}, IM_COL32(120, 90, 56, 200));
+    }
+    const float spacing = ImGui::GetStyle().ItemSpacing.y;
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
+    drawHeader();
+    drawBrushStrip();
+    // the rail | the page (scrolls); the action bar (notes, Testar, Salvar mapa) stays at the bottom
+    const float footer = 64.0f + (note_.empty() ? 0.0f : 50.0f) + (bigNote_ ? 120.0f : 0.0f);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, kRailInk);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 8});
+    ImGui::BeginChild("##rail", {kRail, -footer}, ImGuiChildFlags_AlwaysUseWindowPadding);
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor();
+    drawRail();
+    ImGui::EndChild();
+    ImGui::SameLine(0, 0);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{20, 14});
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{8, spacing});
+    if (scrollTo_) ImGui::SetNextWindowScroll({0, *scrollTo_});
+    ImGui::BeginChild("##page", {0, -footer}, ImGuiChildFlags_AlwaysUseWindowPadding);
+    scrollTo_.reset();
+    drawPageTitle();
+    drawTab();
+    ImGui::Dummy({0, 16});
+    ImGui::EndChild();
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, kRailInk);
+    ImGui::BeginChild("##actions", {0, 0}, ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar(2);
+    {  // a bronze line over the action bar
+      const ImVec2 p = ImGui::GetWindowPos();
+      ImGui::GetWindowDrawList()->AddRectFilled(p, {p.x + ImGui::GetWindowWidth(), p.y + 1}, kEdgeInk);
+    }
+    drawFooter();
+    ImGui::EndChild();
+    ImGui::PopStyleVar();
+    ImGui::End();
+  }
+
+  // Voltar, the editor's name and the map being edited; Desfazer / Refazer (up to kHistory steps; Ctrl+Z / Ctrl+Shift+Z do the
+  // same), the preview and the technical grid, always visible.
+  void drawHeader() {
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec2 o = ImGui::GetCursorScreenPos();
+    const float w = ImGui::GetContentRegionAvail().x, h = 66;
+    dl->AddRectFilled(o, {o.x + w, o.y + h}, kRailInk);
+    dl->AddRectFilledMultiColor({o.x, o.y + h - 1}, {o.x + w, o.y + h}, kBronzeInk, IM_COL32(190, 150, 95, 40), IM_COL32(190, 150, 95, 40), kBronzeInk);
+    ImGui::SetCursorScreenPos({o.x + 14, o.y + 15});
+    if (iconButton("##edback", "chevron-left", "Voltar ao Modo teste", false, 36) && callbacks_.back) callbacks_.back(draft_);
+    const std::string title = draft_.value("title", ""), id = draft_.value("id", "");
+    dl->AddText(uiFont(UiFont::Strong), 21.0f, {o.x + 62, o.y + 11}, kTextInk, "Map Editor");
+    const float right = o.x + w - 14;
+    const float textRoom = right - 4 * 36 - 3 * 6 - 14 - (o.x + 62);
+    const std::string sub = title.empty() ? id : id.empty() ? title : title + " · " + id;
+    dl->AddText(uiFont(UiFont::Plain), 14.5f, {o.x + 62, o.y + 37}, kMutedInk, fitText(uiFont(UiFont::Plain), 14.5f, sub.empty() ? "Mapa novo" : sub, textRoom).c_str());
+    float x = right - 4 * 36 - 3 * 6 - 10;
+    ImGui::SetCursorScreenPos({x, o.y + 15});
+    if (iconButton("##undo", "undo-2", std::format("Desfazer a última ação ({} de até {})", past_.size(), kHistory), false, 36, !past_.empty())) undo();
+    ImGui::SetCursorScreenPos({x += 42, o.y + 15});
+    if (iconButton("##redo", "redo-2", std::format("Refazer a ação desfeita ({})", future_.size()), false, 36, !future_.empty())) redo();
+    ImGui::SetCursorScreenPos({x += 52, o.y + 15});
+    if (iconButton("##preview", showPreview_ ? "eye" : "eye-off", showPreview_ ? "Ocultar a prévia com os gráficos do jogo" : "Mostrar a prévia com os gráficos do jogo",
+                   showPreview_, 36)) {
+      showPreview_ = !showPreview_;
+      if (showPreview_) dirty_ = true, lastEdit_ = {};
+      else preview_.reset();
+    }
+    ImGui::SetCursorScreenPos({x += 42, o.y + 15});
+    if (iconButton("##technical", "grid-3x3", showTechnical_ ? "Ocultar o mapa técnico de edição" : "Mostrar o mapa técnico de edição", showTechnical_, 36))
+      showTechnical_ = !showTechnical_;
+    ImGui::SetCursorScreenPos({o.x, o.y + h});
+  }
+
+  // What a click on the board does now; a click on the strip opens its tab.
+  std::pair<std::string, std::string> brushSummary() const {
+    static const char* kElevation[3] = {"Elevar +1", "Baixar −1", "Nivelar"};
+    static const char* kWallTool[3] = {"clique", "traçar parede", "fechar sala"};
+    const std::string area = elevationRadius_ == 0 ? std::string("uma célula") : elevationRadius_ == 1 ? std::string("1 anel") : std::format("{} anéis", elevationRadius_);
+    switch (mode_) {
+      case Mode::Paint:
+        if (turning_) return {"Terreno", "Girar hex: cada clique vira o desenho 60°"};
+        return {"Terreno", std::format("{} · {}", cityMode_ ? std::string("City") : terrainName(brush_), variantName(brush_, variant_))};
+      case Mode::Elevation:
+        return {"Elevação", std::format("{} · {}{}", kElevation[std::clamp(elevationTool_, 0, 2)], area, elevationTool_ == 2 ? std::format(" · nível {}", elevationLevel_) : std::string())};
+      case Mode::Decoration:
+        return {"Decoração 2D", turningDeco_ ? std::string("Girar objeto: cada clique vira 60°") : decoName(decoBrush_)};
+      case Mode::Architecture:
+        if (turningDeco_) return {architectureDecorations_ ? "Objeto 3D" : "Parede 3D", "Girar peça 3D: cada clique vira 90°"};
+        if (architectureDecorations_) return {"Objeto 3D", decoName(decoBrush_)};
+        return {"Parede 3D", std::format("{} · {}", decoName(decoBrush_), kWallTool[std::clamp(wallTool_, 0, 2)])};
+      case Mode::Player:
+      case Mode::Enemy: {
+        const std::pair<std::string, std::string>& b = mode_ == Mode::Player ? allyBrush_ : enemyBrush_;
+        return {mode_ == Mode::Player ? "Herói" : "Inimigo", b.first.empty() ? className(b.second) : b.first + " · " + className(b.second)};
+      }
+      case Mode::Npc: {
+        std::string name = npcBrush_;
+        for (const auto& [id, n] : editor_.npcs)
+          if (id == npcBrush_) name = n;
+        return {"NPC", name};
+      }
+      case Mode::Summon:
+        return {summonNeutral_ ? "Invocação neutra" : "Invocação aliada", classLabel(summonBrush_)};
+    }
+    return {};
+  }
+  void drawBrushStrip() {
+    const auto [what, which] = brushSummary();
+    const ImVec2 o = ImGui::GetCursorScreenPos();
+    const float w = ImGui::GetContentRegionAvail().x, h = 48;
+    const bool clicked = ImGui::InvisibleButton("##brush", {w, h});
+    const bool hover = ImGui::IsItemHovered();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    dl->AddRectFilled(o, {o.x + w, o.y + h}, hover ? IM_COL32(32, 24, 18, 255) : IM_COL32(20, 16, 13, 255));
+    dl->AddRectFilled({o.x, o.y + h - 1}, {o.x + w, o.y + h}, kEdgeInk);
+    const Tab tab = tabOf(mode_);
+    dl->AddRectFilled({o.x + 14, o.y + 8}, {o.x + 46, o.y + 40}, IM_COL32(70, 36, 16, 255), 4.0f);
+    dl->AddRect({o.x + 14, o.y + 8}, {o.x + 46, o.y + 40}, kEmberInk, 4.0f);
+    uiIcon(dl, tabInfo(tab).icon, {o.x + 30, o.y + 24}, 18, kLitInk);
+    dl->AddText(uiFont(UiFont::Strong), 13.5f, {o.x + 58, o.y + 6}, kLabelInk, ("Pincel · " + what).c_str());
+    dl->AddText(uiFont(UiFont::Plain), 16.0f, {o.x + 58, o.y + 23}, kTextInk, fitText(uiFont(UiFont::Plain), 16.0f, which, w - 58 - 14).c_str());
+    if (hover) ImGui::SetTooltip("O que um clique no mapa faz agora. Clique para abrir a aba %s.", tabInfo(tab).name);
+    if (clicked) tab_ = tab;
+  }
+
+  void drawRail() {
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const float rowHeight = std::clamp(ImGui::GetContentRegionAvail().y / static_cast<float>(std::size(kTabs)), 36.0f, 64.0f);
+    for (const TabInfo& t : kTabs) {
+      const ImVec2 a = ImGui::GetCursorScreenPos();
+      const ImVec2 b{a.x + kRail, a.y + rowHeight};
+      if (ImGui::InvisibleButton(std::format("##tab{}", t.key).c_str(), {kRail, rowHeight})) openTab(t.tab);
+      const bool on = tab_ == t.tab, hover = ImGui::IsItemHovered();
+      if (on || hover) dl->AddRectFilled(a, b, on ? IM_COL32(36, 26, 19, 255) : IM_COL32(24, 18, 14, 255));
+      if (on) dl->AddRectFilled(a, {a.x + 3, b.y}, kEmberInk);
+      const ImU32 ink = on ? IM_COL32(255, 196, 140, 255) : hover ? kTextInk : IM_COL32(170, 156, 138, 255);
+      uiIcon(dl, t.icon, {a.x + kRail * 0.5f, a.y + rowHeight * 0.32f}, std::min(22.0f, rowHeight * 0.36f), ink);
+      ImFont* font = uiFont(on ? UiFont::Strong : UiFont::Plain);
+      const ImVec2 ts = font->CalcTextSizeA(14.0f, FLT_MAX, 0.0f, t.name);
+      dl->AddText(font, 14.0f, {std::round(a.x + (kRail - ts.x) * 0.5f), a.y + rowHeight * 0.64f}, ink, t.name);
+      if (hover) ImGui::SetTooltip("%s", t.about);
+    }
+  }
+  void drawPageTitle() {
+    const TabInfo& t = tabInfo(tab_);
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec2 at = ImGui::GetCursorScreenPos();
+    dl->AddText(uiFont(UiFont::Strong), 23.0f, at, kTextInk, t.name);
+    dl->AddText(uiFont(UiFont::Plain), 15.0f, {at.x, at.y + 31}, kMutedInk, t.about);
+    ImGui::Dummy({1, 54});
+  }
+
+  // Each tab: the page's sections, in order.
+  void drawTab() {
+    switch (tab_) {
+      case Tab::File:
+        section("Abrir");
+        drawOpen();
+        section(std::format("Versões salvas de \"{}\" ({})", draft_.value("id", ""), files_.size()).c_str());
+        drawFiles();
+        break;
+      case Tab::Map:
+        section("Identidade");
+        drawIdentity();
+        section("Missão");
+        drawMission();
+        section("Recompensa");
+        drawReward();
+        section("Diálogos");
+        drawDialogs();
+        section("Tamanho");
+        drawSize();
+        break;
+      case Tab::Terrain:
+        drawTerrainTab();
+        break;
+      case Tab::Decor:
+        drawDecorTab();
+        break;
+      case Tab::Units:
+        drawUnitsTab();
+        break;
+      case Tab::Cutscenes:
+        drawCutscenesTab();
+        break;
+      case Tab::Scene:
+        section("Ground e Panorama");
+        drawGroundAndPanorama();
+        section("Ambiente, iluminação e clima");
+        drawLighting();
+        break;
+      case Tab::Rules:
+        section("Vitória");
+        drawVictory();
+        section("Regras do mapa");
+        drawMapFlags();
+        section("Peça selecionada");
+        drawRules(mode_ == Mode::Architecture);
+        break;
+      case Tab::World:
+        section("Local no mapa-múndi");
+        drawWorldLocation();
+        section("Campanha");
+        drawCampaignWindows();
+        break;
+    }
+  }
+
+  // Novo, the campaign's maps, the saved maps, the CityHubs.
+  void drawOpen() {
+    if (ImGui::Button("Novo mapa em branco")) {
+      setDraft(blankDraft());
+      note(std::format("Mapa novo em branco — cenário \"{}\", {}x{}.", draft_["id"].get<std::string>(), cols(), rows()));
+    }
+    fieldLabel("Mapa da campanha");
+    ImGui::SetNextItemWidth(-1);
+    if (ImGui::BeginCombo("##campaignmap", "Carregar mapa da campanha…")) {
+      LetterJump jump;
+      jump.begin();
+      for (const MapRef& m : campaignRefs()) {
+        if (ImGui::Selectable(std::format("{}##{}", m.title, m.id).c_str())) loadCampaignMap(m.id);
+        jump.item(m.title);
+      }
+      jump.end();
+      ImGui::EndCombo();
+    }
+    // Abrir mapa salvo: reserve maps only (campaign maps are in the picker above), the newest save of each.
+    const std::set<std::string> campaign = campaignIds();
+    std::vector<const Scenario*> pickable;
+    for (const auto& [id, s] : saved_)
+      if (!campaign.contains(id)) pickable.push_back(&s);
+    std::sort(pickable.begin(), pickable.end(), [](const Scenario* a, const Scenario* b) {
+      return mapTitleBefore(a->title, b->title) || (!mapTitleBefore(b->title, a->title) && a->id < b->id);
+    });
+    if (!pickable.empty()) {
+      fieldLabel("Mapa salvo");
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##savedmap", "Abrir mapa salvo…")) {
+        const std::map<std::string, int> active = activeMaps();
+        LetterJump jump;
+        jump.begin();
+        for (const Scenario* s : pickable) {
+          const auto a = active.find(s->id);
+          const std::string label = std::format("{} · {} ({} arquivo{}{})##{}", s->title, s->id, s->files.size(), s->files.size() == 1 ? "" : "s",
+                                                a != active.end() ? std::format(", v{:03} ativa", a->second) : "", s->id);
+          if (ImGui::Selectable(label.c_str()) && !s->files.empty())
+            openFile(s->files.back().file, std::format("Aberto {} — o save mais novo de \"{}\".", s->files.back().file.filename().string(), s->id));
+          jump.item(s->title);
+        }
+        jump.end();
+        ImGui::EndCombo();
+      }
+      if (ImGui::IsItemHovered()) ImGui::SetTooltip("Abre o save mais recente desse cenário — a lista de versões abaixo deixa escolher outro serial");
+    }
+    const std::vector<MapRef> hubs = cityHubs();
+    if (!hubs.empty()) {
+      fieldLabel("CityHubs");
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##cityhubs", "Abrir hub…")) {
+        LetterJump jump;
+        jump.begin();
+        for (const MapRef& m : hubs) {
+          if (ImGui::Selectable(std::format("{}##{}", m.title, m.id).c_str())) loadCampaignMap(m.id);
+          jump.item(m.title);
+        }
+        jump.end();
+        ImGui::EndCombo();
+      }
+      if (ImGui::IsItemHovered()) ImGui::SetTooltip("Mapas de hub (a Estalagem, cidades) e os andares ligados a eles por escada — sem combate");
+    }
+  }
+
+  // Locais / R-Encounter: the campaign's own windows.
+  void drawCampaignWindows() {
+    if (ImGui::Button("Locais", {150, 0})) openLocais();
+    ImGui::SameLine();
+    hint("A progressão entre os locais da campanha, suas missões, vagas e andares.");
+    if (ImGui::Button("R-Encounter", {150, 0})) showEncounters_ = true;
+    ImGui::SameLine();
+    hint("Os encontros aleatórios de estrada de cada região.");
+  }
+
+  // Terreno: paint or sculpt, then the whole map's tools.
+  void drawTerrainTab() {
+    int pick = -1;
+    if (toggleRow({{"Pintar tiles", mode_ == Mode::Paint}, {"Elevação", mode_ == Mode::Elevation}}, pick)) turning_ = false, mode_ = pick == 0 ? Mode::Paint : Mode::Elevation;
+    ImGui::Dummy({0, 2});
+    drawModePanel();
+    section("Mapa inteiro");
+    drawReplaceBase();
+  }
+  // Decoração: 2D, 3D walls, 3D objects; the selected piece's rules; the placed list.
+  void drawDecorTab() {
+    const int current = mode_ == Mode::Decoration ? 0 : architectureDecorations_ ? 2 : 1;
+    int pick = -1;
+    if (toggleRow({{"Decoração 2D", current == 0}, {"Paredes 3D", current == 1}, {"Objetos 3D", current == 2}}, pick) && pick != current) {
+      turningDeco_ = false;
+      if (pick == 0) {
+        mode_ = Mode::Decoration;
+        if (!meta(decoBrush_).model3d.empty() && !editor_.decorationOrder.empty()) decoBrush_ = editor_.decorationOrder.front();
+      } else {
+        mode_ = Mode::Architecture;
+        architectureDecorations_ = pick == 2;
+        decoBrush_ = pick == 2 ? "prop-3d-tavern-table" : thickWalls_ ? "castle-3d-thick" : "wall-3d-stone";
+      }
+    }
+    ImGui::Dummy({0, 2});
+    drawModePanel();
+    hint("Na prévia: botão direito (ou esquerdo) numa decoração e arraste para mover.");
+    drawDecorationList();
+  }
+  // Unidades: the side to place, its brush, then every unit on the map.
+  // --- Cutscenes (the on-map scripts of docs/CUTSCENES.md, content/cutscenes/<id>.json, format ember-cutscene-1) -----------
+  // The tab edits one script at a time in memory (cutDoc_) until Salvar; the Map Editor's own undo (the draft) is not
+  // involved: a script is its own file. "Ao abrir o mapa" writes content/cutscenes/triggers.json onOpen[<map id>].
+  static std::filesystem::path cutscenesDir() { return "content/cutscenes"; }
+  static std::filesystem::path triggersFile() { return cutscenesDir() / "triggers.json"; }
+  static ember::Json readJsonFile(const std::filesystem::path& f) {
+    std::ifstream in(f, std::ios::binary);
+    ember::Json j = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
+    return j.is_discarded() ? ember::Json() : j;
+  }
+  static bool writeJsonFile(const std::filesystem::path& f, const ember::Json& j) {
+    std::error_code ec;
+    std::filesystem::create_directories(f.parent_path(), ec);
+    const std::filesystem::path tmp = f.string() + ".tmp";
+    {
+      std::ofstream out(tmp, std::ios::binary | std::ios::trunc);
+      if (!out) return false;
+      out << j.dump(2) << "\n";
+    }
+    std::filesystem::rename(tmp, f, ec);
+    return !ec;
+  }
+  ember::Json& cutSteps() {
+    if (!cutDoc_.contains("steps") || !cutDoc_["steps"].is_array()) cutDoc_["steps"] = ember::Json::array();
+    return cutDoc_["steps"];
+  }
+  ember::Json& cutActors() {
+    if (!cutDoc_.contains("actors") || !cutDoc_["actors"].is_object()) cutDoc_["actors"] = ember::Json::object();
+    return cutDoc_["actors"];
+  }
+  void refreshCutscenes() {
+    cutFiles_.clear();
+    std::error_code ec;
+    for (const auto& e : std::filesystem::directory_iterator(cutscenesDir(), ec)) {
+      if (!e.is_regular_file() || e.path().extension() != ".json" || e.path().filename() == "triggers.json") continue;
+      const ember::Json j = readJsonFile(e.path());
+      if (j.is_object() && j.value("format", "") == ember::CutsceneScript::kFormat) cutFiles_.push_back(e.path().stem().string());
+    }
+    std::sort(cutFiles_.begin(), cutFiles_.end());
+    cutScanned_ = true;
+  }
+  std::string cutOpeningId() const {
+    const ember::Json t = readJsonFile(triggersFile());
+    const ember::Json on = t.is_object() ? t.value("onOpen", ember::Json::object()) : ember::Json::object();
+    return on.is_object() ? on.value(draft_.value("id", ""), std::string()) : std::string();
+  }
+  void setCutOpening(const std::string& id) {  // "" = no opening scene for this map
+    ember::Json t = readJsonFile(triggersFile());
+    if (!t.is_object()) t = ember::Json::object();
+    if (!t.contains("format")) t["format"] = "ember-cutscene-triggers-1";
+    if (!t.contains("onOpen") || !t["onOpen"].is_object()) t["onOpen"] = ember::Json::object();
+    const std::string map = draft_.value("id", "");
+    if (id.empty()) t["onOpen"].erase(map);
+    else t["onOpen"][map] = id;
+    if (!writeJsonFile(triggersFile(), t)) return note("Não consegui gravar content/cutscenes/triggers.json.");
+    note(id.empty() ? std::format("{} abre sem cena.", map) : std::format("{} abre com a cena {}.", map, id));
+  }
+  void openCutscene(const std::string& id) {
+    cutId_ = id;
+    cutDoc_ = readJsonFile(cutscenesDir() / (id + ".json"));
+    if (!cutDoc_.is_object()) cutDoc_ = ember::Json::object();
+    cutDirty_ = false, cutError_.clear(), cutPickStep_.reset();
+  }
+  void newCutscene() {
+    const std::string map = scenarioId(draft_.value("id", ""));
+    std::string id;
+    for (int n = 1;; ++n) {
+      id = std::format("{}-cena-{:02}", map, n);
+      if (!std::filesystem::exists(cutscenesDir() / (id + ".json"))) break;
+    }
+    ember::Json doc = {{"format", ember::CutsceneScript::kFormat}, {"id", id}, {"actors", ember::Json::object()}, {"steps", ember::Json::array()}};
+    if (!writeJsonFile(cutscenesDir() / (id + ".json"), doc)) return note("Não consegui criar a cena (content/cutscenes).");
+    refreshCutscenes();
+    openCutscene(id);
+    note(std::format("Cena {} criada. Adicione atores e passos, depois Salvar.", id));
+  }
+  bool saveCutscene() {
+    cutDoc_["format"] = ember::CutsceneScript::kFormat;
+    cutDoc_["id"] = cutId_;
+    std::string why;
+    if (!ember::CutsceneScript::parse(cutDoc_, &why)) {
+      cutError_ = why;
+      note("A cena não passa na verificação do jogo: " + why);
+      return false;
+    }
+    if (!writeJsonFile(cutscenesDir() / (cutId_ + ".json"), cutDoc_)) return note("Não consegui gravar a cena."), false;
+    cutDirty_ = false, cutError_.clear();
+    note(std::format("Cena {} gravada (content/cutscenes/{}.json).", cutId_, cutId_));
+    return true;
+  }
+  // The units standing on the map, by name (the names a script's actors point at).
+  std::vector<std::string> cutUnitNames() {
+    std::vector<std::string> out;
+    for (const char* key : {"playerSpawns", "enemySpawns", "neutralSpawns"})
+      for (const ember::Json& sp : arr(key)) {
+        const std::string n = sp.value("name", "");
+        if (!n.empty() && std::find(out.begin(), out.end(), n) == out.end()) out.push_back(n);
+      }
+    return out;
+  }
+  // A small text field over a Json string; returns true when it changed.
+  static bool cutText(const char* id, ember::Json& holder, const char* key, bool multiline = false, float width = -1) {
+    std::string value = holder.contains(key) && holder[key].is_string() ? holder[key].get<std::string>() : "";
+    char buffer[2048];
+    std::snprintf(buffer, sizeof(buffer), "%s", value.c_str());
+    ImGui::SetNextItemWidth(width);
+    const bool changed = multiline ? ImGui::InputTextMultiline(id, buffer, sizeof(buffer), {width, 56}) : ImGui::InputText(id, buffer, sizeof(buffer));
+    if (changed) holder[key] = std::string(buffer);
+    return changed;
+  }
+  // A combo over names; `current` may be absent from the list (shown as it is).
+  static bool cutCombo(const char* id, std::string& current, const std::vector<std::string>& names, const char* empty, float width = -1) {
+    ImGui::SetNextItemWidth(width);
+    bool changed = false;
+    if (ImGui::BeginCombo(id, current.empty() ? empty : current.c_str())) {
+      for (const std::string& n : names)
+        if (ImGui::Selectable(n.c_str(), n == current)) current = n, changed = true;
+      ImGui::EndCombo();
+    }
+    return changed;
+  }
+  void drawCutscenesTab() {
+    if (!cutScanned_) refreshCutscenes();
+    const std::string map = draft_.value("id", "");
+    section("Cenas");
+    hint("Uma cena dirige as unidades que já estão no mapa: mover, virar, falar (na caixa de diálogo do jogo) e esperar, um passo depois do outro. "
+         "Cada cena é um arquivo em content/cutscenes.");
+    if (ImGui::SmallButton("Nova cena")) newCutscene();
+    ImGui::SameLine();
+    if (ImGui::SmallButton("Reler a pasta")) refreshCutscenes();
+    const std::string opening = cutOpeningId();
+    for (const std::string& id : cutFiles_) {
+      ImGui::PushID(id.c_str());
+      const bool sel = id == cutId_;
+      if (ImGui::Selectable(id.c_str(), sel)) {
+        if (!sel) openCutscene(id);
+      }
+      if (id == opening) {
+        ImGui::SameLine();
+        ImGui::TextColored(ImColor(252, 211, 77), "· abre este mapa");
+      }
+      ImGui::PopID();
+    }
+    if (cutFiles_.empty()) hint("Nenhuma cena ainda. Nova cena cria content/cutscenes/%s-cena-01.json.", scenarioId(map).c_str());
+    if (cutId_.empty()) return;
+
+    section(std::format("Cena \"{}\"{}", cutId_, cutDirty_ ? " (não gravada)" : "").c_str());
+    if (ImGui::Button("Salvar cena")) saveCutscene();
+    ImGui::SameLine();
+    if (ImGui::Button("Reabrir")) openCutscene(cutId_);
+    if (!cutError_.empty()) ImGui::TextColored(ImColor(255, 120, 100), "%s", cutError_.c_str());
+    bool isOpening = opening == cutId_;
+    if (ImGui::Checkbox("Ao abrir o mapa (toca toda vez que o mapa abre; Testar mostra)", &isOpening)) setCutOpening(isOpening ? cutId_ : "");
+    hint("Mapa: %s. A cena de abertura toca no jogo e no Testar, não na prévia do editor.", map.c_str());
+
+    // Actors
+    fieldLabel("Atores (nome na cena -> unidade no mapa)");
+    const std::vector<std::string> units = cutUnitNames();
+    ember::Json& actors = cutActors();
+    std::vector<std::string> actorNames;
+    for (const auto& [name, a] : actors.items()) actorNames.push_back(name);
+    std::string removeActor, renameFrom, renameTo;
+    for (const std::string& name : actorNames) {
+      ImGui::PushID(("actor:" + name).c_str());
+      char buf[128];
+      std::snprintf(buf, sizeof(buf), "%s", name.c_str());
+      ImGui::SetNextItemWidth(120);
+      if (ImGui::InputText("##aname", buf, sizeof(buf), ImGuiInputTextFlags_EnterReturnsTrue) && buf[0] && std::string(buf) != name && !actors.contains(buf)) renameFrom = name, renameTo = buf;
+      ImGui::SameLine();
+      ember::Json& a = actors[name];
+      if (!a.is_object()) a = ember::Json::object();
+      std::string unit = a.value("unit", "");
+      if (cutCombo("##aunit", unit, units, "unidade…", 180)) a["unit"] = unit, cutDirty_ = true;
+      if (!unit.empty() && std::find(units.begin(), units.end(), unit) == units.end()) {
+        ImGui::SameLine();
+        ImGui::TextColored(ImColor(255, 120, 100), "não está no mapa");
+      }
+      ImGui::SameLine();
+      if (ImGui::SmallButton("Tirar")) removeActor = name;
+      ImGui::PopID();
+    }
+    if (!removeActor.empty()) actors.erase(removeActor), cutDirty_ = true;
+    if (!renameFrom.empty()) {  // the steps follow the actor's new name
+      ember::Json a = actors[renameFrom];
+      actors.erase(renameFrom);
+      actors[renameTo] = a;
+      for (ember::Json& st : cutSteps()) {
+        if (st.value("actor", "") == renameFrom) st["actor"] = renameTo;
+        if (st.value("toward", "") == renameFrom) st["toward"] = renameTo;
+      }
+      cutDirty_ = true;
+    }
+    if (ImGui::SmallButton("+ Ator")) {
+      for (int n = 1;; ++n) {
+        const std::string name = std::format("ator{}", n);
+        if (!actors.contains(name)) {
+          actors[name] = {{"unit", units.empty() ? "" : units[std::min<size_t>(actorNames.size(), units.size() - 1)]}};
+          break;
+        }
+      }
+      cutDirty_ = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::SmallButton("Todas as unidades")) {
+      for (const std::string& u : units) {
+        bool have = false;
+        for (const auto& [name, a] : actors.items()) have = have || a.value("unit", "") == u;
+        if (!have) actors[u] = {{"unit", u}};
+      }
+      cutDirty_ = true;
+    }
+    actorNames.clear();
+    for (const auto& [name, a] : actors.items()) actorNames.push_back(name);
+
+    // Steps
+    fieldLabel("Passos");
+    static const char* kKinds[] = {"move", "face", "say", "wait"};
+    static const char* kKindNames[] = {"Mover", "Virar", "Falar", "Esperar"};
+    static const char* kDirNames[] = {"leste (e)", "nordeste (ne)", "noroeste (nw)", "oeste (w)", "sudoeste (sw)", "sudeste (se)"};
+    ember::Json& steps = cutSteps();
+    int remove = -1, up = -1, down = -1, dup = -1;
+    for (int i = 0; i < static_cast<int>(steps.size()); ++i) {
+      ember::Json& st = steps[i];
+      if (!st.is_object()) st = {{"do", "wait"}, {"seconds", 1.0}};
+      ImGui::PushID(i);
+      ImGui::Separator();
+      ImGui::Text("%d.", i + 1);
+      ImGui::SameLine();
+      int kind = 3;
+      for (int k = 0; k < 4; ++k)
+        if (st.value("do", "") == kKinds[k]) kind = k;
+      ImGui::SetNextItemWidth(100);
+      if (ImGui::Combo("##kind", &kind, kKindNames, 4)) {
+        ember::Json next = {{"do", kKinds[kind]}};
+        if (kind != 3) next["actor"] = st.value("actor", actorNames.empty() ? "" : actorNames.front());
+        if (kind == 0) next["to"] = ember::Json::array({0, 0});
+        if (kind == 1) next["direction"] = "e";
+        if (kind == 2) next["text"] = "";
+        if (kind == 3) next["seconds"] = 1.0;
+        st = next;
+        cutDirty_ = true;
+      }
+      ImGui::SameLine();
+      if (ImGui::SmallButton("▲") && i > 0) up = i;
+      ImGui::SameLine();
+      if (ImGui::SmallButton("▼") && i + 1 < static_cast<int>(steps.size())) down = i;
+      ImGui::SameLine();
+      if (ImGui::SmallButton("Duplicar")) dup = i;
+      ImGui::SameLine();
+      if (ImGui::SmallButton("Tirar")) remove = i;
+      if (kind != 3) {
+        std::string actor = st.value("actor", "");
+        ImGui::Text("Ator");
+        ImGui::SameLine();
+        if (cutCombo("##actor", actor, actorNames, "ator…", 140)) st["actor"] = actor, cutDirty_ = true;
+      }
+      if (kind == 0) {
+        int xy[2] = {0, 0};
+        if (st.contains("to") && st["to"].is_array() && st["to"].size() == 2 && st["to"][0].is_number() && st["to"][1].is_number()) xy[0] = st["to"][0].get<int>(), xy[1] = st["to"][1].get<int>();
+        ImGui::SameLine();
+        ImGui::Text("para");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(110);
+        if (ImGui::InputInt2("##to", xy)) st["to"] = ember::Json::array({xy[0], xy[1]}), cutDirty_ = true;
+        ImGui::SameLine();
+        const bool arming = cutPickStep_ && *cutPickStep_ == i;
+        if (ImGui::SmallButton(arming ? "Clique na prévia…" : "Escolher na prévia")) cutPickStep_ = arming ? std::optional<int>() : std::optional<int>(i);
+      } else if (kind == 1) {
+        const bool toward = st.contains("toward") && st["toward"].is_string();
+        int mode = toward ? 1 : 0;
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(130);
+        if (ImGui::Combo("##facemode", &mode, "para a direção\0para outro ator\0")) {
+          if (mode == 1) st.erase("direction"), st["toward"] = actorNames.empty() ? "" : actorNames.front();
+          else st.erase("toward"), st["direction"] = "e";
+          cutDirty_ = true;
+        }
+        ImGui::SameLine();
+        if (mode == 1) {
+          std::string other = st.value("toward", "");
+          if (cutCombo("##toward", other, actorNames, "ator…", 140)) st["toward"] = other, cutDirty_ = true;
+        } else {
+          int d = 0;
+          for (int k = 0; k < 6; ++k)
+            if (st.value("direction", "") == ember::CutsceneScript::kDirections[k]) d = k;
+          ImGui::SetNextItemWidth(150);
+          if (ImGui::Combo("##dir", &d, kDirNames, 6)) st["direction"] = ember::CutsceneScript::kDirections[d], cutDirty_ = true;
+        }
+      } else if (kind == 2) {
+        ImGui::Text("Fala");
+        if (cutText("##text", st, "text", true)) cutDirty_ = true;
+        ImGui::Text("Em inglês");
+        ImGui::SameLine();
+        if (!st.contains("translations") || !st["translations"].is_object()) st["translations"] = ember::Json::object();
+        if (cutText("##en", st["translations"], "en", false)) cutDirty_ = true;
+        ImGui::Text("Retrato (opcional, nome de sprite)");
+        ImGui::SameLine();
+        if (cutText("##portrait", st, "portrait", false, 200)) cutDirty_ = true;
+        if (st.value("portrait", "").empty()) st.erase("portrait");
+      } else {
+        float sec = st.contains("seconds") && st["seconds"].is_number() ? st["seconds"].get<float>() : 1.0f;
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(100);
+        if (ImGui::InputFloat("segundos##sec", &sec, 0.1f, 1.0f, "%.1f")) st["seconds"] = std::max(0.0f, sec), cutDirty_ = true;
+      }
+      ImGui::PopID();
+    }
+    if (remove >= 0) steps.erase(remove), cutDirty_ = true, cutPickStep_.reset();
+    if (up > 0) std::swap(steps[up], steps[up - 1]), cutDirty_ = true, cutPickStep_.reset();
+    if (down >= 0) std::swap(steps[down], steps[down + 1]), cutDirty_ = true, cutPickStep_.reset();
+    if (dup >= 0) steps.insert(steps.begin() + dup + 1, steps[dup]), cutDirty_ = true, cutPickStep_.reset();
+    ImGui::Separator();
+    for (int k = 0; k < 4; ++k) {
+      if (k) ImGui::SameLine();
+      if (ImGui::SmallButton(std::format("+ {}", kKindNames[k]).c_str())) {
+        ember::Json next = {{"do", kKinds[k]}};
+        if (k != 3) next["actor"] = actorNames.empty() ? "" : actorNames.front();
+        if (k == 0) next["to"] = ember::Json::array({0, 0});
+        if (k == 1) next["direction"] = "e";
+        if (k == 2) next["text"] = "";
+        if (k == 3) next["seconds"] = 1.0;
+        steps.push_back(next);
+        cutDirty_ = true;
+        if (k == 0) cutPickStep_ = static_cast<int>(steps.size()) - 1;
+      }
+    }
+    hint("Mover: clique na prévia com o passo armado para escolher o hex. Salvar cena verifica o arquivo com a mesma checagem do jogo.");
+  }
+
+  void drawUnitsTab() {
+    static const std::pair<Mode, const char*> kSides[] = {{Mode::Player, "Herói"}, {Mode::Enemy, "Inimigo"}, {Mode::Npc, "NPC"}, {Mode::Summon, "Invocação"}};
+    std::vector<std::pair<std::string, bool>> items;
+    for (const auto& [m, label] : kSides) items.push_back({label, mode_ == m});
+    int pick = -1;
+    if (toggleRow(items, pick)) mode_ = kSides[pick].first;
+    ImGui::Dummy({0, 2});
+    if (mode_ == Mode::Player) {
+      fieldLabel("Adicionar heróis");
+      const float right = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
+      if (ImGui::SmallButton("Party completa")) addHeroes(editor_.heroes);
+      for (const auto& [name, classId] : editor_.heroes) {
+        flow(false, name.c_str(), right);
+        if (ImGui::SmallButton(name.c_str())) addHeroes({{name, classId}});
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", className(classId).c_str());
+      }
+      hint("O nível de cada um é editável na lista abaixo.");
+    }
+    drawModePanel();
+    hint("Na prévia: botão direito (ou esquerdo) numa unidade e arraste para mover; Delete com a unidade segura a remove.");
+    section("No mapa");
+    const bool any = !arr("playerSpawns").empty() || !arr("enemySpawns").empty() || !arr("neutralSpawns").empty();
+    if (any) drawUnits();
+    else hint("Nenhuma unidade no mapa ainda.");
+  }
+
+  // A text field bound to a draft string.
+  void textField(const char* label, const char* key, bool multiline = false, bool readOnly = false, std::function<std::string(const std::string&)> filter = {}) {
+    std::string value = draft_.value(key, "");
+    char buffer[4096];
+    std::snprintf(buffer, sizeof(buffer), "%s", value.c_str());
+    fieldLabel("%s", label);
+    ImGui::SetNextItemWidth(-1);
+    const ImGuiInputTextFlags flags = readOnly ? ImGuiInputTextFlags_ReadOnly : 0;
+    const bool changed = multiline ? ImGui::InputTextMultiline(std::format("##{}", key).c_str(), buffer, sizeof(buffer), {-1, 64}, flags)
+                                   : ImGui::InputText(std::format("##{}", key).c_str(), buffer, sizeof(buffer), flags);
+    if (changed) {
+      beginEdit();
+      draft_[key] = filter ? filter(buffer) : std::string(buffer);
+      if (std::string(key) == "id") refreshFiles();
+    }
+  }
+  bool flagOf(const char* key, bool fallback = false) const {
+    return draft_.contains(key) && draft_[key].is_boolean() ? draft_[key].get<bool>() : fallback;
+  }
+  bool checkbox(const char* label, const char* key, bool fallback = false) {
+    bool v = flagOf(key, fallback);
+    if (!ImGui::Checkbox(label, &v)) return false;
+    beginEdit(), draft_[key] = v;
+    return true;
+  }
+  void slider(const char* label, const char* key, float lo, float hi, float fallback) {
+    float v = draft_.contains(key) && draft_[key].is_number() ? draft_[key].get<float>() : fallback;
+    fieldLabel("%s", label);
+    ImGui::SetNextItemWidth(-1);
+    if (ImGui::SliderFloat(std::format("##{}", key).c_str(), &v, lo, hi, "%.2f")) beginEdit(), draft_[key] = std::round(v * 100.0) / 100.0;
+  }
+  int intField(const char* label, int value, int lo, int hi, float width = 90) {
+    ImGui::SetNextItemWidth(width);
+    int v = value;
+    if (ImGui::InputInt(label, &v, 1, 5)) v = std::clamp(v, lo, hi);
+    return v;
+  }
+
+  void drawIdentity() {
+    textField("Cenário alvo (Id)", "id", false, false, [](const std::string& s) { return stripScenarioId(s); });
+    if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("O cenário da campanha que essa edição mira. Bate com o id de uma missão real (ex.: o-vau) pra poder ativar essa versão nela, ou qualquer id livre pra um mapa avulso.");
+    textField("Título", "title", false, draft_.value("id", "") == "thebridge");
+    textField("Local", "place");
+    // Trilha
+    {
+      const std::string music = draft_.value("music", "");
+      fieldLabel("Trilha");
+      ImGui::SetNextItemWidth(-1);
+      // The default names the track the mission's id plays (the user, 2026-10-20: it played the right one but never said which).
+      const std::string byId = "Tema padrão: " + ::ember::music::forMissionId(draft_.value("id", "")).file;
+      if (ImGui::BeginCombo("##music", music.empty() ? byId.c_str() : music.c_str())) {
+        if (ImGui::Selectable(byId.c_str(), music.empty())) beginEdit(), draft_["music"] = "", note("Trilha desta missão: " + byId + ".");
+        for (const std::string& f : editor_.music)
+          if (ImGui::Selectable(f.c_str(), f == music)) beginEdit(), draft_["music"] = f, note(std::format("Trilha desta missão: {}.", f));
+        ImGui::EndCombo();
+      }
+      hint("Os arquivos de public/game/MUSIC e de content/music, pelo nome. Toca durante o briefing, a batalha e as telas de fim.");
+    }
+  }
+  void drawMission() {
+    textField("Objetivo", "objective");
+    textField("Briefing", "briefing", true);
+  }
+  void drawReward() {
+    {
+      const ember::Json reward = draft_.value("victoryReward", ember::Json::object());
+      int ember = reward.value("ember", 0), rations = reward.value("rations", 0);
+      fieldLabel("Gold");
+      ImGui::SameLine(panelWidth_ * 0.5f);
+      fieldLabel("Rações");
+      ImGui::SetNextItemWidth(panelWidth_ * 0.5f - 24);
+      bool changed = ImGui::InputInt("##gold", &ember, 1, 10);
+      ImGui::SameLine(panelWidth_ * 0.5f);
+      ImGui::SetNextItemWidth(-1);
+      changed = ImGui::InputInt("##rations", &rations, 1, 5) || changed;
+      if (changed) {
+        beginEdit();
+        ember::Json r = draft_.value("victoryReward", ember::Json::object());
+        r["ember"] = std::max(0, ember), r["rations"] = std::max(0, rations);
+        draft_["victoryReward"] = r;
+      }
+      fieldLabel("NPCs que precisam sobreviver");
+      std::vector<std::string> names;
+      for (const ember::Json& s : arr("neutralSpawns"))
+        if (s.contains("dialog") && !s["dialog"].is_null() && std::find(names.begin(), names.end(), s.value("name", "")) == names.end()) names.push_back(s.value("name", ""));
+      std::vector<std::string> required;
+      if (reward.contains("requiredNpcNames") && reward["requiredNpcNames"].is_array())
+        for (const ember::Json& n : reward["requiredNpcNames"]) required.push_back(n.get<std::string>());
+      for (const std::string& n : required)
+        if (std::find(names.begin(), names.end(), n) == names.end()) names.push_back(n);
+      for (const std::string& n : names) {
+        bool on = std::find(required.begin(), required.end(), n) != required.end();
+        if (ImGui::Checkbox((n + "##npcreq").c_str(), &on)) {
+          beginEdit();
+          ember::Json r = draft_.value("victoryReward", ember::Json::object());
+          std::vector<std::string> next;
+          for (const std::string& x : required)
+            if (x != n) next.push_back(x);
+          if (on) next.push_back(n);
+          r["ember"] = r.value("ember", 0), r["rations"] = r.value("rations", 0), r["requiredNpcNames"] = next;
+          draft_["victoryReward"] = r;
+        }
+      }
+      hint("Pagamento ao concluir a vitória, com todos os inimigos derrotados e os NPCs indicados vivos.");
+    }
+  }
+  // Diálogos de abertura / encerramento
+  void drawDialogs() {
+    for (const auto& [label, key, target] : {std::tuple{"Diálogo de abertura", "introDialog", "intro"}, std::tuple{"Diálogo de encerramento", "outroDialog", "outro"}}) {
+      fieldLabel("%s", label);
+      const std::string enabledKey = std::string(key) + "Enabled";
+      bool enabled = !(draft_.contains(enabledKey) && draft_[enabledKey].is_boolean() && !draft_[enabledKey].get<bool>());
+      if (ImGui::Checkbox(("Ativado##" + std::string(target)).c_str(), &enabled)) beginEdit(), draft_[enabledKey] = enabled;
+      ImGui::SameLine();
+      const bool has = draft_.contains(key) && !draft_[key].is_null();
+      if (ImGui::SmallButton(((has ? "Editar diálogo##" : "Criar diálogo##") + std::string(target)).c_str())) openDialogEditor(target);
+    }
+  }
+  void drawVictory() {
+    {
+      static const char* kWin[3][2] = {{"rout", "Derrote todos (rout)"}, {"boss", "Derrube o chefe (boss)"}, {"escape", "Transversal — alcance a saída (escape)"}};
+      const std::string win = draft_.value("win", "rout");
+      const char* shown = kWin[0][1];
+      for (auto& w : kWin)
+        if (win == w[0]) shown = w[1];
+      fieldLabel("Condição de vitória");
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##win", shown)) {
+        for (auto& w : kWin)
+          if (ImGui::Selectable(w[1], win == w[0])) beginEdit(), draft_["win"] = w[0];
+        ImGui::EndCombo();
+      }
+    }
+  }
+  // Local no mapa-múndi (+ its planned slots)
+  void drawWorldLocation() {
+    {
+      const std::string loc = draft_.value("locationId", "");
+      auto label = [&](const ember::Locais::Base& l) {
+        const int planned = locais_.slotsFor(l.id);
+        const size_t n = order_.contains(l.id) ? order_.at(l.id).size() : l.missionIds.size();
+        return l.name + (planned > 0 ? std::format(" ({}/{})", n, planned) : n == 0 ? std::string(" (vazio)") : std::format(" ({})", n));
+      };
+      std::string shown = "Nenhum — não aparece no mapa";
+      for (const ember::Locais::Base& l : locais_.base)
+        if (l.id == loc) shown = label(l);
+      fieldLabel("Local deste mapa");
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##location", shown.c_str())) {
+        if (ImGui::Selectable("Nenhum — não aparece no mapa", loc.empty())) beginEdit(), draft_["locationId"] = "";
+        for (const ember::Locais::Base& l : locais_.base)
+          if (ImGui::Selectable((label(l) + "##" + l.id).c_str(), l.id == loc)) beginEdit(), draft_["locationId"] = l.id;
+        ImGui::EndCombo();
+      }
+      if (!loc.empty()) {
+        const ember::Locais::Base* l = nullptr;
+        for (const ember::Locais::Base& b : locais_.base)
+          if (b.id == loc) l = &b;
+        fieldLabel("Telas em %s", (l ? l->name : loc).c_str());
+        const int declared = locais_.slotsFor(loc);
+        const int n = intField("##slots", declared, 0, 99, 80);
+        if (n != declared) {
+          if (n > 0) locais_.slots[loc] = n;
+          else locais_.slots.erase(loc);
+          saveLocais("Vagas do local atualizadas.");
+        }
+        const std::vector<std::string> ids = order_.contains(loc) ? order_.at(loc) : (l ? l->missionIds : std::vector<std::string>{});
+        ImGui::SameLine();
+        if (declared == 0) hint("%d feita(s) — sem plano definido", static_cast<int>(ids.size()));
+        else hint("%d de %d feita(s), faltam %d", static_cast<int>(ids.size()), declared, std::max(0, declared - static_cast<int>(ids.size())));
+        if (!ids.empty()) {
+          std::string list;
+          for (const std::string& id : ids) list += (list.empty() ? "" : ", ") + id;
+          hint("Já lá: %s", list.c_str());
+        }
+      }
+    }
+  }
+  void drawMapFlags() {
+    checkbox("Preservar posições iniciais (ignorar formação do grupo)", "lockPartyFormation");
+    checkbox("É um hub (sem combate)", "hub");
+    {
+      bool square = draft_.contains("squareTiles") && draft_["squareTiles"].is_boolean() ? draft_["squareTiles"].get<bool>() : squareBorder();
+      if (ImGui::Checkbox("Tiles e bordas quadradas", &square)) beginEdit(), draft_["squareTiles"] = square;
+      if (ImGui::IsItemHovered()) ImGui::SetTooltip("Ligado: tiles alinhados e bordas retas para construir interiores. Desligado: piso e contorno hexagonais.");
+    }
+    checkbox("Exploração livre (sem turnos)", "explore");
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Sem turnos nem vitória: o líder anda livre com um clique e conversa com os NPCs (a Estalagem)");
+    if (checkbox("Terreno automático", "autoTactics", true))
+      note(flagOf("autoTactics") ? "Terreno automático ligado — barricadas e barrancos entram por cima do que você pintou."
+                                 : "Terreno automático desligado — o mapa carrega exatamente como está pintado.");
+    if (checkbox("Névoa de guerra", "fog"))
+      note(flagOf("fog") ? "Névoa ligada — inimigos fora da linha de visão não aparecem nem podem ser alvo."
+                         : "Névoa desligada — o mapa inteiro fica visível, como nas missões antigas.");
+  }
+  // mapFloor.ts hasSquareMapBorder: every non-void cell fills its bounding rectangle.
+  bool squareBorder() const {
+    int minX = cols(), minY = rows(), maxX = -1, maxY = -1, count = 0;
+    for (int y = 0; y < rows(); ++y)
+      for (int x = 0; x < cols(); ++x) {
+        if (tileAt(y * cols() + x) == "void") continue;
+        minX = std::min(minX, x), maxX = std::max(maxX, x), minY = std::min(minY, y), maxY = std::max(maxY, y), ++count;
+      }
+    return count > 0 && count == (maxX - minX + 1) * (maxY - minY + 1);
+  }
+
+  void drawGroundAndPanorama() {
+    {
+      const bool hasOverride = draft_.contains("groundImage") && draft_["groundImage"].is_string();
+      const std::string current = hasOverride ? draft_["groundImage"].get<std::string>() : std::string{};
+      const std::string shown = !hasOverride ? "Ground padrão do Panorama" : current.empty() ? "Sem Ground" : current;
+      fieldLabel("Ground");
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##Ground", shown.c_str())) {
+        if (ImGui::Selectable("Ground padrão do Panorama##ground-default", !hasOverride)) beginEdit(), draft_.erase("groundImage");
+        if (ImGui::Selectable("Sem Ground##ground-none", hasOverride && current.empty())) beginEdit(), draft_["groundImage"] = "";
+        for (const std::string& file : groundImageChoices())
+          if (ImGui::Selectable(std::format("{}##ground-{}", file, file).c_str(), hasOverride && current == file)) beginEdit(), draft_["groundImage"] = file;
+        ImGui::EndCombo();
+      }
+      hint("Padrão segue o Ground do Panorama; a lista contém as imagens de Ground registradas.");
+      if (hasOverride && !current.empty())
+        if (const UiImage* img = uiImage(std::filesystem::path("content/backdrops") / std::filesystem::u8path(current))) {
+          const float w = ImGui::GetContentRegionAvail().x, h = 96;
+          const float aspect = static_cast<float>(img->width) / std::max(1.0f, static_cast<float>(img->height));
+          const float vis = std::min(1.0f, (w / h) / aspect), v0 = (1.0f - std::min(1.0f, aspect / (w / h))) * 0.5f;
+          ImGui::Image(img->texture, {w, h}, {(1.0f - vis) * 0.5f, v0}, {(1.0f + vis) * 0.5f, 1.0f - v0});
+        }
+    }
+    {
+      const std::string current = draft_.contains("backgroundImage") && draft_["backgroundImage"].is_string() ? draft_["backgroundImage"].get<std::string>() : "";
+      std::string shown = "Vazio preto", file;
+      for (const auto& [id, label, f] : editor_.backgrounds)
+        if (id == current) shown = label, file = f;
+      fieldLabel("Panorama");
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##Panorama", shown.c_str())) {
+        if (ImGui::Selectable("Vazio preto", current.empty())) beginEdit(), draft_["backgroundImage"] = "";
+        for (const auto& [id, label, f] : editor_.backgrounds)
+          if (ImGui::Selectable(std::format("{}##{}", label, id).c_str(), id == current)) beginEdit(), draft_["backgroundImage"] = id;
+        ImGui::EndCombo();
+      }
+      if (!file.empty()) {
+        std::filesystem::path preview = std::filesystem::path("content/backdrops") / std::filesystem::u8path(file);
+        if (!std::filesystem::exists(preview)) preview = std::filesystem::path("content/briefings") / std::filesystem::u8path(file);
+        if (const UiImage* img = uiImage(preview)) {
+          const float w = ImGui::GetContentRegionAvail().x, h = 96;
+          const float aspect = static_cast<float>(img->width) / std::max(1.0f, static_cast<float>(img->height));
+          // object-cover: the middle band of the image
+          const float vis = std::min(1.0f, (w / h) / aspect), v0 = (1.0f - std::min(1.0f, aspect / (w / h))) * 0.5f;
+          ImGui::Image(img->texture, {w, h}, {(1.0f - vis) * 0.5f, v0}, {(1.0f + vis) * 0.5f, 1.0f - v0});
+        }
+      }
+      hint("Panoramas registrados no catálogo do editor: %d", static_cast<int>(editor_.backgrounds.size()));
+    }
+  }
+
+  static const std::vector<std::string>& groundImageChoices() {
+    static const std::vector<std::string> files = [] {
+      std::set<std::string> found;
+      std::ifstream in("content/data/backdrop-fit.json");
+      const ember::Json fit = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
+      if (fit.is_object() && fit.contains("paintings") && fit["paintings"].is_object())
+        for (const auto& [_, entry] : fit["paintings"].items())
+          if (entry.is_object() && entry.contains("ground") && entry["ground"].is_string())
+            found.insert(entry["ground"].get<std::string>());
+      std::error_code ec;
+      for (std::filesystem::directory_iterator it("content/backdrops", ec), end; !ec && it != end; it.increment(ec))
+        if (it->is_regular_file(ec) && it->path().filename().string().find("-ground-v") != std::string::npos)
+          found.insert(it->path().filename().string());
+      return std::vector<std::string>(found.begin(), found.end());
+    }();
+    return files;
+  }
+
+  void drawWeather() {
+    {
+      static const char* ids[] = {"none", "rain", "storm", "snow", "ash"};
+      static const char* labels[] = {"Sem precipitação", "Dia chuvoso", "Tempestade", "Neve", "Chuva de Cinzas"};
+      const std::string current = draft_.value("weather", std::string("none"));
+      int selected = 0;
+      for (int i = 0; i < 5; ++i) if (current == ids[i]) selected = i;
+      fieldLabel("Clima");
+      ImGui::SetNextItemWidth(-1);
+      // All choices stay visible: selecting one no longer hides the remaining climates in a closed menu.
+      for (int i = 0; i < 5; ++i)
+        if (ImGui::RadioButton(labels[i], selected == i)) {
+          beginEdit();
+          draft_["weather"] = ids[i];
+          selected = i;
+        }
+    }
+    {
+      static constexpr const char* looks[]={"Sem nuvens","Nuvens 001","Nuvens 002","Nuvens 003","Nuvens 004","Nuvens 005","Nuvens 006","Nuvens RDR2","Nuvens 008 — nova"};
+      int selected=std::clamp(draft_.value("cloudLook",4),0,8);
+      if(selected==6)selected=4;  // look 006 removed from the game (the user, 2026-11-04): such a map draws the default, 004
+      fieldLabel("Nuvens");ImGui::SetNextItemWidth(-1);
+      if(ImGui::BeginCombo("##CloudLookPicker",looks[selected])){
+        for(int i=0;i<9;++i){
+          if(i==6)continue;
+          if(ImGui::Selectable(looks[i],selected==i)){beginEdit();draft_["cloudLook"]=i;selected=i;}
+          if(selected==i)ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+      }
+      ImGui::BeginDisabled(selected==0);
+      // Percentages are displayed directly; the saved normalized values feed both cloud renderers.
+      auto cloudSlider = [&](const char* label, const char* key, float fallback) {
+        float percent = std::clamp(draft_.value(key, fallback), 0.0f, 1.0f) * 100.0f;
+        fieldLabel(label);
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::SliderFloat((std::string("##") + key).c_str(), &percent, 0, 100, "%.0f%%")) {
+          beginEdit();
+          draft_[key] = percent / 100.0f;
+        }
+      };
+      cloudSlider("Densidade das nuvens", "cloudCoverage", 0.32f);
+      cloudSlider("Tom cinzento das nuvens", "cloudGray", 0.0f);
+      hint("%s", "Densidade: 0% sem nuvens, 100% céu encoberto. Tom: 0% brancas, 100% cinza-escuro.");
+      ImGui::EndDisabled();
+    }
+    ImGui::BeginDisabled(draft_.value("weather", std::string("none")) == "none");
+    slider("Intensidade do clima", "weatherIntensity", 0, 1, 0.7f);
+    slider("Vento do clima", "weatherWind", 0, 1, 0.35f);
+    ImGui::EndDisabled();
+  }
+
+  void drawLighting() {
+    {
+      // Subterrâneo (the user, 2026-10-21): the only maps free of the sun, the moon and the sky; saved as "underground": true (an
+      // underground map is an interior: environment "indoor"). Externo / Interno take the mark off.
+      // Interna acima do solo (the user, 2026-10-23: the Torre de Vigia's settings): environment "indoor" + "aboveGround": true, the
+      // room lit from outside only through its windows and doors (Luz das janelas). The other three take that mark off.
+      const bool underground = draft_.contains("underground") && draft_["underground"].is_boolean() && draft_["underground"].get<bool>();
+      const bool indoor = draft_.value("environment", "outdoor") == "indoor";
+      const bool aboveGround = !underground && indoor && draft_.contains("aboveGround") && draft_["aboveGround"].is_boolean() && draft_["aboveGround"].get<bool>();
+      static const char* kOutdoor = "Externo (sol forte, sombras marcadas)";
+      static const char* kIndoor = "Interno (luz suave, sem sol direto)";
+      static const char* kAboveGround = "Interna acima do solo (luz de fora só pelas janelas e portas)";
+      static const char* kUnderground = "Subterrâneo (sem sol, lua e céu)";
+      fieldLabel("Ambiente");
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##Ambiente", underground ? kUnderground : aboveGround ? kAboveGround : indoor ? kIndoor : kOutdoor)) {
+        if (ImGui::Selectable(kOutdoor, !indoor && !underground))
+          beginEdit(), draft_["environment"] = "outdoor", draft_.erase("underground"), draft_.erase("aboveGround");
+        if (ImGui::Selectable(kIndoor, indoor && !underground && !aboveGround))
+          beginEdit(), draft_["environment"] = "indoor", draft_.erase("underground"), draft_.erase("aboveGround");
+        if (ImGui::Selectable(kAboveGround, aboveGround))
+          beginEdit(), draft_["environment"] = "indoor", draft_.erase("underground"), draft_["aboveGround"] = true;
+        if (ImGui::Selectable(kUnderground, underground))
+          beginEdit(), draft_["environment"] = "indoor", draft_["underground"] = true, draft_.erase("aboveGround");
+        ImGui::EndCombo();
+      }
+    }
+    bool moon = false;
+    {
+      const std::string tod = draft_.value("timeOfDay", "day");
+      std::string shown = tod;
+      for (const auto& t : editor_.timeOfDay)
+        if (t.id == tod) shown = t.label, moon = t.moon;
+      fieldLabel("Hora do dia");
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##Hora do dia", shown.c_str())) {
+        for (const auto& t : editor_.timeOfDay)
+          if (ImGui::Selectable(t.label.c_str(), t.id == tod))
+            beginEdit(), draft_["timeOfDay"] = t.id, draft_["sunIntensity"] = t.key, draft_["ambientIntensity"] = t.ambient,
+                draft_["timeOfDayManual"] = true;  // chosen by hand: it wins over the default night (MapStage, MapDraft::timeOfDayManual)
+        ImGui::EndCombo();
+      }
+      // The moon's nine phases, the blood moon included (the user, 2026-10-23: "temos 9 fases, incluindo bloodmoon o editor tem que
+      // refletir tudo isso"): the map's own moon in Modo teste and the editor; a campaign fight takes its day's phase instead.
+      static const char* kPhaseLabels[9] = {"Nova", "Crescente", "Quarto crescente", "Gibosa crescente", "Cheia",
+                                            "Gibosa minguante", "Quarto minguante", "Minguante", "Lua de sangue"};
+      // No Lua chosen: the full moon at every hour (the user, 2026-11-03: "EU QUERO A LUA").
+      const std::string phase = draft_.value("moonPhase", std::string());
+      int shownPhase = 4;
+      for (int i = 0; i < 9; ++i)
+        if (phase == ember::kMoonPhases[i]) shownPhase = i;
+      fieldLabel("Lua");
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##Lua", kPhaseLabels[shownPhase])) {
+        for (int i = 0; i < 9; ++i)
+          if (ImGui::Selectable(kPhaseLabels[i], i == shownPhase)) beginEdit(), draft_["moonPhase"] = ember::kMoonPhases[i];
+        ImGui::EndCombo();
+      }
+      // The night sky this map shows (the user, 2026-11-03: "add to the editor"): the real stars, or the user's painting of
+      // Andromeda's sky (star look 005), saved with the map as "emberSky".
+      static const char* kSkyReal = "Estrelas reais";
+      static const char* kSkyAndromeda = "Andrômeda (padrão)";
+      const bool real = draft_.value("emberSky", std::string()) == "real";  // nothing saved = Andromeda, every map's default
+      fieldLabel("Céu");
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##Céu", real ? kSkyReal : kSkyAndromeda)) {
+        if (ImGui::Selectable(kSkyAndromeda, !real)) beginEdit(), draft_.erase("emberSky");
+        if (ImGui::Selectable(kSkyReal, real)) beginEdit(), draft_["emberSky"] = "real";
+        ImGui::EndCombo();
+      }
+    }
+    slider(moon ? "Intensidade da lua" : "Intensidade do sol", "sunIntensity", 0, 6, static_cast<float>(editor_.defaultSun));
+    slider("Luz ambiente", "ambientIntensity", 0, 4, static_cast<float>(editor_.defaultAmbient));
+    slider("Brilho (bloom)", "bloomIntensity", 0, 3, static_cast<float>(editor_.defaultBloom));
+    {
+      static const char* kMist[10][2] = {{"none", "Sem névoa"}, {"mist2", "Névoa 2 (textura suave, mundo inteiro)"}, {"mist3", "Névoa 3 (ruído original, mundo inteiro)"},
+                                         {"mist4", "Névoa 4 (vórtice nas bordas do mapa, centro sempre limpo)"},
+                                         {"fog1", "Névoa 01 (só sobre área não revelada e o fundo, limpa no mapa revelado)"}, {"fog5", "Névoa 5 (rasteira, fiapos finos e véus)"},
+                                         {"vignette", "Vinheta (tela inteira, bordas suaves)"}, {"vignette2", "Vinheta 2 (bancos de névoa profundos, centro limpo)"},
+                                         {"vignette3", "Vinheta 3 (névoa rasteira em faixas, sem bordas escuras)"}, {"vignette4", "Vinheta 4 (névoa monocromática nas bordas)"}};
+      const std::string mist = draft_.value("mistType", "none");
+      const char* shown = kMist[0][1];
+      for (auto& m : kMist)
+        if (mist == m[0]) shown = m[1];
+      fieldLabel("Tipo de névoa");
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##Tipo de névoa", shown)) {
+        for (auto& m : kMist)
+          if (ImGui::Selectable(m[1], mist == m[0])) beginEdit(), draft_["mistType"] = m[0];
+        ImGui::EndCombo();
+      }
+    }
+    {
+      // Clima: the volumetric fog's regional profile (content/atmosphere/v1/profiles.json), saved with the map. Automático =
+      // the profile whose map keys name this map (so a map needs nothing set here to get its own).
+      static const std::vector<Volumetrics::Profile> profiles = Volumetrics::loadProfiles("content/atmosphere/v1/profiles.json");
+      const std::string current = draft_.value("atmosphereProfile", std::string());
+      std::string shown = "Automático (pelo nome do mapa)";
+      for (const Volumetrics::Profile& p : profiles)
+        if (p.name == current) shown = p.label;
+      fieldLabel("Perfil da névoa");
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##PerfilNeblina", shown.c_str())) {
+        if (ImGui::Selectable("Automático (pelo nome do mapa)", current.empty())) beginEdit(), draft_.erase("atmosphereProfile");
+        for (const Volumetrics::Profile& p : profiles)
+          if (ImGui::Selectable(p.label.c_str(), p.name == current)) beginEdit(), draft_["atmosphereProfile"] = p.name;
+        ImGui::EndCombo();
+      }
+    }
+    drawWeather();
+    if (ImGui::TreeNode("Previsao do Tempo global")) {
+      ImGui::InputInt("Dia de teste", &tempoPreviewDay_);
+      ImGui::SliderInt("Hora de teste", &tempoPreviewHour_, 0, 23);
+      ImGui::SliderInt("Minuto de teste", &tempoPreviewMinute_, 0, 59);
+      tempoPreviewDay_ = std::clamp(tempoPreviewDay_, 0, 100000);
+      const auto milliseconds = (static_cast<std::int64_t>(tempoPreviewDay_)*1440+tempoPreviewHour_*60+tempoPreviewMinute_)*60000;
+      tempoPreviewTimeline_.configure(tempoPreviewConfig_,milliseconds,true);
+      tempoPreviewPanel_.draw(tempoPreviewConfig_,tempoPreviewTimeline_,milliseconds);
+      hint("%s", "Previsao global para testes; o perfil regional de nevoa continua independente.");
+      ImGui::TreePop();
+    }
+    slider("Névoa", "mistIntensity", 0, 1, 0);
+    slider("Vel. da névoa", "mistSpeed", 0.1f, 4, 1);
+    slider("Wisps", "wispIntensity", 0, 1, 0);
+    slider("Velocidade", "wispSpeed", 0.1f, 4, 1);
+    {
+      const unsigned c = draft_.contains("wispColor") && draft_["wispColor"].is_number() ? draft_["wispColor"].get<unsigned>() : 0xffa552u;
+      float rgb[3] = {((c >> 16) & 255) / 255.0f, ((c >> 8) & 255) / 255.0f, (c & 255) / 255.0f};
+      if (ImGui::ColorEdit3("Cor dos wisps", rgb, ImGuiColorEditFlags_NoInputs)) {
+        beginEdit();
+        draft_["wispColor"] = (static_cast<unsigned>(rgb[0] * 255 + 0.5f) << 16) | (static_cast<unsigned>(rgb[1] * 255 + 0.5f) << 8) | static_cast<unsigned>(rgb[2] * 255 + 0.5f);
+      }
+    }
+    hint("A vista 3D mostra estes ajustes na prévia; Testar também usa a iluminação salva no mapa.");
+  }
+
+  // The next small button on the same line when it still fits before `right` (the panel's edge), else on a new one.
+  static void flow(bool first, const char* label, float right) {
+    if (first) return;
+    const float w = ImGui::CalcTextSize(label, nullptr, true).x + ImGui::GetStyle().FramePadding.x * 2;
+    if (ImGui::GetItemRectMax().x + ImGui::GetStyle().ItemSpacing.x + w <= right) ImGui::SameLine();
+  }
+  // A row of chips in the editor's look, wrapping at the page's edge; true when one was pressed (its index in `pressed`).
+  static bool toggleRow(const std::vector<std::pair<std::string, bool>>& items, int& pressed) {
+    bool any = false;
+    const float right = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    for (size_t k = 0; k < items.size(); ++k) {
+      const char* label = items[k].first.c_str();
+      const ImVec2 ts = ImGui::CalcTextSize(label);
+      const ImVec2 box{std::round(ts.x + 24), std::round(ts.y + 10)};
+      if (k && ImGui::GetItemRectMax().x + 6 + box.x <= right) ImGui::SameLine(0, 6);
+      ImGui::PushID(label);
+      if (ImGui::InvisibleButton("##chip", box)) pressed = static_cast<int>(k), any = true;
+      ImGui::PopID();
+      const bool on = items[k].second, hover = ImGui::IsItemHovered();
+      const ImVec2 a = ImGui::GetItemRectMin(), b = ImGui::GetItemRectMax();
+      dl->AddRectFilled(a, b, on ? IM_COL32(96, 50, 22, 255) : hover ? IM_COL32(50, 37, 28, 255) : kCardInk, 4.0f);
+      dl->AddRect(a, b, on ? kEmberInk : hover ? kBronzeInk : kEdgeInk, 4.0f);
+      dl->AddText({std::round(a.x + 12), std::round(a.y + 5)}, on ? kLitInk : kTextInk, label);
+    }
+    return any;
+  }
+
+  void drawSize() {
+    const int c = intField("colunas", cols(), editor_.minGrid, editor_.maxGrid);
+    ImGui::SameLine(0, 16);
+    const int r = intField("linhas", rows(), editor_.minGrid, editor_.maxGrid);
+    if (c != cols() || r != rows()) resize(c, r);
+    fieldLabel("Grade do mapa técnico");
+    int grid = -1;
+    if (toggleRow({{"Hexágono", !gridSquare_}, {"Quadrado", gridSquare_}}, grid)) gridSquare_ = grid == 1;
+  }
+  static Mode modeOf(int k) {
+    static const Mode m[] = {Mode::Paint, Mode::Elevation, Mode::Decoration, Mode::Architecture, Mode::Architecture, Mode::Player, Mode::Enemy, Mode::Npc, Mode::Summon};
+    return m[std::clamp(k, 0, 8)];
+  }
+
+  // A small image button for a thumbnail (an Ember public file; a decoration's from decoracoes-2d, the art the game cooks);
+  // the swatch when there is none.
+  bool thumbButton(const char* id, const std::string& thumb, const std::string& swatch, float size, bool selected, const std::string& tip, const char* text = nullptr) {
+    const ImVec2 at = ImGui::GetCursorScreenPos();
+    const bool clicked = ImGui::InvisibleButton(id, {size, size});
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    constexpr std::string_view decor = "/game/decorations/", ownTexture = "/ember/";  // "/ember/x": the game's own content/x (Cooker architecture)
+    constexpr std::string_view ownGround = "content/ground/", ownModel = "content/ui/thumbs3d/";
+    const std::filesystem::path projectRoot = base_.artRoot.parent_path().parent_path().parent_path();
+    const std::filesystem::path own = thumb.starts_with(decor) ? std::filesystem::path("decoracoes-2d") / thumb.substr(decor.size())
+                                      : thumb.starts_with(ownTexture)                               ? projectRoot / "content" / thumb.substr(ownTexture.size())
+                                      : thumb.starts_with(ownGround) || thumb.starts_with(ownModel) ? projectRoot / thumb
+                                                                                                     : std::filesystem::path();
+    const UiImage* image = thumb.empty() ? nullptr
+                           : uiImage(!own.empty() && std::filesystem::exists(own) ? own : base_.artRoot / thumb.substr(thumb.starts_with('/') ? 1 : 0));
+    if (image) {
+      const float aspect = static_cast<float>(image->width) / std::max(1.0f, static_cast<float>(image->height));
+      const float w = aspect >= 1 ? size : size * aspect, h = aspect >= 1 ? size / aspect : size;
+      dl->AddRectFilled(at, {at.x + size, at.y + size}, IM_COL32(28, 28, 28, 255));
+      dl->AddImage(image->texture, {at.x + (size - w) / 2, at.y + (size - h) / 2}, {at.x + (size + w) / 2, at.y + (size + h) / 2});
+    } else {
+      unsigned c = 0x555555;
+      if (swatch.size() == 7) c = static_cast<unsigned>(std::strtoul(swatch.c_str() + 1, nullptr, 16));
+      dl->AddRectFilled(at, {at.x + size, at.y + size}, IM_COL32((c >> 16) & 255, (c >> 8) & 255, c & 255, 255));
+    }
+    if (text && !image) {  // (a model's "3D" stands in for a picture it has not got)
+      const ImVec2 ts = ImGui::CalcTextSize(text);
+      dl->AddText({at.x + (size - ts.x) / 2, at.y + (size - ts.y) / 2}, IM_COL32(240, 240, 240, 255), text);
+    }
+    dl->AddRect(at, {at.x + size, at.y + size}, selected ? IM_COL32(252, 211, 77, 255) : IM_COL32(74, 74, 74, 255), 0.0f, selected ? 2.0f : 1.0f);
+    if (ImGui::IsItemHovered() && !tip.empty()) ImGui::SetTooltip("%s", tip.c_str());
+    return clicked;
+  }
+
+  // Personagens (the user, 2026-10-29: "uma sessão de Personagens aliados e Inimigos para colocar no mapa"): every character the side
+  // can field, each with its one portrait (Portraits.h unitPortraitFile), searchable; the picked one is what a click on the board
+  // places. Allies: the named heroes first, then every fighting class; enemies: every fighting class (summons, civilians and road
+  // NPCs have their own brushes).
+  void drawCharacters(bool allies) {
+    fieldLabel("%s", allies ? "Personagens aliados" : "Personagens inimigos");
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputTextWithHint("##unitsearch", "Procurar…", unitSearch_, sizeof(unitSearch_));
+    std::vector<std::pair<std::string, std::string>> list;  // (a named hero's name or "", class)
+    if (allies)
+      for (const auto& [name, classId] : editor_.heroes) list.push_back({name, classId});
+    for (const std::string& c : editor_.classOrder)
+      if (!isSummon(c) && !isCivil(c) && !isNpc(c)) list.push_back({"", c});
+    const std::string query = lower(unitSearch_);
+    std::pair<std::string, std::string>& brush = allies ? allyBrush_ : enemyBrush_;
+    ImGui::BeginChild("##characters", {-1, 320.0f}, ImGuiChildFlags_Borders);
+    const float cell = 72, per = std::max(1.0f, std::floor((ImGui::GetContentRegionAvail().x + 6) / (cell + 8)));
+    int k = 0;
+    for (const auto& [name, classId] : list) {
+      const std::string label = name.empty() ? className(classId) : std::format("{} · {}", name, className(classId));
+      if (!query.empty() && lower(label).find(query) == std::string::npos && classId.find(query) == std::string::npos) continue;
+      if (k++ % static_cast<int>(per)) ImGui::SameLine();
+      const auto cls = editor_.classes.find(classId);
+      const std::string portrait = "/" + unitPortraitFile(name, cls == editor_.classes.end() ? classId : cls->second.sprite);
+      ImGui::BeginGroup();
+      if (thumbButton(std::format("##u{}|{}", name, classId).c_str(), portrait, "#333333", cell, brush == std::pair{name, classId}, label))
+        brush = {name, classId};
+      nameUnder(name.empty() ? className(classId) : name, ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+      ImGui::EndGroup();
+    }
+    ImGui::EndChild();
+  }
+
+  void drawModePanel() {
+    if (mode_ == Mode::Elevation) {
+      int pick = -1;
+      if (toggleRow({{"Elevar +1", elevationTool_ == 0}, {"Baixar −1", elevationTool_ == 1}, {"Nivelar", elevationTool_ == 2}}, pick)) elevationTool_ = pick;
+      elevationLevel_ = intField("Nível", elevationLevel_, 0, 12, 90);
+      ImGui::SameLine();
+      ringCombo("Área", elevationRadius_);
+      hint("Clique para esculpir. Níveis 0–12; Nivelar em 0 remove a elevação. Ctrl+Z desfaz.");
+    } else if (mode_ == Mode::Paint) {
+      drawPaintPanel();
+    } else if (mode_ == Mode::Decoration || mode_ == Mode::Architecture) {
+      drawDecorationPanel();
+    } else {
+      if (mode_ == Mode::Player || mode_ == Mode::Enemy) {
+        hint("Clique numa casa vazia pra adicionar %s; clique numa casa ocupada (do mesmo lado) pra remover. Edite nome/classe na lista abaixo.",
+                            mode_ == Mode::Player ? "um herói" : "um inimigo");
+        drawCharacters(mode_ == Mode::Player);
+      }
+      if (mode_ == Mode::Npc) {
+        std::string shown = npcBrush_;
+        for (const auto& [id, name] : editor_.npcs)
+          if (id == npcBrush_) shown = name;
+        ImGui::Text("Personagem");
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::BeginCombo("##npc", shown.c_str())) {
+          LetterJump jump;
+          jump.begin();
+          for (const auto& [id, name] : editor_.npcs) {
+            if (ImGui::Selectable((name + "##" + id).c_str(), id == npcBrush_)) npcBrush_ = id;
+            jump.item(name);
+          }
+          jump.end();
+          ImGui::EndCombo();
+        }
+        hint("Os novos personagens têm animação de quatro quadros e diálogo próprio.");
+      }
+      if (mode_ == Mode::Summon) {
+        fieldLabel("Lado");
+        ImGui::SameLine();
+        int pick = -1;
+        if (toggleRow({{"Aliada", !summonNeutral_}, {"Neutra", summonNeutral_}}, pick)) summonNeutral_ = pick == 1;
+        ImGui::SameLine();
+        fieldLabel("Tipo");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::BeginCombo("##summon", classLabel(summonBrush_).c_str())) {
+          LetterJump jump;
+          jump.begin();
+          for (const std::string& c : editor_.classOrder) {
+            if (!summonNeutral_ && !isSummon(c)) continue;  // allies: summons only; neutral: any class (a talkable NPC)
+            if (ImGui::Selectable((classLabel(c) + "##" + c).c_str(), c == summonBrush_)) summonBrush_ = c;
+            jump.item(classLabel(c));
+          }
+          jump.end();
+          ImGui::EndCombo();
+        }
+        hint("Clique numa casa vazia pra pôr %s %s; clique numa casa ocupada desse lado pra remover.", lower(className(summonBrush_)).c_str(),
+                            summonNeutral_ ? "como fera neutra" : "do lado aliado");
+        ImGui::TextWrapped("%s", summonNeutral_ ? "Neutras ficam paradas: não entram na ordem de turno e não contam pra limpar o mapa. Atacar uma acorda o bando inteiro da "
+                                                  "mesma classe, que vira inimigo e passa a agir na rodada seguinte — a menos que ela tenha um Diálogo (veja a lista de "
+                                                  "unidades abaixo): aí não pode ser atacada, e clicar nela conversa em vez de brigar."
+                                                : "Aliadas não contam na derrota — perder todas não perde a missão.");
+      }
+    }
+  }
+  static void ringCombo(const char* label, int& radius) {
+    ImGui::SetNextItemWidth(120);
+    auto name = [](int r) { return r == 0 ? std::string("Uma célula") : r == 1 ? std::string("1 anel") : std::format("{} anéis", r); };
+    if (ImGui::BeginCombo(label, name(radius).c_str())) {
+      for (int r = 0; r <= 3; ++r)
+        if (ImGui::Selectable(name(r).c_str(), r == radius)) radius = r;
+      ImGui::EndCombo();
+    }
+  }
+
+  void drawPaintPanel() {
+    hint("Escolha um terreno ou grupo de tiles para pintar o mapa.");
+    ImGui::SameLine();
+    if (ImGui::SmallButton(turning_ ? "Girando — clique num hex" : "Girar hex")) {
+      note(turning_ ? "Pincel de volta: clicar pinta o terreno."
+                    : "Girar armado: cada clique num hex vira o desenho 60°, sem trocar o terreno. O ponto vermelho mostra onde é o lado de baixo.");
+      turning_ = !turning_;
+    }
+    if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("Gira o desenho do hex 60° por clique, para casar costa, estrada e muro com o vizinho. O terreno e a variante não mudam; seis cliques voltam ao original.");
+    // the terrains (City is plains with the city layers), by name; snow has its own Icelands section
+    std::vector<std::tuple<std::string, std::string, std::string, std::string, std::string, std::string>> items;  // key, terrain, label, thumb, swatch, hint
+    for (const TerrainEntry& t : editor_.terrains)
+      if (t.id != "snow") items.emplace_back(t.id, t.id, t.name, t.thumb, t.swatch, t.hint);
+    if (!editor_.city.empty()) items.emplace_back("city", "plains", "City", editor_.city[0].thumb, "#9c8f6f", "City");
+    std::sort(items.begin(), items.end(), [](const auto& a, const auto& b) { return byName(std::get<2>(a), std::get<2>(b)); });
+    auto pickTerrain = [&](const std::string& key, const std::string& terrain) {
+      brush_ = terrain;
+      if (key == "city") {
+        cityMode_ = true;
+        if (std::none_of(editor_.city.begin(), editor_.city.end(), [&](const Version& v) { return v.variant == variant_; })) variant_ = editor_.city[0].variant;
+      } else {
+        cityMode_ = false;
+        variant_ = std::min(variant_, variantCount(terrain) - 1);
+        if (terrain == "plains" && std::any_of(editor_.city.begin(), editor_.city.end(), [&](const Version& v) { return v.variant == variant_; })) variant_ = 0;
+      }
+    };
+    int n = 0;
+    const float columnWidth = 150;
+    const int perRow = std::max(1, static_cast<int>(ImGui::GetContentRegionAvail().x / columnWidth));
+    for (const auto& [key, terrain, label, thumb, swatch, hint] : items) {
+      const bool selected = key == "city" ? cityMode_ && brush_ == "plains" : !cityMode_ && brush_ == terrain;
+      if (n % perRow) ImGui::SameLine(static_cast<float>(n % perRow) * columnWidth + ImGui::GetStyle().WindowPadding.x);
+      ImGui::BeginGroup();
+      if (thumbButton(("##t" + key).c_str(), thumb, swatch, 28, selected, hint)) pickTerrain(key, terrain);
+      ImGui::SameLine();
+      ImGui::TextUnformatted(label.c_str());
+      ImGui::EndGroup();
+      ++n;
+    }
+    // Versões (City's own strip in City mode)
+    const std::vector<Version>* versions = nullptr;
+    std::string swatch = "#555555";
+    if (cityMode_) versions = &editor_.city;
+    else
+      for (const TerrainEntry& t : editor_.terrains)
+        if (t.id == brush_ && brush_ != "void") versions = &t.versions, swatch = t.swatch;
+    if (versions) {
+      fieldLabel("Versões");
+      // Each version as a preview of its tile with its number under it (the user, 2026-10-29: "colocar prévia de cada no editor").
+      ImGui::BeginChild("##versions", {0, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
+      constexpr float kPreview = 72;
+      const float step = kPreview + ImGui::GetStyle().ItemSpacing.x;
+      const int per = std::max(1, static_cast<int>((ImGui::GetContentRegionAvail().x + ImGui::GetStyle().ItemSpacing.x) / step));
+      int k = 0;
+      for (const Version& v : *versions) {
+        if (k++ % per) ImGui::SameLine();
+        ImGui::BeginGroup();
+        if (thumbButton(std::format("##v{}", v.variant).c_str(), v.thumb, brush_ == "plains" ? "#5f8c28" : swatch, kPreview, variant_ == v.variant,
+                        std::format("{} {} · {}", cityMode_ ? std::string("City ·") : terrainName(brush_), v.label, variantName(brush_, v.variant))))
+          variant_ = v.variant;
+        const float tw = ImGui::CalcTextSize(v.label.c_str()).x;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, (kPreview - tw) * 0.5f));
+        ImGui::TextUnformatted(v.label.c_str());
+        ImGui::EndGroup();
+      }
+      ImGui::EndChild();
+    }
+    if (brush_ == "hill") hint("Colina cria relevo. Use Elevação para esculpir vários níveis e ver o resultado na prévia 3D.");
+    // Icelands
+    ImGui::BeginChild("##icelands", {0, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
+    fieldLabel("Icelands");
+    ImGui::SameLine();
+    for (const TerrainEntry& t : editor_.terrains)
+      if (t.id == "snow") {
+        if (thumbButton("##tsnow", t.thumb, t.swatch, 28, !cityMode_ && brush_ == "snow", t.hint)) pickTerrain("snow", "snow");
+        ImGui::SameLine();
+        ImGui::TextUnformatted("Neve e gelo");
+      }
+    ImGui::EndChild();
+  }
+
+  // MapEditorScreen architectureOptions: 3D walls (regular or thick, doors and openings) or 3D decorations; the
+  // watchtower entrance only on watchtower maps; walls last.
+  std::vector<std::string> architectureOptions() const {
+    std::vector<std::string> out;
+    const bool watchtower = draft_.value("id", "").starts_with("watchtower-");
+    for (const std::string& id : editor_.architectureOrder) {
+      const DecoMeta& m = meta(id);
+      if (m.model3d.empty() || m.props3d != architectureDecorations_) continue;
+      if (id == kEntrance && !watchtower) continue;
+      if (!architectureDecorations_ && m.thickWall != thickWalls_) continue;
+      out.push_back(id);
+    }
+    std::stable_sort(out.begin(), out.end(), [&](const std::string& a, const std::string& b) { return (meta(a).model3d == "wall") < (meta(b).model3d == "wall"); });
+    return out;
+  }
+
+  // A 3D decoration's thumbnail: its render (content/ui/thumbs3d/<id>.png, content/models/blender/render_thumbs.py), else the
+  // catalog's; looked up once.
+  const std::string& modelThumb(const std::string& id) {
+    auto it = modelThumbs_.find(id);
+    if (it == modelThumbs_.end()) {
+      const std::string own = "content/ui/thumbs3d/" + id + ".png";
+      const std::filesystem::path projectRoot = base_.artRoot.parent_path().parent_path().parent_path();
+      it = modelThumbs_.emplace(id, std::filesystem::exists(projectRoot / own) ? own : editor_.decoThumb[id]).first;
+    }
+    return it->second;
+  }
+
+  void drawDecorationPanel() {
+    const bool arch = mode_ == Mode::Architecture;
+    const bool props3d = arch && architectureDecorations_;
+    if (arch && !architectureDecorations_) {
+      int pick = -1;
+      if (toggleRow({{"Regular Walls", !thickWalls_}, {"Thick Walls", thickWalls_}}, pick)) {
+        thickWalls_ = pick == 1;
+        decoBrush_ = thickWalls_ ? "castle-3d-thick" : "wall-3d-stone";
+      }
+    }
+    ImGui::TextWrapped("%s", arch ? "Coloque paredes em linhas e colunas para formar salas retangulares contínuas. Paredes e portas fechadas bloqueiam movimento e "
+                                    "visão; passagens abertas permitem atravessar. Selecione uma peça e use Delete para remover."
+                                  : "Clique na casa âncora pra colocar; clique em qualquer casa que a decoração cubra pra remover. Toda casa coberta fica "
+                                    "intransponível e bloqueia visão/tiro, não importa o terreno por baixo.");
+    if (arch && !architectureDecorations_) {
+      // The watchtower's kit (content/models/architecture.json) and the wall tools: a drag on the preview lays the whole run or room.
+      fieldLabel("Torre de Vigia");
+      static const std::pair<const char*, const char*> kKit[9] = {{"Parede", "ember-arch-watchtower-wall"}, {"Janela", "ember-arch-watchtower-window"},
+                                                                  {"Seteira", "ember-arch-watchtower-slit"}, {"Tocha", "ember-arch-watchtower-wall-torch"},
+                                                                  {"Portal", "ember-arch-watchtower-portal"}, {"Porta", "ember-arch-watchtower-door"},
+                                                                  {"Portão", "ember-arch-watchtower-gate"}, {"Escada sobe", "ember-arch-watchtower-stairs-up"},
+                                                                  {"Escada desce", "ember-arch-watchtower-stairs-down"}};
+      auto kitButtons = [&](const std::pair<const char*, const char*>* kit, int count) {
+        for (int k = 0; k < count; ++k) {
+          if (k) ImGui::SameLine();
+          const bool armed = decoBrush_ == kit[k].second;
+          if (armed) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+          // (each kit has its own Parede / Janela / Porta: the id keeps the buttons apart, ImGui's "conflicting ID")
+          if (ImGui::Button(std::format("{}##{}", kit[k].first, kit[k].second).c_str())) decoBrush_ = kit[k].second, thickWalls_ = false, selected_.reset(), turningDeco_ = false;
+          if (armed) ImGui::PopStyleColor();
+        }
+      };
+      kitButtons(kKit, 9);
+      // The gothic parapet kit (the Stone Bridge's parapets in 3D, 2026-10-21): the guardians' side turns to the board's centre by
+      // itself; pilasters stand at every run end and corner, the Pilastra piece puts one mid-run.
+      fieldLabel("Muralha gótica");
+      static const std::pair<const char*, const char*> kGothic[3] = {{"Parede gótica", "ember-arch-gothic-wall"}, {"Nicho com guardião", "ember-arch-gothic-niche"},
+                                                                     {"Pilastra", "ember-arch-gothic-pier"}};
+      kitButtons(kGothic, 3);
+      // The Inn's kit (2026-10-22): plastered timber-framed walls, the casement window, the one-hex door (animated) and doorway, the
+      // candle lantern; the window and the lantern turn to the room by themselves.
+      fieldLabel("Estalagem");
+      static const std::pair<const char*, const char*> kInn[5] = {{"Parede", "ember-arch-inn-wall"}, {"Janela", "ember-arch-inn-window"},
+                                                                  {"Porta", "ember-arch-inn-door"}, {"Vão", "ember-arch-inn-doorway"},
+                                                                  {"Lampião", "ember-arch-inn-sconce"}};
+      kitButtons(kInn, 5);
+      int tool = -1;
+      if (toggleRow({{"Clique", wallTool_ == 0}, {"Traçar parede", wallTool_ == 1}, {"Fechar sala", wallTool_ == 2}}, tool)) wallTool_ = tool, wallDragFrom_.reset();
+      hint("%s", wallTool_ == 0 ? "Clique coloca uma peça; clique numa parede com Janela, Seteira ou Tocha armada e ela vira essa peça (a abertura e a tocha se viram para a sala sozinhas)."
+                 : wallTool_ == 1 ? "Arraste na prévia de um hex a outro: a peça armada é traçada em linha reta ou na diagonal (as paredes se emendam sozinhas; janelas e tochas trocam a parede que cobrem)."
+                                  : "Arraste na prévia de um canto ao canto oposto: as quatro paredes da sala com a peça armada (cantos emendados sozinhos).");
+    }
+    if (ImGui::Button(turningDeco_ ? (arch ? "Girando — clique numa peça 3D" : "Girando — clique numa decoração") : "Girar objeto")) {
+      note(turningDeco_ ? (arch ? "Pincel 3D ativo: clique para colocar ou selecionar uma peça." : "Pincel de volta: clicar coloca e remove decoração.")
+                        : (arch ? "Girar peça 3D armado: cada clique vira a peça 90°. Quatro cliques voltam ao original."
+                                : "Girar objeto armado: cada clique numa decoração vira ela 60°, com toda a área junto. Seis cliques voltam ao original."));
+      turningDeco_ = !turningDeco_;
+    }
+    if (!arch) {
+      hint("O dado em cada uma liga/desliga se ela pode sair no sorteio de \"Gerar terreno\" — aceso participa, apagado só entra no mapa se você colocar à mão.");
+      // the catalog's sections as chips (every one in view), then the search
+      fieldLabel("Categorias");
+      std::vector<std::pair<std::string, bool>> chips;
+      for (const std::string& s : editor_.decorationSections) chips.push_back({s, s == decoSection_});
+      if (int pick = -1; toggleRow(chips, pick)) decoSection_ = editor_.decorationSections[pick];
+      ImGui::SetNextItemWidth(-1);
+      ImGui::InputTextWithHint("##decosearch", "Procurar…", search_, sizeof(search_));
+    }
+    if (props3d) {
+      // the 3D decorations' own sections (only those some 3D piece has) and search, apart from the 2D tab's
+      std::vector<std::string> sections{"Todas"};
+      for (const std::string& id : architectureOptions())
+        if (const std::string& s = editor_.decoSection[id]; !s.empty() && std::ranges::find(sections, s) == sections.end()) sections.push_back(s);
+      std::sort(sections.begin() + 1, sections.end(), byName);
+      fieldLabel("Categorias");
+      std::vector<std::pair<std::string, bool>> chips;
+      for (const std::string& s : sections) chips.push_back({s, s == decoSection3d_});
+      if (int pick = -1; toggleRow(chips, pick)) decoSection3d_ = sections[pick];
+      ImGui::SetNextItemWidth(-1);
+      ImGui::InputTextWithHint("##props3dsearch", "Procurar…", search3d_, sizeof(search3d_));
+    }
+    // the palette
+    std::vector<std::string> visible;
+    if (arch) {
+      visible = architectureOptions();
+      if (props3d) {
+        const std::string query = lower(search3d_);
+        std::erase_if(visible, [&](const std::string& id) {
+          return (decoSection3d_ != "Todas" && editor_.decoSection[id] != decoSection3d_) ||
+                 (!query.empty() && lower(decoName(id)).find(query) == std::string::npos && id.find(query) == std::string::npos);
+        });
+        std::sort(visible.begin(), visible.end(), [&](const std::string& a, const std::string& b) { return byName(decoName(a), decoName(b)); });
+      }
+    } else {
+      const std::string query = lower(search_);
+      for (const std::string& id : editor_.decorationOrder) {
+        if (decoSection_ != "Todas" && editor_.decoSection[id] != decoSection_) continue;
+        if (!query.empty() && lower(decoName(id)).find(query) == std::string::npos && id.find(query) == std::string::npos) continue;
+        visible.push_back(id);
+      }
+    }
+    ImGui::BeginChild("##decos", {-1, arch ? 300.0f : 380.0f}, ImGuiChildFlags_Borders);
+    const float cell = 76, per = std::max(1.0f, std::floor((ImGui::GetContentRegionAvail().x + 6) / (cell + 8)));
+    int k = 0;
+    for (const std::string& id : visible) {
+      const DecoMeta& m = meta(id);
+      if (k % static_cast<int>(per)) ImGui::SameLine();
+      ImGui::BeginGroup();
+      const bool model = !m.model3d.empty();
+      const std::string thumb = model ? (m.props3d && m.wallTexture.empty() ? modelThumb(id) : m.wallTexture) : editor_.decoThumb[id];
+      if (thumbButton(("##d" + id).c_str(), thumb, "#333333", cell, decoBrush_ == id, std::format("{} · {} hexes", decoName(id), catalog_.decoration(id) ? catalog_.decoration(id)->footprint.size() : 0),
+                      model ? "3D" : nullptr))
+        decoBrush_ = id, selected_.reset(), turningDeco_ = false;
+      const ImVec2 thumbMin = ImGui::GetItemRectMin(), thumbMax = ImGui::GetItemRectMax();
+      if (!model) {
+        // the dice: in Gerar terreno's draw or out of it
+        const ImVec2 corner = ImGui::GetItemRectMax();
+        const bool excluded = shuffleExclude_.contains(id);
+        const ImVec2 d0{corner.x - 19, corner.y - 19};
+        ImGui::SetCursorScreenPos(d0);
+        if (ImGui::InvisibleButton(("##dice" + id).c_str(), {17, 17})) toggleShuffleExclude(id);
+        ImDrawList* dl = ImGui::GetWindowDrawList();
+        const ImU32 ink = excluded ? IM_COL32(150, 150, 150, 255) : IM_COL32(252, 211, 77, 255);
+        dl->AddRectFilled(d0, {d0.x + 17, d0.y + 17}, IM_COL32(17, 17, 17, 230), 3.0f);
+        dl->AddRect(d0, {d0.x + 17, d0.y + 17}, ink, 3.0f, 1.5f);
+        for (const ImVec2 pip : {ImVec2{4.5f, 4.5f}, ImVec2{12.5f, 4.5f}, ImVec2{8.5f, 8.5f}, ImVec2{4.5f, 12.5f}, ImVec2{12.5f, 12.5f}})
+          dl->AddCircleFilled({d0.x + pip.x, d0.y + pip.y}, 1.6f, ink);
+        if (ImGui::IsItemHovered())
+          ImGui::SetTooltip("%s", excluded ? "Fora do sorteio de \"Gerar terreno\" — clique pra incluir" : "No sorteio de \"Gerar terreno\" — clique pra excluir");
+      }
+      nameUnder(decoName(id), thumbMin, thumbMax);
+      ImGui::EndGroup();
+      ++k;
+    }
+    ImGui::EndChild();
+    drawRules(arch);
+  }
+
+  // Regras da decoração / da peça 3D, and a floor connector's Passagem de andar.
+  void drawRules(bool arch) {
+    ember::Json* p = selectedPlacement();
+    ImGui::BeginChild("##rules", {0, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
+    fieldLabel("%s", arch ? "Regras da peça 3D" : "Regras da decoração");
+    ImGui::SameLine();
+    if (p) hint("%s em %d,%d", decoName(p->value("id", "")).c_str(), p->value("x", 0), p->value("y", 0));
+    else hint("%s", arch ? "clique numa peça 3D no mapa" : "clique numa decoração no mapa");
+    const std::string model = p ? meta(p->value("id", "")).model3d : std::string();
+    if (arch) {
+      const bool vertical = !model.empty() ? (p->contains("wallOrientation") && (*p)["wallOrientation"].is_string() ? (*p)["wallOrientation"] == "vertical" : p->value("rot", 0) % 2 == 1)
+                                           : wallVertical_;
+      int pick = -1;
+      if (toggleRow({{"Horizontal", !vertical}, {"Vertical", vertical}}, pick)) {
+        wallVertical_ = pick == 1;
+        if (p && !model.empty()) {
+          beginEdit();
+          (*p)["rot"] = wallVertical_ ? 1 : 0, (*p)["wallOrientation"] = wallVertical_ ? "vertical" : "horizontal";
+          selected_ = ember::Json{{"id", (*p)["id"]}, {"x", (*p)["x"]}, {"y", (*p)["y"]}, {"rot", (*p)["rot"]}};
+          cleanEntrances();
+          p = selectedPlacement();
+        }
+      }
+      if (p && (model == "door" || model == "doorway" || model == "secretDoor") && p->value("id", "") != kEntrance) {
+        const std::string style = meta(p->value("id", "")).doorStyle.empty() ? "oak" : meta(p->value("id", "")).doorStyle;
+        const auto pair = editor_.doorVariants.find(style);
+        const bool closed = model == "door" || model == "secretDoor";
+        if (pair != editor_.doorVariants.end() && ImGui::Button(closed ? "Abrir porta" : "Fechar passagem")) {
+          beginEdit();
+          (*p)["id"] = closed ? pair->second.first : pair->second.second;
+          p->erase("blocksPath");
+          (*selected_)["id"] = (*p)["id"];
+        }
+      }
+      hint("Escolha a orientação para colocar novas peças ou mudar a peça selecionada. Paredes, portas fechadas e passagens secretas bloqueiam o caminho; vãos abertos permitem atravessar.");
+    } else {
+      const DecoMeta& m = p ? meta(p->value("id", "")) : DecoMeta{};
+      const bool forced = p && (m.solidHouse || m.solidCart || model == "wall" || model == "door" || model == "secretDoor");
+      bool blocks = p && ((p->contains("blocksPath") && (*p)["blocksPath"].is_boolean() && (*p)["blocksPath"].get<bool>()) || forced);
+      ImGui::BeginDisabled(!p || forced);
+      if (ImGui::Checkbox("Bloquear caminho", &blocks)) toggleDecorationRule("blocksPath");
+      ImGui::EndDisabled();
+      if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        ImGui::SetTooltip("Ligado, o hexágono deixa de ser navegável. Nesta engine sólido é sólido: também passa a barrar flecha e névoa.");
+      bool high = p && p->contains("yieldsHighGround") && (*p)["yieldsHighGround"].is_boolean() && (*p)["yieldsHighGround"].get<bool>();
+      ImGui::BeginDisabled(!p);
+      if (ImGui::Checkbox("Alto terreno", &high)) toggleDecorationRule("yieldsHighGround");
+      ImGui::EndDisabled();
+      if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        ImGui::SetTooltip("Ligado, quem estiver no hexágono recebe os bônus de terreno alto: +2 de dano, +1 de alcance para arco. Com Bloquear caminho também ligado vira "
+                          "rochedo — ninguém sobe, e flecha de quem está embaixo não passa por cima.");
+      hint("Os dois só acrescentam: desligados, o hexágono mantém a regra do terreno que está embaixo. Uma barricada segue intransponível com "
+                          "\"Bloquear caminho\" desligado, porque é a definição dela que a torna sólida.");
+    }
+    ImGui::EndChild();
+    if (p && meta(p->value("id", "")).exitKind == "connector") {
+      ImGui::BeginChild("##connector", {0, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
+      fieldLabel("Passagem de andar");
+      hint("Leva para");
+      const std::string target = p->contains("targetMapId") && (*p)["targetMapId"].is_string() ? (*p)["targetMapId"].get<std::string>() : "";
+      std::string shown = "Escolha um mapa…";
+      const std::vector<MapRef> targets = connectorTargets();
+      for (const MapRef& m : targets)
+        if (m.id == target) shown = m.title + " · " + m.id;
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##leva", shown.c_str())) {
+        if (ImGui::Selectable("Escolha um mapa…", target.empty())) beginEdit(), p->erase("targetMapId");
+        for (const MapRef& m : targets)
+          if (ImGui::Selectable(std::format("{} · {}##{}", m.title, m.id, m.id).c_str(), m.id == target)) beginEdit(), (*p)["targetMapId"] = m.id;
+        ImGui::EndCombo();
+      }
+      bool back = p->contains("returnConnector") && (*p)["returnConnector"].is_boolean() && (*p)["returnConnector"].get<bool>();
+      if (ImGui::Checkbox("Volta para o andar anterior (em vez de avançar)", &back)) {
+        beginEdit();
+        if (back) (*p)["returnConnector"] = true;
+        else p->erase("returnConnector");
+      }
+      if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Desligado: o resultado da batalha mostra \"Avançar\" (mais fundo na masmorra). Ligado: mostra \"Voltar\" (andar anterior). Puramente o texto/sentido "
+                          "mostrado ao jogador — quem decide qual mapa liga a qual é o campo \"Leva para\" acima.");
+      ImGui::EndChild();
+    }
+  }
+
+  // Substituir base and Gerar terreno: the whole map at once.
+  void drawReplaceBase() {
+    const int v = std::min(variant_, variantCount(brush_) - 1);
+    if (ImGui::Button(std::format("Substituir base · {}", baseVersionLabel(brush_, v)).c_str())) {
+      beginEdit();
+      const int n = cols() * rows();
+      draft_["baseTile"] = brush_, draft_["baseVariant"] = v;
+      draft_["tiles"] = ember::Json(std::vector<std::string>(n, brush_));
+      draft_["tileVariants"] = ember::Json(std::vector<int>(n, v));
+      draft_["tileRots"] = ember::Json(std::vector<int>(n, 0));
+      note(std::format("Base inteira substituída por {}.", baseVersionLabel(brush_, v)));
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Preenche todos os hexes com %s", baseVersionLabel(brush_, v).c_str());
+    ImGui::SameLine();
+    if (ImGui::Button("Gerar terreno")) generateTerrain();
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Espalha barricadas, barrancos e terreno alto pelo mapa do tamanho atual — depois é só limpar o que não serve");
+  }
+
+  // The technical grid: every hex in its terrain's colour, the art's serial, a red dot on its bottom side (the turn),
+  // P / E / S / N units by side and D for props; a click turns the hex (Terreno) or the prop (Decoração).
+  void drawTechnicalMap() {
+    static const std::map<std::string, ImU32> kSwatch = {
+        {"plains", IM_COL32(156, 143, 111, 255)}, {"woods", IM_COL32(63, 92, 58, 255)},    {"ruins", IM_COL32(107, 101, 96, 255)}, {"water", IM_COL32(44, 95, 122, 255)},
+        {"ember", IM_COL32(122, 44, 44, 255)},    {"hill", IM_COL32(138, 122, 79, 255)},   {"flame", IM_COL32(181, 80, 31, 255)}, {"column", IM_COL32(74, 74, 82, 255)},
+        {"nave", IM_COL32(38, 38, 44, 255)},      {"barricade", IM_COL32(90, 70, 48, 255)}, {"door", IM_COL32(74, 53, 36, 255)},  {"void", IM_COL32(0, 0, 0, 255)},
+        {"snow", IM_COL32(216, 222, 226, 255)}};
+    const ImGuiIO& io = ImGui::GetIO();
+    ImGui::SetNextWindowPos({panelWidth_ + 12, 60}, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize({io.DisplaySize.x - panelWidth_ - 24, io.DisplaySize.y * 0.6f}, ImGuiCond_FirstUseEver);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 240));
+    if (!ImGui::Begin("Mapa técnico de edição", &showTechnical_, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoSavedSettings)) {
+      ImGui::End();
+      ImGui::PopStyleColor();
+      return;
+    }
+    std::map<std::pair<int, int>, std::pair<char, ImU32>> units;
+    for (const auto& [key, side] : {std::pair{"playerSpawns", 'p'}, std::pair{"enemySpawns", 'e'}, std::pair{"neutralSpawns", 'n'}})
+      for (const ember::Json& s : arr(key)) {
+        const std::pair<int, int> at{s.value("x", 0), s.value("y", 0)};
+        if (units.contains(at)) continue;
+        const ImU32 ink = side == 'p' ? IM_COL32(125, 211, 252, 255) : side == 'n' ? IM_COL32(52, 211, 153, 255) : IM_COL32(248, 113, 113, 255);
+        units[at] = {isSummon(s.value("classId", "")) ? 'S' : side == 'p' ? 'P' : side == 'n' ? 'N' : 'E', ink};
+      }
+    std::map<std::pair<int, int>, std::string> decoAt;
+    for (const ember::Json& p : arr("decorations"))
+      for (const auto& c : cellsOf(p)) decoAt[c] = decoName(p.value("id", ""));
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec2 origin = ImGui::GetCursorScreenPos();
+    const float hr = 32, sq3 = std::sqrt(3.0f), cellPx = 56;
+    const ImVec2 size = gridSquare_ ? ImVec2{cols() * (cellPx + 1), rows() * (cellPx + 1)} : ImVec2{hr * sq3 * (cols() + 0.5f), hr * (1.5f * (rows() - 1) + 2)};
+    ImGui::InvisibleButton("##techboard", {std::max(1.0f, size.x), std::max(1.0f, size.y)});
+    const bool clicked = ImGui::IsItemClicked();
+    const ImVec2 mouse = io.MousePos;
+    std::optional<std::pair<int, int>> under;
+    for (int y = 0; y < rows(); ++y)
+      for (int x = 0; x < cols(); ++x) {
+        const int i = y * cols() + x;
+        const std::string t = tileAt(i);
+        const ImU32 fill = kSwatch.contains(t) ? kSwatch.at(t) : IM_COL32(85, 85, 85, 255);
+        const bool deco = decoAt.contains({x, y});
+        ImVec2 c;
+        float half;
+        if (gridSquare_) {
+          const ImVec2 a{origin.x + x * (cellPx + 1), origin.y + y * (cellPx + 1)};
+          dl->AddRectFilled(a, {a.x + cellPx, a.y + cellPx}, fill);
+          if (deco) dl->AddRect(a, {a.x + cellPx, a.y + cellPx}, IM_COL32(251, 191, 36, 204), 0.0f, 2.0f);
+          c = {a.x + cellPx / 2, a.y + cellPx / 2}, half = 21;
+          if (mouse.x >= a.x && mouse.x < a.x + cellPx && mouse.y >= a.y && mouse.y < a.y + cellPx) under = {x, y};
+        } else {
+          c = {origin.x + hr * sq3 * (x + 0.5f * (y & 1) + 0.5f), origin.y + hr * (1.5f * y + 1)};
+          ImVec2 pts[6];
+          for (int k = 0; k < 6; ++k) {
+            const float a = std::numbers::pi_v<float> / 180.0f * (60.0f * k - 90.0f);
+            pts[k] = {c.x + hr * std::cos(a), c.y + hr * std::sin(a)};
+          }
+          dl->AddConvexPolyFilled(pts, 6, fill);
+          dl->AddPolyline(pts, 6, deco ? IM_COL32(251, 191, 36, 255) : IM_COL32(0, 0, 0, 51), 1.0f, ImDrawFlags_Closed);
+          half = hr * 0.66f;
+          if (std::hypot(mouse.x - c.x, mouse.y - c.y) < hr * 0.87f) under = {x, y};
+        }
+        const std::string serial = std::format("{:03}", intAt("tileVariants", i) + 1);
+        const ImVec2 ts = ImGui::CalcTextSize(serial.c_str());
+        dl->AddText({c.x - ts.x / 2 + 1, c.y - ts.y / 2 + 1}, IM_COL32(0, 0, 0, 240), serial.c_str());
+        dl->AddText({c.x - ts.x / 2, c.y - ts.y / 2}, IM_COL32(255, 255, 255, 255), serial.c_str());
+        const float a = std::numbers::pi_v<float> / 2 + (intAt("tileRots", i) % 6) * std::numbers::pi_v<float> / 3;
+        dl->AddCircleFilled({c.x + std::cos(a) * half, c.y + std::sin(a) * half}, 3.5f, IM_COL32(239, 68, 68, 255));
+        if (const auto u = units.find({x, y}); u != units.end()) {
+          const char g[2] = {u->second.first, 0};
+          dl->AddText({c.x - 4, c.y + 6}, u->second.second, g);
+        } else if (deco) {
+          dl->AddText({c.x - 4, c.y + 6}, IM_COL32(252, 211, 77, 255), "D");
+        }
+      }
+    if (under && ImGui::IsItemHovered()) {
+      const auto [x, y] = *under;
+      if (decoAt.contains({x, y})) ImGui::SetTooltip("%s", decoAt.at({x, y}).c_str());
+      else ImGui::SetTooltip("%s", variantName(tileAt(y * cols() + x), intAt("tileVariants", y * cols() + x)).c_str());
+    }
+    if (clicked && under) technicalClick(under->first, under->second);
+    ImGui::End();
+    ImGui::PopStyleColor();
+  }
+  // onTechnicalClick: the fast turn gesture (Terreno: the hex's art; Decoração: the prop); otherwise the brush.
+  void technicalClick(int x, int y) {
+    if (mode_ == Mode::Paint) {
+      const bool was = turning_;
+      turning_ = true;
+      onCellClick(x, y, std::nullopt);
+      turning_ = was;
+    } else if (mode_ == Mode::Decoration || mode_ == Mode::Architecture) {
+      turnDecoration(x, y);
+    } else {
+      onCellClick(x, y, std::nullopt);
+    }
+  }
+
+  // Decorações (N): every placed prop, its thumbnail, hex and a remove button.
+  void drawDecorationList() {
+    ember::Json& decos = arr("decorations");
+    if (decos.empty()) return;
+    if (!ImGui::CollapsingHeader(std::format("Decorações ({})###decolist", decos.size()).c_str())) return;
+    std::optional<size_t> remove;
+    for (size_t k = 0; k < decos.size(); ++k) {
+      const ember::Json& p = decos[k];
+      const std::string id = p.value("id", "");
+      ImGui::PushID(static_cast<int>(k));
+      const DecoMeta& m = meta(id);
+      const std::string thumb = !m.model3d.empty() ? m.wallTexture : m.art.empty() ? editor_.decoThumb[id] : m.art;
+      thumbButton("##dl", thumb, "#333333", 22, false, "", !m.model3d.empty() ? "3D" : nullptr);
+      ImGui::SameLine();
+      ImGui::Text("%s", decoName(id).c_str());
+      ImGui::SameLine(ImGui::GetContentRegionAvail().x - 40);
+      hint("%d,%d", p.value("x", 0), p.value("y", 0));
+      ImGui::SameLine();
+      if (ImGui::SmallButton("X")) remove = k;
+      ImGui::PopID();
+    }
+    if (remove) beginEdit(), decos.erase(*remove), selected_.reset();
+  }
+
+  // The spawn lists in Ember's groups (heroes, allied summons, enemies, neutral beasts, neutral summons): name, class,
+  // level; Sortear classe for enemies, a neutral's dialogue, remove.
+  void drawUnits() {
+    static const std::tuple<const char*, bool, const char*> kGroups[] = {{"playerSpawns", false, "Heróis"},           {"playerSpawns", true, "Invocações aliadas"},
+                                                                         {"enemySpawns", false, "Inimigos"},          {"neutralSpawns", false, "Feras neutras"},
+                                                                         {"neutralSpawns", true, "Invocações neutras"}};
+    for (const auto& [key, summons, label] : kGroups) {
+      ember::Json& list = arr(key);
+      std::vector<size_t> rowsOf;
+      for (size_t k = 0; k < list.size(); ++k)
+        if (isSummon(list[k].value("classId", "")) == summons) rowsOf.push_back(k);
+      if (rowsOf.empty()) continue;
+      fieldLabel("%s (%d)", label, static_cast<int>(rowsOf.size()));
+      const bool enemy = std::string(key) == "enemySpawns", neutral = std::string(key) == "neutralSpawns";
+      for (size_t k : rowsOf) {
+        ember::Json& s = list[k];
+        ImGui::PushID(std::format("{}{}", key, k).c_str());
+        hint("%d,%d", s.value("x", 0), s.value("y", 0));
+        ImGui::SameLine(48);
+        char name[128];
+        std::snprintf(name, sizeof(name), "%s", s.value("name", "").c_str());
+        // the name takes what the class, level and buttons leave
+        const ImGuiStyle& st = ImGui::GetStyle();
+        const float buttons = ImGui::CalcTextSize("X").x + st.FramePadding.x * 2 + st.ItemSpacing.x +
+                              (enemy ? ImGui::CalcTextSize("Sortear").x : neutral ? ImGui::CalcTextSize("+ Diálogo").x : -st.ItemSpacing.x - st.FramePadding.x * 2) +
+                              st.FramePadding.x * 2 + st.ItemSpacing.x;
+        const float classW = 150, levelW = 40 + ImGui::CalcTextSize("Nv").x + st.ItemSpacing.x * 2;
+        ImGui::SetNextItemWidth(std::max(60.0f, ImGui::GetContentRegionAvail().x - classW - levelW - buttons - st.ItemSpacing.x * 2));
+        if (ImGui::InputText("##name", name, sizeof(name))) beginEdit(), s["name"] = std::string(name);
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(classW);
+        const std::string classId = s.value("classId", "");
+        if (ImGui::BeginCombo("##class", classLabel(classId).c_str())) {
+          LetterJump jump;
+          jump.begin();
+          // in alphabetical order of the names shown, whatever order the catalog lists them in (new classes are added at its end)
+          std::vector<std::string> byLabel = editor_.classOrder;
+          std::stable_sort(byLabel.begin(), byLabel.end(), [&](const std::string& a, const std::string& b) { return byName(classLabel(a), classLabel(b)); });
+          for (const std::string& c : byLabel) {
+            if (enemy && (isSummon(c) || isCivil(c) || isNpc(c))) continue;
+            if (ImGui::Selectable((classLabel(c) + "##" + c).c_str(), c == classId)) beginEdit(), s["classId"] = c, s["useClassSprite"] = true;
+            jump.item(classLabel(c));
+          }
+          jump.end();
+          ImGui::EndCombo();
+        }
+        ImGui::SameLine();
+        hint("Nv");
+        ImGui::SameLine();
+        int level = s.value("level", editor_.testLevel);
+        ImGui::SetNextItemWidth(40);
+        if (ImGui::InputInt("##lv", &level, 0)) beginEdit(), s["level"] = std::clamp(level, 1, editor_.maxLevel);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Nível (só afeta o Testar)");
+        if (enemy) {
+          ImGui::SameLine();
+          if (ImGui::SmallButton("Sortear")) {
+            // never a named hero's own class for a random foe
+            std::vector<std::string> pool;
+            for (const std::string& c : editor_.classOrder) {
+              if (isSummon(c) || isCivil(c) || isNpc(c)) continue;
+              bool named = false;
+              for (const auto& h : editor_.heroes) named = named || h.second == c;
+              for (const auto& h : editor_.namedNonHeroes) named = named || h.second == c;
+              if (!named) pool.push_back(c);
+            }
+            if (!pool.empty()) {
+              static std::mt19937 rng{std::random_device{}()};
+              beginEdit(), s["classId"] = pool[rng() % pool.size()], s["useClassSprite"] = true;
+            }
+          }
+          if (ImGui::IsItemHovered()) ImGui::SetTooltip("Sortear uma classe inimiga aleatória");
+        }
+        if (neutral) {
+          ImGui::SameLine();
+          if (ImGui::SmallButton(s.contains("dialog") && !s["dialog"].is_null() ? "Diálogo" : "+ Diálogo")) pendingDialog_ = std::format("spawn:{}", k);
+          if (ImGui::IsItemHovered()) ImGui::SetTooltip("Editar o diálogo desta unidade");
+        }
+        ImGui::SameLine();
+        const bool remove = ImGui::SmallButton("X");
+        ImGui::PopID();
+        if (remove) {
+          beginEdit();
+          list.erase(k);
+          heldUnit_.reset();
+          break;
+        }
+      }
+    }
+  }
+
+  // Arquivos de "<id>": every saved serial (ours and Ember's), Carregar / Ativar / apagar (ours only, two clicks).
+  void drawFiles() {
+    const std::string id = draft_.value("id", "");
+    const std::map<std::string, int> active = activeMaps();
+    const std::optional<int> activeSerial = active.contains(id) ? std::optional(active.at(id)) : std::nullopt;
+    if (files_.empty()) {
+      hint("Nenhum — Salvar grava content/maps/ember/%s001.json.", scenarioId(id).c_str());
+    } else {
+      const int latest = files_.back().serial;
+      for (auto it = files_.rbegin(); it != files_.rend(); ++it) {
+        const SavedFile& f = *it;
+        ImGui::PushID(f.file.string().c_str());
+        ImGui::TextColored(f.serial == latest ? ImColor(252, 211, 77) : ImColor(240, 240, 240), "%03d", f.serial);
+        ImGui::SameLine();
+        hint("%s%s%s", f.file.filename().string().c_str(), f.own ? "" : " (Ember)",
+                            activeSerial && *activeSerial == f.serial ? " · ativa na campanha" : f.serial == latest ? " · arquivo mais novo" : "");
+        // The buttons on their own line: after the file name they ran past the panel's edge and Apagar was never seen.
+        ImGui::Indent(34);
+        if (ImGui::SmallButton("Carregar")) openFile(f.file, std::format("Aberto {}.", f.file.filename().string()));
+        ImGui::SameLine();
+        ImGui::BeginDisabled(activeSerial && *activeSerial == f.serial);
+        if (ImGui::SmallButton("Ativar")) {
+          openFile(f.file, "");
+          setActive(id, f.serial);
+          note(std::format("{} agora é a cópia exata ativa na campanha. Preparando para o jogo…", f.file.filename().string()));
+          prepare(f.file);
+        }
+        ImGui::EndDisabled();
+        // Ours, or an editor-made map's copy in Ember's folder (custom-*); never an original campaign map there.
+        if (f.own || id.starts_with("custom-")) {
+          ImGui::SameLine();
+          const std::string name = f.file.filename().string();
+          if (ImGui::SmallButton(armedDelete_ == f.file.string() ? "Confirmar apagar" : "Apagar")) {
+            if (armedDelete_ != f.file.string()) {
+              armedDelete_ = f.file.string();
+              note(std::format("Clique de novo em Confirmar apagar pra apagar {} — isso não tem volta.", name));
+            } else {
+              armedDelete_.clear();
+              std::error_code ec;
+              std::filesystem::remove(f.file, ec);
+              note(ec ? std::format("NÃO APAGOU {}: {}", name, ec.message()) : std::format("{} apagado.", name));
+              if (activeSerial && *activeSerial == f.serial) setActive(id, std::nullopt);
+              ImGui::Unindent(34);
+              ImGui::PopID();
+              rescan();
+              return;
+            }
+          }
+        }
+        ImGui::Unindent(34);
+        ImGui::PopID();
+      }
+    }
+    if (activeSerial && ImGui::SmallButton(std::format("Usar cenário original (desativar v{:03})", *activeSerial).c_str())) {
+      setActive(id, std::nullopt);
+      note(std::format("\"{}\" voltou a usar o cenário original.", id));
+    }
+  }
+
+  // The action bar: the big confirmation (Locais' Salvar), the running note, Testar and Salvar mapa.
+  void drawFooter() {
+    if (bigNote_) {
+      const ImU32 border = bigNote_->ok ? IM_COL32(52, 211, 153, 255) : IM_COL32(239, 68, 68, 255);
+      ImGui::PushStyleColor(ImGuiCol_Border, border);
+      ImGui::BeginChild("##bignote", {0, 112}, ImGuiChildFlags_Borders);
+      ImGui::TextColored(bigNote_->ok ? ImColor(110, 231, 183) : ImColor(252, 165, 165), "%s", bigNote_->title.c_str());
+      ImGui::SameLine(ImGui::GetContentRegionAvail().x - 10);
+      if (ImGui::SmallButton("×")) bigNote_.reset();
+      if (bigNote_)
+        for (const std::string& l : bigNote_->lines) ImGui::TextWrapped("%s", l.c_str());
+      ImGui::EndChild();
+      ImGui::PopStyleColor();
+    }
+    if (!note_.empty()) {
+      const bool bad = note_.starts_with("NÃO SALVO:"), good = note_.starts_with("Salvo:");
+      ImGui::PushStyleColor(ImGuiCol_Text, bad ? IM_COL32(252, 165, 165, 255) : good ? IM_COL32(110, 231, 183, 255) : IM_COL32(224, 200, 150, 255));
+      ImGui::BeginChild("##note", {0, 44});
+      ImGui::TextWrapped("%s", note_.c_str());
+      ImGui::EndChild();
+      ImGui::PopStyleColor();
+    }
+    const float w = std::floor((ImGui::GetContentRegionAvail().x - 10) / 2);
+    if (actionButton("##test", "play", playtest_.valid() ? "Preparando…" : "Testar", false, {w, 36}, !playtest_.valid())) playtest();
+    ImGui::SameLine(0, 10);
+    if (actionButton("##save", "save", "Salvar mapa", true, {w, 36}, true)) save();
+  }
+
+  // --- Locais (the campaign's locations, their missions, slots and floors) ------------------------------------------------
+
+  void openLocais() {
+    locais_ = ember::Locais::load(kCatalog);  // refreshLocaisState: what is on disk now
+    order_ = locais_.editorOrder();
+    showLocations_ = true;
+    rescan();
+  }
+  // saveOrder / saveLocaisLocal: written at once and the campaign takes it.
+  bool saveLocais(const std::string& said) {
+    for (const auto& [loc, ids] : order_) locais_.order[loc] = ids;
+    if (!locais_.save()) {
+      note("NÃO SALVOU: não foi possível gravar " + ember::Locais::file().generic_string() + ".");
+      return false;
+    }
+    if (callbacks_.locaisSaved) callbacks_.locaisSaved();
+    note(said);
+    return true;
+  }
+  void transferMission(const std::string& missionId, const std::string& to) {
+    for (auto& [loc, ids] : order_) ids.erase(std::remove(ids.begin(), ids.end(), missionId), ids.end());
+    order_[to].push_back(missionId);
+    saveLocais("Ordem salva e aplicada à campanha.");
+  }
+  // setLocationSubmap: the mission becomes this location's floor (leaving every other floor list and every order).
+  void setSubmap(const std::string& loc, const std::string& missionId, int floor) {
+    std::optional<int> oldFloor;
+    for (const ember::LocaisFloor& f : locais_.submaps[loc])
+      if (f.missionId == missionId) oldFloor = f.floor;
+    for (auto& [l, list] : locais_.submaps) list.erase(std::remove_if(list.begin(), list.end(), [&](const ember::LocaisFloor& f) { return f.missionId == missionId; }), list.end());
+    std::vector<ember::LocaisFloor>& list = locais_.submaps[loc];
+    for (ember::LocaisFloor& f : list)
+      if (oldFloor && f.floor == floor) f.floor = *oldFloor;
+    list.push_back({missionId, floor});
+    std::stable_sort(list.begin(), list.end(), [](const ember::LocaisFloor& a, const ember::LocaisFloor& b) { return a.floor > b.floor; });
+    for (auto& [l, ids] : order_) ids.erase(std::remove(ids.begin(), ids.end(), missionId), ids.end());
+    saveLocais("Andares atualizados.");
+  }
+
+  void drawLocais() {
+    const ImGuiIO& io = ImGui::GetIO();
+    ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f}, ImGuiCond_Appearing, {0.5f, 0.5f});
+    ImGui::SetNextWindowSize({620, io.DisplaySize.y * 0.85f}, ImGuiCond_Appearing);
+    if (!ImGui::Begin("Locais", &showLocations_, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings)) return ImGui::End();
+    hint("Setas do título mudam a progressão entre Locais; setas das missões mudam a sequência interna.");
+    if (ImGui::Button("Salvar")) {
+      if (saveLocais("Ordem das missões e dos Locais salva.")) {
+        bigNote_ = BigNote{true, "ESTÁ SALVO",
+                           {"Salvo em " + ember::Locais::file().generic_string() + " — vale já: a campanha e o mapa-múndi jogam esta ordem.",
+                            std::format("{} locais com ordem definida; {} com vagas definidas; submaps e andares confirmados.", order_.size(), locais_.slots.size())}};
+      } else {
+        bigNote_ = BigNote{false, "NÃO SALVOU", {"Não foi possível gravar " + ember::Locais::file().generic_string() + "."}};
+      }
+    }
+    const std::vector<MapRef> reserve = reserveRefs(), campaign = campaignRefs(), targets = connectorTargets();
+    const std::set<std::string> inCampaign = campaignIds();
+    std::optional<std::pair<std::string, int>> moveLocation;
+    for (size_t li = 0; li < locais_.locationOrder.size(); ++li) {
+      const std::string locId = locais_.locationOrder[li];
+      const ember::Locais::Base* loc = nullptr;
+      for (const ember::Locais::Base& b : locais_.base)
+        if (b.id == locId) loc = &b;
+      if (!loc) continue;
+      ImGui::PushID(locId.c_str());
+      std::vector<std::string>& ids = order_[locId];
+      const int planned = locais_.slotsFor(locId);
+      ImGui::BeginChild("##loc", {0, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
+      fieldLabel("%s", upperUtf8(std::format("{}. {}{}", li + 1, loc->name,
+                                                                             planned > 0 ? std::format(" · {}/{}", ids.size(), planned)
+                                                                             : !ids.empty() ? std::format(" · {}", ids.size())
+                                                                                            : std::string(" · vazio")))
+                                                              .c_str());
+      ImGui::SameLine(ImGui::GetContentRegionAvail().x - 50);
+      ImGui::BeginDisabled(li == 0);
+      if (ImGui::SmallButton("↑##loc")) moveLocation = {locId, -1};
+      ImGui::EndDisabled();
+      ImGui::SameLine();
+      ImGui::BeginDisabled(li + 1 == locais_.locationOrder.size());
+      if (ImGui::SmallButton("↓##loc")) moveLocation = {locId, 1};
+      ImGui::EndDisabled();
+      if (ImGui::SmallButton("Novo mapa aqui")) {
+        ember::Json fresh = blankDraft();
+        const std::string mapId = scenarioId(locId + "-" + base36Now());
+        int next = -1;
+        for (const std::string& id : ids) next = std::max(next, id == draft_.value("id", "") ? draft_.value("index", 0) : missionInfo(id) ? missionInfo(id)->index : -1);
+        fresh["id"] = mapId, fresh["index"] = next + 1, fresh["title"] = "Novo mapa — " + loc->name, fresh["place"] = loc->name, fresh["locationId"] = locId;
+        setDraft(fresh);
+        ids.push_back(mapId);
+        saveLocais("Mapa novo criado para " + loc->name + " e já na campanha. Salvar mapa grava o conteúdo dele.");
+        showLocations_ = false;
+      }
+      ImGui::SameLine();
+      ImGui::SetNextItemWidth(170);
+      if (ImGui::BeginCombo("##add", "Adicionar mapa…")) {
+        LetterJump jump;
+        jump.begin();
+        for (const MapRef& m : reserve) {
+          if (ImGui::Selectable(std::format("{} · {}##{}", m.title, m.id, m.id).c_str())) transferMission(m.id, locId);
+          jump.item(m.title);
+        }
+        jump.end();
+        ImGui::EndCombo();
+      }
+      if (ImGui::IsItemHovered()) ImGui::SetTooltip("Coloca neste Local um mapa seu já salvo que ainda não está na campanha");
+      ImGui::SameLine();
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##addcampaign", "Adicionar mapa da campanha…")) {
+        LetterJump jump;
+        jump.begin();
+        for (const MapRef& m : campaign) {
+          if (inCampaign.contains(m.id) && std::find(ids.begin(), ids.end(), m.id) == ids.end() &&
+              ImGui::Selectable(std::format("{} · {}##{}", m.title, m.id, m.id).c_str()))
+            transferMission(m.id, locId);
+          if (inCampaign.contains(m.id) && std::find(ids.begin(), ids.end(), m.id) == ids.end()) jump.item(m.title);
+        }
+        jump.end();
+        ImGui::EndCombo();
+      }
+      if (ImGui::IsItemHovered()) ImGui::SetTooltip("Move pra este Local um mapa que já está em outro Local da campanha");
+      hint("Andar 0: entrada. Valores negativos: subsolo. Valores positivos: acima da entrada.");
+      // the campaign's missions (floor 0) and the floors, highest first
+      struct Row {
+        std::string id;
+        int floor = 0, campaignIndex = -1;
+      };
+      std::vector<Row> rowsOf;
+      for (size_t i = 0; i < ids.size(); ++i) rowsOf.push_back({ids[i], 0, static_cast<int>(i)});
+      for (const ember::LocaisFloor& f : locais_.submaps[locId]) rowsOf.push_back({f.missionId, f.floor, -1});
+      std::stable_sort(rowsOf.begin(), rowsOf.end(), [](const Row& a, const Row& b) { return a.floor > b.floor; });
+      std::optional<std::function<void()>> act;
+      const bool table = !rowsOf.empty() && ImGui::BeginTable("##rows", 3, ImGuiTableFlags_SizingFixedFit);
+      if (table) {
+        ImGui::TableSetupColumn("andar", ImGuiTableColumnFlags_WidthFixed, 120);
+        ImGui::TableSetupColumn("map", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("acts", ImGuiTableColumnFlags_WidthFixed, 250);
+      }
+      for (const Row& r : rowsOf) {
+        if (!table) break;
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::PushID(r.id.c_str());
+        const std::optional<MissionInfo> m = missionInfo(r.id);
+        const std::string title = m ? m->title : r.id;
+        ImGui::BeginDisabled(r.campaignIndex >= 0);
+        int floor = r.floor;
+        ImGui::SetNextItemWidth(60);
+        if (ImGui::InputInt("Andar", &floor, 0) && floor != r.floor) act = [this, locId, id = r.id, floor] { setSubmap(locId, id, floor); };
+        ImGui::EndDisabled();
+        ImGui::TableNextColumn();
+        ImGui::TextWrapped("%s", title.c_str());
+        ImGui::TableNextColumn();
+        if (ImGui::SmallButton("Editar")) act = [this, id = r.id] {
+            loadCampaignMap(id);
+            showLocations_ = false;
+          };
+        ImGui::SameLine();
+        if (r.campaignIndex >= 0) {
+          ImGui::BeginDisabled(r.campaignIndex == 0);
+          if (ImGui::SmallButton("↑")) act = [this, locId, i = r.campaignIndex] {
+              std::swap(order_[locId][static_cast<size_t>(i)], order_[locId][static_cast<size_t>(i - 1)]);
+              saveLocais("Ordem salva e aplicada à campanha.");
+            };
+          ImGui::EndDisabled();
+          ImGui::SameLine();
+          ImGui::BeginDisabled(r.campaignIndex + 1 == static_cast<int>(ids.size()));
+          if (ImGui::SmallButton("↓")) act = [this, locId, i = r.campaignIndex] {
+              std::swap(order_[locId][static_cast<size_t>(i)], order_[locId][static_cast<size_t>(i + 1)]);
+              saveLocais("Ordem salva e aplicada à campanha.");
+            };
+          ImGui::EndDisabled();
+        } else {
+          if (ImGui::SmallButton("↑")) act = [this, locId, id = r.id, f = r.floor] { setSubmap(locId, id, f == -1 ? 1 : f + 1); };
+          ImGui::SameLine();
+          if (ImGui::SmallButton("↓")) act = [this, locId, id = r.id, f = r.floor] { setSubmap(locId, id, f == 1 ? -1 : f - 1); };
+        }
+        ImGui::SameLine();
+        const std::string key = "location:" + locId + ":" + r.id;
+        if (ImGui::SmallButton("Remover")) {
+          if (r.campaignIndex >= 0) {
+            if (armedDelete_ != key) {
+              armedDelete_ = key;
+              note("Remover? Clique de novo para tirar este mapa de Locais. O arquivo do mapa não será apagado.");
+            } else {
+              armedDelete_.clear();
+              act = [this, locId, id = r.id] {
+                auto& list = order_[locId];
+                list.erase(std::remove(list.begin(), list.end(), id), list.end());
+                note("Mapa removido deste Local. Clique Salvar em Locais para gravar a campanha.");
+              };
+            }
+          } else {
+            act = [this, locId, id = r.id] {
+              auto& list = locais_.submaps[locId];
+              list.erase(std::remove_if(list.begin(), list.end(), [&](const ember::LocaisFloor& f) { return f.missionId == id; }), list.end());
+              saveLocais("Submap removido.");
+            };
+          }
+        }
+        ImGui::PopID();
+      }
+      if (table) ImGui::EndTable();
+      ImGui::Separator();
+      hint("SUBMAPS (ANDARES EXTRAS, FORA DO MENU DE CAMPANHA)");
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##addsub", "Adicionar submap…")) {
+        LetterJump jump;
+        jump.begin();
+        for (const MapRef& m : targets) {
+          if (std::find(ids.begin(), ids.end(), m.id) != ids.end()) continue;
+          const auto& subs = locais_.submaps[locId];
+          if (std::any_of(subs.begin(), subs.end(), [&](const ember::LocaisFloor& f) { return f.missionId == m.id; })) continue;
+          if (ImGui::Selectable(std::format("{} · {}##{}", m.title, m.id, m.id).c_str())) {
+            int top = 0;
+            for (const ember::LocaisFloor& f : subs) top = std::max(top, f.floor);
+            act = [this, locId, id = m.id, top] { setSubmap(locId, id, top + 1); };
+          }
+          jump.item(m.title);
+        }
+        jump.end();
+        ImGui::EndCombo();
+      }
+      ImGui::EndChild();
+      ImGui::PopID();
+      if (act) {
+        (*act)();
+        break;  // the lists changed under the loop
+      }
+    }
+    if (moveLocation) {
+      auto& v = locais_.locationOrder;
+      const auto it = std::find(v.begin(), v.end(), moveLocation->first);
+      const long long i = it - v.begin(), j = i + moveLocation->second;
+      if (it != v.end() && j >= 0 && j < static_cast<long long>(v.size())) std::swap(v[static_cast<size_t>(i)], v[static_cast<size_t>(j)]), saveLocais("Ordem dos Locais salva.");
+    }
+    ImGui::End();
+  }
+
+  // --- R-Encounter (random encounters by region) --------------------------------------------------------------------------
+
+  void saveRegions() {
+    if (!locais_.saveRegions()) return note("Não foi possível gravar " + ember::Locais::regionsFile().generic_string() + ".");
+    if (callbacks_.locaisSaved) callbacks_.locaisSaved();
+    note("Regiões de R-Encounter atualizadas.");
+  }
+  void drawEncounters() {
+    const ImGuiIO& io = ImGui::GetIO();
+    ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f}, ImGuiCond_Appearing, {0.5f, 0.5f});
+    ImGui::SetNextWindowSize({560, io.DisplaySize.y * 0.85f}, ImGuiCond_Appearing);
+    if (!ImGui::Begin("R-Encounter", &showEncounters_, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings)) return ImGui::End();
+    hint("Encontros separados da campanha. Regiões são grupos livres para receber novos biomas depois.");
+    ImGui::SetNextItemWidth(220);
+    ImGui::InputTextWithHint("##regionname", "Nome da nova região", regionName_, sizeof(regionName_));
+    ImGui::SameLine();
+    if (ImGui::Button("Nova região") && regionName_[0]) {
+      const std::string id = scenarioId(regionName_);
+      if (std::any_of(locais_.regions.begin(), locais_.regions.end(), [&](const ember::EncounterRegion& r) { return r.id == id; })) {
+        note("Já existe uma região com esse nome.");
+      } else {
+        std::string name = regionName_;
+        while (!name.empty() && std::isspace(static_cast<unsigned char>(name.back()))) name.pop_back();
+        locais_.regions.push_back({id, name, {}});
+        regionName_[0] = 0;
+        saveRegions();
+      }
+    }
+    std::set<std::string> assigned;
+    for (const ember::EncounterRegion& r : locais_.regions) assigned.insert(r.encounterIds.begin(), r.encounterIds.end());
+    const std::vector<MapRef> reserve = reserveRefs();
+    std::optional<std::function<void()>> act;
+    for (size_t ri = 0; ri < locais_.regions.size() && !act; ++ri) {
+      ember::EncounterRegion& region = locais_.regions[ri];
+      ImGui::PushID(region.id.c_str());
+      ImGui::BeginChild("##region", {0, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
+      fieldLabel("%s · %d encontro%s", upperUtf8(region.name).c_str(), static_cast<int>(region.encounterIds.size()),
+                         region.encounterIds.size() == 1 ? "" : "s");
+      ImGui::SameLine(ImGui::GetContentRegionAvail().x - 60);
+      const std::string key = "region:" + region.id;
+      if (ImGui::SmallButton(armedDelete_ == key ? "Remover?" : "✕##region")) {
+        if (armedDelete_ != key) {
+          armedDelete_ = key;
+          note(std::format("Remover a região {}? Clique de novo. Os mapas não serão apagados.", region.name));
+        } else {
+          armedDelete_.clear();
+          act = [this, ri] {
+            locais_.regions.erase(locais_.regions.begin() + static_cast<long>(ri));
+            saveRegions();
+          };
+        }
+      }
+      if (ImGui::SmallButton("Novo encontro")) act = [this, ri] {
+          ember::EncounterRegion& r = locais_.regions[ri];
+          const std::string id = scenarioId("random-" + r.id + "-" + base36Now());
+          r.encounterIds.push_back(id);
+          saveRegions();
+          ember::Json fresh = blankDraft();
+          const std::string suffix = id.substr(std::min(id.size(), std::string("random-" + r.id + "-").size()));
+          fresh["id"] = id, fresh["index"] = 0, fresh["title"] = std::format("Encontro em {} · {}", r.name, suffix), fresh["place"] = r.name, fresh["locationId"] = "";
+          setDraft(fresh);
+          showEncounters_ = false;
+          note(std::format("Novo encontro criado em {}. Salve o mapa para gravar o conteúdo.", r.name));
+        };
+      ImGui::SameLine();
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##addsaved", "Adicionar mapa salvo…")) {
+        LetterJump jump;
+        jump.begin();
+        for (const MapRef& m : reserve) {
+          if (!assigned.contains(m.id) && ImGui::Selectable(std::format("{} · {}##{}", m.title, m.id, m.id).c_str()))
+            act = [this, ri, id = m.id] {
+              locais_.regions[ri].encounterIds.push_back(id);
+              saveRegions();
+            };
+          if (!assigned.contains(m.id)) jump.item(m.title);
+        }
+        jump.end();
+        ImGui::EndCombo();
+      }
+      if (region.encounterIds.empty()) hint("Nenhum encontro nesta região ainda.");
+      for (size_t k = 0; k < region.encounterIds.size(); ++k) {
+        const std::string id = region.encounterIds[k];
+        ImGui::PushID(static_cast<int>(k));
+        std::string title = id;
+        for (const MapRef& m : reserve)
+          if (m.id == id) title = m.title;
+        hint("%d.", static_cast<int>(k + 1));
+        ImGui::SameLine();
+        if (ImGui::Selectable(title.c_str(), false, 0, {ImGui::GetContentRegionAvail().x - 90, 0})) act = [this, id] {
+            if (const auto f = newestFile(id)) openFile(*f, std::format("Aberto o encontro \"{}\".", id)), showEncounters_ = false;
+          };
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Abrir encontro no editor");
+        ImGui::SameLine();
+        ImGui::BeginDisabled(k == 0);
+        if (ImGui::SmallButton("↑")) act = [this, ri, k] {
+            std::swap(locais_.regions[ri].encounterIds[k], locais_.regions[ri].encounterIds[k - 1]);
+            saveRegions();
+          };
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        ImGui::BeginDisabled(k + 1 == region.encounterIds.size());
+        if (ImGui::SmallButton("↓")) act = [this, ri, k] {
+            std::swap(locais_.regions[ri].encounterIds[k], locais_.regions[ri].encounterIds[k + 1]);
+            saveRegions();
+          };
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        if (ImGui::SmallButton("✕")) act = [this, ri, k] {
+            locais_.regions[ri].encounterIds.erase(locais_.regions[ri].encounterIds.begin() + static_cast<long>(k));
+            saveRegions();
+          };
+        ImGui::PopID();
+      }
+      ImGui::EndChild();
+      ImGui::PopID();
+    }
+    if (act) (*act)();
+    ImGui::End();
+  }
+
+  // --- state ---------------------------------------------------------------------------------------------------------------
+
+  Services services_;
+  MapStageOptions base_;
+  CampaignPaths paths_;
+  const ember::Campaign& campaign_;
+  Callbacks callbacks_;
+  std::optional<ember::BoardData> data_;
+  ember::EditorCatalog catalog_;
+  EditorTables editor_;
+  ember::DressTables dress_;
+  ember::Locais locais_;
+  std::map<std::string, std::vector<std::string>> order_;  // Locais: each location's missions as edited
+  ember::Json draft_;
+  static constexpr size_t kHistory = 20;  // Desfazer / Refazer reach this many steps back
+  std::deque<ember::Json> past_, future_;
+  std::chrono::steady_clock::time_point lastEdit_{};
+  bool dirty_ = false;
+  ember::Json previewWeatherBase_;  // full last-applied draft excluding live weather settings
+  ember::Json previewSettings_;  // the draft's settings the open preview was made with (previewSettings)
+  // The brush stroke (Terreno / Elevação dragged over the preview): the hexes painted so far, the last one, the hexes raised.
+  // Personagens: what a click in Herói / Inimigo places (a named hero's name or "", class), and the palette's search.
+  std::pair<std::string, std::string> allyBrush_{"", "swordsman"}, enemyBrush_{"", "miliciaV2"};
+  char unitSearch_[64] = {};
+  bool stroking_ = false, strokeEdited_ = false;
+  std::set<int> strokeCells_, strokeRaised_;
+  std::optional<std::pair<int, int>> strokeLast_;
+  std::unique_ptr<MapStage> preview_;
+  std::optional<std::pair<int, int>> pendingClick_, hover_;
+  std::optional<glm::vec3> pendingPoint_;
+  std::optional<std::pair<std::optional<std::pair<int, int>>, bool>> pendingRelease_;
+  std::optional<HeldUnit> heldUnit_;
+  std::optional<ember::Json> heldDeco_;
+  std::future<std::optional<MissionEntry>> playtest_;
+  std::vector<std::future<std::string>> exports_;  // Salvar / Ativar: the game's files for a map (their notes when done)
+  std::future<std::map<std::string, Scenario>> scan_;
+  std::map<std::string, Scenario> saved_;
+  std::vector<SavedFile> files_;  // the draft's id's saved serials
+  std::string playtestError_;
+  // Cutscenes tab: the scripts in content/cutscenes, the one open (its document in memory until Salvar), the "Mover" step
+  // waiting for a hex from the preview.
+  std::vector<std::string> cutFiles_;
+  bool cutScanned_ = false, cutDirty_ = false;
+  std::string cutId_, cutError_;
+  ember::Json cutDoc_;
+  std::optional<int> cutPickStep_;
+  std::string script_;  // captures: clicks to apply (previewEdits)
+  std::string note_, armedDelete_, pendingDialog_;
+  std::optional<BigNote> bigNote_;
+  std::optional<float> scrollTo_;
+  float panelWidth_ = 500;
+  int frames_ = 0;
+  DialogEditorUi dialogUi_;
+  bool showPreview_ = true, showTechnical_ = false, gridSquare_ = false, showLocations_ = false, showEncounters_ = false;
+  char regionName_[96] = {};
+  std::set<std::string> shuffleExclude_;
+  // the brushes
+  ember::tempo::Config tempoPreviewConfig_{};
+  ember::tempo::Timeline tempoPreviewTimeline_;
+  ember::TempoPanel tempoPreviewPanel_;
+  int tempoPreviewDay_=0, tempoPreviewHour_=8, tempoPreviewMinute_=0;
+  Mode mode_ = Mode::Paint;
+  Tab tab_ = Tab::Terrain;
+  std::string brush_ = "plains";
+  int variant_ = 0;
+  bool cityMode_ = false, turning_ = false, turningDeco_ = false;
+  int elevationTool_ = 0, elevationLevel_ = 0, elevationRadius_ = 0;
+  bool architectureDecorations_ = false, thickWalls_ = false, wallVertical_ = false;
+  int wallTool_ = 0;  // 3D Walls: 0 a click places one piece, 1 Traçar parede (a drag lays a run), 2 Fechar sala (a drag lays a room)
+  std::optional<std::pair<int, int>> wallDragFrom_;  // the run's first hex while the left button is held on the preview
+  std::string decoBrush_ = "dead-tree", decoSection_ = "Todas";
+  char search_[64] = {};
+  std::string decoSection3d_ = "Todas";  // the 3D Decorations tab's own section and search (2D and 3D never mixed)
+  char search3d_[64] = {};
+  std::map<std::string, std::string> modelThumbs_;  // id: its thumbnail, looked up once (modelThumb)
+  std::optional<ember::Json> selected_;
+  std::string summonBrush_ = "familiar", npcBrush_ = "breadLady";
+  bool summonNeutral_ = false;
+};
+
+}  // namespace ember

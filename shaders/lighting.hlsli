@@ -243,7 +243,11 @@ float probeRoom(MeshFrame f, float3 p) {
 }
 
 // The sky's (or the hemisphere's) irradiance facing `n`: what lights every surface outside a room.
-float3 outsideIrradiance(MeshFrame f, float3 n) {
+float3 outsideIrradiance(MeshFrame f, float3 n, float3 position) {
+  if(rdr2On(f) && (f.cloudFlags&32u)==0) {
+    const float scale=probesAddress(f)!=0?f.exposure:vk::RawBufferLoad<float4>(loadAtmosphere(f).ambient).w;
+    return rdr2ProbeIrradiance(f,position,n,false)*scale;
+  }
   if (f.atmosphere != 0) {
     if (probesAddress(f) == 0) return skyIrradiance(f, n);
     // A map with a room (Luz das janelas) sets the passes' ambient to 0 (the probes carry the sky inside): outside the room read the
@@ -257,15 +261,16 @@ float3 outsideIrradiance(MeshFrame f, float3 n) {
   }
   return lerp(f.groundColor, f.skyColor, n.y * 0.5 + 0.5) * f.ambientIntensity;
 }
+float3 outsideIrradiance(MeshFrame f,float3 n){return outsideIrradiance(f,n,f.cameraPosition);}
 // `room` (probeRoom): 1 inside the room (its probes), 0 outside (the sky, as on any map: the yard a muralha rings, the
 // Monastery, 2026-10-29), blended at the mask's edge.
 float3 indirectDiffuse(MeshFrame f, Surface s, float room) {
   if (probesAddress(f) != 0 && room > 0.0) {
     bool found;
     const float3 probe = probeIrradiance(f, s.position, s.normal, found);
-    return room >= 1.0 ? probe : lerp(outsideIrradiance(f, s.normal), probe, room);
+    return room >= 1.0 ? probe : lerp(outsideIrradiance(f, s.normal, s.position), probe, room);
   }
-  return outsideIrradiance(f, s.normal);
+  return outsideIrradiance(f, s.normal, s.position);
 }
 float3 indirectDiffuse(MeshFrame f, Surface s) { return indirectDiffuse(f, s, probesAddress(f) != 0 ? probeRoom(f, s.position) : 1.0); }
 
@@ -281,7 +286,8 @@ float2 latLongUv(float3 dir) {
 }
 // (the sample in its own helper, the coordinate finished first: the DXC gotcha of volumeSampleAt)
 float3 skyReflectSample(MeshFrame f, float2 uv, float lod) {
-  return gTextures[NonUniformResourceIndex(f.skyReflect)].SampleLevel(gSamplers[f.materialSampler], uv, lod).rgb;
+  const float3 value=gTextures[NonUniformResourceIndex(f.skyReflect)].SampleLevel(gSamplers[f.materialSampler],uv,lod).rgb;
+  return (f.cloudFlags&32u)!=0?value/max(f.exposure,1e-8):value;
 }
 // Prefiltered sky radiance along `dir` for a surface of `roughness`, on the same scale as the SH ambient (CSAmbient
 // stores its scale in the ambient record's first w).
@@ -296,6 +302,9 @@ float3 skyReflection(MeshFrame f, float3 dir, float roughness) {
 // polished stone, metal see the real sky, clouds and all), else the sky's irradiance there / pi (a rough reflection;
 // the hemisphere's uniform radiance E / pi without the atmosphere).
 float3 outsideReflection(MeshFrame f, Surface s, float3 reflected) {
+  if(rdr2On(f) && (f.cloudFlags&32u)==0 && probesAddress(f)==0 && s.roughness<.18) {
+    return rdr2CubeSample(f,reflected)*vk::RawBufferLoad<float4>(loadAtmosphere(f).ambient).w;
+  }
   if (f.atmosphere != 0) {
     if (probesAddress(f) != 0) return outsideIrradiance(f, reflected) / kPi;  // the reflection map's scale is 0 on a room map
     if (f.skyReflect != kNoTexture) return skyReflection(f, reflected, s.roughness);

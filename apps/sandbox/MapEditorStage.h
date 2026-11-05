@@ -3340,7 +3340,7 @@ class MapEditorStage : public Stage {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     constexpr std::string_view decor = "/game/decorations/", ownTexture = "/ember/";  // "/ember/x": the game's own content/x (Cooker architecture)
     constexpr std::string_view ownGround = "content/ground/", ownModel = "content/ui/thumbs3d/";
-    const std::filesystem::path projectRoot = base_.artRoot.parent_path().parent_path().parent_path();
+    const std::filesystem::path projectRoot = base_.artRoot.parent_path().parent_path();
     const std::filesystem::path own = thumb.starts_with(decor) ? std::filesystem::path("decoracoes-2d") / thumb.substr(decor.size())
                                       : thumb.starts_with(ownTexture)                               ? projectRoot / "content" / thumb.substr(ownTexture.size())
                                       : thumb.starts_with(ownGround) || thumb.starts_with(ownModel) ? projectRoot / thumb
@@ -3578,7 +3578,7 @@ class MapEditorStage : public Stage {
     auto it = modelThumbs_.find(id);
     if (it == modelThumbs_.end()) {
       const std::string own = "content/ui/thumbs3d/" + id + ".png";
-      const std::filesystem::path projectRoot = base_.artRoot.parent_path().parent_path().parent_path();
+      const std::filesystem::path projectRoot = base_.artRoot.parent_path().parent_path();
       it = modelThumbs_.emplace(id, std::filesystem::exists(projectRoot / own) ? own : editor_.decoThumb[id]).first;
     }
     return it->second;
@@ -3694,10 +3694,22 @@ class MapEditorStage : public Stage {
       ImGui::BeginGroup();
       const bool model = !m.model3d.empty();
       const std::string thumb = model ? (m.props3d && m.wallTexture.empty() ? modelThumb(id) : m.wallTexture) : editor_.decoThumb[id];
-      if (thumbButton(("##d" + id).c_str(), thumb, "#333333", cell, decoBrush_ == id, std::format("{} · {} hexes", decoName(id), catalog_.decoration(id) ? catalog_.decoration(id)->footprint.size() : 0),
-                      model ? "3D" : nullptr))
+      const auto* def = catalog_.decoration(id);
+      const std::string modelFile = def && def->model ? def->model->file : std::string();
+      const bool missingModel = modelFile.starts_with("/game/") && modelFile.size() > 10 &&
+          services_.assets.name(assetId("meshes/" + modelFile.substr(6, modelFile.size() - 10) + ".mesh")).empty();
+      const std::string tip = std::format("{} · {} hexes{}", decoName(id), def ? def->footprint.size() : 0,
+          missingModel ? " · Modelo ausente do pacote: a miniatura foi preservada" : "");
+      if (thumbButton(("##d" + id).c_str(), thumb, "#333333", cell, decoBrush_ == id, tip, model ? "3D" : nullptr)) {
         decoBrush_ = id, selected_.reset(), turningDeco_ = false;
+        if (missingModel) note(std::format("{}: modelo ausente do pacote. A miniatura e as colocações estão preservadas.", decoName(id)));
+      }
       const ImVec2 thumbMin = ImGui::GetItemRectMin(), thumbMax = ImGui::GetItemRectMax();
+      if (missingModel) {
+        ImDrawList* dl = ImGui::GetWindowDrawList();
+        dl->AddRectFilled({thumbMin.x, thumbMax.y - 17}, thumbMax, IM_COL32(70, 35, 20, 240));
+        dl->AddText({thumbMin.x + 3, thumbMax.y - 17}, IM_COL32(255, 220, 170, 255), "Sem modelo");
+      }
       if (!model) {
         // the dice: in Gerar terreno's draw or out of it
         const ImVec2 corner = ImGui::GetItemRectMax();

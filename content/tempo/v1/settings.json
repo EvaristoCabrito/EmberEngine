@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "enabled": true,
+  "chaosMilli": 500,
+  "yearDays": 365,
+  "note": "Tempo starts enabled. Chaos uses thousandths; 500 = 0.5."
+}

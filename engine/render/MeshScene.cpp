@@ -129,20 +129,23 @@ const MeshHeader* MeshScene::header(MeshId id) const {
 }
 
 bool MeshScene::placeable() const {
+  // Placement needs bounds and material slots, never texture or GPU residency.
+  // Otherwise one texture awaiting GPU memory hides every object, even on a
+  // small map below the regional streaming budget. Resident instances are
+  // rebuilt by update() when each geometry upload finishes.
   for (const auto& mesh : meshes_)
-    if (!mesh->failed && !(streamingGeometry() ? mesh->parsed : mesh->uploaded)) return false;
-  // Regional placement needs only mesh bounds and material slots. Waiting for every
-  // texture here blocks instance placement, sight initialization and enemy visibility
-  // when texture residency is limited by the GPU budget.
-  if (streamingGeometry()) return true;
-  for (const auto& [id, texture] : textures_)
-    if (!texture->failed && texture->index == kNoTextureIndex) return false;
+    if (!mesh->failed && !mesh->parsed) return false;
   return true;
 }
 
 bool MeshScene::ready() const {
-  // A gated scene also waits for the first streaming pass: every texture at the size it needs, or the budget reached.
-  return placeable() && (!gated_ || (open_ && settled_));
+  for (const auto& mesh : meshes_)
+    if (!mesh->failed && !(streamingGeometry() ? mesh->parsed : mesh->uploaded)) return false;
+  if (!streamingGeometry())
+    for (const auto& [id, texture] : textures_)
+      if (!texture->failed && texture->index == kNoTextureIndex) return false;
+  // A gated scene also waits for the first streaming pass.
+  return !gated_ || (open_ && settled_);
 }
 
 std::pair<uint32_t, uint32_t> MeshScene::progress() const {

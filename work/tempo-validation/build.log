@@ -1,0 +1,65 @@
+[0/2] Re-checking globbed directories...
+[1/101] Scanning C:\EmberEngine\tools\TempoCheck.cpp for CXX dependencies
+[2/101] Scanning C:\EmberEngine\engine\world\Campaign.cpp for CXX dependencies
+[3/101] Generating CXX dyndep file tools\CMakeFiles\TempoCheck.dir\CXX.dd
+[4/101] Generating CXX dyndep file engine\CMakeFiles\EmberEngine.dir\CXX.dd
+[5/14] Building CXX object tools\CMakeFiles\TempoCheck.dir\TempoCheck.cpp.obj
+[6/14] Linking CXX executable bin\TempoCheck.exe
+[7/14] Building CXX object engine\CMakeFiles\EmberEngine.dir\world\Campaign.cpp.obj
+C:\EmberEngine\engine\world\Campaign.cpp(93): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+[8/14] Linking CXX static library engine\EmberEngine.lib
+[9/14] Linking CXX executable bin\TurnClockCheck.exe
+[10/14] Scanning C:\EmberEngine\apps\sandbox\main.cpp for CXX dependencies
+[11/14] Generating CXX dyndep file apps\sandbox\CMakeFiles\Sandbox.dir\CXX.dd
+[12/14] Building CXX object apps\sandbox\CMakeFiles\Sandbox.dir\main.cpp.obj
+C:\EmberEngine\apps\sandbox\BattleStage.h(346): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\GamePrefs.h(47): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\engine\render/UiArt.h(206): warning C4996: 'std::filesystem::u8path': warning STL4021: The std::filesystem::u8path() overloads are deprecated in C++20. The constructors of std::filesystem::path provide equivalent functionality via construction from u8string, u8string_view, or iterators with value_type char8_t. You can define _SILENCE_CXX20_U8PATH_DEPRECATION_WARNING or _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS to suppress this warning.
+C:\EmberEngine\apps\sandbox\QuestLog.h(110): warning C4244: 'inicializando': conversão de 'int' para 'float', possível perda de dados
+C:\EmberEngine\apps\sandbox\QuestLog.h(110): warning C4244: 'inicializando': conversão de 'int' para 'const float', possível perda de dados
+C:\EmberEngine\apps\sandbox\DevGfxSettings.h(69): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapStage.h(569): warning C4244: '=': conversão de 'genTypeT' para 'T', possível perda de dados
+        with
+        [
+            genTypeT=double
+        ]
+        and
+        [
+            T=float
+        ]
+C:\EmberEngine\apps\sandbox\MapStage.h(570): warning C4244: '=': conversão de 'genTypeT' para 'T', possível perda de dados
+        with
+        [
+            genTypeT=double
+        ]
+        and
+        [
+            T=float
+        ]
+C:\EmberEngine\apps\sandbox\MapStage.h(562): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapStage.h(1180): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapStage.h(3156): warning C4459: a declaração de 'kStep' oculta uma declaração global
+C:\EmberEngine\engine\world/Hex.h(20): note: consulte a declaração de 'ember::kStep'
+C:\EmberEngine\apps\sandbox\MapStage.h(3592): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapStage.h(4112): warning C4189: 'hero': variável local é inicializada mas não referenciada
+C:\EmberEngine\apps\sandbox\MapStage.h(7510): warning C4456: a declaração de 'steps' oculta uma declaração local anterior
+C:\EmberEngine\apps\sandbox\MapStage.h(7455): note: consulte a declaração de 'steps'
+C:\EmberEngine\apps\sandbox\MapStage.h(11236): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\LoadingScreens.h(78): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\CutsceneScreen.h(126): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\CutsceneScreen.h(127): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\InnScreen.h(357): warning C4458: a declaração de 'id' oculta o membro da classe
+C:\EmberEngine\apps\sandbox\InnScreen.h(370): note: consulte a declaração de 'ember::InnScreen::drawQuests::<lambda_1>::id'
+C:\EmberEngine\apps\sandbox\OverworldStage.h(1408): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\OverworldStage.h(1441): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(158): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(187): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(697): warning C4100: 'point': parâmetro não referenciado
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(1907): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(2697): warning C4996: 'std::filesystem::u8path': warning STL4021: The std::filesystem::u8path() overloads are deprecated in C++20. The constructors of std::filesystem::path provide equivalent functionality via construction from u8string, u8string_view, or iterators with value_type char8_t. You can define _SILENCE_CXX20_U8PATH_DEPRECATION_WARNING or _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS to suppress this warning.
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(2718): warning C4996: 'std::filesystem::u8path': warning STL4021: The std::filesystem::u8path() overloads are deprecated in C++20. The constructors of std::filesystem::path provide equivalent functionality via construction from u8string, u8string_view, or iterators with value_type char8_t. You can define _SILENCE_CXX20_U8PATH_DEPRECATION_WARNING or _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS to suppress this warning.
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(2719): warning C4996: 'std::filesystem::u8path': warning STL4021: The std::filesystem::u8path() overloads are deprecated in C++20. The constructors of std::filesystem::path provide equivalent functionality via construction from u8string, u8string_view, or iterators with value_type char8_t. You can define _SILENCE_CXX20_U8PATH_DEPRECATION_WARNING or _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS to suppress this warning.
+C:\EmberEngine\apps\sandbox\TestModeStage.h(673): warning C4244: 'inicializando': conversão de 'int' para 'float', possível perda de dados
+C:\EmberEngine\apps\sandbox\TestModeStage.h(673): warning C4244: 'inicializando': conversão de 'int' para 'const float', possível perda de dados
+C:\EmberEngine\apps\sandbox\main.cpp(989): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+[13/14] Linking CXX executable bin\Sandbox.exe

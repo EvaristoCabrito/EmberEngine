@@ -1,8 +1,0 @@
-Model Information:
-* title:	tree trunk scan
-* source:	https://sketchfab.com/3d-models/tree-trunk-scan-1aeddbf47d9a45328587d920c7038da0
-* author:	JabRomich (https://sketchfab.com/JabRomich)
-
-Model License:
-* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
-* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works

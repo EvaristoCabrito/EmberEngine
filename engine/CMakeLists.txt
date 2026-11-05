@@ -15,6 +15,7 @@ add_library(EmberEngine STATIC
   rhi/Pipeline.cpp
   rhi/GpuTimer.cpp
   rhi/UploadQueue.cpp
+  render/Clouds008.cpp
   render/CloudsRdr2.cpp
   render/Clouds006.cpp
   render/Renderer.cpp
@@ -81,9 +82,9 @@ add_library(EmberEngine STATIC
   world/Campaign.cpp
   world/Locais.cpp
   world/Overworld.cpp
-  world/Underworld.cpp
   world/Atmos2.cpp
   world/Atmos2Service.cpp
+  world/Underworld.cpp
   world/Inn.cpp
   world/Quests.cpp
   world/Companions.cpp

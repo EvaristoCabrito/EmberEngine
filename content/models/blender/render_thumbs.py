@@ -30,6 +30,15 @@ def model_file(url):
                  os.path.join(ROOT, "content", "models", url[len("/game/ember/"):]) if url.startswith("/game/ember/") else ""):
         if path and os.path.exists(path):
             return path
+    # Scanned assets keep resolution variants in a per-model directory; the
+    # cooker also keeps the original URL layout in its versioned staging roots.
+    if url.startswith("/game/ember/"):
+        rel = url[len("/game/ember/"):]
+        family, filename = os.path.split(rel)
+        stem = filename.removesuffix("-v01.glb")
+        variant = os.path.join(ROOT, "content", "models", family, stem, stem + "-2k-v01.glb")
+        if os.path.exists(variant):
+            return variant
     return None
 
 

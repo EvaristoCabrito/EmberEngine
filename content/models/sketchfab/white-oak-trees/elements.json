@@ -1,0 +1,68 @@
+[
+ {
+  "element": "FlorasynthTree.001_1",
+  "file": "white-oak-trees-florasynthtree-001-1-{level}-v01.glb",
+  "size_m": [
+   22.104,
+   20.799,
+   20.288
+  ],
+  "triangles": 404756,
+  "copies": 1
+ },
+ {
+  "element": "FlorasynthTree.001_3",
+  "file": "white-oak-trees-florasynthtree-001-3-{level}-v01.glb",
+  "size_m": [
+   20.36,
+   20.228,
+   17.217
+  ],
+  "triangles": 305626,
+  "copies": 1
+ },
+ {
+  "element": "FlorasynthTree_4",
+  "file": "white-oak-trees-florasynthtree-4-{level}-v01.glb",
+  "size_m": [
+   18.164,
+   14.757,
+   14.086
+  ],
+  "triangles": 146220,
+  "copies": 1
+ },
+ {
+  "element": "grass1.001",
+  "file": "white-oak-trees-grass1-001-{level}-v01.glb",
+  "size_m": [
+   2.087,
+   1.611,
+   1.824
+  ],
+  "triangles": 24,
+  "copies": 3000
+ },
+ {
+  "element": "Landscape.001",
+  "file": "white-oak-trees-landscape-001-{level}-v01.glb",
+  "size_m": [
+   17.97,
+   17.404,
+   11.716
+  ],
+  "triangles": 4900,
+  "copies": 4
+ },
+ {
+  "element": "Landscape",
+  "file": "white-oak-trees-landscape-{level}-v01.glb",
+  "size_m": [
+   78.81,
+   79.489,
+   10.923
+  ],
+  "triangles": 20890,
+  "copies": 1
+ }
+]

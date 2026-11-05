@@ -26,7 +26,7 @@
    {
     "col": 1,
     "row": -1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -46,7 +46,7 @@
    {
     "col": 3,
     "row": -1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -66,7 +66,7 @@
    {
     "col": 4,
     "row": -1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -86,7 +86,7 @@
    {
     "col": 5,
     "row": -1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -106,7 +106,7 @@
    {
     "col": 8,
     "row": -1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -126,7 +126,7 @@
    {
     "col": 9,
     "row": -1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -146,7 +146,7 @@
    {
     "col": 11,
     "row": -1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -166,7 +166,7 @@
    {
     "col": 12,
     "row": -1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -186,7 +186,7 @@
    {
     "col": 13,
     "row": -1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -206,7 +206,7 @@
    {
     "col": 19,
     "row": -1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -226,7 +226,7 @@
    {
     "col": 20,
     "row": -1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -246,7 +246,7 @@
    {
     "col": 2,
     "row": 0,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -266,7 +266,7 @@
    {
     "col": 3,
     "row": 0,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -286,7 +286,7 @@
    {
     "col": 4,
     "row": 0,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -306,7 +306,7 @@
    {
     "col": 5,
     "row": 0,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -326,7 +326,7 @@
    {
     "col": 6,
     "row": 0,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -346,7 +346,7 @@
    {
     "col": 7,
     "row": 0,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -366,7 +366,7 @@
    {
     "col": 8,
     "row": 0,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -386,7 +386,7 @@
    {
     "col": 9,
     "row": 0,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -406,7 +406,7 @@
    {
     "col": 10,
     "row": 0,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -426,7 +426,7 @@
    {
     "col": 11,
     "row": 0,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -446,7 +446,7 @@
    {
     "col": 12,
     "row": 0,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -466,7 +466,7 @@
    {
     "col": 13,
     "row": 0,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -486,7 +486,7 @@
    {
     "col": 14,
     "row": 0,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -506,7 +506,7 @@
    {
     "col": 15,
     "row": 0,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -526,7 +526,7 @@
    {
     "col": 19,
     "row": 0,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -546,7 +546,7 @@
    {
     "col": 20,
     "row": 0,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -566,7 +566,7 @@
    {
     "col": 21,
     "row": 0,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -586,7 +586,7 @@
    {
     "col": 2,
     "row": 1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -606,7 +606,7 @@
    {
     "col": 3,
     "row": 1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -626,7 +626,7 @@
    {
     "col": 4,
     "row": 1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -646,7 +646,7 @@
    {
     "col": 6,
     "row": 1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -666,7 +666,7 @@
    {
     "col": 8,
     "row": 1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -686,7 +686,7 @@
    {
     "col": 10,
     "row": 1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -706,7 +706,7 @@
    {
     "col": 11,
     "row": 1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -726,7 +726,7 @@
    {
     "col": 12,
     "row": 1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -746,7 +746,7 @@
    {
     "col": 14,
     "row": 1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -766,7 +766,7 @@
    {
     "col": 17,
     "row": 1,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -784,7 +784,7 @@
    {
     "col": 19,
     "row": 1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -804,7 +804,7 @@
    {
     "col": 20,
     "row": 1,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -824,7 +824,7 @@
    {
     "col": 16,
     "row": 2,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -842,7 +842,7 @@
    {
     "col": 17,
     "row": 2,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -860,7 +860,7 @@
    {
     "col": 18,
     "row": 2,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -878,7 +878,7 @@
    {
     "col": 23,
     "row": 2,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -898,7 +898,7 @@
    {
     "col": 3,
     "row": 3,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -916,7 +916,7 @@
    {
     "col": 5,
     "row": 3,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -934,7 +934,7 @@
    {
     "col": 6,
     "row": 3,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -952,7 +952,7 @@
    {
     "col": 7,
     "row": 3,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -970,7 +970,7 @@
    {
     "col": 9,
     "row": 3,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -988,7 +988,7 @@
    {
     "col": 10,
     "row": 3,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1006,7 +1006,7 @@
    {
     "col": 11,
     "row": 3,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -1026,7 +1026,7 @@
    {
     "col": 13,
     "row": 3,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1044,7 +1044,7 @@
    {
     "col": 14,
     "row": 3,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1062,7 +1062,7 @@
    {
     "col": 15,
     "row": 3,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1080,7 +1080,7 @@
    {
     "col": 16,
     "row": 3,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1098,7 +1098,7 @@
    {
     "col": 17,
     "row": 3,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1116,7 +1116,7 @@
    {
     "col": 18,
     "row": 3,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1134,7 +1134,7 @@
    {
     "col": 19,
     "row": 3,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1152,7 +1152,7 @@
    {
     "col": 4,
     "row": 4,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1170,7 +1170,7 @@
    {
     "col": 5,
     "row": 4,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1188,7 +1188,7 @@
    {
     "col": 6,
     "row": 4,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1206,7 +1206,7 @@
    {
     "col": 7,
     "row": 4,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1224,7 +1224,7 @@
    {
     "col": 8,
     "row": 4,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1242,7 +1242,7 @@
    {
     "col": 9,
     "row": 4,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1260,7 +1260,7 @@
    {
     "col": 10,
     "row": 4,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1278,7 +1278,7 @@
    {
     "col": 11,
     "row": 4,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1296,7 +1296,7 @@
    {
     "col": 12,
     "row": 4,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -1316,7 +1316,7 @@
    {
     "col": 13,
     "row": 4,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1334,7 +1334,7 @@
    {
     "col": 14,
     "row": 4,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1352,7 +1352,7 @@
    {
     "col": 15,
     "row": 4,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1370,7 +1370,7 @@
    {
     "col": 16,
     "row": 4,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1388,7 +1388,7 @@
    {
     "col": 17,
     "row": 4,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1406,7 +1406,7 @@
    {
     "col": 18,
     "row": 4,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1424,7 +1424,7 @@
    {
     "col": 19,
     "row": 4,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1442,7 +1442,7 @@
    {
     "col": 20,
     "row": 4,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1460,7 +1460,7 @@
    {
     "col": 3,
     "row": 5,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -1480,7 +1480,7 @@
    {
     "col": 4,
     "row": 5,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1498,7 +1498,7 @@
    {
     "col": 5,
     "row": 5,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1516,7 +1516,7 @@
    {
     "col": 6,
     "row": 5,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1534,7 +1534,7 @@
    {
     "col": 7,
     "row": 5,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -1554,7 +1554,7 @@
    {
     "col": 8,
     "row": 5,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1572,7 +1572,7 @@
    {
     "col": 9,
     "row": 5,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1590,7 +1590,7 @@
    {
     "col": 10,
     "row": 5,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1608,7 +1608,7 @@
    {
     "col": 11,
     "row": 5,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -1628,7 +1628,7 @@
    {
     "col": 12,
     "row": 5,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -1648,7 +1648,7 @@
    {
     "col": 13,
     "row": 5,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1666,7 +1666,7 @@
    {
     "col": 14,
     "row": 5,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1684,7 +1684,7 @@
    {
     "col": 15,
     "row": 5,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1702,7 +1702,7 @@
    {
     "col": 16,
     "row": 5,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1720,7 +1720,7 @@
    {
     "col": 17,
     "row": 5,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1738,7 +1738,7 @@
    {
     "col": 18,
     "row": 5,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1756,7 +1756,7 @@
    {
     "col": 19,
     "row": 5,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -1776,7 +1776,7 @@
    {
     "col": 20,
     "row": 5,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -1794,7 +1794,7 @@
    {
     "col": 2,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -1814,7 +1814,7 @@
    {
     "col": 3,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -1834,7 +1834,7 @@
    {
     "col": 4,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -1854,7 +1854,7 @@
    {
     "col": 5,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -1874,7 +1874,7 @@
    {
     "col": 6,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -1894,7 +1894,7 @@
    {
     "col": 7,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -1914,7 +1914,7 @@
    {
     "col": 8,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -1934,7 +1934,7 @@
    {
     "col": 9,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -1954,7 +1954,7 @@
    {
     "col": 10,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -1974,7 +1974,7 @@
    {
     "col": 11,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -1994,7 +1994,7 @@
    {
     "col": 12,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2014,7 +2014,7 @@
    {
     "col": 13,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2034,7 +2034,7 @@
    {
     "col": 14,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2054,7 +2054,7 @@
    {
     "col": 15,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2074,7 +2074,7 @@
    {
     "col": 16,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2094,7 +2094,7 @@
    {
     "col": 17,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2114,7 +2114,7 @@
    {
     "col": 18,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2134,7 +2134,7 @@
    {
     "col": 19,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2154,7 +2154,7 @@
    {
     "col": 20,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2174,7 +2174,7 @@
    {
     "col": 21,
     "row": 6,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2194,7 +2194,7 @@
    {
     "col": 1,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "forest",
     "encounters": [],
     "x": 6.495190528383289,
@@ -2203,7 +2203,7 @@
    {
     "col": 2,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2223,7 +2223,7 @@
    {
     "col": 3,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2243,7 +2243,7 @@
    {
     "col": 4,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2263,7 +2263,7 @@
    {
     "col": 5,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2283,7 +2283,7 @@
    {
     "col": 6,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2303,7 +2303,7 @@
    {
     "col": 7,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2323,7 +2323,7 @@
    {
     "col": 8,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2343,7 +2343,7 @@
    {
     "col": 9,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2363,7 +2363,7 @@
    {
     "col": 10,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2383,7 +2383,7 @@
    {
     "col": 11,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -2401,7 +2401,7 @@
    {
     "col": 12,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -2419,7 +2419,7 @@
    {
     "col": 13,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -2437,7 +2437,7 @@
    {
     "col": 14,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2457,7 +2457,7 @@
    {
     "col": 15,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2477,7 +2477,7 @@
    {
     "col": 16,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2497,7 +2497,7 @@
    {
     "col": 17,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2517,7 +2517,7 @@
    {
     "col": 18,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2537,7 +2537,7 @@
    {
     "col": 19,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2557,7 +2557,7 @@
    {
     "col": 20,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2577,7 +2577,7 @@
    {
     "col": 21,
     "row": 7,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2597,7 +2597,7 @@
    {
     "col": 2,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "forest",
     "encounters": [],
     "x": 8.660254037844386,
@@ -2606,7 +2606,7 @@
    {
     "col": 3,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2626,7 +2626,7 @@
    {
     "col": 4,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2646,7 +2646,7 @@
    {
     "col": 5,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2666,7 +2666,7 @@
    {
     "col": 6,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2686,7 +2686,7 @@
    {
     "col": 7,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2706,7 +2706,7 @@
    {
     "col": 8,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2726,7 +2726,7 @@
    {
     "col": 9,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2746,7 +2746,7 @@
    {
     "col": 10,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2766,7 +2766,7 @@
    {
     "col": 11,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -2784,7 +2784,7 @@
    {
     "col": 12,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -2802,7 +2802,7 @@
    {
     "col": 13,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -2820,7 +2820,7 @@
    {
     "col": 14,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -2838,7 +2838,7 @@
    {
     "col": 15,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -2856,7 +2856,7 @@
    {
     "col": 16,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2876,7 +2876,7 @@
    {
     "col": 17,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2896,7 +2896,7 @@
    {
     "col": 18,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2916,7 +2916,7 @@
    {
     "col": 19,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2936,7 +2936,7 @@
    {
     "col": 20,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2956,7 +2956,7 @@
    {
     "col": 21,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2976,7 +2976,7 @@
    {
     "col": 22,
     "row": 8,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -2996,7 +2996,7 @@
    {
     "col": 2,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "forest",
     "encounters": [],
     "x": 10.825317547305481,
@@ -3005,7 +3005,7 @@
    {
     "col": 3,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3025,7 +3025,7 @@
    {
     "col": 4,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3045,7 +3045,7 @@
    {
     "col": 5,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3065,7 +3065,7 @@
    {
     "col": 6,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3085,7 +3085,7 @@
    {
     "col": 7,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -3103,7 +3103,7 @@
    {
     "col": 8,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3123,7 +3123,7 @@
    {
     "col": 9,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3143,7 +3143,7 @@
    {
     "col": 10,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3163,7 +3163,7 @@
    {
     "col": 11,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -3181,7 +3181,7 @@
    {
     "col": 12,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -3199,7 +3199,7 @@
    {
     "col": 13,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -3217,7 +3217,7 @@
    {
     "col": 14,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -3235,7 +3235,7 @@
    {
     "col": 15,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3255,7 +3255,7 @@
    {
     "col": 16,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3275,7 +3275,7 @@
    {
     "col": 17,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3295,7 +3295,7 @@
    {
     "col": 18,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3315,7 +3315,7 @@
    {
     "col": 19,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3335,7 +3335,7 @@
    {
     "col": 20,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3355,7 +3355,7 @@
    {
     "col": 21,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3375,7 +3375,7 @@
    {
     "col": 22,
     "row": 9,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3395,7 +3395,7 @@
    {
     "col": 3,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "plains",
     "encounters": [
      "random-whispering-reeds",
@@ -3415,7 +3415,7 @@
    {
     "col": 4,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3435,7 +3435,7 @@
    {
     "col": 5,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3455,7 +3455,7 @@
    {
     "col": 6,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3475,7 +3475,7 @@
    {
     "col": 7,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -3493,7 +3493,7 @@
    {
     "col": 8,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3513,7 +3513,7 @@
    {
     "col": 9,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3533,7 +3533,7 @@
    {
     "col": 10,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3553,7 +3553,7 @@
    {
     "col": 11,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -3571,7 +3571,7 @@
    {
     "col": 12,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -3589,7 +3589,7 @@
    {
     "col": 13,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -3607,7 +3607,7 @@
    {
     "col": 14,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -3625,7 +3625,7 @@
    {
     "col": 15,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -3643,7 +3643,7 @@
    {
     "col": 16,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3663,7 +3663,7 @@
    {
     "col": 17,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3683,7 +3683,7 @@
    {
     "col": 18,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3703,7 +3703,7 @@
    {
     "col": 19,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3723,7 +3723,7 @@
    {
     "col": 20,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3743,7 +3743,7 @@
    {
     "col": 21,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3763,7 +3763,7 @@
    {
     "col": 22,
     "row": 10,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3783,7 +3783,7 @@
    {
     "col": 1,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3803,7 +3803,7 @@
    {
     "col": 2,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3823,7 +3823,7 @@
    {
     "col": 3,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "plains",
     "encounters": [
      "random-whispering-reeds",
@@ -3843,7 +3843,7 @@
    {
     "col": 4,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3863,7 +3863,7 @@
    {
     "col": 5,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3883,7 +3883,7 @@
    {
     "col": 6,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3903,7 +3903,7 @@
    {
     "col": 7,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "forest",
     "encounters": [],
     "x": 32.47595264191644,
@@ -3912,7 +3912,7 @@
    {
     "col": 8,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3932,7 +3932,7 @@
    {
     "col": 9,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3952,7 +3952,7 @@
    {
     "col": 10,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -3972,7 +3972,7 @@
    {
     "col": 11,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "forest",
     "encounters": [],
     "x": 49.796460717605214,
@@ -3981,7 +3981,7 @@
    {
     "col": 12,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -3999,7 +3999,7 @@
    {
     "col": 13,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -4017,7 +4017,7 @@
    {
     "col": 14,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -4035,7 +4035,7 @@
    {
     "col": 15,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -4053,7 +4053,7 @@
    {
     "col": 16,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4073,7 +4073,7 @@
    {
     "col": 17,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4093,7 +4093,7 @@
    {
     "col": 18,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4113,7 +4113,7 @@
    {
     "col": 19,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4133,7 +4133,7 @@
    {
     "col": 20,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4153,7 +4153,7 @@
    {
     "col": 21,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4173,7 +4173,7 @@
    {
     "col": 22,
     "row": 11,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4193,7 +4193,7 @@
    {
     "col": 1,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4213,7 +4213,7 @@
    {
     "col": 2,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4233,7 +4233,7 @@
    {
     "col": 3,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4253,7 +4253,7 @@
    {
     "col": 4,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "plains",
     "encounters": [
      "random-whispering-reeds",
@@ -4273,7 +4273,7 @@
    {
     "col": 5,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4293,7 +4293,7 @@
    {
     "col": 6,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4313,7 +4313,7 @@
    {
     "col": 7,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4333,7 +4333,7 @@
    {
     "col": 8,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "forest",
     "encounters": [],
     "x": 34.64101615137754,
@@ -4342,7 +4342,7 @@
    {
     "col": 9,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4362,7 +4362,7 @@
    {
     "col": 10,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4382,7 +4382,7 @@
    {
     "col": 11,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4402,7 +4402,7 @@
    {
     "col": 12,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "forest",
     "encounters": [],
     "x": 51.96152422706631,
@@ -4411,7 +4411,7 @@
    {
     "col": 13,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -4429,7 +4429,7 @@
    {
     "col": 14,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -4447,7 +4447,7 @@
    {
     "col": 15,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -4465,7 +4465,7 @@
    {
     "col": 16,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -4483,7 +4483,7 @@
    {
     "col": 17,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4503,7 +4503,7 @@
    {
     "col": 18,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4523,7 +4523,7 @@
    {
     "col": 19,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4543,7 +4543,7 @@
    {
     "col": 20,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4563,7 +4563,7 @@
    {
     "col": 21,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4583,7 +4583,7 @@
    {
     "col": 22,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4603,7 +4603,7 @@
    {
     "col": 23,
     "row": 12,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4623,7 +4623,7 @@
    {
     "col": 1,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4643,7 +4643,7 @@
    {
     "col": 2,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4663,7 +4663,7 @@
    {
     "col": 3,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4683,7 +4683,7 @@
    {
     "col": 4,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "plains",
     "encounters": [
      "random-whispering-reeds",
@@ -4703,7 +4703,7 @@
    {
     "col": 5,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4723,7 +4723,7 @@
    {
     "col": 6,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4743,7 +4743,7 @@
    {
     "col": 7,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "plains",
     "encounters": [
      "random-whispering-reeds",
@@ -4763,7 +4763,7 @@
    {
     "col": 8,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "forest",
     "encounters": [],
     "x": 36.80607966083864,
@@ -4772,7 +4772,7 @@
    {
     "col": 9,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4792,7 +4792,7 @@
    {
     "col": 10,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4812,7 +4812,7 @@
    {
     "col": 11,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "plains",
     "encounters": [
      "random-whispering-reeds",
@@ -4832,7 +4832,7 @@
    {
     "col": 12,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "forest",
     "encounters": [],
     "x": 54.12658773652741,
@@ -4841,7 +4841,7 @@
    {
     "col": 13,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -4859,7 +4859,7 @@
    {
     "col": 14,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -4877,7 +4877,7 @@
    {
     "col": 15,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -4895,7 +4895,7 @@
    {
     "col": 16,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "mountain",
     "encounters": [
      "random-coldwind-saddle",
@@ -4913,7 +4913,7 @@
    {
     "col": 17,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4933,7 +4933,7 @@
    {
     "col": 18,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4953,7 +4953,7 @@
    {
     "col": 19,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4973,7 +4973,7 @@
    {
     "col": 20,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -4993,7 +4993,7 @@
    {
     "col": 21,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5013,7 +5013,7 @@
    {
     "col": 22,
     "row": 13,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5033,7 +5033,7 @@
    {
     "col": 2,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5053,7 +5053,7 @@
    {
     "col": 3,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5073,7 +5073,7 @@
    {
     "col": 4,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5093,7 +5093,7 @@
    {
     "col": 5,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5113,7 +5113,7 @@
    {
     "col": 6,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "plains",
     "encounters": [
      "random-whispering-reeds",
@@ -5133,7 +5133,7 @@
    {
     "col": 7,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "plains",
     "encounters": [
      "random-whispering-reeds",
@@ -5153,7 +5153,7 @@
    {
     "col": 8,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "plains",
     "encounters": [
      "random-whispering-reeds",
@@ -5173,7 +5173,7 @@
    {
     "col": 9,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "plains",
     "encounters": [
      "random-whispering-reeds",
@@ -5193,7 +5193,7 @@
    {
     "col": 10,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "plains",
     "encounters": [
      "random-whispering-reeds",
@@ -5213,7 +5213,7 @@
    {
     "col": 11,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "plains",
     "encounters": [
      "random-whispering-reeds",
@@ -5233,7 +5233,7 @@
    {
     "col": 12,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "plains",
     "encounters": [
      "random-whispering-reeds",
@@ -5253,7 +5253,7 @@
    {
     "col": 13,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5273,7 +5273,7 @@
    {
     "col": 14,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5293,7 +5293,7 @@
    {
     "col": 15,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5313,7 +5313,7 @@
    {
     "col": 16,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5333,7 +5333,7 @@
    {
     "col": 17,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5353,7 +5353,7 @@
    {
     "col": 18,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5373,7 +5373,7 @@
    {
     "col": 19,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5393,7 +5393,7 @@
    {
     "col": 20,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5413,7 +5413,7 @@
    {
     "col": 21,
     "row": 14,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5433,7 +5433,7 @@
    {
     "col": 1,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5453,7 +5453,7 @@
    {
     "col": 2,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5473,7 +5473,7 @@
    {
     "col": 3,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5493,7 +5493,7 @@
    {
     "col": 4,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5513,7 +5513,7 @@
    {
     "col": 5,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5533,7 +5533,7 @@
    {
     "col": 6,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "plains",
     "encounters": [
      "random-whispering-reeds",
@@ -5553,7 +5553,7 @@
    {
     "col": 7,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5573,7 +5573,7 @@
    {
     "col": 8,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5593,7 +5593,7 @@
    {
     "col": 9,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5613,7 +5613,7 @@
    {
     "col": 10,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "plains",
     "encounters": [
      "random-whispering-reeds",
@@ -5633,7 +5633,7 @@
    {
     "col": 11,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5653,7 +5653,7 @@
    {
     "col": 12,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5673,7 +5673,7 @@
    {
     "col": 13,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5693,7 +5693,7 @@
    {
     "col": 14,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5713,7 +5713,7 @@
    {
     "col": 15,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5733,7 +5733,7 @@
    {
     "col": 16,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5753,7 +5753,7 @@
    {
     "col": 17,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5773,7 +5773,7 @@
    {
     "col": 18,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5793,7 +5793,7 @@
    {
     "col": 19,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5813,7 +5813,7 @@
    {
     "col": 20,
     "row": 15,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5833,7 +5833,7 @@
    {
     "col": 2,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5853,7 +5853,7 @@
    {
     "col": 3,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5873,7 +5873,7 @@
    {
     "col": 4,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5893,7 +5893,7 @@
    {
     "col": 5,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5913,7 +5913,7 @@
    {
     "col": 6,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5933,7 +5933,7 @@
    {
     "col": 7,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5953,7 +5953,7 @@
    {
     "col": 8,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5973,7 +5973,7 @@
    {
     "col": 9,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -5993,7 +5993,7 @@
    {
     "col": 10,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6013,7 +6013,7 @@
    {
     "col": 11,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6033,7 +6033,7 @@
    {
     "col": 12,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6053,7 +6053,7 @@
    {
     "col": 13,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6073,7 +6073,7 @@
    {
     "col": 14,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6093,7 +6093,7 @@
    {
     "col": 15,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6113,7 +6113,7 @@
    {
     "col": 16,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6133,7 +6133,7 @@
    {
     "col": 17,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6153,7 +6153,7 @@
    {
     "col": 18,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6173,7 +6173,7 @@
    {
     "col": 19,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6193,7 +6193,7 @@
    {
     "col": 20,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6213,7 +6213,7 @@
    {
     "col": 21,
     "row": 16,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6233,7 +6233,7 @@
    {
     "col": 2,
     "row": 17,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6253,7 +6253,7 @@
    {
     "col": 3,
     "row": 17,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6273,7 +6273,7 @@
    {
     "col": 4,
     "row": 17,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6293,7 +6293,7 @@
    {
     "col": 6,
     "row": 17,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6313,7 +6313,7 @@
    {
     "col": 7,
     "row": 17,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6333,7 +6333,7 @@
    {
     "col": 8,
     "row": 17,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6353,7 +6353,7 @@
    {
     "col": 9,
     "row": 17,
-    "hours": 3,
+    "hours": 6,
     "region": "forest",
     "encounters": [],
     "x": 41.13620667976083,
@@ -6362,7 +6362,7 @@
    {
     "col": 10,
     "row": 17,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6382,7 +6382,7 @@
    {
     "col": 11,
     "row": 17,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6402,7 +6402,7 @@
    {
     "col": 12,
     "row": 17,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6422,7 +6422,7 @@
    {
     "col": 13,
     "row": 17,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6442,7 +6442,7 @@
    {
     "col": 14,
     "row": 17,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6462,7 +6462,7 @@
    {
     "col": 15,
     "row": 17,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6482,7 +6482,7 @@
    {
     "col": 16,
     "row": 17,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6502,7 +6502,7 @@
    {
     "col": 17,
     "row": 17,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6522,7 +6522,7 @@
    {
     "col": 18,
     "row": 17,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6542,7 +6542,7 @@
    {
     "col": 19,
     "row": 17,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6562,7 +6562,7 @@
    {
     "col": 20,
     "row": 17,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6582,7 +6582,7 @@
    {
     "col": 21,
     "row": 17,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6602,7 +6602,7 @@
    {
     "col": 7,
     "row": 18,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6622,7 +6622,7 @@
    {
     "col": 8,
     "row": 18,
-    "hours": 3,
+    "hours": 6,
     "region": "forest",
     "encounters": [],
     "x": 34.64101615137754,
@@ -6631,7 +6631,7 @@
    {
     "col": 9,
     "row": 18,
-    "hours": 3,
+    "hours": 6,
     "region": "forest",
     "encounters": [],
     "x": 38.97114317029973,
@@ -6640,7 +6640,7 @@
    {
     "col": 10,
     "row": 18,
-    "hours": 3,
+    "hours": 6,
     "region": "forest",
     "encounters": [],
     "x": 43.301270189221924,
@@ -6649,7 +6649,7 @@
    {
     "col": 11,
     "row": 18,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6669,7 +6669,7 @@
    {
     "col": 12,
     "row": 18,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6689,7 +6689,7 @@
    {
     "col": 13,
     "row": 18,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6709,7 +6709,7 @@
    {
     "col": 14,
     "row": 18,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6729,7 +6729,7 @@
    {
     "col": 15,
     "row": 18,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6749,7 +6749,7 @@
    {
     "col": 16,
     "row": 18,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6769,7 +6769,7 @@
    {
     "col": 17,
     "row": 18,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6789,7 +6789,7 @@
    {
     "col": 18,
     "row": 18,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6809,7 +6809,7 @@
    {
     "col": 19,
     "row": 18,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6829,7 +6829,7 @@
    {
     "col": 20,
     "row": 18,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6849,7 +6849,7 @@
    {
     "col": 21,
     "row": 18,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6869,7 +6869,7 @@
    {
     "col": 22,
     "row": 18,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6889,7 +6889,7 @@
    {
     "col": 3,
     "row": 19,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6909,7 +6909,7 @@
    {
     "col": 7,
     "row": 19,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6929,7 +6929,7 @@
    {
     "col": 8,
     "row": 19,
-    "hours": 3,
+    "hours": 6,
     "region": "forest",
     "encounters": [],
     "x": 36.80607966083864,
@@ -6938,7 +6938,7 @@
    {
     "col": 9,
     "row": 19,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6958,7 +6958,7 @@
    {
     "col": 10,
     "row": 19,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6978,7 +6978,7 @@
    {
     "col": 11,
     "row": 19,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -6998,7 +6998,7 @@
    {
     "col": 12,
     "row": 19,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7018,7 +7018,7 @@
    {
     "col": 13,
     "row": 19,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7038,7 +7038,7 @@
    {
     "col": 14,
     "row": 19,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7058,7 +7058,7 @@
    {
     "col": 15,
     "row": 19,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7078,7 +7078,7 @@
    {
     "col": 16,
     "row": 19,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7098,7 +7098,7 @@
    {
     "col": 17,
     "row": 19,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7118,7 +7118,7 @@
    {
     "col": 18,
     "row": 19,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7138,7 +7138,7 @@
    {
     "col": 19,
     "row": 19,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7158,7 +7158,7 @@
    {
     "col": 20,
     "row": 19,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7178,7 +7178,7 @@
    {
     "col": 4,
     "row": 20,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7198,7 +7198,7 @@
    {
     "col": 8,
     "row": 20,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7218,7 +7218,7 @@
    {
     "col": 9,
     "row": 20,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7238,7 +7238,7 @@
    {
     "col": 10,
     "row": 20,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7258,7 +7258,7 @@
    {
     "col": 11,
     "row": 20,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7278,7 +7278,7 @@
    {
     "col": 12,
     "row": 20,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7298,7 +7298,7 @@
    {
     "col": 13,
     "row": 20,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7318,7 +7318,7 @@
    {
     "col": 14,
     "row": 20,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7338,7 +7338,7 @@
    {
     "col": 15,
     "row": 20,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7358,7 +7358,7 @@
    {
     "col": 16,
     "row": 20,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7378,7 +7378,7 @@
    {
     "col": 17,
     "row": 20,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7398,7 +7398,7 @@
    {
     "col": 18,
     "row": 20,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7418,7 +7418,7 @@
    {
     "col": 19,
     "row": 20,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7438,7 +7438,7 @@
    {
     "col": 20,
     "row": 20,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7458,7 +7458,7 @@
    {
     "col": 3,
     "row": 21,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7478,7 +7478,7 @@
    {
     "col": 4,
     "row": 21,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7498,7 +7498,7 @@
    {
     "col": 7,
     "row": 21,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7518,7 +7518,7 @@
    {
     "col": 8,
     "row": 21,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7538,7 +7538,7 @@
    {
     "col": 9,
     "row": 21,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7558,7 +7558,7 @@
    {
     "col": 10,
     "row": 21,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7578,7 +7578,7 @@
    {
     "col": 11,
     "row": 21,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7598,7 +7598,7 @@
    {
     "col": 12,
     "row": 21,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7618,7 +7618,7 @@
    {
     "col": 13,
     "row": 21,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7638,7 +7638,7 @@
    {
     "col": 14,
     "row": 21,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7658,7 +7658,7 @@
    {
     "col": 15,
     "row": 21,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7678,7 +7678,7 @@
    {
     "col": 16,
     "row": 21,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7698,7 +7698,7 @@
    {
     "col": 17,
     "row": 21,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7718,7 +7718,7 @@
    {
     "col": 18,
     "row": 21,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7738,7 +7738,7 @@
    {
     "col": 19,
     "row": 21,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7758,7 +7758,7 @@
    {
     "col": 20,
     "row": 21,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7778,7 +7778,7 @@
    {
     "col": 2,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7798,7 +7798,7 @@
    {
     "col": 3,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7818,7 +7818,7 @@
    {
     "col": 4,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7838,7 +7838,7 @@
    {
     "col": 5,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7858,7 +7858,7 @@
    {
     "col": 6,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7878,7 +7878,7 @@
    {
     "col": 7,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7898,7 +7898,7 @@
    {
     "col": 8,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7918,7 +7918,7 @@
    {
     "col": 9,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7938,7 +7938,7 @@
    {
     "col": 10,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7958,7 +7958,7 @@
    {
     "col": 11,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7978,7 +7978,7 @@
    {
     "col": 12,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -7998,7 +7998,7 @@
    {
     "col": 13,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8018,7 +8018,7 @@
    {
     "col": 14,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8038,7 +8038,7 @@
    {
     "col": 15,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8058,7 +8058,7 @@
    {
     "col": 16,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8078,7 +8078,7 @@
    {
     "col": 17,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8098,7 +8098,7 @@
    {
     "col": 18,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8118,7 +8118,7 @@
    {
     "col": 19,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8138,7 +8138,7 @@
    {
     "col": 20,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8158,7 +8158,7 @@
    {
     "col": 21,
     "row": 22,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8178,7 +8178,7 @@
    {
     "col": 2,
     "row": 23,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8198,7 +8198,7 @@
    {
     "col": 3,
     "row": 23,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8218,7 +8218,7 @@
    {
     "col": 4,
     "row": 23,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8238,7 +8238,7 @@
    {
     "col": 5,
     "row": 23,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8258,7 +8258,7 @@
    {
     "col": 6,
     "row": 23,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8278,7 +8278,7 @@
    {
     "col": 7,
     "row": 23,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8298,7 +8298,7 @@
    {
     "col": 8,
     "row": 23,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8318,7 +8318,7 @@
    {
     "col": 9,
     "row": 23,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8338,7 +8338,7 @@
    {
     "col": 10,
     "row": 23,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8358,7 +8358,7 @@
    {
     "col": 11,
     "row": 23,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8378,7 +8378,7 @@
    {
     "col": 12,
     "row": 23,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8398,7 +8398,7 @@
    {
     "col": 13,
     "row": 23,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8418,7 +8418,7 @@
    {
     "col": 14,
     "row": 23,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8438,7 +8438,7 @@
    {
     "col": 15,
     "row": 23,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8458,7 +8458,7 @@
    {
     "col": 16,
     "row": 23,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8478,7 +8478,7 @@
    {
     "col": 17,
     "row": 23,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8498,7 +8498,7 @@
    {
     "col": 18,
     "row": 23,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8518,7 +8518,7 @@
    {
     "col": 19,
     "row": 23,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8538,7 +8538,7 @@
    {
     "col": 20,
     "row": 23,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8558,7 +8558,7 @@
    {
     "col": 3,
     "row": 24,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8578,7 +8578,7 @@
    {
     "col": 4,
     "row": 24,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8598,7 +8598,7 @@
    {
     "col": 5,
     "row": 24,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8618,7 +8618,7 @@
    {
     "col": 6,
     "row": 24,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8638,7 +8638,7 @@
    {
     "col": 7,
     "row": 24,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8658,7 +8658,7 @@
    {
     "col": 8,
     "row": 24,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8678,7 +8678,7 @@
    {
     "col": 9,
     "row": 24,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8698,7 +8698,7 @@
    {
     "col": 10,
     "row": 24,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8718,7 +8718,7 @@
    {
     "col": 11,
     "row": 24,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8738,7 +8738,7 @@
    {
     "col": 12,
     "row": 24,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8758,7 +8758,7 @@
    {
     "col": 13,
     "row": 24,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8778,7 +8778,7 @@
    {
     "col": 14,
     "row": 24,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8798,7 +8798,7 @@
    {
     "col": 15,
     "row": 24,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8818,7 +8818,7 @@
    {
     "col": 16,
     "row": 24,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8838,7 +8838,7 @@
    {
     "col": 17,
     "row": 24,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8858,7 +8858,7 @@
    {
     "col": 18,
     "row": 24,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8878,7 +8878,7 @@
    {
     "col": 19,
     "row": 24,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8898,7 +8898,7 @@
    {
     "col": 20,
     "row": 24,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8918,7 +8918,7 @@
    {
     "col": 21,
     "row": 24,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8938,7 +8938,7 @@
    {
     "col": 3,
     "row": 25,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8958,7 +8958,7 @@
    {
     "col": 4,
     "row": 25,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8978,7 +8978,7 @@
    {
     "col": 6,
     "row": 25,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -8998,7 +8998,7 @@
    {
     "col": 7,
     "row": 25,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9018,7 +9018,7 @@
    {
     "col": 8,
     "row": 25,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9038,7 +9038,7 @@
    {
     "col": 9,
     "row": 25,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9058,7 +9058,7 @@
    {
     "col": 10,
     "row": 25,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9078,7 +9078,7 @@
    {
     "col": 11,
     "row": 25,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9098,7 +9098,7 @@
    {
     "col": 12,
     "row": 25,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9118,7 +9118,7 @@
    {
     "col": 13,
     "row": 25,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9138,7 +9138,7 @@
    {
     "col": 14,
     "row": 25,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9158,7 +9158,7 @@
    {
     "col": 15,
     "row": 25,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9178,7 +9178,7 @@
    {
     "col": 16,
     "row": 25,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9198,7 +9198,7 @@
    {
     "col": 18,
     "row": 25,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9218,7 +9218,7 @@
    {
     "col": 19,
     "row": 25,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9238,7 +9238,7 @@
    {
     "col": 20,
     "row": 25,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9258,7 +9258,7 @@
    {
     "col": 3,
     "row": 26,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9278,7 +9278,7 @@
    {
     "col": 7,
     "row": 26,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9298,7 +9298,7 @@
    {
     "col": 8,
     "row": 26,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9318,7 +9318,7 @@
    {
     "col": 9,
     "row": 26,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9338,7 +9338,7 @@
    {
     "col": 10,
     "row": 26,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9358,7 +9358,7 @@
    {
     "col": 11,
     "row": 26,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9378,7 +9378,7 @@
    {
     "col": 12,
     "row": 26,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9398,7 +9398,7 @@
    {
     "col": 13,
     "row": 26,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9418,7 +9418,7 @@
    {
     "col": 14,
     "row": 26,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9438,7 +9438,7 @@
    {
     "col": 15,
     "row": 26,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9458,7 +9458,7 @@
    {
     "col": 8,
     "row": 27,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9478,7 +9478,7 @@
    {
     "col": 12,
     "row": 27,
-    "hours": 3,
+    "hours": 6,
     "region": "road",
     "encounters": [
      "random-encounter-5",
@@ -9496,7 +9496,7 @@
     "y": 101.25
    }
   ],
-  "stepHours": 3
+  "stepHours": 6
  },
  "locations": [
   {

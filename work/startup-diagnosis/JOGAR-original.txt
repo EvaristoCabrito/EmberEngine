@@ -1,0 +1,49 @@
+[info] mounted C:\EmberEngine\build\sprites\battle.pak (3274 assets)
+[info] mounted C:\EmberEngine\build\meshes\props-v37.pak (837 assets)
+[info] mounted C:\EmberEngine\build\meshes\architecture.pak (32 assets)
+[info] mounted C:\EmberEngine\build\meshes\effects.pak (5 assets)
+[info] mounted C:\EmberEngine\build\ground\ground-v65.pak (304 assets)
+[info] campaign: save bank C:\Users\evari\AppData\Local\Ember\ember-save-bank.json (4 of 6 slots used)
+[info] overworld: 489 cells, 16 locations, 13 missions
+[info] overworld: 8 road encounters field undead
+[info] startup: data loaded at 128 ms
+[info] startup: window at 158 ms
+[info] GPU: AMD Radeon(TM) RX 6400 (Vulkan 1.4.315, driver 0x800161)
+[info] transfer queue: dedicated (family 2)
+[info] pipeline cache: 18906244 bytes restored for this GPU/driver
+[info] bindless: 65536 textures, 16384 storage images, 256 samplers, 4096 storage buffers
+[info] bindless: creating descriptor set layout
+[info] bindless: descriptor set layout ready
+[info] bindless: creating descriptor pool
+[info] bindless: descriptor pool ready
+[info] bindless: allocating descriptor set
+[info] bindless: descriptor set ready
+[info] bindless: creating pipeline layout
+[info] bindless: ready
+[info] startup: GPU timer ready
+[info] startup: renderer resources begin
+[info] startup: renderer frame buffers ready
+[info] pipeline compute: volumetrics_v1.CSInject creating
+[info] pipeline compute: volumetrics_v1.CSInject ready in 0 ms
+[info] pipeline compute: volumetrics_v1.CSIntegrate creating
+[info] pipeline compute: volumetrics_v1.CSIntegrate ready in 0 ms
+[info] pipeline compute: volumetrics_clouds002.CSMaterial creating
+[info] pipeline compute: volumetrics_clouds002.CSMaterial ready in 1 ms
+[info] pipeline compute: volumetrics_clouds002.CSInject creating
+[info] pipeline compute: volumetrics_clouds002.CSInject ready in 0 ms
+[info] pipeline compute: volumetrics_clouds002.CSIntegrate creating
+[info] pipeline compute: volumetrics_clouds002.CSIntegrate ready in 0 ms
+[info] startup: renderer volumetrics ready
+[info] startup: renderer images and buffers ready
+[info] startup: renderer targets ready
+[info] pipeline graphics: triangle.VSMain + triangle.PSMain creating
+[info] pipeline graphics: triangle.VSMain + triangle.PSMain ready in 0 ms
+[info] pipeline graphics: tonemap.VSMain + tonemap.PSMain creating
+[info] pipeline graphics: tonemap.VSMain + tonemap.PSMain ready in 0 ms
+[info] pipeline graphics: ground.VSMain + ground.PSMain creating
+[info] pipeline graphics: ground.VSMain + ground.PSMain ready in 0 ms
+[info] pipeline graphics: terrain.VSMain + terrain.PSMain creating
+[info] pipeline graphics: terrain.VSMain + terrain.PSMain ready in 1 ms
+[info] pipeline graphics: terrain.VSShadow + terrain.PSShadow creating
+[info] pipeline graphics: terrain.VSShadow + terrain.PSShadow ready in 0 ms
+[info] pipeline graphics: water.VSMain + water.PSMain creating

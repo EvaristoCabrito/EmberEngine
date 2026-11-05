@@ -1,0 +1,63 @@
+[0/2] Re-checking globbed directories...
+[1/244] Scanning C:\EmberEngine\engine\render\Clouds008.cpp for CXX dependencies
+[2/244] Generating CXX dyndep file engine\CMakeFiles\EmberEngine.dir\CXX.dd
+[3/155] Building CXX object engine\CMakeFiles\EmberEngine.dir\render\Clouds008.cpp.obj
+[4/155] Building CXX object engine\CMakeFiles\EmberEngine.dir\debug\PerfOverlay.cpp.obj
+[5/155] Linking CXX static library engine\EmberEngine.lib
+[6/155] Shader triangle.VSMain
+[7/155] Shader tonemap.VSMain
+[8/155] Shader triangle.PSMain
+[9/155] Shader tonemap.PSMain
+[10/155] Shader worldmap.VSMain
+[11/155] Shader ground.VSMain
+[12/155] Shader ground.PSMain
+[13/155] Shader sprites.PSDepth
+FAILED: [code=2147500037] bin/shaders/sprites.PSDepth.spv C:/EmberEngine/build/release/bin/shaders/sprites.PSDepth.spv 
+C:\WINDOWS\system32\cmd.exe /C "cd /D C:\EmberEngine\build\release\apps\sandbox && "C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/EmberEngine/build/release/bin/shaders && C:\VulkanSDK\1.4.363.0\Bin\dxc.exe -spirv -T ps_6_7 -E PSDepth -HV 2021 -fspv-target-env=vulkan1.3 -fvk-use-scalar-layout -Zpr -O3 -I C:/EmberEngine/shaders -Fo C:/EmberEngine/build/release/bin/shaders/sprites.PSDepth.spv C:/EmberEngine/shaders/sprites.hlsl"
+In file included from C:/EmberEngine/shaders/sprites.hlsl:13:
+In file included from C:/EmberEngine/shaders/lighting.hlsli:13:
+In file included from C:/EmberEngine/shaders/clouds.hlsli:267:
+C:/EmberEngine/shaders/clouds_rdr2_data.hlsli:21:18: error: modifiers must appear before type
+    const float2 point=float2((i&1u)?1:-1,(i&2u)?1:-1)*.5;
+                 ^
+C:/EmberEngine/shaders/clouds_rdr2_data.hlsli:21:23: error: expected unqualified-id
+    const float2 point=float2((i&1u)?1:-1,(i&2u)?1:-1)*.5;
+                      ^
+C:/EmberEngine/shaders/clouds_rdr2_data.hlsli:22:37: error: expected expression
+    const float2 at=uv+mul(rotation,point)*texel*radius;
+                                    ^
+
+[14/155] Shader sprites.PSMain
+FAILED: [code=2147500037] bin/shaders/sprites.PSMain.spv C:/EmberEngine/build/release/bin/shaders/sprites.PSMain.spv 
+C:\WINDOWS\system32\cmd.exe /C "cd /D C:\EmberEngine\build\release\apps\sandbox && "C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/EmberEngine/build/release/bin/shaders && C:\VulkanSDK\1.4.363.0\Bin\dxc.exe -spirv -T ps_6_7 -E PSMain -HV 2021 -fspv-target-env=vulkan1.3 -fvk-use-scalar-layout -Zpr -O3 -I C:/EmberEngine/shaders -Fo C:/EmberEngine/build/release/bin/shaders/sprites.PSMain.spv C:/EmberEngine/shaders/sprites.hlsl"
+In file included from C:/EmberEngine/shaders/sprites.hlsl:13:
+In file included from C:/EmberEngine/shaders/lighting.hlsli:13:
+In file included from C:/EmberEngine/shaders/clouds.hlsli:267:
+C:/EmberEngine/shaders/clouds_rdr2_data.hlsli:21:18: error: modifiers must appear before type
+    const float2 point=float2((i&1u)?1:-1,(i&2u)?1:-1)*.5;
+                 ^
+C:/EmberEngine/shaders/clouds_rdr2_data.hlsli:21:23: error: expected unqualified-id
+    const float2 point=float2((i&1u)?1:-1,(i&2u)?1:-1)*.5;
+                      ^
+C:/EmberEngine/shaders/clouds_rdr2_data.hlsli:22:37: error: expected expression
+    const float2 at=uv+mul(rotation,point)*texel*radius;
+                                    ^
+
+[15/155] Shader sprites.VSMain
+FAILED: [code=2147500037] bin/shaders/sprites.VSMain.spv C:/EmberEngine/build/release/bin/shaders/sprites.VSMain.spv 
+C:\WINDOWS\system32\cmd.exe /C "cd /D C:\EmberEngine\build\release\apps\sandbox && "C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/EmberEngine/build/release/bin/shaders && C:\VulkanSDK\1.4.363.0\Bin\dxc.exe -spirv -T vs_6_7 -E VSMain -HV 2021 -fspv-target-env=vulkan1.3 -fvk-use-scalar-layout -Zpr -O3 -I C:/EmberEngine/shaders -Fo C:/EmberEngine/build/release/bin/shaders/sprites.VSMain.spv C:/EmberEngine/shaders/sprites.hlsl"
+In file included from C:/EmberEngine/shaders/sprites.hlsl:13:
+In file included from C:/EmberEngine/shaders/lighting.hlsli:13:
+In file included from C:/EmberEngine/shaders/clouds.hlsli:267:
+C:/EmberEngine/shaders/clouds_rdr2_data.hlsli:21:18: error: modifiers must appear before type
+    const float2 point=float2((i&1u)?1:-1,(i&2u)?1:-1)*.5;
+                 ^
+C:/EmberEngine/shaders/clouds_rdr2_data.hlsli:21:23: error: expected unqualified-id
+    const float2 point=float2((i&1u)?1:-1,(i&2u)?1:-1)*.5;
+                      ^
+C:/EmberEngine/shaders/clouds_rdr2_data.hlsli:22:37: error: expected expression
+    const float2 at=uv+mul(rotation,point)*texel*radius;
+                                    ^
+
+[16/155] Shader worldmap.PSMain
+ninja: build stopped: subcommand failed.

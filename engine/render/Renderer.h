@@ -41,6 +41,7 @@ struct LocalLight {
 class Swapchain;
 class DebugUi;
 class CloudsRdr2;
+class Clouds008;
 
 // Frame renderer. Everything is drawn into the renderer's own HDR targets (scene colour in
 // half-float, reversed-Z depth); a final pass tonemaps into an 8-bit output image that is copied
@@ -393,11 +394,13 @@ class Renderer {
     // scattering, temporal reconstruction, a blurred shadow map. `quality` 0 Ultra .. 3 Low changes only the resolution and
     // the step counts, never the look.
     bool rdr2 = false;
+    bool look008 = false;
     int quality = 0;
     float anvilTop = 1100.0f, cirrusHeight = 2600.0f;  // world heights (the caller adds the mean ground)
     float cirrusCoverage = 0.25f, kind = 0.65f, growth = 0.0f, rain = 0.0f, lightning = 0.0f;
   };
   void setClouds(const Clouds& clouds) { clouds_ = clouds; }
+  Clouds008* clouds008() { return clouds008_.get(); }
   CloudsRdr2* cloudsRdr2() { return cloudsRdr2_.get(); }
   // The real night sky (render/StarSky.h; star look 4): the catalogue's stars as world directions this frame, the galactic frame
   // for the Milky Way (strength `milkyWay`, 0 = none), the two Magellanic clouds (direction, radius in radians; 0 = none).
@@ -548,6 +551,7 @@ class Renderer {
   std::vector<VkImageView> skyReflectLevelViews_;
   std::vector<uint32_t> skyReflectLevelIndices_;
   uint32_t skyReflectSampled_ = kNoIndex;
+  VkPipeline cloud008ReflectPipeline_ = VK_NULL_HANDLE, cloud008ReflectFilterPipeline_ = VK_NULL_HANDLE;
   VkPipeline skyReflectBasePipeline_ = VK_NULL_HANDLE, skyReflectFilterPipeline_ = VK_NULL_HANDLE;
   bool skyReflection_ = true, skyReflectReady_ = false, skyReflectThisFrame_ = false;
   // The room's light probes (setProbes): the bake (staged once into a device buffer), relit every frame into probeOutput_.
@@ -629,11 +633,11 @@ class Renderer {
   float shadowFilterTexels_ = 1.6f;
   bool shadowsThisFrame_ = false;          // the shadow map is drawn this frame
   std::array<float, 8> shadowKey_{};       // what the cached shadow map was drawn for
+  glm::vec3 shadowSun_{0.0f, 1.0f, 0.0f};  // the sun the cached shadow map was drawn for (redrawn past kShadowSunStep)
   VkDeviceAddress shadowTerrain_ = 0;
   uint32_t background_ = 0xFFFFFFFFu;  // setBackground
   uint32_t backgroundMode_ = 0;
   glm::vec4 backdropFitA_{0.0f}, backdropFitB_{0.0f};
-  glm::vec3 shadowSun_{0.0f, 1.0f, 0.0f};  // the sun the cached shadow map was drawn for (redrawn past kShadowSunStep)
   BackdropPlane backdropPlane_;
   uint32_t lightingLayers_ = 0xFFFFFFFFu;
   TerrainView terrain_;
@@ -713,6 +717,7 @@ class Renderer {
   bool volumetricsThisFrame_ = false;
   // Nuvens RDR2 (made on first use; its passes run after the sky tables, before anything reads the cloud shadow).
   std::unique_ptr<CloudsRdr2> cloudsRdr2_;
+  std::unique_ptr<Clouds008> clouds008_;
   bool cloudsRdr2ThisFrame_ = false;
 };
 

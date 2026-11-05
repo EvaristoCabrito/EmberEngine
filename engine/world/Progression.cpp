@@ -136,10 +136,13 @@ void applyRank(BattleUnit& u) {
   if (!dodge) u.skills.emplace_back("dodging", skill);
   static const char* kElements[] = {"fire", "lightning", "ice", "arcane", "darkness", "holy", "poison", "ember"};
   for (const char* e : kElements) {
+    // Fixed plant resistances do not scale with level or enemy rank.
+    const bool fixed = u.classId == "carnivorousPlant" || (u.classId == "sapling" && std::string(e) == "fire");
+    const double fixedValue = std::string(e) == "fire" ? 0.0 : 70.0;
     bool found = false;
     for (auto& [id, v] : u.combat.resistances)
-      if (id == e) v += skill, found = true;
-    if (!found) u.combat.resistances.emplace_back(e, skill);
+      if (id == e) v = fixed ? fixedValue : v + skill, found = true;
+    if (!found) u.combat.resistances.emplace_back(e, fixed ? fixedValue : skill);
   }
 }
 

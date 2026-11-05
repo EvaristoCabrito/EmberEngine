@@ -1,13 +1,101 @@
 [
  {
-  "element": "part0",
-  "file": "scanned-plants-and-grass-part0-{level}-v01.glb",
+  "element": "part15",
+  "file": "scanned-plants-and-grass-ground-cover-bunch-{level}-v01.glb",
   "size_m": [
-   14.174,
-   15.06,
+   4.956,
+   4.889,
+   2.287
+  ],
+  "triangles": 77425,
+  "copies": 1
+ },
+ {
+  "element": "part16",
+  "file": "scanned-plants-and-grass-ground-cover-bunch-2-{level}-v01.glb",
+  "size_m": [
+   4.608,
+   4.31,
    2.458
   ],
-  "triangles": 264489,
+  "triangles": 110120,
+  "copies": 1
+ },
+ {
+  "element": "part7",
+  "file": "scanned-plants-and-grass-purple-flower-{level}-v01.glb",
+  "size_m": [
+   2.662,
+   2.186,
+   1.896
+  ],
+  "triangles": 20855,
+  "copies": 1
+ },
+ {
+  "element": "part8",
+  "file": "scanned-plants-and-grass-purple-flower-2-{level}-v01.glb",
+  "size_m": [
+   2.228,
+   2.276,
+   1.547
+  ],
+  "triangles": 55173,
+  "copies": 1
+ },
+ {
+  "element": "part9",
+  "file": "scanned-plants-and-grass-white-flower-{level}-v01.glb",
+  "size_m": [
+   0.169,
+   0.172,
+   0.053
+  ],
+  "triangles": 8,
+  "copies": 1
+ },
+ {
+  "element": "part10",
+  "file": "scanned-plants-and-grass-5-leaf-ground-plant-{level}-v01.glb",
+  "size_m": [
+   3.805,
+   1.169,
+   0.801
+  ],
+  "triangles": 355,
+  "copies": 1
+ },
+ {
+  "element": "part12",
+  "file": "scanned-plants-and-grass-grass-blades-{level}-v01.glb",
+  "size_m": [
+   1.089,
+   0.514,
+   0.498
+  ],
+  "triangles": 184,
+  "copies": 1
+ },
+ {
+  "element": "part13",
+  "file": "scanned-plants-and-grass-grass-cloves-{level}-v01.glb",
+  "size_m": [
+   1.428,
+   1.325,
+   0.35
+  ],
+  "triangles": 84,
+  "copies": 1
+ },
+ {
+  "element": "part14",
+  "file": "scanned-plants-and-grass-dandelion-{level}-v01.glb",
+  "size_m": [
+   2.016,
+   1.081,
+   0.694
+  ],
+  "triangles": 285,
   "copies": 1
  }
 ]

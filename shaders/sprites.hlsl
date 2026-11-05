@@ -123,6 +123,13 @@ float4 PSMain(VSOut i) : SV_Target0 {
 #ifdef CARD_STANDING_DEPTH
   c *= 1.0 - float((s.flags >> 24) & 255u) / 255.0;  // a fallen unit fading out (MapStage kSpriteFadeShift: flags bits 24..31, how far)
 #endif
+  // A decoration whose art runs off its picture (a burning house's smoke cut by the image's top and sides) showed the cut as a hard
+  // straight edge across the sky (the user, 2026-11-05: "THIS IS A VISUAL GLITCH"): its top and sides fade out over the last few
+  // percent of the card. Units, and every card's bottom (where feet stand), unchanged.
+  if ((s.flags & 4u) == 0u) {
+    const float2 q = i.uv / max(s.uvScale, 1e-4);  // 0..1 across the card, y 0 at the top
+    c *= smoothstep(0.0, 0.08, q.y) * smoothstep(0.0, 0.05, q.x) * smoothstep(0.0, 0.05, 1.0 - q.x);
+  }
   clip(c.a - 1.0 / 255.0);
   float3 color = c.rgb;
   if ((s.flags & 2u) && push.frame != 0) {

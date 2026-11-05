@@ -1,0 +1,33 @@
+C:\EmberEngineBOSTA\content\models\blender\render_thumbs.py:65: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+20:21:26 | INFO: Data are loaded, start creating Blender stuff
+20:21:26 | INFO: Blender create Mesh node BezierCurve.002
+20:21:26 | INFO: glTF import finished in 0.09s
+00:09.109  render           | Saved: 'C:\EmberEngineBOSTA\content\ui\thumbs3d\ember-polyhaven-wisp-tree-small-02-bare-v01.png'
+thumb ember-polyhaven-wisp-tree-small-02-bare-v01 -> content\ui\thumbs3d\ember-polyhaven-wisp-tree-small-02-bare-v01.png
+20:21:28 | INFO: Data are loaded, start creating Blender stuff
+20:21:28 | INFO: Blender create Mesh node NurbsPath.006
+20:21:28 | INFO: glTF import finished in 0.06s
+00:09.546  render           | Saved: 'C:\EmberEngineBOSTA\content\ui\thumbs3d\ember-polyhaven-wisp-fir-tree-01-bare-v01.png'
+thumb ember-polyhaven-wisp-fir-tree-01-bare-v01 -> content\ui\thumbs3d\ember-polyhaven-wisp-fir-tree-01-bare-v01.png
+thumb ember-smithsonian-cast-iron-cauldron: model not found (/game/ember/smithsonian/cast-iron-cauldron-v01.glb)
+thumb ember-smithsonian-garden-fork: model not found (/game/ember/smithsonian/garden-fork-v01.glb)
+thumb ember-smithsonian-bridge-ward-lock-key: model not found (/game/ember/smithsonian/bridge-ward-lock-key-v01.glb)
+thumb ember-smithsonian-cuatro: model not found (/game/ember/smithsonian/cuatro-v01.glb)
+thumb ember-smithsonian-gorilla-cranium: model not found (/game/ember/smithsonian/gorilla-cranium-v01.glb)
+thumb ember-smithsonian-orangutan-cranium: model not found (/game/ember/smithsonian/orangutan-cranium-v01.glb)
+thumb ember-smithsonian-ruffed-lemur-cranium: model not found (/game/ember/smithsonian/ruffed-lemur-cranium-v01.glb)
+thumb ember-smithsonian-kloss-gibbon-cranium: model not found (/game/ember/smithsonian/kloss-gibbon-cranium-v01.glb)
+thumb ember-smithsonian-homo-floresiensis-cranium: model not found (/game/ember/smithsonian/homo-floresiensis-cranium-v01.glb)
+thumb ember-smithsonian-black-crested-gibbon-mandible: model not found (/game/ember/smithsonian/black-crested-gibbon-mandible-v01.glb)
+thumb ember-smithsonian-chimpanzee-fibula-right: model not found (/game/ember/smithsonian/chimpanzee-fibula-right-v01.glb)
+thumb ember-smithsonian-chimpanzee-metatarsal5-right: model not found (/game/ember/smithsonian/chimpanzee-metatarsal5-right-v01.glb)
+thumb ember-smithsonian-mountain-gorilla-ulna-right: model not found (/game/ember/smithsonian/mountain-gorilla-ulna-right-v01.glb)
+thumb ember-smithsonian-mountain-gorilla-metacarpal2-left: model not found (/game/ember/smithsonian/mountain-gorilla-metacarpal2-left-v01.glb)
+thumb ember-ambientcg-bread-006: model not found (/game/ember/ambientcg/bread-006-v01.glb)
+thumb ember-ambientcg-apple-002: model not found (/game/ember/ambientcg/apple-002-v01.glb)
+thumb ember-ambientcg-stick-001: model not found (/game/ember/ambientcg/stick-001-v01.glb)
+thumbs: 2 rendered, 17 failed
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

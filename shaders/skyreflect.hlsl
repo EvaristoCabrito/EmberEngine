@@ -38,7 +38,7 @@ void CSBase(uint2 pixel : SV_DispatchThreadID) {
       clear = lerp(clear, andromedaSkyLight(f.atmosphere, f.exposure, a.skyScale, dir, 0.025), andromedaNight(a.stars, a.sunDisc, a.sunDirection.y));
     if (f.cloudFlags & kCloudRdr2) {
       // Nuvens RDR2: the same layer marched coarsely from the board's middle (the water and the metals see the same clouds).
-      const Rdr2Hit hit = rdr2March(f, a, loadRdr2(f), float3(0.0, 0.0, 0.0), dir, clear * a.skyScale, 28u, 3u, 2u, 0.5, float2(0.5, 0.5));
+      const Rdr2Hit hit = rdr2March(f, a, loadRdr2(f), float3(0.0, 0.0, 0.0), dir, clear * a.skyScale, 80u, 4u, 3u, 0.5, float2(0.5, 0.5), false, true);
       radiance = clear * hit.transmittance + hit.color / max(a.skyScale, 1e-4);
     } else if (f.cloudFlags & kCloudVolumetric) {
       // The volumetric layer, marched coarsely (12 steps: the map is 256 x 128) from the board's middle.

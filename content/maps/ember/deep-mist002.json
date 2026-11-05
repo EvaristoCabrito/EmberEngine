@@ -2389,14 +2389,6 @@
         "guaranteedDrop": false
       },
       {
-        "name": "Olho da fenda",
-        "classId": "birolho",
-        "x": 13,
-        "y": 12,
-        "level": 10,
-        "guaranteedDrop": false
-      },
-      {
         "name": "Cultista das velas",
         "classId": "cultistV2",
         "x": 25,

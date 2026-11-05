@@ -1648,13 +1648,6 @@
     ],
     "enemySpawns": [
       {
-        "name": "Birolho do prado",
-        "classId": "birolho3",
-        "x": 10,
-        "y": 5,
-        "level": 7
-      },
-      {
         "name": "Aparição entre o capim",
         "classId": "apparition",
         "x": 18,

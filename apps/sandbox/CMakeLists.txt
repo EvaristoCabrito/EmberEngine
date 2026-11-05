@@ -30,7 +30,8 @@ ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/cloud-looks/005/cloudsvol
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/cloud-looks/005/skyreflect.hlsl NAME cloud_legacy005_sky STAGES cs:CSBase cs:CSCloudShadow)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/clouds006.hlsl STAGES cs:CSWeather cs:CSHeight cs:CSEsm cs:CSFilter cs:CSMarch cs:CSResolve cs:CSAtlas cs:CSDisplacement cs:CSProbes cs:CSCube cs:CSWater)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/cloudsvol.hlsl STAGES cs:CSNoiseBase cs:CSNoiseDetail cs:CSMarch)
-ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/clouds_rdr2.hlsl STAGES cs:CSWeather cs:CSMarch cs:CSResolve cs:CSShadow cs:CSShadowBlur)
+ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/clouds_rdr2.hlsl STAGES cs:CSWeather cs:CSMarch cs:CSResolve cs:CSShadow cs:CSShadowBlur cs:CSAtlas cs:CSHeight cs:CSDisplacement cs:CSShadowMip cs:CSAmbient cs:CSProbes cs:CSCube cs:CSWater)
+ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/clouds008.hlsl STAGES cs:CSWeather cs:CSMarch cs:CSResolve cs:CSShadow cs:CSShadowBlur cs:CSAtlas cs:CSHeight cs:CSDisplacement cs:CSShadowMip cs:CSAmbient cs:CSProbes cs:CSCube cs:CSWater)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/sunglare.hlsl STAGES cs:CSGlare)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/volume.hlsl STAGES cs:CSInject cs:CSIntegrate)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/volumetrics_v1.hlsl STAGES cs:CSInject cs:CSIntegrate)
@@ -54,3 +55,5 @@ ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/water.hlsl STAGES vs:VSMa
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/lights.hlsl STAGES cs:CSClusters)
 
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/fog_look002.hlsl STAGES cs:CSMarch cs:CSComposite)
+
+ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/skyreflect008.hlsl STAGES cs:CSBase cs:CSFilter)

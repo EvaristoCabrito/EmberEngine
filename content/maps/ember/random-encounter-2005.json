@@ -450,13 +450,6 @@
     ],
     "enemySpawns": [
       {
-        "name": "Birolho",
-        "classId": "birolho3",
-        "x": 7,
-        "y": 1,
-        "level": 3
-      },
-      {
         "name": "Cobalt Blue Deer",
         "classId": "swampBlueCalf",
         "x": 5,

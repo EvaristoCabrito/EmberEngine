@@ -1,0 +1,6 @@
+[0/2] Re-checking globbed directories...
+[1/6] Scanning C:\EmberEngine\tools\TempoCheck.cpp for CXX dependencies
+[2/6] Generating CXX dyndep file tools\CMakeFiles\TempoCheck.dir\CXX.dd
+[3/6] Linking CXX executable bin\Sandbox.exe
+[4/6] Building CXX object tools\CMakeFiles\TempoCheck.dir\TempoCheck.cpp.obj
+[5/6] Linking CXX executable bin\TempoCheck.exe

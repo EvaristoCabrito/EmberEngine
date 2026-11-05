@@ -974,15 +974,7 @@
         "level": 11
       }
     ],
-    "neutralSpawns": [
-      {
-        "name": "Coisa das Covas",
-        "classId": "birolho",
-        "x": 9,
-        "y": 17,
-        "level": 11
-      }
-    ],
+    "neutralSpawns": [],
     "tileRots": [
       0,
       0,

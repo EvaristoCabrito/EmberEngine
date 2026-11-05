@@ -410,13 +410,6 @@
         "x": 9,
         "y": 3,
         "level": 9
-      },
-      {
-        "name": "Birolho",
-        "classId": "birolho",
-        "x": 7,
-        "y": 6,
-        "level": 9
       }
     ],
     "neutralSpawns": [],

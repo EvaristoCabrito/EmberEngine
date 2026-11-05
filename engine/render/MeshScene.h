@@ -75,9 +75,7 @@ class MeshScene {
   };
   EffectMesh effect(MeshId id) const;  // the bindless indices change as the textures stream: read it every frame
   bool ready() const;  // every added mesh's geometry and textures are on the GPU
-  // Geometry and every texture's base on the GPU: the models can be placed (the textures sharpen later); ready() also waits for
-  // the first streaming pass, which a short GPU never settles (the user, 2026-10-29: a map with no 3D, no fog, no monsters).
-  // Regional streaming places from parsed bounds/materials before textures become resident.
+  // Parsed bounds/materials allow placement before GPU geometry and textures arrive.
   bool placeable() const;
   std::pair<uint32_t, uint32_t> progress() const;  // meshes and textures settled (on the GPU or failed), out of all added
   const MeshHeader* header(MeshId id) const;  // null until its asset arrived

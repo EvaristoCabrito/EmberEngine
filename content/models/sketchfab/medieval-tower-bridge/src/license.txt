@@ -1,8 +1,0 @@
-Model Information:
-* title:	Medieval Tower Bridge
-* source:	https://sketchfab.com/3d-models/medieval-tower-bridge-2e96a904c44f4becafa87b50f6dc40cf
-* author:	xplanepilot (https://sketchfab.com/xplanepilot)
-
-Model License:
-* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
-* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works

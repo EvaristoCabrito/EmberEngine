@@ -264,6 +264,9 @@ float cloudShadowCompute(MeshFrame f, float3 position) {
 float cloudShadowSample(uint map, uint sampler, float2 uv) {
   return gTextures[NonUniformResourceIndex(map)].SampleLevel(gSamplers[NonUniformResourceIndex(sampler)], uv, 0).r;
 }
+#include "clouds_rdr2_data.hlsli"
+#include "clouds008_data.hlsli"
+
 // The sun through the low sheet onto `position`: the shadow map over the board (one texel read; skyreflect.hlsl
 // CSCloudShadow fills it once a frame with cloudShadowCompute at the board's height), the cover computed here off the map.
 // AtmosphereFrame: cloudShadowRect at byte 304, cloudShadowMap at 320 (read by offset: the moonTexture gotcha).
@@ -272,6 +275,7 @@ float cloudShadow(MeshFrame f, float3 position) {
   if(clouds006On(f))return cloud006Shadow(f,position);
   const uint map = vk::RawBufferLoad<uint>(f.atmosphere + 320u);
   if (map == kNoTexture) return cloudShadowCompute(f, position);
+  if(rdr2On(f))return rdr2EsmShadow(f,position,map);
   const float4 rect = vk::RawBufferLoad<float4>(f.atmosphere + 304u);
   float2 uv = (position.xz - rect.xy) * rect.zw;
   if (any(uv < 0.0) || any(uv > 1.0)) return cloudShadowCompute(f, position);

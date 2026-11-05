@@ -1,0 +1,4 @@
+[0/2] Re-checking globbed directories...
+[1/4] Scanning C:\EmberEngine\engine\render\Clouds008.cpp for CXX dependencies
+[2/4] Generating CXX dyndep file engine\CMakeFiles\EmberEngine.dir\CXX.dd
+[3/4] Building CXX object engine\CMakeFiles\EmberEngine.dir\render\Clouds008.cpp.obj

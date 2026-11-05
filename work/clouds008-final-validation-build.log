@@ -1,0 +1,388 @@
+[0/2] Re-checking globbed directories...
+-- GLOB mismatch!
+The following files were added:
+  +C:/EmberEngine/shaders/clouds008_data.hlsli
+[1/2] Re-running CMake...
+CMake Warning at C:/Program Files/CMake/share/cmake-4.4/Modules/FindVulkan.cmake:712 (message):
+  Library dxc for Debug configuration is missing, imported target Vulkan::dxc
+  may not be able to link when targeting this build configuration due to
+  incompatible MSVC ABI.  Consider re-installing the Vulkan SDK and request
+  debug libraries to fix this warning.
+Call Stack (most recent call first):
+  C:/Program Files/CMake/share/cmake-4.4/Modules/FindVulkan.cmake:730 (_Vulkan_set_library_component_found)
+  CMakeLists.txt:10 (find_package)
+
+
+-- Could NOT find PkgConfig (missing: PKG_CONFIG_EXECUTABLE) 
+-- Could NOT find LibUSB (missing: LibUSB_LIBRARY LibUSB_INCLUDE_PATH) (found version "LibUSB_VERSION-NOTFOUND")
+-- 
+-- SDL3 was configured with the following options:
+-- 
+-- Platform: Windows-10.0.26200
+-- 64-bit:   TRUE
+-- Compiler: C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe
+-- Revision: SDL-3.4.18-release-3.4.18
+-- Vendor:   
+-- 
+-- Subsystems:
+--   Audio:    ON
+--   Video:    ON
+--   GPU:      ON
+--   Render:   ON
+--   Camera:   ON
+--   Joystick: ON
+--   Haptic:   ON
+--   Hidapi:   ON
+--   Power:    ON
+--   Sensor:   ON
+--   Dialog:   ON
+--   Tray:     ON
+-- 
+-- Options:
+--   SDL_ALSA                    (Wanted: OFF): OFF
+--   SDL_ALSA_SHARED             (Wanted: OFF): OFF
+--   SDL_ALTIVEC                 (Wanted: OFF): OFF
+--   SDL_ARMNEON                 (Wanted: OFF): OFF
+--   SDL_ASAN                    (Wanted: OFF): OFF
+--   SDL_ASSEMBLY                (Wanted: ON): ON
+--   SDL_ASSERTIONS              (Wanted: auto): auto
+--   SDL_AVX                     (Wanted: ON): ON
+--   SDL_AVX2                    (Wanted: ON): ON
+--   SDL_AVX512F                 (Wanted: ON): ON
+--   SDL_BACKGROUNDING_SIGNAL    (Wanted: OFF): OFF
+--   SDL_CCACHE                  (Wanted: OFF): OFF
+--   SDL_CLANG_TIDY              (Wanted: OFF): OFF
+--   SDL_CLOCK_GETTIME           (Wanted: OFF): OFF
+--   SDL_COCOA                   (Wanted: OFF): OFF
+--   SDL_DBUS                    (Wanted: OFF): OFF
+--   SDL_DEPS_SHARED             (Wanted: ON): OFF
+--   SDL_DIRECTX                 (Wanted: ON): ON
+--   SDL_DISKAUDIO               (Wanted: ON): ON
+--   SDL_DLOPEN_NOTES            (Wanted: OFF): OFF
+--   SDL_DUMMYAUDIO              (Wanted: ON): ON
+--   SDL_DUMMYCAMERA             (Wanted: ON): ON
+--   SDL_DUMMYVIDEO              (Wanted: ON): ON
+--   SDL_EXAMPLES                (Wanted: OFF): OFF
+--   SDL_EXAMPLES_LINK_SHARED    (Wanted: OFF): OFF
+--   SDL_FOREGROUNDING_SIGNAL    (Wanted: OFF): OFF
+--   SDL_FRIBIDI                 (Wanted: OFF): OFF
+--   SDL_FRIBIDI_SHARED          (Wanted: OFF): OFF
+--   SDL_GCC_ATOMICS             (Wanted: OFF): OFF
+--   SDL_HIDAPI                  (Wanted: ON): ON
+--   SDL_HIDAPI_JOYSTICK         (Wanted: ON): ON
+--   SDL_HIDAPI_LIBUSB           (Wanted: ON): OFF
+--   SDL_HIDAPI_LIBUSB_SHARED    (Wanted: ON): OFF
+--   SDL_IBUS                    (Wanted: OFF): OFF
+--   SDL_INSTALL                 (Wanted: OFF): OFF
+--   SDL_INSTALL_TESTS           (Wanted: OFF): OFF
+--   SDL_JACK                    (Wanted: OFF): OFF
+--   SDL_JACK_SHARED             (Wanted: OFF): OFF
+--   SDL_KMSDRM                  (Wanted: OFF): OFF
+--   SDL_KMSDRM_SHARED           (Wanted: OFF): OFF
+--   SDL_LASX                    (Wanted: OFF): OFF
+--   SDL_LIBC                    (Wanted: ON): ON
+--   SDL_LIBICONV                (Wanted: OFF): OFF
+--   SDL_LIBTHAI                 (Wanted: OFF): OFF
+--   SDL_LIBTHAI_SHARED          (Wanted: OFF): OFF
+--   SDL_LIBUDEV                 (Wanted: ON): OFF
+--   SDL_LIBURING                (Wanted: OFF): OFF
+--   SDL_LSX                     (Wanted: OFF): OFF
+--   SDL_METAL                   (Wanted: OFF): OFF
+--   SDL_MMX                     (Wanted: ON): OFF
+--   SDL_OFFSCREEN               (Wanted: ON): ON
+--   SDL_OPENGL                  (Wanted: ON): ON
+--   SDL_OPENGLES                (Wanted: ON): ON
+--   SDL_OPENVR                  (Wanted: OFF): OFF
+--   SDL_OSS                     (Wanted: OFF): OFF
+--   SDL_PIPEWIRE                (Wanted: OFF): OFF
+--   SDL_PIPEWIRE_SHARED         (Wanted: OFF): OFF
+--   SDL_PTHREADS                (Wanted: OFF): OFF
+--   SDL_PTHREADS_SEM            (Wanted: OFF): OFF
+--   SDL_PULSEAUDIO              (Wanted: OFF): OFF
+--   SDL_PULSEAUDIO_SHARED       (Wanted: OFF): OFF
+--   SDL_RENDER_D3D              (Wanted: ON): ON
+--   SDL_RENDER_D3D11            (Wanted: ON): ON
+--   SDL_RENDER_D3D12            (Wanted: ON): ON
+--   SDL_RENDER_GPU              (Wanted: ON): ON
+--   SDL_RENDER_METAL            (Wanted: OFF): OFF
+--   SDL_RENDER_VULKAN           (Wanted: ON): ON
+--   SDL_ROCKCHIP                (Wanted: OFF): OFF
+--   SDL_RPATH                   (Wanted: OFF): OFF
+--   SDL_RPI                     (Wanted: OFF): OFF
+--   SDL_SNDIO                   (Wanted: OFF): OFF
+--   SDL_SNDIO_SHARED            (Wanted: OFF): OFF
+--   SDL_SSE                     (Wanted: ON): ON
+--   SDL_SSE2                    (Wanted: ON): ON
+--   SDL_SSE3                    (Wanted: ON): ON
+--   SDL_SSE4_1                  (Wanted: ON): ON
+--   SDL_SSE4_2                  (Wanted: ON): ON
+--   SDL_SYSTEM_ICONV            (Wanted: OFF): OFF
+--   SDL_TESTS                   (Wanted: OFF): OFF
+--   SDL_TESTS_LINK_SHARED       (Wanted: OFF): OFF
+--   SDL_UNINSTALL               (Wanted: OFF): OFF
+--   SDL_VIRTUAL_JOYSTICK        (Wanted: ON): ON
+--   SDL_VIVANTE                 (Wanted: OFF): OFF
+--   SDL_VULKAN                  (Wanted: ON): ON
+--   SDL_WASAPI                  (Wanted: ON): ON
+--   SDL_WAYLAND                 (Wanted: OFF): OFF
+--   SDL_WAYLAND_LIBDECOR        (Wanted: OFF): OFF
+--   SDL_WAYLAND_LIBDECOR_SHARED (Wanted: OFF): OFF
+--   SDL_WAYLAND_SHARED          (Wanted: OFF): OFF
+--   SDL_X11                     (Wanted: OFF): OFF
+--   SDL_X11_SHARED              (Wanted: OFF): OFF
+--   SDL_X11_XCURSOR             (Wanted: OFF): OFF
+--   SDL_X11_XDBE                (Wanted: OFF): OFF
+--   SDL_X11_XFIXES              (Wanted: OFF): OFF
+--   SDL_X11_XINPUT              (Wanted: OFF): OFF
+--   SDL_X11_XRANDR              (Wanted: OFF): OFF
+--   SDL_X11_XSCRNSAVER          (Wanted: OFF): OFF
+--   SDL_X11_XSHAPE              (Wanted: OFF): OFF
+--   SDL_X11_XSYNC               (Wanted: OFF): OFF
+--   SDL_X11_XTEST               (Wanted: OFF): OFF
+--   SDL_XINPUT                  (Wanted: ON): ON
+-- 
+--  Build Shared Library: OFF
+--  Build Static Library: ON
+-- 
+-- Enabled backends:
+--   Video drivers: dummy offscreen windows
+--   Render drivers: d3d d3d11 d3d12 gpu ogl ogl_es2 vulkan
+--   GPU drivers: d3d12 vulkan
+--   Audio drivers: disk dsound dummy wasapi
+--   Joystick drivers: dinput gameinput hidapi rawinput virtual wgi xinput
+--   Camera drivers: dummy mediafoundation
+-- 
+CMake Warning at C:/Program Files/CMake/share/cmake-4.4/Modules/FindVulkan.cmake:712 (message):
+  Library dxc for Debug configuration is missing, imported target Vulkan::dxc
+  may not be able to link when targeting this build configuration due to
+  incompatible MSVC ABI.  Consider re-installing the Vulkan SDK and request
+  debug libraries to fix this warning.
+Call Stack (most recent call first):
+  C:/Program Files/CMake/share/cmake-4.4/Modules/FindVulkan.cmake:730 (_Vulkan_set_library_component_found)
+  build/release/_deps/volk-src/CMakeLists.txt:78 (find_package)
+
+
+volk: using Vulkan_INCLUDE_DIRS from FindVulkan module
+-- GLM: Version 1.0.3
+-- GLM: Build with C++ features auto detection
+-- Using plutovg submodule.
+-- ZSTD VERSION: 1.5.7
+-- CMAKE_INSTALL_PREFIX: C:/Program Files (x86)/EmberEngine
+-- CMAKE_INSTALL_LIBDIR: lib
+-- ZSTD_LEGACY_SUPPORT not defined!
+-- ZSTD_MULTITHREAD_SUPPORT is enabled
+-- Opus package version from git repo: 1.6.1
+-- Opus project version: 1.6.1
+-- Performing Test VLA_SUPPORTED -- failed to compile
+-- Check SIMD support by compiler
+-- The following features have been enabled:
+
+ * OPUS_ENABLE_FLOAT_API, compile with the floating point API (for machines with float library).
+ * OPUS_HARDENING, run-time checks that are cheap and safe for use in production.
+ * OPUS_USE_ALLOCA, use alloca for stack arrays (on non-C99 compilers).
+ * OPUS_STACK_PROTECTOR, use stack protection.
+ * OPUS_X86_MAY_HAVE_SSE, does runtime check for SSE1 support.
+ * OPUS_X86_MAY_HAVE_SSE2, does runtime check for SSE2 support.
+ * OPUS_X86_MAY_HAVE_SSE4_1, does runtime check for SSE4.1 support.
+ * OPUS_X86_MAY_HAVE_AVX2, does runtime check for AVX FMA AVX2 support.
+ * OPUS_X86_PRESUME_SSE, assume target CPU has SSE1 support (override runtime check).
+ * OPUS_X86_PRESUME_SSE2, assume target CPU has SSE2 support (override runtime check).
+
+-- The following OPTIONAL packages have been found:
+
+ * Threads
+ * Git
+
+-- The following REQUIRED packages have been found:
+
+ * Vulkan
+
+-- The following features have been disabled:
+
+ * OPUS_BUILD_SHARED_LIBRARY, build shared library.
+ * OPUS_BUILD_TESTING, build tests.
+ * OPUS_CUSTOM_MODES, enable non-Opus modes, e.g. 44.1 kHz & 2^n frames.
+ * OPUS_BUILD_PROGRAMS, build programs.
+ * OPUS_DISABLE_INTRINSICS, disable all intrinsics optimizations.
+ * OPUS_FIXED_POINT, compile as fixed-point (for machines without a fast enough FPU).
+ * OPUS_FLOAT_APPROX, enable floating point approximations (Ensure your platform supports IEEE 754 before enabling).
+ * OPUS_ASSERTIONS, additional software error checking.
+ * OPUS_FUZZING, causes the encoder to make random decisions (do not use in production).
+ * OPUS_CHECK_ASM, enable bit-exactness checks between optimized and c implementations.
+ * OPUS_DNN_FLOAT_DEBUG, Run DNN computations as float for debugging purposes.
+ * OPUS_INSTALL_PKG_CONFIG_MODULE, install pkg-config module.
+ * OPUS_INSTALL_CMAKE_CONFIG_MODULE, install CMake package config module.
+ * OPUS_DRED, enable DRED.
+ * OPUS_OSCE, enable OSCE.
+ * OPUS_STATIC_RUNTIME, build with static runtime library.
+ * OPUS_FIXED_POINT_DEBUG, debug fixed-point implementation.
+ * OPUS_VAR_ARRAYS, use variable length arrays for stack arrays.
+ * OPUS_NONTHREADSAFE_PSEUDOSTACK, use a non threadsafe pseudostack when neither variable length arrays or alloca is supported.
+ * OPUS_FAST_MATH, enable fast math (unsupported and discouraged use, as code is not well tested with this build option).
+ * OPUS_X86_PRESUME_SSE4_1, assume target CPU has SSE4.1 support (override runtime check).
+ * OPUS_X86_PRESUME_AVX2, assume target CPU has AVX FMA AVX2 support (override runtime check).
+
+-- The following OPTIONAL packages have not been found:
+
+ * LibUSB
+
+-- Configuring done (0.7s)
+-- Generating done (0.6s)
+-- Build files have been written to: C:/EmberEngine/build/release
+[0/4] Re-checking globbed directories...
+[1/288] Generating CXX dyndep file CMakeFiles\webm_reader.dir\CXX.dd
+[2/285] Generating CXX dyndep file _deps\sdl3-build\CMakeFiles\SDL3-static.dir\CXX.dd
+[3/280] Generating CXX dyndep file CMakeFiles\imgui.dir\CXX.dd
+[4/272] Generating CXX dyndep file _deps\meshoptimizer-build\CMakeFiles\meshoptimizer.dir\CXX.dd
+[5/250] Scanning C:\EmberEngine\engine\render\Clouds008.cpp for CXX dependencies
+[6/250] Generating CXX dyndep file engine\CMakeFiles\EmberEngine.dir\CXX.dd
+[7/160] Building CXX object engine\CMakeFiles\EmberEngine.dir\render\Clouds008.cpp.obj
+[8/160] Linking CXX static library engine\EmberEngine.lib
+[9/160] Shader triangle.PSMain
+[10/160] Shader triangle.VSMain
+[11/160] Shader tonemap.VSMain
+[12/160] Shader tonemap.PSMain
+[13/160] Shader worldmap.VSMain
+[14/160] Shader ground.VSMain
+[15/160] Shader ground.PSMain
+[16/160] Shader sprites.PSDepth
+[17/160] Shader sprites.VSMain
+[18/160] Shader worldmap.PSMain
+[19/160] Shader sprites.PSShadow
+[20/160] Shader sprites.VSShadow
+[21/160] Shader sprites_standing.VSMain
+[22/160] Shader sprites_standing.PSDepth
+[23/160] Shader effects.VSMain
+[24/160] Shader vfx.VSMain
+[25/160] Shader sprites.PSMain
+[26/160] Shader hiz.CSDownsample
+[27/160] Shader sprites_standing.PSMain
+[28/160] Shader bloom.CSDown
+[29/160] Shader bloom.CSUp
+[30/160] Shader atmosphere.CSTransmittance
+[31/160] Shader effects.PSMain
+[32/160] Shader atmosphere.CSMultiScattering
+[33/160] Shader atmosphere.CSSkyView
+[34/160] Shader atmosphere.CSAerial
+[35/160] Shader atmosphere.CSAmbient
+[36/160] Shader skyreflect.CSFilter
+[37/160] Shader skyreflect.CSCloudShadow
+[38/160] Shader volumetrics_clouds006.CSMaterial
+[39/160] Shader probes.CSRelight
+[40/160] Shader volumetrics_clouds006.CSIntegrate
+[41/160] Shader volumetrics_clouds006.CSInject
+[42/160] Shader skyreflect.CSBase
+[43/160] Shader cloud_legacy001.CSMarch
+[44/160] Shader cloud_legacy001.CSNoiseDetail
+[45/160] Shader cloud_legacy001.CSNoiseBase
+[46/160] Shader cloud_legacy001_sky.CSCloudShadow
+[47/160] Shader cloud_legacy001_sky.CSBase
+[48/160] Shader cloud_legacy002.CSMarch
+[49/160] Shader cloud_legacy002.CSNoiseDetail
+[50/160] Shader cloud_legacy002.CSNoiseBase
+[51/160] Shader cloud_legacy002_sky.CSCloudShadow
+[52/160] Shader cloud_legacy002_sky.CSBase
+[53/160] Shader cloud_legacy003.CSMarch
+[54/160] Shader cloud_legacy003_sky.CSBase
+[55/160] Shader cloud_legacy003.CSNoiseDetail
+[56/160] Shader cloud_legacy003_sky.CSCloudShadow
+[57/160] Shader cloud_legacy003.CSNoiseBase
+[58/160] Shader cloud_legacy004.CSMarch
+[59/160] Shader vfx.PSMain
+[60/160] Shader cloud_legacy004_sky.CSCloudShadow
+[61/160] Shader cloud_legacy004_sky.CSBase
+[62/160] Shader cloud_legacy004.CSNoiseDetail
+[63/160] Shader cloud_legacy004.CSNoiseBase
+[64/160] Shader cloud_legacy005.CSMarch
+[65/160] Shader cloud_legacy005_sky.CSCloudShadow
+[66/160] Shader clouds006.CSWeather
+[67/160] Shader cloud_legacy005_sky.CSBase
+[68/160] Shader clouds006.CSHeight
+[69/160] Shader clouds006.CSFilter
+[70/160] Shader clouds006.CSEsm
+[71/160] Shader clouds006.CSResolve
+[72/160] Shader cloud_legacy005.CSNoiseDetail
+[73/160] Shader clouds006.CSMarch
+[74/160] Shader clouds006.CSAtlas
+[75/160] Shader clouds006.CSDisplacement
+[76/160] Shader cloud_legacy005.CSNoiseBase
+[77/160] Shader clouds006.CSProbes
+[78/160] Shader clouds006.CSCube
+[79/160] Shader clouds006.CSWater
+[80/160] Shader clouds_rdr2.CSWeather
+[81/160] Shader cloudsvol.CSMarch
+[82/160] Shader clouds_rdr2.CSResolve
+[83/160] Shader clouds_rdr2.CSShadow
+[84/160] Shader clouds_rdr2.CSMarch
+[85/160] Shader clouds_rdr2.CSShadowBlur
+[86/160] Shader clouds_rdr2.CSAtlas
+[87/160] Shader clouds_rdr2.CSHeight
+[88/160] Shader clouds_rdr2.CSDisplacement
+[89/160] Shader cloudsvol.CSNoiseDetail
+[90/160] Shader clouds_rdr2.CSShadowMip
+[91/160] Shader cloudsvol.CSNoiseBase
+[92/160] Shader clouds_rdr2.CSAmbient
+[93/160] Shader clouds008.CSWeather
+[94/160] Shader clouds_rdr2.CSCube
+[95/160] Shader clouds_rdr2.CSWater
+[96/160] Shader clouds_rdr2.CSProbes
+[97/160] Shader clouds008.CSResolve
+[98/160] Shader clouds008.CSShadowBlur
+[99/160] Shader clouds008.CSAtlas
+[100/160] Shader clouds008.CSHeight
+[101/160] Shader clouds008.CSShadow
+[102/160] Shader clouds008.CSDisplacement
+[103/160] Shader clouds008.CSShadowMip
+[104/160] Shader clouds008.CSAmbient
+[105/160] Shader clouds008.CSMarch
+[106/160] Shader sunglare.CSGlare
+[107/160] Shader volume.CSInject
+[108/160] Shader volume.CSIntegrate
+[109/160] Shader volumetrics_v1.CSInject
+[110/160] Shader clouds008.CSCube
+[111/160] Shader volumetrics_v1.CSIntegrate
+[112/160] Shader clouds008.CSProbes
+[113/160] Shader clouds008.CSWater
+[114/160] Shader fog_look001.CSComposite
+[115/160] Shader fog_look001.CSMarch
+[116/160] Shader fog_look006.CSMarch
+[117/160] Shader fog_look006.CSComposite
+[118/160] Shader fog_look003.CSComposite
+[119/160] Shader fog_look003.CSMarch
+[120/160] Shader fog_look008.CSComposite
+[121/160] Shader fog_look008.CSMarch
+[122/160] Shader fog_look009.CSComposite
+[123/160] Shader fog_look009.CSMarch
+[124/160] Shader fog_look010.CSComposite
+[125/160] Shader fog_look010.CSMarch
+[126/160] Shader fog_look004.CSMarch
+[127/160] Shader fog_look004.CSComposite
+[128/160] Shader fog_look005.CSComposite
+[129/160] Shader fog_look005.CSMarch
+[130/160] Shader fog_look007.CSComposite
+[131/160] Shader fog_look007.CSMarch
+[132/160] Shader cull.CSInstancesEarly
+[133/160] Shader cull.CSInstancesLate
+[134/160] Shader cull.CSPrepare
+[135/160] Shader cull.CSTraverse
+[136/160] Shader cull.CSPrepareDraw
+[137/160] Shader meshlet.MSMain
+[138/160] Shader meshlet.ASMain
+[139/160] Shader meshlet.PSMain
+[140/160] Shader meshlet.PSShadow
+[141/160] Shader resolve.CSSky
+[142/160] Shader terrain.VSMain
+[143/160] Shader resolve_panorama.CSSky
+[144/160] Shader terrain.VSShadow
+[145/160] Shader terrain.PSShadow
+[146/160] Shader water.VSMain
+[147/160] Shader terrain.PSMain
+[148/160] Shader lights.CSClusters
+[149/160] Shader fog_look002.CSMarch
+[150/160] Shader fog_look002.CSComposite
+[151/160] Shader skyreflect008.CSBase
+[152/160] Shader resolve.CSResolve
+[153/160] Shader resolve_panorama.CSResolve
+[154/160] Shader water.PSMain
+[155/160] Generating CXX dyndep file apps\sandbox\CMakeFiles\Sandbox.dir\CXX.dd
+[156/159] Linking CXX executable bin\Sandbox.exe

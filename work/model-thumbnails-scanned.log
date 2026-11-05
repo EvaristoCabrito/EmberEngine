@@ -1,0 +1,93 @@
+C:\EmberEngineBOSTA\content\models\blender\render_thumbs.py:74: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+20:22:46 | INFO: Data are loaded, start creating Blender stuff
+20:22:46 | INFO: Blender create Mesh node Mesh_0
+20:22:46 | INFO: Blender create Mesh node Mesh_0.001
+20:22:46 | INFO: glTF import finished in 0.23s
+00:03.937  render           | Saved: 'C:\EmberEngineBOSTA\content\ui\thumbs3d\ember-smithsonian-cast-iron-cauldron.png'
+thumb ember-smithsonian-cast-iron-cauldron -> content\ui\thumbs3d\ember-smithsonian-cast-iron-cauldron.png
+20:22:47 | INFO: Data are loaded, start creating Blender stuff
+20:22:47 | INFO: Blender create Mesh node acm_2022_5_1-pitchfork-polish-unwrapped-webmulti
+20:22:48 | INFO: glTF import finished in 0.22s
+00:04.547  render           | Saved: 'C:\EmberEngineBOSTA\content\ui\thumbs3d\ember-smithsonian-garden-fork.png'
+thumb ember-smithsonian-garden-fork -> content\ui\thumbs3d\ember-smithsonian-garden-fork.png
+20:22:48 | INFO: Data are loaded, start creating Blender stuff
+20:22:48 | INFO: Blender create Mesh node Mesh_0
+20:22:48 | INFO: glTF import finished in 0.16s
+00:05.250  render           | Saved: 'C:\EmberEngineBOSTA\content\ui\thumbs3d\ember-smithsonian-bridge-ward-lock-key.png'
+thumb ember-smithsonian-bridge-ward-lock-key -> content\ui\thumbs3d\ember-smithsonian-bridge-ward-lock-key.png
+20:22:49 | INFO: Data are loaded, start creating Blender stuff
+20:22:49 | INFO: Blender create Mesh node Mesh_0
+20:22:49 | INFO: Blender create Mesh node Mesh_0.001
+20:22:49 | INFO: glTF import finished in 0.21s
+00:06.031  render           | Saved: 'C:\EmberEngineBOSTA\content\ui\thumbs3d\ember-smithsonian-cuatro.png'
+thumb ember-smithsonian-cuatro -> content\ui\thumbs3d\ember-smithsonian-cuatro.png
+20:22:49 | INFO: Data are loaded, start creating Blender stuff
+20:22:49 | INFO: Blender create Mesh node Mesh_0
+20:22:50 | INFO: glTF import finished in 0.41s
+00:06.984  render           | Saved: 'C:\EmberEngineBOSTA\content\ui\thumbs3d\ember-smithsonian-gorilla-cranium.png'
+thumb ember-smithsonian-gorilla-cranium -> content\ui\thumbs3d\ember-smithsonian-gorilla-cranium.png
+20:22:50 | INFO: Data are loaded, start creating Blender stuff
+20:22:50 | INFO: Blender create Mesh node Mesh_0
+20:22:51 | INFO: glTF import finished in 0.35s
+00:07.828  render           | Saved: 'C:\EmberEngineBOSTA\content\ui\thumbs3d\ember-smithsonian-orangutan-cranium.png'
+thumb ember-smithsonian-orangutan-cranium -> content\ui\thumbs3d\ember-smithsonian-orangutan-cranium.png
+20:22:51 | INFO: Data are loaded, start creating Blender stuff
+20:22:51 | INFO: Blender create Mesh node Mesh_0
+20:22:51 | INFO: glTF import finished in 0.23s
+00:08.531  render           | Saved: 'C:\EmberEngineBOSTA\content\ui\thumbs3d\ember-smithsonian-ruffed-lemur-cranium.png'
+thumb ember-smithsonian-ruffed-lemur-cranium -> content\ui\thumbs3d\ember-smithsonian-ruffed-lemur-cranium.png
+20:22:52 | INFO: Data are loaded, start creating Blender stuff
+20:22:52 | INFO: Blender create Mesh node Mesh_0
+20:22:52 | INFO: glTF import finished in 0.25s
+00:09.281  render           | Saved: 'C:\EmberEngineBOSTA\content\ui\thumbs3d\ember-smithsonian-kloss-gibbon-cranium.png'
+thumb ember-smithsonian-kloss-gibbon-cranium -> content\ui\thumbs3d\ember-smithsonian-kloss-gibbon-cranium.png
+20:22:53 | INFO: Data are loaded, start creating Blender stuff
+20:22:53 | INFO: Blender create Mesh node Mesh_0
+20:22:53 | INFO: glTF import finished in 0.19s
+00:09.984  render           | Saved: 'C:\EmberEngineBOSTA\content\ui\thumbs3d\ember-smithsonian-homo-floresiensis-cranium.png'
+thumb ember-smithsonian-homo-floresiensis-cranium -> content\ui\thumbs3d\ember-smithsonian-homo-floresiensis-cranium.png
+20:22:53 | INFO: Data are loaded, start creating Blender stuff
+20:22:53 | INFO: Blender create Mesh node Mesh_0
+20:22:54 | INFO: glTF import finished in 0.23s
+00:10.719  render           | Saved: 'C:\EmberEngineBOSTA\content\ui\thumbs3d\ember-smithsonian-black-crested-gibbon-mandible.png'
+thumb ember-smithsonian-black-crested-gibbon-mandible -> content\ui\thumbs3d\ember-smithsonian-black-crested-gibbon-mandible.png
+20:22:54 | INFO: Data are loaded, start creating Blender stuff
+20:22:54 | INFO: Blender create Mesh node Mesh_0
+20:22:54 | INFO: glTF import finished in 0.10s
+00:11.265  render           | Saved: 'C:\EmberEngineBOSTA\content\ui\thumbs3d\ember-smithsonian-chimpanzee-fibula-right.png'
+thumb ember-smithsonian-chimpanzee-fibula-right -> content\ui\thumbs3d\ember-smithsonian-chimpanzee-fibula-right.png
+20:22:55 | INFO: Data are loaded, start creating Blender stuff
+20:22:55 | INFO: Blender create Mesh node Mesh_0
+20:22:55 | INFO: glTF import finished in 0.06s
+00:11.781  render           | Saved: 'C:\EmberEngineBOSTA\content\ui\thumbs3d\ember-smithsonian-chimpanzee-metatarsal5-right.png'
+thumb ember-smithsonian-chimpanzee-metatarsal5-right -> content\ui\thumbs3d\ember-smithsonian-chimpanzee-metatarsal5-right.png
+20:22:55 | INFO: Data are loaded, start creating Blender stuff
+20:22:55 | INFO: Blender create Mesh node Mesh_0
+20:22:56 | INFO: glTF import finished in 0.33s
+00:12.640  render           | Saved: 'C:\EmberEngineBOSTA\content\ui\thumbs3d\ember-smithsonian-mountain-gorilla-ulna-right.png'
+thumb ember-smithsonian-mountain-gorilla-ulna-right -> content\ui\thumbs3d\ember-smithsonian-mountain-gorilla-ulna-right.png
+20:22:56 | INFO: Data are loaded, start creating Blender stuff
+20:22:56 | INFO: Blender create Mesh node Mesh_0
+20:22:56 | INFO: glTF import finished in 0.12s
+00:13.203  render           | Saved: 'C:\EmberEngineBOSTA\content\ui\thumbs3d\ember-smithsonian-mountain-gorilla-metacarpal2-left.png'
+thumb ember-smithsonian-mountain-gorilla-metacarpal2-left -> content\ui\thumbs3d\ember-smithsonian-mountain-gorilla-metacarpal2-left.png
+20:22:57 | INFO: Data are loaded, start creating Blender stuff
+20:22:57 | INFO: Blender create Mesh node 3DBread006_HQ-2K-JPG
+20:22:57 | INFO: glTF import finished in 0.07s
+00:13.687  render           | Saved: 'C:\EmberEngineBOSTA\content\ui\thumbs3d\ember-ambientcg-bread-006.png'
+thumb ember-ambientcg-bread-006 -> content\ui\thumbs3d\ember-ambientcg-bread-006.png
+20:22:57 | INFO: Data are loaded, start creating Blender stuff
+20:22:57 | INFO: Blender create Mesh node 3DApple002_HQ-2K-JPG
+20:22:57 | INFO: glTF import finished in 0.13s
+00:14.375  render           | Saved: 'C:\EmberEngineBOSTA\content\ui\thumbs3d\ember-ambientcg-apple-002.png'
+thumb ember-ambientcg-apple-002 -> content\ui\thumbs3d\ember-ambientcg-apple-002.png
+20:22:58 | INFO: Data are loaded, start creating Blender stuff
+20:22:58 | INFO: Blender create Mesh node 3DStick001_HQ-2K-JPG
+20:22:58 | INFO: glTF import finished in 0.08s
+00:14.969  render           | Saved: 'C:\EmberEngineBOSTA\content\ui\thumbs3d\ember-ambientcg-stick-001.png'
+thumb ember-ambientcg-stick-001 -> content\ui\thumbs3d\ember-ambientcg-stick-001.png
+thumbs: 17 rendered, 0 failed
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

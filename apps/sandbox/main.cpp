@@ -299,7 +299,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--background" && hasValue) o.background = std::atoi(argv[++i]);
     else if (arg == "--water" && hasValue) o.waterLook = std::atoi(argv[++i]);
     else if (arg == "--sky-reflect" && hasValue) o.skyReflect = std::atoi(argv[++i]);
-    else if (arg == "--cloud-look" && hasValue) o.cloudLook=std::clamp(std::atoi(argv[++i]),0,7);
+    else if (arg == "--cloud-look" && hasValue) o.cloudLook=std::clamp(std::atoi(argv[++i]),0,8);
     else if (arg == "--clouds" && hasValue) o.clouds = std::atoi(argv[++i]);
     else if (arg == "--atmos2" && hasValue) o.atmos2 = std::atoi(argv[++i]);  // -1 never started, 0 started but OFF, 1 on (default)
     else if (arg == "--clouds-quality" && hasValue) o.cloudQuality = std::atoi(argv[++i]);

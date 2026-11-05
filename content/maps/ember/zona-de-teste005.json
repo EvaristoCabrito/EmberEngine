@@ -1448,14 +1448,6 @@
         "level": 1
       },
       {
-        "name": "Inimigo 18",
-        "classId": "birolho2",
-        "x": 5,
-        "y": 3,
-        "level": 1,
-        "useClassSprite": true
-      },
-      {
         "name": "Inimigo 19",
         "classId": "cultistV2",
         "x": 2,

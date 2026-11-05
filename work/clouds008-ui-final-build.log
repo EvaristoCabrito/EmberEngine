@@ -1,0 +1,441 @@
+[0/2] Re-checking globbed directories...
+[1/2] Re-running CMake...
+CMake Warning at C:/Program Files/CMake/share/cmake-4.4/Modules/FindVulkan.cmake:712 (message):
+  Library dxc for Debug configuration is missing, imported target Vulkan::dxc
+  may not be able to link when targeting this build configuration due to
+  incompatible MSVC ABI.  Consider re-installing the Vulkan SDK and request
+  debug libraries to fix this warning.
+Call Stack (most recent call first):
+  C:/Program Files/CMake/share/cmake-4.4/Modules/FindVulkan.cmake:730 (_Vulkan_set_library_component_found)
+  CMakeLists.txt:10 (find_package)
+
+
+-- Could NOT find PkgConfig (missing: PKG_CONFIG_EXECUTABLE) 
+-- Could NOT find LibUSB (missing: LibUSB_LIBRARY LibUSB_INCLUDE_PATH) (found version "LibUSB_VERSION-NOTFOUND")
+-- 
+-- SDL3 was configured with the following options:
+-- 
+-- Platform: Windows-10.0.26200
+-- 64-bit:   TRUE
+-- Compiler: C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe
+-- Revision: SDL-3.4.18-release-3.4.18
+-- Vendor:   
+-- 
+-- Subsystems:
+--   Audio:    ON
+--   Video:    ON
+--   GPU:      ON
+--   Render:   ON
+--   Camera:   ON
+--   Joystick: ON
+--   Haptic:   ON
+--   Hidapi:   ON
+--   Power:    ON
+--   Sensor:   ON
+--   Dialog:   ON
+--   Tray:     ON
+-- 
+-- Options:
+--   SDL_ALSA                    (Wanted: OFF): OFF
+--   SDL_ALSA_SHARED             (Wanted: OFF): OFF
+--   SDL_ALTIVEC                 (Wanted: OFF): OFF
+--   SDL_ARMNEON                 (Wanted: OFF): OFF
+--   SDL_ASAN                    (Wanted: OFF): OFF
+--   SDL_ASSEMBLY                (Wanted: ON): ON
+--   SDL_ASSERTIONS              (Wanted: auto): auto
+--   SDL_AVX                     (Wanted: ON): ON
+--   SDL_AVX2                    (Wanted: ON): ON
+--   SDL_AVX512F                 (Wanted: ON): ON
+--   SDL_BACKGROUNDING_SIGNAL    (Wanted: OFF): OFF
+--   SDL_CCACHE                  (Wanted: OFF): OFF
+--   SDL_CLANG_TIDY              (Wanted: OFF): OFF
+--   SDL_CLOCK_GETTIME           (Wanted: OFF): OFF
+--   SDL_COCOA                   (Wanted: OFF): OFF
+--   SDL_DBUS                    (Wanted: OFF): OFF
+--   SDL_DEPS_SHARED             (Wanted: ON): OFF
+--   SDL_DIRECTX                 (Wanted: ON): ON
+--   SDL_DISKAUDIO               (Wanted: ON): ON
+--   SDL_DLOPEN_NOTES            (Wanted: OFF): OFF
+--   SDL_DUMMYAUDIO              (Wanted: ON): ON
+--   SDL_DUMMYCAMERA             (Wanted: ON): ON
+--   SDL_DUMMYVIDEO              (Wanted: ON): ON
+--   SDL_EXAMPLES                (Wanted: OFF): OFF
+--   SDL_EXAMPLES_LINK_SHARED    (Wanted: OFF): OFF
+--   SDL_FOREGROUNDING_SIGNAL    (Wanted: OFF): OFF
+--   SDL_FRIBIDI                 (Wanted: OFF): OFF
+--   SDL_FRIBIDI_SHARED          (Wanted: OFF): OFF
+--   SDL_GCC_ATOMICS             (Wanted: OFF): OFF
+--   SDL_HIDAPI                  (Wanted: ON): ON
+--   SDL_HIDAPI_JOYSTICK         (Wanted: ON): ON
+--   SDL_HIDAPI_LIBUSB           (Wanted: ON): OFF
+--   SDL_HIDAPI_LIBUSB_SHARED    (Wanted: ON): OFF
+--   SDL_IBUS                    (Wanted: OFF): OFF
+--   SDL_INSTALL                 (Wanted: OFF): OFF
+--   SDL_INSTALL_TESTS           (Wanted: OFF): OFF
+--   SDL_JACK                    (Wanted: OFF): OFF
+--   SDL_JACK_SHARED             (Wanted: OFF): OFF
+--   SDL_KMSDRM                  (Wanted: OFF): OFF
+--   SDL_KMSDRM_SHARED           (Wanted: OFF): OFF
+--   SDL_LASX                    (Wanted: OFF): OFF
+--   SDL_LIBC                    (Wanted: ON): ON
+--   SDL_LIBICONV                (Wanted: OFF): OFF
+--   SDL_LIBTHAI                 (Wanted: OFF): OFF
+--   SDL_LIBTHAI_SHARED          (Wanted: OFF): OFF
+--   SDL_LIBUDEV                 (Wanted: ON): OFF
+--   SDL_LIBURING                (Wanted: OFF): OFF
+--   SDL_LSX                     (Wanted: OFF): OFF
+--   SDL_METAL                   (Wanted: OFF): OFF
+--   SDL_MMX                     (Wanted: ON): OFF
+--   SDL_OFFSCREEN               (Wanted: ON): ON
+--   SDL_OPENGL                  (Wanted: ON): ON
+--   SDL_OPENGLES                (Wanted: ON): ON
+--   SDL_OPENVR                  (Wanted: OFF): OFF
+--   SDL_OSS                     (Wanted: OFF): OFF
+--   SDL_PIPEWIRE                (Wanted: OFF): OFF
+--   SDL_PIPEWIRE_SHARED         (Wanted: OFF): OFF
+--   SDL_PTHREADS                (Wanted: OFF): OFF
+--   SDL_PTHREADS_SEM            (Wanted: OFF): OFF
+--   SDL_PULSEAUDIO              (Wanted: OFF): OFF
+--   SDL_PULSEAUDIO_SHARED       (Wanted: OFF): OFF
+--   SDL_RENDER_D3D              (Wanted: ON): ON
+--   SDL_RENDER_D3D11            (Wanted: ON): ON
+--   SDL_RENDER_D3D12            (Wanted: ON): ON
+--   SDL_RENDER_GPU              (Wanted: ON): ON
+--   SDL_RENDER_METAL            (Wanted: OFF): OFF
+--   SDL_RENDER_VULKAN           (Wanted: ON): ON
+--   SDL_ROCKCHIP                (Wanted: OFF): OFF
+--   SDL_RPATH                   (Wanted: OFF): OFF
+--   SDL_RPI                     (Wanted: OFF): OFF
+--   SDL_SNDIO                   (Wanted: OFF): OFF
+--   SDL_SNDIO_SHARED            (Wanted: OFF): OFF
+--   SDL_SSE                     (Wanted: ON): ON
+--   SDL_SSE2                    (Wanted: ON): ON
+--   SDL_SSE3                    (Wanted: ON): ON
+--   SDL_SSE4_1                  (Wanted: ON): ON
+--   SDL_SSE4_2                  (Wanted: ON): ON
+--   SDL_SYSTEM_ICONV            (Wanted: OFF): OFF
+--   SDL_TESTS                   (Wanted: OFF): OFF
+--   SDL_TESTS_LINK_SHARED       (Wanted: OFF): OFF
+--   SDL_UNINSTALL               (Wanted: OFF): OFF
+--   SDL_VIRTUAL_JOYSTICK        (Wanted: ON): ON
+--   SDL_VIVANTE                 (Wanted: OFF): OFF
+--   SDL_VULKAN                  (Wanted: ON): ON
+--   SDL_WASAPI                  (Wanted: ON): ON
+--   SDL_WAYLAND                 (Wanted: OFF): OFF
+--   SDL_WAYLAND_LIBDECOR        (Wanted: OFF): OFF
+--   SDL_WAYLAND_LIBDECOR_SHARED (Wanted: OFF): OFF
+--   SDL_WAYLAND_SHARED          (Wanted: OFF): OFF
+--   SDL_X11                     (Wanted: OFF): OFF
+--   SDL_X11_SHARED              (Wanted: OFF): OFF
+--   SDL_X11_XCURSOR             (Wanted: OFF): OFF
+--   SDL_X11_XDBE                (Wanted: OFF): OFF
+--   SDL_X11_XFIXES              (Wanted: OFF): OFF
+--   SDL_X11_XINPUT              (Wanted: OFF): OFF
+--   SDL_X11_XRANDR              (Wanted: OFF): OFF
+--   SDL_X11_XSCRNSAVER          (Wanted: OFF): OFF
+--   SDL_X11_XSHAPE              (Wanted: OFF): OFF
+--   SDL_X11_XSYNC               (Wanted: OFF): OFF
+--   SDL_X11_XTEST               (Wanted: OFF): OFF
+--   SDL_XINPUT                  (Wanted: ON): ON
+-- 
+--  Build Shared Library: OFF
+--  Build Static Library: ON
+-- 
+-- Enabled backends:
+--   Video drivers: dummy offscreen windows
+--   Render drivers: d3d d3d11 d3d12 gpu ogl ogl_es2 vulkan
+--   GPU drivers: d3d12 vulkan
+--   Audio drivers: disk dsound dummy wasapi
+--   Joystick drivers: dinput gameinput hidapi rawinput virtual wgi xinput
+--   Camera drivers: dummy mediafoundation
+-- 
+CMake Warning at C:/Program Files/CMake/share/cmake-4.4/Modules/FindVulkan.cmake:712 (message):
+  Library dxc for Debug configuration is missing, imported target Vulkan::dxc
+  may not be able to link when targeting this build configuration due to
+  incompatible MSVC ABI.  Consider re-installing the Vulkan SDK and request
+  debug libraries to fix this warning.
+Call Stack (most recent call first):
+  C:/Program Files/CMake/share/cmake-4.4/Modules/FindVulkan.cmake:730 (_Vulkan_set_library_component_found)
+  build/release/_deps/volk-src/CMakeLists.txt:78 (find_package)
+
+
+volk: using Vulkan_INCLUDE_DIRS from FindVulkan module
+-- GLM: Version 1.0.3
+-- GLM: Build with C++ features auto detection
+-- Using plutovg submodule.
+-- ZSTD VERSION: 1.5.7
+-- CMAKE_INSTALL_PREFIX: C:/Program Files (x86)/EmberEngine
+-- CMAKE_INSTALL_LIBDIR: lib
+-- ZSTD_LEGACY_SUPPORT not defined!
+-- ZSTD_MULTITHREAD_SUPPORT is enabled
+-- Opus package version from git repo: 1.6.1
+-- Opus project version: 1.6.1
+-- Performing Test VLA_SUPPORTED -- failed to compile
+-- Check SIMD support by compiler
+-- The following features have been enabled:
+
+ * OPUS_ENABLE_FLOAT_API, compile with the floating point API (for machines with float library).
+ * OPUS_HARDENING, run-time checks that are cheap and safe for use in production.
+ * OPUS_USE_ALLOCA, use alloca for stack arrays (on non-C99 compilers).
+ * OPUS_STACK_PROTECTOR, use stack protection.
+ * OPUS_X86_MAY_HAVE_SSE, does runtime check for SSE1 support.
+ * OPUS_X86_MAY_HAVE_SSE2, does runtime check for SSE2 support.
+ * OPUS_X86_MAY_HAVE_SSE4_1, does runtime check for SSE4.1 support.
+ * OPUS_X86_MAY_HAVE_AVX2, does runtime check for AVX FMA AVX2 support.
+ * OPUS_X86_PRESUME_SSE, assume target CPU has SSE1 support (override runtime check).
+ * OPUS_X86_PRESUME_SSE2, assume target CPU has SSE2 support (override runtime check).
+
+-- The following OPTIONAL packages have been found:
+
+ * Threads
+ * Git
+
+-- The following REQUIRED packages have been found:
+
+ * Vulkan
+
+-- The following features have been disabled:
+
+ * OPUS_BUILD_SHARED_LIBRARY, build shared library.
+ * OPUS_BUILD_TESTING, build tests.
+ * OPUS_CUSTOM_MODES, enable non-Opus modes, e.g. 44.1 kHz & 2^n frames.
+ * OPUS_BUILD_PROGRAMS, build programs.
+ * OPUS_DISABLE_INTRINSICS, disable all intrinsics optimizations.
+ * OPUS_FIXED_POINT, compile as fixed-point (for machines without a fast enough FPU).
+ * OPUS_FLOAT_APPROX, enable floating point approximations (Ensure your platform supports IEEE 754 before enabling).
+ * OPUS_ASSERTIONS, additional software error checking.
+ * OPUS_FUZZING, causes the encoder to make random decisions (do not use in production).
+ * OPUS_CHECK_ASM, enable bit-exactness checks between optimized and c implementations.
+ * OPUS_DNN_FLOAT_DEBUG, Run DNN computations as float for debugging purposes.
+ * OPUS_INSTALL_PKG_CONFIG_MODULE, install pkg-config module.
+ * OPUS_INSTALL_CMAKE_CONFIG_MODULE, install CMake package config module.
+ * OPUS_DRED, enable DRED.
+ * OPUS_OSCE, enable OSCE.
+ * OPUS_STATIC_RUNTIME, build with static runtime library.
+ * OPUS_FIXED_POINT_DEBUG, debug fixed-point implementation.
+ * OPUS_VAR_ARRAYS, use variable length arrays for stack arrays.
+ * OPUS_NONTHREADSAFE_PSEUDOSTACK, use a non threadsafe pseudostack when neither variable length arrays or alloca is supported.
+ * OPUS_FAST_MATH, enable fast math (unsupported and discouraged use, as code is not well tested with this build option).
+ * OPUS_X86_PRESUME_SSE4_1, assume target CPU has SSE4.1 support (override runtime check).
+ * OPUS_X86_PRESUME_AVX2, assume target CPU has AVX FMA AVX2 support (override runtime check).
+
+-- The following OPTIONAL packages have not been found:
+
+ * LibUSB
+
+-- Configuring done (0.7s)
+-- Generating done (0.5s)
+-- Build files have been written to: C:/EmberEngine/build/release
+[0/4] Re-checking globbed directories...
+[1/289] Generating CXX dyndep file CMakeFiles\webm_reader.dir\CXX.dd
+[2/286] Generating CXX dyndep file _deps\sdl3-build\CMakeFiles\SDL3-static.dir\CXX.dd
+[3/281] Generating CXX dyndep file CMakeFiles\imgui.dir\CXX.dd
+[4/273] Generating CXX dyndep file _deps\meshoptimizer-build\CMakeFiles\meshoptimizer.dir\CXX.dd
+[5/251] Scanning C:\EmberEngine\engine\render\Clouds008.cpp for CXX dependencies
+[6/251] Scanning C:\EmberEngine\engine\render\Renderer.cpp for CXX dependencies
+[7/251] Generating CXX dyndep file engine\CMakeFiles\EmberEngine.dir\CXX.dd
+[8/163] Building CXX object engine\CMakeFiles\EmberEngine.dir\render\Clouds008.cpp.obj
+[9/163] Building CXX object engine\CMakeFiles\EmberEngine.dir\debug\PerfOverlay.cpp.obj
+[10/163] Building CXX object engine\CMakeFiles\EmberEngine.dir\render\Renderer.cpp.obj
+[11/163] Linking CXX static library engine\EmberEngine.lib
+[12/163] Shader triangle.PSMain
+[13/163] Shader triangle.VSMain
+[14/163] Shader tonemap.VSMain
+[15/163] Shader tonemap.PSMain
+[16/163] Shader worldmap.VSMain
+[17/163] Shader ground.VSMain
+[18/163] Shader ground.PSMain
+[19/163] Shader worldmap.PSMain
+[20/163] Shader sprites.VSMain
+[21/163] Shader sprites.PSDepth
+[22/163] Shader sprites.VSShadow
+[23/163] Shader sprites.PSShadow
+[24/163] Shader sprites_standing.VSMain
+[25/163] Shader sprites_standing.PSDepth
+[26/163] Shader effects.VSMain
+[27/163] Shader sprites.PSMain
+[28/163] Shader vfx.VSMain
+[29/163] Shader sprites_standing.PSMain
+[30/163] Shader hiz.CSDownsample
+[31/163] Shader effects.PSMain
+[32/163] Shader bloom.CSDown
+[33/163] Shader bloom.CSUp
+[34/163] Shader atmosphere.CSTransmittance
+[35/163] Shader atmosphere.CSMultiScattering
+[36/163] Shader atmosphere.CSSkyView
+[37/163] Shader atmosphere.CSAerial
+[38/163] Shader atmosphere.CSAmbient
+[39/163] Shader skyreflect.CSFilter
+[40/163] Shader skyreflect.CSCloudShadow
+[41/163] Shader probes.CSRelight
+[42/163] Shader skyreflect.CSBase
+[43/163] Shader volumetrics_clouds006.CSInject
+[44/163] Shader volumetrics_clouds006.CSIntegrate
+[45/163] Shader volumetrics_clouds006.CSMaterial
+[46/163] Shader cloud_legacy001.CSNoiseDetail
+[47/163] Shader cloud_legacy001.CSNoiseBase
+[48/163] Shader cloud_legacy001.CSMarch
+[49/163] Shader cloud_legacy001_sky.CSCloudShadow
+[50/163] Shader cloud_legacy001_sky.CSBase
+[51/163] Shader cloud_legacy002.CSNoiseDetail
+[52/163] Shader cloud_legacy002.CSNoiseBase
+[53/163] Shader vfx.PSMain
+[54/163] Shader cloud_legacy002.CSMarch
+[55/163] Shader cloud_legacy002_sky.CSCloudShadow
+[56/163] Shader cloud_legacy002_sky.CSBase
+[57/163] Shader cloud_legacy003.CSMarch
+[58/163] Shader cloud_legacy003_sky.CSBase
+[59/163] Shader cloud_legacy003_sky.CSCloudShadow
+[60/163] Shader cloud_legacy003.CSNoiseDetail
+[61/163] Shader cloud_legacy003.CSNoiseBase
+[62/163] Shader cloud_legacy004.CSMarch
+[63/163] Shader cloud_legacy004_sky.CSBase
+[64/163] Shader cloud_legacy004_sky.CSCloudShadow
+[65/163] Shader cloud_legacy004.CSNoiseDetail
+[66/163] Shader cloud_legacy004.CSNoiseBase
+[67/163] Shader cloud_legacy005.CSMarch
+[68/163] Shader cloud_legacy005_sky.CSBase
+[69/163] Shader cloud_legacy005_sky.CSCloudShadow
+[70/163] Shader clouds006.CSWeather
+[71/163] Shader cloud_legacy005.CSNoiseBase
+[72/163] Shader cloud_legacy005.CSNoiseDetail
+[73/163] Shader clouds006.CSHeight
+[74/163] Shader clouds006.CSFilter
+[75/163] Shader clouds006.CSEsm
+[76/163] Shader clouds006.CSAtlas
+[77/163] Shader clouds006.CSResolve
+[78/163] Shader clouds006.CSMarch
+[79/163] Shader clouds006.CSDisplacement
+[80/163] Shader clouds006.CSProbes
+[81/163] Shader clouds006.CSCube
+[82/163] Shader clouds006.CSWater
+[83/163] Shader cloudsvol.CSMarch
+[84/163] Shader clouds_rdr2.CSWeather
+[85/163] Shader cloudsvol.CSNoiseDetail
+[86/163] Shader clouds_rdr2.CSMarch
+[87/163] Shader cloudsvol.CSNoiseBase
+[88/163] Shader clouds_rdr2.CSResolve
+[89/163] Shader clouds_rdr2.CSAtlas
+[90/163] Shader clouds_rdr2.CSShadowBlur
+[91/163] Shader clouds_rdr2.CSShadow
+[92/163] Shader clouds_rdr2.CSDisplacement
+[93/163] Shader clouds_rdr2.CSHeight
+[94/163] Shader clouds_rdr2.CSShadowMip
+[95/163] Shader clouds_rdr2.CSAmbient
+[96/163] Shader clouds_rdr2.CSCube
+[97/163] Shader clouds_rdr2.CSProbes
+[98/163] Shader clouds_rdr2.CSWater
+[99/163] Shader clouds008.CSWeather
+[100/163] Shader clouds008.CSResolve
+[101/163] Shader clouds008.CSShadowBlur
+[102/163] Shader clouds008.CSAtlas
+[103/163] Shader clouds008.CSShadow
+[104/163] Shader clouds008.CSHeight
+[105/163] Shader clouds008.CSDisplacement
+[106/163] Shader clouds008.CSShadowMip
+[107/163] Shader clouds008.CSAmbient
+[108/163] Shader clouds008.CSMarch
+[109/163] Shader clouds008.CSProbes
+[110/163] Shader clouds008.CSCube
+[111/163] Shader sunglare.CSGlare
+[112/163] Shader volume.CSIntegrate
+[113/163] Shader volume.CSInject
+[114/163] Shader volumetrics_v1.CSIntegrate
+[115/163] Shader volumetrics_v1.CSInject
+[116/163] Shader fog_look001.CSMarch
+[117/163] Shader fog_look001.CSComposite
+[118/163] Shader fog_look006.CSMarch
+[119/163] Shader fog_look006.CSComposite
+[120/163] Shader fog_look003.CSMarch
+[121/163] Shader fog_look003.CSComposite
+[122/163] Shader clouds008.CSWater
+[123/163] Shader fog_look008.CSMarch
+[124/163] Shader fog_look008.CSComposite
+[125/163] Shader fog_look009.CSComposite
+[126/163] Shader fog_look009.CSMarch
+[127/163] Shader fog_look010.CSMarch
+[128/163] Shader fog_look010.CSComposite
+[129/163] Shader fog_look004.CSComposite
+[130/163] Shader fog_look004.CSMarch
+[131/163] Shader fog_look005.CSMarch
+[132/163] Shader fog_look005.CSComposite
+[133/163] Shader fog_look007.CSMarch
+[134/163] Shader fog_look007.CSComposite
+[135/163] Shader cull.CSInstancesEarly
+[136/163] Shader cull.CSInstancesLate
+[137/163] Shader cull.CSPrepare
+[138/163] Shader cull.CSTraverse
+[139/163] Shader cull.CSPrepareDraw
+[140/163] Shader meshlet.ASMain
+[141/163] Shader meshlet.MSMain
+[142/163] Shader meshlet.PSMain
+[143/163] Shader meshlet.PSShadow
+[144/163] Shader resolve.CSSky
+[145/163] Shader resolve.CSResolve
+[146/163] Shader terrain.VSMain
+[147/163] Shader resolve_panorama.CSSky
+[148/163] Shader terrain.VSShadow
+[149/163] Shader terrain.PSShadow
+[150/163] Shader water.VSMain
+[151/163] Shader resolve_panorama.CSResolve
+[152/163] Shader lights.CSClusters
+[153/163] Shader fog_look002.CSMarch
+[154/163] Shader fog_look002.CSComposite
+[155/163] Shader terrain.PSMain
+[156/163] Shader skyreflect008.CSBase
+[157/163] Shader water.PSMain
+[158/163] Scanning C:\EmberEngine\apps\sandbox\main.cpp for CXX dependencies
+[159/163] Generating CXX dyndep file apps\sandbox\CMakeFiles\Sandbox.dir\CXX.dd
+[160/163] Building CXX object apps\sandbox\CMakeFiles\Sandbox.dir\main.cpp.obj
+C:\EmberEngine\apps\sandbox\BattleStage.h(346): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\GamePrefs.h(47): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\engine\render/UiArt.h(206): warning C4996: 'std::filesystem::u8path': warning STL4021: The std::filesystem::u8path() overloads are deprecated in C++20. The constructors of std::filesystem::path provide equivalent functionality via construction from u8string, u8string_view, or iterators with value_type char8_t. You can define _SILENCE_CXX20_U8PATH_DEPRECATION_WARNING or _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS to suppress this warning.
+C:\EmberEngine\apps\sandbox\QuestLog.h(110): warning C4244: 'inicializando': conversão de 'int' para 'float', possível perda de dados
+C:\EmberEngine\apps\sandbox\QuestLog.h(110): warning C4244: 'inicializando': conversão de 'int' para 'const float', possível perda de dados
+C:\EmberEngine\apps\sandbox\DevGfxSettings.h(69): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapStage.h(576): warning C4244: '=': conversão de 'genTypeT' para 'T', possível perda de dados
+        with
+        [
+            genTypeT=double
+        ]
+        and
+        [
+            T=float
+        ]
+C:\EmberEngine\apps\sandbox\MapStage.h(577): warning C4244: '=': conversão de 'genTypeT' para 'T', possível perda de dados
+        with
+        [
+            genTypeT=double
+        ]
+        and
+        [
+            T=float
+        ]
+C:\EmberEngine\apps\sandbox\MapStage.h(1011): warning C4456: a declaração de 'dt' oculta uma declaração local anterior
+C:\EmberEngine\apps\sandbox\MapStage.h(584): note: consulte a declaração de 'dt'
+C:\EmberEngine\apps\sandbox\MapStage.h(569): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapStage.h(1288): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapStage.h(3306): warning C4459: a declaração de 'kStep' oculta uma declaração global
+C:\EmberEngine\engine\world/Hex.h(20): note: consulte a declaração de 'ember::kStep'
+C:\EmberEngine\apps\sandbox\MapStage.h(3742): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapStage.h(4262): warning C4189: 'hero': variável local é inicializada mas não referenciada
+C:\EmberEngine\apps\sandbox\MapStage.h(7660): warning C4456: a declaração de 'steps' oculta uma declaração local anterior
+C:\EmberEngine\apps\sandbox\MapStage.h(7605): note: consulte a declaração de 'steps'
+C:\EmberEngine\apps\sandbox\MapStage.h(11386): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\LoadingScreens.h(78): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\CutsceneScreen.h(126): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\CutsceneScreen.h(127): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\InnScreen.h(357): warning C4458: a declaração de 'id' oculta o membro da classe
+C:\EmberEngine\apps\sandbox\InnScreen.h(370): note: consulte a declaração de 'ember::InnScreen::drawQuests::<lambda_1>::id'
+C:\EmberEngine\apps\sandbox\OverworldStage.h(1462): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\OverworldStage.h(1495): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(158): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(187): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(697): warning C4100: 'point': parâmetro não referenciado
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(1909): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(2699): warning C4996: 'std::filesystem::u8path': warning STL4021: The std::filesystem::u8path() overloads are deprecated in C++20. The constructors of std::filesystem::path provide equivalent functionality via construction from u8string, u8string_view, or iterators with value_type char8_t. You can define _SILENCE_CXX20_U8PATH_DEPRECATION_WARNING or _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS to suppress this warning.
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(2720): warning C4996: 'std::filesystem::u8path': warning STL4021: The std::filesystem::u8path() overloads are deprecated in C++20. The constructors of std::filesystem::path provide equivalent functionality via construction from u8string, u8string_view, or iterators with value_type char8_t. You can define _SILENCE_CXX20_U8PATH_DEPRECATION_WARNING or _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS to suppress this warning.
+C:\EmberEngine\apps\sandbox\MapEditorStage.h(2721): warning C4996: 'std::filesystem::u8path': warning STL4021: The std::filesystem::u8path() overloads are deprecated in C++20. The constructors of std::filesystem::path provide equivalent functionality via construction from u8string, u8string_view, or iterators with value_type char8_t. You can define _SILENCE_CXX20_U8PATH_DEPRECATION_WARNING or _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS to suppress this warning.
+C:\EmberEngine\apps\sandbox\TestModeStage.h(673): warning C4244: 'inicializando': conversão de 'int' para 'float', possível perda de dados
+C:\EmberEngine\apps\sandbox\TestModeStage.h(673): warning C4244: 'inicializando': conversão de 'int' para 'const float', possível perda de dados
+C:\EmberEngine\apps\sandbox\main.cpp(995): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.

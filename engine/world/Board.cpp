@@ -170,7 +170,7 @@ std::optional<MapDraft> MapDraft::fromJson(const json& d) {
   auto num = [&](const char* k, float fallback) { return d.contains(k) && d[k].is_number() ? d[k].get<float>() : fallback; };
   m.cloudCoverage = std::clamp(num("cloudCoverage", -1.0f), -1.0f, 1.0f);
   m.cloudGray = std::clamp(num("cloudGray", 0.0f), 0.0f, 1.0f);
-  m.cloudLook = std::clamp(static_cast<int>(num("cloudLook", -1.0f)), -1, 7);
+  m.cloudLook = std::clamp(static_cast<int>(num("cloudLook", -1.0f)), -1, 8);
   m.weather = str(d, "weather");
   m.weatherIntensity = std::clamp(num("weatherIntensity", 0.7f), 0.0f, 1.0f);
   m.weatherWind = std::clamp(num("weatherWind", 0.35f), 0.0f, 1.0f);
