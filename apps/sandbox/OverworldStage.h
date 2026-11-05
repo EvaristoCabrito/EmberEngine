@@ -280,12 +280,12 @@ class OverworldStage : public Stage {
         const WorldMapConfig& c = fxConfig_[1];
         for (const WorldMapConfig::LutKey& k : c.luts) fxLuts_[1].push_back(k.file.empty() ? WorldMapFx::kNoTexture : fx_->loadTexture(k.file));
         uint32_t* t = fxTex_[1];
-        if (!c.fungalMask.empty()) std::tie(t[0], t[1]) = fx_->loadLightMask(c.fungalMask, c.lightGlowDownsample, c.lightGlowRadius);
+        if (!c.fungalMask.empty()) std::tie(t[0], t[1]) = fx_->loadLightMask(c.fungalMask, c.lightGlowDownsample, c.lightGlowRadius, true);
         if (!c.plantMask.empty()) t[2] = fx_->loadTexture(c.plantMask);
         if (!c.waterMask.empty()) t[3] = fx_->loadTexture(c.waterMask);
         if (!c.sporeMask.empty()) t[4] = fx_->loadTexture(c.sporeMask);
         if (!c.windowMask.empty()) t[5] = fx_->loadTexture(c.windowMask);
-        if (!c.emberMask.empty()) std::tie(t[6], t[7]) = fx_->loadLightMask(c.emberMask, c.lightGlowDownsample, c.lightGlowRadius);
+        if (!c.emberMask.empty()) std::tie(t[6], t[7]) = fx_->loadLightMask(c.emberMask, c.lightGlowDownsample, c.lightGlowRadius, true);
         if (!c.heatMask.empty()) t[8] = fx_->loadTexture(c.heatMask);
         logInfo("underworld look: {} LUTs, fungal {}, plants {}, water {}, spores {}, windows {}, ember {}, heat {}", fxLuts_[1].size(), fxOn(1, 0),
                 fxOn(1, 2), fxOn(1, 3), fxOn(1, 4), fxOn(1, 5), fxOn(1, 6), fxOn(1, 8));

@@ -368,7 +368,7 @@ uint32_t WorldMapFx::loadTexture(const std::filesystem::path& file) {
   return index;
 }
 
-std::pair<uint32_t, uint32_t> WorldMapFx::loadLightMask(const std::filesystem::path& file, int downsample, int radius) {
+std::pair<uint32_t, uint32_t> WorldMapFx::loadLightMask(const std::filesystem::path& file, int downsample, int radius, bool normalizeToPeak) {
   int w = 0, h = 0, n = 0;
   stbi_uc* pixels = stbi_load(file.string().c_str(), &w, &h, &n, 4);
   if (!pixels) {
@@ -443,7 +443,14 @@ std::pair<uint32_t, uint32_t> WorldMapFx::loadLightMask(const std::filesystem::p
     for (int pass = 0; pass < 3; ++pass) box(one, t2, true), box(t2, one, false);
     unitPeak = std::max(one[(size_t(n / 2) * n + n / 2)], 1e-6f);
   }
-  const float gain = kHaloPeak / unitPeak;
+  float gain = kHaloPeak / unitPeak;
+  // O Submundo (2026-11-05, o usuário: manchas teal / laranja chapadas e pixeladas desde 29/10): com raio 10 o ganho fixo passa de
+  // 90 x e todo aglomerado de cogumelos / forjas satura em 1; normalizado ao pico, como antes de 29/10, o halo volta a ter degradê.
+  if (normalizeToPeak) {
+    float peak = 1e-4f;
+    for (float v : small) peak = std::max(peak, v);
+    gain = 1.0f / peak;
+  }
   std::vector<unsigned char> texels(size_t(gw) * gh * 4, 255);
   for (size_t i = 0; i < size_t(gw) * gh; ++i)
     for (int k = 0; k < 3; ++k) texels[i * 4 + k] = static_cast<unsigned char>(std::lround(std::clamp(small[i * 3 + k] * gain, 0.0f, 1.0f) * 255.0f));

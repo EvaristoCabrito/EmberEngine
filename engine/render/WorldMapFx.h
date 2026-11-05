@@ -121,7 +121,9 @@ class WorldMapFx {
   uint32_t loadTexture(const std::filesystem::path& file);
   // A máscara de luzes e a sua cópia borrada (o halo): a imagem reduzida `downsample` vezes e borrada `radius` pixels (caixa,
   // três passes), subida ao lado da nítida. {kNoTexture, kNoTexture} se o arquivo não pode ser lido.
-  std::pair<uint32_t, uint32_t> loadLightMask(const std::filesystem::path& file, int downsample, int radius);
+  // normalizeToPeak: o halo dividido pelo seu próprio pico (o Submundo: máscaras densas de cogumelos e forjas, que com o ganho fixo
+  // saturavam em manchas chapadas); false = o ganho fixo de um ponto isolado (kHaloPeak).
+  std::pair<uint32_t, uint32_t> loadLightMask(const std::filesystem::path& file, int downsample, int radius, bool normalizeToPeak = false);
   // O revelado do mapa-múndi (R8, 1 = explorado), refeito só quando os hexágonos explorados mudam (o chamador decide).
   void setReveal(const std::vector<uint8_t>& texels, uint32_t w, uint32_t h);
   static constexpr uint32_t kNoTexture = 0xFFFFFFFFu;
