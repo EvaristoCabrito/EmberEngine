@@ -389,6 +389,23 @@ class MapStage final : public Stage {
     // A time of day chosen by hand (the Map Editor's Hora do dia) wins over the default night: the map's own hour ("Hora: do mapa").
     if (options.hour < 0 && options.gameHour < 0.0f && board_->draft().timeOfDayManual) dayCycle_ = 0;
     boardWidth_ = static_cast<float>(b.x1 - b.x0);
+    // The world's clock runs on EVERY map (the user, 2026-11-05: "O mundo tem um relógio que avança segundo por segundo. O céu, a
+    // iluminação, as sombras e o clima acompanham esse relógio continuamente, durante todas as 24 horas"): a map opened without the
+    // campaign's clock (Modo teste, the Map Editor's preview, the editor's Testar) starts at its own hour (the Hora do dia chosen by
+    // hand) or at the default 19:30, and from there the clock walks on, 1 s real = 1 s of the world in free movement, 60 s a round
+    // in combat (campaignMillisecondsNow). gameHour_ follows it every frame, so the sun, the moon, the stars and the shadows slide.
+    // The panel's Hora (ciclo rápido / lento / a fixed hour) still overrides it, as a test.
+    if (gameHour_ < 0.0f && options.hour < 0) {
+      const float start = board_->draft().timeOfDayManual ? ember::mapHour(board_->draft().timeOfDay) : 19.5f;
+      const std::int64_t day = options_.campaignMinute / 1440;
+      const double startMs = static_cast<double>(start) * 3600000.0;
+      options_.campaignMinute = day * 1440 + static_cast<std::int64_t>(startMs / 60000.0);
+      options_.campaignSubMinuteMs = static_cast<std::int64_t>(startMs) % 60000;
+      tempoTimeline_.configure(tempoConfig_, options_.campaignMinute * 60000, true);
+      gameHour_ = start;
+      dayCycle_ = 0;
+      logInfo("world clock: this map has no campaign clock: it starts at {} and runs from there", worldClockText());
+    }
     boardDepth_ = static_cast<float>(b.z1 - b.z0);
     boardZ0_ = static_cast<float>(b.z0);
     // The sun's shadow covers the board's bounding sphere (ground from y = 0 to its highest cell).
@@ -591,8 +608,12 @@ class MapStage final : public Stage {
     const float dt = std::min(std::chrono::duration<float>(std::chrono::steady_clock::now() - lastFrame_).count(), 0.1f);
     lastFrame_ = std::chrono::steady_clock::now();
     const auto clockNow=std::chrono::steady_clock::now();
-    if (lastCampaignTick_ && !options_.editorClick && options_.sceneTime < 0 && !pauseOpen_ && loading().ready &&
-        ((battle_ && battle_->roaming()) || inputHeld || cutscene_ || holdTurns)) {
+    // The world's seconds (1:1 with the real ones) pass in free movement, in a conversation / film, in the editor's preview (a map
+    // with no battle: the user watches the sun walk) and while the turns are held; in turn-based combat they pass by the rounds only
+    // (updateTurns: 60 s a round, counted once). A frame over 5 s is a stall (a load, the window asleep), not play.
+    if (lastCampaignTick_ && options_.sceneTime < 0 && !pauseOpen_ && loading().ready &&
+        (clockNow - *lastCampaignTick_) < std::chrono::seconds(5) &&
+        (!battle_ || battle_->roaming() || inputHeld || cutscene_ || holdTurns)) {
       const auto before=campaignMinuteNow();
       const auto ns=std::chrono::duration_cast<std::chrono::nanoseconds>(clockNow-*lastCampaignTick_).count();
       explorationMilliseconds_ += campaignRealtime_.consume(ns);
@@ -787,12 +808,16 @@ class MapStage final : public Stage {
       tempoMotion.flash=age>=0&&age<.10f?1-age/.10f:age>=.18f&&age<.24f?.5f*(1-(age-.18f)/.06f):0;
       tempoMotion.lightningSeed=ember::tempo::hash(minute,tempoConfig_.seed,92);
     } else { lastLightningMinute_=INT64_MIN; lightningAt_=-1000.0f; }
-    const std::string_view activeWeather=tempoActive?std::string_view("rain"):std::string_view(weatherKind_);
-    const float activeIntensity=tempoActive?tempoEffects.rain:weatherIntensity_;
+    // The map's own Clima (the Map Editor: chuva, tempestade, neve, cinzas) always shows (the user, 2026-11-05: "O CAMPO CLIMA PRECISA
+    // TER EFEITOS DE CLIMA"); the Tempo's natural weather drives a map that chose none. Before, the Tempo (on by default) replaced
+    // the map's choice by its own rain, so no Clima button did anything.
+    const bool mapWeather = !weatherKind_.empty() && weatherKind_ != "none";
+    const std::string_view activeWeather = mapWeather ? std::string_view(weatherKind_) : tempoActive ? std::string_view("rain") : std::string_view();
+    const float activeIntensity = mapWeather ? weatherIntensity_ : tempoActive ? tempoEffects.rain : 0.0f;
     if (board_ && !interiorMap() && !activeWeather.empty() && activeWeather != "none" && activeIntensity>0) {
       weatherFrame_ = spellFx_.vfx();
       const float flash = WeatherFx::append(weatherFrame_, activeWeather, activeIntensity, weatherWind_,
-          time, camera, cam_.target, [this](float x, float z) { return static_cast<float>(ember::groundHeightAt(*board_, look_, x, z)); }, tempoActive?&tempoMotion:nullptr);
+          time, camera, cam_.target, [this](float x, float z) { return static_cast<float>(ember::groundHeightAt(*board_, look_, x, z)); }, tempoActive && !mapWeather ? &tempoMotion : nullptr);
       if (flash > 0) lights_.push_back(classicLight(cam_.target + glm::vec3(0,18,0), {.78f,.86f,1.0f}, flash*12.0f, 65.0f, 1.25f));
       renderer.setVfx(weatherFrame_);
     } else renderer.setVfx(spellFx_.vfx());
@@ -2507,6 +2532,11 @@ class MapStage final : public Stage {
   float flatY(float z) const { return boardTop_ + kFlatLift + (z - boardZ0_) * kFlatRowStep; }
   // The camera bar (Ember GameApp.tsx + ember-plate): 28 px plates (size-7), 4 px apart (gap-1), 8 px from the
   // corner (inset-x-2, top 0.5rem), 10 px text; the window's padding leaves room for the shadow and glow.
+  // "15:23:10": the world's clock, for the plates and the log.
+  std::string worldClockText() const {
+    const std::int64_t s = (campaignMillisecondsNow() / 1000) % 86400;
+    return std::format("{:02}:{:02}:{:02}", s / 3600, (s / 60) % 60, s % 60);
+  }
   static constexpr float kPlate = 28.0f, kBarGap = 4.0f, kBarInset = 8.0f, kPlateText = 12.0f, kPlateGlow = 10.0f;
   static constexpr float kFlameEmit = 2.5f;           // Ember FLAME_EMIT
   // Light mode "real" (ARCHITECTURE 7.6 step A).
@@ -5987,8 +6017,9 @@ class MapStage final : public Stage {
     int active = battle_->activeUnit();
     if (active < 0) {
       battle_->startNewRound();
-      ++elapsedBattleMinutes_;
-      if (gameHour_ >= 0) gameHour_ = static_cast<float>(campaignMinuteNow() % 1440) / 60.0f;
+      ++elapsedBattleMinutes_;  // a completed round = one minute of the world, counted once, here
+      if (gameHour_ >= 0) gameHour_ = static_cast<float>(campaignMillisecondsNow() % 86400000) / 3600000.0f;
+      logInfo("world clock: round {} begins at {}", battle_->round(), worldClockText());
       turnUnit_ = -1;
       active = battle_->activeUnit();
       if (active < 0) return;
@@ -10704,7 +10735,7 @@ class MapStage final : public Stage {
   // Free roam's box (top centre, in place of the turn plate): the party is in a free-movement area, how to move in it.
   void drawFreeMovePlate() {
     const ImGuiIO& io = ImGui::GetIO();
-    const std::string title = tr("Movimento livre", "Free movement");
+    const std::string title = tr("Movimento livre", "Free movement") + "  ·  " + worldClockText();
     std::vector<std::string> lines;
     if (innFloor()) {
       lines.push_back(tr("Clique no chão para andar · clique em alguém para conversar.", "Click the ground to walk · click someone to talk."));
@@ -10789,7 +10820,7 @@ class MapStage final : public Stage {
     if (result_ == "victory") text = tr("Vitória", "Victory");
     else if (result_ == "defeat") text = tr("Derrota", "Defeat");
     else if (const int a = battle_->activeUnit(); a >= 0)
-      text = std::format("{} {}  ·  {}", tr("Rodada", "Round"), battle_->round(),
+      text = std::format("{} {}  ·  {}  ·  {}", tr("Rodada", "Round"), battle_->round(), worldClockText(),
                          std::vformat(tr("vez de {}", "{}'s turn"), std::make_format_args(battle_->units()[static_cast<size_t>(a)].name)));
     if (text.empty()) return;
     const bool end = !result_.empty();

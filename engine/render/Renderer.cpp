@@ -1456,7 +1456,14 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
   }
   // The static board's shadow is cached: drawn again only when the sun, the bounds or the ground change.
   const bool shadows = f.shadowMap != kNoTextureIndex && (lightingLayers_ & 2u) != 0;
-  const std::array<float, 8> key{lighting_.sunDirection.x, lighting_.sunDirection.y, lighting_.sunDirection.z, shadowCenter_.x,
+  // A sun that slides with the world's clock (0.25 deg a minute) would redraw the map's shadow every frame: it is drawn again once
+  // the sun has moved more than kShadowSunStep from the direction it was drawn for (a step of ~25 s of the world).
+  {
+    constexpr float kShadowSunStep = 0.1f;  // degrees
+    const glm::vec3 sun = glm::normalize(lighting_.sunDirection);
+    if (glm::dot(sun, shadowSun_) < std::cos(glm::radians(kShadowSunStep))) shadowSun_ = sun;
+  }
+  const std::array<float, 8> key{shadowSun_.x, shadowSun_.y, shadowSun_.z, shadowCenter_.x,
                                  shadowCenter_.y, shadowCenter_.z, shadowRadius_, static_cast<float>(terrain_.vertices % 1000003u)};
   // The 3D pieces belong to the cached map too: a new instance list (or new meshes) redraws it.
   const uint64_t meshKey = meshView_ ? (meshView_.instancesVersion * 1000003ull) ^ meshView_.meshes ^ meshView_.meshCount : 0;

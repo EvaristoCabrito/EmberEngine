@@ -633,6 +633,7 @@ class Renderer {
   uint32_t background_ = 0xFFFFFFFFu;  // setBackground
   uint32_t backgroundMode_ = 0;
   glm::vec4 backdropFitA_{0.0f}, backdropFitB_{0.0f};
+  glm::vec3 shadowSun_{0.0f, 1.0f, 0.0f};  // the sun the cached shadow map was drawn for (redrawn past kShadowSunStep)
   BackdropPlane backdropPlane_;
   uint32_t lightingLayers_ = 0xFFFFFFFFu;
   TerrainView terrain_;
