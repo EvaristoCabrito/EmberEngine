@@ -351,7 +351,7 @@ place('wilds-ivy-statue', HILL[0] + 3, HILL[1] - 3)
 place('wilds-gothic-arch', 30, 10, allow_path=True, block=False)
 for c, r in [(27, 4), (33, 4), (27, 8), (33, 8)]:
     place('ember-crypt-cracked-pillar', c, r)
-place('ember-dungeon-broken-arch', 29, 3)
+# ember-dungeon-broken-arch removed on the user's order (2026-11-05): tools/scripts/data/removed_decorations.py
 place('ember-crypt-deity-statue', 30, 2)
 for c, r in [(23, 3), (37, 5), (24, 8), (36, 9), (26, 10), (34, 2)]:
     place(rng.choice(['ember-crypt-collapsed-ceiling', 'ember-structures-scattered-blocks', 'ember-crypt-column-base']), c, r)

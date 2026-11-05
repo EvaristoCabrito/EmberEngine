@@ -257,18 +257,6 @@
       "blocks": true
     },
     {
-      "id": "ember-dungeon-broken-arch",
-      "name": "Arco de pedra quebrado 3D",
-      "kit": "dungeon",
-      "model": "ember-broken-arch",
-      "file": "/game/ember/dungeon/broken-arch-v01.glb",
-      "height": 4.036,
-      "width": 4.651,
-      "footprint": "triple",
-      "section": "Cave",
-      "blocks": true
-    },
-    {
       "id": "ember-dungeon-chains",
       "name": "Correntes de ferro 3D",
       "kit": "dungeon",

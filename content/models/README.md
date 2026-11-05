@@ -108,7 +108,7 @@ Ids are `ember-<kit>-<name>`; sizes in units (w = widest side, h = height); tris
 | ember-dungeon-iron-cage | dungeon | dungeon/iron-cage-v01.glb | 1.33 × 2.30 | 680 | rusted iron frame + bars, door ajar, rivets |
 | ember-dungeon-bone-pile | dungeon | dungeon/bone-pile-v01.glb | 1.52 × 0.47 | 2944 | skull (sockets), jaw, 7 long bones, 4 ribs; bone vertex colour |
 | ember-dungeon-altar | dungeon | dungeon/altar-v01.glb | 2.40 × 0.99 | 268 | crypt masonry, grooves, one fractured corner |
-| ember-dungeon-broken-arch | dungeon | dungeon/broken-arch-v01.glb | 4.65 × 4.04 | 880 | two piers, 7 voussoirs, right half fallen |
+| ember-dungeon-broken-arch | dungeon | dungeon/broken-arch-v01.glb | 4.65 × 4.04 | 880 | two piers, 7 voussoirs, right half fallen. **Removed from the catalog and every map on the user's order (2026-11-05); GLB kept, unused** |
 | ember-dungeon-chains | dungeon | dungeon/chains-v01.glb | 0.90 × 1.88 | 2748 | wall plate, ring, 11 hanging links, 5 on the floor |
 | ember-extra-fence-segment | extra | extra/fence-segment-v01.glb | 3.00 × 1.65 | 340 | 2 worn posts, 3 rails, iron nails; pair footprint along x |
 | ember-extra-broken-fence | extra | extra/broken-fence-v01.glb | 3.04 × 1.65 | 276 | leaning snapped post, top rail hanging, bottom rail + splinters on the ground |

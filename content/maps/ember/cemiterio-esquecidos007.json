@@ -9119,12 +9119,6 @@
         "blocksPath": true
       },
       {
-        "id": "ember-dungeon-broken-arch",
-        "x": 29,
-        "y": 3,
-        "blocksPath": true
-      },
-      {
         "id": "ember-structures-scattered-blocks",
         "x": 23,
         "y": 3,

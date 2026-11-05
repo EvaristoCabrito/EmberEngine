@@ -13884,42 +13884,6 @@
       "lockYaw": false,
       "nudge": 0
     },
-    "ember-dungeon-broken-arch": {
-      "name": "Arco de pedra quebrado 3D",
-      "footprint": [
-        {
-          "dx": -1,
-          "dy": 0
-        },
-        {
-          "dx": 0,
-          "dy": 0
-        },
-        {
-          "dx": 1,
-          "dy": 0
-        }
-      ],
-      "blockingFootprint": null,
-      "architectureSpan": false,
-      "architecture": false,
-      "model3d": "prop",
-      "model": {
-        "model": "ember-broken-arch",
-        "file": "/game/ember/dungeon/broken-arch-v01.glb",
-        "height": 4.036
-      },
-      "mirrorAlternate": false,
-      "exitKind": null,
-      "size": {
-        "w": 4.651,
-        "h": 4.036
-      },
-      "light": null,
-      "standOn": false,
-      "lockYaw": false,
-      "nudge": 0
-    },
     "ember-dungeon-chains": {
       "name": "Correntes de ferro 3D",
       "footprint": [
@@ -202297,12 +202261,6 @@
         "thumb": "",
         "blocksByDefault": true
       },
-      "ember-dungeon-broken-arch": {
-        "section": "Cave",
-        "tile": null,
-        "thumb": "",
-        "blocksByDefault": true
-      },
       "ember-dungeon-chains": {
         "section": "Cave",
         "tile": null,
@@ -213144,21 +213102,6 @@
         "manual": true,
         "art": ""
       },
-      "ember-dungeon-broken-arch": {
-        "model3d": "prop",
-        "exitKind": null,
-        "props3d": true,
-        "rockStyle": false,
-        "thickWall": false,
-        "doorStyle": null,
-        "wallTexture": null,
-        "solidHouse": false,
-        "solidCart": false,
-        "solidRock": false,
-        "chest": false,
-        "manual": true,
-        "art": ""
-      },
       "ember-dungeon-chains": {
         "model3d": "prop",
         "exitKind": null,
@@ -217326,7 +217269,6 @@
       "ember-dungeon-iron-cage",
       "ember-dungeon-bone-pile",
       "ember-dungeon-altar",
-      "ember-dungeon-broken-arch",
       "ember-dungeon-chains",
       "ember-treasure-ceramic-jars",
       "ember-treasure-open-barrel",

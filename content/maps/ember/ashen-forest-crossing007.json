@@ -11958,12 +11958,6 @@
         "chestTier": "good"
       },
       {
-        "id": "ember-dungeon-broken-arch",
-        "x": 13,
-        "y": 20,
-        "blocksPath": true
-      },
-      {
         "id": "ember-dungeon-pillar",
         "x": 9,
         "y": 23,

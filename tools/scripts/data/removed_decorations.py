@@ -2,6 +2,12 @@
 
   wall-3d-low  "Mureta de pedra 3D": Ember gives it no wall texture (wallTexture null), so it draws as a flat grey slab
                (the user, 2026-10-20: "apaga essa mureta 3d sem textura ... para eu nunca mais ter que ver essa merda")
+  ember-dungeon-broken-arch  "Arco de pedra quebrado 3D" (the user, 2026-11-05: a list of 3D props "que não quero aparecer em nenhum
+               outro lugar do mapa"; also scrubbed from content/models/models.json and every map in content/maps/ember that placed it;
+               the GLB stays in content/models, unused)
+
+Maps too: python -I tools/scripts/data/removed_decorations.py content/maps/ember/<map>.json ... drops every decoration naming a
+removed id (the map's other entries untouched).
 
   python -I tools/scripts/data/removed_decorations.py [file.json ...]   (default: content/data/editor-catalog.json)
 
@@ -19,6 +25,7 @@ REMOVED = {
     'ember-nature-dry-branch-pile',
     'prop-3d-vau-stone-v01',
     'prop-3d-vau-well-v01',
+    'ember-dungeon-broken-arch',
 }
 FILES = ['content/data/editor-catalog.json']
 
@@ -36,7 +43,10 @@ def main():
         raw = open(path, encoding='utf-8').read()
         data = json.loads(raw)
         clean = scrub(data)
-        out = json.dumps(clean, ensure_ascii=False, separators=(',', ':')) if '\n' not in raw.strip() else json.dumps(clean, ensure_ascii=False, indent=2)
+        if '\n' in raw.strip():
+            out = json.dumps(clean, ensure_ascii=False, indent=2)
+        else:  # one line: keep the file's own separators
+            out = json.dumps(clean, ensure_ascii=False, separators=(', ', ': ') if '", "' in raw[:4000] else (',', ':'))
         open(path, 'w', encoding='utf-8', newline='\n').write(out + ('\n' if raw.endswith('\n') else ''))
         left = sum(out.count(f'"{r}"') for r in REMOVED)
         print(f'{path}: {len(raw) - len(out)} bytes removed, {left} mentions left')

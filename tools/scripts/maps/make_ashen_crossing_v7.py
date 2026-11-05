@@ -256,7 +256,7 @@ def main():
     put_near("ember-wisp-revisited-broken-stump", (33, 45), 2, blocksPath=True)
     put_near("ember-polyhaven-treasure-chest", (38, 45), 3, chestTier="good")
     # the ruined waystation: a broken arch, pillars, a well, a chest
-    put_near("ember-dungeon-broken-arch", (12, 21), 2, blocksPath=True)
+    # ember-dungeon-broken-arch removed on the user's order (2026-11-05): tools/scripts/data/removed_decorations.py
     put_near("ember-dungeon-pillar", (10, 23), 2, blocksPath=True)
     put_near("ember-dungeon-pillar-v02", (14, 21), 2, blocksPath=True)
     put_near("ember-city-well", (13, 24), 2, blocksPath=True)
