@@ -64,6 +64,7 @@
 #include "world/Board.h"
 #include "world/Campaign.h"
 #include "world/Combat.h"
+#include "world/CutsceneScript.h"
 #include "world/Locais.h"
 #include "world/MapDressing.h"
 #include "world/Overworld.h"
@@ -175,7 +176,13 @@ class MapEditorStage : public Stage {
         pendingDialog_ = step.substr(7);
         continue;
       }
-      if (step.starts_with("tab:")) {  // a tab of the page opened: file map terrain decor units scene rules world
+      if (step.starts_with("cutscene:")) {  // the Cutscenes tab with that script open
+        openTab(Tab::Cutscenes);
+        refreshCutscenes();
+        openCutscene(step.substr(9));
+        continue;
+      }
+      if (step.starts_with("tab:")) {  // a tab of the page opened: file map terrain decor units cutscenes scene rules world
         for (const TabInfo& t : kTabs)
           if (step.substr(4) == t.key) openTab(t.tab);
         continue;
@@ -700,6 +707,16 @@ class MapEditorStage : public Stage {
   void onCellClick(int x, int y, std::optional<glm::vec3> point) {
     if (x < 0 || y < 0 || x >= cols() || y >= rows()) return;
     heldUnit_.reset();
+    if (tab_ == Tab::Cutscenes) {  // the Cutscenes tab: a click on the preview picks a hex for the armed "Mover" step, never edits the map
+      if (cutPickStep_ && *cutPickStep_ < static_cast<int>(cutSteps().size())) {
+        ember::Json& st = cutSteps()[*cutPickStep_];
+        st["to"] = ember::Json::array({x, y});
+        cutDirty_ = true;
+        note(std::format("Passo {}: destino {},{}.", *cutPickStep_ + 1, x, y));
+      }
+      cutPickStep_.reset();
+      return;
+    }
     const int i = y * cols() + x;
     if (mode_ == Mode::Elevation) return elevate(x, y);
     if (mode_ == Mode::Paint) {
@@ -1184,7 +1201,7 @@ class MapEditorStage : public Stage {
   void rebuildPreview() {
     dirty_ = false;
     if (!data_) return;
-    if(!draft_.contains("cloudLook"))draft_["cloudLook"]=0;
+    // An absent map choice inherits the established default. Opening a preview must not save OFF into the draft.
     std::optional<ember::MapDraft> draft = ember::MapDraft::fromJson(nlohmann::json::parse(draft_.dump()));
     if (!draft) return note("O mapa não tem tabuleiro.");
     ember::Json weatherBase = withoutPreviewWeather(draft_);
@@ -2090,7 +2107,7 @@ class MapEditorStage : public Stage {
   }
 
   // The tabs of the page (the rail on its left).
-  enum class Tab { File, Map, Terrain, Decor, Units, Scene, Rules, World };
+  enum class Tab { File, Map, Terrain, Decor, Units, Cutscenes, Scene, Rules, World };
   struct TabInfo {
     Tab tab;
     const char* key;  // the captures' "tab:<key>"
@@ -2104,6 +2121,7 @@ class MapEditorStage : public Stage {
       {Tab::Terrain, "terrain", "mountain", "Terreno", "Pintar os tiles e esculpir a elevação."},
       {Tab::Decor, "decor", "castle", "Decoração", "Decorações 2D, paredes 3D e objetos 3D."},
       {Tab::Units, "units", "users", "Unidades", "Heróis, inimigos, NPCs e invocações."},
+      {Tab::Cutscenes, "cutscenes", "clapperboard", "Cutscenes", "Cenas no mapa: atores, passos (mover, virar, falar, esperar) e a cena de abertura."},
       {Tab::Scene, "scene", "sun-moon", "Cenário", "Ground, panorama, céu, iluminação, clima, nuvens e névoa."},
       {Tab::Rules, "rules", "scroll-text", "Regras", "Vitória, regras do mapa e da peça selecionada."},
       {Tab::World, "world", "globe", "Mundo", "Local no mapa-múndi, Locais e encontros de estrada."}};
@@ -2323,6 +2341,9 @@ class MapEditorStage : public Stage {
       case Tab::Units:
         drawUnitsTab();
         break;
+      case Tab::Cutscenes:
+        drawCutscenesTab();
+        break;
       case Tab::Scene:
         section("Ground e Panorama");
         drawGroundAndPanorama();
@@ -2450,6 +2471,335 @@ class MapEditorStage : public Stage {
     drawDecorationList();
   }
   // Unidades: the side to place, its brush, then every unit on the map.
+  // --- Cutscenes (the on-map scripts of docs/CUTSCENES.md, content/cutscenes/<id>.json, format ember-cutscene-1) -----------
+  // The tab edits one script at a time in memory (cutDoc_) until Salvar; the Map Editor's own undo (the draft) is not
+  // involved: a script is its own file. "Ao abrir o mapa" writes content/cutscenes/triggers.json onOpen[<map id>].
+  static std::filesystem::path cutscenesDir() { return "content/cutscenes"; }
+  static std::filesystem::path triggersFile() { return cutscenesDir() / "triggers.json"; }
+  static ember::Json readJsonFile(const std::filesystem::path& f) {
+    std::ifstream in(f, std::ios::binary);
+    ember::Json j = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
+    return j.is_discarded() ? ember::Json() : j;
+  }
+  static bool writeJsonFile(const std::filesystem::path& f, const ember::Json& j) {
+    std::error_code ec;
+    std::filesystem::create_directories(f.parent_path(), ec);
+    const std::filesystem::path tmp = f.string() + ".tmp";
+    {
+      std::ofstream out(tmp, std::ios::binary | std::ios::trunc);
+      if (!out) return false;
+      out << j.dump(2) << "\n";
+    }
+    std::filesystem::rename(tmp, f, ec);
+    return !ec;
+  }
+  ember::Json& cutSteps() {
+    if (!cutDoc_.contains("steps") || !cutDoc_["steps"].is_array()) cutDoc_["steps"] = ember::Json::array();
+    return cutDoc_["steps"];
+  }
+  ember::Json& cutActors() {
+    if (!cutDoc_.contains("actors") || !cutDoc_["actors"].is_object()) cutDoc_["actors"] = ember::Json::object();
+    return cutDoc_["actors"];
+  }
+  void refreshCutscenes() {
+    cutFiles_.clear();
+    std::error_code ec;
+    for (const auto& e : std::filesystem::directory_iterator(cutscenesDir(), ec)) {
+      if (!e.is_regular_file() || e.path().extension() != ".json" || e.path().filename() == "triggers.json") continue;
+      const ember::Json j = readJsonFile(e.path());
+      if (j.is_object() && j.value("format", "") == ember::CutsceneScript::kFormat) cutFiles_.push_back(e.path().stem().string());
+    }
+    std::sort(cutFiles_.begin(), cutFiles_.end());
+    cutScanned_ = true;
+  }
+  std::string cutOpeningId() const {
+    const ember::Json t = readJsonFile(triggersFile());
+    const ember::Json on = t.is_object() ? t.value("onOpen", ember::Json::object()) : ember::Json::object();
+    return on.is_object() ? on.value(draft_.value("id", ""), std::string()) : std::string();
+  }
+  void setCutOpening(const std::string& id) {  // "" = no opening scene for this map
+    ember::Json t = readJsonFile(triggersFile());
+    if (!t.is_object()) t = ember::Json::object();
+    if (!t.contains("format")) t["format"] = "ember-cutscene-triggers-1";
+    if (!t.contains("onOpen") || !t["onOpen"].is_object()) t["onOpen"] = ember::Json::object();
+    const std::string map = draft_.value("id", "");
+    if (id.empty()) t["onOpen"].erase(map);
+    else t["onOpen"][map] = id;
+    if (!writeJsonFile(triggersFile(), t)) return note("Não consegui gravar content/cutscenes/triggers.json.");
+    note(id.empty() ? std::format("{} abre sem cena.", map) : std::format("{} abre com a cena {}.", map, id));
+  }
+  void openCutscene(const std::string& id) {
+    cutId_ = id;
+    cutDoc_ = readJsonFile(cutscenesDir() / (id + ".json"));
+    if (!cutDoc_.is_object()) cutDoc_ = ember::Json::object();
+    cutDirty_ = false, cutError_.clear(), cutPickStep_.reset();
+  }
+  void newCutscene() {
+    const std::string map = scenarioId(draft_.value("id", ""));
+    std::string id;
+    for (int n = 1;; ++n) {
+      id = std::format("{}-cena-{:02}", map, n);
+      if (!std::filesystem::exists(cutscenesDir() / (id + ".json"))) break;
+    }
+    ember::Json doc = {{"format", ember::CutsceneScript::kFormat}, {"id", id}, {"actors", ember::Json::object()}, {"steps", ember::Json::array()}};
+    if (!writeJsonFile(cutscenesDir() / (id + ".json"), doc)) return note("Não consegui criar a cena (content/cutscenes).");
+    refreshCutscenes();
+    openCutscene(id);
+    note(std::format("Cena {} criada. Adicione atores e passos, depois Salvar.", id));
+  }
+  bool saveCutscene() {
+    cutDoc_["format"] = ember::CutsceneScript::kFormat;
+    cutDoc_["id"] = cutId_;
+    std::string why;
+    if (!ember::CutsceneScript::parse(cutDoc_, &why)) {
+      cutError_ = why;
+      note("A cena não passa na verificação do jogo: " + why);
+      return false;
+    }
+    if (!writeJsonFile(cutscenesDir() / (cutId_ + ".json"), cutDoc_)) return note("Não consegui gravar a cena."), false;
+    cutDirty_ = false, cutError_.clear();
+    note(std::format("Cena {} gravada (content/cutscenes/{}.json).", cutId_, cutId_));
+    return true;
+  }
+  // The units standing on the map, by name (the names a script's actors point at).
+  std::vector<std::string> cutUnitNames() {
+    std::vector<std::string> out;
+    for (const char* key : {"playerSpawns", "enemySpawns", "neutralSpawns"})
+      for (const ember::Json& sp : arr(key)) {
+        const std::string n = sp.value("name", "");
+        if (!n.empty() && std::find(out.begin(), out.end(), n) == out.end()) out.push_back(n);
+      }
+    return out;
+  }
+  // A small text field over a Json string; returns true when it changed.
+  static bool cutText(const char* id, ember::Json& holder, const char* key, bool multiline = false, float width = -1) {
+    std::string value = holder.contains(key) && holder[key].is_string() ? holder[key].get<std::string>() : "";
+    char buffer[2048];
+    std::snprintf(buffer, sizeof(buffer), "%s", value.c_str());
+    ImGui::SetNextItemWidth(width);
+    const bool changed = multiline ? ImGui::InputTextMultiline(id, buffer, sizeof(buffer), {width, 56}) : ImGui::InputText(id, buffer, sizeof(buffer));
+    if (changed) holder[key] = std::string(buffer);
+    return changed;
+  }
+  // A combo over names; `current` may be absent from the list (shown as it is).
+  static bool cutCombo(const char* id, std::string& current, const std::vector<std::string>& names, const char* empty, float width = -1) {
+    ImGui::SetNextItemWidth(width);
+    bool changed = false;
+    if (ImGui::BeginCombo(id, current.empty() ? empty : current.c_str())) {
+      for (const std::string& n : names)
+        if (ImGui::Selectable(n.c_str(), n == current)) current = n, changed = true;
+      ImGui::EndCombo();
+    }
+    return changed;
+  }
+  void drawCutscenesTab() {
+    if (!cutScanned_) refreshCutscenes();
+    const std::string map = draft_.value("id", "");
+    section("Cenas");
+    hint("Uma cena dirige as unidades que já estão no mapa: mover, virar, falar (na caixa de diálogo do jogo) e esperar, um passo depois do outro. "
+         "Cada cena é um arquivo em content/cutscenes.");
+    if (ImGui::SmallButton("Nova cena")) newCutscene();
+    ImGui::SameLine();
+    if (ImGui::SmallButton("Reler a pasta")) refreshCutscenes();
+    const std::string opening = cutOpeningId();
+    for (const std::string& id : cutFiles_) {
+      ImGui::PushID(id.c_str());
+      const bool sel = id == cutId_;
+      if (ImGui::Selectable(id.c_str(), sel)) {
+        if (!sel) openCutscene(id);
+      }
+      if (id == opening) {
+        ImGui::SameLine();
+        ImGui::TextColored(ImColor(252, 211, 77), "· abre este mapa");
+      }
+      ImGui::PopID();
+    }
+    if (cutFiles_.empty()) hint("Nenhuma cena ainda. Nova cena cria content/cutscenes/%s-cena-01.json.", scenarioId(map).c_str());
+    if (cutId_.empty()) return;
+
+    section(std::format("Cena \"{}\"{}", cutId_, cutDirty_ ? " (não gravada)" : "").c_str());
+    if (ImGui::Button("Salvar cena")) saveCutscene();
+    ImGui::SameLine();
+    if (ImGui::Button("Reabrir")) openCutscene(cutId_);
+    if (!cutError_.empty()) ImGui::TextColored(ImColor(255, 120, 100), "%s", cutError_.c_str());
+    bool isOpening = opening == cutId_;
+    if (ImGui::Checkbox("Ao abrir o mapa (toca toda vez que o mapa abre; Testar mostra)", &isOpening)) setCutOpening(isOpening ? cutId_ : "");
+    hint("Mapa: %s. A cena de abertura toca no jogo e no Testar, não na prévia do editor.", map.c_str());
+
+    // Actors
+    fieldLabel("Atores (nome na cena -> unidade no mapa)");
+    const std::vector<std::string> units = cutUnitNames();
+    ember::Json& actors = cutActors();
+    std::vector<std::string> actorNames;
+    for (const auto& [name, a] : actors.items()) actorNames.push_back(name);
+    std::string removeActor, renameFrom, renameTo;
+    for (const std::string& name : actorNames) {
+      ImGui::PushID(("actor:" + name).c_str());
+      char buf[128];
+      std::snprintf(buf, sizeof(buf), "%s", name.c_str());
+      ImGui::SetNextItemWidth(120);
+      if (ImGui::InputText("##aname", buf, sizeof(buf), ImGuiInputTextFlags_EnterReturnsTrue) && buf[0] && std::string(buf) != name && !actors.contains(buf)) renameFrom = name, renameTo = buf;
+      ImGui::SameLine();
+      ember::Json& a = actors[name];
+      if (!a.is_object()) a = ember::Json::object();
+      std::string unit = a.value("unit", "");
+      if (cutCombo("##aunit", unit, units, "unidade…", 180)) a["unit"] = unit, cutDirty_ = true;
+      if (!unit.empty() && std::find(units.begin(), units.end(), unit) == units.end()) {
+        ImGui::SameLine();
+        ImGui::TextColored(ImColor(255, 120, 100), "não está no mapa");
+      }
+      ImGui::SameLine();
+      if (ImGui::SmallButton("Tirar")) removeActor = name;
+      ImGui::PopID();
+    }
+    if (!removeActor.empty()) actors.erase(removeActor), cutDirty_ = true;
+    if (!renameFrom.empty()) {  // the steps follow the actor's new name
+      ember::Json a = actors[renameFrom];
+      actors.erase(renameFrom);
+      actors[renameTo] = a;
+      for (ember::Json& st : cutSteps()) {
+        if (st.value("actor", "") == renameFrom) st["actor"] = renameTo;
+        if (st.value("toward", "") == renameFrom) st["toward"] = renameTo;
+      }
+      cutDirty_ = true;
+    }
+    if (ImGui::SmallButton("+ Ator")) {
+      for (int n = 1;; ++n) {
+        const std::string name = std::format("ator{}", n);
+        if (!actors.contains(name)) {
+          actors[name] = {{"unit", units.empty() ? "" : units[std::min<size_t>(actorNames.size(), units.size() - 1)]}};
+          break;
+        }
+      }
+      cutDirty_ = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::SmallButton("Todas as unidades")) {
+      for (const std::string& u : units) {
+        bool have = false;
+        for (const auto& [name, a] : actors.items()) have = have || a.value("unit", "") == u;
+        if (!have) actors[u] = {{"unit", u}};
+      }
+      cutDirty_ = true;
+    }
+    actorNames.clear();
+    for (const auto& [name, a] : actors.items()) actorNames.push_back(name);
+
+    // Steps
+    fieldLabel("Passos");
+    static const char* kKinds[] = {"move", "face", "say", "wait"};
+    static const char* kKindNames[] = {"Mover", "Virar", "Falar", "Esperar"};
+    static const char* kDirNames[] = {"leste (e)", "nordeste (ne)", "noroeste (nw)", "oeste (w)", "sudoeste (sw)", "sudeste (se)"};
+    ember::Json& steps = cutSteps();
+    int remove = -1, up = -1, down = -1, dup = -1;
+    for (int i = 0; i < static_cast<int>(steps.size()); ++i) {
+      ember::Json& st = steps[i];
+      if (!st.is_object()) st = {{"do", "wait"}, {"seconds", 1.0}};
+      ImGui::PushID(i);
+      ImGui::Separator();
+      ImGui::Text("%d.", i + 1);
+      ImGui::SameLine();
+      int kind = 3;
+      for (int k = 0; k < 4; ++k)
+        if (st.value("do", "") == kKinds[k]) kind = k;
+      ImGui::SetNextItemWidth(100);
+      if (ImGui::Combo("##kind", &kind, kKindNames, 4)) {
+        ember::Json next = {{"do", kKinds[kind]}};
+        if (kind != 3) next["actor"] = st.value("actor", actorNames.empty() ? "" : actorNames.front());
+        if (kind == 0) next["to"] = ember::Json::array({0, 0});
+        if (kind == 1) next["direction"] = "e";
+        if (kind == 2) next["text"] = "";
+        if (kind == 3) next["seconds"] = 1.0;
+        st = next;
+        cutDirty_ = true;
+      }
+      ImGui::SameLine();
+      if (ImGui::SmallButton("▲") && i > 0) up = i;
+      ImGui::SameLine();
+      if (ImGui::SmallButton("▼") && i + 1 < static_cast<int>(steps.size())) down = i;
+      ImGui::SameLine();
+      if (ImGui::SmallButton("Duplicar")) dup = i;
+      ImGui::SameLine();
+      if (ImGui::SmallButton("Tirar")) remove = i;
+      if (kind != 3) {
+        std::string actor = st.value("actor", "");
+        ImGui::Text("Ator");
+        ImGui::SameLine();
+        if (cutCombo("##actor", actor, actorNames, "ator…", 140)) st["actor"] = actor, cutDirty_ = true;
+      }
+      if (kind == 0) {
+        int xy[2] = {0, 0};
+        if (st.contains("to") && st["to"].is_array() && st["to"].size() == 2 && st["to"][0].is_number() && st["to"][1].is_number()) xy[0] = st["to"][0].get<int>(), xy[1] = st["to"][1].get<int>();
+        ImGui::SameLine();
+        ImGui::Text("para");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(110);
+        if (ImGui::InputInt2("##to", xy)) st["to"] = ember::Json::array({xy[0], xy[1]}), cutDirty_ = true;
+        ImGui::SameLine();
+        const bool arming = cutPickStep_ && *cutPickStep_ == i;
+        if (ImGui::SmallButton(arming ? "Clique na prévia…" : "Escolher na prévia")) cutPickStep_ = arming ? std::optional<int>() : std::optional<int>(i);
+      } else if (kind == 1) {
+        const bool toward = st.contains("toward") && st["toward"].is_string();
+        int mode = toward ? 1 : 0;
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(130);
+        if (ImGui::Combo("##facemode", &mode, "para a direção\0para outro ator\0")) {
+          if (mode == 1) st.erase("direction"), st["toward"] = actorNames.empty() ? "" : actorNames.front();
+          else st.erase("toward"), st["direction"] = "e";
+          cutDirty_ = true;
+        }
+        ImGui::SameLine();
+        if (mode == 1) {
+          std::string other = st.value("toward", "");
+          if (cutCombo("##toward", other, actorNames, "ator…", 140)) st["toward"] = other, cutDirty_ = true;
+        } else {
+          int d = 0;
+          for (int k = 0; k < 6; ++k)
+            if (st.value("direction", "") == ember::CutsceneScript::kDirections[k]) d = k;
+          ImGui::SetNextItemWidth(150);
+          if (ImGui::Combo("##dir", &d, kDirNames, 6)) st["direction"] = ember::CutsceneScript::kDirections[d], cutDirty_ = true;
+        }
+      } else if (kind == 2) {
+        ImGui::Text("Fala");
+        if (cutText("##text", st, "text", true)) cutDirty_ = true;
+        ImGui::Text("Em inglês");
+        ImGui::SameLine();
+        if (!st.contains("translations") || !st["translations"].is_object()) st["translations"] = ember::Json::object();
+        if (cutText("##en", st["translations"], "en", false)) cutDirty_ = true;
+        ImGui::Text("Retrato (opcional, nome de sprite)");
+        ImGui::SameLine();
+        if (cutText("##portrait", st, "portrait", false, 200)) cutDirty_ = true;
+        if (st.value("portrait", "").empty()) st.erase("portrait");
+      } else {
+        float sec = st.contains("seconds") && st["seconds"].is_number() ? st["seconds"].get<float>() : 1.0f;
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(100);
+        if (ImGui::InputFloat("segundos##sec", &sec, 0.1f, 1.0f, "%.1f")) st["seconds"] = std::max(0.0f, sec), cutDirty_ = true;
+      }
+      ImGui::PopID();
+    }
+    if (remove >= 0) steps.erase(remove), cutDirty_ = true, cutPickStep_.reset();
+    if (up > 0) std::swap(steps[up], steps[up - 1]), cutDirty_ = true, cutPickStep_.reset();
+    if (down >= 0) std::swap(steps[down], steps[down + 1]), cutDirty_ = true, cutPickStep_.reset();
+    if (dup >= 0) steps.insert(steps.begin() + dup + 1, steps[dup]), cutDirty_ = true, cutPickStep_.reset();
+    ImGui::Separator();
+    for (int k = 0; k < 4; ++k) {
+      if (k) ImGui::SameLine();
+      if (ImGui::SmallButton(std::format("+ {}", kKindNames[k]).c_str())) {
+        ember::Json next = {{"do", kKinds[k]}};
+        if (k != 3) next["actor"] = actorNames.empty() ? "" : actorNames.front();
+        if (k == 0) next["to"] = ember::Json::array({0, 0});
+        if (k == 1) next["direction"] = "e";
+        if (k == 2) next["text"] = "";
+        if (k == 3) next["seconds"] = 1.0;
+        steps.push_back(next);
+        cutDirty_ = true;
+        if (k == 0) cutPickStep_ = static_cast<int>(steps.size()) - 1;
+      }
+    }
+    hint("Mover: clique na prévia com o passo armado para escolher o hex. Salvar cena verifica o arquivo com a mesma checagem do jogo.");
+  }
+
   void drawUnitsTab() {
     static const std::pair<Mode, const char*> kSides[] = {{Mode::Player, "Herói"}, {Mode::Enemy, "Inimigo"}, {Mode::Npc, "NPC"}, {Mode::Summon, "Invocação"}};
     std::vector<std::pair<std::string, bool>> items;
@@ -2770,12 +3120,12 @@ class MapEditorStage : public Stage {
         }
     }
     {
-      static constexpr const char* looks[]={"Sem nuvens","Nuvens 001","Nuvens 002","Nuvens 003","Nuvens 004","Nuvens 005","Nuvens 006","Nuvens RDR2"};
-      int selected=std::clamp(draft_.value("cloudLook",4),0,7);
+      static constexpr const char* looks[]={"Sem nuvens","Nuvens 001","Nuvens 002","Nuvens 003","Nuvens 004","Nuvens 005","Nuvens 006","Nuvens RDR2","Nuvens 008 — nova"};
+      int selected=std::clamp(draft_.value("cloudLook",4),0,8);
       if(selected==6)selected=4;  // look 006 removed from the game (the user, 2026-11-04): such a map draws the default, 004
       fieldLabel("Nuvens");ImGui::SetNextItemWidth(-1);
       if(ImGui::BeginCombo("##CloudLookPicker",looks[selected])){
-        for(int i=0;i<8;++i){
+        for(int i=0;i<9;++i){
           if(i==6)continue;
           if(ImGui::Selectable(looks[i],selected==i)){beginEdit();draft_["cloudLook"]=i;selected=i;}
           if(selected==i)ImGui::SetItemDefaultFocus();
@@ -4170,6 +4520,13 @@ class MapEditorStage : public Stage {
   std::map<std::string, Scenario> saved_;
   std::vector<SavedFile> files_;  // the draft's id's saved serials
   std::string playtestError_;
+  // Cutscenes tab: the scripts in content/cutscenes, the one open (its document in memory until Salvar), the "Mover" step
+  // waiting for a hex from the preview.
+  std::vector<std::string> cutFiles_;
+  bool cutScanned_ = false, cutDirty_ = false;
+  std::string cutId_, cutError_;
+  ember::Json cutDoc_;
+  std::optional<int> cutPickStep_;
   std::string script_;  // captures: clicks to apply (previewEdits)
   std::string note_, armedDelete_, pendingDialog_;
   std::optional<BigNote> bigNote_;
