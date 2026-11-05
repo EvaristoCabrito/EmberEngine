@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <radialGradient id="sky" cx="0" cy="0" r="1" gradientTransform="matrix(0 104 -104 0 64 23)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#647e9c"/><stop offset="1" stop-color="#172c42"/>
+    </radialGradient>
+    <linearGradient id="ice" x1="34" x2="93" y1="29" y2="100" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f4ffff"/><stop offset=".48" stop-color="#a7e8ff"/><stop offset="1" stop-color="#5ba6d0"/>
+    </linearGradient>
+    <linearGradient id="cloud" x1="25" x2="101" y1="37" y2="86" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#edfaff"/><stop offset="1" stop-color="#77b7d9"/>
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="61" fill="url(#sky)" stroke="#c3ebfa" stroke-width="3"/>
+  <path d="M24 81c-4-11 4-22 16-22 2-15 13-25 27-25 12 0 21 7 25 18 13-2 23 7 22 18-1 9-8 15-20 15H39c-7 0-12-1-15-4Z" fill="url(#cloud)" stroke="#f0fcff" stroke-width="3"/>
+  <path d="m40 83-7 15m30-13-7 19m32-21-5 17" stroke="#c4f4ff" stroke-linecap="round" stroke-width="5"/>
+  <path d="m64 45 0 25m-10-20 20 15m0-15L54 65m10-20-5-5m5 5 5-5m-5 30-5 5m5-5 5 5m-10-15-7 1m7-1-2-7m12 7 7 1m-7-1 2-7" stroke="#3288b4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.7"/>
+  <circle cx="33" cy="39" r="2.5" fill="#fff"/><circle cx="99" cy="32" r="2" fill="#d9f8ff"/><circle cx="105" cy="101" r="2.5" fill="#fff"/>
+</svg>
