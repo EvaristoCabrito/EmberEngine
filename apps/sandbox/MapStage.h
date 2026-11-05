@@ -12366,7 +12366,8 @@ class MapStage final : public Stage {
   bool andromedaRequested_ = false;  // look 005's images asked from the ground pack
   // Look 005's painting (~15 MB on the GPU), asked from the ground pack once, when the look is first in use.
   void requestAndromedaSky() {
-    // ceu_galaxia thrown out of the game (the user, 2026-11-04): the painting is never loaded again.
+    if (andromedaRequested_) return;
+    ground_.requestTexture(ember::skyAndromedaAsset(ember::kAndromedaSkyPainting));  // skylayer_b_panorama_q92 (the user, 2026-11-04)
     andromedaRequested_ = true;
   }
   int moonPhase_ = -1;  // index in ember::kMoonPhases; -1 = Ember's default (the full moon's art, the night's strength)

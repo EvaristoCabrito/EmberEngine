@@ -3,7 +3,7 @@ rem JOGAR.bat - dois cliques e o jogo abre com o build local do editor. A arte v
 setlocal EnableExtensions
 set "HERE=%~dp0"
 if "%HERE:~-1%"=="\" set "HERE=%HERE:~0,-1%"
-set "ART=C:\EmberEngine\build"
+set "ART=%~dp0build"
 set "EXE=%ART%\release\bin\Sandbox.exe"
 cd /d "%HERE%"
 
@@ -12,7 +12,8 @@ if not exist "%EXE%" (
   goto :fim
 )
 
-set "GROUND=%ART%\ground\ground-v65.pak"
+set "GROUND=%ART%\ground\ground-v66.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v65.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v64.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v61.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v60.pak"
