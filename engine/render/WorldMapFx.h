@@ -149,6 +149,15 @@ class WorldMapFx {
 
   // Mapa-múndi: os parâmetros da hora (0..24, fração), das chaves do arquivo. `partyUv` = o grupo na pintura (0..1).
   static WorldMapParams overworldParams(const WorldMapConfig& c, float hour, glm::vec2 partyUv = {0.5f, 0.5f});
+  // Mapa-múndi: o clima natural sobre a pintura (a previsão do relógio da campanha, world/Tempo.h; o usuário, 2026-11-05: "quero
+  // efeitos de tempo no mapa-múndi"). Escreve os parâmetros 22 (weather) e 23.w (o vento) de worldmap.hlsl; sem chamar, nada muda.
+  struct Weather {
+    float rain = 0;       // 0..1
+    float cover = 0;      // o céu coberto, 0..1
+    float flash = 0;      // o clarão do relâmpago agora, 0..1
+    float windAngle = 0;  // a direção do vento na pintura, radianos (x para leste, y para o sul)
+  };
+  static void overworldWeather(WorldMapParams& p, const Weather& w);
   // Mapa-múndi: as duas LUTs da hora (índices em c.luts; -1 sem) e a mistura entre elas.
   struct LutMix {
     int a = -1, b = -1;

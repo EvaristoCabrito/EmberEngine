@@ -1,5 +1,6 @@
 #pragma once
 #include "TempoPanel.h"
+#include "world/TempoConsumers.h"
 #include "world/TempoSave.h"
 
 // The campaign's world map, copied from Ember (src/game/OverworldMapScreen.tsx, GameApp's overworld handlers and
@@ -1430,9 +1431,45 @@ class OverworldStage : public Stage {
       for (int i = 0; i < WorldMapFx::Draw::kTextures; ++i) d.tex[i] = fxTex_[0][i];
       d.partyLight = gamePrefs().partyLight;
       d.params = WorldMapFx::overworldParams(c, shownHour_, {partyX_ / 100.0f, partyY_ / 100.0f});
+      // O clima natural sobre a pintura, sempre (o usuário, 2026-11-05: "não tem opção off ... o mesmo clima girando, girando, e
+      // não desliga. É eterno, 24 horas por dia, o ano inteiro").
+      WorldMapFx::overworldWeather(d.params, worldWeatherNow(dt, c.hourEase));
       updateReveal();
     }
     fx_->draw(dl, d);
+  }
+
+  // O clima natural de agora no mapa-múndi: a previsão (world/Tempo.h) na hora do relógio da campanha, a mesma que as batalhas
+  // seguem. O relógio anda horas inteiras a cada passo, então a chuva e o céu coberto andam até o valor novo no mesmo tempo da luz
+  // (hourEaseSeconds), sem saltos. O relâmpago é um clarão em tempo real: cada janela de 0,4 s tem a chance da força dos raios da
+  // previsão (semeado: o mesmo instante dá o mesmo clarão), com o segundo clarão curto de um raio de verdade.
+  WorldMapFx::Weather worldWeatherNow(float dt, float ease) {
+    // sempre ligado (a previsão do jogo nunca desliga): a chave "enabled" do painel de teste não para o clima da pintura
+    ember::tempo::Config always = worldTempoConfig_;
+    always.enabled = true;
+    const ember::tempo::Sample s = ember::tempo::at(ember::campaignMilliseconds(save_), always);
+    const ember::tempo::Controls k = ember::tempo::controls(s);
+    const float rain = std::clamp(std::max(k.rain, k.heavyRain * 0.8f), 0.0f, 1.0f), cover = std::clamp(k.coverage, 0.0f, 1.0f);
+    if (shownRain_ < 0.0f) shownRain_ = rain, shownCover_ = cover;
+    const float step = ease > 0.0f ? dt / ease : 1.0f;
+    auto toward = [step](float& v, float target) { v += std::clamp(target - v, -step, step); };
+    toward(shownRain_, rain), toward(shownCover_, cover);
+    WorldMapFx::Weather w;
+    w.rain = shownRain_, w.cover = shownCover_;
+    if (std::abs(rain - loggedRain_) > 0.1f || std::abs(cover - loggedCover_) > 0.1f) {
+      loggedRain_ = rain, loggedCover_ = cover;
+      logInfo("world map weather: {} - rain {:.2f}, cover {:.2f}, lightning {:.2f}", ember::tempo::label(s.state), rain, cover, k.lightning);
+    }
+    // vento: x para leste, z para o norte no mundo; na pintura o sul é para baixo (y +)
+    if (std::abs(k.windX) + std::abs(k.windZ) > 1e-4f) w.windAngle = std::atan2(-k.windZ, k.windX);
+    if (k.lightning > 0.001f) {
+      constexpr float kSlot = 0.4f;
+      const auto slot = static_cast<long long>(std::floor(now_ / kSlot));
+      const bool strike = ember::tempo::hash(slot, worldTempoConfig_.seed, 93) % 10000u < static_cast<uint32_t>(k.lightning * 0.12f * 10000.0f);
+      const float age = now_ - static_cast<float>(slot) * kSlot;
+      if (strike) w.flash = age < 0.10f ? 1.0f - age / 0.10f : age >= 0.18f && age < 0.24f ? 0.5f * (1.0f - (age - 0.18f) / 0.06f) : 0.0f;
+    }
+    return w;
   }
 
   // What one explored hex clears: a soft circle (radius 9 % of the image, solid to 65 %) around it; a hex within two hex steps
@@ -2940,6 +2977,8 @@ class OverworldStage : public Stage {
   size_t revealKey_ = 0;  // o que o revelado subido representa (um hash dos hexágonos explorados)
   float shownHour_ = -1;  // a hora da luz na tela (segue o relógio em hourEaseSeconds)
   float lastHourAt_ = 0;
+  float shownRain_ = -1, shownCover_ = 0;  // o clima na tela (segue a previsão em hourEaseSeconds; -1 = ainda não lido)
+  float loggedRain_ = -1, loggedCover_ = -1;  // a última previsão escrita no log (uma linha quando ela muda)
   bool measure_ = false;  // --map-ui measure
   std::vector<ember::OverworldHex> slowSteps_;  // --map-ui walkslow:...
   size_t slowNext_ = 0;

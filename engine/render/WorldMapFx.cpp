@@ -556,6 +556,11 @@ WorldMapFx::LutMix WorldMapFx::lutMix(const WorldMapConfig& c, float hour) {
   return m;
 }
 
+void WorldMapFx::overworldWeather(WorldMapParams& p, const Weather& w) {
+  p.creatures = {std::clamp(w.rain, 0.0f, 1.0f), std::clamp(w.cover, 0.0f, 1.0f), std::clamp(w.flash, 0.0f, 1.0f), 1.0f};
+  p.spare.w = w.windAngle;
+}
+
 WorldMapParams WorldMapFx::overworldParams(const WorldMapConfig& c, float hour, glm::vec2 partyUv) {
   WorldMapParams p{};
   // O look 2D pela hora (worldmap.hlsl 13..21): a mistura das LUTs, a noite e o dia como rampas, a névoa da madrugada (e uma

@@ -58,6 +58,9 @@ struct Push {
 // 19 water      x brilho de dia, y reflexo da lua à noite, z escala, w velocidade
 // 20 party      xy posição do grupo na pintura (uv), z raio da luz (uv), w força do escuro em volta (0 = sem)
 // 21 moon       rgb cor do reflexo na água pela luz principal da hora (sol / entardecer / lua), w força da LUT (0 = sem, 1 = inteira)
+// 22 weather    o clima natural (world/Tempo.h, a previsão do relógio da campanha; WorldMapFx::overworldWeather): x chuva (0..1),
+//               y céu coberto (0..1), z clarão de relâmpago (0..1), w 1 = clima ligado (0 = desligado: a pintura como antes)
+// 23 spare      xyz os wisps (abaixo), w a direção do vento na pintura (radianos; só com o clima ligado)
 float4 param(uint i) { return vk::RawBufferLoad<float4>((uint64_t(push.paramsHi) << 32 | uint64_t(push.paramsLo)) + uint64_t(i) * 16); }
 
 uint quality() { return (push.flags >> 1) & 3u; }
@@ -91,6 +94,23 @@ float hash21(float2 p) {
   float3 p3 = frac(float3(p.xyx) * 0.1031);
   p3 += dot(p3, p3.yzx + 33.33);
   return frac((p3.x + p3.y) * p3.z);
+}
+
+// O clima natural sobre a pintura: uma camada de gotas caindo, em pixels da tela (o mesmo tamanho em qualquer zoom), inclinada
+// pelo vento. `scale` = altura de uma célula em pixels, `speed` = células por segundo, `fill` = a parte das colunas com gota.
+float rainLayer(float2 pixel, float scale, float speed, float slant, float fill, float seed) {
+  float2 q = pixel / scale;
+  q.x -= q.y * slant;
+  q.y -= push.time * speed;
+  const float2 grid = float2(q.x * 3.0, q.y);  // colunas estreitas: uma gota fina por coluna
+  const float2 cell = floor(grid);
+  const float2 f = frac(grid);
+  const float h = hash21(cell + seed);
+  if (h > fill) return 0.0;
+  const float y = frac(f.y + frac(h * 13.7));
+  const float body = smoothstep(0.0, 0.06, y) * (1.0 - smoothstep(0.22, 0.38, y));  // um risco curto
+  const float x = abs(f.x - 0.5 - (frac(h * 7.13) - 0.5) * 0.6);
+  return body * (1.0 - smoothstep(0.03, 0.10, x));
 }
 
 float3 srgbToLinear(float3 c) { return pow(max(c, 0.0), 2.2); }
@@ -213,11 +233,41 @@ float4 overworld(float2 uv, float2 pixel, float2 texel) {
   // 3. O sol falso: o relevo do mapa de altura, só de dia (à noite a lua não marca encosta), parado quando o sol está baixo.
   if (hasHeight() && quality() != 0u && sun.w > 0.0) c *= saturate(1.0 + clamp(heightRelief(uv, texel, sun), -0.5, 0.5) * hourMix.z);
   // 4a. Sombras de nuvem passando, de dia: o ruído grande deriva devagar e escurece de leve.
-  if (clouds.x > 0.0 && hourMix.z > 0.001) {
+  const float4 weather = param(22);
+  const bool weatherOn = weather.w > 0.5;
+  if (clouds.x > 0.0 && hourMix.z > 0.001 && !weatherOn) {
     const float2 p = uv * clouds.y + float2(push.time * clouds.z, push.time * clouds.z * 0.23);
     const float n = fbmQ(p);
     const float shadow = smoothstep(0.52, 0.78, n) * clouds.x * hourMix.z;
     c *= 1.0 - shadow;
+  }
+  // 4c. O clima natural (a previsão do relógio da campanha, world/Tempo.h): as nuvens seguem o vento e a cobertura do céu (mais
+  // sombras, maiores, e o céu coberto apaga a luz do dia), a chuva molha a terra e cai em riscos finos, o relâmpago clareia tudo.
+  if (weatherOn) {
+    const float cover = saturate(weather.y), rain = saturate(weather.x);
+    const float windAngle = param(23).w;
+    const float2 wind = float2(cos(windAngle), sin(windAngle));
+    if (clouds.x > 0.0) {
+      const float2 p = uv * clouds.y + wind * push.time * clouds.z * (1.0 + 2.0 * cover);
+      const float n = fbmQ(p);
+      const float shadow = smoothstep(0.52 - 0.30 * cover, 0.78 - 0.18 * cover, n) * (clouds.x + 0.28 * cover);
+      c *= 1.0 - shadow * lerp(0.35, 1.0, hourMix.z);
+    }
+    // o céu coberto: a luz do dia cai e perde a cor (de noite, só um pouco)
+    const float overcast = cover * cover * lerp(0.35, 1.0, hourMix.z);
+    c *= 1.0 - 0.38 * overcast;
+    c = lerp(c, luma(c).xxx, 0.30 * overcast);
+    if (rain > 0.001) {
+      c *= 1.0 - 0.10 * rain;  // a terra molhada, mais escura
+      const float slant = clamp(wind.x * 0.45, -0.45, 0.45);
+      const float drops = rainLayer(pixel, 26.0, 2.6, slant, 0.20 + 0.55 * rain, 0.0) +
+                          (quality() == 0u ? 0.0 : 0.6 * rainLayer(pixel, 15.0, 3.4, slant * 1.2, 0.15 + 0.45 * rain, 37.0));
+      const float3 dropColor = lerp(float3(0.55, 0.60, 0.68), float3(0.80, 0.84, 0.92), hourMix.z) * tint.rgb * max(tint.w, 0.25);
+      c = lerp(c, dropColor, saturate(drops * (0.25 + 0.35 * rain)));
+      c = lerp(c, dropColor * 0.6, 0.10 * rain);  // o véu da chuva
+    }
+    // o relâmpago: um clarão branco-azulado sobre a pintura inteira
+    c += saturate(weather.z) * float3(0.80, 0.86, 1.0) * (0.45 * c + 0.06);
   }
   // 5. A água: de dia um brilho fino que anda; o reflexo tingido pela luz principal da hora (moon.rgb: o sol de dia, o
   // vermelho do entardecer, a lua pálida à noite), nos pontos altos do mesmo ruído.
