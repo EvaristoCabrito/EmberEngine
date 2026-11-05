@@ -6116,9 +6116,30 @@ class MapStage final : public Stage {
   // movement; once no enemy is in sight (fallen or out of view) the party roams again (the user, 2026-10-17: "free
   // movement switch back and forth"). Ember roamed the whole mission; its free reach stays (Battle::reachable while
   // roaming), and like Ember the reach is not washed over the board (a box says it is free movement).
-  static constexpr int kRoamSight = ember::kSightRadius;  // without fog of war: an enemy this many hexes from the party is met (the same 12 as the fog's sight; was 6)
+  // The party's sight this moment: kSightRadius (15) less the weather's penalty (the user, 2026-11-05: "1 penalty to weak rain, 2
+  // penalty to strong rain, 3 penalty to ashes and 4 penalty to snow"): the map's own Clima (rain 1, storm 2, ash 3, snow 4), else
+  // the Tempo's natural rain (heavy 2, light 1). Indoors the weather does not fall: no penalty. Never under 1.
+  int weatherSightPenalty() const {
+    if (!board_ || interiorMap()) return 0;
+    const bool mapWeather = !weatherKind_.empty() && weatherKind_ != "none";
+    if (mapWeather) {
+      if (weatherIntensity_ <= 0) return 0;
+      if (weatherKind_ == "rain") return 1;
+      if (weatherKind_ == "storm") return 2;
+      if (weatherKind_ == "ash") return 3;
+      if (weatherKind_ == "snow") return 4;
+      return 0;
+    }
+    if (!tempoConfig_.enabled) return 0;
+    const auto t = ember::tempo::controls(tempoNow());
+    if (t.heavyRain > 0.0f) return 2;
+    if (t.rain > 0.0f) return 1;
+    return 0;
+  }
+  int sightRadius() const { return std::max(1, ember::kSightRadius - weatherSightPenalty()); }
+  int roamSight() const { return sightRadius(); }  // without fog of war: an enemy this many hexes from the party is met (the same as the fog's sight; was 6)
 
-  // The living enemies the party sees right now (fog: on a hex in sight; without fog: within kRoamSight of a hero).
+  // The living enemies the party sees right now (fog: on a hex in sight; without fog: within roamSight() of a hero).
   std::vector<int> enemiesInSight() const {
     const ember::HexLayout& L = board_->layout();
     // The party's eyes where its feet are now (mid-walk too).
@@ -6139,7 +6160,7 @@ class MapStage final : public Stage {
         const size_t i = static_cast<size_t>(ember::indexOf(L, e.x, e.y));
         seen = litHex(i);  // what is drawn is in sight: an enemy on lit ground starts the fight, as the player sees it
       } else {
-        seen = std::any_of(eyes.begin(), eyes.end(), [&](ember::BattleHex h) { return ember::Battle::distance(h, {e.x, e.y}) <= kRoamSight; });
+        seen = std::any_of(eyes.begin(), eyes.end(), [&](ember::BattleHex h) { return ember::Battle::distance(h, {e.x, e.y}) <= roamSight(); });
       }
       if (seen) met.push_back(static_cast<int>(b));
     }
@@ -11399,7 +11420,7 @@ class MapStage final : public Stage {
         int inRange = 0, seen = 0;
         for (int y = 0; y < L.rows; ++y)
           for (int x = 0; x < L.cols; ++x)
-            if (ember::hexDistance({c, r}, {x, y}) <= ember::kSightRadius) ++inRange, seen += fog_->sightReaches({c, r}, {x, y}) ? 1 : 0;
+            if (ember::hexDistance({c, r}, {x, y}) <= sightRadius()) ++inRange, seen += fog_->sightReaches({c, r}, {x, y}) ? 1 : 0;
         logInfo("sight: {} at ({}, {}) sees {} of the {} hexes in range ({} hidden by ground or what stands on it)", u.name, c, r, seen,
                 inRange, inRange - seen);
       }
@@ -11463,7 +11484,7 @@ class MapStage final : public Stage {
 
   void relight(const std::vector<ember::HexPoint>& party) {
     std::vector<ember::Eye> eyes;
-    for (const ember::HexPoint& p : party) eyes.push_back({p, ember::kSightRadius});
+    for (const ember::HexPoint& p : party) eyes.push_back({p, sightRadius()});
     fog_->relight(eyes);
   }
 
