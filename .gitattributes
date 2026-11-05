@@ -12,6 +12,7 @@ Attachments/EmberMovieIntro.mp4 filter=lfs diff=lfs merge=lfs -text
 /content/models/sketchfab/pine-forest-at-sunset/src/scene.bin filter=lfs diff=lfs merge=lfs -text
 /content/models/sketchfab/ruined-stone-bridge/ruined-stone-bridge-2k-v01.glb filter=lfs diff=lfs merge=lfs -text
 /content/models/sketchfab/ruined-stone-bridge/src/scene.bin filter=lfs diff=lfs merge=lfs -text
+/content/game/public/game/vau-intro.mp4 filter=lfs diff=lfs merge=lfs -text
 content/models/**/*.glb filter=lfs diff=lfs merge=lfs -text
 content/models/**/*.zip filter=lfs diff=lfs merge=lfs -text
 content/models/**/*.bin filter=lfs diff=lfs merge=lfs -text

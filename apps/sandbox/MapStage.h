@@ -4766,6 +4766,22 @@ class MapStage final : public Stage {
   }
 
   // The map's units find their own catalog entry by key. The panel's poses: those at least one of the map's units
+  // The real moon's elongation, degrees east of the sun, by its phase (new 0, first quarter 90, full 180, last quarter 270); the
+  // blood moon is a full moon in the Earth's shadow.
+  static float moonElongation(std::string_view phase) {
+    for (int k = 0; k < 8; ++k)
+      if (phase == ember::kMoonPhases[k]) return 45.0f * static_cast<float>(k);
+    return 180.0f;
+  }
+  // AtmosphereFrame.moonWhole for the 24 h cycle's real moon: 1 = full / blood (no dark side), 2 = waxing, 3 = waning: the disc's
+  // lit side is turned toward the sun (atmosphere.hlsli moonDisc), as on the real moon. 0 = the art upright (the map presets).
+  static float realMoonFlag(std::string_view phase) {
+    if (moonWholePhase(phase)) return 1.0f;
+    return moonElongation(phase) < 180.0f ? 2.0f : 3.0f;
+  }
+  // The moon's surface by day: lit by the sun like grey rock (its albedo 0.12), so in a daylight sky it shows pale over the blue,
+  // as the real one does; at night the disc's display white (moonDiscGlow) is far below this and stays as it was.
+  static constexpr float kMoonAlbedo = 0.12f;
   // has, in the catalog's order of first appearance with its label, the idle ("Parado") first.
   void setUpPoses(const std::filesystem::path& path) {
     if (catalog_.empty()) {  // (read once: the editor's edits match the scene's units again on the same catalog)
