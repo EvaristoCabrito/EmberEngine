@@ -12,7 +12,7 @@ if not exist "%EXE%" (
   goto :fim
 )
 
-set "GROUND=%ART%\ground\ground-v72.pak"
+set "GROUND=%ART%\ground\ground-v74.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v69.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v68.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v67.pak"

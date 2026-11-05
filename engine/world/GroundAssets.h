@@ -91,6 +91,11 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"ashen-road-v01", "woods", "ember-ashen-road-v01-charred", "content/ground/deep-ashen-forest-ash-tile-v01.png", 4.5f},
     {"ashen-road-v01", "hill", "ember-ashen-road-v01-slope", "content/ground/deep-ashen-forest-ash-tile-v01.png", 4.5f},
     {"ashen-road-v01", "plains", "ember-ashen-road-v01-loose-ash", "content/ground/deep-ashen-forest-ash-tile-v01.png", 4.5f},
+    // Ashen Forest Crossing 008 (2026-11-05, the user: "É branco. É branco igual o ground. Exatamente igual o ground"): the board's
+    // hexes wear the very image that lies around the board (bosque-ground-v01.jpg, the fit's ground at 16 units), same scale.
+    {"ashen-ground-v01", "woods", "ember-ashen-ground-v01-woods", "content/backdrops/bosque-ground-v01.jpg", 16.0f, true},
+    {"ashen-ground-v01", "hill", "ember-ashen-ground-v01-hill", "content/backdrops/bosque-ground-v01.jpg", 16.0f, true},
+    {"ashen-ground-v01", "plains", "ember-ashen-ground-v01-plains", "content/backdrops/bosque-ground-v01.jpg", 16.0f, true},
     // Bosque Morto: damp moss for woods, leaf litter for clearings, exposed roots for raised ground.
     {"bosque-morto-v01", "woods", "ember-bosque-morto-moss-v01", "content/ground/bosque-morto-moss-v01.png", 4.5f},
     {"bosque-morto-v01", "plains", "ember-bosque-morto-litter-v01", "content/ground/bosque-morto-litter-v01.png", 4.0f},
