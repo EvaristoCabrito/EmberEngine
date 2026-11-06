@@ -1935,14 +1935,24 @@ ashens forest", "mudar a cor dessa fog para cinza", "resolução extra baixa com
 - **Personagens Extra baixa** (`GamePrefs::characters` "extra", Opções > Gráficos 4th choice): Leve's copies, every clip pinned as
   two versions with the light one asked (`sprites_.setLight(true)`, kBaseFirstMip): half of Leve's resolution. The SpriteSystem log
   still names it "Leve". Measured (Ashen Forest test fight): 200 MB for the 74 clips.
-- Seen in that audit, NOT done yet: the Poly Haven grass_medium_01_* and moss_01_* (alphaMode BLEND, their diffuse PNG has no alpha:
-  drawn as dark cards) and 7 models with flat-colour parts (bookshelf, drink-shelf, folding-screen, pantry-shelf, simple-bed-v02,
-  sacks-v02, open-barrel, weapon-rack-v02).
+- **The 8 models with flat-colour parts textured** (`tools/scripts/models/texture_flat_parts.py`: photo parts = the project's own
+  photos, factor white (iron, dark glass, clay, leather, burlap, rope); cloth / wool / paper / brass / silver = a grey detail
+  `content/models/textures/{fabric,paper,brass,silver}-detail-v01.jpg` (from wt-burlap, wt-limestone, ambientCG metal-053c /
+  061a) under the part's own colour): bookshelf-v02, drink-shelf-v02, folding-screen-v02, pantry-shelf-v02, simple-bed-v03,
+  sacks-v03, open-barrel-v02, weapon-rack-v03 (models.json + catalog); pack `build/meshes/props-v40.pak` (src-v40), JOGAR uses it.
+  Their editor thumbnails were not re-rendered. The audit now finds no part without a texture.
+- NOT done: the Poly Haven grass_medium_01_* and moss_01_* (alphaMode BLEND, their diffuse PNG lost its alpha at import: drawn as
+  dark cards); no original with alpha on any disk, only a new download from Poly Haven would fix them (needs the user's yes).
+- A capture copy of a map under another id loses its per-map looks: the Ashen Forest's neutral grey ash is `kAshNeutral` by map id
+  (BoardGround.cpp); the same draft as "showcase-flat" drew the tiles' own pinkish tone (the user, 2026-11-06: "essa é a cor do
+  cenário", the grey).
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
 - The five `-photo` trees and `dead-oak-v03-leafy` (2026-11-06): drawn near black (above); the catalog points at their new versions.
   `snowy-pine-photo-v02.glb` (its needles grey over the snow image: white needles) was made before the hue rule; v03 plays.
+- The 8 flat-part models' previous versions (bookshelf-v01, drink-shelf-v01, folding-screen-v01, pantry-shelf-v01, simple-bed-v02,
+  sacks-v02, open-barrel-v01, weapon-rack-v02; 2026-11-06): the catalog points at their textured versions.
 
 - The Wisp Forest's bare fir (2026-10-30; `content/models/blender/fix_fir_trunk_uv.py`, `make_fir_v03.py -- v03|v04|v05`):
   `polyhaven-wisp-v02/fir_tree_01_bare_v02.glb` (the trunk unwrapped), `_v03.glb` (the user's Pine.jpg bark, `content/textures/bark/`:
