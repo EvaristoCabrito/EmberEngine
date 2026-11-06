@@ -182,9 +182,9 @@ class MapEditorStage : public Stage {
         openCutscene(step.substr(9));
         continue;
       }
-      if (step.starts_with("tab:")) {  // a tab of the page opened: file map terrain decor units cutscenes scene rules world
+      if (step.starts_with("tab:")) {  // a tab of the page opened: map (file = map) terrain decor units cutscenes scene rules world
         for (const TabInfo& t : kTabs)
-          if (step.substr(4) == t.key) openTab(t.tab);
+          if (step.substr(4) == t.key || (step.substr(4) == "file" && t.tab == Tab::Map)) openTab(t.tab);
         continue;
       }
       const size_t c1 = step.find(':'), c2 = step.rfind(':');
@@ -2157,7 +2157,7 @@ class MapEditorStage : public Stage {
   }
 
   // The tabs of the page (the rail on its left).
-  enum class Tab { File, Map, Terrain, Decor, Units, Cutscenes, Scene, Rules, World };
+  enum class Tab { Map, Terrain, Decor, Units, Cutscenes, Scene, Rules, World };
   struct TabInfo {
     Tab tab;
     const char* key;  // the captures' "tab:<key>"
@@ -2166,8 +2166,7 @@ class MapEditorStage : public Stage {
     const char* about;
   };
   static constexpr TabInfo kTabs[] = {
-      {Tab::File, "file", "folder-open", "Arquivo", "Abrir, criar e guardar as versões deste mapa."},
-      {Tab::Map, "map", "map", "Mapa", "Identidade, missão, recompensa, diálogos e tamanho."},
+      {Tab::Map, "map", "map", "Mapa", "Abrir, criar e guardar versões; identidade, missão, recompensa, diálogos e tamanho."},
       {Tab::Terrain, "terrain", "mountain", "Terreno", "Pintar os tiles e esculpir a elevação."},
       {Tab::Decor, "decor", "castle", "Decoração", "Decorações 2D, paredes 3D e objetos 3D."},
       {Tab::Units, "units", "users", "Unidades", "Heróis, inimigos, NPCs e invocações."},
@@ -2364,13 +2363,11 @@ class MapEditorStage : public Stage {
   // Each tab: the page's sections, in order.
   void drawTab() {
     switch (tab_) {
-      case Tab::File:
+      case Tab::Map:
         section("Abrir");
         drawOpen();
         section(std::format("Versões salvas de \"{}\" ({})", draft_.value("id", ""), files_.size()).c_str());
         drawFiles();
-        break;
-      case Tab::Map:
         section("Identidade");
         drawIdentity();
         section("Missão");
