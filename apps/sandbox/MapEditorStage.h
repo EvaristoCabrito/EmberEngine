@@ -250,6 +250,13 @@ class MapEditorStage : public Stage {
       }
       logInfo("map editor: Mapa da campanha {} maps ({} random); Random encounters {} maps; Mapa salvo {} maps", campaignList.size(), randomInCampaign, randomRefs().size(), placedNowhere);
       for (const MapRef& m : campaignList) logInfo("map editor:   campanha {} ({})", m.id, m.title);
+      {
+        std::string hidden;
+        int hiddenCount = 0;
+        for (const std::string& id : editor_.architectureOrder)
+          if (!meta(id).model3d.empty() && modelNotInGame(id)) ++hiddenCount, hidden += (hidden.empty() ? "" : ", ") + id;
+        logInfo("map editor: 3D palette hides {} pieces not in the mesh pack: {}", hiddenCount, hidden);
+      }
     }
     // The preview follows the draft a moment after the last edit (Ember setPreviewMission).
     const auto now = std::chrono::steady_clock::now();
@@ -3624,6 +3631,14 @@ class MapEditorStage : public Stage {
     ImGui::EndChild();
   }
 
+  // A catalog 3D piece whose cooked mesh is not in the mesh pack the game loaded: nothing would be drawn, so the palette hides it.
+  bool modelNotInGame(const std::string& id) const {
+    const auto* def = catalog_.decoration(id);
+    const std::string file = def && def->model ? def->model->file : std::string();
+    return file.starts_with("/game/") && file.ends_with(".glb") &&
+           services_.assets.name(assetId("meshes/" + file.substr(6, file.size() - 10) + ".mesh")).empty();
+  }
+
   // MapEditorScreen architectureOptions: 3D walls (regular or thick, doors and openings) or 3D decorations; the
   // watchtower entrance only on watchtower maps; walls last.
   std::vector<std::string> architectureOptions() const {
@@ -3632,6 +3647,7 @@ class MapEditorStage : public Stage {
     for (const std::string& id : editor_.architectureOrder) {
       const DecoMeta& m = meta(id);
       if (m.model3d.empty() || m.props3d != architectureDecorations_) continue;
+      if (modelNotInGame(id)) continue;  // the user, 2026-11-05: "se não tá no jogo, não lista"
       if (id == kEntrance && !watchtower) continue;
       if (!architectureDecorations_ && m.thickWall != thickWalls_) continue;
       out.push_back(id);
