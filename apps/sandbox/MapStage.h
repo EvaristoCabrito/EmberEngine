@@ -1211,7 +1211,9 @@ class MapStage final : public Stage {
     // the sky); the Inn keeps resolve.hlsl untouched (the user, 2026-10-23: the Inn is an exception to all rules).
     renderer.usePanoramaShader(!innFloor());
     renderer.useStandingCards(!innFloor());  // the cards' depth upright at their feet (sprites_standing), the Inn's cards as they were
-    if (windowLight() && board_->draft().id != "estalagem") {
+    // The Inn's floors keep their own panoramas, ground and ceiling with Luz das janelas on (the user, 2026-11-06: "pode marcar como
+    // above ground, só não vou mudar o céu"): only the light changes there.
+    if (windowLight() && !innFloor()) {
       // An interior (the user, 2026-10-23: "INTERNO ambiente INTERNO", "portas e janelas abertas trazem a luz de fora, que nunca é
       // desenhada de fora"): nothing outside is drawn, only the light comes in through the openings. Beyond the walls: the map's own
       // ground image (MapDraft::emberFloor; the watchtower's background, the user: "usar ele de imagem de GROUND"; the panel's "Chão do
