@@ -35,3 +35,7 @@ endif()
 
 add_executable(ModelVisibilityCheck ModelVisibilityCheck.cpp)
 target_link_libraries(ModelVisibilityCheck PRIVATE EmberEngine)
+
+add_executable(EditorSceneCheck EditorSceneCheck.cpp)
+target_link_libraries(EditorSceneCheck PRIVATE EmberEngine)
+

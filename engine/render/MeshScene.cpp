@@ -674,8 +674,14 @@ void MeshScene::updateGeometry() {
       continue;
     }
     // Leave headroom for images and transfers; admission is retried next frame.
-    if (freeGpuBytes() < mesh.bytes + (64ull << 20)) {
-      if (streamTrace() && frame_ % 120 == 0) logWarn("stream blocked {}: needs {:.2f} MB + 64 MB headroom, {:.2f} MB free", assets_.name(mesh.asset), mesh.bytes / 1048576.0, freeGpuBytes() / 1048576.0);
+    // Optional cap for the headless regression test: model low free GPU memory.
+    static const uint64_t testGeometryFree = [] {
+      const char* value = std::getenv("EMBER_TEST_MESH_FREE_MB");
+      return value ? std::strtoull(value, nullptr, 10) << 20 : 0ull;
+    }();
+    const uint64_t geometryFree = testGeometryFree ? std::min(freeGpuBytes(), testGeometryFree) : freeGpuBytes();
+    if (geometryFree < mesh.bytes + (16ull << 20)) {
+      if (streamTrace() && frame_ % 120 == 0) logWarn("stream blocked {}: needs {:.2f} MB + 16 MB headroom, {:.2f} MB free", assets_.name(mesh.asset), mesh.bytes / 1048576.0, freeGpuBytes() / 1048576.0);
       continue;
     }
     if (streamTrace()) logInfo("stream request {}: {:.2f} MB, distance {:.2f}", assets_.name(mesh.asset), mesh.bytes / 1048576.0, mesh.distance);

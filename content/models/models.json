@@ -3739,6 +3739,76 @@
       "section": "Objetos",
       "blocks": false,
       "triangles": 49999
+    },
+    {
+      "id": "ember-wisp-natural-01",
+      "name": "Árvore Wisp vertical 01",
+      "kit": "wisp-novas",
+      "model": "wisp-natural-01",
+      "file": "/game/ember/wisp-novas/arvore-01.glb",
+      "height": 5.2,
+      "width": 2.6,
+      "footprint": "one",
+      "section": "Natureza · Wisp Forest",
+      "blocks": true,
+      "source": "Poly Haven tree_small_02",
+      "license": "CC0"
+    },
+    {
+      "id": "ember-wisp-natural-02",
+      "name": "Árvore Wisp vertical 02",
+      "kit": "wisp-novas",
+      "model": "wisp-natural-02",
+      "file": "/game/ember/wisp-novas/arvore-02.glb",
+      "height": 5.5,
+      "width": 2.6,
+      "footprint": "one",
+      "section": "Natureza · Wisp Forest",
+      "blocks": true,
+      "source": "Sketchfab Jagobo, Pine Forest at Sunset",
+      "license": "CC BY 4.0"
+    },
+    {
+      "id": "ember-wisp-natural-03",
+      "name": "Árvore Wisp vertical 03",
+      "kit": "wisp-novas",
+      "model": "wisp-natural-03",
+      "file": "/game/ember/wisp-novas/arvore-03.glb",
+      "height": 5.8,
+      "width": 2.6,
+      "footprint": "one",
+      "section": "Natureza · Wisp Forest",
+      "blocks": true,
+      "source": "Sketchfab Jagobo, Pine Forest at Sunset",
+      "license": "CC BY 4.0"
+    },
+    {
+      "id": "ember-wisp-natural-04",
+      "name": "Árvore Wisp vertical 04",
+      "kit": "wisp-novas",
+      "model": "wisp-natural-04",
+      "file": "/game/ember/wisp-novas/arvore-04.glb",
+      "height": 6.0,
+      "width": 2.6,
+      "footprint": "one",
+      "section": "Natureza · Wisp Forest",
+      "blocks": true,
+      "source": "Sketchfab Jagobo, Pine Forest at Sunset",
+      "license": "CC BY 4.0"
+    },
+    {
+      "id": "ember-wisp-natural-05",
+      "name": "Árvore Wisp vertical 05",
+      "kit": "wisp-novas",
+      "model": "wisp-natural-05",
+      "file": "/game/ember/wisp-novas/arvore-05.glb",
+      "height": 5.0,
+      "width": 2.6,
+      "footprint": "one",
+      "section": "Natureza · Wisp Forest",
+      "blocks": true,
+      "source": "Sketchfab Jagobo, White Oak Trees",
+      "license": "CC BY 4.0"
     }
   ]
 }

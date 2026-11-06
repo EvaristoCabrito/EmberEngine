@@ -44,6 +44,7 @@ class WeatherFx {
                       float time, const Camera& camera, glm::vec3 center, Ground ground, const TempoMotion* tempo=nullptr) {
     if ((kind != "rain" && kind != "storm" && kind != "snow" && kind != "ash") || !std::isfinite(time)) return 0;
     intensity = std::clamp(intensity, 0.0f, 1.0f);
+    if (kind == "rain") intensity *= 0.45f;  // ordinary rain is lighter than a storm at the same setting
     wind = std::clamp(wind, 0.0f, 1.0f);
     if (intensity <= 0) return 0;
     const bool snow = kind == "snow", storm = kind == "storm", ash = kind == "ash";

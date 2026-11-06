@@ -1,0 +1,195 @@
+[0/2] Re-checking globbed directories...
+[1/142] Generating CXX dyndep file CMakeFiles\webm_reader.dir\CXX.dd
+[2/139] Generating CXX dyndep file _deps\sdl3-build\CMakeFiles\SDL3-static.dir\CXX.dd
+[3/134] Generating CXX dyndep file CMakeFiles\imgui.dir\CXX.dd
+[4/126] Generating CXX dyndep file _deps\meshoptimizer-build\CMakeFiles\meshoptimizer.dir\CXX.dd
+[5/104] Generating CXX dyndep file engine\CMakeFiles\EmberEngine.dir\CXX.dd
+[6/10] Scanning C:\EmberEngineBOSTA\tools\EditorSceneCheck.cpp for CXX dependencies
+Observação: incluindo arquivo: C:\EmberEngineBOSTA\engine\world/Board.h
+Observação: incluindo arquivo:  C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\filesystem
+Observação: incluindo arquivo:   C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\yvals_core.h
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\vcruntime.h
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\sal.h
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\concurrencysal.h
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\vadefs.h
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xkeycheck.h
+Observação: incluindo arquivo:   C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\algorithm
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_heap_algorithms.hpp
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xutility
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\yvals.h
+Observação: incluindo arquivo:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\crtdbg.h
+Observação: incluindo arquivo:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt.h
+Observação: incluindo arquivo:        C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\vcruntime_new_debug.h
+Observação: incluindo arquivo:         C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\vcruntime_new.h
+Observação: incluindo arquivo:       C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\crtdefs.h
+Observação: incluindo arquivo:       C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\use_ansi.h
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_iter_core.hpp
+Observação: incluindo arquivo:       C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\utility
+Observação: incluindo arquivo:        C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\initializer_list
+Observação: incluindo arquivo:         C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\cstddef
+Observação: incluindo arquivo:          C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\stddef.h
+Observação: incluindo arquivo:          C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xtr1common
+Observação: incluindo arquivo:        C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\type_traits
+Observação: incluindo arquivo:         C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\cstdint
+Observação: incluindo arquivo:          C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\stdint.h
+Observação: incluindo arquivo:         C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\cstring
+Observação: incluindo arquivo:          C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\string.h
+Observação: incluindo arquivo:           C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_memory.h
+Observação: incluindo arquivo:            C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_memcpy_s.h
+Observação: incluindo arquivo:             C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\errno.h
+Observação: incluindo arquivo:             C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\vcruntime_string.h
+Observação: incluindo arquivo:           C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wstring.h
+Observação: incluindo arquivo:        C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\compare
+Observação: incluindo arquivo:         C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\concepts
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\climits
+Observação: incluindo arquivo:       C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\limits.h
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\cstdlib
+Observação: incluindo arquivo:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\math.h
+Observação: incluindo arquivo:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_math.h
+Observação: incluindo arquivo:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\stdlib.h
+Observação: incluindo arquivo:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_malloc.h
+Observação: incluindo arquivo:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_search.h
+Observação: incluindo arquivo:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wstdlib.h
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\cwchar
+Observação: incluindo arquivo:       C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\cstdio
+Observação: incluindo arquivo:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\stdio.h
+Observação: incluindo arquivo:         C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wstdio.h
+Observação: incluindo arquivo:          C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_stdio_config.h
+Observação: incluindo arquivo:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\wchar.h
+Observação: incluindo arquivo:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wconio.h
+Observação: incluindo arquivo:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wctype.h
+Observação: incluindo arquivo:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wdirect.h
+Observação: incluindo arquivo:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wio.h
+Observação: incluindo arquivo:         C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_share.h
+Observação: incluindo arquivo:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wprocess.h
+Observação: incluindo arquivo:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wtime.h
+Observação: incluindo arquivo:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\sys/stat.h
+Observação: incluindo arquivo:         C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\sys/types.h
+Observação: incluindo arquivo:        C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\intrin.h
+Observação: incluindo arquivo:         C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\intrin0.inl.h
+Observação: incluindo arquivo:         C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\setjmp.h
+Observação: incluindo arquivo:         C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\immintrin.h
+Observação: incluindo arquivo:          C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\wmmintrin.h
+Observação: incluindo arquivo:           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\nmmintrin.h
+Observação: incluindo arquivo:            C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\smmintrin.h
+Observação: incluindo arquivo:             C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\tmmintrin.h
+Observação: incluindo arquivo:              C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\pmmintrin.h
+Observação: incluindo arquivo:               C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\emmintrin.h
+Observação: incluindo arquivo:                C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xmmintrin.h
+Observação: incluindo arquivo:                 C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\mmintrin.h
+Observação: incluindo arquivo:                 C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\malloc.h
+Observação: incluindo arquivo:          C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\zmmintrin.h
+Observação: incluindo arquivo:         C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\ammintrin.h
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_minmax.hpp
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xmemory
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\limits
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\cfloat
+Observação: incluindo arquivo:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\float.h
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\intrin0.h
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\new
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\exception
+Observação: incluindo arquivo:       C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\vcruntime_exception.h
+Observação: incluindo arquivo:        C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\eh.h
+Observação: incluindo arquivo:         C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_terminate.h
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xatomic.h
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\tuple
+Observação: incluindo arquivo:   C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\chrono
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_chrono.hpp
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\ctime
+Observação: incluindo arquivo:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\time.h
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\ratio
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xtimec.h
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\system_error
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_system_error_abi.hpp
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\cerrno
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\stdexcept
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xstring
+Observação: incluindo arquivo:       C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_sanitizer_annotate_container.hpp
+Observação: incluindo arquivo:       C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_string_view.hpp
+Observação: incluindo arquivo:        C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\iosfwd
+Observação: incluindo arquivo:       C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xpolymorphic_allocator.h
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xcall_once.h
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xerrc.h
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\atomic
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xatomic_wait.h
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xthreads.h
+Observação: incluindo arquivo:       C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_threads_core.hpp
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xfilesystem_abi.h
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_tzdb.hpp
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\cmath
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\format
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_format_ucd_tables.hpp
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_formatter.hpp
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_print.hpp
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_ranges_tuple_formatter.hpp
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\bit
+Observação: incluindo arquivo:       C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_bit_utils.hpp
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\iterator
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xlocale
+Observação: incluindo arquivo:       C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\memory
+Observação: incluindo arquivo:        C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\typeinfo
+Observação: incluindo arquivo:         C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\vcruntime_typeinfo.h
+Observação: incluindo arquivo:       C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xfacet
+Observação: incluindo arquivo:       C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xlocinfo
+Observação: incluindo arquivo:        C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_xlocinfo_types.hpp
+Observação: incluindo arquivo:        C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\cctype
+Observação: incluindo arquivo:         C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\ctype.h
+Observação: incluindo arquivo:        C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\clocale
+Observação: incluindo arquivo:         C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\locale.h
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\charconv
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xbit_ops.h
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xcharconv.h
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xcharconv_ryu.h
+Observação: incluindo arquivo:       C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xcharconv_ryu_tables.h
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xcharconv_tables.h
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\locale
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xlocbuf
+Observação: incluindo arquivo:       C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\streambuf
+Observação: incluindo arquivo:        C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xiosbase
+Observação: incluindo arquivo:         C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\share.h
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xlocmes
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xlocmon
+Observação: incluindo arquivo:       C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xlocnum
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xloctime
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\forward_list
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\iomanip
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\istream
+Observação: incluindo arquivo:      C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_ostream.hpp
+Observação: incluindo arquivo:       C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\ios
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\optional
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xsmf_control.h
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\sstream
+Observação: incluindo arquivo:     C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\string
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\vector
+Observação: incluindo arquivo:  C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\map
+Observação: incluindo arquivo:   C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xtree
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xnode_handle.h
+Observação: incluindo arquivo:  C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\unordered_map
+Observação: incluindo arquivo:   C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\xhash
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\list
+Observação: incluindo arquivo:  C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\unordered_set
+Observação: incluindo arquivo:  C:\EmberEngineBOSTA\build\release\_deps\nlohmann_json-src\single_include\nlohmann/json.hpp
+Observação: incluindo arquivo:   C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\functional
+Observação: incluindo arquivo:   C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\array
+Observação: incluindo arquivo:   C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\valarray
+Observação: incluindo arquivo:   C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\version
+Observação: incluindo arquivo:   C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\cassert
+Observação: incluindo arquivo:    C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\assert.h
+Observação: incluindo arquivo:   C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\ranges
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_int128.hpp
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_ranges_to.hpp
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\span
+Observação: incluindo arquivo:    C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\string_view
+Observação: incluindo arquivo:   C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\numeric
+Observação: incluindo arquivo:   C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\ostream
+Observação: incluindo arquivo:   C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\any
+Observação: incluindo arquivo:  C:\EmberEngineBOSTA\engine\world/Hex.h
+Observação: incluindo arquivo:   C:\EmberEngineBOSTA\engine\world/Noise.h
+Observação: incluindo arquivo: C:\EmberEngineBOSTA\engine\world/SceneBuilder.h
+Observação: incluindo arquivo:  C:\EmberEngineBOSTA\engine\world/SceneData.h
+Observação: incluindo arquivo: C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\fstream
+Observação: incluindo arquivo:  C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_filebuf.hpp
+Observação: incluindo arquivo: C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\iostream
+[7/10] Generating CXX dyndep file tools\CMakeFiles\EditorSceneCheck.dir\CXX.dd
+[8/10] Building CXX object tools\CMakeFiles\EditorSceneCheck.dir\EditorSceneCheck.cpp.obj
+[9/10] Linking CXX executable bin\EditorSceneCheck.exe

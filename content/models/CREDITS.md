@@ -42,3 +42,5 @@ Tiles093, Tiles089, Tiles116, Tiles083, Tiles130, Grass005, Metal053C, Planks037
 ## Poly Haven (CC0; `content/models/polyhaven/`, `content/textures/polyhaven/`)
 
 https://polyhaven.com. Os modelos de `content/models/polyhaven/` e a textura brown_mud_leaves_01.
+
+Wisp vertical 01: adaptado de Poly Haven, tree_small_02, CC0. Wisp vertical 02–04: adaptados de Jagobo, Pine Forest at Sunset, CC BY 4.0. Wisp vertical 05: adaptado de Jagobo, White Oak Trees, CC BY 4.0; fontes e links acima.

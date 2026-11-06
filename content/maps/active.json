@@ -4,6 +4,7 @@
   "bosque": 13,
   "custom-mw10gqyi": 1,
   "custom-mw1k9ub6": 1,
+  "custom-mw487hd8": 2,
   "estalagem": 10,
   "estalagem-andar-2": 8,
   "fortaleza": 8,
@@ -30,5 +31,6 @@
   "watchtower-gate-floor": 10,
   "wisp-forest": 11,
   "wisp-forest-2": 7,
-  "wisp-forest-crossing": 34
+  "wisp-forest-crossing": 34,
+  "wisp-forest-crossing-boss": 9
 }

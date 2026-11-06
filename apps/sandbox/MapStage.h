@@ -2175,14 +2175,14 @@ class MapStage final : public Stage {
   // a single object or tile"): the edited board and its scene replace the old ones here; the ground's textures, the meshes and the
   // sprites already on the GPU stay, and the previous ground is drawn until the new one is up. False (nothing changed): the edit needs
   // the preview opened again (another board size, a relief that does not load).
-  bool applyEditorDraft(ember::MapDraft draft, ember::SceneData scene) {
+  bool applyEditorDraft(ember::MapDraft draft, ember::SceneData scene, bool terrainChanged) {
     if (!board_ || !scene_ || !data_) return false;
     const auto started = std::chrono::steady_clock::now();
     auto board = std::make_unique<ember::Board>(*data_, std::move(draft));
     if (board->layout().cols != board_->layout().cols || board->layout().rows != board_->layout().rows) return false;
     if (!board->loadRelief(options_.artRoot)) return false;
     if (probeBusy_) jobs_.wait(probeJob_), probeBusy_ = false;  // the bake reads the old board's room
-    if (!ground_.rebuild(*board)) return false;
+    if (terrainChanged && !ground_.rebuild(*board)) return false;
     board_ = std::move(board);
     setEditorWeather(board_->draft());
     double top = 0;
@@ -4766,22 +4766,7 @@ class MapStage final : public Stage {
   }
 
   // The map's units find their own catalog entry by key. The panel's poses: those at least one of the map's units
-  // The real moon's elongation, degrees east of the sun, by its phase (new 0, first quarter 90, full 180, last quarter 270); the
-  // blood moon is a full moon in the Earth's shadow.
-  static float moonElongation(std::string_view phase) {
-    for (int k = 0; k < 8; ++k)
-      if (phase == ember::kMoonPhases[k]) return 45.0f * static_cast<float>(k);
-    return 180.0f;
-  }
-  // AtmosphereFrame.moonWhole for the 24 h cycle's real moon: 1 = full / blood (no dark side), 2 = waxing, 3 = waning: the disc's
-  // lit side is turned toward the sun (atmosphere.hlsli moonDisc), as on the real moon. 0 = the art upright (the map presets).
-  static float realMoonFlag(std::string_view phase) {
-    if (moonWholePhase(phase)) return 1.0f;
-    return moonElongation(phase) < 180.0f ? 2.0f : 3.0f;
-  }
-  // The moon's surface by day: lit by the sun like grey rock (its albedo 0.12), so in a daylight sky it shows pale over the blue,
-  // as the real one does; at night the disc's display white (moonDiscGlow) is far below this and stays as it was.
-  static constexpr float kMoonAlbedo = 0.12f;
+
   // has, in the catalog's order of first appearance with its label, the idle ("Parado") first.
   void setUpPoses(const std::filesystem::path& path) {
     if (catalog_.empty()) {  // (read once: the editor's edits match the scene's units again on the same catalog)
@@ -5006,7 +4991,9 @@ class MapStage final : public Stage {
       const bool object3d = !cd->architecture && cd->model && !cd->standOn && cd->exitKind.empty() &&
                             !has(d.id, {"grass", "moss", "rug", "stairs", "fern", "celandine", "periwinkle", "plant", "flower"});
       if (!solidWall && !barricade && !object3d) continue;
-      const bool stopsShots = solidWall || barricade || has(d.id + " " + cd->name, {"pillar", "column", "coluna", "pilar"});
+      // Trees surrounding the Wisp boss provide the intended cover from shots.
+      const bool bossTree = board_->draft().id == "wisp-forest-crossing-boss" && d.id.starts_with("ember-wisp-natural-");
+      const bool stopsShots = solidWall || barricade || bossTree || has(d.id + " " + cd->name, {"pillar", "column", "coluna", "pilar"});
       const bool trunkOnly = object3d && has(d.id, {"tree"});
       const std::vector<ember::FootOffset> cellsOf = trunkOnly ? std::vector<ember::FootOffset>{{0, 0}} : ember::placedFootprint(*cd, d.x, d.y, d.rot);
       // A model gate (kModelGates): shut like this, and open for anyone near it (updateDoors); found by its model at this anchor.
