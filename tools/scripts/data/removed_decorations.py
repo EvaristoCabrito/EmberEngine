@@ -14,6 +14,11 @@
                fungos"): out of 11 wisp-forest / deep-ashen-forest maps, kit_wisp_revisited.py and register_wisp_forest_revisited.py;
                its GLBs, .blend and thumbnail deleted. Older map generators still name it: the game skips it (not in the catalog)
 
+  20 pieces with untextured parts (the user, 2026-11-05: "Todos esses objetos são válidos, todos devem ser texturizados, todo o
+               resto deve ser apagado para sempre"; kept for texturing: the 5 dense trees tree-3d-*, the 9 Smithsonian bones, the Ember
+               lantern; kept for the locked Inn: its 8 pieces): out of the catalog and models.json, GLB / .blend / thumbnail deleted.
+               Map files were not edited: the scene builder leaves out an id the catalog no longer has.
+
 Maps too: python -I tools/scripts/data/removed_decorations.py content/maps/ember/<map>.json ... drops every decoration naming a
 removed id (the map's other entries untouched).
 
@@ -37,6 +42,26 @@ REMOVED = {
     'ember-winter-snow-boulder',
     'ember-polyhaven-wooden-barrels-01-barrel02',
     'ember-wisp-revisited-roots-and-fungi',
+    'ember-winter-snowy-pine',
+    'ember-winter-frost-dead-tree',
+    'ember-winter-snow-fallen-log',
+    'ember-city-well',
+    'ember-ember-containment-box',
+    'ember-farmlands-tall-grass',
+    'ember-farmlands-wheat-tile',
+    'ember-farmlands-hay-bales',
+    'ember-wisp-revisited-hollow-snag',
+    'ember-wisp-revisited-tall-burnt-pine',
+    'ember-wisp-revisited-rotted-hollow-log',
+    'ember-wisp-revisited-hollow-snag-v02',
+    'ember-wisp-revisited-tall-burnt-pine-v02',
+    'ember-bosque-morto-hollow-snag',
+    'ember-wisp-crossing-hollow-sentinel-v02',
+    'ember-wisp-revisited-rotted-hollow-log-v02',
+    'ember-mosteiro-bell-cote',
+    'ember-mosteiro-lectern',
+    'ember-mosteiro-scriptorium-desk',
+    'ember-mosteiro-votive-rack',
 }
 FILES = ['content/data/editor-catalog.json']
 
