@@ -157,6 +157,9 @@ struct MapDraft {
   // user: "encostar o tabuleiro da torre até a porta chegar no chão": the ground image lies at the board's base, so the gate's threshold
   // touches it and no side wall stands under the door). Absent = the board's own.
   std::optional<int> emberBaseLevels;
+  // Heroes who fight on this map only, whoever the save has recruited ("guestHeroes": ["Salazar"]; The Devouring Root, 2026-11-05):
+  // their player spawns stay in the campaign's party for this fight, and nothing of theirs is written into the save after it.
+  std::vector<std::string> guestHeroes;
 
   // The map's backdrop pick (Ember draft.backgroundImage: absent = the map's own, "" = none) and its lighting
   // sliders as authored (absent = the time of day's default).

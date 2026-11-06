@@ -1,0 +1,42 @@
+{
+  "format": "ember-battle-lines-1",
+  "_about": "Lines said during a fight, by map id (MapStage runBattleLines): each once a fight, between actions, by its speaker while it stands. when: battleStart | bossRegenerates | allyBadlyWounded (below, default 0.3) | bossNearDefeat (below, default 0.25).",
+  "maps": {
+    "wisp-forest-crossing-boss": [
+      {
+        "when": "battleStart",
+        "speaker": "Salazar",
+        "text": "Queimem o caule principal! As raízes vão continuar crescendo se vocês não destruírem o coração!",
+        "translations": {
+          "en": "Burn the main stalk! The roots will keep growing unless you destroy the heart!"
+        }
+      },
+      {
+        "when": "bossRegenerates",
+        "speaker": "Salazar",
+        "text": "Ali! Estão vendo como ela se alimenta? Fogo nela antes que se recupere!",
+        "translations": {
+          "en": "There! See how it feeds itself? Give it fire before it recovers!"
+        }
+      },
+      {
+        "when": "allyBadlyWounded",
+        "speaker": "Salazar",
+        "below": 0.3,
+        "text": "Fique parado! Ninguém morre sob os meus cuidados!",
+        "translations": {
+          "en": "Hold still! You're not dying on my watch!"
+        }
+      },
+      {
+        "when": "bossNearDefeat",
+        "speaker": "Salazar",
+        "below": 0.25,
+        "text": "É isso! Mantenham as chamas nela!",
+        "translations": {
+          "en": "That's it! Keep the flames on it!"
+        }
+      }
+    ]
+  }
+}

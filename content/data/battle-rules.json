@@ -22684,7 +22684,7 @@
           "dy": -2
         }
       ],
-      "resistances": {"fire": 0, "lightning": 70, "ice": 70, "arcane": 70, "darkness": 70, "holy": 70, "poison": 70, "ember": 70},
+      "resistances": {"fire": -50, "lightning": 70, "ice": 70, "arcane": 70, "darkness": 70, "holy": 70, "poison": 70, "ember": 70},
       "minRange": 1,
       "maxRange": 1,
       "mov": 5,

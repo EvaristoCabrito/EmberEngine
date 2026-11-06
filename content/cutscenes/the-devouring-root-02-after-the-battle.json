@@ -1,0 +1,220 @@
+{
+  "format": "ember-cutscene-1",
+  "id": "the-devouring-root-02-after-the-battle",
+  "_note": "The Devouring Root, scene 02 (the user's script, 2026-11-05). Plays when the lair's fight is won, before the result screen; Salazar walks away north. The plant is dead here: no step may name it.",
+  "actors": {
+    "kael": {
+      "unit": "Kael"
+    },
+    "neera": {
+      "unit": "Neera"
+    },
+    "voss": {
+      "unit": "Voss"
+    },
+    "salazar": {
+      "unit": "Salazar"
+    }
+  },
+  "steps": [
+    {
+      "do": "wait",
+      "seconds": 0.8
+    },
+    {
+      "do": "face",
+      "actor": "salazar",
+      "direction": "ne"
+    },
+    {
+      "do": "face",
+      "actor": "neera",
+      "toward": "salazar"
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "toward": "salazar"
+    },
+    {
+      "do": "face",
+      "actor": "voss",
+      "toward": "salazar"
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Você parece saber bastante sobre aquela coisa.",
+      "translations": {
+        "en": "You seem to know a great deal about that thing."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "salazar",
+      "text": "O bastante para ter mantido distância até hoje.",
+      "translations": {
+        "en": "Enough to have kept my distance until today."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Então por que veio correndo?",
+      "translations": {
+        "en": "Then why did you come running?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "salazar",
+      "text": "Vocês pareciam precisar de ajuda.",
+      "translations": {
+        "en": "You looked as though you could use the help."
+      }
+    },
+    {
+      "do": "face",
+      "actor": "salazar",
+      "toward": "kael"
+    },
+    {
+      "do": "say",
+      "actor": "salazar",
+      "text": "Agora, se me dão licença, tenho uns assuntos para resolver. Gente que depende de mim, essas coisas.",
+      "translations": {
+        "en": "Now, if you'll excuse me, I've got a few matters to attend to. People depending on me, and all that."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Você vai embora?",
+      "translations": {
+        "en": "You're leaving?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "salazar",
+      "text": "Receio que sim. Vocês parecem capazes de se virar sem um velho se preocupando com vocês.",
+      "translations": {
+        "en": "Afraid so. You seem capable enough to manage without an old man fussing over you."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Você nem é tão velho.",
+      "translations": {
+        "en": "You're not that old."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "salazar",
+      "text": "É a coisa mais gentil que alguém me disse em semanas.",
+      "translations": {
+        "en": "That's the kindest thing anyone's said to me in weeks."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "salazar",
+      "text": "Ainda assim, não me importaria de cruzar com vocês de novo. De preferência num lugar com teto, uma lareira acesa e uma bebida decente.",
+      "translations": {
+        "en": "Still, I wouldn't mind crossing paths again. Preferably somewhere with a roof, a warm fire, and a decent drink."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Uma taverna, então.",
+      "translations": {
+        "en": "A tavern, then."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "salazar",
+      "text": "Aí está uma sugestão sensata.",
+      "translations": {
+        "en": "Now there's a sensible suggestion."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Se ainda sobrar alguma de pé.",
+      "translations": {
+        "en": "Assuming there's one left standing."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "salazar",
+      "text": "Se sobrar, espero que guardem um lugar para mim.",
+      "translations": {
+        "en": "If there is, I hope you'll save me a seat."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "salazar",
+      "text": "Cuidem-se. E fiquem de olho no chão. Esta mata tem o péssimo costume de morder de volta.",
+      "translations": {
+        "en": "Take care of yourselves. And keep an eye on the ground. These woods have a nasty habit of biting back."
+      }
+    },
+    {
+      "do": "move",
+      "actor": "salazar",
+      "to": [
+        16,
+        0
+      ]
+    },
+    {
+      "do": "face",
+      "actor": "neera",
+      "direction": "ne"
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Sujeito estranho.",
+      "translations": {
+        "en": "Strange fellow."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Mas ajudou.",
+      "translations": {
+        "en": "Helpful, though."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "Talvez.",
+      "translations": {
+        "en": "Perhaps."
+      }
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "direction": "nw"
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Vamos. Já perdemos luz do dia demais.",
+      "translations": {
+        "en": "Come on. We've wasted enough daylight."
+      }
+    }
+  ]
+}

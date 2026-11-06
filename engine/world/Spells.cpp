@@ -5124,6 +5124,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
 }  // namespace
 
 static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out);
+static constexpr double kPlantRegenShare = 0.05;  // the Carnivorous Plant's HP back at its turn start
 
 void startOfTurnEffects(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) {
   gNotes.clear();
@@ -5162,6 +5163,13 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
       u.hp += heal;
       out.push_back({unit, heal, false, false, true, false, false});
     }
+  }
+  // The Carnivorous Plant feeds itself (The Devouring Root, 2026-11-05: "There! See how it feeds itself? Give it fire before it
+  // recovers!"): 5 % of its HP back at the start of its turn (first value). Its weakness is fire (battle-rules.json: fire -50).
+  if (u.alive && u.classId == "carnivorousPlant" && u.maxHp > 0 && u.hp < u.maxHp) {
+    const int heal = std::min(u.maxHp - u.hp, std::max(1, static_cast<int>(std::floor(u.maxHp * kPlantRegenShare))));
+    u.hp += heal;
+    out.push_back({unit, heal, false, false, true, false, false});
   }
   // Fôlego Renovado (the paladin's passive): the first time its turn opens badly wounded with a tier-3 use banked
   if (u.alive && u.classId == "paladin" && u.maxHp > 0 && static_cast<double>(u.hp) / u.maxHp <= 0.3 && tierRemaining(u, "secondWind") > 0) {

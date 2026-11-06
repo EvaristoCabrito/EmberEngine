@@ -185,6 +185,9 @@ std::optional<MapDraft> MapDraft::fromJson(const json& d) {
   m.underground = d.contains("underground") && d["underground"].is_boolean() && d["underground"].get<bool>();
   m.aboveGround = !m.underground && d.contains("aboveGround") && d["aboveGround"].is_boolean() && d["aboveGround"].get<bool>();
   if (d.contains("emberBaseLevels") && d["emberBaseLevels"].is_number()) m.emberBaseLevels = d["emberBaseLevels"].get<int>();
+  if (d.contains("guestHeroes") && d["guestHeroes"].is_array())
+    for (const json& g : d["guestHeroes"])
+      if (g.is_string() && !g.get<std::string>().empty()) m.guestHeroes.push_back(g.get<std::string>());
   m.mistIntensity = num("mistIntensity", m.mistType.empty() ? 0.0f : 0.2f);
   m.mistSpeed = num("mistSpeed", 1.0f);
   m.wispIntensity = num("wispIntensity", 0.0f);

@@ -1,0 +1,171 @@
+{
+  "format": "ember-cutscene-1",
+  "id": "the-devouring-root-01-the-warning",
+  "_note": "The Devouring Root, scene 01 (the user's script, 2026-11-05). Plays when the Planta Carnívora's lair opens.",
+  "actors": {
+    "kael": {
+      "unit": "Kael"
+    },
+    "neera": {
+      "unit": "Neera"
+    },
+    "voss": {
+      "unit": "Voss"
+    },
+    "salazar": {
+      "unit": "Salazar"
+    },
+    "planta": {
+      "unit": "Planta Carnívora"
+    }
+  },
+  "steps": [
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        15,
+        17
+      ]
+    },
+    {
+      "do": "face",
+      "actor": "neera",
+      "direction": "ne"
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Espere. Tem alguma coisa errada.",
+      "translations": {
+        "en": "Wait. Something's wrong."
+      }
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "toward": "neera"
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "O que foi?",
+      "translations": {
+        "en": "What is it?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Nenhum inseto. Nenhum pássaro. Nem uma minhoca na terra.",
+      "translations": {
+        "en": "No insects. No birds. Not even a worm in the dirt."
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 0.6
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "toward": "planta"
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Alguma coisa está se mexendo.",
+      "translations": {
+        "en": "Something's moving."
+      }
+    },
+    {
+      "do": "face",
+      "actor": "neera",
+      "toward": "planta"
+    },
+    {
+      "do": "face",
+      "actor": "voss",
+      "toward": "planta"
+    },
+    {
+      "do": "wait",
+      "seconds": 0.8
+    },
+    {
+      "do": "say",
+      "actor": "salazar",
+      "text": "Fiquem longe dessas raízes!",
+      "translations": {
+        "en": "Stay away from those roots!"
+      }
+    },
+    {
+      "do": "move",
+      "actor": "salazar",
+      "to": [
+        16,
+        20
+      ]
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "toward": "salazar"
+    },
+    {
+      "do": "say",
+      "actor": "salazar",
+      "text": "Aço não vai adiantar muito contra essa coisa. Fogo! Fogo é a única fraqueza dela!",
+      "translations": {
+        "en": "Steel won't do you much good against that thing. Fire! Fire is its only weakness!"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "E você seria…?",
+      "translations": {
+        "en": "And you would be?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "salazar",
+      "text": "Salazar. As apresentações podem esperar até a gente sair do cardápio.",
+      "translations": {
+        "en": "Salazar. Introductions can wait until we're not on the menu."
+      }
+    },
+    {
+      "do": "move",
+      "actor": "neera",
+      "to": [
+        19,
+        19
+      ]
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Então se faça útil, Salazar!",
+      "translations": {
+        "en": "Then make yourself useful, Salazar!"
+      }
+    },
+    {
+      "do": "face",
+      "actor": "salazar",
+      "toward": "planta"
+    },
+    {
+      "do": "say",
+      "actor": "salazar",
+      "text": "Com prazer.",
+      "translations": {
+        "en": "Gladly."
+      }
+    }
+  ]
+}
