@@ -1096,7 +1096,7 @@ int runWindow(const Options& o) {
   // Atmos 2, the living atmosphere (docs/ATMOS2.md): one planet for the whole game, stepping only with the game's clock.
   {
     auto& atmos = ember::atmos2::Service::instance();
-    if (o.atmos2 >= 0 && !atmos.start("content/atmos2/state-v01.bin", "content/atmos2/config.json")) ember::logWarn("atmos2: not started");
+    if (o.atmos2 >= 0 && !atmos.start("content/atmos2/state-v02.bin", "content/atmos2/config.json")) ember::logWarn("atmos2: not started");
     atmos.setEnabled(o.atmos2 != 0);
   }
   const auto bootMs = [&] { return std::chrono::duration<double, std::milli>(Clock::now() - bootStart).count(); };

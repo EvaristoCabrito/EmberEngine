@@ -15,7 +15,8 @@ constexpr double kPi = 3.14159265358979323846;
 constexpr double kG = 9.80665, kR = 287.05, kCp = 1004.6, kKappa = kR / kCp, kOmega = 7.2921e-5, kRadius = 6.371e6;
 constexpr double kLv = 2.501e6, kSigma = 5.670374e-8, kSolar = 1361.0, kRho = 1.1;
 constexpr double kCloudScale = 3.0e-4;   // qc that makes 63 % cover
-constexpr double kRainThreshold = 2.0e-4; // kg / kg of cloud water above which it rains
+constexpr double kRainThreshold = 1.0e-4; // kg / kg of cloud water above which it rains (autoconversion: the excess falls in ~1 h)
+constexpr double kAutoconversion = 3600.0; // s
 constexpr double kSoilCapacity = 30.0;    // mm of water a saturated soil holds (wet = 1)
 constexpr double kAlbedoOcean = 0.07, kAlbedoLand = 0.22, kAlbedoSnow = 0.60, kAlbedoCloud = 0.55;
 constexpr double kDiffusion = 0.001;      // share of the 4-neighbour mean mixed in per step (light: a 10-cell wave lives ~5 days, the storms grow faster than that)
@@ -378,6 +379,12 @@ void Core::surfaceExchange() {
     lo.q[s] += E * kDt * kG / (ps_[s] * 100.0 * 0.5);
     ts_[s] -= (Hs + kLv * E) * kDt / cGround;
     if (land_[s]) wet_[s] = clamp01(wet_[s] - E * kDt / kSoilCapacity);
+    else {  // the deep ocean mixes the slab toward its latitude's climate (20 days), with a small season
+      const double lat = latOf(c / kNx) * 3.14159265358979323846 / 180.0;
+      const double season = std::sin(2.0 * 3.14159265358979323846 * (worldSeconds() / 86400.0 - 110.0) / 365.0) * (lat >= 0 ? 1.0 : -1.0);
+      const double clim = 301.0 - 38.0 * std::sin(lat) * std::sin(lat) + 3.0 * season * std::abs(std::sin(lat));
+      ts_[s] += (clim - ts_[s]) * kDt / (20.0 * 86400.0);
+    }
   }
 }
 
@@ -388,7 +395,7 @@ void Core::convection() {
     const size_t s = static_cast<size_t>(c);
     const double tLow = airTemperature(kLow, c), tHigh = airTemperature(kHigh, c);
     const double zLow = geopotential(kLow, c) / kG, zHigh = geopotential(kHigh, c) / kG;
-    const double hLow = kCp * tLow + kG * zLow + kLv * lo.q[s];
+    const double hLow = kCp * surfaceAirTemperature(c) + kG * terrain_[s] + kLv * std::min(kSurfaceToMean * lo.q[s], saturation(surfaceAirTemperature(c), ps_[s]));
     const double hHighSat = kCp * tHigh + kG * zHigh + kLv * saturation(condensationTemperature(kHigh, c), condensationPressure(kHigh, c));
     const double excess = hLow - hHighSat;
     if (excess <= 0.0) { diag_.convection[s] = 0.0; continue; }
@@ -398,8 +405,11 @@ void Core::convection() {
       const double mean = 0.5 * (a + b);
       a += m * share * (mean - a); b += m * share * (mean - b);
     };
-    mix(lo.q[s], hi.q[s], 1.0); mix(lo.qc[s], hi.qc[s], 1.0); mix(lo.u[s], hi.u[s], 0.5); mix(lo.v[s], hi.v[s], 0.5);
-    mix(lo.theta[s], hi.theta[s], 0.3);
+    // The updraught carries vapour up (it condenses aloft in phaseChange and heats the high layer there) and momentum both ways.
+    // Theta is NOT mixed: the high layer's theta is ~30 K over the low one's, so mixing it heated the low air without end (124 C).
+    const double lift = m * lo.q[s];  // both layers hold the same air mass: vapour moves one for one
+    lo.q[s] -= lift; hi.q[s] += lift;
+    mix(lo.u[s], hi.u[s], 0.5); mix(lo.v[s], hi.v[s], 0.5);
     diag_.convection[s] = strength;
   }
 }
@@ -437,14 +447,14 @@ void Core::rain() {
     double ground = 0.0;  // kg / kg of the low layer's mass equivalent, summed as kg / m2 below
     // High cloud: rain falls through the low layer, part evaporating there
     if (hi.qc[s] > kRainThreshold) {
-      const double r = 0.2 * (hi.qc[s] - kRainThreshold);
+      const double r = (hi.qc[s] - kRainThreshold) * std::min(1.0, kDt / kAutoconversion);
       hi.qc[s] -= r;
       const double evap = r * std::min(0.5, 1.0 - rhLow);
       lo.q[s] += evap; lo.theta[s] -= kLv * evap / kCp * toThetaLow;
       ground += (r - evap) * dp / kG;
     }
     if (lo.qc[s] > kRainThreshold) {
-      const double r = 0.2 * (lo.qc[s] - kRainThreshold);
+      const double r = (lo.qc[s] - kRainThreshold) * std::min(1.0, kDt / kAutoconversion);
       lo.qc[s] -= r;
       const double evap = r * std::min(0.3, 0.6 * (1.0 - rhLow));
       lo.q[s] += evap; lo.theta[s] -= kLv * evap / kCp * toThetaLow;

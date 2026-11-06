@@ -200,7 +200,7 @@ WeatherSample Service::sampleAt(double lon, double lat, std::int64_t worldMs) co
   const double rainVis = 1.0 / (1.0 + 0.6 * w.rainMmPerHour);
   const double humidVis = w.humidity > 0.9 ? std::pow(1.0 - (w.humidity - 0.9) / 0.1, 2.0) * 0.95 + 0.05 : 1.0;
   w.visibilityKm = std::max(0.2, 40.0 * rainVis * humidVis);
-  w.snow = w.rainMmPerHour > 0.0 && w.airTemperatureC < 0.5;
+  w.snow = w.rainMmPerHour > 0.05 && w.airTemperatureC < 0.5;
   w.ice = w.wetness > 0.2 && w.airTemperatureC < 0.5;
   w.traction = w.ice ? 0.15 : w.wetness > 0.2 ? 1.0 - 0.4 * std::min(1.0, (w.wetness - 0.2) / 0.5) : 1.0;
   w.speedOfSound = 331.3 * std::sqrt(1.0 + w.airTemperatureC / 273.15);
@@ -222,7 +222,7 @@ tempo::Sample Service::toTempo(const WeatherSample& w) {
   tempo::Sample s;
   auto fix = [](double x) { return static_cast<tempo::I>(std::llround(x * static_cast<double>(Q))); };
   const double speed = std::hypot(w.windLowX, w.windLowZ);
-  const double rain = clamp01(w.rainMmPerHour / 6.0), heavy = clamp01((w.rainMmPerHour - 3.0) / 6.0);
+  const double rain = clamp01((w.rainMmPerHour - 0.05) / 0.4), heavy = clamp01((w.rainMmPerHour - 0.25) / 0.4);  // calibrated to the two-layer model's rain (0..0.3 mm/h in 10 measured days at 4 points): under 0.05 = cloud only
   const double fog = (w.humidity > 0.96 && speed < 3.0 && w.rainMmPerHour < 0.2) ? clamp01((w.humidity - 0.96) / 0.04) * clamp01(1.0 - speed / 3.0) : 0.0;
   s.v[tempo::Low] = fix(w.coverLow);
   s.v[tempo::Middle] = fix(0.5 * w.coverLow * (0.5 + 0.5 * w.humidity));
@@ -265,9 +265,9 @@ bool Service::strike(std::int64_t worldMinute, int cell, double risk) {
 
 std::string Service::stateLabel(const WeatherSample& w) const {
   if (w.snow) return "Neve";
-  if (w.rainMmPerHour > 3.0 && w.lightningRisk > 0.05) return "Tempestade";
-  if (w.rainMmPerHour > 3.0) return "Chuva forte";
-  if (w.rainMmPerHour > 0.3) return "Chuva";
+  if (w.rainMmPerHour > 0.25 && (w.lightningRisk > 0.05 || std::hypot(w.windLowX, w.windLowZ) > 6.0)) return "Tempestade";
+  if (w.rainMmPerHour > 0.25) return "Chuva forte";
+  if (w.rainMmPerHour > 0.05) return "Chuva";
   if (w.humidity > 0.96 && std::hypot(w.windLowX, w.windLowZ) < 3.0) return "Neblina";
   if (w.coverLow > 0.7) return "Nublado";
   if (w.coverLow > 0.35 || w.coverHigh > 0.5) return "Parcialmente nublado";

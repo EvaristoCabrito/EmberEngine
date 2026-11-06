@@ -825,7 +825,7 @@ class MapStage final : public Stage {
         : tempoTemperature < 0.5f ? std::string_view("snow")
         : (tempoEffects.heavyRain > 0.3f || tempoEffects.lightning > 0.05f) ? std::string_view("storm") : std::string_view("rain");
     const float tempoIntensity = std::clamp(std::max(tempoEffects.rain, tempoEffects.heavyRain), 0.0f, 1.0f);
-    const float tempoWind = std::clamp(static_cast<float>(tempoState.value(ember::tempo::WindSpeed)) / 20.0f, 0.05f, 1.0f);
+    const float tempoWind = std::clamp(static_cast<float>(tempoState.value(ember::tempo::WindSpeed) * (1.0 + tempoState.value(ember::tempo::Gust))) / 8.0f, 0.05f, 1.0f);
     const std::string_view activeWeather = mapWeather ? std::string_view(weatherKind_) : tempoKind;
     const float activeIntensity = mapWeather ? weatherIntensity_ : tempoIntensity;
     const float activeWind = mapWeather ? weatherWind_ : tempoWind;
