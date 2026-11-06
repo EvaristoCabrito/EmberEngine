@@ -2514,6 +2514,12 @@ class MapStage final : public Stage {
     const int max = maxHpAt(u, u.level);
     return u.alive ? std::min(max, battle + static_cast<int>(std::ceil((max - battle) * 0.5))) : std::max(1, static_cast<int>(std::ceil(max * 0.5)));
   }
+  // A hero who fights on this map only (MapDraft::guestHeroes).
+  bool isGuest(const std::string& name) const {
+    if (!board_) return false;
+    const std::vector<std::string>& g = board_->draft().guestHeroes;
+    return std::find(g.begin(), g.end(), name) != g.end();
+  }
   std::vector<HeroOutcome> heroOutcomes() const {
     std::vector<HeroOutcome> out;
     if (!battle_) return out;
@@ -2528,12 +2534,6 @@ class MapStage final : public Stage {
         h.poison = u.poisoned ? (u.poisonTier.empty() ? "lesser" : u.poisonTier) : "";
         h.fullness = u.fullness;
         if (const auto start = skillsAtStart_.find(u.name); start != skillsAtStart_.end())
-  // A hero who fights on this map only (MapDraft::guestHeroes).
-  bool isGuest(const std::string& name) const {
-    if (!board_) return false;
-    const std::vector<std::string>& g = board_->draft().guestHeroes;
-    return std::find(g.begin(), g.end(), name) != g.end();
-  }
           for (const auto& [id, v] : trainedSkills(u)) {
             const auto before = start->second.find(id);
             const double gain = v - (before != start->second.end() ? before->second : 0.0);
@@ -6065,6 +6065,15 @@ class MapStage final : public Stage {
 
   // Ember's turn loop (tick / beginUnitTurn / startNewRound): whoever is next in the round acts; when everyone has
   // gone a new round starts. The party's unit is picked and waits for the player; an enemy plays its own turn.
+  // The mission's end confirmed (confirmFinishNow) while the board is in free roam: the result screen (and the onVictory scenes
+  // before it) as after a fight's last turn. updateTurns does the same when the end comes during the turns.
+  void catchResult() {
+    if (!battle_ || !scene_ || !result_.empty() || battle_->result().empty()) return;
+    result_ = battle_->result();
+    resultAt_ = now_;
+    select(-1);
+    if (result_ == "victory") queueVictoryScenes();
+  }
   void updateTurns() {
     if (!battle_ || !scene_ || levelUpMoment_ || !result_.empty() || holdTurns || battle_->roaming()) return;
     const bool walking = std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
@@ -6079,15 +6088,6 @@ class MapStage final : public Stage {
     // An enemy's turn: its walk is over; now its strike, then its turn ends.
     if (enemyTurn_) {
       EnemyTurn t = *enemyTurn_;
-  // The mission's end confirmed (confirmFinishNow) while the board is in free roam: the result screen (and the onVictory scenes
-  // before it) as after a fight's last turn. updateTurns does the same when the end comes during the turns.
-  void catchResult() {
-    if (!battle_ || !scene_ || !result_.empty() || battle_->result().empty()) return;
-    result_ = battle_->result();
-    resultAt_ = now_;
-    select(-1);
-    if (result_ == "victory") queueVictoryScenes();
-  }
       enemyTurn_.reset();
       // The Vigília da Sentinela (docs/SKILLS_LANCER.md): before its blow or its cast, every sentinel whose stance covers one of
       // its targets thrusts first; an attacker that falls never strikes.
@@ -6300,6 +6300,14 @@ class MapStage final : public Stage {
     std::string why;
     std::optional<ember::CutsceneScript> script = ember::CutsceneScript::load("content/cutscenes/" + id + ".json", &why);
     if (!script) return logError("cutscene {}: refused ({})", id, why), false;
+    if (script->id.empty()) script->id = id;
+    return playCutsceneScript(std::move(*script));
+  }
+  // The same with a script made in memory (a line of the fight: battle-lines.json).
+  bool playCutsceneScript(ember::CutsceneScript script) {
+    const std::string id = script.id;
+    if (cutscene_) return logError("cutscene {}: refused, {} is still playing", id, cutscene_->script.id), false;
+    if (!battle_ || !scene_) return logError("cutscene {}: refused, the map is not ready", id), false;
     Cutscene c;
     c.script = std::move(script);
     for (const auto& [actor, unit] : c.script.actors) {
@@ -6314,14 +6322,6 @@ class MapStage final : public Stage {
     cutsceneFailed_ = false, cutsceneWhy_.clear(), cutsceneDone_ = false;
     cutscene_ = std::move(c);
     holdTurns = true;
-    if (script->id.empty()) script->id = id;
-    return playCutsceneScript(std::move(*script));
-  }
-  // The same with a script made in memory (a line of the fight: battle-lines.json).
-  bool playCutsceneScript(ember::CutsceneScript script) {
-    const std::string id = script.id;
-    if (cutscene_) return logError("cutscene {}: refused, {} is still playing", id, cutscene_->script.id), false;
-    if (!battle_ || !scene_) return logError("cutscene {}: refused, the map is not ready", id), false;
     spellMode_.clear(), attackMode_ = false, offHandMode_ = false, pendingStrike_ = -1, talkAfterWalk_ = -1;
     select(-1);
     logInfo("cutscene {}: start ({} actors, {} steps)", id, cutscene_->units.size(), cutscene_->script.steps.size());
@@ -6501,20 +6501,6 @@ class MapStage final : public Stage {
   // replays it: the map's opening is the safe checkpoint). The Map Editor's "Testar esta cena" (openingCutscenes) plays its own
   // list instead. Not in the Map Editor's preview, nor under a --cutscene test run (which plays its own list). A scene refused
   // (an actor not on the map) is skipped with a log line; the next one plays.
-  void runCutsceneTriggers() {
-    if (!openingDone_) {
-      if (!battle_ || !scene_ || readyFrames_ < 30 || !loading().ready) return;
-      openingDone_ = true;  // (a battle script waits for this moment, so its steps never run before the map's opening scene)
-      if (options_.editorClick || !options_.cutscene.empty()) return;
-      openingQueue_.clear();
-      if (!options_.openingCutscenes.empty()) {
-        for (size_t at = 0; at <= options_.openingCutscenes.size();) {
-          size_t end = options_.openingCutscenes.find(',', at);
-          if (end == std::string::npos) end = options_.openingCutscenes.size();
-          if (end > at) openingQueue_.push_back(options_.openingCutscenes.substr(at, end - at));
-          at = end + 1;
-        }
-      } else {
   static ember::Json cutsceneTriggerList(const char* event, const std::string& map) {
     std::ifstream in("content/cutscenes/triggers.json", std::ios::binary);  // read each time: the editor may have changed it
     const ember::Json table = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
@@ -6616,9 +6602,23 @@ class MapStage final : public Stage {
     }
   }
 
-        std::ifstream in("content/cutscenes/triggers.json", std::ios::binary);  // read at each opening: the editor may have changed it
+  void runCutsceneTriggers() {
     runVictoryScenes();
     runBattleLines();
+    if (!openingDone_) {
+      if (!battle_ || !scene_ || readyFrames_ < 30 || !loading().ready) return;
+      openingDone_ = true;  // (a battle script waits for this moment, so its steps never run before the map's opening scene)
+      if (options_.editorClick || !options_.cutscene.empty()) return;
+      openingQueue_.clear();
+      if (!options_.openingCutscenes.empty()) {
+        for (size_t at = 0; at <= options_.openingCutscenes.size();) {
+          size_t end = options_.openingCutscenes.find(',', at);
+          if (end == std::string::npos) end = options_.openingCutscenes.size();
+          if (end > at) openingQueue_.push_back(options_.openingCutscenes.substr(at, end - at));
+          at = end + 1;
+        }
+      } else {
+        std::ifstream in("content/cutscenes/triggers.json", std::ios::binary);  // read at each opening: the editor may have changed it
         const ember::Json table = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
         const ember::Json onOpen = table.is_object() ? table.value("onOpen", ember::Json::object()) : ember::Json::object();
         const ember::Json list = onOpen.is_object() && onOpen.contains(draftId()) ? onOpen[draftId()] : ember::Json();
@@ -12427,6 +12427,12 @@ class MapStage final : public Stage {
   bool cutsceneQueueStarted_ = false, cutsceneQueueDone_ = false, cutsceneTestFailed_ = false;
   bool openingDone_ = false;  // the map's onOpen trigger looked up once (runCutsceneTriggers)
   std::vector<std::string> openingQueue_;  // the opening scenes still to play, in order
+  std::vector<std::string> victoryQueue_;  // the victory scenes still to play (queueVictoryScenes)
+  bool victoryScenesPlaying_ = false;      // the result screen waits for them
+  std::vector<BattleLine> battleLines_;    // this map's lines in the fight (runBattleLines)
+  bool battleLinesLoaded_ = false;
+  std::map<size_t, int> bossHp_;           // each boss's HP last frame (a regeneration seen)
+  bool bossHealed_ = false;
   struct CardRect {  // a unit's card as drawn this frame, for picking
     glm::vec3 origin{0.0f};  // bottom centre
     float width = 0.0f, height = 0.0f;
@@ -12445,12 +12451,6 @@ class MapStage final : public Stage {
   std::set<std::string> absent_;               // battle unit ids gone from the start (dead on an earlier visit, fallen on the floor before)
   std::optional<ember::Battle::Exit> finishExit_; // the waypoint the mission was ended on (the result screen's text and its way on)
   bool talked_ = false;                        // a conversation was taken (the battle script's "talk" check)
-  std::vector<std::string> victoryQueue_;  // the victory scenes still to play (queueVictoryScenes)
-  bool victoryScenesPlaying_ = false;      // the result screen waits for them
-  std::vector<BattleLine> battleLines_;    // this map's lines in the fight (runBattleLines)
-  bool battleLinesLoaded_ = false;
-  std::map<size_t, int> bossHp_;           // each boss's HP last frame (a regeneration seen)
-  bool bossHealed_ = false;
   bool explores_ = false;                      // an explore mission (it roamed when it opened)
   bool roams_ = false;                         // free roam until an enemy is in sight: an explore mission or any map with fog of war
   bool winDismissed_ = false;        // the end was on offer and the player kept playing (the footer button brings it back)
