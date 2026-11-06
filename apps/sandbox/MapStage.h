@@ -4835,11 +4835,15 @@ class MapStage final : public Stage {
   // copy, else the Média one; a pose without a copy plays its full clip in every setting. Leve never halves anything (halved frames
   // pixelate: "anything less is just nasty looking"); only Alta's fallback when the GPU is short halves full clips, for everyone.
   void pinUnitArt() {
-    sprites_.setLight(false);
-    mediumArt_ = gamePrefs().characters == "media" || gamePrefs().characters == "leve";
+    // Extra baixa (the user, 2026-11-06: "resolução extra baixa com a metade da resolução da baixa e frames de 36 normais"):
+    // Leve's copies, every clip pinned as two versions with the light one asked, so each is held from kBaseFirstMip: half of
+    // Leve's resolution, the same frames.
+    extraLowArt_ = gamePrefs().characters == "extra";
+    sprites_.setLight(extraLowArt_);
+    mediumArt_ = gamePrefs().characters == "media" || gamePrefs().characters == "leve" || extraLowArt_;
     // A pose with a Leve copy of its own (HeroPose::light: Voss's 36-frame cut, the user 2026-10-22: "36 is on with LEVE, 64 is
     // on with Medium, High plays the full version") draws it in Leve.
-    lightArt_ = gamePrefs().characters == "leve";
+    lightArt_ = gamePrefs().characters == "leve" || extraLowArt_;
     for (size_t i = 0; i < scene_->units.size(); ++i) pinArt(scene_->units[i], i < unitCatalog_.size() ? unitCatalog_[i] : nullptr);
   }
   // A pose drawn from its own Média / Leve copy is never halved on top of it, not even by Alta's fallback when the GPU is short
@@ -4847,11 +4851,11 @@ class MapStage final : public Stage {
   // out ~305 px of figure).
   void pinArt(const ember::SceneUnit& u, const ember::Hero* entry) {
     const std::string& own = sceneArtSet(u, entry);
-    sprites_.pin(own, u.clip, own == u.set);
+    sprites_.pin(own, u.clip, extraLowArt_ || own == u.set);
     if (entry)
       for (const ember::HeroPose& p : entry->poses) {
         const std::string& set = artSet(p);
-        sprites_.pin(set, p.clip, set == p.set);
+        sprites_.pin(set, p.clip, extraLowArt_ || set == p.set);
       }
   }
   const std::string& artSet(const ember::HeroPose& p) const {
@@ -4878,6 +4882,7 @@ class MapStage final : public Stage {
   }
   bool mediumArt_ = false;  // Personagens: Média or Leve, taken when the fight loads (pinUnitArt)
   bool lightArt_ = false;   // Personagens: Leve (a pose's own Leve copy wins over its Média one)
+  bool extraLowArt_ = false;  // Personagens: Extra baixa (Leve's copies, every clip held at half resolution)
   // The battle HUD's pictures (every unit's portrait, each hero's 12 sockets: spell art up to 784 x 1168) decoded on a
   // worker during the loading screen (the hunt for the battle hitch, 2026-10-19: read on the main thread the first time the
   // bar showed them, 45-90 ms).

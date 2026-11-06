@@ -33,6 +33,8 @@ struct GamePrefs {
   // Leve halves that copy where there is one (Voss ~305 px), the full clip elsewhere.
   // Saved as "characterArt"; a file with only the old "characters" keeps an explicit "leve", its "alta" (the old default)
   // becomes the new default.
+  // "extra" = Extra baixa (the user, 2026-11-06: "resolução extra baixa com a metade da resolução da baixa e frames de 36
+  // normais"): Leve's copies (the 36-frame cuts where a pose has one), every clip held at half its resolution.
   std::string characters = "media";
   // Opções > Gráficos > Luz do grupo (the user, 2026-10-28: "o efeito pode existir guardado para depois"): on the world map at
   // night, a soft circle of light around the party and the rest of the map darker. OFF by default.
@@ -66,7 +68,7 @@ struct GamePrefs {
     const float scale = j.value("dialogueScale", p.dialogueScale);
     if (scale == 1.0f || std::abs(scale - 1.15f) < 1e-3f || std::abs(scale - 1.3f) < 1e-3f) p.dialogueScale = scale;
     const std::string art = j.value("characterArt", std::string());
-    if (art == "alta" || art == "media" || art == "leve") p.characters = art;
+    if (art == "alta" || art == "media" || art == "leve" || art == "extra") p.characters = art;
     else if (j.value("characters", std::string()) == "leve") p.characters = "leve";
     p.partyLight = j.value("partyLight", p.partyLight);
     const std::string tex = j.value("meshTextures", std::string());

@@ -748,9 +748,12 @@ class OptionsDialog {
       s.rows.push_back(toggle("##gfxlights", tr("Luzes locais"), g.localLights, !actions.gfx, &gfxChanged));
       s.rows.push_back(toggle("##gfxatmo", tr("FX atmosféricos"), g.atmosphericFx, !actions.gfx, &gfxChanged));
       s.rows.push_back(select("##gfxcast", tr("Personagens", "Characters"),
-                              prefs.characters == "alta" ? 0 : prefs.characters == "leve" ? 2 : 1,
-                              {{tr("Alta", "High"), true}, {tr("Média", "Medium"), true}, {tr("Leve", "Light"), true}},
-                              [&](int v) { prefs.characters = v == 0 ? "alta" : v == 2 ? "leve" : "media", prefsChanged = true; }));
+                              prefs.characters == "alta" ? 0 : prefs.characters == "leve" ? 2 : prefs.characters == "extra" ? 3 : 1,
+                              {{tr("Alta", "High"), true}, {tr("Média", "Medium"), true}, {tr("Leve", "Light"), true},
+                               {tr("Extra baixa", "Extra low"), true}},
+                              [&](int v) {
+                                prefs.characters = v == 0 ? "alta" : v == 2 ? "leve" : v == 3 ? "extra" : "media", prefsChanged = true;
+                              }));
       // Texturas 3D (the user, 2026-10-29): Alta 2K, Média 1K, Leve 512; taken when a map opens.
       s.rows.push_back(select("##gfxtex3d", tr("Texturas 3D", "3D textures"),
                               prefs.textures3d == "media" ? 1 : prefs.textures3d == "leve" ? 2 : 0,
