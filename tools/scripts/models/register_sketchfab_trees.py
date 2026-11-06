@@ -139,6 +139,15 @@ def main(models_path='content/models/models.json'):
                 'triangles': tris, 'source': f'Sketchfab {pack}',
             })
     print('left out (scene ground / water / grass):', ', '.join(left))
+    # The 64 young pines are near copies: six spread over the heights stay (the user, 2026-11-05: "começar a reutilizar", "Sim,
+    # enxuga"); a map varies them by turning and sizing each one. Named 01..06 from the smallest.
+    young = sorted((e for e in entries if e['name'].startswith('Pinheiro jovem 3D')), key=lambda e: e['height'])
+    keep = [young[round((2 * i + 1) * len(young) / 12)] for i in range(6)] if len(young) > 6 else young
+    for n, e in enumerate(keep, 1):
+        e['name'] = f'Pinheiro jovem 3D · {n:02}'
+    dropped = [e['id'] for e in young if e not in keep]
+    entries = [e for e in entries if e['id'] not in dropped]
+    print(f'young pines: {len(keep)} kept, {len(dropped)} left out')
     ids = {e['id'] for e in entries}
     assert len(ids) == len(entries), 'duplicate ids'
     assert not any(e['name'].startswith('?') for e in entries), [e['id'] for e in entries if e['name'].startswith('?')]
