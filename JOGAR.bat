@@ -1,5 +1,5 @@
-﻿@echo off
-rem JOGAR.bat - dois cliques e o jogo abre com o build local do editor. A arte vem de C:\EmberEngine\build.
+@echo off
+rem JOGAR.bat - dois cliques e o jogo abre. Tudo vem SO desta pasta (exe, arte, mapas); nunca de outra pasta. 
 setlocal EnableExtensions
 set "HERE=%~dp0"
 if "%HERE:~-1%"=="\" set "HERE=%HERE:~0,-1%"
