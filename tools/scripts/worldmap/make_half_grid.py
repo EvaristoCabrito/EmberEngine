@@ -64,6 +64,15 @@ def main():
     board["hexSize"] = NEW_SIZE
     board["stepHours"] = 6
     board["cells"] = cells
+    # The campaign starts one hex west of the old start (the user, 2026-11-06: "começar a campanha em um hex à esquerda agora que
+    # estão menores"): that hex lies past the old grid's west edge, so it is added as a copy of the start's road cell.
+    start = board["startHex"]
+    west = (start["col"] - 1, start["row"])
+    if west not in {(c["col"], c["row"]) for c in cells}:
+        base = next(c for c in cells if (c["col"], c["row"]) == (start["col"], start["row"]))
+        x, y = to_world(*west, NEW_SIZE)
+        cells.insert(cells.index(base), {**base, "col": west[0], "row": west[1], "x": x, "y": y})
+    board["startHex"] = {"col": west[0], "row": west[1]}
     keys = {(c["col"], c["row"]) for c in cells}
     for loc in data["locations"]:
         # The hex under the pin (an old hex's centre can be a whole small hex away from its pin): clicking the pin is clicking the

@@ -1,7 +1,7 @@
 {
  "board": {
   "startHex": {
-   "col": 2,
+   "col": 1,
    "row": 16
   },
   "westEdgeCol": 2,
@@ -5829,6 +5829,26 @@
     ],
     "x": 88.76760388790495,
     "y": 56.25
+   },
+   {
+    "col": 1,
+    "row": 16,
+    "hours": 6,
+    "region": "road",
+    "encounters": [
+     "random-encounter-5",
+     "random-encounter-3",
+     "random-encounter-6",
+     "random-encounter-7",
+     "random-encounter-8",
+     "random-encounter-11",
+     "random-encounter-12",
+     "random-encounter-13",
+     "random-road-three-routes-market",
+     "random-road-broken-milepost"
+    ],
+    "x": 4.330127018922193,
+    "y": 60.0
    },
    {
     "col": 2,

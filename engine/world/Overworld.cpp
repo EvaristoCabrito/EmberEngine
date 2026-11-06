@@ -318,6 +318,14 @@ Json Overworld::fitSave(Json save) const {
         const OverworldHex h = moved(r.value("col", 0), r.value("row", 0));
         r["col"] = h.col, r["row"] = h.row;
       }
+  // A campaign that has not left its start yet (nobody steps before "vau", canStep) begins on this board's own start hex: on the
+  // half grid one hex west of where the old start lands (the user, 2026-11-06: "começar a campanha em um hex à esquerda").
+  if (!has(child(save, "completed"), "vau")) {
+    save["overworldPos"] = Json{{"col", start_.col}, {"row", start_.row}};
+    const std::string key = std::format("{},{}", start_.col, start_.row);
+    if (!save.contains("exploredHexes") || !save["exploredHexes"].is_array()) save["exploredHexes"] = Json::array();
+    if (!has(save["exploredHexes"], key)) save["exploredHexes"].push_back(key);
+  }
   save["overworldGrid"] = gHexSize;
   return save;
 }
@@ -489,7 +497,9 @@ bool Overworld::canStep(const Json& save, OverworldHex from, OverworldHex to, bo
   const Json& completed = child(save, "completed");
   if (!has(completed, "vau")) return false;
   if (wisp_ && from.col <= wisp_->col && to.col > wisp_->col && wispForestUncleared(save)) return false;
-  if (has(completed, "estalagem") || from == inn_) return true;
+  // Free movement, every side, only once the Bridge's 4th scenario is over (the user, 2026-11-06: "somente após o final do
+  // cenário 4 da ponte é que o movimento fica livre para escolher os lados"); before it, only the early road below.
+  if (has(completed, "thebridge")) return true;
   // The early road: the start's row from the start to the Inn, and the Stone Bridge's hex (on the start's row on the 5 % grid,
   // the row below on the half grid). Back (west) always; east up to the bridge; past it once the bridge's missions are done.
   const MapLocation* bridge = nullptr;
