@@ -1,0 +1,4782 @@
+{
+ "aerial_asphalt_01": {
+  "name": "Aerial Asphalt 01",
+  "categories": [
+   "asphalt",
+   "outdoor",
+   "floor",
+   "road",
+   "man made",
+   "aerial"
+  ],
+  "tags": [
+   "road",
+   "flat",
+   "cracked"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "aerial_asphalt_01_diff_2k.jpg",
+   "nor_gl": "aerial_asphalt_01_nor_gl_2k.jpg",
+   "arm": "aerial_asphalt_01_arm_2k.jpg",
+   "disp": "aerial_asphalt_01_disp_2k.jpg"
+  }
+ },
+ "aerial_beach_01": {
+  "name": "Aerial Beach 01",
+  "categories": [
+   "terrain",
+   "sand",
+   "outdoor",
+   "natural",
+   "aerial"
+  ],
+  "tags": [
+   "beach",
+   "wavy",
+   "costal",
+   "ocean",
+   "seaside"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "aerial_beach_01_diff_2k.jpg",
+   "nor_gl": "aerial_beach_01_nor_gl_2k.jpg",
+   "arm": "aerial_beach_01_arm_2k.jpg",
+   "disp": "aerial_beach_01_disp_2k.jpg"
+  }
+ },
+ "aerial_beach_02": {
+  "name": "Aerial Beach 02",
+  "categories": [
+   "terrain",
+   "sand",
+   "natural",
+   "outdoor",
+   "aerial"
+  ],
+  "tags": [
+   "beach",
+   "flat",
+   "costal",
+   "ocean",
+   "seaside"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "aerial_beach_02_diff_2k.jpg",
+   "nor_gl": "aerial_beach_02_nor_gl_2k.jpg",
+   "arm": "aerial_beach_02_arm_2k.jpg",
+   "disp": "aerial_beach_02_disp_2k.jpg"
+  }
+ },
+ "aerial_beach_03": {
+  "name": "Aerial Beach 03",
+  "categories": [
+   "outdoor",
+   "terrain",
+   "sand",
+   "natural",
+   "aerial"
+  ],
+  "tags": [
+   "beach",
+   "seaside",
+   "sand",
+   "trampled",
+   "uneven",
+   "brown",
+   "footprints",
+   "costal",
+   "ocean"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "aerial_beach_03_diff_2k.jpg",
+   "nor_gl": "aerial_beach_03_nor_gl_2k.jpg",
+   "arm": "aerial_beach_03_arm_2k.jpg",
+   "disp": "aerial_beach_03_disp_2k.jpg"
+  }
+ },
+ "aerial_grass_rock": {
+  "name": "Aerial Grass Rock",
+  "categories": [
+   "terrain",
+   "rock",
+   "outdoor",
+   "natural",
+   "aerial"
+  ],
+  "tags": [
+   "moss",
+   "grass",
+   "cliff",
+   "cave",
+   "rock face"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "aerial_grass_rock_diff_2k.jpg",
+   "nor_gl": "aerial_grass_rock_nor_gl_2k.jpg",
+   "arm": "aerial_grass_rock_arm_2k.jpg",
+   "disp": "aerial_grass_rock_disp_2k.jpg"
+  }
+ },
+ "aerial_ground_rock": {
+  "name": "Aerial Ground Rock",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "natural",
+   "aerial"
+  ],
+  "tags": [
+   "mud",
+   "rocks",
+   "stones",
+   "dirt",
+   "dry"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "aerial_ground_rock_diff_2k.jpg",
+   "nor_gl": "aerial_ground_rock_nor_gl_2k.jpg",
+   "arm": "aerial_ground_rock_arm_2k.jpg",
+   "disp": "aerial_ground_rock_disp_2k.jpg"
+  }
+ },
+ "aerial_mud_1": {
+  "name": "Aerial Mud 1",
+  "categories": [
+   "terrain",
+   "road",
+   "outdoor",
+   "natural",
+   "aerial"
+  ],
+  "tags": [
+   "mud",
+   "tracks",
+   "tire tracks",
+   "wet soil",
+   "uneven surface",
+   "ruts",
+   "surface depressions"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "aerial_mud_1_diff_2k.jpg",
+   "nor_gl": "aerial_mud_1_nor_gl_2k.jpg",
+   "arm": "aerial_mud_1_arm_2k.jpg",
+   "disp": "aerial_mud_1_disp_2k.jpg"
+  }
+ },
+ "aerial_rocks_01": {
+  "name": "Aerial Rocks 01",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "natural",
+   "rock",
+   "aerial"
+  ],
+  "tags": [
+   "rocks",
+   "moss",
+   "cliff",
+   "rock face",
+   "cave"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "aerial_rocks_01_diff_2k.jpg",
+   "nor_gl": "aerial_rocks_01_nor_gl_2k.jpg",
+   "arm": "aerial_rocks_01_arm_2k.jpg",
+   "disp": "aerial_rocks_01_disp_2k.jpg"
+  }
+ },
+ "aerial_rocks_02": {
+  "name": "Aerial Rocks 02",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "natural",
+   "rock",
+   "aerial"
+  ],
+  "tags": [
+   "rocks",
+   "rough",
+   "moss",
+   "cliff",
+   "rock face",
+   "cave"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "aerial_rocks_02_diff_2k.jpg",
+   "nor_gl": "aerial_rocks_02_nor_gl_2k.jpg",
+   "arm": "aerial_rocks_02_arm_2k.jpg",
+   "disp": "aerial_rocks_02_disp_2k.jpg"
+  }
+ },
+ "aerial_rocks_04": {
+  "name": "Aerial Rocks 04",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "natural",
+   "rock",
+   "aerial"
+  ],
+  "tags": [
+   "rough",
+   "rocks",
+   "moss",
+   "cliff",
+   "rock face",
+   "cave"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "aerial_rocks_04_diff_2k.jpg",
+   "nor_gl": "aerial_rocks_04_nor_gl_2k.jpg",
+   "arm": "aerial_rocks_04_arm_2k.jpg",
+   "disp": "aerial_rocks_04_disp_2k.jpg"
+  }
+ },
+ "aerial_sand": {
+  "name": "Aerial Sand",
+  "categories": [
+   "terrain",
+   "sand",
+   "outdoor",
+   "natural",
+   "aerial"
+  ],
+  "tags": [
+   "sand",
+   "costal",
+   "seaside",
+   "ocean",
+   "sea"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "aerial_sand_diff_2k.jpg",
+   "nor_gl": "aerial_sand_nor_gl_2k.jpg",
+   "arm": "aerial_sand_arm_2k.jpg",
+   "disp": "aerial_sand_disp_2k.jpg"
+  }
+ },
+ "aerial_wood_snips": {
+  "name": "Aerial Wood Snips",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "natural",
+   "aerial"
+  ],
+  "tags": [
+   "rough",
+   "wood",
+   "mud",
+   "dirt",
+   "wood chips",
+   "wood splinters",
+   "tire tracks",
+   "organic debris",
+   "earth"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "aerial_wood_snips_diff_2k.jpg",
+   "nor_gl": "aerial_wood_snips_nor_gl_2k.jpg",
+   "arm": "aerial_wood_snips_arm_2k.jpg",
+   "disp": "aerial_wood_snips_disp_2k.jpg"
+  }
+ },
+ "asphalt_02": {
+  "name": "Asphalt 02",
+  "categories": [
+   "terrain",
+   "road",
+   "man made",
+   "outdoor",
+   "floor"
+  ],
+  "tags": [
+   "asphalt",
+   "cracked",
+   "flat",
+   "road",
+   "asphalt road",
+   "tarmac road",
+   "gritty",
+   "weathered",
+   "grey",
+   "cracking",
+   "tar",
+   "cracks"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "asphalt_02_diff_2k.jpg",
+   "nor_gl": "asphalt_02_nor_gl_2k.jpg",
+   "arm": "asphalt_02_arm_2k.jpg",
+   "disp": "asphalt_02_disp_2k.jpg"
+  }
+ },
+ "asphalt_snow": {
+  "name": "Asphalt Snow",
+  "categories": [
+   "outdoor",
+   "man made",
+   "asphalt",
+   "snow"
+  ],
+  "tags": [
+   "rough",
+   "asphalt",
+   "road",
+   "snow",
+   "urban",
+   "floor"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "asphalt_snow_diff_2k.jpg",
+   "nor_gl": "asphalt_snow_nor_gl_2k.jpg",
+   "arm": "asphalt_snow_arm_2k.jpg",
+   "disp": "asphalt_snow_disp_2k.jpg"
+  }
+ },
+ "baseball_playground": {
+  "name": "Baseball Playground",
+  "categories": [
+   "outdoor",
+   "terrain",
+   "sand"
+  ],
+  "tags": [
+   "dirt",
+   "playground",
+   "sand",
+   "baseball",
+   "ground",
+   "brown",
+   "dry",
+   "trampled",
+   "footprints"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "baseball_playground_diff_2k.jpg",
+   "nor_gl": "baseball_playground_nor_gl_2k.jpg",
+   "arm": "baseball_playground_arm_2k.jpg",
+   "disp": "baseball_playground_disp_2k.jpg"
+  }
+ },
+ "bicolour_gravel": {
+  "name": "Bicolour Gravel",
+  "categories": [
+   "floor",
+   "gravel"
+  ],
+  "tags": [
+   "gravel",
+   "gravelly",
+   "driveway gravel",
+   "driveway stones",
+   "driveway",
+   "garden walkway",
+   "stones",
+   "garden path gravel"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "bicolour_gravel_diff_2k.jpg",
+   "nor_gl": "bicolour_gravel_nor_gl_2k.jpg",
+   "arm": "bicolour_gravel_arm_2k.jpg",
+   "disp": "bicolour_gravel_disp_2k.jpg"
+  }
+ },
+ "brick_gravel": {
+  "name": "Brick Gravel",
+  "categories": [
+   "outdoor",
+   "gravel",
+   "brick"
+  ],
+  "tags": [
+   "rough",
+   "uneven",
+   "brick",
+   "gravel",
+   "broken pieces",
+   "rubble",
+   "fragmented",
+   "crushed",
+   "aggregate",
+   "terracotta"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "brick_gravel_diff_2k.jpg",
+   "nor_gl": "brick_gravel_nor_gl_2k.jpg",
+   "arm": "brick_gravel_arm_2k.jpg",
+   "disp": "brick_gravel_disp_2k.jpg"
+  }
+ },
+ "brown_mud": {
+  "name": "Brown Mud",
+  "categories": [
+   "terrain",
+   "natural",
+   "outdoor"
+  ],
+  "tags": [
+   "mud",
+   "dirt",
+   "stones",
+   "dry",
+   "ground",
+   "soil",
+   "plant debris",
+   "granular",
+   "organic matter",
+   "earthy",
+   "twigs",
+   "earth"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "brown_mud_diff_2k.jpg",
+   "nor_gl": "brown_mud_nor_gl_2k.jpg",
+   "arm": "brown_mud_arm_2k.jpg",
+   "disp": "brown_mud_disp_2k.jpg"
+  }
+ },
+ "brown_mud_02": {
+  "name": "Brown Mud 02",
+  "categories": [
+   "terrain",
+   "natural",
+   "outdoor"
+  ],
+  "tags": [
+   "mud",
+   "dirt",
+   "stones",
+   "dry",
+   "ground",
+   "footprints",
+   "soil",
+   "compact soil",
+   "wet soil",
+   "plant debris",
+   "roots",
+   "sticks",
+   "earth"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "brown_mud_02_diff_2k.jpg",
+   "nor_gl": "brown_mud_02_nor_gl_2k.jpg",
+   "arm": "brown_mud_02_arm_2k.jpg",
+   "disp": "brown_mud_02_disp_2k.jpg"
+  }
+ },
+ "brown_mud_03": {
+  "name": "Brown Mud 03",
+  "categories": [
+   "terrain",
+   "natural",
+   "outdoor"
+  ],
+  "tags": [
+   "mud",
+   "dirt",
+   "stones",
+   "dry",
+   "ground",
+   "soil",
+   "wet soil",
+   "footprints",
+   "earth",
+   "muddy surface",
+   "wet patches",
+   "mud clumps",
+   "loose earth"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "brown_mud_03_diff_2k.jpg",
+   "nor_gl": "brown_mud_03_nor_gl_2k.jpg",
+   "arm": "brown_mud_03_arm_2k.jpg",
+   "disp": "brown_mud_03_disp_2k.jpg"
+  }
+ },
+ "brown_mud_dry": {
+  "name": "Brown Mud Dry",
+  "categories": [
+   "terrain",
+   "natural",
+   "outdoor",
+   "collection: the_shed"
+  ],
+  "tags": [
+   "mud",
+   "dirt",
+   "stones",
+   "dry",
+   "ground"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "brown_mud_dry_diff_2k.jpg",
+   "nor_gl": "brown_mud_dry_nor_gl_2k.jpg",
+   "arm": "brown_mud_dry_arm_2k.jpg",
+   "disp": "brown_mud_dry_disp_2k.jpg"
+  }
+ },
+ "brown_mud_leaves_01": {
+  "name": "Brown Mud Leaves 01",
+  "categories": [
+   "terrain",
+   "natural",
+   "outdoor"
+  ],
+  "tags": [
+   "grass",
+   "mud",
+   "moss",
+   "stones",
+   "orange",
+   "forest"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "brown_mud_leaves_01_diff_2k.jpg",
+   "nor_gl": "brown_mud_leaves_01_nor_gl_2k.jpg",
+   "arm": "brown_mud_leaves_01_arm_2k.jpg",
+   "disp": "brown_mud_leaves_01_disp_2k.jpg"
+  }
+ },
+ "brown_mud_rocks_01": {
+  "name": "Brown Mud Rocks 01",
+  "categories": [
+   "terrain",
+   "natural",
+   "outdoor"
+  ],
+  "tags": [
+   "gravel",
+   "mud",
+   "moss",
+   "stones",
+   "forest",
+   "rocks",
+   "loose stones",
+   "plants",
+   "weeds",
+   "scattered weeds",
+   "plant debris",
+   "riverbank",
+   "organic matter",
+   "rocky soil",
+   "wet ground"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "brown_mud_rocks_01_diff_2k.jpg",
+   "nor_gl": "brown_mud_rocks_01_nor_gl_2k.jpg",
+   "arm": "brown_mud_rocks_01_arm_2k.jpg",
+   "disp": "brown_mud_rocks_01_disp_2k.jpg"
+  }
+ },
+ "burned_ground_01": {
+  "name": "Burned Ground 01",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "natural"
+  ],
+  "tags": [
+   "mud",
+   "burned",
+   "fire",
+   "dirt",
+   "ash",
+   "plant debris",
+   "plant litter",
+   "leaves",
+   "dry leaves",
+   "dry grass",
+   "gravel",
+   "gravelly",
+   "fallen leaves",
+   "organic debris",
+   "loose stones",
+   "charred soil",
+   "scorched earth"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "burned_ground_01_diff_2k.jpg",
+   "nor_gl": "burned_ground_01_nor_gl_2k.jpg",
+   "arm": "burned_ground_01_arm_2k.jpg",
+   "disp": "burned_ground_01_disp_2k.jpg"
+  }
+ },
+ "coast_land_rocks_01": {
+  "name": "Coast Land Rocks 01",
+  "categories": [
+   "outdoor",
+   "natural",
+   "terrain",
+   "aerial",
+   "sand",
+   "collection: smugglers_cove"
+  ],
+  "tags": [
+   "rough",
+   "uneven",
+   "stones",
+   "moss",
+   "rock",
+   "dirt",
+   "cracked",
+   "seaside",
+   "ocean",
+   "costal",
+   "rocks",
+   "brown",
+   "gravel",
+   "nature",
+   "ground",
+   "cliff"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "coast_land_rocks_01_diff_2k.jpg",
+   "nor_gl": "coast_land_rocks_01_nor_gl_2k.jpg",
+   "arm": "coast_land_rocks_01_arm_2k.jpg",
+   "disp": "coast_land_rocks_01_disp_2k.jpg"
+  }
+ },
+ "coast_sand_01": {
+  "name": "Coast Sand 01",
+  "categories": [
+   "outdoor",
+   "terrain",
+   "sand",
+   "natural",
+   "aerial",
+   "collection: smugglers_cove",
+   "collection: verdant_trail"
+  ],
+  "tags": [
+   "beach",
+   "costal",
+   "ocean",
+   "seaside",
+   "sand",
+   "brown",
+   "rough",
+   "gravel",
+   "damp",
+   "dirt",
+   "stones"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "coast_sand_01_diff_2k.jpg",
+   "nor_gl": "coast_sand_01_nor_gl_2k.jpg",
+   "arm": "coast_sand_01_arm_2k.jpg",
+   "disp": "coast_sand_01_disp_2k.jpg"
+  }
+ },
+ "coast_sand_02": {
+  "name": "Coast Sand 02",
+  "categories": [
+   "outdoor",
+   "terrain",
+   "sand",
+   "natural",
+   "collection: smugglers_cove",
+   "aerial"
+  ],
+  "tags": [
+   "beach",
+   "sand",
+   "seaside",
+   "rough",
+   "coastal",
+   "ocean",
+   "uneven",
+   "stones",
+   "brown",
+   "dirt"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "coast_sand_02_diff_2k.jpg",
+   "nor_gl": "coast_sand_02_nor_gl_2k.jpg",
+   "arm": "coast_sand_02_arm_2k.jpg",
+   "disp": "coast_sand_02_disp_2k.jpg"
+  }
+ },
+ "coast_sand_03": {
+  "name": "Coast Sand 03",
+  "categories": [
+   "sand",
+   "terrain",
+   "rock",
+   "outdoor",
+   "natural",
+   "collection: smugglers_cove"
+  ],
+  "tags": [
+   "sand",
+   "pebbles",
+   "stones",
+   "beach",
+   "seaside",
+   "ocean",
+   "costal",
+   "brown",
+   "ground",
+   "gravel",
+   "dry",
+   "pathway",
+   "coral",
+   "rock",
+   "broken",
+   "nature",
+   "debris"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "coast_sand_03_diff_2k.jpg",
+   "nor_gl": "coast_sand_03_nor_gl_2k.jpg",
+   "arm": "coast_sand_03_arm_2k.jpg",
+   "disp": "coast_sand_03_disp_2k.jpg"
+  }
+ },
+ "coast_sand_04": {
+  "name": "Coast Sand 04",
+  "categories": [
+   "outdoor",
+   "terrain",
+   "sand",
+   "natural"
+  ],
+  "tags": [
+   "stones",
+   "pebbles",
+   "sand",
+   "coastal",
+   "coast",
+   "dirt",
+   "ocean",
+   "beach",
+   "seaside",
+   "brown",
+   "gravel",
+   "debris",
+   "coral",
+   "sea"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "coast_sand_04_diff_2k.jpg",
+   "nor_gl": "coast_sand_04_nor_gl_2k.jpg",
+   "arm": "coast_sand_04_arm_2k.jpg",
+   "disp": "coast_sand_04_disp_2k.jpg"
+  }
+ },
+ "coast_sand_05": {
+  "name": "Coast Sand 05",
+  "categories": [
+   "sand",
+   "natural",
+   "terrain",
+   "dirty",
+   "rock",
+   "outdoor",
+   "aerial"
+  ],
+  "tags": [
+   "costal",
+   "seaside",
+   "stones",
+   "ground",
+   "brown",
+   "gravel",
+   "beach",
+   "coastal",
+   "dirt",
+   "path",
+   "weathered",
+   "dirty",
+   "sand",
+   "worn"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "coast_sand_05_diff_2k.jpg",
+   "nor_gl": "coast_sand_05_nor_gl_2k.jpg",
+   "arm": "coast_sand_05_arm_2k.jpg",
+   "disp": "coast_sand_05_disp_2k.jpg"
+  }
+ },
+ "coast_sand_rocks_02": {
+  "name": "Coast Sand Rocks 02",
+  "categories": [
+   "outdoor",
+   "natural",
+   "terrain",
+   "aerial",
+   "rock",
+   "collection: smugglers_cove"
+  ],
+  "tags": [
+   "grass",
+   "rock face",
+   "rock",
+   "moss",
+   "rough",
+   "uneven",
+   "weathered",
+   "stones",
+   "cliff",
+   "ground",
+   "seaside",
+   "coastal"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "coast_sand_rocks_02_diff_2k.jpg",
+   "nor_gl": "coast_sand_rocks_02_nor_gl_2k.jpg",
+   "arm": "coast_sand_rocks_02_arm_2k.jpg",
+   "disp": "coast_sand_rocks_02_disp_2k.jpg"
+  }
+ },
+ "coral_gravel": {
+  "name": "Coral Gravel",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "rock",
+   "natural"
+  ],
+  "tags": [
+   "gravel",
+   "coral",
+   "ground",
+   "stones",
+   "costal"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "coral_gravel_diff_2k.jpg",
+   "nor_gl": "coral_gravel_nor_gl_2k.jpg",
+   "arm": "coral_gravel_arm_2k.jpg",
+   "disp": "coral_gravel_disp_2k.jpg"
+  }
+ },
+ "coral_ground_02": {
+  "name": "Coral Ground 02",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "rock",
+   "natural"
+  ],
+  "tags": [
+   "coral",
+   "ground",
+   "costal",
+   "stones",
+   "ocean",
+   "gravel",
+   "debris",
+   "sandy",
+   "porous surface",
+   "dirt",
+   "reef",
+   "coastline",
+   "sand",
+   "exposed seabed"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "coral_ground_02_diff_2k.jpg",
+   "nor_gl": "coral_ground_02_nor_gl_2k.jpg",
+   "arm": "coral_ground_02_arm_2k.jpg",
+   "disp": "coral_ground_02_disp_2k.jpg"
+  }
+ },
+ "coral_mud_01": {
+  "name": "Coral Mud 01",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "road",
+   "natural"
+  ],
+  "tags": [
+   "coral",
+   "ground",
+   "costal",
+   "stones",
+   "gravel",
+   "gravelly",
+   "coastal sediment",
+   "rock fragments",
+   "coastline",
+   "ocean",
+   "exposed seabed"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "coral_mud_01_diff_2k.jpg",
+   "nor_gl": "coral_mud_01_nor_gl_2k.jpg",
+   "arm": "coral_mud_01_arm_2k.jpg",
+   "disp": "coral_mud_01_disp_2k.jpg"
+  }
+ },
+ "cracked_red_ground": {
+  "name": "Cracked Red Ground",
+  "categories": [
+   "outdoor",
+   "natural",
+   "dirty",
+   "floor",
+   "sand"
+  ],
+  "tags": [
+   "rough",
+   "uneven",
+   "old",
+   "weathered",
+   "worn",
+   "cracked",
+   "brown",
+   "dirty",
+   "stones",
+   "dry",
+   "ground",
+   "dirt",
+   "rocks",
+   "red",
+   "clay",
+   "cracks",
+   "eroded",
+   "nature",
+   "floor",
+   "sand"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "cracked_red_ground_diff_2k.jpg",
+   "nor_gl": "cracked_red_ground_nor_gl_2k.jpg",
+   "arm": "cracked_red_ground_arm_2k.jpg",
+   "disp": "cracked_red_ground_disp_2k.jpg"
+  }
+ },
+ "damp_beach_sand_02": {
+  "name": "Damp Beach Sand 02",
+  "categories": [
+   "outdoor",
+   "sand"
+  ],
+  "tags": [
+   "sand",
+   "sandy",
+   "beach",
+   "sandy beach",
+   "damp",
+   "tidal",
+   "striated",
+   "pitted",
+   "impressions",
+   "imprinted",
+   "compact",
+   "shore"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "damp_beach_sand_02_diff_2k.jpg",
+   "nor_gl": "damp_beach_sand_02_nor_gl_2k.jpg",
+   "arm": "damp_beach_sand_02_arm_2k.jpg",
+   "disp": "damp_beach_sand_02_disp_2k.jpg"
+  }
+ },
+ "damp_sand": {
+  "name": "Damp Sand",
+  "categories": [
+   "outdoor",
+   "sand"
+  ],
+  "tags": [
+   "coarse",
+   "sand",
+   "beach",
+   "wet",
+   "brown",
+   "ground",
+   "costal",
+   "granular",
+   "grainy",
+   "moist",
+   "riverbank",
+   "footprints",
+   "playground",
+   "sandpit"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "damp_sand_diff_2k.jpg",
+   "nor_gl": "damp_sand_nor_gl_2k.jpg",
+   "arm": "damp_sand_arm_2k.jpg",
+   "disp": "damp_sand_disp_2k.jpg"
+  }
+ },
+ "defense_wall_02": {
+  "name": "Defense Wall 02",
+  "categories": [
+   "outdoor",
+   "wall",
+   "rock",
+   "man made",
+   "aerial"
+  ],
+  "tags": [
+   "rough",
+   "wall",
+   "bricks",
+   "castle",
+   "fort"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "defense_wall_02_diff_2k.jpg",
+   "nor_gl": "defense_wall_02_nor_gl_2k.jpg",
+   "arm": "defense_wall_02_arm_2k.jpg",
+   "disp": "defense_wall_02_disp_2k.jpg"
+  }
+ },
+ "dense_sand": {
+  "name": "Dense Sand",
+  "categories": [
+   "outdoor",
+   "sand",
+   "natural"
+  ],
+  "tags": [
+   "rough",
+   "sand",
+   "sandy",
+   "sandpit",
+   "granular",
+   "coarse",
+   "gritty",
+   "compact",
+   "footprints",
+   "tan"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "dense_sand_diff_2k.jpg",
+   "nor_gl": "dense_sand_nor_gl_2k.jpg",
+   "arm": "dense_sand_arm_2k.jpg",
+   "disp": "dense_sand_disp_2k.jpg"
+  }
+ },
+ "dirt": {
+  "name": "Dirt",
+  "categories": [
+   "floor",
+   "dirty",
+   "sand"
+  ],
+  "tags": [
+   "dirt",
+   "dirty",
+   "ground",
+   "nature",
+   "earth",
+   "dusty",
+   "rocky",
+   "debris",
+   "footprints"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "dirt_diff_2k.jpg",
+   "nor_gl": "dirt_nor_gl_2k.jpg",
+   "arm": "dirt_arm_2k.jpg",
+   "disp": "dirt_disp_2k.jpg"
+  }
+ },
+ "dirt_aerial_02": {
+  "name": "Dirt Aerial 02",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "sand",
+   "natural",
+   "aerial"
+  ],
+  "tags": [
+   "mud",
+   "rough",
+   "soil",
+   "erosion",
+   "compacted",
+   "tracks"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "dirt_aerial_02_diff_2k.jpg",
+   "nor_gl": "dirt_aerial_02_nor_gl_2k.jpg",
+   "arm": "dirt_aerial_02_arm_2k.jpg",
+   "disp": "dirt_aerial_02_disp_2k.jpg"
+  }
+ },
+ "dirt_aerial_03": {
+  "name": "Dirt Aerial 03",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "sand",
+   "natural",
+   "aerial"
+  ],
+  "tags": [
+   "mud",
+   "gravel",
+   "stones",
+   "dry",
+   "organic",
+   "ground",
+   "rock fragments"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "dirt_aerial_03_diff_2k.jpg",
+   "nor_gl": "dirt_aerial_03_nor_gl_2k.jpg",
+   "arm": "dirt_aerial_03_arm_2k.jpg",
+   "disp": "dirt_aerial_03_disp_2k.jpg"
+  }
+ },
+ "dirt_floor": {
+  "name": "Dirt Floor",
+  "categories": [
+   "outdoor",
+   "natural",
+   "terrain",
+   "collection: verdant_trail"
+  ],
+  "tags": [
+   "dirt",
+   "ground",
+   "brown",
+   "nature",
+   "uneven",
+   "mud",
+   "debris",
+   "forest",
+   "pathway",
+   "woodland"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "dirt_floor_diff_2k.jpg",
+   "nor_gl": "dirt_floor_nor_gl_2k.jpg",
+   "arm": "dirt_floor_arm_2k.jpg",
+   "disp": "dirt_floor_disp_2k.jpg"
+  }
+ },
+ "dirty_concrete": {
+  "name": "Dirty Concrete",
+  "categories": [
+   "concrete",
+   "outdoor",
+   "floor",
+   "man made",
+   "sand",
+   "dirty",
+   "plaster-concrete"
+  ],
+  "tags": [
+   "rough",
+   "mud"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "dirty_concrete_diff_2k.jpg",
+   "nor_gl": "dirty_concrete_nor_gl_2k.jpg",
+   "arm": "dirty_concrete_arm_2k.jpg",
+   "disp": "dirty_concrete_disp_2k.jpg"
+  }
+ },
+ "dry_decay_leaves": {
+  "name": "Dry Decay Leaves",
+  "categories": [
+   "outdoor",
+   "natural",
+   "terrain"
+  ],
+  "tags": [
+   "leaves",
+   "forest",
+   "dry",
+   "sticks",
+   "winter",
+   "dead grass",
+   "twigs",
+   "nature",
+   "leaf litter",
+   "organic"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "dry_decay_leaves_diff_2k.jpg",
+   "nor_gl": "dry_decay_leaves_nor_gl_2k.jpg",
+   "arm": "dry_decay_leaves_arm_2k.jpg",
+   "disp": "dry_decay_leaves_disp_2k.jpg"
+  }
+ },
+ "dry_ground_01": {
+  "name": "Dry Ground 01",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "natural"
+  ],
+  "tags": [
+   "dry",
+   "sand",
+   "mud",
+   "cracked",
+   "desert",
+   "baked",
+   "rough",
+   "fissured",
+   "baked earth",
+   "compact",
+   "brittle",
+   "parched"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "dry_ground_01_diff_2k.jpg",
+   "nor_gl": "dry_ground_01_nor_gl_2k.jpg",
+   "arm": "dry_ground_01_arm_2k.jpg",
+   "disp": "dry_ground_01_disp_2k.jpg"
+  }
+ },
+ "dry_ground_rocks": {
+  "name": "Dry Ground Rocks",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "natural"
+  ],
+  "tags": [
+   "mud",
+   "rocks",
+   "cracked",
+   "ground",
+   "dry",
+   "parched",
+   "soil",
+   "dirt",
+   "stones",
+   "rough",
+   "stony"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "dry_ground_rocks_diff_2k.jpg",
+   "nor_gl": "dry_ground_rocks_nor_gl_2k.jpg",
+   "arm": "dry_ground_rocks_arm_2k.jpg",
+   "disp": "dry_ground_rocks_disp_2k.jpg"
+  }
+ },
+ "dry_mud_field_001": {
+  "name": "Dry Mud Field 001",
+  "categories": [
+   "outdoor",
+   "terrain",
+   "natural"
+  ],
+  "tags": [
+   "road",
+   "mud",
+   "dry",
+   "uneven",
+   "dirt",
+   "farm",
+   "ground",
+   "rough",
+   "brown"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "dry_mud_field_001_diff_2k.jpg",
+   "nor_gl": "dry_mud_field_001_nor_gl_2k.jpg",
+   "arm": "dry_mud_field_001_arm_2k.jpg",
+   "disp": "dry_mud_field_001_disp_2k.jpg"
+  }
+ },
+ "dry_riverbed_rock": {
+  "name": "Dry Riverbed Rock",
+  "categories": [
+   "floor",
+   "natural",
+   "terrain",
+   "rock",
+   "outdoor"
+  ],
+  "tags": [
+   "rough",
+   "rock face",
+   "uneven",
+   "weathered",
+   "cracked",
+   "stone"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "dry_riverbed_rock_diff_2k.jpg",
+   "nor_gl": "dry_riverbed_rock_nor_gl_2k.jpg",
+   "arm": "dry_riverbed_rock_arm_2k.jpg",
+   "disp": "dry_riverbed_rock_disp_2k.jpg"
+  }
+ },
+ "excavated_soil_wall": {
+  "name": "Excavated Soil Wall",
+  "categories": [
+   "outdoor",
+   "wall",
+   "sand"
+  ],
+  "tags": [
+   "sand",
+   "wall",
+   "cracks",
+   "excavation",
+   "soil",
+   "earth",
+   "dirt",
+   "dusty",
+   "dry",
+   "uneven"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "excavated_soil_wall_diff_2k.jpg",
+   "nor_gl": "excavated_soil_wall_nor_gl_2k.jpg",
+   "arm": "excavated_soil_wall_arm_2k.jpg",
+   "disp": "excavated_soil_wall_disp_2k.jpg"
+  }
+ },
+ "floor_pebbles_01": {
+  "name": "Floor Pebbles 01",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "natural"
+  ],
+  "tags": [
+   "pebbles",
+   "pathway",
+   "stones",
+   "walkway",
+   "driveway stones",
+   "stony",
+   "pebbly",
+   "gravelly",
+   "driveway gravel",
+   "scattered pebbles",
+   "loose stones"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "floor_pebbles_01_diff_2k.jpg",
+   "nor_gl": "floor_pebbles_01_nor_gl_2k.jpg",
+   "arm": "floor_pebbles_01_arm_2k.jpg",
+   "disp": "floor_pebbles_01_disp_2k.jpg"
+  }
+ },
+ "flower_scattered_dirt": {
+  "name": "Flower Scattered Dirt",
+  "categories": [
+   "floor",
+   "outdoor",
+   "natural",
+   "sand"
+  ],
+  "tags": [
+   "dirt",
+   "dirty",
+   "ground",
+   "petals",
+   "sand",
+   "flowers",
+   "jacaranda",
+   "scattered",
+   "earth",
+   "soil",
+   "scattered flowers",
+   "scattered petals"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "flower_scattered_dirt_diff_2k.jpg",
+   "nor_gl": "flower_scattered_dirt_nor_gl_2k.jpg",
+   "arm": "flower_scattered_dirt_arm_2k.jpg",
+   "disp": "flower_scattered_dirt_disp_2k.jpg"
+  }
+ },
+ "flower_scattered_gravel": {
+  "name": "Flower Scattered Gravel",
+  "categories": [
+   "floor",
+   "gravel"
+  ],
+  "tags": [
+   "gravel",
+   "stones",
+   "driveway gravel",
+   "gravelly ground",
+   "petals",
+   "scattered",
+   "scattered petals",
+   "jacaranda",
+   "driveway stones",
+   "scattered flowers",
+   "leaves",
+   "plant debris",
+   "floral debris",
+   "gravelly"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "flower_scattered_gravel_diff_2k.jpg",
+   "nor_gl": "flower_scattered_gravel_nor_gl_2k.jpg",
+   "arm": "flower_scattered_gravel_arm_2k.jpg",
+   "disp": "flower_scattered_gravel_disp_2k.jpg"
+  }
+ },
+ "forest_floor": {
+  "name": "Forest Floor",
+  "categories": [
+   "outdoor",
+   "natural",
+   "terrain"
+  ],
+  "tags": [
+   "sand",
+   "leaves",
+   "autumn",
+   "forest",
+   "dirt",
+   "nature",
+   "dry",
+   "mud",
+   "debris",
+   "pathway",
+   "twigs",
+   "yellow",
+   "ground"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "forest_floor_diff_2k.jpg",
+   "nor_gl": "forest_floor_nor_gl_2k.jpg",
+   "arm": "forest_floor_arm_2k.jpg",
+   "disp": "forest_floor_disp_2k.jpg"
+  }
+ },
+ "forest_ground_04": {
+  "name": "Forest Ground 04",
+  "categories": [
+   "outdoor",
+   "natural",
+   "terrain",
+   "rock",
+   "collection: pine_forest",
+   "collection: verdant_trail"
+  ],
+  "tags": [
+   "rough",
+   "uneven",
+   "stones",
+   "ground",
+   "forest",
+   "dry",
+   "brown",
+   "gravel",
+   "rock",
+   "debris",
+   "nature",
+   "dirt"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "forest_ground_04_diff_2k.jpg",
+   "nor_gl": "forest_ground_04_nor_gl_2k.jpg",
+   "arm": "forest_ground_04_arm_2k.jpg",
+   "disp": "forest_ground_04_disp_2k.jpg"
+  }
+ },
+ "forest_ground_05": {
+  "name": "Forest Ground 05",
+  "categories": [
+   "outdoor",
+   "terrain",
+   "natural",
+   "sand"
+  ],
+  "tags": [
+   "rough",
+   "uneven",
+   "dirt",
+   "soil",
+   "compact soil",
+   "scattered rocks",
+   "scattered leaves",
+   "forest debris",
+   "organic matter",
+   "leaf litter",
+   "forest floor",
+   "earthy",
+   "dry soil",
+   "natural path",
+   "hikers trail"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "forest_ground_05_diff_2k.jpg",
+   "nor_gl": "forest_ground_05_nor_gl_2k.jpg",
+   "arm": "forest_ground_05_arm_2k.jpg",
+   "disp": "forest_ground_05_disp_2k.jpg"
+  }
+ },
+ "forest_ground_06": {
+  "name": "Forest Ground 06",
+  "categories": [
+   "outdoor",
+   "natural",
+   "terrain",
+   "floor"
+  ],
+  "tags": [
+   "dirt",
+   "dirty",
+   "soil",
+   "compact soil",
+   "loose earth",
+   "scattered leaves",
+   "forest soil",
+   "forest",
+   "scattered rocks",
+   "forest debris",
+   "pathway",
+   "dry soil",
+   "pebbly",
+   "twigs",
+   "leaves",
+   "fallen leaves"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "forest_ground_06_diff_2k.jpg",
+   "nor_gl": "forest_ground_06_nor_gl_2k.jpg",
+   "arm": "forest_ground_06_arm_2k.jpg",
+   "disp": "forest_ground_06_disp_2k.jpg"
+  }
+ },
+ "forest_leaves_02": {
+  "name": "Forest Leaves 02",
+  "categories": [
+   "outdoor",
+   "terrain",
+   "natural"
+  ],
+  "tags": [
+   "moss",
+   "sticks",
+   "leaves",
+   "twigs",
+   "autumn",
+   "mossy",
+   "mosscovered",
+   "mossy patches",
+   "forest floor",
+   "fallen leaves",
+   "leaf litter",
+   "organic",
+   "plant debris"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "forest_leaves_02_diff_2k.jpg",
+   "nor_gl": "forest_leaves_02_nor_gl_2k.jpg",
+   "arm": "forest_leaves_02_arm_2k.jpg",
+   "disp": "forest_leaves_02_disp_2k.jpg"
+  }
+ },
+ "forest_leaves_03": {
+  "name": "Forest Leaves 03",
+  "categories": [
+   "outdoor",
+   "natural",
+   "terrain"
+  ],
+  "tags": [
+   "leaves",
+   "autumn",
+   "dry",
+   "nature",
+   "forest",
+   "ground",
+   "cover",
+   "dirt",
+   "debris",
+   "brown",
+   "yellow",
+   "green"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "forest_leaves_03_diff_2k.jpg",
+   "nor_gl": "forest_leaves_03_nor_gl_2k.jpg",
+   "arm": "forest_leaves_03_arm_2k.jpg",
+   "disp": "forest_leaves_03_disp_2k.jpg"
+  }
+ },
+ "forest_leaves_04": {
+  "name": "Forest Leaves 04",
+  "categories": [
+   "outdoor",
+   "terrain",
+   "natural",
+   "collection: pine_forest",
+   "collection: verdant_trail"
+  ],
+  "tags": [
+   "leaves",
+   "nature",
+   "ground",
+   "dirt",
+   "debris",
+   "dry",
+   "autumn",
+   "sticks",
+   "twigs",
+   "brown"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "forest_leaves_04_diff_2k.jpg",
+   "nor_gl": "forest_leaves_04_nor_gl_2k.jpg",
+   "arm": "forest_leaves_04_arm_2k.jpg",
+   "disp": "forest_leaves_04_disp_2k.jpg"
+  }
+ },
+ "forrest_ground_01": {
+  "name": "Forest Ground 01",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "natural"
+  ],
+  "tags": [
+   "grass",
+   "twigs",
+   "forest",
+   "leaves",
+   "sticks",
+   "foliage",
+   "dead grass",
+   "plant litter",
+   "underbrush",
+   "underbrush",
+   "organic",
+   "dry grass",
+   "dry leaves"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "forrest_ground_01_diff_2k.jpg",
+   "nor_gl": "forrest_ground_01_nor_gl_2k.jpg",
+   "arm": "forrest_ground_01_arm_2k.jpg",
+   "disp": "forrest_ground_01_disp_2k.jpg"
+  }
+ },
+ "forrest_ground_03": {
+  "name": "Forest Ground 03",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "natural"
+  ],
+  "tags": [
+   "pine",
+   "needles",
+   "forest",
+   "plant debris",
+   "dirt soil",
+   "leaf litter",
+   "twigs",
+   "fallen leaves",
+   "ground cover",
+   "fallen pine needles",
+   "dry grass"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "forrest_ground_03_diff_2k.jpg",
+   "nor_gl": "forrest_ground_03_nor_gl_2k.jpg",
+   "arm": "forrest_ground_03_arm_2k.jpg",
+   "disp": "forrest_ground_03_disp_2k.jpg"
+  }
+ },
+ "forrest_sand_01": {
+  "name": "Forest Sand 01",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "natural",
+   "sand"
+  ],
+  "tags": [
+   "sand",
+   "pine",
+   "needles",
+   "forest",
+   "plant debris",
+   "plant litter",
+   "soil",
+   "organic matter",
+   "granular",
+   "twigs",
+   "sticks"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "forrest_sand_01_diff_2k.jpg",
+   "nor_gl": "forrest_sand_01_nor_gl_2k.jpg",
+   "arm": "forrest_sand_01_arm_2k.jpg",
+   "disp": "forrest_sand_01_disp_2k.jpg"
+  }
+ },
+ "ganges_river_pebbles": {
+  "name": "Ganges River Pebbles",
+  "categories": [
+   "natural",
+   "rock",
+   "outdoor",
+   "terrain"
+  ],
+  "tags": [
+   "rough",
+   "uneven",
+   "rock",
+   "pebbles",
+   "pebble",
+   "scattered pebbles",
+   "scattered",
+   "river",
+   "pebbly",
+   "rocky",
+   "bumpy"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "ganges_river_pebbles_diff_2k.jpg",
+   "nor_gl": "ganges_river_pebbles_nor_gl_2k.jpg",
+   "arm": "ganges_river_pebbles_arm_2k.jpg",
+   "disp": "ganges_river_pebbles_disp_2k.jpg"
+  }
+ },
+ "grass_ground": {
+  "name": "Grass Ground",
+  "categories": [
+   "outdoor",
+   "natural",
+   "terrain",
+   "dirty"
+  ],
+  "tags": [
+   "grass",
+   "dry grass",
+   "dirt",
+   "root",
+   "dead grass",
+   "turf",
+   "dry"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "grass_ground_diff_2k.jpg",
+   "nor_gl": "grass_ground_nor_gl_2k.jpg",
+   "arm": "grass_ground_arm_2k.jpg",
+   "disp": "grass_ground_disp_2k.jpg"
+  }
+ },
+ "grass_path_2": {
+  "name": "Grass Path 2",
+  "categories": [
+   "terrain",
+   "natural",
+   "outdoor"
+  ],
+  "tags": [
+   "grass",
+   "pathway",
+   "path",
+   "ground",
+   "stones",
+   "sidewalk",
+   "rural",
+   "farm"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "grass_path_2_diff_2k.jpg",
+   "nor_gl": "grass_path_2_nor_gl_2k.jpg",
+   "arm": "grass_path_2_arm_2k.jpg",
+   "disp": "grass_path_2_disp_2k.jpg"
+  }
+ },
+ "grass_path_3": {
+  "name": "Grass Path 3",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "natural"
+  ],
+  "tags": [
+   "grass",
+   "pathway",
+   "path",
+   "ground",
+   "stones",
+   "sidewalk",
+   "rural",
+   "farm"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "grass_path_3_diff_2k.jpg",
+   "nor_gl": "grass_path_3_nor_gl_2k.jpg",
+   "arm": "grass_path_3_arm_2k.jpg",
+   "disp": "grass_path_3_disp_2k.jpg"
+  }
+ },
+ "grassy_cobblestone": {
+  "name": "Grassy Cobblestone",
+  "categories": [
+   "natural",
+   "sand",
+   "outdoor",
+   "floor",
+   "cobblestone"
+  ],
+  "tags": [
+   "ground",
+   "dirt",
+   "rock",
+   "grass",
+   "dirty",
+   "path",
+   "trampled",
+   "pathway"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "grassy_cobblestone_diff_2k.jpg",
+   "nor_gl": "grassy_cobblestone_nor_gl_2k.jpg",
+   "arm": "grassy_cobblestone_arm_2k.jpg",
+   "disp": "grassy_cobblestone_disp_2k.jpg"
+  }
+ },
+ "gravel_floor": {
+  "name": "Gravel Floor",
+  "categories": [
+   "outdoor",
+   "gravel"
+  ],
+  "tags": [
+   "rough",
+   "uneven",
+   "stones",
+   "gravel",
+   "pathway",
+   "driveway stones",
+   "path",
+   "pebbles",
+   "outdoor flooring",
+   "gravelly ground",
+   "driveway gravel",
+   "coarse",
+   "gravelly texture",
+   "walkway",
+   "gravelly",
+   "pebbly",
+   "driveway",
+   "stony"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "gravel_floor_diff_2k.jpg",
+   "nor_gl": "gravel_floor_nor_gl_2k.jpg",
+   "arm": "gravel_floor_arm_2k.jpg",
+   "disp": "gravel_floor_disp_2k.jpg"
+  }
+ },
+ "gravel_floor_02": {
+  "name": "Gravel Floor 02",
+  "categories": [
+   "floor",
+   "gravel"
+  ],
+  "tags": [
+   "rough",
+   "rocks",
+   "gravel",
+   "gravelly",
+   "gravelly ground",
+   "driveway gravel",
+   "driveway",
+   "stones",
+   "coarse",
+   "gray",
+   "driveway stones",
+   "stony",
+   "outdoors"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "gravel_floor_02_diff_2k.jpg",
+   "nor_gl": "gravel_floor_02_nor_gl_2k.jpg",
+   "arm": "gravel_floor_02_arm_2k.jpg",
+   "disp": "gravel_floor_02_disp_2k.jpg"
+  }
+ },
+ "gravel_floor_04": {
+  "name": "Gravel Floor 04",
+  "categories": [
+   "floor",
+   "gravel"
+  ],
+  "tags": [
+   "rough",
+   "uneven",
+   "granular",
+   "gravel",
+   "gravelly",
+   "coarse",
+   "gritty",
+   "gravelly ground",
+   "stones",
+   "rock fragments",
+   "weathered",
+   "ground",
+   "sand",
+   "sandy",
+   "dusty"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "gravel_floor_04_diff_2k.jpg",
+   "nor_gl": "gravel_floor_04_nor_gl_2k.jpg",
+   "arm": "gravel_floor_04_arm_2k.jpg",
+   "disp": "gravel_floor_04_disp_2k.jpg"
+  }
+ },
+ "gravel_ground_01": {
+  "name": "Gravel Ground 01",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "natural"
+  ],
+  "tags": [
+   "gravel",
+   "pathway",
+   "path",
+   "stones",
+   "ground",
+   "sidewalk",
+   "rural",
+   "farm"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "gravel_ground_01_diff_2k.jpg",
+   "nor_gl": "gravel_ground_01_nor_gl_2k.jpg",
+   "arm": "gravel_ground_01_arm_2k.jpg",
+   "disp": "gravel_ground_01_disp_2k.jpg"
+  }
+ },
+ "gravel_road": {
+  "name": "Gravel Road",
+  "categories": [
+   "outdoor",
+   "natural",
+   "terrain",
+   "rock",
+   "road",
+   "asphalt",
+   "dirty",
+   "man made"
+  ],
+  "tags": [
+   "old",
+   "worn",
+   "rough",
+   "aged",
+   "stone",
+   "gravel",
+   "gravelly",
+   "gravelly texture",
+   "road",
+   "gravelly ground",
+   "driveway",
+   "driveway gravel",
+   "pebbly",
+   "gritty texture"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "gravel_road_diff_2k.jpg",
+   "nor_gl": "gravel_road_nor_gl_2k.jpg",
+   "arm": "gravel_road_arm_2k.jpg",
+   "disp": "gravel_road_disp_2k.jpg"
+  }
+ },
+ "gravel_stones": {
+  "name": "Gravel Stones",
+  "categories": [
+   "outdoor",
+   "gravel",
+   "natural"
+  ],
+  "tags": [
+   "rough",
+   "uneven",
+   "stones",
+   "gravel",
+   "gritty",
+   "grey",
+   "pebbles",
+   "coarse",
+   "pebbly",
+   "pathway",
+   "driveway",
+   "gravelly",
+   "gray",
+   "garden walkway",
+   "rocky",
+   "scattered pebbles",
+   "gritty texture",
+   "stony",
+   "driveway stones"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "gravel_stones_diff_2k.jpg",
+   "nor_gl": "gravel_stones_nor_gl_2k.jpg",
+   "arm": "gravel_stones_arm_2k.jpg",
+   "disp": "gravel_stones_disp_2k.jpg"
+  }
+ },
+ "gravelly_sand": {
+  "name": "Gravelly Sand",
+  "categories": [
+   "outdoor",
+   "natural",
+   "terrain",
+   "sand",
+   "gravel",
+   "collection: namaqualand"
+  ],
+  "tags": [
+   "sand",
+   "gravel",
+   "stony",
+   "terrain",
+   "ground",
+   "dirt",
+   "coarse",
+   "debris",
+   "dusty"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "gravelly_sand_diff_2k.jpg",
+   "nor_gl": "gravelly_sand_nor_gl_2k.jpg",
+   "arm": "gravelly_sand_arm_2k.jpg",
+   "disp": "gravelly_sand_disp_2k.jpg"
+  }
+ },
+ "gray_rocks": {
+  "name": "Gray Rocks",
+  "categories": [
+   "outdoor",
+   "terrain",
+   "natural",
+   "rock"
+  ],
+  "tags": [
+   "uneven",
+   "rocks",
+   "rocky",
+   "rock",
+   "gray",
+   "rough"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "gray_rocks_diff_2k.jpg",
+   "nor_gl": "gray_rocks_nor_gl_2k.jpg",
+   "arm": "gray_rocks_arm_2k.jpg",
+   "disp": "gray_rocks_disp_2k.jpg"
+  }
+ },
+ "ground_grey": {
+  "name": "Ground Grey",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "natural",
+   "road"
+  ],
+  "tags": [
+   "gravel",
+   "grey",
+   "gravelly",
+   "rough",
+   "uneven",
+   "coarse",
+   "concrete"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "ground_grey_diff_2k.jpg",
+   "nor_gl": "ground_grey_nor_gl_2k.jpg",
+   "arm": "ground_grey_arm_2k.jpg",
+   "disp": "ground_grey_disp_2k.jpg"
+  }
+ },
+ "leaf_scattered_gravel": {
+  "name": "Leaf Scattered Gravel",
+  "categories": [
+   "outdoor",
+   "natural",
+   "terrain",
+   "gravel",
+   "rock"
+  ],
+  "tags": [
+   "forest",
+   "nature",
+   "stones",
+   "autumn",
+   "leaves",
+   "stone-fragments",
+   "organic-debris",
+   "organic-debris",
+   "loose pebbles"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "leaf_scattered_gravel_diff_2k.jpg",
+   "nor_gl": "leaf_scattered_gravel_nor_gl_2k.jpg",
+   "arm": "leaf_scattered_gravel_arm_2k.jpg",
+   "disp": "leaf_scattered_gravel_disp_2k.jpg"
+  }
+ },
+ "leaves_forest_ground": {
+  "name": "Leaves Forest Ground",
+  "categories": [
+   "outdoor",
+   "natural",
+   "terrain"
+  ],
+  "tags": [
+   "dirt",
+   "forest",
+   "leaves",
+   "twigs",
+   "yellow",
+   "green",
+   "sticks",
+   "autumn",
+   "nature",
+   "brown"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "leaves_forest_ground_diff_2k.jpg",
+   "nor_gl": "leaves_forest_ground_nor_gl_2k.jpg",
+   "arm": "leaves_forest_ground_arm_2k.jpg",
+   "disp": "leaves_forest_ground_disp_2k.jpg"
+  }
+ },
+ "lichen_rock": {
+  "name": "Lichen Rock",
+  "categories": [
+   "collection: verdant_trail",
+   "rock",
+   "terrain",
+   "natural"
+  ],
+  "tags": [
+   "rock",
+   "cliff",
+   "lichen",
+   "moss",
+   "rock face",
+   "boulder",
+   "mossy",
+   "stone",
+   "nature",
+   "rugged"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "lichen_rock_diff_2k.jpg",
+   "nor_gl": "lichen_rock_nor_gl_2k.jpg",
+   "arm": "lichen_rock_arm_2k.jpg",
+   "disp": "lichen_rock_disp_2k.jpg"
+  }
+ },
+ "low_tide_rocks": {
+  "name": "Low Tide Rocks",
+  "categories": [
+   "floor",
+   "outdoor",
+   "natural",
+   "sand"
+  ],
+  "tags": [
+   "rocks",
+   "scattered rocks",
+   "pebbles",
+   "wet",
+   "wet ground",
+   "low tide",
+   "granular",
+   "scattered pebbles",
+   "riverbank",
+   "pebbly",
+   "small stones",
+   "river sediment",
+   "sand"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "low_tide_rocks_diff_2k.jpg",
+   "nor_gl": "low_tide_rocks_nor_gl_2k.jpg",
+   "arm": "low_tide_rocks_arm_2k.jpg",
+   "disp": "low_tide_rocks_disp_2k.jpg"
+  }
+ },
+ "marble_cliff_01": {
+  "name": "Marble Cliff 01",
+  "categories": [
+   "natural",
+   "rock",
+   "aerial"
+  ],
+  "tags": [
+   "uneven",
+   "weathered",
+   "marble",
+   "cliff",
+   "discolored",
+   "cracked",
+   "fractured",
+   "metamorphic",
+   "fissured",
+   "crag",
+   "cleft",
+   "sedimentary",
+   "strata"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "marble_cliff_01_diff_2k.jpg",
+   "nor_gl": "marble_cliff_01_nor_gl_2k.jpg",
+   "arm": "marble_cliff_01_arm_2k.jpg",
+   "disp": "marble_cliff_01_disp_2k.jpg"
+  }
+ },
+ "marble_cliff_02": {
+  "name": "Marble Cliff 02",
+  "categories": [
+   "natural",
+   "rock",
+   "outdoor",
+   "aerial"
+  ],
+  "tags": [
+   "rough",
+   "weathered",
+   "uneven",
+   "rock",
+   "cracked",
+   "sedimentary",
+   "sedimentary",
+   "fissured",
+   "marble",
+   "craggy",
+   "drone",
+   "dusty",
+   "brown"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "marble_cliff_02_diff_2k.jpg",
+   "nor_gl": "marble_cliff_02_nor_gl_2k.jpg",
+   "arm": "marble_cliff_02_arm_2k.jpg",
+   "disp": "marble_cliff_02_disp_2k.jpg"
+  }
+ },
+ "marble_cliff_03": {
+  "name": "Marble Cliff 03",
+  "categories": [
+   "outdoor",
+   "rock",
+   "natural",
+   "aerial"
+  ],
+  "tags": [
+   "rough",
+   "weathered",
+   "uneven",
+   "cliff",
+   "marble",
+   "rock",
+   "craggy",
+   "sedimentary",
+   "fractured",
+   "cracked",
+   "rock wall",
+   "strata",
+   "cracks",
+   "drone"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "marble_cliff_03_diff_2k.jpg",
+   "nor_gl": "marble_cliff_03_nor_gl_2k.jpg",
+   "arm": "marble_cliff_03_arm_2k.jpg",
+   "disp": "marble_cliff_03_disp_2k.jpg"
+  }
+ },
+ "marble_cliff_04": {
+  "name": "Marble Cliff 04",
+  "categories": [
+   "outdoor",
+   "natural",
+   "rock",
+   "aerial"
+  ],
+  "tags": [
+   "uneven",
+   "rough",
+   "weathered",
+   "cracked",
+   "rock face",
+   "rock",
+   "cliff",
+   "stratified",
+   "veined",
+   "marble",
+   "geological",
+   "fissured",
+   "striated",
+   "stone",
+   "fractured"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "marble_cliff_04_diff_2k.jpg",
+   "nor_gl": "marble_cliff_04_nor_gl_2k.jpg",
+   "arm": "marble_cliff_04_arm_2k.jpg",
+   "disp": "marble_cliff_04_disp_2k.jpg"
+  }
+ },
+ "marble_cliff_05": {
+  "name": "Marble Cliff 05",
+  "categories": [
+   "aerial",
+   "rock",
+   "natural",
+   "outdoor"
+  ],
+  "tags": [
+   "rough",
+   "weathered",
+   "uneven",
+   "rock",
+   "chipped",
+   "stone",
+   "marble",
+   "striated",
+   "veined",
+   "fractured",
+   "cracked",
+   "cliff",
+   "craggy",
+   "fissured",
+   "striations",
+   "rock face",
+   "rock formation",
+   "exposed rock"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "marble_cliff_05_diff_2k.jpg",
+   "nor_gl": "marble_cliff_05_nor_gl_2k.jpg",
+   "arm": "marble_cliff_05_arm_2k.jpg",
+   "disp": "marble_cliff_05_disp_2k.jpg"
+  }
+ },
+ "marble_cliff_06": {
+  "name": "Marble Cliff 06",
+  "categories": [
+   "outdoor",
+   "aerial",
+   "natural",
+   "rock"
+  ],
+  "tags": [
+   "rough",
+   "uneven",
+   "rock",
+   "cracked",
+   "stone",
+   "marble",
+   "cliff",
+   "veined",
+   "striations",
+   "rock formation",
+   "geological",
+   "exposed rock",
+   "stratified",
+   "pitted",
+   "eroded",
+   "crag",
+   "fractured",
+   "fissured"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "marble_cliff_06_diff_2k.jpg",
+   "nor_gl": "marble_cliff_06_nor_gl_2k.jpg",
+   "arm": "marble_cliff_06_arm_2k.jpg",
+   "disp": "marble_cliff_06_disp_2k.jpg"
+  }
+ },
+ "moon_01": {
+  "name": "Moon 01",
+  "categories": [
+   "outdoor",
+   "sand",
+   "terrain",
+   "collection: moon"
+  ],
+  "tags": [
+   "rough",
+   "uneven",
+   "dirt",
+   "coarse",
+   "exterior",
+   "regolith",
+   "lunar",
+   "extraterrestrial",
+   "space"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_01_diff_2k.jpg",
+   "nor_gl": "moon_01_nor_gl_2k.jpg",
+   "arm": "moon_01_arm_2k.jpg",
+   "disp": "moon_01_disp_2k.jpg"
+  }
+ },
+ "moon_02": {
+  "name": "Moon 02",
+  "categories": [
+   "outdoor",
+   "sand",
+   "terrain",
+   "collection: moon"
+  ],
+  "tags": [
+   "rough",
+   "uneven",
+   "dirt",
+   "course",
+   "exterior",
+   "regolith",
+   "lunar",
+   "extraterrestrial",
+   "space"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_02_diff_2k.jpg",
+   "nor_gl": "moon_02_nor_gl_2k.jpg",
+   "arm": "moon_02_arm_2k.jpg",
+   "disp": "moon_02_disp_2k.jpg"
+  }
+ },
+ "moon_03": {
+  "name": "Moon 03",
+  "categories": [
+   "outdoor",
+   "sand",
+   "terrain",
+   "collection: moon"
+  ],
+  "tags": [
+   "rough",
+   "uneven",
+   "dirt",
+   "coarse",
+   "exterior",
+   "regolith",
+   "lunar",
+   "extraterrestrial",
+   "space"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_03_diff_2k.jpg",
+   "nor_gl": "moon_03_nor_gl_2k.jpg",
+   "arm": "moon_03_arm_2k.jpg",
+   "disp": "moon_03_disp_2k.jpg"
+  }
+ },
+ "moon_04": {
+  "name": "Moon 04",
+  "categories": [
+   "outdoor",
+   "sand",
+   "terrain",
+   "collection: moon"
+  ],
+  "tags": [
+   "rough",
+   "uneven",
+   "dirt",
+   "coarse",
+   "exterior",
+   "regolith",
+   "lunar",
+   "extraterrestrial",
+   "space"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_04_diff_2k.jpg",
+   "nor_gl": "moon_04_nor_gl_2k.jpg",
+   "arm": "moon_04_arm_2k.jpg",
+   "disp": "moon_04_disp_2k.jpg"
+  }
+ },
+ "moon_dusted_01": {
+  "name": "Moon Dusted 01",
+  "categories": [
+   "outdoor",
+   "sand",
+   "terrain",
+   "collection: moon"
+  ],
+  "tags": [
+   "rough",
+   "dirt",
+   "coarse",
+   "exterior",
+   "regolith",
+   "dusted",
+   "lunar",
+   "extraterrestrial",
+   "space"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_dusted_01_diff_2k.jpg",
+   "nor_gl": "moon_dusted_01_nor_gl_2k.jpg",
+   "arm": "moon_dusted_01_arm_2k.jpg",
+   "disp": "moon_dusted_01_disp_2k.jpg"
+  }
+ },
+ "moon_dusted_02": {
+  "name": "Moon Dusted 02",
+  "categories": [
+   "outdoor",
+   "sand",
+   "terrain",
+   "collection: moon"
+  ],
+  "tags": [
+   "rough",
+   "dirt",
+   "coarse",
+   "exterior",
+   "regolith",
+   "dusted",
+   "pebbles",
+   "lunar",
+   "extraterrestrial",
+   "space"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_dusted_02_diff_2k.jpg",
+   "nor_gl": "moon_dusted_02_nor_gl_2k.jpg",
+   "arm": "moon_dusted_02_arm_2k.jpg",
+   "disp": "moon_dusted_02_disp_2k.jpg"
+  }
+ },
+ "moon_dusted_03": {
+  "name": "Moon Dusted 03",
+  "categories": [
+   "outdoor",
+   "sand",
+   "terrain",
+   "collection: moon"
+  ],
+  "tags": [
+   "rough",
+   "dirt",
+   "coarse",
+   "exterior",
+   "regolith",
+   "dusted",
+   "lunar",
+   "extraterrestrial",
+   "space"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_dusted_03_diff_2k.jpg",
+   "nor_gl": "moon_dusted_03_nor_gl_2k.jpg",
+   "arm": "moon_dusted_03_arm_2k.jpg",
+   "disp": "moon_dusted_03_disp_2k.jpg"
+  }
+ },
+ "moon_dusted_04": {
+  "name": "Moon Dusted 04",
+  "categories": [
+   "outdoor",
+   "sand",
+   "terrain",
+   "collection: moon"
+  ],
+  "tags": [
+   "rough",
+   "dirt",
+   "course",
+   "exterior",
+   "regolith",
+   "dusted",
+   "lunar",
+   "extraterrestrial",
+   "space"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_dusted_04_diff_2k.jpg",
+   "nor_gl": "moon_dusted_04_nor_gl_2k.jpg",
+   "arm": "moon_dusted_04_arm_2k.jpg",
+   "disp": "moon_dusted_04_disp_2k.jpg"
+  }
+ },
+ "moon_dusted_05": {
+  "name": "Moon Dusted 05",
+  "categories": [
+   "outdoor",
+   "sand",
+   "terrain",
+   "collection: moon"
+  ],
+  "tags": [
+   "rough",
+   "dirt",
+   "coarse",
+   "exterior",
+   "regolith",
+   "dusted",
+   "extraterrestrial",
+   "lunar",
+   "space"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_dusted_05_diff_2k.jpg",
+   "nor_gl": "moon_dusted_05_nor_gl_2k.jpg",
+   "arm": "moon_dusted_05_arm_2k.jpg",
+   "disp": "moon_dusted_05_disp_2k.jpg"
+  }
+ },
+ "moon_flat_macro_01": {
+  "name": "Moon Flat Macro 01",
+  "categories": [
+   "outdoor",
+   "sand",
+   "terrain",
+   "collection: moon"
+  ],
+  "tags": [
+   "flat",
+   "macro",
+   "dirt",
+   "exterior",
+   "regolith",
+   "dusted",
+   "lunar",
+   "extraterrestrial",
+   "space"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_flat_macro_01_diff_2k.jpg",
+   "nor_gl": "moon_flat_macro_01_nor_gl_2k.jpg",
+   "arm": "moon_flat_macro_01_arm_2k.jpg",
+   "disp": "moon_flat_macro_01_disp_2k.jpg"
+  }
+ },
+ "moon_flat_macro_02": {
+  "name": "Moon Flat Macro 02",
+  "categories": [
+   "outdoor",
+   "sand",
+   "terrain",
+   "collection: moon"
+  ],
+  "tags": [
+   "flat",
+   "macro",
+   "dirt",
+   "exterior",
+   "regolith",
+   "dusted",
+   "extraterrestrial",
+   "lunar",
+   "space"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_flat_macro_02_diff_2k.jpg",
+   "nor_gl": "moon_flat_macro_02_nor_gl_2k.jpg",
+   "arm": "moon_flat_macro_02_arm_2k.jpg",
+   "disp": "moon_flat_macro_02_disp_2k.jpg"
+  }
+ },
+ "moon_footprints_01": {
+  "name": "Moon Footprints 01",
+  "categories": [
+   "outdoor",
+   "sand",
+   "terrain",
+   "collection: moon"
+  ],
+  "tags": [
+   "rough",
+   "dirt",
+   "course",
+   "exterior",
+   "regolith",
+   "dusted",
+   "footprints",
+   "path",
+   "trail",
+   "extraterrestrial",
+   "space",
+   "lunar"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_footprints_01_diff_2k.jpg",
+   "nor_gl": "moon_footprints_01_nor_gl_2k.jpg",
+   "arm": "moon_footprints_01_arm_2k.jpg",
+   "disp": "moon_footprints_01_disp_2k.jpg"
+  }
+ },
+ "moon_footprints_02": {
+  "name": "Moon Footprints 02",
+  "categories": [
+   "outdoor",
+   "sand",
+   "terrain",
+   "collection: moon"
+  ],
+  "tags": [
+   "rough",
+   "dirt",
+   "course",
+   "exterior",
+   "regolith",
+   "dusted",
+   "footprints",
+   "garden path gravel",
+   "trail",
+   "lunar",
+   "extraterrestrial",
+   "space"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_footprints_02_diff_2k.jpg",
+   "nor_gl": "moon_footprints_02_nor_gl_2k.jpg",
+   "arm": "moon_footprints_02_arm_2k.jpg",
+   "disp": "moon_footprints_02_disp_2k.jpg"
+  }
+ },
+ "moon_macro_01": {
+  "name": "Moon Macro 01",
+  "categories": [
+   "outdoor",
+   "sand",
+   "terrain",
+   "collection: moon"
+  ],
+  "tags": [
+   "rough",
+   "dirt",
+   "course",
+   "exterior",
+   "regolith",
+   "dusted",
+   "lunar",
+   "extraterrestrial",
+   "space"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_macro_01_diff_2k.jpg",
+   "nor_gl": "moon_macro_01_nor_gl_2k.jpg",
+   "arm": "moon_macro_01_arm_2k.jpg",
+   "disp": "moon_macro_01_disp_2k.jpg"
+  }
+ },
+ "moon_meteor_01": {
+  "name": "Moon Meteor 01",
+  "categories": [
+   "outdoor",
+   "sand",
+   "terrain",
+   "collection: moon"
+  ],
+  "tags": [
+   "rough",
+   "dirt",
+   "course",
+   "exterior",
+   "regolith",
+   "dusted",
+   "meteor",
+   "craters",
+   "rock",
+   "extraterrestrial",
+   "space",
+   "lunar"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_meteor_01_diff_2k.jpg",
+   "nor_gl": "moon_meteor_01_nor_gl_2k.jpg",
+   "arm": "moon_meteor_01_arm_2k.jpg",
+   "disp": "moon_meteor_01_disp_2k.jpg"
+  }
+ },
+ "moon_meteor_02": {
+  "name": "Moon Meteor 02",
+  "categories": [
+   "outdoor",
+   "sand",
+   "terrain",
+   "collection: moon"
+  ],
+  "tags": [
+   "rough",
+   "dirt",
+   "course",
+   "exterior",
+   "regolith",
+   "dusted",
+   "meteor",
+   "craters",
+   "rock",
+   "lunar",
+   "extraterrestrial",
+   "space"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_meteor_02_diff_2k.jpg",
+   "nor_gl": "moon_meteor_02_nor_gl_2k.jpg",
+   "arm": "moon_meteor_02_arm_2k.jpg",
+   "disp": "moon_meteor_02_disp_2k.jpg"
+  }
+ },
+ "moon_track_01": {
+  "name": "Moon Track 01",
+  "categories": [
+   "sand",
+   "terrain",
+   "outdoor",
+   "collection: moon"
+  ],
+  "tags": [
+   "rough",
+   "dirt",
+   "course",
+   "exterior",
+   "regolith",
+   "dusted",
+   "tracks",
+   "tyre tracks",
+   "tire tracks",
+   "extraterrestrial",
+   "space",
+   "lunar"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_track_01_diff_2k.jpg",
+   "nor_gl": "moon_track_01_nor_gl_2k.jpg",
+   "arm": "moon_track_01_arm_2k.jpg",
+   "disp": "moon_track_01_disp_2k.jpg"
+  }
+ },
+ "moon_track_02": {
+  "name": "Moon Track 02",
+  "categories": [
+   "outdoor",
+   "sand",
+   "terrain",
+   "collection: moon"
+  ],
+  "tags": [
+   "rough",
+   "dirt",
+   "course",
+   "exterior",
+   "regolith",
+   "dusted",
+   "tracks",
+   "tyre tracks",
+   "tire tracks",
+   "extraterrestrial",
+   "space",
+   "lunar"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_track_02_diff_2k.jpg",
+   "nor_gl": "moon_track_02_nor_gl_2k.jpg",
+   "arm": "moon_track_02_arm_2k.jpg",
+   "disp": "moon_track_02_disp_2k.jpg"
+  }
+ },
+ "moon_track_03": {
+  "name": "Moon Track 03",
+  "categories": [
+   "outdoor",
+   "sand",
+   "terrain",
+   "collection: moon"
+  ],
+  "tags": [
+   "rough",
+   "dirt",
+   "course",
+   "exterior",
+   "regolith",
+   "dusted",
+   "tracks",
+   "tyre tracks",
+   "tire tracks",
+   "extraterrestrial",
+   "space",
+   "lunar"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_track_03_diff_2k.jpg",
+   "nor_gl": "moon_track_03_nor_gl_2k.jpg",
+   "arm": "moon_track_03_arm_2k.jpg",
+   "disp": "moon_track_03_disp_2k.jpg"
+  }
+ },
+ "moon_track_04": {
+  "name": "Moon Track 04",
+  "categories": [
+   "outdoor",
+   "sand",
+   "terrain",
+   "collection: moon"
+  ],
+  "tags": [
+   "rough",
+   "dirt",
+   "course",
+   "exterior",
+   "regolith",
+   "dusted",
+   "tracks",
+   "tyre tracks",
+   "tire tracks",
+   "extraterrestrial",
+   "space",
+   "lunar"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "moon_track_04_diff_2k.jpg",
+   "nor_gl": "moon_track_04_nor_gl_2k.jpg",
+   "arm": "moon_track_04_arm_2k.jpg",
+   "disp": "moon_track_04_disp_2k.jpg"
+  }
+ },
+ "mossy_rock": {
+  "name": "Mossy Rock",
+  "categories": [
+   "rock",
+   "natural",
+   "outdoor",
+   "terrain"
+  ],
+  "tags": [
+   "rough",
+   "moss",
+   "rock face",
+   "cracked",
+   "lichen",
+   "striations",
+   "striated",
+   "mosscovered",
+   "mossy",
+   "uneven",
+   "rock"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "mossy_rock_diff_2k.jpg",
+   "nor_gl": "mossy_rock_nor_gl_2k.jpg",
+   "arm": "mossy_rock_arm_2k.jpg",
+   "disp": "mossy_rock_disp_2k.jpg"
+  }
+ },
+ "mud_cracked_dry_03": {
+  "name": "Mud Cracked Dry 03",
+  "categories": [
+   "outdoor",
+   "natural",
+   "terrain",
+   "sand"
+  ],
+  "tags": [
+   "dry",
+   "mud",
+   "sand",
+   "uneven",
+   "ground",
+   "cracked",
+   "cracks",
+   "nature"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "mud_cracked_dry_03_diff_2k.jpg",
+   "nor_gl": "mud_cracked_dry_03_nor_gl_2k.jpg",
+   "arm": "mud_cracked_dry_03_arm_2k.jpg",
+   "disp": "mud_cracked_dry_03_disp_2k.jpg"
+  }
+ },
+ "mud_cracked_dry_riverbed_002": {
+  "name": "Mud Cracked Dry Riverbed 002",
+  "categories": [
+   "outdoor",
+   "natural",
+   "terrain",
+   "sand"
+  ],
+  "tags": [
+   "weathered",
+   "cracked",
+   "rough",
+   "ground",
+   "dry",
+   "uneven",
+   "mud",
+   "cracks",
+   "nature",
+   "flaked",
+   "lake"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "mud_cracked_dry_riverbed_002_diff_2k.jpg",
+   "nor_gl": "mud_cracked_dry_riverbed_002_nor_gl_2k.jpg",
+   "arm": "mud_cracked_dry_riverbed_002_arm_2k.jpg",
+   "disp": "mud_cracked_dry_riverbed_002_disp_2k.jpg"
+  }
+ },
+ "muddy_tracks": {
+  "name": "Muddy Tracks",
+  "categories": [
+   "floor",
+   "natural",
+   "outdoor",
+   "sand",
+   "dirty"
+  ],
+  "tags": [
+   "mud",
+   "muddy surface",
+   "tracks",
+   "tire tracks",
+   "wet",
+   "organic",
+   "outdoor",
+   "earth",
+   "dirty",
+   "earthy",
+   "loose earth",
+   "soil",
+   "moist ground",
+   "muddy terrain",
+   "off-road"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "muddy_tracks_diff_2k.jpg",
+   "nor_gl": "muddy_tracks_nor_gl_2k.jpg",
+   "arm": "muddy_tracks_arm_2k.jpg",
+   "disp": "muddy_tracks_disp_2k.jpg"
+  }
+ },
+ "park_dirt": {
+  "name": "Park Dirt",
+  "categories": [
+   "outdoor",
+   "natural",
+   "terrain",
+   "sand"
+  ],
+  "tags": [
+   "sand",
+   "park",
+   "dirt",
+   "leaves",
+   "twigs",
+   "debris",
+   "seaside",
+   "ground",
+   "damp",
+   "pathway",
+   "autumn",
+   "nature"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "park_dirt_diff_2k.jpg",
+   "nor_gl": "park_dirt_nor_gl_2k.jpg",
+   "arm": "park_dirt_arm_2k.jpg",
+   "disp": "park_dirt_disp_2k.jpg"
+  }
+ },
+ "park_sand": {
+  "name": "Park Sand",
+  "categories": [
+   "outdoor",
+   "natural",
+   "sand"
+  ],
+  "tags": [
+   "brown",
+   "ground",
+   "sand",
+   "trampled",
+   "tracks",
+   "park"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "park_sand_diff_2k.jpg",
+   "nor_gl": "park_sand_nor_gl_2k.jpg",
+   "arm": "park_sand_arm_2k.jpg",
+   "disp": "park_sand_disp_2k.jpg"
+  }
+ },
+ "pebble_ground_01": {
+  "name": "Pebble Ground 01",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "natural",
+   "road"
+  ],
+  "tags": [
+   "pebble",
+   "stones",
+   "even",
+   "pebbles",
+   "pebbly",
+   "sticks",
+   "scattered pebbles",
+   "small stones",
+   "dirt",
+   "plant litter",
+   "dry leaves"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "pebble_ground_01_diff_2k.jpg",
+   "nor_gl": "pebble_ground_01_nor_gl_2k.jpg",
+   "arm": "pebble_ground_01_arm_2k.jpg",
+   "disp": "pebble_ground_01_disp_2k.jpg"
+  }
+ },
+ "playground_sand": {
+  "name": "Playground Sand",
+  "categories": [
+   "outdoor",
+   "floor",
+   "sand"
+  ],
+  "tags": [
+   "brown",
+   "sand",
+   "floor",
+   "rough",
+   "ground",
+   "playground",
+   "dirty",
+   "wet",
+   "footprints"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "playground_sand_diff_2k.jpg",
+   "nor_gl": "playground_sand_nor_gl_2k.jpg",
+   "arm": "playground_sand_arm_2k.jpg",
+   "disp": "playground_sand_disp_2k.jpg"
+  }
+ },
+ "red_dirt_mud_01": {
+  "name": "Red Dirt Mud 01",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "natural"
+  ],
+  "tags": [
+   "gravel",
+   "mud",
+   "dirt",
+   "rough",
+   "pathway",
+   "path",
+   "road",
+   "village"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "red_dirt_mud_01_diff_2k.jpg",
+   "nor_gl": "red_dirt_mud_01_nor_gl_2k.jpg",
+   "arm": "red_dirt_mud_01_arm_2k.jpg",
+   "disp": "red_dirt_mud_01_disp_2k.jpg"
+  }
+ },
+ "red_laterite_soil_stones": {
+  "name": "Red Laterite Soil Stones",
+  "categories": [
+   "outdoor",
+   "natural",
+   "terrain",
+   "rock",
+   "road",
+   "sand"
+  ],
+  "tags": [
+   "rough",
+   "red",
+   "laterite",
+   "stones",
+   "ground",
+   "dirt",
+   "pebbles",
+   "rocks",
+   "gravel",
+   "debris",
+   "nature",
+   "pathway",
+   "path",
+   "rock",
+   "brown",
+   "chipped"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "red_laterite_soil_stones_diff_2k.jpg",
+   "nor_gl": "red_laterite_soil_stones_nor_gl_2k.jpg",
+   "arm": "red_laterite_soil_stones_arm_2k.jpg",
+   "disp": "red_laterite_soil_stones_disp_2k.jpg"
+  }
+ },
+ "red_mud_stones": {
+  "name": "Red Mud Stones",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "natural"
+  ],
+  "tags": [
+   "mud",
+   "dirt",
+   "flat",
+   "dry",
+   "rocks",
+   "compact soil",
+   "organic debris",
+   "roots",
+   "gothic",
+   "soil",
+   "cracked",
+   "earthy",
+   "plant debris"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "red_mud_stones_diff_2k.jpg",
+   "nor_gl": "red_mud_stones_nor_gl_2k.jpg",
+   "arm": "red_mud_stones_arm_2k.jpg",
+   "disp": "red_mud_stones_disp_2k.jpg"
+  }
+ },
+ "red_sand": {
+  "name": "Red Sand",
+  "categories": [
+   "floor",
+   "sand",
+   "outdoor"
+  ],
+  "tags": [
+   "red",
+   "sand",
+   "outdoor",
+   "footprints",
+   "dusty",
+   "ground",
+   "tracks",
+   "tyre tracks",
+   "tire tracks",
+   "trampled"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "red_sand_diff_2k.jpg",
+   "nor_gl": "red_sand_nor_gl_2k.jpg",
+   "arm": "red_sand_arm_2k.jpg",
+   "disp": "red_sand_disp_2k.jpg"
+  }
+ },
+ "river_small_rocks": {
+  "name": "River Small Rocks",
+  "categories": [
+   "terrain",
+   "rock",
+   "natural",
+   "outdoor"
+  ],
+  "tags": [
+   "rough",
+   "uneven",
+   "stones",
+   "rock",
+   "pebbles",
+   "river",
+   "pathway",
+   "debris",
+   "scattered",
+   "ground",
+   "broken",
+   "costal"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "river_small_rocks_diff_2k.jpg",
+   "nor_gl": "river_small_rocks_nor_gl_2k.jpg",
+   "arm": "river_small_rocks_arm_2k.jpg",
+   "disp": "river_small_rocks_disp_2k.jpg"
+  }
+ },
+ "rock_01": {
+  "name": "Rock 01",
+  "categories": [
+   "rock",
+   "outdoor",
+   "terrain",
+   "natural"
+  ],
+  "tags": [
+   "grey",
+   "smooth",
+   "rock",
+   "stone",
+   "gray",
+   "weathered",
+   "rock face",
+   "solid rock"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rock_01_diff_2k.jpg",
+   "nor_gl": "rock_01_nor_gl_2k.jpg",
+   "arm": "rock_01_arm_2k.jpg",
+   "disp": "rock_01_disp_2k.jpg"
+  }
+ },
+ "rock_04": {
+  "name": "Rock 04",
+  "categories": [
+   "rock",
+   "outdoor",
+   "terrain",
+   "natural"
+  ],
+  "tags": [
+   "rough",
+   "uneven",
+   "stone",
+   "bumpy",
+   "rock",
+   "rock formation",
+   "weathered",
+   "dirty",
+   "coarse",
+   "mossy"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rock_04_diff_2k.jpg",
+   "nor_gl": "rock_04_nor_gl_2k.jpg",
+   "arm": "rock_04_arm_2k.jpg",
+   "disp": "rock_04_disp_2k.jpg"
+  }
+ },
+ "rock_05": {
+  "name": "Rock 05",
+  "categories": [
+   "rock",
+   "outdoor",
+   "terrain",
+   "natural"
+  ],
+  "tags": [
+   "rough",
+   "uneven",
+   "old",
+   "stone",
+   "geological",
+   "irregular",
+   "rock",
+   "pitted",
+   "rock face"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rock_05_diff_2k.jpg",
+   "nor_gl": "rock_05_nor_gl_2k.jpg",
+   "arm": "rock_05_arm_2k.jpg",
+   "disp": "rock_05_disp_2k.jpg"
+  }
+ },
+ "rock_06": {
+  "name": "Rock 06",
+  "categories": [
+   "rock",
+   "outdoor",
+   "terrain",
+   "natural"
+  ],
+  "tags": [
+   "yellow",
+   "cliff",
+   "rough",
+   "rock face",
+   "solid rock",
+   "rock",
+   "striated",
+   "geological",
+   "exposed rock",
+   "uneven",
+   "weathered rock",
+   "striations"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rock_06_diff_2k.jpg",
+   "nor_gl": "rock_06_nor_gl_2k.jpg",
+   "arm": "rock_06_arm_2k.jpg",
+   "disp": "rock_06_disp_2k.jpg"
+  }
+ },
+ "rock_08": {
+  "name": "Rock 08",
+  "categories": [
+   "rock",
+   "outdoor",
+   "terrain",
+   "natural"
+  ],
+  "tags": [
+   "rough",
+   "rock face",
+   "bare",
+   "rock",
+   "boulder",
+   "coarse",
+   "geological",
+   "stone",
+   "uneven"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rock_08_diff_2k.jpg",
+   "nor_gl": "rock_08_nor_gl_2k.jpg",
+   "arm": "rock_08_arm_2k.jpg",
+   "disp": "rock_08_disp_2k.jpg"
+  }
+ },
+ "rock_2": {
+  "name": "Rock 2",
+  "categories": [
+   "rock",
+   "outdoor",
+   "terrain",
+   "natural"
+  ],
+  "tags": [
+   "rough",
+   "stone",
+   "dirty",
+   "rock face",
+   "rock",
+   "coarse",
+   "geological",
+   "uneven"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rock_2_diff_2k.jpg",
+   "nor_gl": "rock_2_nor_gl_2k.jpg",
+   "arm": "rock_2_arm_2k.jpg",
+   "disp": "rock_2_disp_2k.jpg"
+  }
+ },
+ "rock_3": {
+  "name": "Rock 3",
+  "categories": [
+   "rock",
+   "outdoor",
+   "terrain",
+   "natural"
+  ],
+  "tags": [
+   "grey",
+   "seaside",
+   "rough",
+   "rock face",
+   "rock",
+   "uneven",
+   "boulder",
+   "mossy",
+   "mossy patches",
+   "eroded",
+   "grunge"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rock_3_diff_2k.jpg",
+   "nor_gl": "rock_3_nor_gl_2k.jpg",
+   "arm": "rock_3_arm_2k.jpg",
+   "disp": "rock_3_disp_2k.jpg"
+  }
+ },
+ "rock_boulder_cracked": {
+  "name": "Rock Boulder Cracked",
+  "categories": [
+   "outdoor",
+   "terrain",
+   "rock",
+   "natural"
+  ],
+  "tags": [
+   "rough",
+   "weathered",
+   "rock face",
+   "rock",
+   "orange",
+   "cliff",
+   "cave",
+   "stone",
+   "uneven",
+   "eroded"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rock_boulder_cracked_diff_2k.jpg",
+   "nor_gl": "rock_boulder_cracked_nor_gl_2k.jpg",
+   "arm": "rock_boulder_cracked_arm_2k.jpg",
+   "disp": "rock_boulder_cracked_disp_2k.jpg"
+  }
+ },
+ "rock_boulder_dry": {
+  "name": "Rock Boulder Dry",
+  "categories": [
+   "rock",
+   "outdoor",
+   "natural",
+   "terrain"
+  ],
+  "tags": [
+   "weathered",
+   "chipped",
+   "rocks",
+   "boulder",
+   "stone",
+   "flat",
+   "damaged",
+   "eroded",
+   "cracked",
+   "rough",
+   "uneven"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rock_boulder_dry_diff_2k.jpg",
+   "nor_gl": "rock_boulder_dry_nor_gl_2k.jpg",
+   "arm": "rock_boulder_dry_arm_2k.jpg",
+   "disp": "rock_boulder_dry_disp_2k.jpg"
+  }
+ },
+ "rock_face": {
+  "name": "Rock Face",
+  "categories": [
+   "outdoor",
+   "terrain",
+   "natural",
+   "rock",
+   "collection: namaqualand"
+  ],
+  "tags": [
+   "terrain",
+   "landscape",
+   "rock face",
+   "solid rock",
+   "cliff",
+   "solid"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rock_face_diff_2k.jpg",
+   "nor_gl": "rock_face_nor_gl_2k.jpg",
+   "arm": "rock_face_arm_2k.jpg",
+   "disp": "rock_face_disp_2k.jpg"
+  }
+ },
+ "rock_face_03": {
+  "name": "Rock Face 03",
+  "categories": [
+   "natural",
+   "terrain",
+   "rock",
+   "outdoor",
+   "collection: verdant_trail"
+  ],
+  "tags": [
+   "rough",
+   "rock",
+   "cliff",
+   "uneven",
+   "weathered",
+   "wall",
+   "cracked",
+   "stone",
+   "rock face",
+   "rugged",
+   "chipped",
+   "eroded",
+   "cracks",
+   "rocks"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rock_face_03_diff_2k.jpg",
+   "nor_gl": "rock_face_03_nor_gl_2k.jpg",
+   "arm": "rock_face_03_arm_2k.jpg",
+   "disp": "rock_face_03_disp_2k.jpg"
+  }
+ },
+ "rock_ground": {
+  "name": "Rock Ground",
+  "categories": [
+   "terrain",
+   "natural",
+   "rock",
+   "outdoor"
+  ],
+  "tags": [
+   "gravel",
+   "rough",
+   "broken",
+   "rock",
+   "ground"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rock_ground_diff_2k.jpg",
+   "nor_gl": "rock_ground_nor_gl_2k.jpg",
+   "arm": "rock_ground_arm_2k.jpg",
+   "disp": "rock_ground_disp_2k.jpg"
+  }
+ },
+ "rock_ground_02": {
+  "name": "Rock Ground 02",
+  "categories": [
+   "terrain",
+   "natural",
+   "rock",
+   "outdoor"
+  ],
+  "tags": [
+   "rough",
+   "broken",
+   "gravel",
+   "ground",
+   "scattered plants ",
+   "stones",
+   "loose stones",
+   "dirt",
+   "sand",
+   "rocks",
+   "scattered rocks"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rock_ground_02_diff_2k.jpg",
+   "nor_gl": "rock_ground_02_nor_gl_2k.jpg",
+   "arm": "rock_ground_02_arm_2k.jpg",
+   "disp": "rock_ground_02_disp_2k.jpg"
+  }
+ },
+ "rock_pitted_mossy": {
+  "name": "Rock Pitted Mossy",
+  "categories": [
+   "outdoor",
+   "rock",
+   "terrain",
+   "natural",
+   "sandstone"
+  ],
+  "tags": [
+   "cracked",
+   "weathered",
+   "rock face",
+   "rock",
+   "boulder",
+   "red",
+   "discolored",
+   "eroded",
+   "moss",
+   "stone",
+   "uneven",
+   "rough",
+   "orange"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rock_pitted_mossy_diff_2k.jpg",
+   "nor_gl": "rock_pitted_mossy_nor_gl_2k.jpg",
+   "arm": "rock_pitted_mossy_arm_2k.jpg",
+   "disp": "rock_pitted_mossy_disp_2k.jpg"
+  }
+ },
+ "rock_wall_02": {
+  "name": "Rock Wall 02",
+  "categories": [
+   "rock",
+   "natural",
+   "terrain",
+   "outdoor"
+  ],
+  "tags": [
+   "rough",
+   "rock face",
+   "bare",
+   "rock",
+   "uneven",
+   "rough  ",
+   "discolored",
+   "coastal landscape",
+   "weathered",
+   "eroded",
+   "weather-beaten",
+   "mossy patches"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rock_wall_02_diff_2k.jpg",
+   "nor_gl": "rock_wall_02_nor_gl_2k.jpg",
+   "arm": "rock_wall_02_arm_2k.jpg",
+   "disp": "rock_wall_02_disp_2k.jpg"
+  }
+ },
+ "rocks_ground_01": {
+  "name": "Rocks Ground 01",
+  "categories": [
+   "terrain",
+   "natural",
+   "outdoor",
+   "rock",
+   "collection: verdant_trail"
+  ],
+  "tags": [
+   "rough",
+   "rock",
+   "cracked",
+   "stones"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rocks_ground_01_diff_2k.jpg",
+   "nor_gl": "rocks_ground_01_nor_gl_2k.jpg",
+   "arm": "rocks_ground_01_arm_2k.jpg",
+   "disp": "rocks_ground_01_disp_2k.jpg"
+  }
+ },
+ "rocks_ground_02": {
+  "name": "Rocks Ground 02",
+  "categories": [
+   "terrain",
+   "natural",
+   "outdoor",
+   "rock"
+  ],
+  "tags": [
+   "rough",
+   "mud",
+   "rock",
+   "stones",
+   "uneven",
+   "rocks",
+   "scattered rocks",
+   "gravel",
+   "dirt",
+   "exposed rock",
+   "earthy",
+   "soil"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rocks_ground_02_diff_2k.jpg",
+   "nor_gl": "rocks_ground_02_nor_gl_2k.jpg",
+   "arm": "rocks_ground_02_arm_2k.jpg",
+   "disp": "rocks_ground_02_disp_2k.jpg"
+  }
+ },
+ "rocks_ground_03": {
+  "name": "Rocks Ground 03",
+  "categories": [
+   "terrain",
+   "natural",
+   "outdoor",
+   "rock"
+  ],
+  "tags": [
+   "rocks",
+   "rough",
+   "stones",
+   "uneven",
+   "pebbles",
+   "pebbly",
+   "scattered pebbles",
+   "scattered rocks",
+   "gravel",
+   "gravelly",
+   "plant debris"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rocks_ground_03_diff_2k.jpg",
+   "nor_gl": "rocks_ground_03_nor_gl_2k.jpg",
+   "arm": "rocks_ground_03_arm_2k.jpg",
+   "disp": "rocks_ground_03_disp_2k.jpg"
+  }
+ },
+ "rocks_ground_04": {
+  "name": "Rocks Ground 04",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "rock",
+   "natural"
+  ],
+  "tags": [
+   "rocks",
+   "rough",
+   "smooth",
+   "stones",
+   "gravel",
+   "gravelly",
+   "rock",
+   "rocky",
+   "dirt",
+   "cracks",
+   "crevice"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rocks_ground_04_diff_2k.jpg",
+   "nor_gl": "rocks_ground_04_nor_gl_2k.jpg",
+   "arm": "rocks_ground_04_arm_2k.jpg",
+   "disp": "rocks_ground_04_disp_2k.jpg"
+  }
+ },
+ "rocks_ground_05": {
+  "name": "Rocks Ground 05",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "rock",
+   "natural"
+  ],
+  "tags": [
+   "rough",
+   "rock",
+   "gravel",
+   "dirt",
+   "rocky",
+   "soil",
+   "uneven",
+   "stony",
+   "dry",
+   "pebbles",
+   "stones"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rocks_ground_05_diff_2k.jpg",
+   "nor_gl": "rocks_ground_05_nor_gl_2k.jpg",
+   "arm": "rocks_ground_05_arm_2k.jpg",
+   "disp": "rocks_ground_05_disp_2k.jpg"
+  }
+ },
+ "rocks_ground_06": {
+  "name": "Rocks Ground 06",
+  "categories": [
+   "terrain",
+   "outdoor",
+   "rock",
+   "natural"
+  ],
+  "tags": [
+   "rocks",
+   "rough",
+   "broken",
+   "rock",
+   "uneven",
+   "gravel",
+   "scattered pebbles",
+   "scattered rocks",
+   "coastal",
+   "layered rock"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rocks_ground_06_diff_2k.jpg",
+   "nor_gl": "rocks_ground_06_nor_gl_2k.jpg",
+   "arm": "rocks_ground_06_arm_2k.jpg",
+   "disp": "rocks_ground_06_disp_2k.jpg"
+  }
+ },
+ "rocks_ground_08": {
+  "name": "Rocks Ground 08",
+  "categories": [
+   "terrain",
+   "natural",
+   "outdoor"
+  ],
+  "tags": [
+   "mud",
+   "rough",
+   "dry",
+   "damp",
+   "dirt",
+   "rocks",
+   "scattered rocks",
+   "muddy surface",
+   "footprints",
+   "gritty",
+   "organic",
+   "outdoor",
+   "terrain",
+   "uneven",
+   "gravel"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rocks_ground_08_diff_2k.jpg",
+   "nor_gl": "rocks_ground_08_nor_gl_2k.jpg",
+   "arm": "rocks_ground_08_arm_2k.jpg",
+   "disp": "rocks_ground_08_disp_2k.jpg"
+  }
+ },
+ "rocks_ground_09": {
+  "name": "Rocks Ground 09",
+  "categories": [
+   "terrain",
+   "natural",
+   "outdoor"
+  ],
+  "tags": [
+   "rough",
+   "rock",
+   "stones",
+   "broken",
+   "gravel",
+   "gravelly",
+   "scattered pebbles",
+   "scattered rocks",
+   "stony",
+   "gravelly ground",
+   "rocks",
+   "rock fragments",
+   "loose debris",
+   "pebbled"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rocks_ground_09_diff_2k.jpg",
+   "nor_gl": "rocks_ground_09_nor_gl_2k.jpg",
+   "arm": "rocks_ground_09_arm_2k.jpg",
+   "disp": "rocks_ground_09_disp_2k.jpg"
+  }
+ },
+ "rocky_gravel": {
+  "name": "Rocky Gravel",
+  "categories": [
+   "outdoor",
+   "floor",
+   "gravel",
+   "dirty"
+  ],
+  "tags": [
+   "rough",
+   "stones",
+   "rocks",
+   "gravel",
+   "dirt",
+   "path",
+   "nature",
+   "leaves",
+   "ground",
+   "uneven"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rocky_gravel_diff_2k.jpg",
+   "nor_gl": "rocky_gravel_nor_gl_2k.jpg",
+   "arm": "rocky_gravel_arm_2k.jpg",
+   "disp": "rocky_gravel_disp_2k.jpg"
+  }
+ },
+ "rocky_terrain": {
+  "name": "Rocky Terrain",
+  "categories": [
+   "outdoor",
+   "terrain",
+   "natural",
+   "rock",
+   "aerial"
+  ],
+  "tags": [
+   "rock face",
+   "rocky",
+   "solid rock",
+   "nature",
+   "grass",
+   "terrain",
+   "wilderness",
+   "uneven terrain",
+   "mountain",
+   "rugged",
+   "landscape"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rocky_terrain_diff_2k.jpg",
+   "nor_gl": "rocky_terrain_nor_gl_2k.jpg",
+   "arm": "rocky_terrain_arm_2k.jpg",
+   "disp": "rocky_terrain_disp_2k.jpg"
+  }
+ },
+ "rocky_terrain_02": {
+  "name": "Rocky Terrain 02",
+  "categories": [
+   "outdoor",
+   "terrain",
+   "natural",
+   "aerial"
+  ],
+  "tags": [
+   "rocky",
+   "terrain",
+   "uneven terrain",
+   "grass",
+   "drone",
+   "landscape",
+   "nature",
+   "nature",
+   "boulders",
+   "wilderness",
+   "scenic",
+   "mountain",
+   "landform",
+   "natural landscape"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rocky_terrain_02_diff_2k.jpg",
+   "nor_gl": "rocky_terrain_02_nor_gl_2k.jpg",
+   "arm": "rocky_terrain_02_arm_2k.jpg",
+   "disp": "rocky_terrain_02_disp_2k.jpg"
+  }
+ },
+ "rocky_terrain_03": {
+  "name": "Rocky Terrain 03",
+  "categories": [
+   "outdoor",
+   "natural",
+   "rock",
+   "aerial",
+   "terrain"
+  ],
+  "tags": [
+   "rocks",
+   "aerial",
+   "terrain",
+   "landscape",
+   "natural landscape",
+   "nature",
+   "boulders",
+   "landform",
+   "scenic",
+   "uneven terrain",
+   "wilderness",
+   "mountainside",
+   "greenery",
+   "rocky",
+   "ground",
+   "earth",
+   "nature scene"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rocky_terrain_03_diff_2k.jpg",
+   "nor_gl": "rocky_terrain_03_nor_gl_2k.jpg",
+   "arm": "rocky_terrain_03_arm_2k.jpg",
+   "disp": "rocky_terrain_03_disp_2k.jpg"
+  }
+ },
+ "rocky_trail": {
+  "name": "Rocky Trail",
+  "categories": [
+   "outdoor",
+   "natural",
+   "terrain",
+   "rock",
+   "collection: pine_forest"
+  ],
+  "tags": [
+   "rough",
+   "uneven",
+   "stones",
+   "rock",
+   "gravel",
+   "chipped",
+   "rocks",
+   "nature",
+   "path",
+   "broken",
+   "cliff"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rocky_trail_diff_2k.jpg",
+   "nor_gl": "rocky_trail_nor_gl_2k.jpg",
+   "arm": "rocky_trail_arm_2k.jpg",
+   "disp": "rocky_trail_disp_2k.jpg"
+  }
+ },
+ "rocky_trail_02": {
+  "name": "Rocky Trail 02",
+  "categories": [
+   "outdoor",
+   "natural",
+   "dirty",
+   "sand",
+   "floor"
+  ],
+  "tags": [
+   "stones",
+   "earthy",
+   "rugged",
+   "rough",
+   "terrain",
+   "gravelly",
+   "pathway",
+   "gritty",
+   "dusty",
+   "rocky",
+   "outdoors",
+   "dirt",
+   "rocks",
+   "ground",
+   "sand",
+   "gravel",
+   "footprints",
+   "dusty",
+   "dry",
+   "stony",
+   "rocky"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "rocky_trail_02_diff_2k.jpg",
+   "nor_gl": "rocky_trail_02_nor_gl_2k.jpg",
+   "arm": "rocky_trail_02_arm_2k.jpg",
+   "disp": "rocky_trail_02_disp_2k.jpg"
+  }
+ },
+ "sand_01": {
+  "name": "Sand 01",
+  "categories": [
+   "terrain",
+   "sand",
+   "outdoor",
+   "natural"
+  ],
+  "tags": [
+   "sand",
+   "uneven",
+   "trampled",
+   "clay",
+   "plaster",
+   "dry"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "sand_01_diff_2k.jpg",
+   "nor_gl": "sand_01_nor_gl_2k.jpg",
+   "arm": "sand_01_arm_2k.jpg",
+   "disp": "sand_01_disp_2k.jpg"
+  }
+ },
+ "sand_02": {
+  "name": "Sand 02",
+  "categories": [
+   "floor",
+   "sand"
+  ],
+  "tags": [
+   "dirty",
+   "sand",
+   "sandy",
+   "beach",
+   "gritty",
+   "coast",
+   "shore",
+   "granular"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "sand_02_diff_2k.jpg",
+   "nor_gl": "sand_02_nor_gl_2k.jpg",
+   "arm": "sand_02_arm_2k.jpg",
+   "disp": "sand_02_disp_2k.jpg"
+  }
+ },
+ "sand_03": {
+  "name": "Sand 03",
+  "categories": [
+   "floor",
+   "sand"
+  ],
+  "tags": [
+   "sand",
+   "sandy",
+   "beach",
+   "seaside",
+   "gritty",
+   "shore",
+   "costal",
+   "sandy beach",
+   "coastline",
+   "granular",
+   "coast"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "sand_03_diff_2k.jpg",
+   "nor_gl": "sand_03_nor_gl_2k.jpg",
+   "arm": "sand_03_arm_2k.jpg",
+   "disp": "sand_03_disp_2k.jpg"
+  }
+ },
+ "sandstone_cracks": {
+  "name": "Sandstone Cracks",
+  "categories": [
+   "wall",
+   "floor",
+   "natural",
+   "man made",
+   "outdoor",
+   "road",
+   "terrain"
+  ],
+  "tags": [
+   "rough",
+   "dirt",
+   "ground",
+   "sandstone",
+   "cracked",
+   "plaster"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "sandstone_cracks_diff_2k.jpg",
+   "nor_gl": "sandstone_cracks_nor_gl_2k.jpg",
+   "arm": "sandstone_cracks_arm_2k.jpg",
+   "disp": "sandstone_cracks_disp_2k.jpg"
+  }
+ },
+ "sandy_gravel": {
+  "name": "Sandy Gravel",
+  "categories": [
+   "outdoor",
+   "sand",
+   "gravel"
+  ],
+  "tags": [
+   "rough",
+   "weathered",
+   "stones",
+   "sand",
+   "sandy",
+   "gravel",
+   "gravelly ground",
+   "gravelly texture",
+   "gravelly",
+   "gritty",
+   "coarse"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "sandy_gravel_diff_2k.jpg",
+   "nor_gl": "sandy_gravel_nor_gl_2k.jpg",
+   "arm": "sandy_gravel_arm_2k.jpg",
+   "disp": "sandy_gravel_disp_2k.jpg"
+  }
+ },
+ "sandy_gravel_02": {
+  "name": "Sandy Gravel 02",
+  "categories": [
+   "outdoor",
+   "terrain",
+   "natural",
+   "sand",
+   "gravel",
+   "collection: namaqualand"
+  ],
+  "tags": [
+   "terrain",
+   "sand",
+   "gravel",
+   "stony",
+   "gravelly",
+   "dusty",
+   "desert",
+   "ground",
+   "pebbles",
+   "debris"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "sandy_gravel_02_diff_2k.jpg",
+   "nor_gl": "sandy_gravel_02_nor_gl_2k.jpg",
+   "arm": "sandy_gravel_02_arm_2k.jpg",
+   "disp": "sandy_gravel_02_disp_2k.jpg"
+  }
+ },
+ "shell_floor_01": {
+  "name": "Shell Floor 01",
+  "categories": [
+   "terrain",
+   "natural",
+   "outdoor"
+  ],
+  "tags": [
+   "shells",
+   "seaside",
+   "uneven",
+   "rough",
+   "broken shells",
+   "gravel",
+   "gravelly",
+   "gravelly ground",
+   "marine debris",
+   "coastal",
+   "organic debris",
+   "beach"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "shell_floor_01_diff_2k.jpg",
+   "nor_gl": "shell_floor_01_nor_gl_2k.jpg",
+   "arm": "shell_floor_01_arm_2k.jpg",
+   "disp": "shell_floor_01_disp_2k.jpg"
+  }
+ },
+ "snow_01": {
+  "name": "Snow 01",
+  "categories": [
+   "terrain",
+   "natural",
+   "outdoor",
+   "snow"
+  ],
+  "tags": [
+   "snow",
+   "rough",
+   "uneven",
+   "footprints",
+   "powdery",
+   "trail",
+   "snowfield"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "snow_01_diff_2k.jpg",
+   "nor_gl": "snow_01_nor_gl_2k.jpg",
+   "arm": "snow_01_arm_2k.jpg",
+   "disp": "snow_01_disp_2k.jpg"
+  }
+ },
+ "snow_02": {
+  "name": "Snow 02",
+  "categories": [
+   "terrain",
+   "natural",
+   "outdoor",
+   "snow"
+  ],
+  "tags": [
+   "snow",
+   "uneven",
+   "smooth",
+   "powdery",
+   "frosty",
+   "snowfield",
+   "soft",
+   "wintery"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "snow_02_diff_2k.jpg",
+   "nor_gl": "snow_02_nor_gl_2k.jpg",
+   "arm": "snow_02_arm_2k.jpg",
+   "disp": "snow_02_disp_2k.jpg"
+  }
+ },
+ "snow_03": {
+  "name": "Snow 03",
+  "categories": [
+   "terrain",
+   "natural",
+   "snow",
+   "dirty",
+   "outdoor"
+  ],
+  "tags": [
+   "snow",
+   "uneven",
+   "rough",
+   "trampled",
+   "mud"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "snow_03_diff_2k.jpg",
+   "nor_gl": "snow_03_nor_gl_2k.jpg",
+   "arm": "snow_03_arm_2k.jpg",
+   "disp": "snow_03_disp_2k.jpg"
+  }
+ },
+ "snow_04": {
+  "name": "Snow 04",
+  "categories": [
+   "terrain",
+   "snow",
+   "outdoor",
+   "natural",
+   "dirty"
+  ],
+  "tags": [
+   "snow",
+   "mud",
+   "field",
+   "uneven",
+   "rough"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "snow_04_diff_2k.jpg",
+   "nor_gl": "snow_04_nor_gl_2k.jpg",
+   "arm": "snow_04_arm_2k.jpg",
+   "disp": "snow_04_disp_2k.jpg"
+  }
+ },
+ "snow_05": {
+  "name": "Snow 05",
+  "categories": [
+   "terrain",
+   "snow",
+   "outdoor",
+   "dirty",
+   "road"
+  ],
+  "tags": [
+   "snow",
+   "mud",
+   "uneven",
+   "rough"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "snow_05_diff_2k.jpg",
+   "nor_gl": "snow_05_nor_gl_2k.jpg",
+   "arm": "snow_05_arm_2k.jpg",
+   "disp": "snow_05_disp_2k.jpg"
+  }
+ },
+ "snow_field_aerial": {
+  "name": "Snow Field Aerial",
+  "categories": [
+   "terrain",
+   "snow",
+   "outdoor",
+   "dirty",
+   "natural",
+   "aerial"
+  ],
+  "tags": [
+   "snow",
+   "mud",
+   "field",
+   "uneven"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "snow_field_aerial_diff_2k.jpg",
+   "nor_gl": "snow_field_aerial_nor_gl_2k.jpg",
+   "arm": "snow_field_aerial_arm_2k.jpg",
+   "disp": "snow_field_aerial_disp_2k.jpg"
+  }
+ },
+ "snow_floor": {
+  "name": "Snow Floor",
+  "categories": [
+   "outdoor",
+   "man made",
+   "floor",
+   "snow",
+   "asphalt"
+  ],
+  "tags": [
+   "rough",
+   "snow",
+   "floor",
+   "asphalt"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "snow_floor_diff_2k.jpg",
+   "nor_gl": "snow_floor_nor_gl_2k.jpg",
+   "arm": "snow_floor_arm_2k.jpg",
+   "disp": "snow_floor_disp_2k.jpg"
+  }
+ },
+ "tarred_gravel": {
+  "name": "Tarred Gravel",
+  "categories": [
+   "asphalt",
+   "gravel"
+  ],
+  "tags": [
+   "rough",
+   "weathered",
+   "uneven",
+   "old",
+   "worn",
+   "floor",
+   "tar",
+   "gravel",
+   "stone embedded",
+   "gritty",
+   "coarse",
+   "bumpy",
+   "embedded rock",
+   "compacted",
+   "asphalt",
+   "cracks",
+   "cracking"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "tarred_gravel_diff_2k.jpg",
+   "nor_gl": "tarred_gravel_nor_gl_2k.jpg",
+   "arm": "tarred_gravel_arm_2k.jpg",
+   "disp": "tarred_gravel_disp_2k.jpg"
+  }
+ },
+ "terrain_red_01": {
+  "name": "Terrain Red 01",
+  "categories": [
+   "terrain",
+   "natural",
+   "outdoor",
+   "road",
+   "rock"
+  ],
+  "tags": [
+   "gravel",
+   "stones",
+   "rough",
+   "pebbles",
+   "railroad",
+   "pathway",
+   "path"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "terrain_red_01_diff_2k.jpg",
+   "nor_gl": "terrain_red_01_nor_gl_2k.jpg",
+   "arm": "terrain_red_01_arm_2k.jpg",
+   "disp": "terrain_red_01_disp_2k.jpg"
+  }
+ },
+ "tiger_rock": {
+  "name": "Tiger Rock",
+  "categories": [
+   "collection: namaqualand",
+   "rock",
+   "terrain",
+   "natural",
+   "outdoor"
+  ],
+  "tags": [
+   "cliff",
+   "boulder",
+   "rock face",
+   "cave",
+   "weathered",
+   "landscape",
+   "solid rock",
+   "mountain",
+   "solid",
+   "rugged",
+   "granite"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "tiger_rock_diff_2k.jpg",
+   "nor_gl": "tiger_rock_nor_gl_2k.jpg",
+   "arm": "tiger_rock_arm_2k.jpg",
+   "disp": "tiger_rock_disp_2k.jpg"
+  }
+ },
+ "wood_chip_path": {
+  "name": "Wood Chip Path",
+  "categories": [
+   "outdoor",
+   "terrain"
+  ],
+  "tags": [
+   "wood chips",
+   "plant debris",
+   "organic debris",
+   "petals",
+   "pathway",
+   "path",
+   "mulch",
+   "small twigs",
+   "mulch layer"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "wood_chip_path_diff_2k.jpg",
+   "nor_gl": "wood_chip_path_nor_gl_2k.jpg",
+   "arm": "wood_chip_path_arm_2k.jpg",
+   "disp": "wood_chip_path_disp_2k.jpg"
+  }
+ },
+ "worn_rock_natural_01": {
+  "name": "Worn Rock Natural 01",
+  "categories": [
+   "outdoor",
+   "natural",
+   "terrain",
+   "rock",
+   "sandstone"
+  ],
+  "tags": [
+   "weathered",
+   "yellow",
+   "rock face",
+   "rock",
+   "flat",
+   "brown",
+   "boulder",
+   "cliff",
+   "chipped",
+   "nature",
+   "costal"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "worn_rock_natural_01_diff_2k.jpg",
+   "nor_gl": "worn_rock_natural_01_nor_gl_2k.jpg",
+   "arm": "worn_rock_natural_01_arm_2k.jpg",
+   "disp": "worn_rock_natural_01_disp_2k.jpg"
+  }
+ }
+}
