@@ -39,6 +39,9 @@ struct MissionEntry {
   // (MapExport.h Campaign), into `map` / `scene` / `battle`.
   bool prepare = false;
   std::filesystem::path source;
+  // The Map Editor's "Testar esta cena": these cutscenes (content/cutscenes/<id>.json, comma-separated) play as the map opens,
+  // in place of its own "Ao abrir o mapa" list.
+  std::string cutscenes;
 };
 
 struct CampaignPaths {

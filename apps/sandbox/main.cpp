@@ -1728,6 +1728,7 @@ int runWindow(const Options& o) {
         if (hasWorld && !inEditorTest)
           setUpParty(options, testSession ? testSession->save : campaign.activeSave(), world, !testSession && !playing.empty(), hasInterlude ? &interlude : nullptr);
         options.arrivedFrom = std::exchange(arriveFrom, {});
+        options.openingCutscenes = pending->cutscenes;  // the Map Editor's Testar esta cena
         options.preserveKnockouts = std::exchange(preserveKnockouts, false);
         // A dungeon's dead stay dead (crossingDefeatedSpawns; a campaign only), and the Wisp crossing's exits lead to the lair until
         // it is done (routeWispCrossing; Modo teste: always to the lair).

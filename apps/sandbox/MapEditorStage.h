@@ -1744,7 +1744,8 @@ class MapEditorStage : public Stage {
 
   // Testar uses the same campaign map preparation and battle rules. The caller supplies the test save, which provides
   // the full level-30 party; the draft does not get a separate level-15 battle export.
-  void playtest() {
+  // `cutscenes` (comma-separated): played as the test map opens, in place of its own opening list (Testar esta cena).
+  void playtest(const std::string& cutscenes = {}) {
     if (playtest_.valid()) return;
     const std::string id = scenarioId(draft_.value("id", "scenario"));
     const std::filesystem::path dir = std::filesystem::path("build/editor/playtest");
@@ -1759,7 +1760,8 @@ class MapEditorStage : public Stage {
     CampaignPaths previewPaths = paths_;
     previewPaths.campaign = dir;
     note("Testando — Encerrar teste nas Opções traz o mapa de volta como está.");
-    playtest_ = std::async(std::launch::async, [this, dir, id, file, ember, paths = std::move(previewPaths), title, place, briefing, objective]() -> std::optional<MissionEntry> {
+    playtest_ = std::async(std::launch::async, [this, dir, id, file, ember, paths = std::move(previewPaths), title, place, briefing, objective,
+                                                 cutscenes]() -> std::optional<MissionEntry> {
       std::error_code ec;
       std::filesystem::create_directories(dir, ec);
       const std::filesystem::path source = dir / (id + ".draft.json");
@@ -1775,6 +1777,7 @@ class MapEditorStage : public Stage {
       MissionEntry e;
       e.id = id, e.title = title, e.place = place, e.briefing = briefing, e.objective = objective, e.draftId = id;
       e.map = r.map, e.scene = r.scene, e.battle = r.battle;
+      e.cutscenes = cutscenes;
       return e;
     });
   }
@@ -2584,21 +2587,46 @@ class MapEditorStage : public Stage {
     std::sort(cutFiles_.begin(), cutFiles_.end());
     cutScanned_ = true;
   }
-  std::string cutOpeningId() const {
+  // triggers.json onOpen[<map id>]: one scene id or a list, played in that order every time the map opens (MapStage
+  // runCutsceneTriggers). The only trigger the game has today.
+  static std::vector<std::string> openingListOf(const ember::Json& entry) {
+    std::vector<std::string> out;
+    if (entry.is_string() && !entry.get<std::string>().empty()) out.push_back(entry.get<std::string>());
+    else if (entry.is_array())
+      for (const ember::Json& id : entry)
+        if (id.is_string() && !id.get<std::string>().empty()) out.push_back(id.get<std::string>());
+    return out;
+  }
+  std::vector<std::string> cutOpeningList() const {
     const ember::Json t = readJsonFile(triggersFile());
     const ember::Json on = t.is_object() ? t.value("onOpen", ember::Json::object()) : ember::Json::object();
-    return on.is_object() ? on.value(draft_.value("id", ""), std::string()) : std::string();
+    const std::string map = draft_.value("id", "");
+    return on.is_object() && on.contains(map) ? openingListOf(on[map]) : std::vector<std::string>{};
   }
-  void setCutOpening(const std::string& id) {  // "" = no opening scene for this map
+  // Every scene's triggers: the maps that open with it and its place in each map's order (1-based).
+  std::map<std::string, std::vector<std::pair<std::string, int>>> cutTriggersByScene() const {
+    std::map<std::string, std::vector<std::pair<std::string, int>>> out;
+    const ember::Json t = readJsonFile(triggersFile());
+    const ember::Json on = t.is_object() ? t.value("onOpen", ember::Json::object()) : ember::Json::object();
+    if (on.is_object())
+      for (const auto& [map, entry] : on.items()) {
+        const std::vector<std::string> list = openingListOf(entry);
+        for (size_t i = 0; i < list.size(); ++i) out[list[i]].push_back({map, static_cast<int>(i) + 1});
+      }
+    return out;
+  }
+  void setCutOpeningList(const std::vector<std::string>& list) {  // empty = the map opens with no scene
     ember::Json t = readJsonFile(triggersFile());
     if (!t.is_object()) t = ember::Json::object();
     if (!t.contains("format")) t["format"] = "ember-cutscene-triggers-1";
     if (!t.contains("onOpen") || !t["onOpen"].is_object()) t["onOpen"] = ember::Json::object();
     const std::string map = draft_.value("id", "");
-    if (id.empty()) t["onOpen"].erase(map);
-    else t["onOpen"][map] = id;
+    if (list.empty()) t["onOpen"].erase(map);
+    else t["onOpen"][map] = list;
     if (!writeJsonFile(triggersFile(), t)) return note("Não consegui gravar content/cutscenes/triggers.json.");
-    note(id.empty() ? std::format("{} abre sem cena.", map) : std::format("{} abre com a cena {}.", map, id));
+    std::string ids;
+    for (size_t i = 0; i < list.size(); ++i) ids += std::format("{}{}. {}", i ? ", " : "", i + 1, list[i]);
+    note(list.empty() ? std::format("{} abre sem cena.", map) : std::format("{} abre com: {}.", map, ids));
   }
   void openCutscene(const std::string& id) {
     cutId_ = id;
@@ -2669,34 +2697,96 @@ class MapEditorStage : public Stage {
     const std::string map = draft_.value("id", "");
     section("Cenas");
     hint("Uma cena dirige as unidades que já estão no mapa: mover, virar, falar (na caixa de diálogo do jogo) e esperar, um passo depois do outro. "
-         "Cada cena é um arquivo em content/cutscenes.");
+         "Cada cena é um arquivo em content/cutscenes. Ela só toca no jogo com um gatilho: hoje o gatilho é \"Ao abrir o mapa\" "
+         "(toda vez que o mapa abre, no jogo e no Testar, na ordem do mapa). Sem gatilho a cena nunca toca no jogo.");
     if (ImGui::SmallButton("Nova cena")) newCutscene();
     ImGui::SameLine();
     if (ImGui::SmallButton("Reler a pasta")) refreshCutscenes();
-    const std::string opening = cutOpeningId();
+    const std::map<std::string, std::vector<std::pair<std::string, int>>> where = cutTriggersByScene();
+    std::vector<std::string> opening = cutOpeningList();
     for (const std::string& id : cutFiles_) {
       ImGui::PushID(id.c_str());
       const bool sel = id == cutId_;
       if (ImGui::Selectable(id.c_str(), sel)) {
         if (!sel) openCutscene(id);
       }
-      if (id == opening) {
-        ImGui::SameLine();
-        ImGui::TextColored(ImColor(252, 211, 77), "· abre este mapa");
+      ImGui::Indent(14);
+      if (const auto it = where.find(id); it != where.end()) {
+        std::string maps;
+        for (const auto& [m, n] : it->second) maps += std::format("{}{} ({}ª)", maps.empty() ? "" : ", ", m, n);
+        ImGui::TextColored(ImColor(252, 211, 77), "Toca ao abrir: %s", maps.c_str());
+      } else {
+        ImGui::TextColored(ImColor(150, 136, 120), "Sem gatilho: não toca em nenhum mapa");
       }
+      ImGui::Unindent(14);
       ImGui::PopID();
     }
     if (cutFiles_.empty()) hint("Nenhuma cena ainda. Nova cena cria content/cutscenes/%s-cena-01.json.", scenarioId(map).c_str());
+
+    // The open map's opening: its scenes in the order they play.
+    section(std::format("Ao abrir o mapa \"{}\": ordem", map).c_str());
+    if (opening.empty()) hint("Nenhuma cena toca quando este mapa abre.");
+    int openUp = -1, openDown = -1, openOut = -1;
+    for (int i = 0; i < static_cast<int>(opening.size()); ++i) {
+      ImGui::PushID(("open:" + std::to_string(i)).c_str());
+      const bool exists = std::find(cutFiles_.begin(), cutFiles_.end(), opening[static_cast<size_t>(i)]) != cutFiles_.end();
+      ImGui::Text("%d.", i + 1);
+      ImGui::SameLine();
+      if (ImGui::Selectable(opening[static_cast<size_t>(i)].c_str(), opening[static_cast<size_t>(i)] == cutId_, 0, {200, 0}) && exists)
+        openCutscene(opening[static_cast<size_t>(i)]);
+      if (!exists) {
+        ImGui::SameLine();
+        ImGui::TextColored(ImColor(255, 120, 100), "arquivo não existe");
+      }
+      ImGui::SameLine();
+      if (ImGui::SmallButton("▲") && i > 0) openUp = i;
+      ImGui::SameLine();
+      if (ImGui::SmallButton("▼") && i + 1 < static_cast<int>(opening.size())) openDown = i;
+      ImGui::SameLine();
+      if (ImGui::SmallButton("Tirar")) openOut = i;
+      ImGui::PopID();
+    }
+    if (openUp > 0) std::swap(opening[static_cast<size_t>(openUp)], opening[static_cast<size_t>(openUp - 1)]), setCutOpeningList(opening);
+    if (openDown >= 0) std::swap(opening[static_cast<size_t>(openDown)], opening[static_cast<size_t>(openDown + 1)]), setCutOpeningList(opening);
+    if (openOut >= 0) opening.erase(opening.begin() + openOut), setCutOpeningList(opening);
+    ImGui::SetNextItemWidth(-1);
+    if (ImGui::BeginCombo("##addopening", "+ Cena ao abrir este mapa…")) {
+      for (const std::string& id : cutFiles_)
+        if (std::find(opening.begin(), opening.end(), id) == opening.end() && ImGui::Selectable(id.c_str())) {
+          opening.push_back(id);
+          setCutOpeningList(opening);
+        }
+      ImGui::EndCombo();
+    }
+    if (ImGui::Button("Testar a abertura deste mapa", {-1, 0}) && !playtest_.valid()) playtest();
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Testar: o mapa abre e as cenas acima tocam nessa ordem.");
     if (cutId_.empty()) return;
 
     section(std::format("Cena \"{}\"{}", cutId_, cutDirty_ ? " (não gravada)" : "").c_str());
     if (ImGui::Button("Salvar cena")) saveCutscene();
     ImGui::SameLine();
     if (ImGui::Button("Reabrir")) openCutscene(cutId_);
+    ImGui::SameLine();
+    if (ImGui::Button(playtest_.valid() ? "Preparando…" : "Testar esta cena") && !playtest_.valid() && (!cutDirty_ || saveCutscene()))
+      playtest(cutId_);
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Grava a cena, abre este mapa no Testar e toca só esta cena assim que ele abre.");
     if (!cutError_.empty()) ImGui::TextColored(ImColor(255, 120, 100), "%s", cutError_.c_str());
-    bool isOpening = opening == cutId_;
-    if (ImGui::Checkbox("Ao abrir o mapa (toca toda vez que o mapa abre; Testar mostra)", &isOpening)) setCutOpening(isOpening ? cutId_ : "");
-    hint("Mapa: %s. A cena de abertura toca no jogo e no Testar, não na prévia do editor.", map.c_str());
+
+    // Where and when it plays.
+    fieldLabel("Onde e quando toca");
+    if (const auto it = where.find(cutId_); it != where.end()) {
+      for (const auto& [m, n] : it->second) ImGui::TextColored(ImColor(252, 211, 77), "Ao abrir o mapa %s, %dª da ordem", m.c_str(), n);
+    } else {
+      ImGui::TextColored(ImColor(150, 136, 120), "Sem gatilho: esta cena não toca em nenhum mapa (só no botão Testar esta cena).");
+    }
+    const auto here = std::find(opening.begin(), opening.end(), cutId_);
+    bool isOpening = here != opening.end();
+    if (ImGui::Checkbox(std::format("Toca ao abrir o mapa \"{}\"", map).c_str(), &isOpening)) {
+      if (isOpening) opening.push_back(cutId_);
+      else opening.erase(std::find(opening.begin(), opening.end(), cutId_));
+      setCutOpeningList(opening);
+    }
+    hint("Os atores são unidades deste mapa (%s), pelo nome. A cena toca no jogo e no Testar, não na prévia do editor.", map.c_str());
 
     // Actors
     fieldLabel("Atores (nome na cena -> unidade no mapa)");

@@ -138,6 +138,8 @@ struct MapStageOptions {
   // (nobody clicks in a capture).
   std::string cutscene;
   float cutsceneAuto = 0.0f;
+  // The Map Editor's "Testar esta cena": these scripts (comma-separated) play as the map opens, in place of its triggers.json list.
+  std::string openingCutscenes;
   bool tatica = false;  // open in the 2D view (Tática), for captures
   bool spellsMenu = true;  // the Magias window (every spell's effect version, loose effects; test mode)
   bool choicesPanel = true;  // the Escolhas window (the look switches; test mode)
@@ -648,6 +650,7 @@ class MapStage final : public Stage {
       runCutsceneTriggers();
       runCutsceneQueue();
       updateCutscene();
+      runCutsceneTriggers();  // the next scene of the map's opening list begins the frame the last one ends
       updateRoaming();
       updateCombatOpening();
       laps.lap("roaming");
@@ -6447,23 +6450,45 @@ class MapStage final : public Stage {
     if (cutsceneDialog_->draw(ImGui::GetIO().DisplaySize)) cutsceneDialog_.reset();
   }
 
-  // Map events that start a cutscene (content/cutscenes/triggers.json): "onOpen" by map id, played once the map is ready and the
-  // loading curtain is gone, every time the map opens (a reload replays it: the map's opening is the safe checkpoint). Not in
-  // the Map Editor's preview, nor under a --cutscene test run (which plays its own list).
+  // Map events that start a cutscene (content/cutscenes/triggers.json): "onOpen" by map id, one script or a list played one
+  // after another in its order, once the map is ready and the loading curtain is gone, every time the map opens (a reload
+  // replays it: the map's opening is the safe checkpoint). The Map Editor's "Testar esta cena" (openingCutscenes) plays its own
+  // list instead. Not in the Map Editor's preview, nor under a --cutscene test run (which plays its own list). A scene refused
+  // (an actor not on the map) is skipped with a log line; the next one plays.
   void runCutsceneTriggers() {
-    if (openingDone_ || !battle_ || !scene_ || readyFrames_ < 30 || !loading().ready) return;
-    openingDone_ = true;  // (a battle script waits for this moment, so its steps never run before the map's opening scene)
-    if (options_.editorClick || !options_.cutscene.empty()) return;
-    static const ember::Json table = [] {
-      std::ifstream in("content/cutscenes/triggers.json", std::ios::binary);
-      ember::Json j = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
-      return j.is_object() ? j : ember::Json::object();
-    }();
-    const ember::Json onOpen = table.value("onOpen", ember::Json::object());
-    const std::string id = onOpen.is_object() ? onOpen.value(draftId(), std::string()) : std::string();
-    if (id.empty()) return;
-    logInfo("cutscene trigger: {} opens with {}", draftId(), id);
-    playCutscene(id);
+    if (!openingDone_) {
+      if (!battle_ || !scene_ || readyFrames_ < 30 || !loading().ready) return;
+      openingDone_ = true;  // (a battle script waits for this moment, so its steps never run before the map's opening scene)
+      if (options_.editorClick || !options_.cutscene.empty()) return;
+      openingQueue_.clear();
+      if (!options_.openingCutscenes.empty()) {
+        for (size_t at = 0; at <= options_.openingCutscenes.size();) {
+          size_t end = options_.openingCutscenes.find(',', at);
+          if (end == std::string::npos) end = options_.openingCutscenes.size();
+          if (end > at) openingQueue_.push_back(options_.openingCutscenes.substr(at, end - at));
+          at = end + 1;
+        }
+      } else {
+        std::ifstream in("content/cutscenes/triggers.json", std::ios::binary);  // read at each opening: the editor may have changed it
+        const ember::Json table = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
+        const ember::Json onOpen = table.is_object() ? table.value("onOpen", ember::Json::object()) : ember::Json::object();
+        const ember::Json list = onOpen.is_object() && onOpen.contains(draftId()) ? onOpen[draftId()] : ember::Json();
+        if (list.is_string()) openingQueue_.push_back(list.get<std::string>());
+        else if (list.is_array())
+          for (const ember::Json& id : list)
+            if (id.is_string() && !id.get<std::string>().empty()) openingQueue_.push_back(id.get<std::string>());
+      }
+      if (!openingQueue_.empty()) {
+        std::string ids;
+        for (const std::string& id : openingQueue_) ids += (ids.empty() ? "" : ", ") + id;
+        logInfo("cutscene trigger: {} opens with {}", draftId(), ids);
+      }
+    }
+    while (!cutscene_ && !openingQueue_.empty()) {
+      const std::string id = openingQueue_.front();
+      openingQueue_.erase(openingQueue_.begin());
+      playCutscene(id);
+    }
   }
 
   // --cutscene: the listed scripts, one after another, once the map is ready; "!<id>" must be refused or fail.
@@ -12252,6 +12277,7 @@ class MapStage final : public Stage {
   std::string cutsceneQueueLabel_;
   bool cutsceneQueueStarted_ = false, cutsceneQueueDone_ = false, cutsceneTestFailed_ = false;
   bool openingDone_ = false;  // the map's onOpen trigger looked up once (runCutsceneTriggers)
+  std::vector<std::string> openingQueue_;  // the opening scenes still to play, in order
   struct CardRect {  // a unit's card as drawn this frame, for picking
     glm::vec3 origin{0.0f};  // bottom centre
     float width = 0.0f, height = 0.0f;

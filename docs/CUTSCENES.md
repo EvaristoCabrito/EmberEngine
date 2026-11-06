@@ -55,10 +55,15 @@ undeclared actor, a malformed coordinate or duration refuse the file whole, nami
 
 ## Map events: `content/cutscenes/triggers.json`
 
-`"onOpen": { "<map id>": "<script id>" }`: the script plays once the map is ready and the loading curtain is gone, every time the
+`"onOpen": { "<map id>": "<script id>" | ["<script id>", ...] }`: the script (or the list, one after another in its order; one refused
+is skipped with a log line) plays once the map is ready and the loading curtain is gone, every time the
 map opens (MapStage `runCutsceneTriggers`; a reload replays it: the map's opening is the safe checkpoint). Not in the Map Editor's
 preview, not under a `--cutscene` test run. A battle script waits for the opening scene; a capture with one ends after it. Other
 events (a waypoint reached, a victory) are not wired yet: add them here when a scene needs them.
+
+Map Editor, Cutscenes tab (2026-11-05): every scene in the list says where it plays ("Toca ao abrir: <map> (Nª)" or "Sem gatilho"),
+the open map's opening order (▲ ▼ Tirar, + Cena), "Toca ao abrir o mapa" per scene, "Testar esta cena" (Testar with only that
+scene played as the map opens: MissionEntry::cutscenes -> MapStageOptions::openingCutscenes) and "Testar a abertura deste mapa".
 
 ## Testing
 
