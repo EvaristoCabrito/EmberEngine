@@ -86,7 +86,6 @@ Ids are `ember-<kit>-<name>`; sizes in units (w = widest side, h = height); tris
 | ember-winter-snowy-pine | winter | winter/snowy-pine-v01.glb | 4.98 × 7.66 | 14978 | bark, needles (vertex), snow (colour+normal+rough) |
 | ember-winter-frost-dead-tree | winter | winter/frost-dead-tree-v01.glb | 6.11 × 7.01 | 2344 | pale bark + snow on upper faces |
 | ember-winter-snow-fallen-log | winter | winter/snow-fallen-log-v01.glb | 4.63 × 1.38 | 1308 | bark, snow slab on top |
-| ember-winter-snow-boulder | winter | winter/snow-boulder-v01.glb | 2.72 × 1.65 | 1280 | stone + snow cap |
 | ember-props-treasure-chest | props | props/treasure-chest-v01.glb | 1.38 × 1.07 | 772 | dark planks, iron bands / lock / corners; lid is its own piece |
 | ember-props-crate | props | props/crate-v01.glb | 1.09 × 0.92 | 180 | worn planks, dark corner posts + diagonals |
 | ember-props-barrel | props | props/barrel-v01.glb | 1.17 × 1.30 | 2296 | dark staves (lathe), 4 iron hoops |

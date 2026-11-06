@@ -39,18 +39,6 @@
       "blocks": true
     },
     {
-      "id": "ember-winter-snow-boulder",
-      "name": "Rochedo nevado 3D",
-      "kit": "winter",
-      "model": "ember-snow-boulder",
-      "file": "/game/ember/winter/snow-boulder-v01.glb",
-      "height": 1.646,
-      "width": 2.721,
-      "footprint": "pair",
-      "section": "Pedras e relevo",
-      "blocks": true
-    },
-    {
       "id": "ember-city-well",
       "name": "Poço de pedra 3D",
       "kit": "city",

@@ -13380,38 +13380,6 @@
       "lockYaw": false,
       "nudge": 0
     },
-    "ember-winter-snow-boulder": {
-      "name": "Rochedo nevado 3D",
-      "footprint": [
-        {
-          "dx": 0,
-          "dy": 0
-        },
-        {
-          "dx": 1,
-          "dy": 0
-        }
-      ],
-      "blockingFootprint": null,
-      "architectureSpan": false,
-      "architecture": false,
-      "model3d": "prop",
-      "model": {
-        "model": "ember-snow-boulder",
-        "file": "/game/ember/winter/snow-boulder-v01.glb",
-        "height": 1.646
-      },
-      "mirrorAlternate": false,
-      "exitKind": null,
-      "size": {
-        "w": 2.721,
-        "h": 1.646
-      },
-      "light": null,
-      "standOn": false,
-      "lockYaw": false,
-      "nudge": 0
-    },
     "ember-city-well": {
       "name": "Poço de pedra 3D",
       "footprint": [
@@ -202165,12 +202133,6 @@
         "thumb": "",
         "blocksByDefault": true
       },
-      "ember-winter-snow-boulder": {
-        "section": "Pedras e relevo",
-        "tile": null,
-        "thumb": "",
-        "blocksByDefault": true
-      },
       "ember-city-well": {
         "section": "City",
         "tile": null,
@@ -212862,21 +212824,6 @@
         "manual": true,
         "art": ""
       },
-      "ember-winter-snow-boulder": {
-        "model3d": "prop",
-        "exitKind": null,
-        "props3d": true,
-        "rockStyle": false,
-        "thickWall": false,
-        "doorStyle": null,
-        "wallTexture": null,
-        "solidHouse": false,
-        "solidCart": false,
-        "solidRock": false,
-        "chest": false,
-        "manual": true,
-        "art": ""
-      },
       "ember-city-well": {
         "model3d": "prop",
         "exitKind": null,
@@ -217253,7 +217200,6 @@
       "ember-winter-snowy-pine",
       "ember-winter-frost-dead-tree",
       "ember-winter-snow-fallen-log",
-      "ember-winter-snow-boulder",
       "ember-city-well",
       "ember-city-market-stall",
       "ember-city-street-lamp",

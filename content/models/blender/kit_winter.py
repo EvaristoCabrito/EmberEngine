@@ -61,14 +61,9 @@ def snow_fallen_log():
     return o
 
 
-def snow_boulder():
-    return kit_forest.moss_boulder(seed=14, snow=True)
-
-
 if __name__ == '__main__':
     run('winter', [
         ('snowy-pine', snowy_pine),
         ('frost-dead-tree', frost_dead_tree),
         ('snow-fallen-log', snow_fallen_log),
-        ('snow-boulder', snow_boulder),
     ])

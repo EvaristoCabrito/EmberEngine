@@ -5,6 +5,9 @@
   ember-dungeon-broken-arch  "Arco de pedra quebrado 3D" (the user, 2026-11-05: a list of 3D props "que não quero aparecer em nenhum
                outro lugar do mapa"; also scrubbed from content/models/models.json and every map in content/maps/ember that placed it;
                the GLB stays in content/models, unused)
+  ember-winter-snow-boulder  "Rochedo nevado 3D" (the user, 2026-11-05: "pode apagar de tudo onde aparecer e de todos arquivos do
+               jogo"): out of the catalog, models.json, every map, kit_winter.py and make_cemetery_v2.py; its GLB, .blend and
+               thumbnail deleted (git history keeps them)
 
 Maps too: python -I tools/scripts/data/removed_decorations.py content/maps/ember/<map>.json ... drops every decoration naming a
 removed id (the map's other entries untouched).
@@ -26,6 +29,7 @@ REMOVED = {
     'prop-3d-vau-stone-v01',
     'prop-3d-vau-well-v01',
     'ember-dungeon-broken-arch',
+    'ember-winter-snow-boulder',
 }
 FILES = ['content/data/editor-catalog.json']
 

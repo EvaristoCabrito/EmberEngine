@@ -314,7 +314,7 @@ connectors = [(d['x'], d['y']) for d in decos if d['id'] in ('floor-connector', 
 
 # the hollow's rim: movement does not climb by height, so the ridge's inner ring is closed by solid
 # rocks and dead trees; the cleft is the only way down
-RIM = ['ember-winter-snow-boulder', 'ember-frost-ice-cracked-rocks', 'ember-winter-frost-dead-tree',
+RIM = ['ember-frost-ice-cracked-rocks', 'ember-winter-frost-dead-tree',
        'ember-forest-dead-tree', 'wilds-thorn-bramble', 'dead-tree', 'wilds-twisted-tree']
 rim_cells = sorted((p for p in cells() if 5.2 < math.hypot(wx(*p) - lx, wz(p[1]) - lz) <= 7.0 and p not in cleft),
                    key=lambda p: math.atan2(wz(p[1]) - lz, wx(*p) - lx))
@@ -429,14 +429,14 @@ for (c, r) in cells():
     else:
         place(rng.choice(UNDER), c, r)
 for c, r in [(18, 38), (44, 26), (12, 22), (52, 44), (40, 20)]:
-    place(rng.choice(['ember-winter-snow-fallen-log', 'ember-nature-rotten-fallen-log', 'ember-winter-snow-boulder']), c, r)
+    place(rng.choice(['ember-winter-snow-fallen-log', 'ember-nature-rotten-fallen-log']), c, r)
 
 # snow drifts and frozen things by the pond, rocks on the hills
 for c, r in [(46, 42), (54, 38), (47, 36)]:
     place(rng.choice(['ember-frost-snow-drift', 'ember-frost-ice-cracked-rocks']), c, r)
 for (c, r) in cells():
     if tiles[(c, r)] == 'hill' and rng.random() < 0.05:
-        place(rng.choice(['ember-nature-lichen-rocks', 'ember-forest-rock-cluster', 'ember-winter-snow-boulder']), c, r)
+        place(rng.choice(['ember-nature-lichen-rocks', 'ember-forest-rock-cluster']), c, r)
 
 # --- the Birolho's hollow -------------------------------------------------------------------------------------------
 place('ember-dungeon-iron-cage', 10, 11)

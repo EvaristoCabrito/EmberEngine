@@ -8782,12 +8782,6 @@
         "blocksPath": true
       },
       {
-        "id": "ember-winter-snow-boulder",
-        "x": 11,
-        "y": 15,
-        "blocksPath": true
-      },
-      {
         "id": "ember-frost-ice-cracked-rocks",
         "x": 11,
         "y": 16,
@@ -8819,13 +8813,6 @@
         "x": 7,
         "y": 17,
         "rot": 5,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-winter-snow-boulder",
-        "x": 6,
-        "y": 16,
-        "rot": 4,
         "blocksPath": true
       },
       {
@@ -10132,12 +10119,6 @@
         "blocksPath": true
       },
       {
-        "id": "ember-winter-snow-boulder",
-        "x": 40,
-        "y": 20,
-        "blocksPath": true
-      },
-      {
         "id": "ember-frost-ice-cracked-rocks",
         "x": 46,
         "y": 42,
@@ -10171,30 +10152,6 @@
         "id": "ember-forest-rock-cluster",
         "x": 43,
         "y": 1,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-winter-snow-boulder",
-        "x": 11,
-        "y": 2,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-winter-snow-boulder",
-        "x": 39,
-        "y": 2,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-winter-snow-boulder",
-        "x": 49,
-        "y": 2,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-winter-snow-boulder",
-        "x": 53,
-        "y": 3,
         "blocksPath": true
       },
       {
@@ -10246,27 +10203,9 @@
         "blocksPath": true
       },
       {
-        "id": "ember-winter-snow-boulder",
-        "x": 55,
-        "y": 7,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-winter-snow-boulder",
-        "x": 24,
-        "y": 11,
-        "blocksPath": true
-      },
-      {
         "id": "ember-forest-rock-cluster",
         "x": 56,
         "y": 12,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-winter-snow-boulder",
-        "x": 36,
-        "y": 13,
         "blocksPath": true
       },
       {
@@ -10282,12 +10221,6 @@
         "blocksPath": true
       },
       {
-        "id": "ember-winter-snow-boulder",
-        "x": 25,
-        "y": 14,
-        "blocksPath": true
-      },
-      {
         "id": "ember-forest-rock-cluster",
         "x": 35,
         "y": 18,
@@ -10300,12 +10233,6 @@
         "blocksPath": true
       },
       {
-        "id": "ember-winter-snow-boulder",
-        "x": 3,
-        "y": 19,
-        "blocksPath": true
-      },
-      {
         "id": "ember-forest-rock-cluster",
         "x": 1,
         "y": 20,
@@ -10315,24 +10242,6 @@
         "id": "ember-nature-lichen-rocks",
         "x": 3,
         "y": 23,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-winter-snow-boulder",
-        "x": 21,
-        "y": 23,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-winter-snow-boulder",
-        "x": 30,
-        "y": 24,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-winter-snow-boulder",
-        "x": 34,
-        "y": 24,
         "blocksPath": true
       },
       {
@@ -10360,12 +10269,6 @@
         "blocksPath": true
       },
       {
-        "id": "ember-winter-snow-boulder",
-        "x": 4,
-        "y": 28,
-        "blocksPath": true
-      },
-      {
         "id": "ember-nature-lichen-rocks",
         "x": 39,
         "y": 28,
@@ -10384,20 +10287,8 @@
         "blocksPath": true
       },
       {
-        "id": "ember-winter-snow-boulder",
-        "x": 56,
-        "y": 33,
-        "blocksPath": true
-      },
-      {
         "id": "ember-forest-rock-cluster",
         "x": 1,
-        "y": 35,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-winter-snow-boulder",
-        "x": 3,
         "y": 35,
         "blocksPath": true
       },
