@@ -8988,11 +8988,6 @@
         "y": 41
       },
       {
-        "id": "ember-wisp-revisited-roots-and-fungi",
-        "x": 5,
-        "y": 41
-      },
-      {
         "id": "ember-wisp-revisited-rotted-hollow-log-v02",
         "x": 16,
         "y": 34
@@ -9026,11 +9021,6 @@
         "id": "wilds-exposed-roots",
         "x": 55,
         "y": 31
-      },
-      {
-        "id": "ember-wisp-revisited-roots-and-fungi",
-        "x": 30,
-        "y": 34
       },
       {
         "id": "ember-polyhaven-rock-moss-set-01-rock03",
@@ -10367,12 +10357,6 @@
         "id": "wilds-mossy-charred-log",
         "x": 14,
         "y": 17,
-        "blocksPath": false
-      },
-      {
-        "id": "ember-wisp-revisited-roots-and-fungi",
-        "x": 24,
-        "y": 16,
         "blocksPath": false
       },
       {

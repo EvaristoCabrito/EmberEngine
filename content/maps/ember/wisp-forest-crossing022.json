@@ -4954,12 +4954,6 @@
         "rot": 3
       },
       {
-        "id": "ember-wisp-revisited-roots-and-fungi",
-        "x": 15,
-        "y": 7,
-        "rot": 1
-      },
-      {
         "id": "ember-polyhaven-grass-medium-01-large-a",
         "x": 20,
         "y": 6,
@@ -4969,12 +4963,6 @@
         "id": "ember-polyhaven-grass-medium-01-tall-a",
         "x": 35,
         "y": 16,
-        "rot": 4
-      },
-      {
-        "id": "ember-wisp-revisited-roots-and-fungi",
-        "x": 15,
-        "y": 2,
         "rot": 4
       },
       {
@@ -5006,12 +4994,6 @@
         "x": 6,
         "y": 20,
         "rot": 4
-      },
-      {
-        "id": "ember-wisp-revisited-roots-and-fungi",
-        "x": 4,
-        "y": 21,
-        "rot": 3
       },
       {
         "id": "ember-polyhaven-grass-medium-01-tall-a",
@@ -5176,12 +5158,6 @@
         "rot": 4
       },
       {
-        "id": "ember-wisp-revisited-roots-and-fungi",
-        "x": 12,
-        "y": 27,
-        "rot": 1
-      },
-      {
         "id": "ember-polyhaven-fern-02-c",
         "x": 25,
         "y": 22,
@@ -5206,21 +5182,9 @@
         "rot": 4
       },
       {
-        "id": "ember-wisp-revisited-roots-and-fungi",
-        "x": 8,
-        "y": 27,
-        "rot": 2
-      },
-      {
         "id": "ember-polyhaven-fern-02-b",
         "x": 11,
         "y": 27,
-        "rot": 3
-      },
-      {
-        "id": "ember-wisp-revisited-roots-and-fungi",
-        "x": 25,
-        "y": 23,
         "rot": 3
       },
       {
@@ -5234,18 +5198,6 @@
         "x": 7,
         "y": 27,
         "rot": 4
-      },
-      {
-        "id": "ember-wisp-revisited-roots-and-fungi",
-        "x": 11,
-        "y": 25,
-        "rot": 1
-      },
-      {
-        "id": "ember-wisp-revisited-roots-and-fungi",
-        "x": 25,
-        "y": 20,
-        "rot": 2
       },
       {
         "id": "ember-polyhaven-fern-02-b",

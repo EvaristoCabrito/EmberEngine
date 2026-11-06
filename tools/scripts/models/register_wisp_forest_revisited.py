@@ -23,7 +23,6 @@ ASSETS = [
     ('ash-leaf-tile', 'Tile 3D de cinza e folhas · Wisp', 'Tiles do chão · Wisp Forest', False),
     ('broken-stump', 'Toco partido e enraizado 3D · Wisp', 'Natureza · Wisp Forest', True),
     ('rotted-hollow-log', 'Tronco oco em decomposição 3D · Wisp', 'Natureza · Wisp Forest', True),
-    ('roots-and-fungi', 'Raízes com fungos silvestres 3D · Wisp', 'Natureza · Wisp Forest', False),
 ]
 
 

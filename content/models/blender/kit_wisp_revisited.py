@@ -187,17 +187,6 @@ def _log(mats, seed=42):
     ob=join(parts,'rotted-hollow-log'); ground(ob); box_uv(ob,1.5); smooth(ob,55); return ob
 
 
-def _mushrooms(mats, seed=43):
-    rng=random.Random(seed); b=mats['bark']; parts=[]
-    # A rooted dead-branch cluster with small photographic pale mushroom caps.
-    for i in range(4):
-        x=rng.uniform(-.55,.55); y=rng.uniform(-.5,.5); h=rng.uniform(.22,.44)
-        stem=cylinder('mushroom-stem',.045,.035,h,loc=(x,y,h/2),segs=7,mat=b); parts.append(stem)
-        cap=sphere('muted-fungus-cap',rng.uniform(.12,.20),(x,y,h),subdiv=2,mat=material('pale fungus',flat=(.35,.31,.26),roughness=.82),scale=(1.0,1.0,.42)); parts.append(cap)
-    root=cylinder('mossless-root-base',.78,.7,.07,loc=(0,0,.035),segs=9,mat=mats['root']); parts.append(root)
-    ob=join(parts,'roots-and-fungi'); ground(ob); box_uv(ob,1.1); smooth(ob,55); return ob
-
-
 def build():
     mats=_materials()
     recipes=[
@@ -216,7 +205,7 @@ def build():
     for name,key in [('leaf-litter-tile','floor'),('rooted-soil-tile','root'),('ash-leaf-tile','ash')]:
         if not os.path.exists(f'{ROOT}/{KIT}/{name}-v01.glb'):
             reset(); mats=_materials(); obj=_ground_tile(mats,name,key); print('[ok] tile',name,export(obj,KIT,name,'v01'))
-    for name,builder in [('broken-stump',_stump),('rotted-hollow-log',_log),('roots-and-fungi',_mushrooms)]:
+    for name,builder in [('broken-stump',_stump),('rotted-hollow-log',_log)]:
         if not os.path.exists(f'{ROOT}/{KIT}/{name}-v01.glb'):
             reset(); mats=_materials(); obj=builder(mats); print('[ok] prop',name,export(obj,KIT,name,'v01'))
 

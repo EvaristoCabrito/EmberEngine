@@ -15288,34 +15288,6 @@
       "lockYaw": false,
       "nudge": 0
     },
-    "ember-wisp-revisited-roots-and-fungi": {
-      "name": "Raízes com fungos silvestres 3D · Wisp",
-      "footprint": [
-        {
-          "dx": 0,
-          "dy": 0
-        }
-      ],
-      "blockingFootprint": null,
-      "architectureSpan": false,
-      "architecture": false,
-      "model3d": "prop",
-      "model": {
-        "model": "roots-and-fungi",
-        "file": "/game/ember/wisp-forest-revisited/roots-and-fungi-v01.glb",
-        "height": 0.387
-      },
-      "mirrorAlternate": false,
-      "exitKind": null,
-      "size": {
-        "w": 1.536,
-        "h": 0.387
-      },
-      "light": null,
-      "standOn": false,
-      "lockYaw": false,
-      "nudge": 0
-    },
     "ember-wisp-revisited-weeping-willow-v02": {
       "name": "Salgueiro morto pendente 3D",
       "footprint": [
@@ -19196,34 +19168,6 @@
       "size": {
         "w": 1.093,
         "h": 1.348
-      },
-      "light": null,
-      "standOn": false,
-      "lockYaw": false,
-      "nudge": 0
-    },
-    "ember-polyhaven-wooden-barrels-01-barrel02": {
-      "name": "Barril de madeira B 3D",
-      "footprint": [
-        {
-          "dx": 0,
-          "dy": 0
-        }
-      ],
-      "blockingFootprint": null,
-      "architectureSpan": false,
-      "architecture": false,
-      "model3d": "prop",
-      "model": {
-        "model": "ember-wooden-barrels-01-barrel02",
-        "file": "/game/ember/polyhaven/wooden_barrels_01_barrel02-v01.glb",
-        "height": 1.353
-      },
-      "mirrorAlternate": false,
-      "exitKind": null,
-      "size": {
-        "w": 1.093,
-        "h": 1.353
       },
       "light": null,
       "standOn": false,
@@ -202523,12 +202467,6 @@
         "thumb": "",
         "blocksByDefault": true
       },
-      "ember-wisp-revisited-roots-and-fungi": {
-        "section": "Natureza · Wisp Forest",
-        "tile": null,
-        "thumb": "",
-        "blocksByDefault": false
-      },
       "ember-wisp-revisited-weeping-willow-v02": {
         "section": "Natureza · Wisp Forest",
         "tile": null,
@@ -203286,12 +203224,6 @@
         "blocksByDefault": false
       },
       "ember-polyhaven-wooden-barrels-01-barrel01": {
-        "section": "Objetos",
-        "tile": null,
-        "thumb": "",
-        "blocksByDefault": false
-      },
-      "ember-polyhaven-wooden-barrels-01-barrel02": {
         "section": "Objetos",
         "tile": null,
         "thumb": "",
@@ -213799,21 +213731,6 @@
         "manual": true,
         "art": ""
       },
-      "ember-wisp-revisited-roots-and-fungi": {
-        "model3d": "prop",
-        "exitKind": null,
-        "props3d": true,
-        "rockStyle": false,
-        "thickWall": false,
-        "doorStyle": null,
-        "wallTexture": null,
-        "solidHouse": false,
-        "solidCart": false,
-        "solidRock": false,
-        "chest": false,
-        "manual": true,
-        "art": ""
-      },
       "ember-wisp-revisited-weeping-willow-v02": {
         "model3d": "prop",
         "exitKind": null,
@@ -215719,21 +215636,6 @@
         "manual": true,
         "art": ""
       },
-      "ember-polyhaven-wooden-barrels-01-barrel02": {
-        "model3d": "prop",
-        "exitKind": null,
-        "props3d": true,
-        "rockStyle": false,
-        "thickWall": false,
-        "doorStyle": null,
-        "wallTexture": null,
-        "solidHouse": false,
-        "solidCart": false,
-        "solidRock": false,
-        "chest": false,
-        "manual": true,
-        "art": ""
-      },
       "ember-polyhaven-wooden-barrels-01": {
         "model3d": "prop",
         "exitKind": null,
@@ -217265,7 +217167,6 @@
       "ember-wisp-revisited-ash-leaf-tile",
       "ember-wisp-revisited-broken-stump",
       "ember-wisp-revisited-rotted-hollow-log",
-      "ember-wisp-revisited-roots-and-fungi",
       "ember-wisp-revisited-weeping-willow-v02",
       "ember-wisp-revisited-giant-dead-oak-v02",
       "ember-wisp-revisited-hollow-snag-v02",
@@ -217393,7 +217294,6 @@
       "ember-polyhaven-wine-barrel-01",
       "ember-polyhaven-wooden-bucket-02",
       "ember-polyhaven-wooden-barrels-01-barrel01",
-      "ember-polyhaven-wooden-barrels-01-barrel02",
       "ember-polyhaven-wooden-barrels-01",
       "ember-polyhaven-cannon-01",
       "ember-polyhaven-wooden-lantern-01",

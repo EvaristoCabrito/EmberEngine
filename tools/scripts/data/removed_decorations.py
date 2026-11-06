@@ -8,6 +8,11 @@
   ember-winter-snow-boulder  "Rochedo nevado 3D" (the user, 2026-11-05: "pode apagar de tudo onde aparecer e de todos arquivos do
                jogo"): out of the catalog, models.json, every map, kit_winter.py and make_cemetery_v2.py; its GLB, .blend and
                thumbnail deleted (git history keeps them)
+  ember-polyhaven-wooden-barrels-01-barrel02  "Barril de madeira B 3D" (the user, 2026-11-05: "barril de madeira só precisa de 1":
+               A stays); on no map; its GLB and thumbnail deleted
+  ember-wisp-revisited-roots-and-fungi  "Raízes com fungos silvestres 3D · Wisp" (the user, 2026-11-05: "pode apagar raízes com
+               fungos"): out of 11 wisp-forest / deep-ashen-forest maps, kit_wisp_revisited.py and register_wisp_forest_revisited.py;
+               its GLBs, .blend and thumbnail deleted. Older map generators still name it: the game skips it (not in the catalog)
 
 Maps too: python -I tools/scripts/data/removed_decorations.py content/maps/ember/<map>.json ... drops every decoration naming a
 removed id (the map's other entries untouched).
@@ -30,6 +35,8 @@ REMOVED = {
     'prop-3d-vau-well-v01',
     'ember-dungeon-broken-arch',
     'ember-winter-snow-boulder',
+    'ember-polyhaven-wooden-barrels-01-barrel02',
+    'ember-wisp-revisited-roots-and-fungi',
 }
 FILES = ['content/data/editor-catalog.json']
 

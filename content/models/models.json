@@ -888,19 +888,6 @@
       "triangles": 156
     },
     {
-      "id": "ember-wisp-revisited-roots-and-fungi",
-      "name": "Raízes com fungos silvestres 3D · Wisp",
-      "kit": "wisp-forest-revisited",
-      "model": "roots-and-fungi",
-      "file": "/game/ember/wisp-forest-revisited/roots-and-fungi-v01.glb",
-      "height": 0.387,
-      "width": 1.536,
-      "footprint": "one",
-      "section": "Natureza · Wisp Forest",
-      "blocks": false,
-      "triangles": 448
-    },
-    {
       "id": "ember-wisp-revisited-weeping-willow-v02",
       "name": "Salgueiro morto pendente 3D",
       "kit": "wisp-forest-revisited",
@@ -2558,19 +2545,6 @@
       "section": "Objetos",
       "blocks": false,
       "triangles": 11184
-    },
-    {
-      "id": "ember-polyhaven-wooden-barrels-01-barrel02",
-      "name": "Barril de madeira B 3D",
-      "kit": "polyhaven",
-      "model": "ember-wooden-barrels-01-barrel02",
-      "file": "/game/ember/polyhaven/wooden_barrels_01_barrel02-v01.glb",
-      "height": 1.353,
-      "width": 1.093,
-      "footprint": "one",
-      "section": "Objetos",
-      "blocks": false,
-      "triangles": 11278
     },
     {
       "id": "ember-polyhaven-wooden-barrels-01",
