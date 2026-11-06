@@ -410,6 +410,7 @@ std::span<const FogLook> fogLooks() {
       {"007", "fog_look007", "swirl round the party on mist4's real values, fog-of-war coverage - not yet seen", FogNoise::WhiteLattice, sizeof(Look005Frame), writeLook007},
       {"008", "fog_look008", "003 thinning away near the camera (no veil when the camera comes close)", FogNoise::SoftFbm, sizeof(Look008Frame), writeLook008},
       {"009", "fog_look009", "008 with the background left clear: no mist over the sky or the painting (the user: the sky on every outdoor map)", FogNoise::SoftFbm, sizeof(Look008Frame), writeLook008},
+      {"011", "fog_look011", "009 in grey: never darker than the fog of war's grey, no dark edge (the user, 2026-11-06: \"cinza normal\")", FogNoise::SoftFbm, sizeof(Look008Frame), writeLook008},
       {"010", "fog_look010", "the gorge's wind fog outside the bridge walls (A Ponte de Pedra 023) - not yet seen", FogNoise::SoftFbm, sizeof(Look010Frame), writeLook010, false},
   };
   return looks;

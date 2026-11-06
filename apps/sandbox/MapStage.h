@@ -155,7 +155,7 @@ struct MapStageOptions {
   // Volumetric fog (R7's literal fog, shaders/volume.hlsl): on unless switched off (--volume 0).
   bool volume = true;
   bool airParticles = true;  // the map's wisps and dust motes (Dev Controls "Efeitos atmosféricos" off: none)
-  int fogLook = 8;  // the fog look shown first (render/FogLooks.h numbers): 008 = 003 without the veil up close
+  int fogLook = 11;  // the fog look shown first (render/FogLooks.h numbers): 011 = 009 in grey (the user, 2026-11-06: "cinza normal")
   int cardStance = 1;  // the panel's "Cards" at the start: 0 em pé (vertical), 1 para a câmera (--cards N)
   int barsFade = 1;    // the panel's "Vida perto" at the start: 0 OFF, 1 bars near the camera fade (--bars-fade N)
   int actionCamera = 1;  // the panel's "Câmera de ação" at the start: 0 OFF, 1 cinema (--action-camera N)
@@ -1314,7 +1314,7 @@ class MapStage final : public Stage {
       }
     }
     renderer.setFogOfWar(fogReady_ && !noFog_ ? &fogMask_ : nullptr, maskVersion_, &fogTexels_);
-    renderer.setFogGrey(fogColour_ == 1 ? kFogGrey : 0.0f);
+    renderer.setFogGrey(kFogGrey);
     Renderer::VolumetricFog volume;
     // The froxel haze belongs to the old lighting (mode 0, where every saved fog look was captured); under the
     // brighter physical light it reads as a milky veil (2026-10-15), so it stays off there.
@@ -2132,8 +2132,6 @@ class MapStage final : public Stage {
         noFog_ = look == 0;
         if (!noFog_) fogLook_ = static_cast<uint32_t>(look - 1);
       }
-      // The fog of war's colour (the user, 2026-11-06): cinza (default) or preta, the old look.
-      dropdown("Névoa de guerra", fogColour_, 2, [](int i) { return std::string(i == 0 ? "preta" : "cinza"); });
     }
     ImGui::PopItemWidth();
     ImGui::PopFont();
@@ -12858,9 +12856,8 @@ class MapStage final : public Stage {
   bool holesLogged_ = false;
   uint32_t hiddenUnits_ = 0;
   bool noFog_ = false;  // "sem névoa" in the panel: no mist and no fog of war (sight still runs underneath)
-  // "Névoa de guerra" (the user, 2026-11-06: "mudar a cor dessa fog para cinza porque o preto faz os detalhes dos cortes dos cards
-  // aparecerem muito mais"): 1 cinza (default), 0 preta (what was out of sight before: darkened to black).
-  int fogColour_ = 1;
+  // The fog of war is grey, always (the user, 2026-11-06: "mudar a cor dessa fog para cinza", then of the black: "não vai ter nem
+  // acesso a essa merda"): no choice, the black is gone.
   static constexpr float kFogGrey = 0.06f;  // exposed linear radiance the fog fades towards (~20 % grey on screen at full fog)
   bool moonOff_ = false, starsOff_ = false;  // "sem lua no céu" / "sem estrelas" in the panel
   double lastFogMs_ = 0.0;
