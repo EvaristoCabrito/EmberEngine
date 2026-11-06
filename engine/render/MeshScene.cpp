@@ -362,7 +362,13 @@ void MeshScene::updateTexture(Texture& texture) {
     }
     // Loads can arrive several frames after admission; recheck actual headroom
     // before allocating, including other geometry and texture transfers.
-    if (freeGpuBytes() < bytesAt(texture, texture.target) + (texture.target < texture.baseSkip ? (64ull << 20) : 0ull)) return;
+    // The base (largest mip <= kBaseSize, ~85 KB) is always resident, whatever the budget says: waiting for free memory left
+    // every 3D object without its texture when the sprites had claimed the whole budget (the user, 2026-11-05: white trees
+    // on the Wisp Forest Crossing; measured: 9 of 67 textures uploaded with the sprites at 2299 of 2321 MB).
+    if (texture.target < texture.baseSkip && freeGpuBytes() < bytesAt(texture, texture.target) + (64ull << 20)) {
+      if (texture.skip != UINT32_MAX) return;  // a resize: the resident image stays until there is room
+      texture.target = texture.baseSkip;       // nothing resident yet: the base now, the larger size later
+    }
     startUpload(texture, bytes, texture.target);
     return;
   }
