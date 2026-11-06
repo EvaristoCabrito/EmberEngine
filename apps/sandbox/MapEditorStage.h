@@ -241,7 +241,15 @@ class MapEditorStage : public Stage {
       logInfo("map editor: {} saved maps; CityHubs: {}", saved_.size(), hubs);
       const std::vector<MapRef> campaignList = campaignRefs();
       const size_t randomInCampaign = static_cast<size_t>(std::count_if(campaignList.begin(), campaignList.end(), [&](const MapRef& m) { return isRandomEncounter(m.id); }));
-      logInfo("map editor: Mapa da campanha {} maps ({} random); Random encounters {} maps", campaignList.size(), randomInCampaign, randomRefs().size());
+      size_t placedNowhere = 0;
+      {
+        const std::set<std::string> campaign = campaignIds();
+        std::set<std::string> hubIds;
+        for (const MapRef& h : cityHubs()) hubIds.insert(h.id);
+        for (const auto& [id, s] : saved_) placedNowhere += !campaign.contains(id) && !isRandomEncounter(id) && !hubIds.contains(id) && !s.hub;
+      }
+      logInfo("map editor: Mapa da campanha {} maps ({} random); Random encounters {} maps; Mapa salvo {} maps", campaignList.size(), randomInCampaign, randomRefs().size(), placedNowhere);
+      for (const MapRef& m : campaignList) logInfo("map editor:   campanha {} ({})", m.id, m.title);
     }
     // The preview follows the draft a moment after the last edit (Ember setPreviewMission).
     const auto now = std::chrono::steady_clock::now();
@@ -1804,14 +1812,20 @@ class MapEditorStage : public Stage {
       return mapTitleBefore(a.title, b.title) || (!mapTitleBefore(b.title, a.title) && a.id < b.id);
     });
   }
+  // Every map placed in a Local of the campaign (the user, 2026-11-05: "campaign maps lists all maps that are in the campaign
+  // meaning locais"): each location's missions and its floors (submaps: the crypt's, the cave's levels).
   std::set<std::string> campaignIds() const {
     std::set<std::string> ids;
+    std::map<std::string, std::vector<ember::LocaisFloor>> floors = locais_.defaultSubmaps;
+    for (const auto& [loc, list] : locais_.submaps) floors[loc] = list;
     for (const std::string& loc : locais_.locationOrder) {
       const auto it = order_.find(loc);
       if (it != order_.end()) ids.insert(it->second.begin(), it->second.end());
       else
         for (const ember::Locais::Base& b : locais_.base)
           if (b.id == loc) ids.insert(b.missionIds.begin(), b.missionIds.end());
+      if (const auto f = floors.find(loc); f != floors.end())
+        for (const ember::LocaisFloor& floor : f->second) ids.insert(floor.missionId);
     }
     return ids;
   }
@@ -2414,11 +2428,16 @@ class MapEditorStage : public Stage {
       jump.end();
       ImGui::EndCombo();
     }
-    // Abrir mapa salvo: reserve maps only (campaign maps are in the picker above), the newest save of each.
+    // Abrir mapa salvo: the maps placed nowhere (the user: "saved maps are additional maps not placed anywhere"): not in a Local,
+    // not a random encounter, not a hub or its floor. The newest save of each.
     const std::set<std::string> campaign = campaignIds();
     std::vector<const Scenario*> pickable;
-    for (const auto& [id, s] : saved_)
-      if (!campaign.contains(id) && !isRandomEncounter(id)) pickable.push_back(&s);
+    {
+      std::set<std::string> hubIds;
+      for (const MapRef& h : cityHubs()) hubIds.insert(h.id);
+      for (const auto& [id, s] : saved_)
+        if (!campaign.contains(id) && !isRandomEncounter(id) && !hubIds.contains(id) && !s.hub) pickable.push_back(&s);
+    }
     std::sort(pickable.begin(), pickable.end(), [](const Scenario* a, const Scenario* b) {
       return mapTitleBefore(a->title, b->title) || (!mapTitleBefore(b->title, a->title) && a->id < b->id);
     });
