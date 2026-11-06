@@ -37,7 +37,9 @@ std::optional<CutsceneScript> CutsceneScript::parse(const Json& j, std::string* 
     const std::string unit = a.is_object() ? a.value("unit", "") : a.is_string() ? a.get<std::string>() : "";
     if (unit.empty()) return refuse("actor \"" + name + "\" names no unit");
     s.actors[name] = unit;
+    if (a.is_object() && a.value("offstage", false)) s.offstage.insert(name);
   }
+  s.cameraOnActors = j.value("camera", "") == "actors";
   const auto steps = j.find("steps");
   if (steps == j.end() || !steps->is_array()) return refuse("no \"steps\" array");
   if (steps->empty()) return refuse("\"steps\" is empty");
@@ -53,8 +55,8 @@ std::optional<CutsceneScript> CutsceneScript::parse(const Json& j, std::string* 
       if (!s.actors.contains(out)) return std::format("{}: unknown actor \"{}\"", at, out);
       return std::nullopt;
     };
-    if (kind == "move") {
-      step.kind = CutsceneStep::Kind::Move;
+    if (kind == "move" || kind == "enter") {
+      step.kind = kind == "move" ? CutsceneStep::Kind::Move : CutsceneStep::Kind::Enter;
       if (const auto e = actorOf("actor", step.actor)) return refuse(*e);
       const auto to = st.find("to");
       if (to == st.end() || !to->is_array() || to->size() != 2 || !(*to)[0].is_number_integer() || !(*to)[1].is_number_integer())
@@ -89,7 +91,7 @@ std::optional<CutsceneScript> CutsceneScript::parse(const Json& j, std::string* 
       step.seconds = sec->get<float>();
       if (!std::isfinite(step.seconds) || step.seconds < 0.0f || step.seconds > 600.0f) return refuse(at + ": \"seconds\" out of range (0..600)");
     } else {
-      return refuse(at + ": unknown action \"" + kind + "\" (move, face, say, wait)");
+      return refuse(at + ": unknown action \"" + kind + "\" (move, face, say, wait, enter)");
     }
     s.steps.push_back(std::move(step));
   }

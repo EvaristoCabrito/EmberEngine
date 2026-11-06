@@ -1,0 +1,862 @@
+{
+  "format": "ember-cutscene-1",
+  "id": "estranhos-na-costa",
+  "camera": "actors",
+  "_note": "Estranhos na Costa (the user's script, 2026-11-06): plays when Kael's first fight on the Vau is won, before the result screen, on the empty south-east of the map. Neera and Voss wait off the board until their 'enter' step; the campaign recruits them with the Vau's victory (overworld joinIndex 1).",
+  "actors": {
+    "kael": {
+      "unit": "Kael"
+    },
+    "neera": {
+      "unit": "Neera",
+      "offstage": true
+    },
+    "voss": {
+      "unit": "Voss",
+      "offstage": true
+    }
+  },
+  "steps": [
+    {
+      "do": "wait",
+      "seconds": 1.0
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        16,
+        12
+      ]
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "direction": "nw"
+    },
+    {
+      "do": "wait",
+      "seconds": 1.2
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Desgraçados.",
+      "translations": {
+        "en": "Bastards."
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 0.8
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Todos eles, até o último.",
+      "translations": {
+        "en": "Every last one of them."
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 0.8
+    },
+    {
+      "do": "enter",
+      "actor": "neera",
+      "to": [
+        13,
+        13
+      ]
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "toward": "neera"
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Apareça.",
+      "translations": {
+        "en": "Show yourself."
+      }
+    },
+    {
+      "do": "move",
+      "actor": "neera",
+      "to": [
+        14,
+        13
+      ]
+    },
+    {
+      "do": "face",
+      "actor": "neera",
+      "toward": "kael"
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Calma. Não estou procurando briga.",
+      "translations": {
+        "en": "Easy. I'm not looking for a fight."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Então mantenha distância.",
+      "translations": {
+        "en": "Then keep your distance."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Justo.",
+      "translations": {
+        "en": "Fair enough."
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 0.6
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Parece que você já brigou o bastante por um dia.",
+      "translations": {
+        "en": "Looks like you've had quite enough fighting for one day."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "O que você quer?",
+      "translations": {
+        "en": "What do you want?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Eu vi o que aconteceu. Achei que você ia precisar de uma mão.",
+      "translations": {
+        "en": "I saw what happened. Thought you might need a hand."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Chegou um pouco tarde.",
+      "translations": {
+        "en": "You're a little late."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Pelo visto.",
+      "translations": {
+        "en": "Apparently."
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 0.6
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Mãos onde eu possa ver.",
+      "translations": {
+        "en": "Hands where I can see them."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Ah, pelo amor dos céus. É uma poção de cura.",
+      "translations": {
+        "en": "Oh, for heaven's sake. It's a healing potion."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Viu? Perfeitamente inofensiva. A não ser que você seja alérgico a continuar vivo.",
+      "translations": {
+        "en": "See? Perfectly harmless. Unless you're allergic to being alive."
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 0.8
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Por quê?",
+      "translations": {
+        "en": "Why?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Por que o quê?",
+      "translations": {
+        "en": "Why what?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Por que me dar isso?",
+      "translations": {
+        "en": "Why give it to me?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Porque você está sangrando.",
+      "translations": {
+        "en": "Because you're bleeding."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Isso não é resposta.",
+      "translations": {
+        "en": "That's not an answer."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "É a única que eu tenho.",
+      "translations": {
+        "en": "It's the only one I've got."
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 0.5
+    },
+    {
+      "do": "enter",
+      "actor": "voss",
+      "to": [
+        18,
+        9
+      ]
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "Se já terminaram, deveríamos ir embora.",
+      "translations": {
+        "en": "If you're quite finished, we should be leaving."
+      }
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "toward": "voss"
+    },
+    {
+      "do": "face",
+      "actor": "neera",
+      "toward": "voss"
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "E quem diabos é você?",
+      "translations": {
+        "en": "And who the hell are you?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "Alguém que prefere não estar aqui quando a próxima patrulha chegar.",
+      "translations": {
+        "en": "Someone who would prefer not to be here when the next patrol arrives."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Você estava nos observando?",
+      "translations": {
+        "en": "You've been watching us?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "Obviamente.",
+      "translations": {
+        "en": "Obviously."
+      }
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        17,
+        11
+      ]
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "toward": "voss"
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Você acha alguma graça nisso tudo?",
+      "translations": {
+        "en": "You find something amusing about all this?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "Não.",
+      "translations": {
+        "en": "No."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Homens estão mortos. Os navios nos abandonaram. E você fica aí como se nada disso fosse da sua conta.",
+      "translations": {
+        "en": "Men are dead. Ships have abandoned us. And you stand there as though none of it concerns you."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "Preferiria que eu chorasse?",
+      "translations": {
+        "en": "Would you prefer I wept?"
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 0.6
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Muito bem. Será que dá para a gente não se matar por cinco minutos?",
+      "translations": {
+        "en": "All right. Perhaps we could avoid killing each other for five minutes?"
+      }
+    },
+    {
+      "do": "face",
+      "actor": "voss",
+      "direction": "se"
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "A luta vai ter chamado atenção. O que sobreviveu terra adentro virá investigar.",
+      "translations": {
+        "en": "The fighting will have attracted attention. Whatever survived inland will come to investigate."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "E como você saberia disso?",
+      "translations": {
+        "en": "And how would you know that?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "Porque é o que eu faria.",
+      "translations": {
+        "en": "Because that's what I would do."
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 1.2
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Você tem nome?",
+      "translations": {
+        "en": "You have a name?"
+      }
+    },
+    {
+      "do": "face",
+      "actor": "voss",
+      "toward": "kael"
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "Voss.",
+      "translations": {
+        "en": "Voss."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Só Voss?",
+      "translations": {
+        "en": "Just Voss?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "Basta.",
+      "translations": {
+        "en": "That will suffice."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Conveniente.",
+      "translations": {
+        "en": "Convenient."
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 1.0
+    },
+    {
+      "do": "face",
+      "actor": "neera",
+      "toward": "kael"
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Eu sou a Neera, aliás. Já que as apresentações estão indo tão bem.",
+      "translations": {
+        "en": "I'm Neera, by the way. Since introductions seem to be going so wonderfully."
+      }
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "toward": "neera"
+    },
+    {
+      "do": "wait",
+      "seconds": 0.6
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Kael.",
+      "translations": {
+        "en": "Kael."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Pronto. Estamos progredindo.",
+      "translations": {
+        "en": "There. We're making progress."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Tome. Pegue. Você está com cara de quem precisa.",
+      "translations": {
+        "en": "Here. Take it. You look like you could use it."
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 0.8
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Beba primeiro.",
+      "translations": {
+        "en": "You drink it first."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Sério?",
+      "translations": {
+        "en": "Seriously?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Um gole.",
+      "translations": {
+        "en": "A sip."
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 0.8
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Você vai ser uma delícia de companhia de viagem.",
+      "translations": {
+        "en": "You're going to be a delight to travel with."
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 0.8
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Satisfeito?",
+      "translations": {
+        "en": "Satisfied?"
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 1.0
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "De nada.",
+      "translations": {
+        "en": "You're welcome."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Eu não pedi.",
+      "translations": {
+        "en": "I didn't ask for it."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Não. Certamente não pediu.",
+      "translations": {
+        "en": "No. You certainly didn't."
+      }
+    },
+    {
+      "do": "face",
+      "actor": "voss",
+      "direction": "se"
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "Vamos embora, ou ficaremos aqui até o anoitecer?",
+      "translations": {
+        "en": "Are we leaving, or shall we remain here until nightfall?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Ninguém disse que vamos a lugar nenhum juntos.",
+      "translations": {
+        "en": "Nobody said we're going anywhere together."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "Então não vão.",
+      "translations": {
+        "en": "Then don't."
+      }
+    },
+    {
+      "do": "move",
+      "actor": "voss",
+      "to": [
+        20,
+        14
+      ]
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "toward": "voss"
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Desgraçado arrogante.",
+      "translations": {
+        "en": "Arrogant bastard."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Ele tem um certo charme.",
+      "translations": {
+        "en": "He does have a certain charm."
+      }
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "toward": "neera"
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Você conhece ele?",
+      "translations": {
+        "en": "You know him?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Encontrei ele há pouco tempo. É só o que posso te dizer.",
+      "translations": {
+        "en": "Met him a little while ago. That's about all I can tell you."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "E você confia nele?",
+      "translations": {
+        "en": "And you trust him?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Não muito.",
+      "translations": {
+        "en": "Not particularly."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Mesmo assim vai atrás dele?",
+      "translations": {
+        "en": "Yet you're following him?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Ele parece saber para onde está indo.",
+      "translations": {
+        "en": "He seems to know where he's going."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Isso não quer dizer que seja um lugar onde a gente queira estar.",
+      "translations": {
+        "en": "That doesn't mean he's going somewhere we want to be."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "É verdade. Mas os navios foram embora, e eu não estou com vontade de ficar aqui.",
+      "translations": {
+        "en": "True. But the ships are gone, and I don't much fancy staying here."
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 0.6
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Além disso, três têm mais chance do que um. Mesmo que um deles seja um desgraçado insuportável.",
+      "translations": {
+        "en": "Besides, three people have a better chance than one. Even if one of them is an insufferable bastard."
+      }
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "toward": "voss"
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Qual deles?",
+      "translations": {
+        "en": "Which one?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Deixo você decidir.",
+      "translations": {
+        "en": "I'll let you decide."
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 1.2
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Vamos. Precisamos achar abrigo antes de escurecer.",
+      "translations": {
+        "en": "Come on. We should find shelter before dark."
+      }
+    },
+    {
+      "do": "move",
+      "actor": "neera",
+      "to": [
+        18,
+        14
+      ]
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "direction": "nw"
+    },
+    {
+      "do": "wait",
+      "seconds": 1.6
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        16,
+        14
+      ]
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Uma coisa.",
+      "translations": {
+        "en": "One thing."
+      }
+    },
+    {
+      "do": "face",
+      "actor": "neera",
+      "toward": "kael"
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Sim?",
+      "translations": {
+        "en": "Yes?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Se você e o seu amigo tentarem alguma coisa, esse acordo acaba mal.",
+      "translations": {
+        "en": "You and your friend try anything, and this arrangement ends badly."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Entendido.",
+      "translations": {
+        "en": "Understood."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "Um acordo pressupõe que concordamos com alguma coisa.",
+      "translations": {
+        "en": "An arrangement implies we've agreed to something."
+      }
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "toward": "voss"
+    },
+    {
+      "do": "wait",
+      "seconds": 0.6
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Eu realmente não gosto daquele homem.",
+      "translations": {
+        "en": "I really don't like that man."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Percebi.",
+      "translations": {
+        "en": "I gathered."
+      }
+    },
+    {
+      "do": "move",
+      "actor": "voss",
+      "to": [
+        21,
+        15
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "neera",
+      "to": [
+        20,
+        13
+      ]
+    },
+    {
+      "do": "wait",
+      "seconds": 1.0
+    }
+  ]
+}

@@ -10601,8 +10601,8 @@
   },
   "joinIndex": {
    "Kael": 0,
-   "Neera": 0,
-   "Voss": 0,
+   "Neera": 1,
+   "Voss": 1,
    "Salazar": 6,
    "Aldric": null,
    "Malrec": null

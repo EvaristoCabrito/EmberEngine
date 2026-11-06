@@ -39,6 +39,17 @@ the contract both share.
   `translations` follows a dialogue line's convention (`{"en": ...}`, read in Opções' dialogue language); `portrait` names a
   sprite when the speaker's own art is not wanted. The scene goes on when the player dismisses the line.
 - `wait`: seconds on the scene clock; everything keeps animating.
+- `enter` (2026-11-06, Estranhos na Costa): `{"do": "enter", "actor": "B", "to": [x, y]}`. An actor declared
+  `{"unit": "Neera", "offstage": true}` waits off the board from the map's opening: a unit of that name that is not of the party is
+  kept out of the fight (not drawn, no turn, blocks nothing, nothing in the save; MapStage `sendOffstage` reads the map's onOpen /
+  onVictory scenes) and `enter` puts it on the hex (the nearest free one within 3 if taken), fading in over 0.8 s. A party hero of
+  that name (Modo teste seats everyone) is never sent off: its `enter` walks it there like `move`. Map Editor: "Entrar" and the
+  actor's "fora do tabuleiro".
+- `"camera": "actors"` (top level, optional): while the scene plays the camera's pivot glides to the middle of the actors standing on
+  the board (zoom, turn and tilt stay the player's). Scenes without it leave the camera alone, as before.
+
+The first scene that uses both: `estranhos-na-costa` (the Vau's victory: Kael fights alone, then Neera and Voss come in on the
+empty south-east of the map; the campaign recruits them with the Vau's victory, overworld `joinIndex` 1 for both).
 
 Validation (`world/CutsceneScript.cpp`): wrong `format`, no `id`, no actors, an empty step list, an unknown action, an
 undeclared actor, a malformed coordinate or duration refuse the file whole, naming the step.

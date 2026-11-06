@@ -2806,6 +2806,13 @@ class MapEditorStage : public Stage {
       if (!a.is_object()) a = ember::Json::object();
       std::string unit = a.value("unit", "");
       if (cutCombo("##aunit", unit, units, "unidade…", 180)) a["unit"] = unit, cutDirty_ = true;
+      ImGui::SameLine();
+      bool off = a.value("offstage", false);  // waits off the board until its "Entrar" step (docs/CUTSCENES.md)
+      if (ImGui::Checkbox("fora do tabuleiro##off", &off)) {
+        if (off) a["offstage"] = true;
+        else a.erase("offstage");
+        cutDirty_ = true;
+      }
       if (!unit.empty() && std::find(units.begin(), units.end(), unit) == units.end()) {
         ImGui::SameLine();
         ImGui::TextColored(ImColor(255, 120, 100), "não está no mapa");
@@ -2849,8 +2856,8 @@ class MapEditorStage : public Stage {
 
     // Steps
     fieldLabel("Passos");
-    static const char* kKinds[] = {"move", "face", "say", "wait"};
-    static const char* kKindNames[] = {"Mover", "Virar", "Falar", "Esperar"};
+    static const char* kKinds[] = {"move", "face", "say", "wait", "enter"};
+    static const char* kKindNames[] = {"Mover", "Virar", "Falar", "Esperar", "Entrar"};
     static const char* kDirNames[] = {"leste (e)", "nordeste (ne)", "noroeste (nw)", "oeste (w)", "sudoeste (sw)", "sudeste (se)"};
     ember::Json& steps = cutSteps();
     int remove = -1, up = -1, down = -1, dup = -1;
@@ -2862,13 +2869,13 @@ class MapEditorStage : public Stage {
       ImGui::Text("%d.", i + 1);
       ImGui::SameLine();
       int kind = 3;
-      for (int k = 0; k < 4; ++k)
+      for (int k = 0; k < 5; ++k)
         if (st.value("do", "") == kKinds[k]) kind = k;
       ImGui::SetNextItemWidth(100);
-      if (ImGui::Combo("##kind", &kind, kKindNames, 4)) {
+      if (ImGui::Combo("##kind", &kind, kKindNames, 5)) {
         ember::Json next = {{"do", kKinds[kind]}};
         if (kind != 3) next["actor"] = st.value("actor", actorNames.empty() ? "" : actorNames.front());
-        if (kind == 0) next["to"] = ember::Json::array({0, 0});
+        if (kind == 0 || kind == 4) next["to"] = ember::Json::array({0, 0});
         if (kind == 1) next["direction"] = "e";
         if (kind == 2) next["text"] = "";
         if (kind == 3) next["seconds"] = 1.0;
@@ -2889,7 +2896,7 @@ class MapEditorStage : public Stage {
         ImGui::SameLine();
         if (cutCombo("##actor", actor, actorNames, "ator…", 140)) st["actor"] = actor, cutDirty_ = true;
       }
-      if (kind == 0) {
+      if (kind == 0 || kind == 4) {
         int xy[2] = {0, 0};
         if (st.contains("to") && st["to"].is_array() && st["to"].size() == 2 && st["to"][0].is_number() && st["to"][1].is_number()) xy[0] = st["to"][0].get<int>(), xy[1] = st["to"][1].get<int>();
         ImGui::SameLine();
@@ -2945,21 +2952,22 @@ class MapEditorStage : public Stage {
     if (down >= 0) std::swap(steps[down], steps[down + 1]), cutDirty_ = true, cutPickStep_.reset();
     if (dup >= 0) steps.insert(steps.begin() + dup + 1, steps[dup]), cutDirty_ = true, cutPickStep_.reset();
     ImGui::Separator();
-    for (int k = 0; k < 4; ++k) {
+    for (int k = 0; k < 5; ++k) {
       if (k) ImGui::SameLine();
       if (ImGui::SmallButton(std::format("+ {}", kKindNames[k]).c_str())) {
         ember::Json next = {{"do", kKinds[k]}};
         if (k != 3) next["actor"] = actorNames.empty() ? "" : actorNames.front();
-        if (k == 0) next["to"] = ember::Json::array({0, 0});
+        if (k == 0 || k == 4) next["to"] = ember::Json::array({0, 0});
         if (k == 1) next["direction"] = "e";
         if (k == 2) next["text"] = "";
         if (k == 3) next["seconds"] = 1.0;
         steps.push_back(next);
         cutDirty_ = true;
-        if (k == 0) cutPickStep_ = static_cast<int>(steps.size()) - 1;
+        if (k == 0 || k == 4) cutPickStep_ = static_cast<int>(steps.size()) - 1;
       }
     }
-    hint("Mover: clique na prévia com o passo armado para escolher o hex. Salvar cena verifica o arquivo com a mesma checagem do jogo.");
+    hint("Entrar: um ator marcado \"fora do tabuleiro\" fica fora da luta até este passo e aparece no hex. "
+         "Mover: clique na prévia com o passo armado para escolher o hex. Salvar cena verifica o arquivo com a mesma checagem do jogo.");
   }
 
   void drawUnitsTab() {

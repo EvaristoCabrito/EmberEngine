@@ -4085,6 +4085,9 @@ class MapStage final : public Stage {
         corpseFade = std::clamp((time - unitDiedAt_[ui] - deathLength) / kCorpseSeconds, 0.0f, 1.0f);
       }
       if (ui < unitDiedAt_.size() && (unitDiedAt_[ui] <= -999.0f || corpseFade >= 1.0f)) continue;
+      // A cutscene's "enter": the card fades in over kEnterSeconds (the corpse's fade run backwards).
+      if (ui < unitEnterAt_.size() && unitEnterAt_[ui] >= 0.0f)
+        corpseFade = std::max(corpseFade, 1.0f - std::clamp((time - unitEnterAt_[ui]) / kEnterSeconds, 0.0f, 1.0f));
       OneShot shotNow;  // this frame's (the stored one may move on to its next pose below)
       const OneShot* shot = nullptr;
       if (ui < unitShot_.size() && !unitShot_[ui].pose.empty()) shotNow = unitShot_[ui], shot = &shotNow;
@@ -4911,7 +4914,7 @@ class MapStage final : public Stage {
     const size_t n = scene_->units.size();
     unitPos_.resize(n), unitMoved_.assign(n, 0), unitFacing_.resize(n), unitReversed_.resize(n);
     unitWalk_.assign(n, {}), unitCard_.assign(n, {}), unitBattle_.assign(n, -1);
-    unitShot_.assign(n, {}), unitDiedAt_.assign(n, -1.0f), unitRecoil_.assign(n, {}), unitLeap_.assign(n, {});
+    unitShot_.assign(n, {}), unitDiedAt_.assign(n, -1.0f), unitEnterAt_.assign(n, -1.0f), unitRecoil_.assign(n, {}), unitLeap_.assign(n, {});
     unitHitAction_.assign(n, -1);
     for (size_t i = 0; i < n; ++i) {
       const ember::SceneUnit& u = scene_->units[i];
@@ -5146,6 +5149,7 @@ class MapStage final : public Stage {
       absent_.insert(u.id);
     }
     if (!absent_.empty()) logInfo("battle: {} units absent from the start (killed on an earlier visit, or fell on the floor before)", absent_.size());
+    sendOffstage();
     if (battle_->cols() != board_->layout().cols || battle_->rows() != board_->layout().rows) {
       logError("battle {}: {}x{} does not fit the map's {}x{} board", path.string(), battle_->cols(), battle_->rows(), board_->layout().cols,
                board_->layout().rows);
@@ -6292,6 +6296,45 @@ class MapStage final : public Stage {
   // happens next is the caller's (a map event, a mission, the campaign).
   // ---------------------------------------------------------------------------------------------------------------------
 
+  // The scenes that can play on this map (triggers.json onOpen + onVictory, the Map Editor's "Testar esta cena", a --cutscene
+  // run): their "offstage" actors are kept off the board from the opening (docs/CUTSCENES.md "enter"). A unit of that name that
+  // is not of the party (Estranhos na Costa: the neutral Neera and Voss of the Vau, waiting for Kael's fight to end) is gone
+  // from the start like an absent one: not drawn, no turn, no body, nothing in the save; its "enter" step brings it in.
+  void sendOffstage() {
+    if (options_.editorClick || !battle_) return;
+    std::vector<std::string> ids = cutsceneIds(cutsceneTriggerList("onOpen", draftId()));
+    for (const std::string& id : cutsceneIds(cutsceneTriggerList("onVictory", draftId()))) ids.push_back(id);
+    for (const std::string* list : {&options_.cutscene, &options_.openingCutscenes})
+      for (size_t at = 0; at <= list->size();) {
+        size_t end = list->find(',', at);
+        if (end == std::string::npos) end = list->size();
+        std::string id = list->substr(at, end - at);
+        if (!id.empty() && id.front() == '!') id.erase(0, 1);
+        if (!id.empty()) ids.push_back(id);
+        at = end + 1;
+      }
+    std::set<std::string> names;
+    for (const std::string& id : ids) {
+      const std::optional<ember::CutsceneScript> script = ember::CutsceneScript::load("content/cutscenes/" + id + ".json", nullptr);
+      if (!script) continue;
+      for (const std::string& actor : script->offstage) names.insert(script->actors.at(actor));
+    }
+    for (ember::BattleUnit& u : battle_->units()) {
+      if (u.side == "player" || !u.alive || !names.contains(u.name)) continue;
+      u.alive = false, u.hp = 0;
+      absent_.insert(u.id), offstage_.insert(u.id);
+      logInfo("cutscene: {} waits off the board for its scene", u.name);
+    }
+  }
+  // The scene unit of a unit waiting off the board (sendOffstage), by its name; -1 when none.
+  int offstageUnitNamed(const std::string& name) const {
+    for (size_t i = 0; i < scene_->units.size(); ++i)
+      if (unitBattle_[i] >= 0 && offstage_.contains(battle_->units()[static_cast<size_t>(unitBattle_[i])].id) &&
+          battle_->units()[static_cast<size_t>(unitBattle_[i])].name == name)
+        return static_cast<int>(i);
+    return -1;
+  }
+
   // Starts content/cutscenes/<id>.json over the loaded map. False (and a log line) when the file is refused, an actor is
   // not on the map, or another cutscene is playing. The map must be ready (its battle and scene loaded).
   bool playCutscene(const std::string& id) {
@@ -6311,7 +6354,8 @@ class MapStage final : public Stage {
     Cutscene c;
     c.script = std::move(script);
     for (const auto& [actor, unit] : c.script.actors) {
-      const int ui = sceneUnitNamed(unit);
+      int ui = sceneUnitNamed(unit);
+      if (ui < 0 && c.script.offstage.contains(actor)) ui = offstageUnitNamed(unit);  // waiting off the board for its "enter"
       if (ui < 0) return logError("cutscene {}: refused, actor \"{}\" = \"{}\" is not on the map", id, actor, unit), false;
       c.units[actor] = static_cast<size_t>(ui);
     }
@@ -6363,6 +6407,15 @@ class MapStage final : public Stage {
   void updateCutscene() {
     if (!cutscene_ || !battle_ || !scene_) return;
     Cutscene& c = *cutscene_;
+    // "camera": "actors": the pivot on the middle of the actors standing on the board, gliding as they walk and enter (a scene
+    // staged away from the fight stays in view; zoom, turn and tilt are the player's).
+    if (c.script.cameraOnActors) {
+      glm::vec3 sum{0.0f};
+      int n = 0;
+      for (const auto& [actor, ui] : c.units)
+        if (unitBattle_[ui] >= 0 && battle_->units()[static_cast<size_t>(unitBattle_[ui])].alive) sum += unitWorld(ui), ++n;
+      if (n > 0) target_ = sum / static_cast<float>(n);
+    }
     // The step in play: over?
     if (c.waiting) {
       switch (c.script.steps[c.step].kind) {
@@ -6380,6 +6433,11 @@ class MapStage final : public Stage {
         case ember::CutsceneStep::Kind::Wait:
           if (now_ - c.stepStart < c.script.steps[c.step].seconds) return;
           break;
+        case ember::CutsceneStep::Kind::Enter: {  // the walk of a hero already on the board, else the fade-in
+          const size_t ui = c.units[c.script.steps[c.step].actor];
+          if (!unitWalk_[ui].points.empty() || now_ - c.stepStart < kEnterSeconds) return;
+          break;
+        }
         case ember::CutsceneStep::Kind::Face: break;
       }
       c.waiting = false;
@@ -6398,6 +6456,40 @@ class MapStage final : public Stage {
       return it->second;
     };
     switch (st.kind) {
+      case ember::CutsceneStep::Kind::Enter: {
+        // An actor waiting off the board appears on the hex (fading in); one already standing (a party hero) walks there instead.
+        const auto it = c.units.find(st.actor);
+        if (it == c.units.end() || unitBattle_[it->second] < 0) return fail("actor \"" + st.actor + "\" is not on the map");
+        const size_t eui = it->second;
+        ember::BattleUnit& eu = battle_->units()[static_cast<size_t>(unitBattle_[eui])];
+        if (offstage_.contains(eu.id)) {
+          if (!battle_->inBounds(st.x, st.y)) return fail(std::format("({}, {}) is off the board", st.x, st.y));
+          int toX = st.x, toY = st.y;
+          // The hex taken or not walkable: the nearest free walkable hex within 3.
+          if (!battle_->cell(st.x, st.y).passable || battle_->unitAt(st.x, st.y) >= 0) {
+            int bestDist = 1 << 30;
+            for (int y = 0; y < battle_->rows(); ++y)
+              for (int x = 0; x < battle_->cols(); ++x) {
+                if (!battle_->cell(x, y).passable || battle_->unitAt(x, y) >= 0) continue;
+                const int dist = ember::Battle::distance({x, y}, {st.x, st.y});
+                if (dist < bestDist) bestDist = dist, toX = x, toY = y;
+              }
+            if (bestDist > 3) return fail(std::format("({}, {}) has no free hex near it for {}", st.x, st.y, eu.name));
+          }
+          offstage_.erase(eu.id), absent_.erase(eu.id);
+          eu.alive = true, eu.hp = eu.maxHp, eu.x = toX, eu.y = toY;
+          unitDiedAt_[eui] = -1.0f;
+          unitShot_[eui] = {};
+          unitWalk_[eui] = Walk{};
+          unitPos_[eui] = anchorWorld(eu, {toX, toY});
+          unitEnterAt_[eui] = now_;
+          refreshReach();
+          logInfo("cutscene {}: step {} enter {} at ({}, {})", c.script.id, c.step, st.actor, toX, toY);
+          return;
+        }
+        logInfo("cutscene {}: step {} enter {}: already on the board, walks", c.script.id, c.step, st.actor);
+        [[fallthrough]];
+      }
       case ember::CutsceneStep::Kind::Move: {
         const std::optional<size_t> ui = unitOf(st.actor);
         if (!ui) return fail("actor \"" + st.actor + "\" is not standing on the map");
@@ -12449,6 +12541,7 @@ class MapStage final : public Stage {
   std::optional<size_t> talkRequest_;          // a conversation asked for (takeTalk)
   std::string floorRequest_;                   // a floor connector taken: the linked map's mission id (wantsFloor)
   std::set<std::string> absent_;               // battle unit ids gone from the start (dead on an earlier visit, fallen on the floor before)
+  std::set<std::string> offstage_;             // ... of them, those waiting off the board for a cutscene's "enter" (sendOffstage)
   std::optional<ember::Battle::Exit> finishExit_; // the waypoint the mission was ended on (the result screen's text and its way on)
   bool talked_ = false;                        // a conversation was taken (the battle script's "talk" check)
   bool explores_ = false;                      // an explore mission (it roamed when it opened)
@@ -12598,6 +12691,7 @@ class MapStage final : public Stage {
   std::vector<int> unitHitAction_;        // per scene unit: the action (actionSerial_) whose blow it last reacted to (-1 = none)
   int actionSerial_ = 0;                  // counts the actions played (play()), so two hits from one action are told apart
   std::vector<float> unitDiedAt_;         // per scene unit: when it fell (-1 = alive)
+  std::vector<float> unitEnterAt_;        // per scene unit: when a cutscene's "enter" brought it onto the board (-1 = never)
   std::unordered_map<std::string, std::map<std::string, double>> skillsAtStart_;  // per hero: its skills as the campaign fight opened
   // The struck body's reaction (2026-10-17, the hit react; the impact's light and particles are CombatFx's): the card
   // is knocked back along the blow, squashed a little, and comes back; a heavy blow knocks it further, dips it and it
@@ -12655,6 +12749,7 @@ class MapStage final : public Stage {
   static constexpr float kImpactShare = 0.55f;   // a strike lands this far into the attack pose
   static constexpr float kExchangeGap = 0.15f;   // a breath between the strike and the counter
   static constexpr float kCorpseSeconds = 1.5f;  // the fallen lie this long after their death pose
+  static constexpr float kEnterSeconds = 0.8f;   // a cutscene's "enter": the card's fade-in
   static constexpr float kPopupSeconds = 1.2f;
   glm::vec2 mouse_{-1.0f};
   SDL_WindowID mouseWindow_ = 0;

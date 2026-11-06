@@ -13,17 +13,23 @@
 //       { "do": "face", "actor": "B", "toward": "A" },                     // ... or the direction of another actor
 //       { "do": "move", "actor": "A", "to": [14, 20] },                    // walks there (the map's own pathfinding and poses)
 //       { "do": "say",  "actor": "A", "text": "...", "translations": { "en": "..." } },  // the game's dialogue box
-//       { "do": "wait", "seconds": 1.0 }
+//       { "do": "wait", "seconds": 1.0 },
+//       { "do": "enter", "actor": "B", "to": [12, 9] }                     // an offstage actor appears there (below)
 //     ]
 //   }
 //
-// Only these four actions exist (the Interlude spec's step 1). The file is refused whole when a step is unknown, an actor
+// An actor declared { "unit": "Neera", "offstage": true } waits off the board from the map's opening until its "enter" step
+// (Estranhos na Costa, 2026-11-06: Neera and Voss come only after Kael's first fight): a unit of that name not of the party is
+// kept out of the fight (not drawn, no turn, blocks nothing) and appears on the step's hex, fading in. A party hero of that
+// name (Modo teste seats everyone) is never sent off: its "enter" walks it to the hex like "move".
+// Only these five actions exist (the Interlude spec's step 1 + enter). The file is refused whole when a step is unknown, an actor
 // is not declared, a coordinate or a duration is malformed: nothing of a bad script plays. Whether an actor stands on the
 // map, and whether a destination is free and reachable, is the map's to check when the scene starts / the step plays.
 
 #include <array>
 #include <map>
 #include <optional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -32,10 +38,10 @@
 namespace ember {
 
 struct CutsceneStep {
-  enum class Kind { Move, Face, Say, Wait };
+  enum class Kind { Move, Face, Say, Wait, Enter };
   Kind kind = Kind::Wait;
   std::string actor;        // the actor's stable name (move / face / say)
-  int x = 0, y = 0;         // move: the destination hex
+  int x = 0, y = 0;         // move / enter: the destination hex
   int direction = -1;       // face: 0 e, 1 ne, 2 nw, 3 w, 4 sw, 5 se (Battle::neighbors' order); -1 = `toward`
   std::string toward;       // face: the actor faced instead
   std::string text;         // say: the line (the dialogue's own language)
@@ -47,6 +53,8 @@ struct CutsceneStep {
 struct CutsceneScript {
   std::string id;
   std::map<std::string, std::string> actors;  // stable name -> the unit's name on the map
+  std::set<std::string> offstage;             // the actors who wait off the board until their "enter" step
+  bool cameraOnActors = false;                // "camera": "actors": the camera's pivot glides to the middle of the actors on the board
   std::vector<CutsceneStep> steps;
 
   static constexpr const char* kFormat = "ember-cutscene-1";
