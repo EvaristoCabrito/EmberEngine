@@ -362,6 +362,9 @@ class Renderer {
     FogScene scene;
   };
   void setFogBank(const FogBank& bank) { fogBank_ = bank; }
+  // The fog of war's colour (the user, 2026-11-06: grey, not black): out of sight, surfaces and cards fade towards this grey
+  // (exposed linear radiance) instead of black; 0 = black (the old look).
+  void setFogGrey(float grey) { fogGrey_ = grey; }
   // Atmosfera volumétrica v1 (render/Volumetrics.h, docs/ATMOSPHERE.md): the visible air as a lit 3D medium. Its own
   // module; when enabled it owns the volume every surface reads (the old haze above stays off).
   Volumetrics& volumetrics() { return *volumetrics_; }
@@ -597,6 +600,7 @@ class Renderer {
   bool glareThisFrame_ = false;
   // Fog bank: the tiling noise volume (made once), the half-resolution march result.
   FogBank fogBank_;
+  float fogGrey_ = 0.0f;
   Image bankMarch_;
   Image bankNoise_[static_cast<size_t>(FogNoise::Count)];
   Buffer bankNoiseStaging_[static_cast<size_t>(FogNoise::Count)];

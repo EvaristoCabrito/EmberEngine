@@ -227,7 +227,7 @@ struct MeshFrame {
   float shadowFilterTexels;
   uint32_t lightingLayers;
   float time;
-  uint32_t pad8;
+  float fogGrey;
   uint64_t lights;
   uint32_t lightCount;
   uint32_t clusterBuffer;
@@ -1204,6 +1204,7 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
   f.clusterFar = f.clusterNear + 398.0f;
   f.clusters = bufferAddress(context_, clusters_);
   f.fogMask = kNoTextureIndex;
+  f.fogGrey = fogGrey_;
   if (fogOn_ && fogMaskIndex_ != kNoIndex) {
     f.fogMask = fogMaskIndex_;
     f.fogSampler = linearClampIndex_;

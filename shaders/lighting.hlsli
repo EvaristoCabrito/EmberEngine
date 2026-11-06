@@ -340,6 +340,12 @@ Sight tacticalSight(MeshFrame f, float3 position) {
   s.local = saturate(1.0 - a / 0.6);              // 0.6 = FogOfWar.h kExploredAlpha
   return s;
 }
+// A lit colour under the fog of war: darkened by its sight, the rest of the way towards the fog's grey (f.fogGrey, 0 = black:
+// the old look). The user, 2026-11-06: "mudar a cor dessa fog para cinza porque o preto faz os detalhes dos cortes dos cards
+// aparecerem muito mais".
+float3 fogged(MeshFrame f, float3 lit, Sight sight) {
+  return lit * sight.color + f.fogGrey * (1.0 - sight.color);
+}
 
 // --- The surface's colour --------------------------------------------------------------------------------
 
@@ -486,7 +492,7 @@ float3 shade(MeshFrame f, Surface s) {
   if (f.debugView == 21u) return probesAddress(f) != 0 ? float3(probeRoom(f, s.position), 0.0, 0.0) : float3(0.0, 0.0, 1.0);  // the room's gate: red = inside, black = outside, blue = no probes
   if (f.debugView == kDebugFog) return float3(1.0 - sight.color, sight.local, 1.0);
   if (f.debugView == kDebugFogStates) return fogStateColor(fogAlpha(f, s.sightAt));
-  return applyVolume(f, shadeInSight(f, s, sight) * sight.color, s.position);
+  return applyVolume(f, fogged(f, shadeInSight(f, s, sight), sight), s.position);
 }
 
 #endif

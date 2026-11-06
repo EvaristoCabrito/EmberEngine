@@ -155,7 +155,8 @@ struct MeshFrame {
   float shadowFilterTexels;  // radius of the soft filter, in texels
   uint lightingLayers;       // lighting.hlsli kLayer*: layers switched on
   float time;                // seconds (animated materials: water ripples)
-  uint pad8;
+  float fogGrey;             // the fog of war's grey (exposed linear radiance): what is out of sight fades towards it
+                             // instead of black (the user, 2026-11-06: "mudar a cor dessa fog para cinza"); 0 = black
   // Local lights (lights.hlsl): the list and its clusters.
   uint64_t lights;           // LocalLight[lightCount] (device address)
   uint lightCount;

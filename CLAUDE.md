@@ -1916,7 +1916,33 @@ qualidade máxima" + "faz"; "WRITE THE FUCKING PROPER MODEL NAME NOT NUMBER": th
   panel shows it), lightning in play. Not built of the prompt: rainbow, SH sky probes with cloud occlusion, blue-noise upscale,
   depth-aware reconstruction (listed in the README row).
 
+## Árvores pretas, névoa de guerra cinza, Personagens Extra baixa (2026-11-06; the user: "texturas que não aparecem nas arvores em
+ashens forest", "mudar a cor dessa fog para cinza", "resolução extra baixa com a metade da resolução da baixa e frames de 36 normais")
+
+- **A mesh draws baseColorFactor x COLOR_0 x texture** (resolve*.hlsl). The five `-photo` trees (broadleaf, dead-oak, dead-snag,
+  snowy-pine, twisted-stump; live since 86f1a046) kept the procedural trees' vertex bark (3-10 % bright) and flat leaf greens as
+  factors: the photos drew near black. `tools/scripts/models/fix_photo_tree_albedo.py` writes new versions (COLOR_0 scaled so the
+  brightest is 1; a flat factor over a coloured photo -> a neutral grey of the same relative brightness, over a colourless photo
+  (the snowy pine's needles wear the snow image) -> its hue kept, brighter): `broadleaf-photo-v02`, `dead-oak-photo-v02`,
+  `dead-snag-photo-v02`, `snowy-pine-photo-v03`, `twisted-stump-photo-v02`, `dead-oak-v04-leafy` (catalog points at them);
+  pack `build/meshes/props-v39.pak` (= src-v38 hard links + those, `build/meshes/src-v39`), JOGAR uses it first.
+  **Audit any time: `python -I tools/scripts/models/audit_model_albedo.py [staged root] [--json out]`** (no texture / no UV / drawn
+  near black, per part of every catalogued model).
+- **Fog of war grey:** what is out of sight fades towards `MeshFrame.fogGrey` (the old `pad8`; lighting.hlsli `fogged`, used by
+  `shade` and sprites.hlsl) instead of black; MapStage `fogColour_` (panel "Névoa de guerra": preta / cinza, default cinza, grey
+  `kFogGrey` 0.06 exposed linear). Effects and the air (volume, vfx) still darken to black. In Ashen Forest the trees at the edge of
+  never-seen ground stand out of the fog bank: they were black, now grey (the cause of "the trees have no texture" in play there).
+- **Personagens Extra baixa** (`GamePrefs::characters` "extra", Opções > Gráficos 4th choice): Leve's copies, every clip pinned as
+  two versions with the light one asked (`sprites_.setLight(true)`, kBaseFirstMip): half of Leve's resolution. The SpriteSystem log
+  still names it "Leve". Measured (Ashen Forest test fight): 200 MB for the 74 clips.
+- Seen in that audit, NOT done yet: the Poly Haven grass_medium_01_* and moss_01_* (alphaMode BLEND, their diffuse PNG has no alpha:
+  drawn as dark cards) and 7 models with flat-colour parts (bookshelf, drink-shelf, folding-screen, pantry-shelf, simple-bed-v02,
+  sacks-v02, open-barrel, weapon-rack-v02).
+
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
+
+- The five `-photo` trees and `dead-oak-v03-leafy` (2026-11-06): drawn near black (above); the catalog points at their new versions.
+  `snowy-pine-photo-v02.glb` (its needles grey over the snow image: white needles) was made before the hue rule; v03 plays.
 
 - The Wisp Forest's bare fir (2026-10-30; `content/models/blender/fix_fir_trunk_uv.py`, `make_fir_v03.py -- v03|v04|v05`):
   `polyhaven-wisp-v02/fir_tree_01_bare_v02.glb` (the trunk unwrapped), `_v03.glb` (the user's Pine.jpg bark, `content/textures/bark/`:

@@ -171,7 +171,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
       }
       color += c.rgb * mask * s.emitLevel * f.exposure;
     }
-    color = applyVolume(f, color * sight.color, i.world);
+    color = applyVolume(f, fogged(f, color, sight), i.world);
   }
   return float4(color * c.a, c.a);
 }
