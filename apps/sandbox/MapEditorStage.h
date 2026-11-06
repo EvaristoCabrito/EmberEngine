@@ -239,6 +239,9 @@ class MapEditorStage : public Stage {
       std::string hubs;
       for (const MapRef& m : cityHubs()) hubs += (hubs.empty() ? "" : ", ") + m.id;
       logInfo("map editor: {} saved maps; CityHubs: {}", saved_.size(), hubs);
+      const std::vector<MapRef> campaignList = campaignRefs();
+      const size_t randomInCampaign = static_cast<size_t>(std::count_if(campaignList.begin(), campaignList.end(), [&](const MapRef& m) { return isRandomEncounter(m.id); }));
+      logInfo("map editor: Mapa da campanha {} maps ({} random); Random encounters {} maps", campaignList.size(), randomInCampaign, randomRefs().size());
     }
     // The preview follows the draft a moment after the last edit (Ember setPreviewMission).
     const auto now = std::chrono::steady_clock::now();
@@ -1812,11 +1815,34 @@ class MapEditorStage : public Stage {
     }
     return ids;
   }
-  // Only missions placed in a Local (not hubs): "Carregar mapa da campanha".
+  // A random-encounter map (the user, 2026-11-05: "uma seção de random ... eu saber que é random"): its id starts with "random-"
+  // or it sits in an R-Encounter region. Listed only under "Random encounters", never with the campaign's or the saved maps.
+  bool isRandomEncounter(const std::string& id) const {
+    if (id.starts_with("random-")) return true;
+    for (const ember::EncounterRegion& r : locais_.regions)
+      if (std::find(r.encounterIds.begin(), r.encounterIds.end(), id) != r.encounterIds.end()) return true;
+    return false;
+  }
+  std::vector<MapRef> randomRefs() const {
+    std::map<std::string, MapRef> known;
+    for (const auto& [id, s] : saved_)
+      if (isRandomEncounter(id)) known[id] = {id, s.title, s.index};
+    for (const MissionInfo& m : editor_.missions)
+      if (!m.hub && isRandomEncounter(m.id) && !known.contains(m.id)) known[m.id] = {m.id, m.title, m.index};
+    for (const ember::EncounterRegion& r : locais_.regions)
+      for (const std::string& id : r.encounterIds)
+        if (!known.contains(id))
+          if (const auto m = missionInfo(id)) known[id] = {id, m->title, m->index};
+    std::vector<MapRef> out;
+    for (auto& [id, r] : known) out.push_back(r);
+    sortRefs(out);
+    return out;
+  }
+  // Only missions placed in a Local (not hubs, not random encounters): "Carregar mapa da campanha".
   std::vector<MapRef> campaignRefs() const {
     std::vector<MapRef> out;
     for (const std::string& id : campaignIds())
-      if (const auto m = missionInfo(id); m && !m->hub) out.push_back({id, m->title, m->index});
+      if (const auto m = missionInfo(id); m && !m->hub && !isRandomEncounter(id)) out.push_back({id, m->title, m->index});
     sortRefs(out);
     return out;
   }
@@ -1853,14 +1879,17 @@ class MapEditorStage : public Stage {
           if (const std::optional<MissionInfo> m = missionInfo(floor); m && saved_.contains(floor)) hubs[floor] = {floor, m->title, m->index}, todo.push_back(floor);
     }
     std::vector<MapRef> out;
-    for (auto& [id, r] : hubs) out.push_back(r);
+    for (auto& [id, r] : hubs)
+      if (!isRandomEncounter(id)) out.push_back(r);  // random encounters are listed only under "Random encounters"
     sortRefs(out);
     return out;
   }
-  // Every saved map, campaign or reserve, by name: a floor connector's target.
+  // Every saved map, campaign, reserve or random encounter, by name: a floor connector's target.
   std::vector<MapRef> connectorTargets() const {
     std::vector<MapRef> out = campaignRefs(), reserve = reserveRefs();
     out.insert(out.end(), reserve.begin(), reserve.end());
+    for (const MapRef& r : randomRefs())
+      if (std::none_of(out.begin(), out.end(), [&](const MapRef& o) { return o.id == r.id; })) out.push_back(r);
     std::sort(out.begin(), out.end(), [](const MapRef& a, const MapRef& b) {
       return mapTitleBefore(a.title, b.title) || (!mapTitleBefore(b.title, a.title) && a.id < b.id);
     });
@@ -2389,7 +2418,7 @@ class MapEditorStage : public Stage {
     const std::set<std::string> campaign = campaignIds();
     std::vector<const Scenario*> pickable;
     for (const auto& [id, s] : saved_)
-      if (!campaign.contains(id)) pickable.push_back(&s);
+      if (!campaign.contains(id) && !isRandomEncounter(id)) pickable.push_back(&s);
     std::sort(pickable.begin(), pickable.end(), [](const Scenario* a, const Scenario* b) {
       return mapTitleBefore(a->title, b->title) || (!mapTitleBefore(b->title, a->title) && a->id < b->id);
     });
@@ -2433,6 +2462,26 @@ class MapEditorStage : public Stage {
 
   // Locais / R-Encounter: the campaign's own windows.
   void drawCampaignWindows() {
+    const std::vector<MapRef> randoms = randomRefs();
+    if (!randoms.empty()) {
+      fieldLabel("Random encounters (%d)", static_cast<int>(randoms.size()));
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("##randommap", "Abrir random encounter…")) {
+        LetterJump jump;
+        jump.begin();
+        for (const MapRef& m : randoms) {
+          if (ImGui::Selectable(std::format("{} · {}##{}", m.title, m.id, m.id).c_str())) {
+            if (campaign.contains(m.id)) loadCampaignMap(m.id);
+            else if (const auto f = newestFile(m.id)) openFile(*f, std::format("Aberto o random encounter \"{}\".", m.id));
+            else loadCampaignMap(m.id);
+          }
+          jump.item(m.title);
+        }
+        jump.end();
+        ImGui::EndCombo();
+      }
+      if (ImGui::IsItemHovered()) ImGui::SetTooltip("Mapas de encontro aleatório (id random-… ou numa região do R-Encounter) — fora da lista da campanha");
+    }
     if (ImGui::Button("Locais", {150, 0})) openLocais();
     ImGui::SameLine();
     hint("A progressão entre os locais da campanha, suas missões, vagas e andares.");
