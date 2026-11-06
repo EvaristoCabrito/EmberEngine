@@ -75,6 +75,15 @@
    "spells": {},
    "spellList": [],
    "about": "The user, 2026-10-28: Attachments/GiantBeetle, body type 1, 64 / 36 frames like the Deer. Working numbers, the user's to set: 1 hex, mov 4, a 1D8 horn blow, stats the Mordavian Wolf's row, rank D, no spells."
+  },
+  "ashesCrawler": {
+   "name": "Rastreador de Cinzas", "nameEn": "Ashes Crawler", "role": "Fera",
+   "sprite": "ashes-crawler", "size": 2, "mov": 4, "strikesWith": "atk",
+   "weapon": {"dice": 2, "faces": 6, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {"ember": 50, "fire": 50},
+   "spells": {},
+   "spellList": [],
+   "about": "The user, 2026-11-06: Attachments/SandCrawler, \"its called Ashes Crawler\", \"they live in ashen forest primarily\". Working numbers, the user's to set: 2 hexes, mov 4, a 2D6 claw blow, stats the mean of the Giant Beetle's and the Giant Spider's rows, rank D, half damage from fire and ember (it lives in the ash), no spells."
   }
  },
  "aboutHeroClasses": "EmberEngine's own hero classes (read by engine/world/BattleExport.cpp Rules, merged into content/data/battle-rules.json's classes with the same fields; their melee weapons of weaponTypes become usable by them). The Cruzado (the user, 2026-10-25; young Salazar's interlude class, docs/SKILLS_CRUSADER.md): level 10 at most (Spells.cpp classLevelCap), a hybrid a little under the Guerreiro and a little over the Curandeiro (each stat the two classes' mean at the level), the Arqueiro's tier table (T1 at 1, T2 at 4, T3 at 7, nothing above T3), Bênção from 1 and Cleave from 4 (his own spells come from Spells.cpp kEmberSpells); never a shield. Placeholder sprite: kaelEarly (an old warrior, on no map).",

@@ -56,11 +56,11 @@ def apply_pingpong(over, roster):
 def main():
     over = load(os.path.join(ROOT, "content", "sprite-overrides.json"))
     manifest_path = os.path.join(ROOT, "build", "sprites", "battle.sprites.json")
-    roster_path = os.path.join(ROOT, "build", "ember-scenes", "roster.json")
+    roster_path = os.path.join(ROOT, "build", "scenes", "roster.json")
     manifest = load(manifest_path)
     roster = load(roster_path)
-    strides_paths = [os.path.join(ROOT, "content", "ember", "walk-strides.json"),
-                     os.path.join(ROOT, "build", "ember-scenes", "walk-strides.json")]
+    strides_paths = [os.path.join(ROOT, "content", "data", "walk-strides.json"),
+                     os.path.join(ROOT, "build", "scenes", "walk-strides.json")]
     strides = [load(p) if os.path.exists(p) else None for p in strides_paths]
 
     # poses a whole set below takes over (salazar-v3's walk over salazar-final's move, 2026-10-25): on a roster this script has
@@ -241,7 +241,7 @@ def main():
     if over.get("feet"):
         from PIL import Image
         sets = {s["name"]: {c["name"]: c for c in s["clips"]} for s in manifest["sets"]}
-        public = os.path.join(ROOT, "content", "game", "public", "game")
+        public = os.path.join(ROOT, "content", "assets", "game")
         for key in over["feet"]:
             hero = next((h for h in roster["heroes"] if h.get("key") == key), None)
             if hero is None:

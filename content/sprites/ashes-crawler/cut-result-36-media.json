@@ -1,0 +1,102 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/SandCrawler/iDLEaSHCRWALER.mp4",
+   "first": 16,
+   "last": 95,
+   "bootRow": 702,
+   "bootRows": [
+    671,
+    707
+   ],
+   "loopFirst": 16,
+   "loopLast": 86,
+   "seamSteps": 6.72,
+   "frameCountFrom": 71,
+   "figurePx": 689.0,
+   "scaledTo": 609.6,
+   "frames": 36,
+   "frameMs": 82.17592592592592,
+   "nat": [
+    1133,
+    637
+   ],
+   "crop": [
+    0,
+    0,
+    1129,
+    637
+   ],
+   "box": {
+    "w": 3.01181,
+    "h": 1.69331,
+    "foot": 0.03983
+   },
+   "pattern": "content/sprites/ashes-crawler/base-media36-v01/base-{}.png"
+  },
+  "move": {
+   "video": "Attachments/SandCrawler/aSHCRAWLERWALKatt.mp4",
+   "first": 0,
+   "last": 95,
+   "loopFirst": 1,
+   "loopLast": 77,
+   "seamSteps": 2.76,
+   "bootRow": 646,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "frameCountFrom": 77,
+   "figurePx": 522.0,
+   "frames": 36,
+   "frameMs": 89.12037037037037,
+   "nat": [
+    1027,
+    573
+   ],
+   "crop": [
+    5,
+    5,
+    1018,
+    564
+   ],
+   "box": {
+    "w": 3.1896,
+    "h": 1.77959,
+    "foot": 0.08696
+   },
+   "pattern": "content/sprites/ashes-crawler/move-media36-v01/move-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/SandCrawler/aSHCRAWLERWALKatt.mp4",
+   "first": 96,
+   "last": 191,
+   "bootRow": 648,
+   "bootRows": [
+    642,
+    651
+   ],
+   "frameCountFrom": 96,
+   "figurePx": 520.0,
+   "frames": 36,
+   "frameMs": 111.11111111111111,
+   "nat": [
+    1127,
+    608
+   ],
+   "crop": [
+    5,
+    5,
+    1117,
+    599
+   ],
+   "box": {
+    "w": 3.51364,
+    "h": 1.89556,
+    "foot": 0.08106
+   },
+   "pattern": "content/sprites/ashes-crawler/atk-media36-v01/atk-{}.png",
+   "impact": 0.5
+  }
+ }
+}

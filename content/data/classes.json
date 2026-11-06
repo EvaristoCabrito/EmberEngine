@@ -303,6 +303,9 @@
     },
     "giantBeetle": {
       "mov": 4
+    },
+    "ashesCrawler": {
+      "mov": 4
     }
   }
 }

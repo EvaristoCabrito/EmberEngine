@@ -1,0 +1,109 @@
+{
+ "about": "Hipóstase (Summon Hypostasis) from the user's videos (2026-11-04: IleAtck, Hitanddeath, WalkAttCuttheEnd, Walkleftandright, Minor Special, Creature_walking_in_place; 24 fps, 1280 x 720). The user, 2026-11-06: Alta + 64 + 36 (every frame is this spec; the 64 / 36 copies by tools/scripts/sprites/quality_copies.py), 3 hexes (figureUnits set by slime_pipeline.py --dir hypostasis --width 3.5, the Giant Spider's width). The moves and their frames are first values read off the videos: the user judges.",
+ "set": "hypostasis",
+ "version": "v01",
+ "figureUnits": 3.0674,
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/hypostasis/idleatk",
+   "video": "Attachments/IleAtck.mp4",
+   "first": 0,
+   "last": 96,
+   "loopMin": 40,
+   "loopMax": 96,
+   "mode": "loop",
+   "why": "facing the camera, breathing in place until the glow starts at ~96"
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "src": "build/video-cut/hypostasis/walkatk",
+   "video": "Attachments/WalkAttCuttheEnd.mp4",
+   "first": 48,
+   "last": 114,
+   "impactFrame": 76,
+   "mode": "once",
+   "why": "three-quarter view: the right claws sweep across 60-90 (the swipe at ~76), standing again by ~110"
+  },
+  {
+   "clip": "atk2",
+   "pose": "attack2",
+   "kind": "stand",
+   "src": "build/video-cut/hypostasis/idleatk",
+   "video": "Attachments/IleAtck.mp4",
+   "first": 96,
+   "last": 135,
+   "impactFrame": 112,
+   "mode": "once",
+   "why": "facing the camera: the veins light up from 96, the head bursts at ~112, dark again by ~128"
+  },
+  {
+   "clip": "cast",
+   "pose": "cast",
+   "kind": "stand",
+   "src": "build/video-cut/hypostasis/special",
+   "video": "Minor Special.mp4 (the user's Downloads)",
+   "first": 144,
+   "last": 220,
+   "impactFrame": 188,
+   "mode": "once",
+   "why": "rears with the arms open 160-200, the glow at its brightest ~188, settled by ~216"
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/hypostasis/walkside",
+   "video": "Attachments/Creature_walking_in_place_4dc8b81e.mp4",
+   "first": 0,
+   "last": 143,
+   "loopMin": 40,
+   "loopMax": 140,
+   "mode": "loop",
+   "why": "side view walking in place, facing right, the whole video"
+  },
+  {
+   "clip": "movefront",
+   "pose": "walkDown",
+   "kind": "walk",
+   "src": "build/video-cut/hypostasis/walkfront",
+   "video": "Attachments/Walkleftandright.mp4",
+   "first": 56,
+   "last": 135,
+   "loopMin": 40,
+   "loopMax": 80,
+   "mode": "loop",
+   "why": "facing the camera, stepping in place (the walk toward the viewer)"
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "kind": "stand",
+   "src": "build/video-cut/hypostasis/hitdeath",
+   "video": "Attachments/Hitanddeath.mp4",
+   "first": 40,
+   "last": 100,
+   "mode": "once",
+   "mirror": true,
+   "why": "side view facing left (mirrored to face right); the arrow of the video crosses ~28-38 and is left out; recoils 40-60, settled by ~100"
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "kind": "stand",
+   "src": "build/video-cut/hypostasis/hitdeath",
+   "video": "Attachments/Hitanddeath.mp4",
+   "first": 172,
+   "last": 239,
+   "standUntil": 180,
+   "mode": "once",
+   "mirror": true,
+   "why": "side view facing left (mirrored): collapses from ~180, flat by ~192, lies to the end"
+  }
+ ],
+ "figureNote": "set so the idle body (its opaque box) is 3.5 units wide"
+}

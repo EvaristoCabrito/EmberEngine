@@ -1,0 +1,51 @@
+{
+ "about": "Ashes Crawler (Rastreador de Cinzas) from the user's videos (Attachments/SandCrawler, 2026-11-06: \"its called Ashes Crawler\", \"they live in ashen forest primarily\"): iDLEaSHCRWALER.mp4 (idle, 144 frames) and aSHCRAWLERWALKatt.mp4 (walk + attack, 240 frames); 24 fps, 1280 x 720. Alta + 64 + 36 like the Hipóstase (the 64 / 36 copies by tools/scripts/sprites/quality_copies.py). Every video faces left: every clip is mirrored to face right like every unit's idle. The two videos have their own cameras, so each clip keeps its own scale (no figurePx); figureUnits is set by slime_pipeline.py --dir ashes-crawler --width 3.0 (a two-hex body). No hit / death in the videos yet. The moves and their frames are first values read off the videos: the user judges.",
+ "set": "ashes-crawler",
+ "version": "v01",
+ "figureUnits": 1.6212,
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/ashes-crawler/idle",
+   "video": "Attachments/SandCrawler/iDLEaSHCRWALER.mp4",
+   "first": 16,
+   "last": 95,
+   "loopMin": 40,
+   "loopMax": 80,
+   "mode": "loop",
+   "mirror": true,
+   "why": "three-quarter view facing left, breathing with the jaws working; 16-95 is the stretch on the plain light background (the video's first and last frames are on black)"
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/ashes-crawler/walkatt",
+   "video": "Attachments/SandCrawler/aSHCRAWLERWALKatt.mp4",
+   "first": 0,
+   "last": 95,
+   "loopMin": 40,
+   "loopMax": 95,
+   "mode": "loop",
+   "mirror": true,
+   "inPlace": true,
+   "why": "side view facing left, walking in place on six legs until the attack begins at ~96"
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "src": "build/video-cut/ashes-crawler/walkatt",
+   "video": "Attachments/SandCrawler/aSHCRAWLERWALKatt.mp4",
+   "first": 96,
+   "last": 191,
+   "impactFrame": 144,
+   "mode": "once",
+   "mirror": true,
+   "why": "rears with the jaws open 104-136, lunges low with the claws (the swipe at ~144), walking again by ~192"
+  }
+ ],
+ "figureNote": "set so the idle body (its opaque box) is 3.0 units wide"
+}

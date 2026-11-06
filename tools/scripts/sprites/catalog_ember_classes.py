@@ -15,8 +15,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.a
 
 def main():
     classes = json.load(open(os.path.join(ROOT, "content", "ember-classes.json"), encoding="utf-8"))["classes"]
-    roster = json.load(open(os.path.join(ROOT, "build", "ember-scenes", "roster.json"), encoding="utf-8"))
-    path = os.path.join(ROOT, "content", "ember", "editor-catalog.json")
+    roster = json.load(open(os.path.join(ROOT, "build", "scenes", "roster.json"), encoding="utf-8"))
+    path = os.path.join(ROOT, "content", "data", "editor-catalog.json")
     catalog = json.load(open(path, encoding="utf-8"))
     editor = catalog["editor"]
     for key, c in classes.items():

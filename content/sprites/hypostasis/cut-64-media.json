@@ -1,0 +1,111 @@
+{
+ "about": "hypostasis's Personagens Média (tools/scripts/sprites/quality_copies.py, the rule of 2026-10-25): every clip of cut.json from the same matted frames, at most 64 frames picked evenly (no blend, the clip's timing kept), the figure ~916 px tall (a clip already shorter keeps its own size).",
+ "set": "hypostasis-64-media",
+ "version": "media64-v01",
+ "figureUnits": 3.0674,
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/hypostasis/idleatk",
+   "video": "Attachments/IleAtck.mp4",
+   "first": 0,
+   "last": 96,
+   "loopMin": 40,
+   "loopMax": 96,
+   "mode": "loop",
+   "scaleTo": 916
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "src": "build/video-cut/hypostasis/walkatk",
+   "video": "Attachments/WalkAttCuttheEnd.mp4",
+   "first": 48,
+   "last": 114,
+   "impactFrame": 76,
+   "mode": "once",
+   "scaleTo": 916
+  },
+  {
+   "clip": "atk2",
+   "pose": "attack2",
+   "kind": "stand",
+   "src": "build/video-cut/hypostasis/idleatk",
+   "video": "Attachments/IleAtck.mp4",
+   "first": 96,
+   "last": 135,
+   "impactFrame": 112,
+   "mode": "once",
+   "scaleTo": 916
+  },
+  {
+   "clip": "cast",
+   "pose": "cast",
+   "kind": "stand",
+   "src": "build/video-cut/hypostasis/special",
+   "video": "Minor Special.mp4 (the user's Downloads)",
+   "first": 144,
+   "last": 220,
+   "impactFrame": 188,
+   "mode": "once",
+   "scaleTo": 916
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/hypostasis/walkside",
+   "video": "Attachments/Creature_walking_in_place_4dc8b81e.mp4",
+   "first": 0,
+   "last": 143,
+   "loopMin": 40,
+   "loopMax": 140,
+   "mode": "loop",
+   "scaleTo": 916
+  },
+  {
+   "clip": "movefront",
+   "pose": "walkDown",
+   "kind": "walk",
+   "src": "build/video-cut/hypostasis/walkfront",
+   "video": "Attachments/Walkleftandright.mp4",
+   "first": 56,
+   "last": 135,
+   "loopMin": 40,
+   "loopMax": 80,
+   "mode": "loop",
+   "scaleTo": 916
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "kind": "stand",
+   "src": "build/video-cut/hypostasis/hitdeath",
+   "video": "Attachments/Hitanddeath.mp4",
+   "first": 40,
+   "last": 100,
+   "mode": "once",
+   "mirror": true,
+   "scaleTo": 916
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "kind": "stand",
+   "src": "build/video-cut/hypostasis/hitdeath",
+   "video": "Attachments/Hitanddeath.mp4",
+   "first": 172,
+   "last": 239,
+   "standUntil": 180,
+   "mode": "once",
+   "mirror": true,
+   "scaleTo": 916
+  }
+ ],
+ "figureNote": "set so the idle body (its opaque box) is 3.5 units wide",
+ "result": "cut-result-64-media.json",
+ "frameCount": 64
+}

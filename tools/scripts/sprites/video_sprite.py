@@ -342,6 +342,10 @@ def main():
             x_off = [0]
             for i in range(1, n):
                 x_off.append(x_off[-1] - body_shift(al[i - 1], al[i], rows, cols))
+            if c.get("inPlace"):
+                # `inPlace` (the Ashes Crawler, 2026-11-06): the video already walks in place; its wide flat shell fools the body
+                # patch's tracking (the error adds up past the frame's width), so no frame is moved sideways
+                x_off = [0] * n
             soles = [sole_row(x.astype(np.uint8)) for x in al]
             target = int(np.median(soles))
             frames = [shifted(f, x_off[i], target - soles[i]) for i, f in enumerate(frames)]

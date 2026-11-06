@@ -361,6 +361,62 @@
    "poses": {"hit": "hit", "hit2": "hit2", "death": "death"},
    "labels": {"hit": "Dano", "hit2": "Dano seguido", "death": "Morte"},
    "packs": {}
+  },
+  {
+   "set": "hypostasis",
+   "version": "v01",
+   "hero": "hypostasis",
+   "newHero": {"name": "Hipóstase", "group": "monster", "sprite": "hypostasis", "reversed": false},
+   "cut": "content/sprites/hypostasis/cut.json",
+   "why": "the user, 2026-11-06: the Hipóstase (Summon Hypostasis) from their videos, Alta + 64 + 36, 3 hexes",
+   "poses": {"idle": "base", "walk": "move", "walkDown": "movefront", "attack": "atk", "attack2": "atk2", "cast": "cast", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "walkDown": "Andar (frente)", "attack": "Atacar", "attack2": "Atacar 2", "cast": "Conjurar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field", "movefront": "field"},
+   "strides": {"move": 1.0, "movefront": 1.0}
+  },
+  {
+   "set": "hypostasis-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/hypostasis/cut-64-media.json",
+   "why": "the Hipóstase's Personagens Média (the user, 2026-11-06): 64 frames from the same mattes",
+   "mediumOf": {"hero": "hypostasis", "set": "hypostasis"},
+   "packs": {"base": "field", "move": "field", "movefront": "field"}
+  },
+  {
+   "set": "hypostasis-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/hypostasis/cut-36-media.json",
+   "why": "the Hipóstase's Personagens Leve (the same order): 36 frames from the same mattes",
+   "lightOf": {"hero": "hypostasis", "set": "hypostasis"},
+   "packs": {"base": "field", "move": "field", "movefront": "field"}
+  },
+  {
+   "set": "ashes-crawler",
+   "version": "v01",
+   "hero": "ashesCrawler",
+   "newHero": {"name": "Rastreador de Cinzas", "group": "monster", "sprite": "ashes-crawler", "reversed": false},
+   "cut": "content/sprites/ashes-crawler/cut.json",
+   "why": "the user, 2026-11-06: the Ashes Crawler from their videos (Attachments/SandCrawler), Alta + 64 + 36 like the Hipóstase, 2 hexes; no hit / death yet",
+   "poses": {"idle": "base", "walk": "move", "attack": "atk"},
+   "labels": {"idle": "Parado", "walk": "Andar", "attack": "Atacar"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "ashes-crawler-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/ashes-crawler/cut-64-media.json",
+   "why": "the Ashes Crawler's Personagens Média (the user, 2026-11-06): 64 frames from the same mattes",
+   "mediumOf": {"hero": "ashesCrawler", "set": "ashes-crawler"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "ashes-crawler-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/ashes-crawler/cut-36-media.json",
+   "why": "the Ashes Crawler's Personagens Leve (the same order): 36 frames from the same mattes",
+   "lightOf": {"hero": "ashesCrawler", "set": "ashes-crawler"},
+   "packs": {"base": "field", "move": "field"}
   }
  ],
  "clips": [
