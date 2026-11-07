@@ -14,6 +14,7 @@
 #include <functional>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "CampaignUi.h"
 #include "GamePrefs.h"
@@ -35,16 +36,28 @@ class DialogScreen {
   void requestAdvanceFromAnywhere() { advanceRequested_ = true; }
 
   // Draws it over everything; true once it closed. `onReply` gets each chosen reply (its affinity, if any).
-  bool draw(ImVec2 size, const std::function<void(const ember::Json&)>& onReply = {}, std::optional<ImVec2> cutsceneSpeaker = {}) {
+  bool draw(ImVec2 size, const std::function<void(const ember::Json&)>& onReply = {}, std::optional<ImVec2> cutsceneSpeaker = {},
+            const std::vector<ImVec2>& cutsceneHeads = {}) {
     const ember::Json* line = find(line_);
     if (!line) return true;  // a missing line closes rather than soft-locks
     // A cutscene places a compact box opposite the speaker, leaving the face and the action visible as in a tactical RPG.
     // Regular conversations keep their existing layout.
     const float w = cutsceneSpeaker ? std::min(680.0f, std::max(1.0f, size.x - 32.0f)) : std::max(1.0f, size.x - 24.0f);
+    bool bottom = false;
     if (cutsceneSpeaker) {
-      const bool bottom = cutsceneSpeaker->y < size.y * 0.5f;
-      const float x = cutsceneSpeaker->x < size.x * 0.5f ? size.x - w - 16.0f : 16.0f;
-      ImGui::SetNextWindowPos({x, bottom ? size.y - 16.0f : 16.0f}, ImGuiCond_Always, {0.0f, bottom ? 1.0f : 0.0f});
+      float best = FLT_MAX, chosenX = 16.0f, chosenY = 16.0f;
+      for (int side = 0; side < 2; ++side) for (int row = 0; row < 2; ++row) {
+        const float x = side ? size.x - w - 16.0f : 16.0f;
+        const float top = row ? size.y - 236.0f : (side ? 60.0f : 16.0f);
+        float cost = (row == (cutsceneSpeaker->y < size.y * 0.5f) ? 0.0f : 8.0f) +
+                     (side != (cutsceneSpeaker->x < size.x * 0.5f) ? 4.0f : 0.0f);
+        for (const ImVec2 head : cutsceneHeads) {
+          if (head.x >= x - 44.0f && head.x <= x + w + 44.0f && head.y >= top - 40.0f && head.y <= top + 240.0f)
+            cost += 100.0f;
+        }
+        if (cost < best) best = cost, chosenX = x, chosenY = row ? size.y - 16.0f : top, bottom = row != 0;
+      }
+      ImGui::SetNextWindowPos({chosenX, chosenY}, ImGuiCond_Always, {0.0f, bottom ? 1.0f : 0.0f});
     } else {
       ImGui::SetNextWindowPos({size.x / 2, 0.0f}, ImGuiCond_Always, {0.5f, 0.0f});
     }
@@ -154,7 +167,6 @@ class DialogScreen {
     split.SetCurrentChannel(dl, 0);
     emberPanel(dl, a, b);
     if (cutsceneSpeaker) {
-      const bool bottom = cutsceneSpeaker->y < size.y * 0.5f;
       const float x = std::clamp(cutsceneSpeaker->x, a.x + 36.0f, b.x - 36.0f);
       const float edge = bottom ? a.y + 2.0f : b.y - 2.0f;
       const float tip = edge + (bottom ? -18.0f : 18.0f);

@@ -6963,14 +6963,23 @@ class MapStage final : public Stage {
     if (!cutsceneDialog_) return;
     const ImVec2 size = ImGui::GetIO().DisplaySize;
     std::optional<ImVec2> head;
+    std::vector<ImVec2> heads;
     if (cutscene_ && cutscene_->step < cutscene_->script.steps.size()) {
       const auto it = cutscene_->units.find(cutscene_->script.steps[cutscene_->step].actor);
       if (it != cutscene_->units.end() && unitBattle_[it->second] >= 0) {
         const SpellEffects::Spot spot = unitSpot(it->second);
         head = screenOf(spot.feet + glm::vec3(0.0f, cardHeightOf(spot) * 0.78f, 0.0f), size.x, size.y);
       }
+      for (const auto& [actor, ui] : cutscene_->units) {
+        if (unitBattle_[ui] < 0) continue;
+        const ember::BattleUnit& unit = battle_->units()[static_cast<size_t>(unitBattle_[ui])];
+        if (!unit.alive) continue;
+        const SpellEffects::Spot spot = unitSpot(ui);
+        if (auto projected = screenOf(spot.feet + glm::vec3(0.0f, cardHeightOf(spot) * 0.78f, 0.0f), size.x, size.y))
+          heads.push_back(*projected);
+      }
     }
-    if (cutsceneDialog_->draw(size, {}, head.value_or(ImVec2{size.x * 0.5f, size.y * 0.7f}))) cutsceneDialog_.reset();
+    if (cutsceneDialog_->draw(size, {}, head.value_or(ImVec2{size.x * 0.5f, size.y * 0.7f}), heads)) cutsceneDialog_.reset();
   }
 
   // The "shot" step (world/CutsceneScript.h): the camera's goal from the step's fields, a field left out keeping the camera's own.
