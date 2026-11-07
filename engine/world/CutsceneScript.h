@@ -38,7 +38,7 @@
 namespace ember {
 
 struct CutsceneStep {
-  enum class Kind { Move, Face, Say, Wait, Enter };
+  enum class Kind { Move, Face, Say, Wait, Enter, Exit };  // exit: the actor fades away and leaves the board (2026-11-06, Bosque Morto)
   Kind kind = Kind::Wait;
   std::string actor;        // the actor's stable name (move / face / say)
   int x = 0, y = 0;         // move / enter: the destination hex
@@ -47,6 +47,7 @@ struct CutsceneStep {
   std::string text;         // say: the line (the dialogue's own language)
   Json translations;        // say: {"en": ...}, the dialogue box's translations field
   std::string portrait;     // say: a sprite name for the portrait, when the speaker's own is not wanted
+  std::string speaker;      // say: the name shown instead of the unit's ("???": a voice); with it the actor may still be off the board
   float seconds = 0.0f;     // wait
 };
 

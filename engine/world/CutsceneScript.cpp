@@ -84,14 +84,18 @@ std::optional<CutsceneScript> CutsceneScript::parse(const Json& j, std::string* 
       step.translations = st.value("translations", Json());
       if (!step.translations.is_null() && !step.translations.is_object()) return refuse(at + ": \"translations\" must be an object");
       step.portrait = st.value("portrait", "");
+      step.speaker = st.value("speaker", "");
     } else if (kind == "wait") {
       step.kind = CutsceneStep::Kind::Wait;
       const auto sec = st.find("seconds");
       if (sec == st.end() || !sec->is_number()) return refuse(at + ": \"seconds\" must be a number");
       step.seconds = sec->get<float>();
       if (!std::isfinite(step.seconds) || step.seconds < 0.0f || step.seconds > 600.0f) return refuse(at + ": \"seconds\" out of range (0..600)");
+    } else if (kind == "exit") {
+      step.kind = CutsceneStep::Kind::Exit;
+      if (const auto e = actorOf("actor", step.actor)) return refuse(*e);
     } else {
-      return refuse(at + ": unknown action \"" + kind + "\" (move, face, say, wait, enter)");
+      return refuse(at + ": unknown action \"" + kind + "\" (move, face, say, wait, enter, exit)");
     }
     s.steps.push_back(std::move(step));
   }

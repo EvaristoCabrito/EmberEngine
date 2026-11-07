@@ -1521,6 +1521,18 @@
         "x": 4,
         "y": 12,
         "level": 15
+      },
+      {
+        "name": "Neera",
+        "classId": "neera",
+        "x": 12,
+        "y": 10
+      },
+      {
+        "name": "Voss",
+        "classId": "voss",
+        "x": 10,
+        "y": 11
       }
     ],
     "enemySpawns": [
@@ -1562,22 +1574,7 @@
         "useClassSprite": true
       }
     ],
-    "neutralSpawns": [
-      {
-        "name": "Neera",
-        "classId": "neera",
-        "x": 21,
-        "y": 15,
-        "level": 1
-      },
-      {
-        "name": "Voss",
-        "classId": "voss",
-        "x": 20,
-        "y": 15,
-        "level": 1
-      }
-    ],
+    "neutralSpawns": [],
     "introDialog": {
       "id": "vau-first-crossing-v01",
       "startId": "neera-current",

@@ -2,15 +2,21 @@
   "format": "ember-cutscene-triggers-1",
   "_about": "Map events that start an on-map cutscene (docs/CUTSCENES.md): onOpen = the script played once the map is ready (every time it opens), by map id. Read by MapStage (playCutscene). TEMPORARY entries for the Interlude's placeholder maps. onVictory = the scripts played once the map's fight is won, before the result screen.",
   "onOpen": {
+    "bosque": [
+      "bosque-morto-01-a-menina-no-tronco"
+    ],
     "interlude-city": "interlude-city-opening",
     "interlude-placeholder": "interlude-placeholder-opening",
+    "vau": [
+      "estranhos-na-costa"
+    ],
     "wisp-forest-crossing-boss": [
       "the-devouring-root-01-the-warning"
     ]
   },
   "onVictory": {
-    "vau": [
-      "estranhos-na-costa"
+    "bosque": [
+      "bosque-morto-02-o-que-a-guardia-deixou"
     ],
     "wisp-forest-crossing-boss": [
       "the-devouring-root-02-after-the-battle"

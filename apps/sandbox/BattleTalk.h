@@ -98,7 +98,7 @@ struct BattleTalk {
 
   void draw(MapStage& map) {
     const ImVec2 size = ImGui::GetIO().DisplaySize;
-    if (!introDone) {
+    if (!introDone && map.openingScenesOver()) {  // after the map's opening scenes (triggers.json onOpen), never over them
       introDone = true;
       open(map, "intro", "introEnabled");
     }
@@ -148,6 +148,11 @@ inline std::shared_ptr<BattleTalk> attachBattleTalk(MapStage& map, const std::st
   talk->world = &world;
   MapStage* stage = &map;
   map.overlay = [talk, stage] { talk->draw(*stage); };
+  map.escapeOverlay = [talk] {
+    if (talk->film) { talk->film.reset(); return true; }
+    if (talk->dialog) { talk->dialog.reset(); return true; }
+    return false;
+  };
   return talk;
 }
 

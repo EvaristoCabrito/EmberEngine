@@ -43,13 +43,27 @@ the contract both share.
   `{"unit": "Neera", "offstage": true}` waits off the board from the map's opening: a unit of that name that is not of the party is
   kept out of the fight (not drawn, no turn, blocks nothing, nothing in the save; MapStage `sendOffstage` reads the map's onOpen /
   onVictory scenes) and `enter` puts it on the hex (the nearest free one within 3 if taken), fading in over 0.8 s. A party hero of
-  that name (Modo teste seats everyone) is never sent off: its `enter` walks it there like `move`. Map Editor: "Entrar" and the
-  actor's "fora do tabuleiro".
+  that name is sent off too (2026-11-06) and comes in with its own hit points; if no scene brings it in (a scene refused or
+  stopped), `returnOffstageParty` puts it back on its spawn hex once the opening scenes are over, so the fight never loses a
+  hero. The map's intro conversation (BattleTalk) waits for the opening scenes. Map Editor: "Entrar" and the actor's "fora do
+  tabuleiro".
+- `exit` (2026-11-06, Bosque Morto): `{"do": "exit", "actor": "B"}`. A non-party actor leaves the board as a fallen unit does (its
+  death pose, then the fade; 1.6 s): no kill, no loot; it waits off the board, so a later `enter` could bring it back. A party
+  hero cannot leave by a scene. Map Editor: "Sair".
+- `say` with `"speaker": "???"` (2026-11-06): the name shown instead of the unit's; with it the actor may still be off the board (a
+  voice before its `enter`). A speaker with no art of its own shows no portrait.
+- Scene walks spend no Action Points (2026-11-06): the AP system caps a turn's walk, never a scene's.
 - `"camera": "actors"` (top level, optional): while the scene plays the camera's pivot glides to the middle of the actors standing on
   the board (zoom, turn and tilt stay the player's). Scenes without it leave the camera alone, as before.
 
-The first scene that uses both: `estranhos-na-costa` (the Vau's victory: Kael fights alone, then Neera and Voss come in on the
-empty south-east of the map; the campaign recruits them with the Vau's victory, overworld `joinIndex` 1 for both).
+The first scene that uses both: `estranhos-na-costa`, the Vau's opening (onOpen): Kael climbs the hill over the water on the
+empty east half of the south bank, Neera steps out from behind the cottage, Voss stands up the hill; at the end the three head
+west towards the ford and the fight begins. Neera and Voss are in the party from the start (overworld `joinIndex` 0).
+
+Bosque Morto (bosque014): `bosque-morto-01-a-menina-no-tronco` (onOpen) and `bosque-morto-02-o-que-a-guardia-deixou` (onVictory).
+Lio (`villagerF1`) and Vessa (`crazyLady`) are neutral NPCs of the map with the Inn's own sprites and portraits; both wait off the
+board until the opening brings them in (Lio out of the hollow log by (15,14), Vessa at the giant dead oak's foot (7,10)). In the
+fight they stand as neutrals (no turn, not targeted by the enemy); the victory scene ends with Vessa's `exit`.
 
 Validation (`world/CutsceneScript.cpp`): wrong `format`, no `id`, no actors, an empty step list, an unknown action, an
 undeclared actor, a malformed coordinate or duration refuse the file whole, naming the step.
