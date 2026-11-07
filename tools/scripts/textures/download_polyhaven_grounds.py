@@ -6,7 +6,9 @@ the colour (diff), the OpenGL normal (nor_gl), AO / roughness / metal packed (ar
 (<id>_diff_2k.jpg ...). Files already there are skipped (re-run to resume). content/textures/polyhaven/grounds.json lists each one:
 name, categories, tags, the files.
 
-  python -I tools/scripts/textures/download_polyhaven_grounds.py [--res 2k] [--only id,id]
+  python -I tools/scripts/textures/download_polyhaven_grounds.py [--res 2k] [--only id,id] [--categories a,b --manifest name.json]
+
+--categories / --manifest: another set the same way (2026-11-06: --categories bark --manifest barks.json, the trees' bark).
 """
 import json
 import sys
@@ -37,9 +39,11 @@ def get(url, tries=4):
 def main():
     res = sys.argv[sys.argv.index('--res') + 1] if '--res' in sys.argv else '2k'
     only = set(sys.argv[sys.argv.index('--only') + 1].split(',')) if '--only' in sys.argv else None
+    cats = set(sys.argv[sys.argv.index('--categories') + 1].split(',')) if '--categories' in sys.argv else CATEGORIES
+    manifest_name = sys.argv[sys.argv.index('--manifest') + 1] if '--manifest' in sys.argv else 'grounds.json'
     assets = json.loads(get(API + '/assets?t=textures'))
-    ids = sorted(k for k, v in assets.items() if CATEGORIES & set(v.get('categories', [])) and (not only or k in only))
-    manifest_path = OUT / 'grounds.json'
+    ids = sorted(k for k, v in assets.items() if cats & set(v.get('categories', [])) and (not only or k in only))
+    manifest_path = OUT / manifest_name
     manifest = json.loads(manifest_path.read_text(encoding='utf-8')) if manifest_path.exists() else {}
     total = 0
     for n, tid in enumerate(ids, 1):

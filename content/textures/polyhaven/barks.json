@@ -1,0 +1,658 @@
+{
+ "bark_bluegum": {
+  "name": "Bark Blue gum",
+  "categories": [
+   "bark",
+   "natural"
+  ],
+  "tags": [
+   "bark",
+   "tree",
+   "tree bark",
+   "tree bark texture",
+   "tree trunk",
+   "nature",
+   "outdoor",
+   "bluegum",
+   "organic",
+   "environment",
+   "forest"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "bark_bluegum_diff_2k.jpg",
+   "nor_gl": "bark_bluegum_nor_gl_2k.jpg",
+   "arm": "bark_bluegum_arm_2k.jpg",
+   "disp": "bark_bluegum_disp_2k.jpg"
+  }
+ },
+ "bark_brown_01": {
+  "name": "Bark Brown 01",
+  "categories": [
+   "wood",
+   "outdoor",
+   "natural",
+   "bark"
+  ],
+  "tags": [
+   "bark",
+   "tree",
+   "forest",
+   "knots",
+   "bark grooves",
+   "tree bark",
+   "tree trunk"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "bark_brown_01_diff_2k.jpg",
+   "nor_gl": "bark_brown_01_nor_gl_2k.jpg",
+   "arm": "bark_brown_01_arm_2k.jpg",
+   "disp": "bark_brown_01_disp_2k.jpg"
+  }
+ },
+ "bark_brown_02": {
+  "name": "Bark Brown 02",
+  "categories": [
+   "wood",
+   "outdoor",
+   "natural",
+   "bark"
+  ],
+  "tags": [
+   "bark",
+   "tree",
+   "forest",
+   "knots",
+   "wooden knots",
+   "tree trunk"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "bark_brown_02_diff_2k.jpg",
+   "nor_gl": "bark_brown_02_nor_gl_2k.jpg",
+   "arm": "bark_brown_02_arm_2k.jpg",
+   "disp": "bark_brown_02_disp_2k.jpg"
+  }
+ },
+ "bark_platanus": {
+  "name": "Bark Platanus",
+  "categories": [
+   "natural",
+   "bark"
+  ],
+  "tags": [
+   "bark",
+   "tree bark",
+   "natural",
+   "bark texture",
+   "forestry",
+   "tree",
+   "tree trunk",
+   "tree texture",
+   "platanus",
+   "nature",
+   "organic"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "bark_platanus_diff_2k.jpg",
+   "nor_gl": "bark_platanus_nor_gl_2k.jpg",
+   "arm": "bark_platanus_arm_2k.jpg",
+   "disp": "bark_platanus_disp_2k.jpg"
+  }
+ },
+ "bark_willow": {
+  "name": "Bark Willow",
+  "categories": [
+   "outdoor",
+   "natural",
+   "bark",
+   "wood"
+  ],
+  "tags": [
+   "willow",
+   "bark",
+   "tree",
+   "forest",
+   "nature",
+   "brown",
+   "uneven",
+   "sallow",
+   "osier",
+   "old",
+   "wood",
+   "woodland"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "bark_willow_diff_2k.jpg",
+   "nor_gl": "bark_willow_nor_gl_2k.jpg",
+   "arm": "bark_willow_arm_2k.jpg",
+   "disp": "bark_willow_disp_2k.jpg"
+  }
+ },
+ "bark_willow_02": {
+  "name": "Bark Willow 02",
+  "categories": [
+   "outdoor",
+   "natural",
+   "wood",
+   "raw wood",
+   "bark"
+  ],
+  "tags": [
+   "rough",
+   "dry",
+   "nature",
+   "tree",
+   "bark",
+   "wood",
+   "forest"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "bark_willow_02_diff_2k.jpg",
+   "nor_gl": "bark_willow_02_nor_gl_2k.jpg",
+   "arm": "bark_willow_02_arm_2k.jpg",
+   "disp": "bark_willow_02_disp_2k.jpg"
+  }
+ },
+ "chinese_cedar_bark": {
+  "name": "Chinese Cedar Bark",
+  "categories": [
+   "natural",
+   "bark"
+  ],
+  "tags": [
+   "rough",
+   "tree",
+   "tree bark",
+   "tree trunk",
+   "nature",
+   "trunk",
+   "bark texture",
+   "cedar bark",
+   "chinese cedar"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "chinese_cedar_bark_diff_2k.jpg",
+   "nor_gl": "chinese_cedar_bark_nor_gl_2k.jpg",
+   "arm": "chinese_cedar_bark_arm_2k.jpg",
+   "disp": "chinese_cedar_bark_disp_2k.jpg"
+  }
+ },
+ "chinese_hackberry_bark": {
+  "name": "Chinese Hackberry Bark",
+  "categories": [
+   "natural",
+   "bark"
+  ],
+  "tags": [
+   "bark",
+   "chinese",
+   "chinese hackberry",
+   "tree trunk",
+   "forestry",
+   "trunk",
+   "tree bark texture",
+   "tree texture",
+   "natural",
+   "tree bark",
+   "organic",
+   "tree"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "chinese_hackberry_bark_diff_2k.jpg",
+   "nor_gl": "chinese_hackberry_bark_nor_gl_2k.jpg",
+   "arm": "chinese_hackberry_bark_arm_2k.jpg",
+   "disp": "chinese_hackberry_bark_disp_2k.jpg"
+  }
+ },
+ "eucalyptus_bark": {
+  "name": "Eucalyptus Bark",
+  "categories": [
+   "bark",
+   "natural",
+   "outdoor"
+  ],
+  "tags": [
+   "rough",
+   "weathered",
+   "uneven",
+   "moss",
+   "lichen",
+   "bark",
+   "tree",
+   "tree bark",
+   "eucalyptus",
+   "trunk",
+   "mossy",
+   "flaky"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "eucalyptus_bark_diff_2k.jpg",
+   "nor_gl": "eucalyptus_bark_nor_gl_2k.jpg",
+   "arm": "eucalyptus_bark_arm_2k.jpg",
+   "disp": "eucalyptus_bark_disp_2k.jpg"
+  }
+ },
+ "japanese_camphor_bark": {
+  "name": "Japanese Camphor Bark",
+  "categories": [
+   "natural",
+   "bark"
+  ],
+  "tags": [
+   "bark",
+   "tree",
+   "tree bark",
+   "japanese",
+   "forest",
+   "organic",
+   "tree trunk",
+   "forestry",
+   "environment",
+   "bark texture"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "japanese_camphor_bark_diff_2k.jpg",
+   "nor_gl": "japanese_camphor_bark_nor_gl_2k.jpg",
+   "arm": "japanese_camphor_bark_arm_2k.jpg",
+   "disp": "japanese_camphor_bark_disp_2k.jpg"
+  }
+ },
+ "japanese_cedar_bark": {
+  "name": "Japanese Cedar Bark",
+  "categories": [
+   "outdoor",
+   "natural",
+   "bark"
+  ],
+  "tags": [
+   "bark",
+   "tree",
+   "tree bark",
+   "nature",
+   "bark texture",
+   "natural",
+   "forestry",
+   "japanese",
+   "cedar bark",
+   "cedar",
+   "organic"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "japanese_cedar_bark_diff_2k.jpg",
+   "nor_gl": "japanese_cedar_bark_nor_gl_2k.jpg",
+   "arm": "japanese_cedar_bark_arm_2k.jpg",
+   "disp": "japanese_cedar_bark_disp_2k.jpg"
+  }
+ },
+ "japanese_hackberry_bark": {
+  "name": "Japanese Hackberry Bark",
+  "categories": [
+   "outdoor",
+   "bark",
+   "natural",
+   "wood"
+  ],
+  "tags": [
+   "tree",
+   "bark",
+   "forest",
+   "natural",
+   "tree bark",
+   "tree trunk",
+   "organic",
+   "moss",
+   "nature"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "japanese_hackberry_bark_diff_2k.jpg",
+   "nor_gl": "japanese_hackberry_bark_nor_gl_2k.jpg",
+   "arm": "japanese_hackberry_bark_arm_2k.jpg",
+   "disp": "japanese_hackberry_bark_disp_2k.jpg"
+  }
+ },
+ "japanese_sycamore": {
+  "name": "Japanese Sycamore",
+  "categories": [
+   "outdoor",
+   "natural",
+   "bark",
+   "wood"
+  ],
+  "tags": [
+   "dry",
+   "tree",
+   "bark",
+   "wood",
+   "nature",
+   "forest",
+   "wooden",
+   "non square"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "japanese_sycamore_diff_2k.jpg",
+   "nor_gl": "japanese_sycamore_nor_gl_2k.jpg",
+   "arm": "japanese_sycamore_arm_2k.jpg",
+   "disp": "japanese_sycamore_disp_2k.jpg"
+  }
+ },
+ "japanese_zelkova_bark": {
+  "name": "Japanese Zelkova Bark",
+  "categories": [
+   "natural",
+   "bark",
+   "wood"
+  ],
+  "tags": [
+   "japanese",
+   "bark",
+   "tree bark",
+   "tree",
+   "tree trunk",
+   "natural",
+   "environment",
+   "bark texture",
+   "organic",
+   "forestry",
+   "trunk"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "japanese_zelkova_bark_diff_2k.jpg",
+   "nor_gl": "japanese_zelkova_bark_nor_gl_2k.jpg",
+   "arm": "japanese_zelkova_bark_arm_2k.jpg",
+   "disp": "japanese_zelkova_bark_disp_2k.jpg"
+  }
+ },
+ "jolcham_oak_bark_01": {
+  "name": "Jolcham Oak Bark 01",
+  "categories": [
+   "outdoor",
+   "natural",
+   "bark"
+  ],
+  "tags": [
+   "rough",
+   "weathered",
+   "uneven",
+   "moss",
+   "mossy",
+   "mosscovered",
+   "bark",
+   "tree",
+   "tree bark",
+   "organic",
+   "fissured",
+   "bark texture",
+   "tree trunk",
+   "trunk",
+   "tree texture",
+   "non square"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "jolcham_oak_bark_01_diff_2k.jpg",
+   "nor_gl": "jolcham_oak_bark_01_nor_gl_2k.jpg",
+   "arm": "jolcham_oak_bark_01_arm_2k.jpg",
+   "disp": "jolcham_oak_bark_01_disp_2k.jpg"
+  }
+ },
+ "knotted_pine_bark": {
+  "name": "Knotted Pine Bark",
+  "categories": [
+   "bark",
+   "natural"
+  ],
+  "tags": [
+   "bark",
+   "tree",
+   "tree bark",
+   "tree trunk",
+   "pine",
+   "knotty pine",
+   "pine bark ",
+   "tree bark texture",
+   "organic",
+   "environment",
+   "natural",
+   "forest",
+   "rough",
+   "nature",
+   "outdoors",
+   "tree texture"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "knotted_pine_bark_diff_2k.jpg",
+   "nor_gl": "knotted_pine_bark_nor_gl_2k.jpg",
+   "arm": "knotted_pine_bark_arm_2k.jpg",
+   "disp": "knotted_pine_bark_disp_2k.jpg"
+  }
+ },
+ "metasequoia_bark": {
+  "name": "Metasequoia Bark",
+  "categories": [
+   "natural",
+   "bark"
+  ],
+  "tags": [
+   "bark",
+   "tree bark",
+   "natural",
+   "bark texture",
+   "forestry",
+   "tree",
+   "tree trunk",
+   "tree texture",
+   "nature",
+   "organic",
+   "metasequoia"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "metasequoia_bark_diff_2k.jpg",
+   "nor_gl": "metasequoia_bark_nor_gl_2k.jpg",
+   "arm": "metasequoia_bark_arm_2k.jpg",
+   "disp": "metasequoia_bark_disp_2k.jpg"
+  }
+ },
+ "palm_bark": {
+  "name": "Palm Bark",
+  "categories": [
+   "natural",
+   "bark"
+  ],
+  "tags": [
+   "tree",
+   "tree bark",
+   "tree trunk",
+   "palm",
+   "bark texture",
+   "natural",
+   "environment",
+   "tropical",
+   "bark",
+   "trunk",
+   "forestry"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "palm_bark_diff_2k.jpg",
+   "nor_gl": "palm_bark_nor_gl_2k.jpg",
+   "arm": "palm_bark_arm_2k.jpg",
+   "disp": "palm_bark_disp_2k.jpg"
+  }
+ },
+ "palm_tree_bark": {
+  "name": "Palm Tree Bark",
+  "categories": [
+   "outdoor",
+   "bark",
+   "wood",
+   "natural"
+  ],
+  "tags": [
+   "seaside",
+   "palm",
+   "tree",
+   "bark",
+   "damaged",
+   "forest",
+   "tropical",
+   "nature"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "palm_tree_bark_diff_2k.jpg",
+   "nor_gl": "palm_tree_bark_nor_gl_2k.jpg",
+   "arm": "palm_tree_bark_arm_2k.jpg",
+   "disp": "palm_tree_bark_disp_2k.jpg"
+  }
+ },
+ "pine_bark": {
+  "name": "Pine Bark",
+  "categories": [
+   "natural",
+   "bark",
+   "collection: pine_forest",
+   "wood"
+  ],
+  "tags": [
+   "rough",
+   "weathered",
+   "bark",
+   "tree",
+   "tree bark",
+   "pine",
+   "organic"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "pine_bark_diff_2k.jpg",
+   "nor_gl": "pine_bark_nor_gl_2k.jpg",
+   "arm": "pine_bark_arm_2k.jpg",
+   "disp": "pine_bark_disp_2k.jpg"
+  }
+ },
+ "sakura_bark": {
+  "name": "Sakura Bark",
+  "categories": [
+   "outdoor",
+   "bark",
+   "natural",
+   "wood"
+  ],
+  "tags": [
+   "rough",
+   "bark",
+   "tree",
+   "tree bark",
+   "nature",
+   "japanese",
+   "trunk",
+   "wood",
+   "natural",
+   "bark texture",
+   "tree trunk",
+   "forestry",
+   "organic"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "sakura_bark_diff_2k.jpg",
+   "nor_gl": "sakura_bark_nor_gl_2k.jpg",
+   "arm": "sakura_bark_arm_2k.jpg",
+   "disp": "sakura_bark_disp_2k.jpg"
+  }
+ },
+ "tree_bark_03": {
+  "name": "Tree Bark 03",
+  "categories": [
+   "wood",
+   "natural",
+   "outdoor",
+   "bark"
+  ],
+  "tags": [
+   "bark",
+   "moss",
+   "rough",
+   "old"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "tree_bark_03_diff_2k.jpg",
+   "nor_gl": "tree_bark_03_nor_gl_2k.jpg",
+   "arm": "tree_bark_03_arm_2k.jpg",
+   "disp": "tree_bark_03_disp_2k.jpg"
+  }
+ },
+ "trident_maple_bark": {
+  "name": "Trident Maple Bark",
+  "categories": [
+   "natural",
+   "bark"
+  ],
+  "tags": [
+   "tree",
+   "tree bark",
+   "bark",
+   "tree bark texture",
+   "tree trunk",
+   "nature",
+   "botanical",
+   "outdoor",
+   "trident maple",
+   "forest",
+   "organic",
+   "landscape"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "trident_maple_bark_diff_2k.jpg",
+   "nor_gl": "trident_maple_bark_nor_gl_2k.jpg",
+   "arm": "trident_maple_bark_arm_2k.jpg",
+   "disp": "trident_maple_bark_disp_2k.jpg"
+  }
+ },
+ "yellow_flower_mulch": {
+  "name": "Yellow Flower Mulch",
+  "categories": [
+   "floor",
+   "bark"
+  ],
+  "tags": [
+   "scattered flowers",
+   "mulch",
+   "plant debris",
+   "floral debris",
+   "scattered petals",
+   "petals",
+   "mulch bed",
+   "bark",
+   "tree bark",
+   "sticks",
+   "leaf litter",
+   "wood chips",
+   "mulching"
+  ],
+  "res": "2k",
+  "files": {
+   "diff": "yellow_flower_mulch_diff_2k.jpg",
+   "nor_gl": "yellow_flower_mulch_nor_gl_2k.jpg",
+   "arm": "yellow_flower_mulch_arm_2k.jpg",
+   "disp": "yellow_flower_mulch_disp_2k.jpg"
+  }
+ }
+}
