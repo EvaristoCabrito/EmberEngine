@@ -4887,13 +4887,11 @@ class MapStage final : public Stage {
     return std::pow(10.0f, -0.4f * (0.026f * a + 4e-9f * a * a * a * a));
   }
 
-  // How many stops darker than the meter the camera exposes: none in full daylight, about 0.75 at dusk, ramping to 2.5 at
-  // night. The old first term added two full stops as soon as dusk began, then added the night curve on top; that buried
-  // characters in shadow even when the moon was up.
+  // Restore the map's prior exposure curve (stable through the previous month); the revised dusk curve changed the look of
+  // the Bosque Morto ground even though its approved tile mask and ground texture had not changed.
   static float nightDarkening(float ev100) {
-    const float dusk = 0.75f * std::clamp((14.0f - ev100) / 4.0f, 0.0f, 1.0f);
-    const float night = std::clamp((10.0f - ev100) / 12.5f, 0.0f, 1.0f);
-    return glm::mix(dusk, kNightStops, night);
+    return 2.0f * std::clamp((14.0f - ev100) / 4.0f, 0.0f, 1.0f) +
+           kNightStops * std::clamp((10.0f - ev100) / 12.5f, 0.0f, 1.3f);
   }
   // The painted flames' glow on screen: full at night, still burning by day (from the camera's EV). A flame shines about as
   // bright as sunlit white, so it glows against anything in shade (the user, 2026-10-21: "velas e braziers devem continuar
