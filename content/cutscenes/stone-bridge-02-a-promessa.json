@@ -518,14 +518,10 @@
     {
       "do": "shot",
       "on": "butcher",
-      "offset": [
-        0,
-        2.5
-      ],
       "turn": "s",
       "tilt": 25,
       "distance": 6,
-      "lift": 0.1,
+      "lift": 0.4,
       "cut": true
     },
     {

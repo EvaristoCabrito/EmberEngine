@@ -434,14 +434,11 @@
     },
     {
       "do": "shot",
-      "on": [
-        20,
-        10
-      ],
+      "on": "kael",
       "turn": "e",
-      "tilt": 6,
-      "distance": 9,
-      "lift": 0.5,
+      "tilt": 22,
+      "distance": 14,
+      "lift": 0.4,
       "cut": true
     },
     {
