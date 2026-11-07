@@ -1,6 +1,7 @@
 // A fight in progress, saved and resumed (Ember BattleEngine captureSnapshot / applySnapshot): the units' live
 // state, the round, its initiative order and every enemy's enmity table, in Ember's BattleSnapshot field names.
 
+#include "world/ActionPoints.h"
 #include "world/Battle.h"
 #include "world/Spells.h"
 
@@ -64,6 +65,8 @@ nlohmann::json Battle::snapshot() const {
     if (!u.fearSourceId.empty()) s["fearSourceId"] = u.fearSourceId;
     s["blessedHitBonusPct"] = u.blessedHitBonusPct, s["blessedRoundsLeft"] = u.blessedRoundsLeft;
     if (!u.summonerId.empty()) s["summonerId"] = u.summonerId;
+    s["burialWeightActive"] = u.burialWeightActive;
+    s["burialWeightAnchorX"] = u.burialWeightAnchorX, s["burialWeightAnchorY"] = u.burialWeightAnchorY;
     s["spellCharges"] = u.spellCharges;
     if (u.lifeDrainCharges) s["lifeDrainCharges"] = *u.lifeDrainCharges;
     if (u.faceDx) s["faceDx"] = *u.faceDx;
@@ -88,7 +91,10 @@ nlohmann::json Battle::snapshot() const {
                    {"acidTurns", c.acidTurns},   {"acidDice", c.acidDice},       {"acidFaces", c.acidFaces},       {"acidMag", c.acidMag},
                    {"mantleTurns", c.mantleTurns}, {"mantleDice", c.mantleDice}, {"mantleFaces", c.mantleFaces},   {"oathShown", c.oathShown},
                    {"arcaneMarkDice", c.arcaneMarkDice}, {"arcaneMarkFaces", c.arcaneMarkFaces}, {"arcaneMarkTurns", c.arcaneMarkTurns},
-                   {"arcaneMarkBy", c.arcaneMarkBy}};
+                   {"arcaneMarkBy", c.arcaneMarkBy}, {"witchStitchDice", c.witchStitchDice}, {"witchStitchFaces", c.witchStitchFaces},
+                   {"witchStitchMag", c.witchStitchMag}, {"witchStitchMul", c.witchStitchMul}, {"witchStitchSource", c.witchStitchSource}, {"witchStitchAnchorX", c.witchStitchAnchorX},
+                   {"witchStitchAnchorY", c.witchStitchAnchorY}, {"burialRootSources", c.burialRootSources},
+                   {"twinResonanceTargets", c.twinResonanceTargets}, {"twinResonancePercent", c.twinResonancePercent}};
     }
     if (u.empowerBase)
       s["empowerBase"] = {{"atk", u.empowerBase->atk}, {"mag", u.empowerBase->mag}, {"def", u.empowerBase->def}, {"dex", u.empowerBase->dex}, {"mov", u.empowerBase->mov}};
@@ -96,6 +102,7 @@ nlohmann::json Battle::snapshot() const {
     if (u.disarmBase) s["disarmBase"] = *u.disarmBase;
     if (u.decayBase)
       s["decayBase"] = {{"atk", u.decayBase->atk}, {"mag", u.decayBase->mag}, {"def", u.decayBase->def}, {"dex", u.decayBase->dex}, {"mov", u.decayBase->mov}};
+    apWriteSnapshot(u, s);  // Action Points: its reserve, the round it was refreshed in, its armor, its modifiers
     units.push_back(std::move(s));
   }
   nlohmann::json zones = nlohmann::json::array();
@@ -151,7 +158,8 @@ nlohmann::json Battle::snapshot() const {
           {"ownedWeapons", nlohmann::json(ownedWeapons_)},
           {"turn", round_}, {"units", units}, {"turnOrder", order}, {"enmity", enmity}, {"lootRations", lootRations_}, {"roaming", roaming_},
           {"zones", zones}, {"zoneSerial", zoneSerial_}, {"log", log_}, {"webZones", webs}, {"iceStormZones", ices}, {"auraZones", auras},
-          {"warpGates", gates}, {"turnRestrained", turnRestrained_}, {"questFound", questFound_}};
+          {"warpGates", gates}, {"turnRestrained", turnRestrained_}, {"questFound", questFound_},
+          {"examined", std::vector<std::string>(examined_.begin(), examined_.end())}};
 }
 
 bool Battle::applySnapshot(const nlohmann::json& snap) {
@@ -239,6 +247,8 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
     u.fearSourceId = s.value("fearSourceId", std::string());
     u.blessedHitBonusPct = s.value("blessedHitBonusPct", 0.0), u.blessedRoundsLeft = s.value("blessedRoundsLeft", 0);
     u.summonerId = s.value("summonerId", std::string());
+    u.burialWeightActive = s.value("burialWeightActive", false);
+    u.burialWeightAnchorX = s.value("burialWeightAnchorX", u.x), u.burialWeightAnchorY = s.value("burialWeightAnchorY", u.y);
     u.spellCharges = s.value("spellCharges", 0);
     u.lifeDrainCharges.reset();
     if (s.contains("lifeDrainCharges") && s["lifeDrainCharges"].is_number()) u.lifeDrainCharges = s["lifeDrainCharges"].get<int>();
@@ -277,6 +287,16 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       o.mantleTurns = c.value("mantleTurns", 0), o.mantleDice = c.value("mantleDice", 0), o.mantleFaces = c.value("mantleFaces", 0), o.oathShown = c.value("oathShown", false);
       o.arcaneMarkDice = c.value("arcaneMarkDice", 0), o.arcaneMarkFaces = c.value("arcaneMarkFaces", 0), o.arcaneMarkTurns = c.value("arcaneMarkTurns", 0);
       o.arcaneMarkBy = c.value("arcaneMarkBy", -1);
+      o.witchStitchDice = c.value("witchStitchDice", 0), o.witchStitchFaces = c.value("witchStitchFaces", 0);
+      o.witchStitchMag = c.value("witchStitchMag", 0.0), o.witchStitchMul = c.value("witchStitchMul", 1.0), o.witchStitchSource = c.value("witchStitchSource", std::string());
+      o.witchStitchAnchorX = c.value("witchStitchAnchorX", 0), o.witchStitchAnchorY = c.value("witchStitchAnchorY", 0);
+      if (c.contains("burialRootSources") && c["burialRootSources"].is_array())
+        for (const nlohmann::json& source : c["burialRootSources"])
+          if (source.is_string()) o.burialRootSources.push_back(source.get<std::string>());
+      o.twinResonancePercent = c.value("twinResonancePercent", 0);
+      if (c.contains("twinResonanceTargets") && c["twinResonanceTargets"].is_array())
+        for (const nlohmann::json& target : c["twinResonanceTargets"])
+          if (target.is_string()) o.twinResonanceTargets.push_back(target.get<std::string>());
       o.reflectTurns = c.value("reflectTurns", 0), o.reflectPct = c.value("reflectPct", 0), o.reflectHealPct = c.value("reflectHealPct", 0);
       o.daggers = c.value("daggers", 0);
     }
@@ -296,7 +316,13 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
     }
     // Older snapshots may predate class unlock corrections. Refresh learned spells without refilling any tier uses.
     grantClassSpells(u);
+    // Action Points, after the stats and conditions they are computed from (a snapshot saved before AP: the maximum once)
+    apReadSnapshot(*this, u, s, snap.value("turn", round_));
   }
+  examined_.clear();
+  if (snap.contains("examined") && snap["examined"].is_array())
+    for (const nlohmann::json& id : snap["examined"])
+      if (id.is_string()) examined_.insert(id.get<std::string>());
   zones_.clear();
   zoneSerial_ = snap.value("zoneSerial", 0);
   if (snap.contains("zones") && snap["zones"].is_array())

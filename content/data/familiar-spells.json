@@ -1,0 +1,18 @@
+{
+  "arcaneBanquet": {
+    "progression": [
+      { "level": 5, "unlock": 5, "range": 3, "resistanceBonus": 0, "chargeCost": 2 },
+      { "level": 12, "unlock": 5, "range": 5, "resistanceBonus": 10, "chargeCost": 2 },
+      { "level": 20, "unlock": 5, "range": 7, "resistanceBonus": 20, "chargeCost": 1 }
+    ]
+  },
+  "twinResonance": {
+    "progression": [
+      { "level": 1, "unlock": 1, "range": 3, "targetGap": 3, "percent": 20, "resistanceBonus": 0 },
+      { "level": 16, "unlock": 16, "range": 4, "targetGap": 4, "percent": 25, "resistanceBonus": 5 },
+      { "level": 31, "unlock": 31, "range": 5, "targetGap": 5, "percent": 30, "resistanceBonus": 10 },
+      { "level": 46, "unlock": 46, "range": 6, "targetGap": 6, "percent": 35, "resistanceBonus": 15 },
+      { "level": 60, "unlock": 60, "range": 7, "targetGap": 7, "percent": 40, "resistanceBonus": 20 }
+    ]
+  }
+}

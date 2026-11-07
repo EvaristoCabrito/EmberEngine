@@ -1,4 +1,5 @@
 #include "world/Combat.h"
+#include "world/ActionPoints.h"
 
 #include <algorithm>
 #include <cmath>
@@ -332,7 +333,8 @@ Forecast forecast(const Battle& b, size_t attacker, BattleHex from, size_t defen
   Forecast f;
   const Preview out = previewDamage(b, att, def, attTile, defTile, offHand, useSkill);
   f.dmgOut = out.dmg, f.hitOut = out.hitChance;
-  f.canCounter = canCounter(b, att, from, def);
+  // NO AP, NO COUNTER (world/ActionPoints.h): the defender must hold the AP of the counter it would make
+  f.canCounter = canCounter(b, att, from, def) && apCanCounter(b, du, b.units()[attacker], from);
   const bool daggerCounter = du.combat.offHandWeapon && Battle::distance({du.x, du.y}, from) <= du.combat.offMaxRange;
   if (f.canCounter) {
     // The counter is struck at an attacker facing it (never from behind).

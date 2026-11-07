@@ -12,6 +12,7 @@
 #include <set>
 
 #include "core/Log.h"
+#include "world/ActionPoints.h"
 #include "world/Progression.h"
 
 namespace ember {
@@ -78,6 +79,11 @@ constexpr SpellData kSpells[] = {
     {"lightningTier3", "Relâmpago 3", 5, "lightning", false},
     {"minorVenom", "Veneno Menor", 4, "poison", false},
     {"familiarLifeDrain", "Dreno de Vida", 0, "darkness", false},
+    {"witchStitch", "Costura da Bruxa", 0, "arcane", false},
+    {"burialWeight", "Peso Sepulcral", 0, "arcane", false},
+    {"abyssalSwap", "Permuta Abissal", 0, "arcane", false},
+    {"arcaneBanquet", "Banquete Arcano", 0, "arcane", false},
+    {"twinResonance", "Ressonância Geminada", 0, "arcane", false},
     {"divineWrath", "Ira Divina", 6, "holy", false},
     {"shoulderSmash", "Investida de Ombro", 4, "", false},
     {"stampede", "Debandada", 6, "", false},
@@ -173,6 +179,11 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"arcaneBlade", "Lâmina Arcana", 1, "arcane", true}, "conjurer", 1, "Selene"},
     // ... and its mark going off (never learned: the marked foe walks)
     {{"arcaneMarkBurst", "Marca Arcana", 1, "arcane", false}, "", 99},
+    // The basic Familiar and the old Titan/Numen keep exclusive spells from their own charge pool.
+    {{"witchStitch", "Costura da Bruxa", 0, "arcane", false}, "familiar", 1},
+    {{"burialWeight", "Peso Sepulcral", 0, "arcane", false}, "familiar3", 15},
+    {{"abyssalSwap", "Permuta Abissal", 0, "arcane", false}, "familiar2", 5},
+    {{"arcaneBanquet", "Banquete Arcano", 0, "arcane", false}, "familiar2", 5},
 };
 // The base class a promotion keeps the skills of (the Guerreiro's go on into the Paladino and the Cavaleiro Pesado, the
 // Arqueiro's into the Patrulheiro and the Assassino, the Lanceiro's into the Sentinela and the Templário).
@@ -1361,6 +1372,7 @@ void gainCounterExp(BattleUnit& u) {
 // markDead: an enemy's kill-drop roll (the loot itself is not kept yet).
 void markDead(BattleUnit& u, Mulberry32& rng) {
   u.alive = false;
+  if (u.classId == "hypostasis") u.cond.twinResonancePercent = 0, u.cond.twinResonanceTargets.clear();
   if (u.side != "enemy") return;
   if (u.guaranteedDrop) {
     rng();  // weightedLootPick
@@ -2515,14 +2527,17 @@ std::string emberSpellClass(const std::string& kind) {
 }
 int spellLearnLevel(const std::string& kind) {
   if (kind == "iceStorm") return kMageIceStormLevel;
+  if (kind == "arcaneBanquet") return arcaneBanquetPower(0).unlock;
   const EmberSpell* e = emberSpell(kind);
   return e ? e->learn : 0;
 }
 std::vector<std::string> emberSpells(const std::string& classId, int level, const std::string& hero) {
   std::vector<std::string> out;
   const std::string family = emberClassFamily(classId);
-  for (const EmberSpell& e : kEmberSpells)
-    if ((classId == e.cls || family == e.cls) && level >= e.learn && (!e.hero || hero == e.hero)) out.push_back(e.data.kind);
+  for (const EmberSpell& e : kEmberSpells) {
+    const int unlock = std::string(e.data.kind) == "arcaneBanquet" ? arcaneBanquetPower(level).unlock : e.learn;
+    if ((classId == e.cls || family == e.cls) && level >= unlock && (!e.hero || hero == e.hero)) out.push_back(e.data.kind);
+  }
   return out;
 }
 std::vector<std::string> checkSpellTracks(std::vector<std::string>* report) {
@@ -2666,6 +2681,7 @@ void grantClassSpells(BattleUnit& u) {
   }
   for (const std::string& k : emberSpells(u.classId, u.level, u.name))
     if (!contains(u.spellList, k)) u.spellList.push_back(k);
+  if (u.classId == "hypostasis" && !contains(u.spellList, std::string("twinResonance"))) u.spellList.push_back("twinResonance");
   // The ordinary spell bar and casting checks must grant Voss the same storm the effects preview can play.
   // Keep its existing casting implementation; this is a class unlock, not a new spell formula.
   if (u.side == "player" && emberClassFamily(u.classId) == std::string("mage") && u.level >= kMageIceStormLevel &&
@@ -2723,6 +2739,9 @@ std::string conditionsText(const BattleUnit& u) {
   if (u.cond.sunderPct > 0) add(std::format("{} -{}% DEF ({})", pick("Guarda quebrada", "Guard broken"), u.cond.sunderPct, u.cond.sunderTurns + 1));
   if (u.cond.arcaneMarkDice > 0)
     add(std::format("{} {}D{} ({})", pick("Marca Arcana", "Arcane Mark"), u.cond.arcaneMarkDice, u.cond.arcaneMarkFaces, u.cond.arcaneMarkTurns + 1));
+  if (u.cond.witchStitchDice > 0) add(pick("Costura da Bruxa · rompe ao mover", "Witch's Stitch · ruptures on move"));
+  if (!u.cond.burialRootSources.empty()) add(pick("Peso Sepulcral · movimento impedido", "Burial Weight · movement prevented"));
+  if (u.burialWeightActive) add(pick("Ancorado pelo Peso Sepulcral", "Anchored by Burial Weight"));
   if (u.cond.rallyPct > 0) add(std::format("{} +{}% ATK ({})", pick("Grito de Guerra", "War Cry"), u.cond.rallyPct, u.cond.rallyTurns + 1));
   if (u.cond.mantleDice > 0)
     add(std::format("{} +{}D{} ({})", pick("Manto do Cruzado", "Crusader's Mantle"), u.cond.mantleDice, u.cond.mantleFaces, u.cond.mantleTurns + 1));
@@ -2748,6 +2767,7 @@ std::string conditionsText(const BattleUnit& u) {
   if (u.crippled) add(pick("Aleijado -10%", "Crippled -10%"));
   if (u.fearTurns > 0) add(std::string(pick("Com medo", "Afraid")) + std::format(" ({})", u.fearTurns));
   if (u.blessedRoundsLeft > 0) add(std::string(pick("Abençoado", "Blessed")) + std::format(" +{}% ({})", static_cast<int>(jsRound(u.blessedHitBonusPct * 100)), u.blessedRoundsLeft));
+  if (u.cond.twinResonancePercent > 0) add(std::format("{} {}%", pick("Ressonância Geminada", "Twin Resonance"), u.cond.twinResonancePercent));
   return s;
 }
 std::string spellExplain(const std::string& kind, bool en) {
@@ -2801,6 +2821,8 @@ std::string spellExplain(const std::string& kind, bool en) {
       {"phantasmalForce", "Uma ilusão que fere um inimigo que você vê.", "An illusion that wounds a foe you can see."},
       {"webOfDreams", "Uma teia no hex mirado que fica 3 rodadas: quem está nela pode adormecer (1D4 turnos), aliados também; quem dorme leva 25% a mais de dano.",
        "A web on the aimed hex that stays 3 rounds: whoever is in it may fall asleep (1D4 turns), allies too; sleepers take 25% more damage."},
+      {"twinResonance", "Vincula dois inimigos visíveis. Até o começo do próximo turno da Hipóstase, cada um ecoa no outro parte do dano que realmente sofreu, após as resistências; dano de aliados não ecoa.",
+       "Links two visible foes. Until the Hipóstase's next turn begins, each echoes part of the actual damage it takes to the other, after resistances; allied damage does not echo."},
       {"summonFamiliar", "Invoca um familiar num hex livre até o alcance; ele luta ao seu lado.", "Summons a familiar on a free hex within reach; it fights at your side."},
       {"summonFamiliar2", "Invoca um familiar maior num hex livre até o alcance.", "Summons a greater familiar on a free hex within reach."},
       {"summonFamiliar4", "Invoca um familiar radiante num hex livre até o alcance.", "Summons a radiant familiar on a free hex within reach."},
@@ -2974,6 +2996,31 @@ std::string spellScaleTextRaw(const BattleUnit& c, const std::string& kind, bool
   }
   if (kind == "webOfDreams")
     return std::format("{} · {} · {} {}%", reach(kWebRange), area(1), pick("sono", "sleep"), static_cast<int>(jsRound(webOfDreamsSleepChance(lv) * 100)));
+  if (kind == "witchStitch") {
+    const FamiliarSpellPower p = witchStitchPower(lv);
+    return std::format("{} · {} · {} {}D{} · {}", reach(p.range), pick("um alvo", "one target"), damage, p.dice, p.faces,
+                       pick("rompe no movimento voluntário", "ruptures on voluntary movement"));
+  }
+  if (kind == "abyssalSwap") {
+    const AbyssalSwapPower p = abyssalSwapPower(lv);
+    return std::format("{} · {} · -{}% {} · {} {}", reach(p.range), pick("troca um inimigo e você", "swap places with one enemy"), p.resistanceBonus,
+                       pick("resistência arcana", "arcane resistance"), p.chargeCost, pick("cargas", "charges"));
+  }
+  if (kind == "arcaneBanquet") {
+    const ArcaneBanquetPower p = arcaneBanquetPower(lv);
+    return std::format("{} · {} · -{}% {} · {} {}", reach(p.range), pick("rouba um buff elegível", "steals one eligible boon"), p.resistanceBonus,
+                       pick("resistência arcana", "arcane resistance"), p.chargeCost, pick("cargas", "charges"));
+  }
+  if (kind == "twinResonance") {
+    const TwinResonancePower p = twinResonancePower(lv);
+    return std::format("{} · 2 {} · {}% {} · -{}% {} · 8 PA", reach(p.range), pick("alvos vinculados", "linked targets"), p.percent,
+                       pick("do dano real ecoa", "of actual damage echoes"), p.resistanceBonus, pick("resistência arcana", "arcane resistance"));
+  }
+  if (kind == "burialWeight") {
+    const FamiliarSpellPower p = burialWeightPower(lv);
+    return std::format("{} · 7 hexes · {} {}D{} · -{}% {}", reach(p.range), damage, p.dice, p.faces, p.rootBonus,
+                       pick("resistência arcana no teste de raiz", "arcane resistance on the root check"));
+  }
   if (kind == "longShot") {
     const Dice p = longShotPower(lv);
     const int bonus = spellGains(kind, lv).n('b');
@@ -3182,11 +3229,11 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"spearToss", "Spear Toss"}, {"hookPull", "Hook"}, {"poleVault", "Pole Vault"}, {"disarm", "Disarm"}, {"swapPost", "Change of Post"},
     {"impaleDrag", "Impale and Drag"}, {"sentinelVigil", "Sentinel's Vigil"}, {"sentinelStrike", "Sentinel's Thrust"},
     {"circleOfHealing", "Circle of Healing"}, {"resurrection", "Resurrection"}, {"judgment", "Judgment"},
-    {"placeSwap", "Place Swap"}, {"boneLance", "Bone Lances"}, {"arcaneReflection", "Arcane Reflection"}, {"mirrorImage", "Mirror Image"}, {"detonateSummon", "Detonate Summon"},
+    {"placeSwap", "Place Swap"}, {"abyssalSwap", "Abyssal Swap"}, {"arcaneBanquet", "Arcane Banquet"}, {"twinResonance", "Twin Resonance"}, {"boneLance", "Bone Lances"}, {"arcaneReflection", "Arcane Reflection"}, {"mirrorImage", "Mirror Image"}, {"detonateSummon", "Detonate Summon"},
     {"sacrificeBond", "Sacrifice Bond"}, {"nightmare", "Nightmare"}, {"empowerSummons", "Empower Summons"},
     {"cloudOfDaggers", "Cloud of Daggers"}, {"daggerStrike", "Dagger"}, {"dispelMagic", "Dispel Magic"}, {"globeOfInvulnerability", "Globe of Invulnerability"},
     {"holyStrike", "Consecrated Strike"}, {"holyTouch", "Holy Touch"}, {"crusaderOath", "Oath"}, {"crusaderMantle", "Crusader's Mantle"},
-    {"arcaneBlade", "Arcane Blade"}, {"arcaneMarkBurst", "Arcane Mark"},
+    {"arcaneBlade", "Arcane Blade"}, {"arcaneMarkBurst", "Arcane Mark"}, {"witchStitch", "Witch's Stitch"}, {"burialWeight", "Burial Weight"},
 };
 }  // namespace
 
@@ -3264,6 +3311,8 @@ std::optional<BattleStep> usePotion(const Battle& b, size_t actor, const std::st
     return std::nullopt;
   };
   if (!p || slot < 0 || a.side != "player" || !a.alive || a.bag[slot] <= 0) return fail("Sem essa poção.");
+  if (!apCanAfford(a, apCost(b, a, ApAction::potion())))  // Action Points: 5 to drink or hand it
+    return fail(std::format("Sem PA para a poção ({} PA).", apCost(b, a, ApAction::potion())));
   if (!potionTargetValid(b, actor, cell, error)) return std::nullopt;
   size_t target = actor;
   for (size_t i = 0; i < b.units().size(); ++i)
@@ -3365,6 +3414,9 @@ int spellTierNumber(const std::string& kind) {
 
 int spellUsesLeft(const Battle& b, size_t unit, const std::string& kind) {
   const BattleUnit& u = b.units()[unit];
+  if (kind == "twinResonance" && u.classId == "hypostasis") return 1;  // every cast pays 8 AP, with no charge pool
+  if (kind == "abyssalSwap" && u.classId == "familiar2") return u.spellCharges / std::max(1, abyssalSwapPower(u.level).chargeCost);
+  if (kind == "arcaneBanquet" && u.classId == "familiar2") return u.spellCharges / std::max(1, arcaneBanquetPower(u.level).chargeCost);
   if (kind == "shock" && u.classId != "familiar4") return u.shockCharges;
   if (kind == "fantomForce") return u.fantomForceCharges;
   if (kind == "spectralBolt") return u.spectralCharges;
@@ -3373,11 +3425,97 @@ int spellUsesLeft(const Battle& b, size_t unit, const std::string& kind) {
   return tierRemaining(u, kind == "magicMissileV2" ? "magicMissile" : kind);
 }
 
+std::vector<ArcaneBanquetOption> arcaneBanquetOptions(const Battle& b, size_t caster, size_t target) {
+  std::vector<ArcaneBanquetOption> out;
+  if (caster >= b.units().size() || target >= b.units().size()) return out;
+  const BattleUnit& familiar = b.units()[caster];
+  const BattleUnit& foe = b.units()[target];
+  auto add = [&](std::string id, std::string label, bool present, std::string reason = {}) {
+    if (!present) return;
+    ArcaneBanquetOption option{std::move(id), std::move(label), std::move(reason), false};
+    option.available = option.reason.empty();
+    out.push_back(std::move(option));
+  };
+  if (foe.blessedRoundsLeft > 0 && foe.blessedHitBonusPct > 0) {
+    std::string reason;
+    if (familiar.blessedHitBonusPct > foe.blessedHitBonusPct ||
+        (familiar.blessedHitBonusPct == foe.blessedHitBonusPct && familiar.blessedRoundsLeft >= foe.blessedRoundsLeft))
+      reason = pick("O familiar já tem uma Bênção igual ou superior.", "The familiar already has an equal or stronger Blessing.");
+    add("bless", std::format("{} +{}% · {} {}", pick("Bênção", "Blessing"), static_cast<int>(jsRound(foe.blessedHitBonusPct * 100)), foe.blessedRoundsLeft,
+                              pick("rodadas", "rounds")), true, std::move(reason));
+  }
+  if (foe.cond.rallyPct > 0) {
+    std::string reason;
+    if (familiar.cond.rallyPct > foe.cond.rallyPct ||
+        (familiar.cond.rallyPct == foe.cond.rallyPct && familiar.cond.rallyTurns >= foe.cond.rallyTurns))
+      reason = pick("O familiar já tem um aumento de ataque igual ou superior.", "The familiar already has an equal or stronger attack boon.");
+    add("rally", std::format("{} +{}% ATK · {} {}", pick("Grito de Guerra", "War Cry"), foe.cond.rallyPct, foe.cond.rallyTurns + 1,
+                              pick("rodadas", "rounds")), true, std::move(reason));
+  }
+  if (foe.cond.mantleDice > 0 && foe.cond.mantleTurns > 0) {
+    std::string reason;
+    if (familiar.cond.mantleDice > foe.cond.mantleDice ||
+        (familiar.cond.mantleDice == foe.cond.mantleDice && familiar.cond.mantleFaces > foe.cond.mantleFaces) ||
+        (familiar.cond.mantleDice == foe.cond.mantleDice && familiar.cond.mantleFaces == foe.cond.mantleFaces && familiar.cond.mantleTurns >= foe.cond.mantleTurns))
+      reason = pick("O familiar já tem um Manto igual ou superior.", "The familiar already has an equal or stronger Mantle.");
+    if (reason.empty()) reason = pick("Indisponível: esse efeito não pode ser dissipado no sistema atual.", "Unavailable: this effect cannot be dispelled in the current rules.");
+    add("mantle", std::format("{} {}D{} · {} {}", pick("Manto do Cruzado", "Crusader's Mantle"), foe.cond.mantleDice, foe.cond.mantleFaces,
+                                foe.cond.mantleTurns, pick("rodadas", "rounds")), true, std::move(reason));
+  }
+  if (foe.cond.mirrorCopies > 0 && foe.cond.mirrorRounds > 0) {
+    std::string reason;
+    if (familiar.cond.mirrorCopies > foe.cond.mirrorCopies ||
+        (familiar.cond.mirrorCopies == foe.cond.mirrorCopies && familiar.cond.mirrorRounds >= foe.cond.mirrorRounds))
+      reason = pick("O familiar já tem uma Imagem Espelhada igual ou superior.", "The familiar already has an equal or stronger Mirror Image.");
+    if (reason.empty()) reason = pick("Indisponível: esse efeito não pode ser dissipado no sistema atual.", "Unavailable: this effect cannot be dispelled in the current rules.");
+    add("mirror", std::format("{} ×{} · {} {}", pick("Imagem Espelhada", "Mirror Image"), foe.cond.mirrorCopies, foe.cond.mirrorRounds,
+                               pick("rodadas", "rounds")), true, std::move(reason));
+  }
+  if (foe.cond.reflectTurns > 0) {
+    std::string reason;
+    if (familiar.cond.reflectPct > foe.cond.reflectPct ||
+        (familiar.cond.reflectPct == foe.cond.reflectPct && familiar.cond.reflectTurns >= foe.cond.reflectTurns))
+      reason = pick("O familiar já tem um Reflexo Arcano igual ou superior.", "The familiar already has an equal or stronger Arcane Reflection.");
+    if (reason.empty()) reason = pick("Indisponível: esse efeito não pode ser dissipado no sistema atual.", "Unavailable: this effect cannot be dispelled in the current rules.");
+    add("reflection", std::format("{} {}% · {} {}", pick("Reflexo Arcano", "Arcane Reflection"), foe.cond.reflectPct, foe.cond.reflectTurns,
+                                  pick("rodadas", "rounds")), true, std::move(reason));
+  }
+  if (foe.cond.daggers > 0) {
+    std::string reason;
+    if (familiar.cond.daggers >= foe.cond.daggers)
+      reason = pick("O familiar já tem tantas ou mais cargas de adagas.", "The familiar already has as many or more dagger charges.");
+    if (reason.empty()) reason = pick("Indisponível: cargas persistentes não são dissipáveis.", "Unavailable: persistent charges cannot be dispelled.");
+    add("daggers", std::format("{} ×{}", pick("Nuvem de Adagas", "Cloud of Daggers"), foe.cond.daggers), true, std::move(reason));
+  }
+  if (foe.cond.empowerPct > 0 && foe.cond.empowerRounds > 0) {
+    std::string reason;
+    if (!familiar.summoned) reason = pick("Este efeito só funciona em uma invocação.", "This effect only works on a summon.");
+    else if (familiar.cond.empowerPct > foe.cond.empowerPct ||
+             (familiar.cond.empowerPct == foe.cond.empowerPct && familiar.cond.empowerRounds >= foe.cond.empowerRounds))
+      reason = pick("O familiar já tem Fortalecimento igual ou superior.", "The familiar already has equal or stronger Empowerment.");
+    if (reason.empty()) reason = pick("Indisponível: esse efeito não pode ser dissipado no sistema atual.", "Unavailable: this effect cannot be dispelled in the current rules.");
+    add("empower", std::format("{} +{}% · {} {}", pick("Fortalecer Invocações", "Empower Summons"), foe.cond.empowerPct, foe.cond.empowerRounds,
+                                pick("rodadas", "rounds")), true, std::move(reason));
+  }
+  if (foe.cond.bondPct > 0)
+    add("bond", pick("Elo de Sacrifício", "Sacrifice Bond"), true,
+        pick("Indisponível: o vínculo depende do invocador original.", "Unavailable: the bond depends on its original summoner."));
+  if (foe.cond.vigilPct > 0)
+    add("vigil", pick("Vigília da Sentinela", "Sentinel's Vigil"), true,
+        pick("Indisponível: postura passiva, dissipada ao fim do turno.", "Unavailable: passive stance, removed at turn end."));
+  if (std::find(foe.spellList.begin(), foe.spellList.end(), std::string("crusaderOath")) != foe.spellList.end())
+    add("oath", pick("Juramento do Cruzado", "Crusader's Oath"), true,
+        pick("Indisponível: habilidade passiva ligada à classe.", "Unavailable: class-bound passive ability."));
+  return out;
+}
+
 int spellTargetCount(const Battle& b, size_t unit, const std::string& kind) {
+  if (kind == "twinResonance") return 2;
   if (kind == "wrathOfTheSkies") return emberNumbers(kind, b.units()[unit].level).count;
   if (kind == "multiShot") return multiShotTargets(b.units()[unit].level);
   return kind == "magicMissile" || kind == "magicMissileV2" ? magicMissileCount(b.units()[unit].level) : 1;
 }
+int twinResonanceTargetGap(const BattleUnit& caster) { return twinResonancePower(caster.level).targetGap; }
 
 std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::string& kind) {
   const BattleUnit& u = b.units()[caster];
@@ -3421,6 +3559,11 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   else if (kind == "minorVenom") maxRange = grown(kMinorVenom.range), shot = true;
   else if (kind == "divineBolt") maxRange = grown(kDivineBolt.range), shot = true;
   else if (kind == "webOfDreams") maxRange = grown(kWebRange), shot = true;
+  else if (kind == "witchStitch") maxRange = witchStitchPower(u.level).range, shot = true;
+  else if (kind == "burialWeight") maxRange = burialWeightPower(u.level).range, shot = true;
+  else if (kind == "abyssalSwap") maxRange = abyssalSwapPower(u.level).range, shot = true;
+  else if (kind == "arcaneBanquet") maxRange = arcaneBanquetPower(u.level).range, shot = true;
+  else if (kind == "twinResonance") maxRange = twinResonancePower(u.level).range, shot = true;
   else if (kind == "iceStorm" || kind == "acidCloud") maxRange = grown(iceStormPower(u.level).range), shot = true;
   else if (kind == "bloodyShot") minRange = u.minRange, maxRange = grown(kBloodyShotRange), shot = true, arrow = true;
   else if (kind == "multiShot") minRange = u.minRange, maxRange = grown(kMultiShotRange), shot = true, arrow = true;
@@ -3714,7 +3857,7 @@ std::vector<BattleHex> spellArea(const Battle& b, size_t caster, const std::stri
 }
 
 std::optional<std::vector<BattleStep>> castSpell(Battle& b, size_t caster, const std::string& kind, const std::vector<BattleHex>& cells, std::string* error,
-                                                 bool checkUses) {
+                                                 bool checkUses, const std::string& selectedBuff) {
   BattleUnit& u = b.units()[caster];
   auto fail = [&](const std::string& why) -> std::optional<std::vector<BattleStep>> {
     if (error) *error = why;
@@ -3727,11 +3870,13 @@ std::optional<std::vector<BattleStep>> castSpell(Battle& b, size_t caster, const
   if (static_cast<int>(cells.size()) != spellTargetCount(b, caster, kind)) return fail("Escolha todos os alvos.");
   if (checkUses && u.side == "player" && !contains(u.spellList, kind)) return fail("A classe ou o nível não permite esta magia.");
   if (checkUses && spellUsesLeft(b, caster, kind) <= 0) return fail("Sem usos restantes.");
+  // Action Points (world/ActionPoints.h): the cast must be payable before any use is spent; its AP leave at the action's commit
+  if (checkUses && !apCanAfford(u, apCost(b, u, ApAction::cast(kind)))) return fail(std::format("Sem PA para esta habilidade ({} PA).", apCost(b, u, ApAction::cast(kind))));
   for (const BattleHex& c : cells)
     if (!spellAimValid(b, caster, kind, c, error)) return std::nullopt;
   if (summonSpec(kind)) return castE2(b, caster, kind, cells, error, checkUses);  // every summon, the Cervo (one of ours) too
+  if (e2Kind(kind)) return castE2(b, caster, kind, cells, error, checkUses, selectedBuff);
   if (emberSpell(kind)) return castEmber(b, caster, kind, cells, error);
-  if (e2Kind(kind)) return castE2(b, caster, kind, cells, error, checkUses);
   const BattleHex cell = cells[0];
   std::vector<BattleStep> steps;
   BattleStep s;
@@ -3843,6 +3988,8 @@ bool strikesBack(const Battle& b, const BattleStep& step) {
   const BattleUnit &u = b.units()[step.att], &t = b.units()[step.def];
   if (!u.alive || !t.alive || t.stunned) return false;
   if (t.cond.disarmPct > 0 || t.cond.staggered) return false;  // Desarmado / Desequilibrado (the Lanceiro's): no counter
+  // NO AP, NO COUNTER (world/ActionPoints.h): a Staff Counter needs its 6, a Spell Counter its 7, every other its weapon's cost
+  if (!apCanCounter(b, t, u, {u.x, u.y})) return false;
   const Fighter a = fighterAt(b, step.att, u.x, u.y), d = fighterAt(b, step.def, t.x, t.y);
   return canCounter(b, a, {u.x, u.y}, d);
 }
@@ -4025,6 +4172,9 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
   const size_t ai = counter ? step.def : step.att, ti = counter ? step.att : step.def;
   BattleUnit& actor = b.units()[ai];
   BattleUnit& target = b.units()[ti];
+  // Action Points: the counter's commit. Its AP leave the defender's reserve here, once, as the strike back resolves (strikesBack
+  // checked them before the exchange began); without them there is no counter at all.
+  if (counter && !apTrySpend(actor, apCounterCost(b, actor, target, {target.x, target.y}))) return;
   const bool hitStage = !counter;
   const bool bash = hitStage && step.kind == "shieldBash";
   // Explicit dice: the attacker's own off-hand strike, or the defender's off-hand counter when the attacker stands within
@@ -4291,10 +4441,70 @@ std::vector<BattleStep> arcaneMarkInterrupts(const Battle& b, size_t walker, boo
   return steps;
 }
 
+std::optional<BattleStep> witchStitchInterrupt(const Battle& b, size_t walker) {
+  if (walker >= b.units().size()) return std::nullopt;
+  const BattleUnit& target = b.units()[walker];
+  if (!target.alive || target.cond.witchStitchDice <= 0 || target.cond.witchStitchSource.empty()) return std::nullopt;
+  for (size_t i = 0; i < b.units().size(); ++i) {
+    const BattleUnit& source = b.units()[i];
+    if (!source.alive || source.id != target.cond.witchStitchSource) continue;
+    BattleStep step;
+    step.type = BattleStep::Type::Spell, step.att = i, step.kind = "witchStitchRupture";
+    step.ids = {walker}, step.tiles = {{target.x, target.y}};
+    step.dice = target.cond.witchStitchDice, step.faces = target.cond.witchStitchFaces;
+    step.spellPenetration = target.cond.witchStitchMag;
+    step.stitchMul = target.cond.witchStitchMul;
+    return step;
+  }
+  return std::nullopt;
+}
+
+void releaseFamiliarSpellEffects(Battle& b, const std::string& sourceId) {
+  for (BattleUnit& u : b.units()) {
+    if (u.id == sourceId) u.burialWeightActive = false;
+    if (u.cond.witchStitchSource == sourceId) {
+      u.cond.witchStitchDice = u.cond.witchStitchFaces = 0;
+      u.cond.witchStitchMag = 0.0, u.cond.witchStitchMul = 1.0, u.cond.witchStitchSource.clear();
+      u.cond.witchStitchAnchorX = u.cond.witchStitchAnchorY = 0;
+    }
+    std::erase(u.cond.burialRootSources, sourceId);
+  }
+}
+
+void pruneFamiliarSpellEffects(Battle& b) {
+  for (BattleUnit& u : b.units()) {
+    if (u.cond.witchStitchDice > 0) {
+      const auto source = std::find_if(b.units().begin(), b.units().end(), [&](const BattleUnit& owner) {
+        return owner.id == u.cond.witchStitchSource && owner.alive;
+      });
+      if (source == b.units().end() || !u.alive) {
+        u.cond.witchStitchDice = u.cond.witchStitchFaces = 0;
+        u.cond.witchStitchMag = 0.0, u.cond.witchStitchMul = 1.0, u.cond.witchStitchSource.clear();
+        u.cond.witchStitchAnchorX = u.cond.witchStitchAnchorY = 0;
+      }
+    }
+    std::erase_if(u.cond.burialRootSources, [&](const std::string& sourceId) {
+      return std::none_of(b.units().begin(), b.units().end(), [&](const BattleUnit& owner) { return owner.alive && owner.id == sourceId && owner.burialWeightActive; });
+    });
+  }
+  for (BattleUnit& owner : b.units())
+    if (!owner.alive && owner.burialWeightActive) releaseFamiliarSpellEffects(b, owner.id);
+}
+
+static void echoTwinResonance(Battle& b, size_t source, size_t struck, int hpLost, const std::string& element, Mulberry32& rng,
+                              std::vector<BattleEffect>& out);
+static void echoTwinResonanceEvents(Battle& b, size_t source, size_t from, const std::vector<int>& hpBefore, const std::string& element,
+                                    Mulberry32& rng, std::vector<BattleEffect>& out);
 void resolveStrike(Battle& b, const BattleStep& step, bool counter, Mulberry32& rng, std::vector<BattleEffect>& out) {
   gNotes.clear();
   const size_t from = out.size();
+  std::vector<int> hpBefore;
+  hpBefore.reserve(b.units().size());
+  for (const BattleUnit& unit : b.units()) hpBefore.push_back(unit.hp);
   resolveStrikeImpl(b, step, counter, rng, out);
+  const size_t source = counter ? step.def : step.att;
+  const std::string element = source < b.units().size() && b.units()[source].combat.staff ? b.units()[source].combat.staffElement : "physical";
+  echoTwinResonanceEvents(b, source, from, hpBefore, element, rng, out);
   noteOaths(b, out);
   logEffects(b, out, from, static_cast<int>(counter ? step.def : step.att), &step);
   flushNotes(b);
@@ -4371,15 +4581,78 @@ nlohmann::json enmityNumbers(const Battle& b) {
   return out;
 }
 
+static void echoTwinResonance(Battle& b, size_t source, size_t struck, int hpLost, const std::string& element, Mulberry32& rng,
+                              std::vector<BattleEffect>& out) {
+  if (struck >= b.units().size()) return;
+  const BattleUnit& victim = b.units()[struck];
+  for (size_t caster = 0; caster < b.units().size(); ++caster) {
+    BattleUnit& link = b.units()[caster];
+    if (!link.alive || link.classId != "hypostasis" || link.cond.twinResonancePercent <= 0 || link.cond.twinResonanceTargets.size() != 2) continue;
+    if (std::find(link.cond.twinResonanceTargets.begin(), link.cond.twinResonanceTargets.end(), victim.id) == link.cond.twinResonanceTargets.end()) continue;
+    if (hpLost <= 0 || (source < b.units().size() && b.units()[source].side == victim.side)) continue; // allied damage never resonates
+    const auto other = std::find_if(link.cond.twinResonanceTargets.begin(), link.cond.twinResonanceTargets.end(), [&](const std::string& id) { return id != victim.id; });
+    if (other == link.cond.twinResonanceTargets.end()) continue;
+    size_t paired = b.units().size();
+    for (size_t i = 0; i < b.units().size(); ++i) if (b.units()[i].id == *other) { paired = i; break; }
+    if (paired >= b.units().size() || !b.units()[paired].alive) continue;
+    BattleUnit& target = b.units()[paired];
+    int damage = hpLost * link.cond.twinResonancePercent / 100;
+    if (damage <= 0) break;
+    const std::string type = element.empty() ? "physical" : element;
+    damage = static_cast<int>(std::floor(elementalDamage(damage, target.combat.resistance(type), 0)));
+    damage = static_cast<int>(std::floor(damage * b.zoneDamageMul(target)));
+    if (damage <= 0) break;
+    const int actual = std::min(target.hp, damage);
+    target.hp = std::max(0, target.hp - damage);
+    BattleEffect echo;
+    echo.unit = paired, echo.amount = actual, echo.text = "Ressonância Geminada";
+    if (target.hp <= 0) markDead(target, rng), echo.died = true;
+    out.push_back(std::move(echo));
+    b.noteDamage(caster, paired, actual, true);
+    break;
+  }
+}
+
+static void echoTwinResonanceEvents(Battle& b, size_t source, size_t from, const std::vector<int>& hpBefore, const std::string& element,
+                                    Mulberry32& rng, std::vector<BattleEffect>& out) {
+  const size_t originalEnd = out.size();
+  std::vector<int> remaining = hpBefore;
+  for (size_t i = from; i < originalEnd; ++i) {
+    const BattleEffect& hit = out[i];
+    if (hit.unit >= b.units().size() || hit.amount <= 0 || hit.miss || hit.heal || hit.status) continue;
+    const int actual = std::min(std::max(0, remaining[hit.unit]), hit.amount);
+    if (actual <= 0) continue;
+    remaining[hit.unit] -= actual;
+    echoTwinResonance(b, source, hit.unit, actual, element, rng, out);
+  }
+  for (BattleUnit& link : b.units()) {
+    if (link.classId != "hypostasis" || link.cond.twinResonancePercent <= 0) continue;
+    const bool targetDied = std::any_of(link.cond.twinResonanceTargets.begin(), link.cond.twinResonanceTargets.end(), [&](const std::string& id) {
+      const auto it = std::find_if(b.units().begin(), b.units().end(), [&](const BattleUnit& u) { return u.id == id; });
+      return it == b.units().end() || !it->alive;
+    });
+    if (targetDied) link.cond.twinResonancePercent = 0, link.cond.twinResonanceTargets.clear();
+  }
+}
+
 void resolveStep(Battle& b, const BattleStep& step, Mulberry32& rng, std::vector<BattleEffect>& out) {
+  std::vector<int> hpBefore;
+  hpBefore.reserve(b.units().size());
+  for (const BattleUnit& unit : b.units()) hpBefore.push_back(unit.hp);
   if (step.type == BattleStep::Type::Combat) {  // its strikes (and the counter) log themselves
     resolveStepImpl(b, step, rng, out);
+    pruneFamiliarSpellEffects(b);
     return;
   }
   gNotes.clear();
   const size_t from = out.size();
   // Globo de Invulnerabilidade: whoever it shields from this spell is dropped from the step ("Bloqueado"); the rest of it plays.
-  if (const std::optional<BattleStep> s = globeFilter(b, step, out)) resolveStepImpl(b, *s, rng, out);
+  if (step.kind == "witchStitchRupture") resolveStepImpl(b, step, rng, out);  // a laid filament cannot be intercepted after movement begins
+  else if (const std::optional<BattleStep> s = globeFilter(b, step, out)) resolveStepImpl(b, *s, rng, out);
+  std::string damageType;
+  if (const SpellData* data = spellData(step.kind)) damageType = data->element;
+  echoTwinResonanceEvents(b, step.att, from, hpBefore, damageType, rng, out);
+  pruneFamiliarSpellEffects(b);
   noteOaths(b, out);
   logEffects(b, out, from, static_cast<int>(step.att), &step);
   flushNotes(b);
@@ -4429,6 +4702,170 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     return;
   }
   if (step.type == BattleStep::Type::Effect) {
+    if (step.kind == "witchStitch") {
+      if (!att.alive) return;
+      for (size_t id : step.ids) {
+        if (id >= b.units().size()) continue;
+        BattleUnit& target = b.units()[id];
+        if (!target.alive || target.side == att.side) continue;
+        target.cond.witchStitchDice = step.dice, target.cond.witchStitchFaces = step.faces;
+        target.cond.witchStitchMag = att.mag, target.cond.witchStitchMul = step.spellMul;
+        target.cond.witchStitchSource = att.id;
+        target.cond.witchStitchAnchorX = target.x, target.cond.witchStitchAnchorY = target.y;
+        out.push_back(statusEffect(id, pick("Costura da Bruxa", "Witch's Stitch")));
+        b.noteAware(step.att, kSupportCe, kSupportVe);
+      }
+      return;
+    }
+    if (step.kind == "abyssalSwap") {
+      if (step.ids.empty() || !att.alive) return;
+      const size_t targetId = step.ids.front();
+      if (targetId >= b.units().size()) return;
+      BattleUnit& target = b.units()[targetId];
+      if (target.side == att.side || !targetable(b, static_cast<int>(targetId)) || step.tiles.size() < 2 ||
+          target.x != step.tiles[0].x || target.y != step.tiles[0].y || att.x != step.tiles[1].x || att.y != step.tiles[1].y ||
+          !canAbyssalSwap(b, step.att, targetId)) {
+        out.push_back({targetId, 0, false, true, false, false, false, "Destino inválido"});
+        return;
+      }
+      const double resistance = std::clamp(target.combat.resistance("arcane") - att.mag / 2.0 - step.resistanceBonus, 0.0, 100.0);
+      if (rng() * 100.0 < resistance) {
+        BattleEffect resisted;
+        resisted.unit = targetId, resisted.miss = true, resisted.text = "Resistiu";
+        out.push_back(std::move(resisted));
+        return;
+      }
+      // Publish both new anchors together before hazard entry or presentation observes occupancy.
+      const BattleHex targetOrigin{target.x, target.y}, familiarOrigin{att.x, att.y};
+      att.x = targetOrigin.x, att.y = targetOrigin.y;
+      target.x = familiarOrigin.x, target.y = familiarOrigin.y;
+      for (const size_t who : {step.att, targetId}) {
+        BattleEffect moved;
+        moved.unit = who, moved.moved = true, moved.pushed = true, moved.arc = 0.55f;
+        out.push_back(std::move(moved));
+      }
+      stepOnHex(b, step.att, rng, out);
+      stepOnHex(b, targetId, rng, out);
+      return;
+    }
+    if (step.kind == "twinResonance") {
+      if (!att.alive || att.classId != "hypostasis" || step.ids.size() != 2 || step.tiles.size() != 2) return;
+      const size_t first = step.ids[0], second = step.ids[1];
+      if (first >= b.units().size() || second >= b.units().size() || first == second) return;
+      BattleUnit& a = b.units()[first];
+      BattleUnit& c = b.units()[second];
+      if (!targetable(b, static_cast<int>(first)) || !targetable(b, static_cast<int>(second)) || a.side == att.side || c.side == att.side ||
+          hexDist(step.tiles[0], step.tiles[1]) > twinResonancePower(att.level).targetGap) {
+        BattleEffect invalid;
+        invalid.unit = first, invalid.miss = true, invalid.text = pick("Alvos inválidos", "Invalid targets");
+        out.push_back(std::move(invalid));
+        return;
+      }
+      bool resisted = false;
+      for (size_t targetId : {first, second}) {
+        const BattleUnit& target = b.units()[targetId];
+        const double base = target.combat.resistance("arcane");
+        const double chance = base >= 100.0 ? 100.0 : std::clamp(base - att.mag / 2.0 - step.resistanceBonus, 0.0, 100.0);
+        if (rng() * 100.0 < chance) {
+          resisted = true;
+          BattleEffect result;
+          result.unit = targetId, result.miss = true, result.text = pick("Resistiu", "Resisted");
+          out.push_back(std::move(result));
+        }
+      }
+      if (resisted) {
+        BattleEffect collapse;
+        collapse.unit = step.att, collapse.status = true, collapse.text = pick("Vínculo colapsa", "Link collapses");
+        out.push_back(std::move(collapse));
+        return;
+      }
+      att.cond.twinResonanceTargets = {a.id, c.id};
+      att.cond.twinResonancePercent = step.resonancePercent;
+      for (size_t targetId : {first, second}) {
+        BattleEffect linked;
+        linked.unit = targetId, linked.status = true, linked.text = std::format("Ressonância Geminada · {}%", step.resonancePercent);
+        out.push_back(std::move(linked));
+      }
+      return;
+    }
+    if (step.kind == "arcaneBanquet") {
+      if (step.ids.empty() || !att.alive) return;
+      const size_t targetId = step.ids.front();
+      if (targetId >= b.units().size()) return;
+      BattleUnit& foe = b.units()[targetId];
+      const auto options = arcaneBanquetOptions(b, step.att, targetId);
+      const auto selected = std::find_if(options.begin(), options.end(), [&](const ArcaneBanquetOption& o) { return o.id == step.stolenBuff; });
+      if (foe.side == att.side || !targetable(b, static_cast<int>(targetId)) || selected == options.end() || !selected->available) {
+        BattleEffect invalid;
+        invalid.unit = targetId, invalid.miss = true, invalid.text = pick("Efeito indisponível", "Effect unavailable");
+        out.push_back(std::move(invalid));
+        return;
+      }
+      const double resistance = std::clamp(foe.combat.resistance("arcane") - att.mag / 2.0 - step.resistanceBonus, 0.0, 100.0);
+      if (rng() * 100.0 < resistance) {
+        BattleEffect resisted;
+        resisted.unit = targetId, resisted.miss = true, resisted.text = pick("Resistiu", "Resisted");
+        out.push_back(std::move(resisted));
+        return;
+      }
+      const std::string buff = step.stolenBuff;
+      if (buff == "bless") {
+        att.blessedHitBonusPct = foe.blessedHitBonusPct, att.blessedRoundsLeft = foe.blessedRoundsLeft;
+        foe.blessedHitBonusPct = 0, foe.blessedRoundsLeft = 0;
+      } else if (buff == "rally") {
+        att.cond.rallyPct = foe.cond.rallyPct, att.cond.rallyTurns = foe.cond.rallyTurns;
+        foe.cond.rallyPct = foe.cond.rallyTurns = 0;
+      } else if (buff == "mantle") {
+        att.cond.mantleDice = foe.cond.mantleDice, att.cond.mantleFaces = foe.cond.mantleFaces, att.cond.mantleTurns = foe.cond.mantleTurns;
+        foe.cond.mantleDice = foe.cond.mantleFaces = foe.cond.mantleTurns = 0;
+      } else if (buff == "mirror") {
+        att.cond.mirrorCopies = foe.cond.mirrorCopies, att.cond.mirrorRounds = foe.cond.mirrorRounds;
+        foe.cond.mirrorCopies = foe.cond.mirrorRounds = 0;
+      } else if (buff == "reflection") {
+        att.cond.reflectTurns = foe.cond.reflectTurns, att.cond.reflectPct = foe.cond.reflectPct, att.cond.reflectHealPct = foe.cond.reflectHealPct;
+        foe.cond.reflectTurns = foe.cond.reflectPct = foe.cond.reflectHealPct = 0;
+      } else if (buff == "daggers") {
+        att.cond.daggers = foe.cond.daggers;
+        foe.cond.daggers = 0;
+      } else if (buff == "empower") {
+        const int pct = foe.cond.empowerPct, rounds = foe.cond.empowerRounds;
+        if (foe.empowerBase)
+          foe.atk = foe.empowerBase->atk, foe.mag = foe.empowerBase->mag, foe.def = foe.empowerBase->def, foe.dex = foe.empowerBase->dex,
+          foe.mov = foe.empowerBase->mov;
+        foe.empowerBase.reset(), foe.cond.empowerPct = foe.cond.empowerRounds = 0;
+        if (!att.empowerBase) att.empowerBase = BattleUnit::Stats{att.atk, att.mag, att.def, att.dex, att.mov};
+        const double factor = 1 + pct / 100.0;
+        att.atk = static_cast<int>(jsRound(att.empowerBase->atk * factor)), att.mag = static_cast<int>(jsRound(att.empowerBase->mag * factor));
+        att.def = static_cast<int>(jsRound(att.empowerBase->def * factor)), att.dex = static_cast<int>(jsRound(att.empowerBase->dex * factor));
+        att.mov = std::max(1, static_cast<int>(jsRound(att.empowerBase->mov * factor)));
+        att.cond.empowerPct = pct, att.cond.empowerRounds = rounds;
+      }
+      out.push_back(statusEffect(targetId, pick("Benefício roubado", "Boon stolen")));
+      out.push_back(statusEffect(step.att, selected->label));
+      b.noteAware(step.att, kSupportCe, kSupportVe);
+      return;
+    }
+    if (step.kind == "burialWeight") {
+      if (!att.alive) return;
+      att.burialWeightActive = true;
+      att.burialWeightAnchorX = att.x, att.burialWeightAnchorY = att.y;
+      BattleStep impact = step;
+      impact.type = BattleStep::Type::Spell;  // share spell damage, reflection, mirror images, immunity and death handling
+      resolveStepImpl(b, impact, rng, out);
+      for (size_t id : step.ids) {
+        if (id >= b.units().size()) continue;
+        BattleUnit& foe = b.units()[id];
+        if (!att.alive || !foe.alive || foe.side == att.side) continue;
+        const double resistance = std::clamp(foe.combat.resistance("arcane") - att.mag / 2.0 - step.burialRootBonus, 0.0, 100.0);
+        if (rng() * 100.0 >= resistance) {
+          if (std::find(foe.cond.burialRootSources.begin(), foe.cond.burialRootSources.end(), att.id) == foe.cond.burialRootSources.end())
+            foe.cond.burialRootSources.push_back(att.id);
+          out.push_back(statusEffect(id, pick("Imobilizado pelo Peso Sepulcral", "Rooted by Burial Weight")));
+        }
+      }
+      b.noteAware(step.att, kSupportCe, kSupportVe);
+      return;
+    }
     if (const SummonSpec* sp = summonSpec(step.kind)) {  // the familiar steps out: its initiative is rolled as it appears
       const SummonData& data = summonData();
       const auto it = data.classes.find(sp->classId);
@@ -4533,6 +4970,13 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
           if (t.cond.silenceTurns > 0) t.cond.silenceTurns = 0, changed = true;
           if (t.cond.markTurns > 0) t.cond.markPct = t.cond.markTurns = 0, changed = true;
           if (t.cond.decayTurns > 0) liftDecay(t), changed = true;
+          if (t.cond.witchStitchDice > 0) {
+            t.cond.witchStitchDice = t.cond.witchStitchFaces = 0;
+            t.cond.witchStitchMag = 0.0, t.cond.witchStitchMul = 1.0, t.cond.witchStitchSource.clear();
+            t.cond.witchStitchAnchorX = t.cond.witchStitchAnchorY = 0;
+            changed = true;
+          }
+          if (!t.cond.burialRootSources.empty()) t.cond.burialRootSources.clear(), changed = true;
         }
         if (changed) out.push_back(statusEffect(id, pick("Dissipado", "Dispelled")));
       }
@@ -4628,6 +5072,31 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     up.revived = true;
     out.push_back(up);
     out.push_back({step.def, hp, false, false, true, false, false});
+    return;
+  }
+  if (step.type == BattleStep::Type::Spell && step.kind == "witchStitchRupture") {
+    if (step.ids.empty() || step.ids.front() >= b.units().size()) return;
+    const size_t id = step.ids.front();
+    BattleUnit& target = b.units()[id];
+    if (!att.alive || !target.alive || target.cond.witchStitchSource != att.id || target.cond.witchStitchDice <= 0) return;
+    const int dice = target.cond.witchStitchDice, faces = target.cond.witchStitchFaces;
+    const double mag = target.cond.witchStitchMag, mul = target.cond.witchStitchMul;
+    target.cond.witchStitchDice = target.cond.witchStitchFaces = 0;
+    target.cond.witchStitchMag = 0.0, target.cond.witchStitchMul = 1.0, target.cond.witchStitchSource.clear();
+    target.cond.witchStitchAnchorX = target.cond.witchStitchAnchorY = 0;
+    int damage = static_cast<int>(std::floor(std::floor(mag / 2.0) * mul)) + rollDice(dice, faces, 0, rng);
+    damage = static_cast<int>(std::floor(elementalDamage(damage, target.combat.resistance("arcane"), mag)));
+    damage = marked(target, damage);
+    damage = std::max(0, static_cast<int>(std::floor(damage * b.zoneDamageMul(target))));
+    const int actual = std::min(target.hp, damage);
+    target.hp = std::max(0, target.hp - damage);
+    b.noteDamage(step.att, id, actual, true);
+    if (actual > 0) gainExp(att, target.level, actual);
+    BattleEffect hit{id, actual, false, false, false, false, false};
+    hit.text = pick("Costura rompida", "Stitch ruptured");
+    if (target.hp <= 0) { markDead(target, rng); hit.died = true; }
+    out.push_back(hit);
+    if (!target.alive) afterDeath(b, id, out);
     return;
   }
   if (step.type == BattleStep::Type::Heal) {
@@ -5278,6 +5747,8 @@ bool useLockpick(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffe
   if (u.side != "player" || !u.alive || u.lockpick <= 0) return false;
   const int li = b.adjacentLock(unit);
   if (li < 0) return false;
+  // Action Points: Arrombar is an action of the reserve; its commit is here, before anything opens
+  if (!apTrySpend(u, apCost(b, u, ApAction::lockpick()))) return false;
   Battle::Lock& lock = b.locks()[static_cast<size_t>(li)];
   const std::shared_ptr<const LootTables> tables = LootTables::shared();
   lock.open = true;
@@ -5502,9 +5973,20 @@ bool bleedOnAction(Battle& b, size_t unit, bool isMove, Mulberry32& rng, std::ve
 
 TurnStart beginUnitTurn(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) {
   BattleUnit& u = b.units()[unit];
+  if (u.classId == "hypostasis" && u.cond.twinResonancePercent > 0) {
+    u.cond.twinResonancePercent = 0;
+    u.cond.twinResonanceTargets.clear();
+  }
+  releaseFamiliarSpellEffects(b, u.id);  // both effects last through this caster's turn, never beyond its next start
+  pruneFamiliarSpellEffects(b);
   TurnStart r;
   u.bleedMovedThisTurn = false;
+  std::vector<int> hpBefore;
+  hpBefore.reserve(b.units().size());
+  for (const BattleUnit& member : b.units()) hpBefore.push_back(member.hp);
+  const size_t effectsFrom = out.size();
   startOfTurnEffects(b, unit, rng, out);
+  echoTwinResonanceEvents(b, b.units().size(), effectsFrom, hpBefore, "physical", rng, out);
   if (!u.alive) {
     r.kind = TurnStart::Kind::Lost;
     return r;
@@ -5569,6 +6051,26 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit);
 
 std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
   std::optional<AiCast> cast = planEnemyCastRaw(b, unit);
+  // Action Points: the walk there and the cast must both be paid from its reserve; a plan it cannot pay for gives its uses back
+  // and the enemy falls back to its weapon (planEnemy, which pays the same way). The AI never casts for free.
+  if (cast && !b.roaming()) {
+    const BattleUnit& caster = b.units()[unit];
+    int walkAp = 0;
+    if (cast->path.size() > 1)
+      for (const ReachCell& c : b.reachable(unit, false))
+        if (c.x == cast->path.back().x && c.y == cast->path.back().y) walkAp = c.ap;
+    if (walkAp + apStepsCost(b, unit, cast->steps) > caster.ap) {
+      for (const BattleStep& s : cast->steps) {
+        BattleUnit& w = b.units()[unit];
+        if (s.kind == "frost") w.frostCharges += 1;
+        else if (s.kind == "shock") w.shockCharges += 1;
+        else if (s.kind == "fantomForce") w.fantomForceCharges += 1;
+        else if (s.kind == "spectralBolt") w.spectralCharges += 1;
+        else if (const int tier = unitTierOf(w, s.kind); tier > 0) w.spells[tier - 1] += 1;
+      }
+      return std::nullopt;
+    }
+  }
   // A Globo de Invulnerabilidade: the AI never spends a spell whose every target it shields (the use is spent by the plan: it is given
   // back, and the enemy swings its weapon instead).
   if (!cast || b.globes().empty()) return cast;
@@ -5599,7 +6101,17 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
   BattleUnit& u = b.units()[unit];
   if (!u.alive || u.side != "enemy") return std::nullopt;
   if (u.cond.silenceTurns > 0) return std::nullopt;  // Silêncio Profano: it swings its weapon instead
-  const std::vector<ReachCell> reach = b.reachable(unit, true), walk = b.reachable(unit, false);
+  // Action Points: it casts only from a hex it can still pay a cast from after the walk there (the cheapest cast the rules
+  // price; the real cast's cost is checked once the plan is made, planEnemyCast)
+  std::vector<ReachCell> reach = b.reachable(unit, true);
+  const std::vector<ReachCell> walk = b.reachable(unit, false);
+  if (!b.roaming()) {
+    const ApRules& apr = apRules();
+    int cheapest = apr.spells.defaultCost;
+    for (const auto& [kind, cost] : apr.spells.byKind) cheapest = std::min(cheapest, cost);
+    for (const auto& [tier, cost] : apr.spells.byTier) cheapest = std::min(cheapest, cost);
+    std::erase_if(reach, [&](const ReachCell& c) { return u.ap - c.ap < cheapest; });
+  }
   // Every hero standing, the enmity target first; enmity weighs the choice (enmityBonus), it never hides a foe in range.
   const std::vector<size_t> heroes = b.aiTargets(unit);
   auto score = [&](size_t h) {

@@ -33,11 +33,14 @@ struct BattleStep {
   Type type = Type::Spell;
   size_t att = 0;
   std::string kind;  // the spell (empty = a plain attack)
+  std::string stolenBuff; // Banquete Arcano: the exact boon transferred on a failed save
   // Spell
   std::vector<BattleHex> tiles;
   std::vector<size_t> ids;  // the units it hits, in order
   int dice = 0, faces = 8, bonus = 0;
   double spellMul = 1;
+  double spellPenetration = 0;   // magical resistance penetration captured when a movement mark was applied
+  double stitchMul = 1.0;
   int weaponBonusDice = 0, weaponBonusFaces = 8, weaponBonusBonus = 0;
   double dmgMul = 1;
   std::optional<BattleUnit::Echo> echo;  // lightning: what strikes again when the target's turn begins
@@ -114,6 +117,9 @@ struct BattleStep {
   int mantleTurns = 0, mantleDice = 0, mantleFaces = 0;  // Manto do Cruzado on every unit of `ids` (Type::Effect)
   // Selene's Lâmina Arcana (docs/SKILLS_CONJURER.md): a landed blow marks the foe (dice D faces arcane if it walks, for turns of its own)
   int arcaneMarkDice = 0, arcaneMarkFaces = 0, arcaneMarkTurns = 0;
+  int burialRootBonus = 0;  // percentage points shaved from arcane resistance on the individual root check
+  int resistanceBonus = 0; // percentage points shaved from the target's arcane resistance check
+  int resonancePercent = 0; // Twin Resonance: % of actual HP loss echoed to the linked enemy
 };
 
 // What a step did, for the window: a number over a unit, a miss, a heal, a death.
@@ -133,6 +139,14 @@ struct BattleEffect {
   std::string cause;     // what hurt it at the start of its turn ("Sangramento fere", ...): the combat log's verb
   int reflectFrom = -1;  // Reflexo Arcano: the warded unit the spell came back from (the window flies it back from there)
 };
+
+struct ArcaneBanquetOption {
+  std::string id;
+  std::string label;
+  std::string reason;
+  bool available = false;
+};
+std::vector<ArcaneBanquetOption> arcaneBanquetOptions(const Battle& b, size_t caster, size_t target);
 
 // --- EmberEngine's own spells: the two promotions of the Mago Negro (user, 2026-10-16/17: "2 magias por tier do 6 ao
 // 10"; Bruxo = enfraquecimento e dano no tempo, Elementalista = dano puro e área) ---
@@ -180,6 +194,11 @@ bool daggerStrikeKind(const std::string& kind);
 // Selene's Lâmina Arcana (docs/SKILLS_CONJURER.md): the mark on `walker` going off because it walked (`walked`): one step from whoever
 // marked it, its dice in arcane damage, the mark spent as it resolves. Empty when it carries no mark, did not walk, or its marker fell.
 std::vector<BattleStep> arcaneMarkInterrupts(const Battle& b, size_t walker, bool walked);
+// Witch's Stitch rupture, offered only for a validated voluntary movement attempt.
+std::optional<BattleStep> witchStitchInterrupt(const Battle& b, size_t walker);
+// Remove familiar-owned conditions when their owner expires or dies; safe to call every simulation frame.
+void pruneFamiliarSpellEffects(Battle& b);
+void releaseFamiliarSpellEffects(Battle& b, const std::string& sourceId);
 // The mark's burst: a spell step the mark plays (never learned).
 bool arcaneMarkBurstKind(const std::string& kind);
 // Globo de Invulnerabilidade: `kind` cast by `caster` from where it stands would fail on `target` (inside a globe the caster is not in, the
@@ -243,6 +262,7 @@ int spellUsesLeft(const Battle& b, size_t unit, const std::string& kind);
 int spellTierNumber(const std::string& kind);
 // How many hexes the cast takes (Míssil Mágico: one per missile, which may repeat).
 int spellTargetCount(const Battle& b, size_t unit, const std::string& kind);
+int twinResonanceTargetGap(const BattleUnit& caster);
 // The spell's zone: every hex within its reach from the caster (range, the shot's line) before asking for a target in
 // it, so the window can show where it may be aimed even when nothing stands there; rays (Frost, Tiro / Investida
 // Perfurante) give the hexes where the ray is valid; empty for an instant spell.
@@ -255,7 +275,7 @@ std::vector<BattleHex> spellArea(const Battle& b, size_t caster, const std::stri
 // or nothing (with the reason) when it cannot be cast.
 // checkUses = false skips the class and uses gate (the cast methods themselves do not check them).
 std::optional<std::vector<BattleStep>> castSpell(Battle& b, size_t caster, const std::string& kind, const std::vector<BattleHex>& cells,
-                                                 std::string* error = nullptr, bool checkUses = true);
+                                                 std::string* error = nullptr, bool checkUses = true, const std::string& selectedBuff = {});
 // Plays one step (Ember drain: resolveSpellSource / resolveCombat with its counter / the heal), drawing from `rng`.
 void resolveStep(Battle& b, const BattleStep& step, Mulberry32& rng, std::vector<BattleEffect>& out);
 // One strike of a combat step: `counter` = the defender striking back (resolveCombatSource).

@@ -723,11 +723,55 @@ BattleUnit makeSummon(const Battle& b, const BattleUnit& caster, const SummonSpe
                  : k == "summonSwampDeer" ? 0  // no spell of its own: it fights with its antlers
                                           : chargesAt(d.missileCharges, caster.level);
   if (k == "summonFamiliar2" || k == "summonFamiliar4") f.lifeDrainCharges = chargesAt(d.drainCharges, caster.level);
+  grantClassSpells(f);
+  if (f.classId == "hypostasis" && std::find(f.spellList.begin(), f.spellList.end(), "twinResonance") == f.spellList.end())
+    f.spellList.push_back("twinResonance");
   f.summonerId = caster.id;
   return f;
 }
 
 // --- Aim validity of the remaining spells (spellAimValid) ---------------------------------------------------------------
+
+struct FamiliarSpellPower {
+  int unlock = 1, range = 1, dice = 1, faces = 4, rootBonus = 0;
+  double mul = 0.5;
+};
+struct AbyssalSwapPower { int unlock = 5, range = 3, resistanceBonus = 0, chargeCost = 2; };
+struct ArcaneBanquetPower { int unlock = 5, range = 3, resistanceBonus = 0, chargeCost = 2; };
+struct TwinResonancePower { int unlock = 1, range = 3, targetGap = 3, resistanceBonus = 0, percent = 20; };
+AbyssalSwapPower abyssalSwapPower(int level);
+ArcaneBanquetPower arcaneBanquetPower(int level);
+TwinResonancePower twinResonancePower(int level);
+FamiliarSpellPower witchStitchPower(int level);
+FamiliarSpellPower burialWeightPower(int level);
+bool canAbyssalSwap(const Battle& b, size_t caster, size_t target) {
+  if (caster >= b.units().size() || target >= b.units().size() || caster == target) return false;
+  const BattleUnit& a = b.units()[caster];
+  const BattleUnit& t = b.units()[target];
+  const auto canMove = [](const BattleUnit& u) { return u.mov > 0 && !u.burialWeightActive && u.cond.burialRootSources.empty(); };
+  if (!a.alive || !t.alive || !canMove(a) || !canMove(t)) return false;
+  const auto legal = [&](const BattleUnit& mover, BattleHex destination) {
+    const std::vector<BattleHex> body = Battle::footprint(mover, destination.x, destination.y);
+    if (body.empty()) return false;
+    for (const BattleHex& h : body) {
+      if (!inBoardXY(b, h.x, h.y)) return false;
+      const BattleCell& c = b.cell(h.x, h.y);
+      if (!c.passable || c.blocked || c.terrain == "void" || c.terrain == "water" || c.terrain == "barricade") return false;
+      for (size_t i = 0; i < b.units().size(); ++i) {
+        if (i == caster || i == target || !b.units()[i].alive) continue;
+        for (const BattleHex& occupied : Battle::footprint(b.units()[i], b.units()[i].x, b.units()[i].y))
+          if (occupied.x == h.x && occupied.y == h.y) return false;
+      }
+    }
+    return true;
+  };
+  const std::vector<BattleHex> aBody = Battle::footprint(a, t.x, t.y), tBody = Battle::footprint(t, a.x, a.y);
+  if (!legal(a, {t.x, t.y}) || !legal(t, {a.x, a.y})) return false;
+  for (const BattleHex& x : aBody)
+    for (const BattleHex& y : tBody)
+      if (x.x == y.x && x.y == y.y) return false;
+  return true;
+}
 
 bool boltReaches(const Battle& b, const BattleUnit& u, BattleHex cell, int range) {
   return hexDist({u.x, u.y}, cell) <= range && clearShot(b, {u.x, u.y}, cell, false);
@@ -764,6 +808,41 @@ bool aimE2(const Battle& b, size_t caster, const std::string& kind, BattleHex ce
     return clearShot(b, from, cell, false) ? yes() : no("O tiro está bloqueado.");
   };
   const auto grown = [&](int base) { return grownReach(kind, base, u.level); };  // the reach that grows with the level
+  if (kind == "witchStitch") {
+    if (!targetable(b, here)) return no(here < 0 ? "Não há inimigo visível nessa casa." : "Escolha um inimigo visível.");
+    const FamiliarSpellPower p = witchStitchPower(u.level);
+    if (d > p.range) return no(targetRangeMsg(p.range));
+    return clearShot(b, from, cell, false) ? yes() : no("A linha até o alvo está bloqueada.");
+  }
+  if (kind == "abyssalSwap") {
+    const int foe = occAt(b, cell);
+    if (!targetable(b, foe)) return no(foe < 0 ? "Não há inimigo visível nessa casa." : "Escolha um inimigo visível.");
+    const AbyssalSwapPower p = abyssalSwapPower(u.level);
+    if (d > p.range) return no(targetRangeMsg(p.range));
+    if (!clearShot(b, from, cell, false)) return no("A linha até o alvo está bloqueada.");
+    if (!canAbyssalSwap(b, caster, static_cast<size_t>(foe))) return no("A troca não pode deslocar essas criaturas ou um dos destinos está bloqueado.");
+    valid = true;
+    return true;
+  }
+  if (kind == "arcaneBanquet") {
+    if (!targetable(b, here)) return no(here < 0 ? "Não há inimigo visível nessa casa." : "Escolha um inimigo visível.");
+    const ArcaneBanquetPower p = arcaneBanquetPower(u.level);
+    if (d > p.range) return no(targetRangeMsg(p.range));
+    return clearShot(b, from, cell, false) ? yes() : no("A linha até o alvo está bloqueada.");
+  }
+  if (kind == "twinResonance") {
+    if (u.classId != "hypostasis") return no("A Ressonância Geminada pertence à Hipóstase.");
+    if (!targetable(b, here)) return no(here < 0 ? "Não há inimigo visível nessa casa." : "Escolha um inimigo visível.");
+    const TwinResonancePower p = twinResonancePower(u.level);
+    if (d > p.range) return no(targetRangeMsg(p.range));
+    return clearShot(b, from, cell, false) ? yes() : no("A linha até o alvo está bloqueada.");
+  }
+  if (kind == "burialWeight") {
+    const FamiliarSpellPower p = burialWeightPower(u.level);
+    if (d > p.range) return no(targetRangeMsg(p.range));
+    if (b.cell(cell.x, cell.y).terrain == "void") return no("Escolha um hex com chão.");
+    return clearShot(b, from, cell, false) ? yes() : no("O impacto está bloqueado.");
+  }
   if (kind == "fireball") return bolt(grown(kFireballRange));
   if (kind == "iceStorm") return bolt(grown(iceStormPower(u.level).range));
   if (kind == "acidCloud") return bolt(grown(iceStormPower(u.level).range));
@@ -858,20 +937,73 @@ std::vector<size_t> unitsAlong(const Battle& b, const std::vector<BattleHex>& ti
 }
 
 // spendFamiliarOrTier: a familiar's own spell draws from its charges.
+FamiliarSpellPower witchStitchPower(int level) {
+  if (level >= 20) return {20, 5, 3, 8, 0, 1.0};
+  if (level >= 10) return {10, 4, 2, 6, 0, 0.8};
+  return {1, 3, 1, 4, 0, 0.6};
+}
+FamiliarSpellPower burialWeightPower(int level) {
+  if (level >= 29) return {29, 5, 4, 10, 15, 1.5};
+  if (level >= 22) return {22, 5, 3, 8, 10, 1.2};
+  return {15, 5, 2, 6, 0, 1.0};
+}
+AbyssalSwapPower abyssalSwapPower(int level) {
+  if (level >= 20) return {5, 7, 20, 1};
+  if (level >= 12) return {5, 5, 10, 2};
+  return {5, 3, 0, 2};
+}
+ArcaneBanquetPower arcaneBanquetPower(int level) {
+  static const nlohmann::json config = [] {
+    std::ifstream file("content/data/familiar-spells.json");
+    if (!file) return nlohmann::json::object();
+    try { return nlohmann::json::parse(file); } catch (...) { return nlohmann::json::object(); }
+  }();
+  const nlohmann::json rows = config.value("arcaneBanquet", nlohmann::json::object()).value("progression", nlohmann::json::array());
+  ArcaneBanquetPower power;
+  for (const nlohmann::json& row : rows) {
+    if (!row.is_object() || level < row.value("level", 5)) continue;
+    power.unlock = row.value("unlock", power.unlock);
+    power.range = row.value("range", power.range);
+    power.resistanceBonus = row.value("resistanceBonus", power.resistanceBonus);
+    power.chargeCost = row.value("chargeCost", power.chargeCost);
+  }
+  return power;
+}
+TwinResonancePower twinResonancePower(int level) {
+  static const nlohmann::json config = [] {
+    std::ifstream file("content/data/familiar-spells.json");
+    if (!file) return nlohmann::json::object();
+    try { return nlohmann::json::parse(file); } catch (...) { return nlohmann::json::object(); }
+  }();
+  const nlohmann::json rows = config.value("twinResonance", nlohmann::json::object()).value("progression", nlohmann::json::array());
+  TwinResonancePower power;
+  for (const nlohmann::json& row : rows) {
+    if (!row.is_object() || level < row.value("level", 1)) continue;
+    power.unlock = row.value("unlock", power.unlock);
+    power.range = row.value("range", power.range);
+    power.targetGap = row.value("targetGap", power.targetGap);
+    power.resistanceBonus = row.value("resistanceBonus", power.resistanceBonus);
+    power.percent = row.value("percent", power.percent);
+  }
+  return power;
+}
 bool familiarOwnSpell(const BattleUnit& u, const std::string& kind) {
-  return (u.classId == "familiar" || u.classId == "familiar2") ? kind == "magicMissile"
-         : u.classId == "familiar3"                              ? kind == "fireball"
+  return (u.classId == "familiar" || u.classId == "familiar2") ? (kind == "magicMissile" || (u.classId == "familiar" && kind == "witchStitch") || (u.classId == "familiar2" && (kind == "abyssalSwap" || kind == "arcaneBanquet")))
+         : u.classId == "hypostasis"                              ? kind == "twinResonance"
+         : u.classId == "familiar3"                              ? (kind == "fireball" || kind == "burialWeight")
          : u.classId == "familiar4"                              ? kind == "shock"
          : u.classId == "zombieDog"                              ? kind == "minorVenom"
                                                                  : false;
 }
 void spendFamiliarOrTier(BattleUnit& u, const std::string& kind) {
-  if (familiarOwnSpell(u, kind)) u.spellCharges = std::max(0, u.spellCharges - 1);
+  if (kind == "twinResonance") return;  // exactly 8 AP per cast; no use charge
+  if (familiarOwnSpell(u, kind)) u.spellCharges = std::max(0, u.spellCharges - (kind == "abyssalSwap" ? abyssalSwapPower(u.level).chargeCost : kind == "arcaneBanquet" ? arcaneBanquetPower(u.level).chargeCost : 1));
   else spendTier(u, kind);
 }
-int familiarRemaining(const BattleUnit& u, const std::string& kind) { return familiarOwnSpell(u, kind) ? u.spellCharges : tierRemaining(u, kind); }
+int familiarRemaining(const BattleUnit& u, const std::string& kind) { return kind == "twinResonance" && u.classId == "hypostasis" ? 1 : familiarOwnSpell(u, kind) ? u.spellCharges : tierRemaining(u, kind); }
 
-std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const std::string& kind, const std::vector<BattleHex>& cells, std::string* error, bool checkUses) {
+std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const std::string& kind, const std::vector<BattleHex>& cells, std::string* error, bool checkUses,
+                                             const std::string& selectedBuff = {}) {
   BattleUnit& u = b.units()[caster];
   auto fail = [&](const std::string& why) -> std::optional<std::vector<BattleStep>> {
     if (error) *error = why;
@@ -888,7 +1020,55 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
     s.weaponBonusDice = bonus.dice, s.weaponBonusFaces = bonus.faces, s.weaponBonusBonus = bonusFlat;
     steps.push_back(s);
   };
-  if (kind == "bloodyShot") {
+  if (kind == "witchStitch") {
+    const int foe = occAt(b, cell);
+    if (foe < 0 || !b.units()[static_cast<size_t>(foe)].alive) return fail("Não há inimigo nessa casa.");
+    const FamiliarSpellPower p = witchStitchPower(u.level);
+    spendFamiliarOrTier(u, kind);
+    s.type = BattleStep::Type::Effect, s.ids = {static_cast<size_t>(foe)}, s.tiles = {cell};
+    s.dice = p.dice, s.faces = p.faces, s.spellMul = p.mul;
+    steps.push_back(s);
+  } else if (kind == "abyssalSwap") {
+    const int foe = occAt(b, cell);
+    if (foe < 0 || !targetable(b, foe)) return fail("Escolha um inimigo visível.");
+    const AbyssalSwapPower p = abyssalSwapPower(u.level);
+    if (!canAbyssalSwap(b, caster, static_cast<size_t>(foe))) return fail("A troca não pode deslocar essas criaturas ou um dos destinos está bloqueado.");
+    s.type = BattleStep::Type::Effect, s.ids = {static_cast<size_t>(foe)}, s.tiles = {cell, from};
+    s.resistanceBonus = p.resistanceBonus;
+    spendFamiliarOrTier(u, kind);
+    steps.push_back(s);
+  } else if (kind == "arcaneBanquet") {
+    const int foe = occAt(b, cell);
+    if (foe < 0 || !targetable(b, foe)) return fail("Escolha um inimigo visível.");
+    const ArcaneBanquetPower p = arcaneBanquetPower(u.level);
+    const std::vector<ArcaneBanquetOption> options = arcaneBanquetOptions(b, caster, static_cast<size_t>(foe));
+    const auto selected = std::find_if(options.begin(), options.end(), [&](const ArcaneBanquetOption& option) { return option.id == selectedBuff; });
+    if (selected == options.end()) return fail("Escolha um efeito benéfico para roubar.");
+    if (!selected->available) return fail(selected->reason);
+    spendFamiliarOrTier(u, kind);
+    s.type = BattleStep::Type::Effect, s.ids = {static_cast<size_t>(foe)}, s.tiles = {cell};
+    s.stolenBuff = selectedBuff, s.resistanceBonus = p.resistanceBonus;
+    steps.push_back(s);
+  } else if (kind == "twinResonance") {
+    if (u.classId != "hypostasis") return fail("A Ressonância Geminada pertence à Hipóstase.");
+    if (cells.size() != 2 || cells[0] == cells[1]) return fail("Escolha dois inimigos distintos.");
+    const int first = occAt(b, cells[0]), second = occAt(b, cells[1]);
+    if (!targetable(b, first) || !targetable(b, second) || first == second) return fail("Escolha dois inimigos visíveis e distintos.");
+    const TwinResonancePower p = twinResonancePower(u.level);
+    if (hexDist(cells[0], cells[1]) > p.targetGap) return fail(std::format("Os alvos devem estar a até {} hexes um do outro.", p.targetGap));
+    s.type = BattleStep::Type::Effect, s.ids = {static_cast<size_t>(first), static_cast<size_t>(second)}, s.tiles = cells;
+    s.resonancePercent = p.percent, s.resistanceBonus = p.resistanceBonus;
+    steps.push_back(s);
+  } else if (kind == "burialWeight") {
+    if (u.burialWeightActive) return fail("O Peso Sepulcral ainda mantém o Numen ancorado.");
+    const FamiliarSpellPower p = burialWeightPower(u.level);
+    const std::vector<BattleHex> tiles = areaTiles(b, cell, 1);
+    const std::vector<size_t> foes = unitsAlong(b, tiles, caster, &u.side);
+    spendFamiliarOrTier(u, kind);
+    s.type = BattleStep::Type::Effect, s.tiles = tiles, s.ids = foes;
+    s.dice = p.dice, s.faces = p.faces, s.spellMul = p.mul, s.burialRootBonus = p.rootBonus;
+    steps.push_back(s);
+  } else if (kind == "bloodyShot") {
     const int foe = occAt(b, cell);
     if (foe < 0) return fail("Não há unidade na casa selecionada.");
     spendTier(u, kind);
@@ -1189,7 +1369,7 @@ bool e2Kind(const std::string& k) {
                                       "divineBolt", "minorVenom", "iceStorm",   "turnUndead",        "lightningTier3", "familiarLifeDrain",  "phantasmalForce",
                                       "provoke",    "bullRush",     "bless",     "webOfDreams", "auraOfProtection", "intimidatingPresence", "warp",
                                       "summonFamiliar", "summonFamiliar2", "summonFamiliar3", "summonFamiliar4", "summonZombieDog", "spectralBolt",
-                                      "acidCloud", "acidArrow"};
+                                      "acidCloud", "acidArrow", "witchStitch", "burialWeight", "abyssalSwap", "arcaneBanquet", "twinResonance"};
   for (const char* c : kinds)
     if (k == c) return true;
   return false;
@@ -1214,6 +1394,7 @@ std::vector<BattleHex> areaE2(const Battle& b, size_t caster, const std::string&
     return dir ? coneSector(b, from, *dir, p.radius) : std::vector<BattleHex>{};
   }
   if (kind == "spectralBolt" || kind == "acidArrow") return areaTiles(b, cell, 0);
+  if (kind == "burialWeight") return areaTiles(b, cell, 1);
   if (kind == "fireball") return areaTiles(b, cell, areaRadius(kind, kFireballSize, u.level));
   if (kind == "causticVenom") return areaTiles(b, cell, areaRadius(kind, kCausticVenom.size, u.level));
   if (kind == "minorVenom") return areaTiles(b, cell, areaRadius(kind, kMinorVenom.size, u.level));

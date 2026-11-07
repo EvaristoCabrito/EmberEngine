@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <limits>
 
+#include "world/ActionPoints.h"
 #include "world/Battle.h"
 #include "world/Combat.h"
 
@@ -131,6 +132,9 @@ void Battle::beginTurn(size_t unit) {
   BattleUnit& u = units_[unit];
   u.moveUsed = 0;
   if (u.side == "player") u.acted = false;
+  // Action Points: what was left stayed for counters through the other turns; now the one refresh of the round (apRefresh keeps it
+  // to once, so a turn begun again on a resumed fight gives nothing more).
+  apRefresh(*this, unit);
 }
 
 std::string Battle::result() const {
@@ -288,6 +292,15 @@ AiPlan Battle::planEnemy(size_t unit) const {
   const std::vector<ReachCell> reach = reachable(unit, true), walk = reachable(unit, false);
   // Every hero standing, the enmity target first; enmity weighs the choice (enmityBonus), it never hides a foe in reach.
   const std::vector<size_t> heroes = aiTargets(unit);
+  double stitchMovementPenalty = 0.0;
+  if (u.cond.witchStitchDice > 0) {
+    const auto source = std::find_if(units_.begin(), units_.end(), [&](const BattleUnit& v) { return v.alive && v.id == u.cond.witchStitchSource; });
+    if (source != units_.end()) {
+      const double raw = std::floor(u.cond.witchStitchMag / 2.0) * u.cond.witchStitchMul +
+                         u.cond.witchStitchDice * (u.cond.witchStitchFaces + 1) / 2.0;
+      stitchMovementPenalty = std::max(0.0, raw * (1.0 - std::clamp(u.combat.resistance("arcane") - u.cond.witchStitchMag / 2.0, 0.0, 100.0) / 100.0));
+    }
+  }
   // Tempestade de Gelo (ours, 2026-10-21; the user: "os inimigos não tentam escapar dela"): a hex is unsafe when its body there stands
   // in a storm, or, for one not in a storm yet, when the walk there crosses one. It strikes and closes in from safe hexes when it has
   // any; one caught inside with no safe strike gets out first. Only when nowhere safe is in reach does it act as before.
@@ -312,14 +325,21 @@ AiPlan Battle::planEnemy(size_t unit) const {
     if (!unsafe(c)) safe.push_back(c);
   const std::vector<ReachCell>& options = safe.empty() ? reach : safe;
   // The best strike from any hex it can reach: the most wounded foe, good ground, a foe nearly down.
+  // Action Points: the walk there and the blow must both be paid from its reserve (the reach already holds only the hexes it can
+  // walk to); the AP left after them is its reserve for counters, and the score adds exactly that (the user, 2026-11-06: "a reserva
+  // é exatamente o que estiver de reserva"), times ai.counterReserveWeight (1 = one point of score per AP kept).
+  const int attackCost = apCost(*this, u, ApAction::attack());
   AiPlan plan;
   std::optional<double> bestScore;
   BattleHex from{};
   for (const ReachCell& c : options)
     for (size_t h : heroes) {
       if (!canHitFrom(*this, unit, {c.x, c.y}, h)) continue;
+      if (!roaming_ && u.ap - c.ap < attackCost) continue;  // it cannot pay for the blow from there
       const BattleUnit& foe = units_[h];
-      const double score = (foe.maxHp - foe.hp) * 3 + cell(c.x, c.y).def * 2 + (foe.hp <= 8 ? 20 : 0) + enmityBonus(unit, h);
+      const double score = (foe.maxHp - foe.hp) * 3 + cell(c.x, c.y).def * 2 + (foe.hp <= 8 ? 20 : 0) + enmityBonus(unit, h) -
+                           ((c.x != u.x || c.y != u.y) ? stitchMovementPenalty * 2.0 : 0.0) +
+                           (roaming_ ? 0.0 : std::max(0, u.ap - c.ap - attackCost) * apRules().ai.counterReserveWeight);
       if (!bestScore || score > *bestScore) bestScore = score, from = {c.x, c.y}, plan.target = static_cast<int>(h);
     }
   if (bestScore) {
@@ -327,6 +347,7 @@ AiPlan Battle::planEnemy(size_t unit) const {
     return plan;
   }
   if (heroes.empty()) return plan;
+  if (stitchMovementPenalty > 0.0) return plan;  // it can still attack in place; pursuit must weigh the imminent rupture
   // Close in by real walking distance (walls and pillars count), not a straight line: on the hero it holds the most enmity for
   // when a walk reaches it (heroes come enmity first), else on the nearest hero it can walk to.
   std::vector<std::vector<int>> fields;

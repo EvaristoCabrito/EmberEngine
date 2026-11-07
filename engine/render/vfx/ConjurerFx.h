@@ -45,6 +45,12 @@ class ConjurerFx {
   static float lanceSeconds(size_t hexes);
 
   void swap(const Target& a, const Target& b, float start, float finish);
+  void abyssalSwap(const Target& familiar, const Target& foe, float start, float impact, int tier = 1, bool resisted = false);
+  int arcaneBanquet(const Target& foe, const Target& familiar, float impact, int tier, const std::string& buff);
+  void arcaneBanquetResult(int id, bool resisted);
+  int twinResonanceStart(Target a, Target b, int percent, int tier, float now);
+  void twinResonanceUpdate(int id, Target a, Target b, int percent, float now);
+  void twinResonanceEnd(int id, float now);
   void lance(glm::vec3 from, float fromHeight, const std::vector<glm::vec3>& hexes, std::vector<Target> bodies, float release, float impact);
   void mirrorBurst(const Target& ally, float impact);
   // The standing illusions beside a unit: `copies` of them from `now`; mirrorUpdate follows the unit and shatters the copies that
@@ -63,7 +69,7 @@ class ConjurerFx {
   void build(float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
 
  private:
-  enum class Kind { Swap, Lance, MirrorBurst, Mirror, Detonate, Bond, Nightmare, Empower };
+  enum class Kind { Swap, AbyssalSwap, ArcaneBanquet, TwinResonance, Lance, MirrorBurst, Mirror, Detonate, Bond, Nightmare, Empower };
   struct Effect {
     Kind kind;
     int id = 0;
@@ -74,12 +80,18 @@ class ConjurerFx {
     std::vector<Target> bodies;
     // Mirror: the copies standing, when they end (-1 = standing), the shatters (time, slot)
     int copies = 0;
+    int tier = 1;
+    bool resisted = false;
+    std::string buff;
     float endAt = -1.0f;
     std::vector<std::pair<float, int>> shatters;
     uint32_t seed = 0;
     float end() const;
   };
   void buildSwap(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
+  void buildAbyssalSwap(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
+  void buildArcaneBanquet(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
+  void buildTwinResonance(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   void buildLance(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   void buildMirrorBurst(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   void buildMirror(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);

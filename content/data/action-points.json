@@ -1,0 +1,201 @@
+{
+  "source": "EmberEngine's own (2026-11-06): the Action Point (PA) rules every fight reads (engine/world/ActionPoints.cpp; docs/ACTION_POINTS.md). Values marked provisional are configuration defaults still to be balanced, not confirmed design.",
+  "baseAp": 12,
+  "maxAp": 34,
+  "maxApNote": "the design's (the user, 2026-11-06): the AP scale runs from 1 to 34; no maximum goes over it; the HUD bar has 34 slots",
+  "dexPerAp": 10,
+  "rounding": "floor",
+  "armor": {
+    "slot": "chest",
+    "default": "unarmored",
+    "categories": {
+      "unarmored": 5,
+      "cloth": 4,
+      "lightLeather": 3,
+      "reinforcedLeather": 2,
+      "chainmail": 1,
+      "heavyPlate": 0
+    },
+    "confirmed": ["unarmored", "heavyPlate"],
+    "provisional": ["cloth", "lightLeather", "reinforcedLeather", "chainmail"],
+    "names": {
+      "unarmored": {"pt": "Sem armadura", "en": "Unarmored"},
+      "cloth": {"pt": "Tecido / Mantos", "en": "Cloth / Robes"},
+      "lightLeather": {"pt": "Couro leve", "en": "Light Leather"},
+      "reinforcedLeather": {"pt": "Couro reforçado", "en": "Reinforced Leather"},
+      "chainmail": {"pt": "Cota de malha", "en": "Chainmail"},
+      "heavyPlate": {"pt": "Placas pesadas", "en": "Heavy Plate"}
+    },
+    "itemsNote": "Every chest piece of content/data/overworld.json tables.equipment (slot chest) mapped by its id; the mapping follows the pieces' names (mail, cuirass, breastplate, brigandine, scale, leather, fur, robe) and is provisional until the designer confirms it. A chest piece missing here counts as the default category.",
+    "items": {
+      "leather-steel-cuirass": "reinforcedLeather",
+      "chainmail-hauberk": "chainmail",
+      "cota-do-leao": "chainmail",
+      "cota-da-cruz": "chainmail",
+      "cota-do-leao-dourada": "chainmail",
+      "cota-de-pele-de-lobo-malha": "chainmail",
+      "cota-encapelada": "chainmail",
+      "cota-do-templario": "chainmail",
+      "cota-da-echarpe-vermelha": "chainmail",
+      "cota-sombria": "chainmail",
+      "cota-da-arvore": "chainmail",
+      "cota-do-templario-andrajosa": "chainmail",
+      "cota-azul-ornamentada": "chainmail",
+      "heavy-brigandine": "reinforcedLeather",
+      "scale-armor": "reinforcedLeather",
+      "couraca-do-leao-dourada": "heavyPlate",
+      "couraca-da-cruz-prateada": "heavyPlate",
+      "couraca-da-flor-de-lis": "heavyPlate",
+      "couraca-do-leao-rugidor": "heavyPlate",
+      "couraca-de-malha-do-leao-atlante": "chainmail",
+      "couraca-de-malha-da-cruz-estrelada": "chainmail",
+      "couraca-de-malha-do-leao-carmesim": "chainmail",
+      "couraca-de-malha-da-estrela-guia": "chainmail",
+      "couraca-de-malha-do-dragao-rubro": "chainmail",
+      "couraca-de-malha-do-grifo-azul": "chainmail",
+      "wanderer-brigandine": "reinforcedLeather",
+      "peitoral-do-leao": "heavyPlate",
+      "peitoral-encapuzado": "heavyPlate",
+      "peitoral-escamado-ornamentado": "reinforcedLeather",
+      "peitoral-de-pele-de-lobo": "lightLeather",
+      "peitoral-da-echarpe-carmesim": "heavyPlate",
+      "peitoral-de-correias-cruzadas": "lightLeather",
+      "peitoral-do-emblema-do-leao": "heavyPlate",
+      "peitoral-de-pele-cinzenta": "lightLeather",
+      "peitoral-do-manto-drapeado": "heavyPlate",
+      "peitoral-cravejado": "reinforcedLeather",
+      "peitoral-de-couro-do-leao": "lightLeather",
+      "peitoral-escamado-carmesim": "reinforcedLeather",
+      "manto-remendado-do-arcanista": "cloth",
+      "manto-das-luas-rasgado": "cloth",
+      "manto-encapuzado-desgastado": "cloth",
+      "manto-sombrio-encapuzado": "cloth",
+      "manto-astral-da-meia-noite": "cloth",
+      "manto-sagrado-carmesim": "cloth",
+      "manto-da-noite-escarlate": "cloth",
+      "manto-celeste-ornamentado": "cloth",
+      "manto-do-arauto-sombrio": "cloth",
+      "manto-do-sol-radiante": "cloth"
+    },
+    "classesNote": "Enemies and neutrals carry no equipment data: their category comes from this table by class id, else the default. Empty until the designer assigns them (provisional).",
+    "classes": {}
+  },
+  "weapons": {
+    "categoriesNote": "Every weaponType of content/data/weapons.json (and the off-hand daggers) folded into the cost categories; a type missing here keeps its own name as its category.",
+    "categories": {
+      "dagger": "dagger",
+      "sword": "sword",
+      "axe": "axe",
+      "mace": "blunt",
+      "hammer": "blunt",
+      "club": "blunt",
+      "staff": "staff",
+      "spear": "polearm",
+      "lance": "polearm",
+      "pike": "polearm",
+      "halberd": "polearm",
+      "polearm": "polearm",
+      "bow": "bow",
+      "crossbow": "bow"
+    },
+    "attackCost": {
+      "dagger": 5,
+      "sword": 6,
+      "axe": 6,
+      "blunt": 6,
+      "polearm": 7,
+      "bow": 7,
+      "staff": 6,
+      "unarmed": 6
+    },
+    "attackCostNote": "dagger 5, sword/axe/blunt 6, polearm/bow 7 are the design's; staff (a staff's ordinary blow, never the Staff Counter) and unarmed (no weapon data at all) are provisional.",
+    "classWeaponsNote": "Enemies carry no weapon data (Ember exports none): the category by class id, the same split MapStage::weaponStyle already draws (blades, spears, crossbows, staves); provisional. A class missing here uses default.",
+    "classWeapons": {
+      "miliciaV2": "sword", "milicia": "sword", "theButcher": "sword", "captain": "sword", "brigand": "sword", "rogue": "sword", "assassin": "sword",
+      "swordsman": "sword", "soldier": "sword", "punisher": "sword", "paladin": "sword", "heavyKnight": "sword",
+      "basePikeman": "polearm", "pikeman": "polearm", "lancer": "polearm", "sentinel": "polearm", "templar": "polearm", "sandoval": "polearm",
+      "baseCrossbowman": "bow", "brigandCrossbowman": "bow", "archer": "bow", "ranger": "bow",
+      "cultist": "staff", "cultistV2": "staff", "sorcerer": "staff", "necromancer": "staff", "warlock": "staff", "elementalist": "staff",
+      "mage": "staff", "conjurer": "staff", "cleric": "blunt", "bishop": "blunt", "healer": "blunt"
+    },
+    "default": "blunt"
+  },
+  "actions": {
+    "potion": 5,
+    "lockpick": 5,
+    "lockpickNote": "provisional (Arrombar has no established cost)"
+  },
+  "spells": {
+    "default": 8,
+    "defaultNote": "the design's (the user, 2026-11-06): every spell and every special skill (weapon skills included) costs 8 AP; byKind / byTier override one",
+    "weaponSkillsUseWeaponCost": false,
+    "byTier": {},
+    "byKind": { "twinResonance": 8 }
+  },
+  "counters": {
+    "staff": 6,
+    "spell": 7,
+    "byCategoryNote": "a counter of any other kind costs the defender's own weapon attack cost unless listed here (e.g. dagger: 5)",
+    "byCategory": {}
+  },
+  "movement": {
+    "minimum": 1,
+    "rounding": "round",
+    "cappedByMov": true,
+    "freeWhileRoaming": true,
+    "terrainNote": "apCost null = the tile's own Ember moveCost (content/data/battle-rules.json: plains 1, woods 2, hill 2, ember 2, flame 3, nave/ruins/snow 1); modifier is added on top. The categories without a tile yet (road, uneven, mud, marsh, ice, rocky, shallowWater, magical) are configurable entries for terrains to come; nothing here is balanced.",
+    "terrain": {
+      "plains": {"apCost": null, "modifier": 0, "category": "flat"},
+      "nave": {"apCost": null, "modifier": 0, "category": "road"},
+      "ruins": {"apCost": null, "modifier": 0, "category": "uneven"},
+      "snow": {"apCost": null, "modifier": 0, "category": "snow"},
+      "woods": {"apCost": null, "modifier": 0, "category": "obstructed"},
+      "hill": {"apCost": null, "modifier": 0, "category": "hill"},
+      "ember": {"apCost": null, "modifier": 0, "category": "magical"},
+      "flame": {"apCost": null, "modifier": 0, "category": "magical"},
+      "water": {"apCost": null, "modifier": 0, "category": "water"},
+      "road": {"apCost": null, "modifier": 0, "category": "road"},
+      "floor": {"apCost": null, "modifier": 0, "category": "road"},
+      "uneven": {"apCost": null, "modifier": 0, "category": "uneven"},
+      "mud": {"apCost": null, "modifier": 0, "category": "mud"},
+      "marsh": {"apCost": null, "modifier": 0, "category": "mud"},
+      "ice": {"apCost": null, "modifier": 0, "category": "ice"},
+      "rocky": {"apCost": null, "modifier": 0, "category": "rocky"},
+      "shallowWater": {"apCost": null, "modifier": 0, "category": "shallowWater"},
+      "magical": {"apCost": null, "modifier": 0, "category": "magical"}
+    },
+    "zonesNote": "terrain altered by spells (Teia dos Sonhos, Tempestade de Gelo, auras, our zones): AP added to every hex they cover; provisional 0",
+    "zones": {
+      "web": 0,
+      "iceStorm": 0,
+      "aura": 0,
+      "zone": 0
+    }
+  },
+  "refresh": {
+    "policy": "replace",
+    "when": "ownTurnStart",
+    "accumulateCap": 2.0
+  },
+  "statusNote": "AP effects of the existing conditions, none designed yet. Keys: stunned, asleep, bleeding, crippled, fear, poisoned, diseased, hungry, hobble, sunder, rally, disarm, staggered, silence, mark, decay. Each {flat, pct, movementFlat, movementPct}.",
+  "status": {},
+  "talentsNote": "AP bonus of a known passive / talent by spell kind, e.g. crusaderOath: {flat, pct}; none designed yet",
+  "talents": {},
+  "equipmentNote": "AP bonus of a worn piece by equipment id, e.g. capuz-de-viajante: {flat, pct}; none designed yet",
+  "equipment": {},
+  "examine": {
+    "cost": 3,
+    "costNote": "provisional: the final value is not established",
+    "spendsAction": false,
+    "categories": [
+      {"id": "easy", "pt": "Alvo fácil", "en": "Easy Target", "maxRatio": 0.5},
+      {"id": "moderate", "pt": "Desafio moderado", "en": "Moderate Challenge", "maxRatio": 1.0},
+      {"id": "difficult", "pt": "Oponente difícil", "en": "Difficult Opponent", "maxRatio": 2.0},
+      {"id": "deadly", "pt": "Ameaça mortal", "en": "Deadly Threat", "maxRatio": null}
+    ]
+  },
+  "ai": {
+    "counterReserveWeight": 1.0,
+    "counterReserveWeightNote": "the design's (the user, 2026-11-06): an enemy's strike scores exactly the AP it keeps in reserve after the walk and the blow, times this weight"
+  }
+}

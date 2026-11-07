@@ -19,6 +19,8 @@
 //   Cooker export-battle <map.json> <out.battle.json>                the game's own battle file of a prepared map
 //   Cooker export-scene <board.json> <catalog.json> <public> <map.json> <out.scene.json>   its scene (SceneBuilder)
 //   Cooker check-spell-tracks                                       every spell's numbers level by level: one change a level
+//   Cooker check-abyssal-swap <map.battle.json>                      exercise the familiar's atomic enemy swap and resistance rules
+//   Cooker check-twin-resonance <map.battle.json>                     exercise the Hipóstase's paired damage link and saves
 //   Cooker check-campaign <campaign.json>                            compare the C++ save slots (slotProgress) with Ember's
 //   Cooker check-overworld <overworld.json> <references.json>        compare the C++ world-map rules with Ember's answers
 //   Cooker check-interlude <interlude.json> <overworld.json> <campaign.json>   the Interlude's gate / party switch / return on synthetic saves
@@ -54,6 +56,8 @@
 #include "world/BattleExport.h"
 #include "world/Progression.h"
 #include "world/Spells.h"
+#include "world/ActionPoints.h"
+#include "world/Combat.h"
 #include "GroundCheck.h"
 #include "GroundCooker.h"
 #include "MeshCooker.h"
@@ -336,6 +340,231 @@ int checkSpellTracksCommand(const std::vector<std::string_view>& args) {
   for (const std::string& f : fails) ember::logError("{}", f);
   ember::logInfo("spell tracks: {}", fails.empty() ? "one small improvement a level on every spell" : std::format("{} failures", fails.size()));
   return fails.empty() ? 0 : 1;
+}
+
+int checkAbyssalSwapCommand(const std::vector<std::string_view>& args) {
+  if (args.size() != 1) fatal("usage: Cooker check-abyssal-swap <map.battle.json>");
+  std::optional<ember::Battle> loaded = ember::Battle::load(std::filesystem::path(args[0]));
+  if (!loaded) return 1;
+  ember::Battle& b = *loaded;
+  for (int y = 0; y < b.rows(); ++y)
+    for (int x = 0; x < b.cols(); ++x) b.setCell(y * b.cols() + x, ember::BattleCell{.terrain = "plains"});
+  b.units().clear();
+  ember::BattleUnit familiar, foe;
+  familiar.id = "check-familiar", familiar.name = "Test Familiar", familiar.classId = "familiar2", familiar.className = "Familiar Médio";
+  familiar.side = "player", familiar.alive = true, familiar.x = 3, familiar.y = 4, familiar.level = 4;
+  familiar.mov = 5, familiar.mag = 0, familiar.hp = familiar.maxHp = 100, familiar.spellCharges = 2, familiar.ap = 100;
+  ember::grantClassSpells(familiar);
+  foe.id = "check-foe", foe.name = "Test Foe", foe.classId = "test", foe.side = "enemy", foe.alive = true;
+  foe.x = 6, foe.y = 4, foe.level = 5, foe.mov = 5, foe.hp = foe.maxHp = 100;
+  b.units().push_back(familiar), b.units().push_back(foe);
+  auto require = [](bool ok, const char* why) {
+    if (!ok) ember::logError("abyssal swap check: {}", why);
+    return ok;
+  };
+  std::string castError;
+  auto cast = [&]() { castError.clear(); return ember::castSpell(b, 0, "abyssalSwap", {{b.units()[1].x, b.units()[1].y}}, &castError); };
+  auto knowsSwap = [&]() { return std::find(b.units()[0].spellList.begin(), b.units()[0].spellList.end(), "abyssalSwap") != b.units()[0].spellList.end(); };
+  if (!require(!knowsSwap(), "the medium familiar should not learn the spell before level five")) return 1;
+  b.units()[0].level = 4;
+  ember::grantClassSpells(b.units()[0]);
+  if (!require(!knowsSwap(), "level four must not unlock the spell")) return 1;
+  b.units()[0].level = 5;
+  ember::grantClassSpells(b.units()[0]);
+  if (!require(knowsSwap(), "level five must unlock the spell")) return 1;
+  if (!require(ember::spellAimValid(b, 0, "abyssalSwap", {6, 4}), "visible target and both destinations should be valid")) return 1;
+  if (!require(ember::spellUsesLeft(b, 0, "abyssalSwap") == 1, "initial stage should require two charges per cast")) return 1;
+  auto steps = cast();
+  if (!require(steps.has_value(), castError.empty() ? "cast should be accepted" : castError.c_str())) return 1;
+  if (!require(b.units()[0].spellCharges == 0, "cast should spend both charges")) return 1;
+  std::vector<ember::BattleEffect> effects;
+  ember::Mulberry32 rng(123);
+  ember::resolveStep(b, steps->front(), rng, effects);
+  if (!require(b.units()[0].x == 6 && b.units()[1].x == 3 && b.unitAt(6, 4) == 0 && b.unitAt(3, 4) == 1,
+               "successful cast must atomically exchange both occupied hexes")) return 1;
+
+  b.units()[0].x = 3, b.units()[1].x = 6, b.units()[0].spellCharges = 2;
+  b.units()[1].x = 7;
+  if (!require(!ember::spellAimValid(b, 0, "abyssalSwap", {7, 4}), "initial stage must enforce its short range")) return 1;
+  b.units()[1].x = 6;
+  b.units()[1].combat.resistances = {{"arcane", 100.0}};
+  steps = cast();
+  if (!require(steps.has_value(), "fully resisting target must still be a valid cast")) return 1;
+  effects.clear();
+  ember::Mulberry32 resistRng(9);
+  ember::resolveStep(b, steps->front(), resistRng, effects);
+  if (!require(b.units()[0].x == 3 && b.units()[1].x == 6 && b.units()[0].spellCharges == 0 && b.units()[0].hp == 100 && b.units()[1].hp == 100 &&
+                   std::any_of(effects.begin(), effects.end(), [](const ember::BattleEffect& e) { return e.miss; }),
+               "resistance should keep positions and still consume cast charges")) return 1;
+
+  b.units()[0].spellCharges = 2, b.units()[1].combat.resistances.clear();
+  b.units()[1].size = 2;
+  if (!require(ember::spellAimValid(b, 0, "abyssalSwap", {6, 4}), "a valid large-creature footprint should be swappable")) return 1;
+  steps = cast();
+  if (!require(steps.has_value(), "a large target with valid footprints should cast")) return 1;
+  effects.clear();
+  ember::Mulberry32 largeRng(31);
+  ember::resolveStep(b, steps->front(), largeRng, effects);
+  if (!require(b.units()[0].x == 6 && b.units()[1].x == 3 && b.unitAt(3, 4) == 1 && b.unitAt(4, 4) == 1,
+               "a large creature should swap as one body and occupy every destination hex")) return 1;
+  b.units()[0].x = 3, b.units()[1].x = 6, b.units()[0].spellCharges = 2;
+  ember::BattleUnit blocker;
+  blocker.id = "check-blocker", blocker.side = "enemy", blocker.alive = true, blocker.x = 4, blocker.y = 4;
+  b.units().push_back(blocker);
+  if (!require(!ember::spellAimValid(b, 0, "abyssalSwap", {6, 4}), "another unit in either destination footprint must reject the whole exchange")) return 1;
+  b.units().back().alive = false;
+  b.setCell(4 * b.cols() + 4, ember::BattleCell{.terrain = "plains", .blocked = true});
+  if (!require(!ember::spellAimValid(b, 0, "abyssalSwap", {6, 4}), "a blocked hex in a large footprint must invalidate the entire exchange")) return 1;
+  b.setCell(4 * b.cols() + 4, ember::BattleCell{.terrain = "plains"});
+  b.units()[1].size = 1;
+  b.setCell(4 * b.cols() + 4, ember::BattleCell{.terrain = "plains", .shot = {.blocksShot = true}});
+  if (!require(!ember::spellAimValid(b, 0, "abyssalSwap", {6, 4}), "a blocked line of sight must reject targeting")) return 1;
+  b.setCell(4 * b.cols() + 4, ember::BattleCell{.terrain = "plains"});
+  b.units()[1].hidden = true;
+  if (!require(!ember::spellAimValid(b, 0, "abyssalSwap", {6, 4}), "hidden targets must not be valid")) return 1;
+  b.units()[1].hidden = false;
+  b.units()[1].size = 1, b.units()[1].mov = 0;
+  if (!require(!ember::spellAimValid(b, 0, "abyssalSwap", {6, 4}), "movement-immune targets must be rejected before casting")) return 1;
+  b.units()[1].mov = 5, b.units()[1].cond.burialRootSources = {"test-anchor"};
+  if (!require(!ember::spellAimValid(b, 0, "abyssalSwap", {6, 4}), "rooted targets must be immune to teleport displacement")) return 1;
+  b.units()[1].cond.burialRootSources.clear();
+  b.setCell(4 * b.cols() + 3, ember::BattleCell{.terrain = "void", .passable = false});
+  if (!require(!ember::spellAimValid(b, 0, "abyssalSwap", {6, 4}), "void at either destination must reject the exchange")) return 1;
+  b.setCell(4 * b.cols() + 3, ember::BattleCell{.terrain = "plains"});
+
+  b.units()[0].level = 12, b.units()[0].spellCharges = 2;
+  steps = cast();
+  if (!require(steps && steps->front().resistanceBonus == 10, "intermediate stage should improve the resistance check")) return 1;
+  b.units()[0].level = 20, b.units()[0].spellCharges = 2, b.units()[1].x = 10;
+  steps = cast();
+  if (!require(steps && steps->front().resistanceBonus == 20 && b.units()[0].spellCharges == 1,
+               "advanced stage should extend range, improve resistance and cost one charge")) return 1;
+
+  b.units()[0].x = 3, b.units()[1].x = 6, b.units()[0].level = 5, b.units()[0].spellCharges = 2;
+  b.setCell(4 * b.cols() + 3, ember::BattleCell{.terrain = "flame", .hazardDice = 1, .hazardFaces = 1});
+  b.setCell(4 * b.cols() + 6, ember::BattleCell{.terrain = "ember", .hazardDice = 1, .hazardFaces = 1});
+  steps = cast();
+  if (!require(steps.has_value(), "dangerous but passable destinations should remain valid")) return 1;
+  effects.clear();
+  ember::Mulberry32 hazardRng(77);
+  ember::resolveStep(b, steps->front(), hazardRng, effects);
+  if (!require(b.units()[0].hp == 99 && b.units()[1].hp == 99,
+               "each creature should enter its dangerous destination exactly once")) return 1;
+  ember::logInfo("abyssal swap checks passed: success, resistance/cost, large footprint, blocked/void destinations, movement immunity, progression, hazard entry");
+  return 0;
+}
+
+int checkTwinResonanceCommand(const std::vector<std::string_view>& args) {
+  if (args.size() != 1) fatal("usage: Cooker check-twin-resonance <map.battle.json>");
+  std::optional<ember::Battle> loaded = ember::Battle::load(std::filesystem::path(args[0]));
+  if (!loaded) return 1;
+  ember::Battle& b = *loaded;
+  for (int y = 0; y < b.rows(); ++y)
+    for (int x = 0; x < b.cols(); ++x) b.setCell(y * b.cols() + x, ember::BattleCell{.terrain = "plains"});
+  b.units().clear();
+  ember::BattleUnit caster;
+  caster.id = "check-hypostasis", caster.name = "Hipóstase de Teste", caster.classId = "hypostasis", caster.side = "player";
+  caster.alive = true, caster.x = 2, caster.y = 2, caster.level = 1, caster.mag = 30, caster.hp = caster.maxHp = 100, caster.ap = 20;
+  ember::grantClassSpells(caster);
+  ember::BattleUnit a, d, attacker;
+  a.id = "check-resonance-a", a.side = "enemy", a.alive = true, a.x = 4, a.y = 2, a.hp = a.maxHp = 100;
+  d.id = "check-resonance-b", d.side = "enemy", d.alive = true, d.x = 4, d.y = 3, d.hp = d.maxHp = 100;
+  attacker.id = "check-resonance-attacker", attacker.side = "player", attacker.alive = true, attacker.x = 1, attacker.y = 4;
+  attacker.hp = attacker.maxHp = 100, attacker.mag = 30;
+  b.units() = {caster, a, d, attacker};
+  auto require = [](bool ok, const char* why) {
+    if (!ok) ember::logError("twin resonance check: {}", why);
+    return ok;
+  };
+  if (!require(ember::apCost(b, b.units()[0], ember::ApAction::cast("twinResonance")) == 8, "each cast must cost exactly 8 AP")) return 1;
+  if (!require(ember::spellTargetCount(b, 0, "twinResonance") == 2, "spell must keep two targets at every rank")) return 1;
+  if (!require(ember::spellAimValid(b, 0, "twinResonance", {4, 2}) && ember::spellAimValid(b, 0, "twinResonance", {4, 3}),
+               "visible enemies in range and clear line of sight should be valid")) return 1;
+  if (!require(!ember::castSpell(b, 0, "twinResonance", {{4, 2}, {4, 2}}, nullptr), "same target cannot fill both picks")) return 1;
+  b.units()[2].x = 7;
+  if (!require(!ember::castSpell(b, 0, "twinResonance", {{4, 2}, {7, 3}}, nullptr), "the rank's target-gap limit must be enforced")) return 1;
+  b.units()[2].x = 4;
+  for (const auto [level, gap] : {std::pair{1, 3}, std::pair{16, 4}, std::pair{31, 5}, std::pair{46, 6}, std::pair{60, 7}}) {
+    b.units()[0].level = level;
+    if (!require(ember::twinResonanceTargetGap(b.units()[0]) == gap, "rank progression must advance the paired-target gap")) return 1;
+  }
+  b.units()[0].level = 1;
+  auto castPair = [&](size_t first, size_t second) { return ember::castSpell(b, 0, "twinResonance", {{b.units()[first].x, b.units()[first].y}, {b.units()[second].x, b.units()[second].y}}, nullptr); };
+  auto steps = castPair(1, 2);
+  if (!require(steps.has_value(), "eligible pair should cast")) return 1;
+  std::vector<ember::BattleEffect> fx;
+  ember::Mulberry32 rng(701);
+  ember::resolveStep(b, steps->front(), rng, fx);
+  if (!require(b.units()[0].cond.twinResonancePercent == 20 && b.units()[0].cond.twinResonanceTargets.size() == 2,
+               "two failed saves should establish the initial 20% link")) return 1;
+  ember::BattleStep hit;
+  hit.att = 3, hit.kind = "fireball", hit.ids = {1}, hit.tiles = {{4, 2}}, hit.dice = 2, hit.faces = 50, hit.spellMul = 1.0;
+  const int beforeA = b.units()[1].hp, beforeD = b.units()[2].hp;
+  fx.clear();
+  ember::resolveStep(b, hit, rng, fx);
+  const int lostA = beforeA - b.units()[1].hp, lostD = beforeD - b.units()[2].hp;
+  if (!require(lostA > 0 && lostD > 0 && lostD <= lostA / 5 &&
+                   std::any_of(fx.begin(), fx.end(), [](const ember::BattleEffect& e) { return e.text == "Ressonância Geminada"; }),
+               "direct damage must echo a resisted fraction of actual HP loss")) return 1;
+  hit.att = 1, hit.ids = {2}, hit.tiles = {{4, 3}};
+  const int alliedEchoBefore = b.units()[1].hp;
+  fx.clear();
+  ember::resolveStep(b, hit, rng, fx);
+  if (!require(b.units()[1].hp == alliedEchoBefore, "damage from the target's own side must not echo")) return 1;
+  b.units()[1].hp = b.units()[1].maxHp, b.units()[1].alive = true;
+  b.units()[2].hp = b.units()[2].maxHp, b.units()[2].alive = true;
+  hit.att = 3, hit.ids = {1, 2}, hit.tiles = {{4, 2}, {4, 3}};
+  fx.clear();
+  ember::resolveStep(b, hit, rng, fx);
+  if (!require(std::count_if(fx.begin(), fx.end(), [](const ember::BattleEffect& e) { return e.text == "Ressonância Geminada"; }) == 2,
+               "an area impact on both linked targets should echo each original hit once")) return 1;
+  b.units()[1].hp = b.units()[1].maxHp, b.units()[1].alive = true;
+  b.units()[2].hp = b.units()[2].maxHp, b.units()[2].alive = true;
+  b.units()[0].cond.twinResonancePercent = 0, b.units()[0].cond.twinResonanceTargets.clear();
+  b.units()[1].combat.resistances = {{"arcane", 100.0}};
+  steps = castPair(1, 2);
+  if (!require(steps.has_value(), "an immune target remains a valid attempted cast")) return 1;
+  fx.clear();
+  ember::resolveStep(b, steps->front(), rng, fx);
+  if (!require(b.units()[0].cond.twinResonancePercent == 0, "one target resisting must fizzle the entire new link")) return 1;
+  b.units()[1].combat.resistances.clear();
+  steps = castPair(1, 2);
+  if (!require(steps.has_value(), "the pair should cast after the immunity is removed")) return 1;
+  fx.clear();
+  ember::resolveStep(b, steps->front(), rng, fx);
+  if (!require(b.units()[0].cond.twinResonancePercent == 20, "successful saves should reestablish the pair")) return 1;
+  b.units()[1].combat.resistances = {{"arcane", 100.0}};
+  steps = castPair(1, 2);
+  if (!require(steps.has_value(), "an immune target remains a valid attempted recast")) return 1;
+  fx.clear();
+  ember::resolveStep(b, steps->front(), rng, fx);
+  if (!require(b.units()[0].cond.twinResonancePercent == 20, "a resisted recast must leave the previous successful link intact")) return 1;
+  b.units()[1].combat.resistances.clear();
+  ember::BattleUnit third;
+  third.id = "check-resonance-c", third.side = "enemy", third.alive = true, third.x = 3, third.y = 3, third.hp = third.maxHp = 100;
+  b.units().push_back(third);
+  steps = castPair(2, 4);
+  if (!require(steps.has_value(), "a replacement pair should cast")) return 1;
+  fx.clear();
+  ember::resolveStep(b, steps->front(), rng, fx);
+  if (!require(b.units()[0].cond.twinResonanceTargets == std::vector<std::string>{b.units()[2].id, b.units()[4].id},
+               "a successful new cast must replace the previous pair")) return 1;
+  b.units()[2].hp = 5;
+  hit.att = 3, hit.kind = "fireball", hit.ids = {2}, hit.tiles = {{4, 3}}, hit.dice = 4, hit.faces = 100;
+  const int beforeFatalEcho = b.units()[4].hp;
+  fx.clear();
+  ember::resolveStep(b, hit, rng, fx);
+  if (!require(!b.units()[2].alive && b.units()[4].hp == beforeFatalEcho - 1 && b.units()[0].cond.twinResonancePercent == 0,
+               "a fatal hit must transmit its echo once and then end the link")) return 1;
+  steps = castPair(1, 4);
+  if (!require(steps.has_value(), "the Hipóstase can establish a fresh pair after a fatal link ends")) return 1;
+  fx.clear();
+  ember::resolveStep(b, steps->front(), rng, fx);
+  ember::beginUnitTurn(b, 0, rng, fx);
+  if (!require(b.units()[0].cond.twinResonancePercent == 0 && b.units()[0].cond.twinResonanceTargets.empty(),
+               "the link must expire at the beginning of the Hipóstase's next turn")) return 1;
+  ember::logInfo("twin resonance checks passed: AP cost, two picks, rank gap, direct echo, ally immunity, resisted replacement, next-turn expiry");
+  return 0;
 }
 
 int checkCampaignCommand(const std::vector<std::string_view>& args) {
@@ -629,6 +858,8 @@ int main(int argc, char** argv) {
   if (command == "export-scene") return exportSceneCommand(args);
   if (command == "check-campaign") return checkCampaignCommand(args);
   if (command == "check-spell-tracks") return checkSpellTracksCommand(args);
+  if (command == "check-abyssal-swap") return checkAbyssalSwapCommand(args);
+  if (command == "check-twin-resonance") return checkTwinResonanceCommand(args);
   if (command == "check-overworld") return checkOverworldCommand(args);
   if (command == "check-interlude") return checkInterludeCommand(args);
   if (command == "check-scene-builder") return checkSceneBuilderCommand(args);

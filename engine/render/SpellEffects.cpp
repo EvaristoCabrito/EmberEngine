@@ -59,6 +59,9 @@ glm::vec3 SpellEffects::position(const Element& e, float now) const {
 }
 
 int SpellEffects::looks(const std::string& kind) {
+  if (kind == "witchStitch") return 1;
+  if (kind == "burialWeight") return 1;
+  if (kind == "abyssalSwap") return 1;
   // Our 3D light (HolyLight, 2026-10-17): Cura Menor 02 after its flipbook cards; the first version of the other cures,
   // the meal and the potion.
   if (kind == "cureMinor") return 2;
@@ -107,7 +110,7 @@ int SpellEffects::looks(const std::string& kind) {
                                  // Selene's (vfx/SeleneFx, ours, 3D)
                                  "arcaneBlade", "arcaneMarkBurst",
                                  // the Conjurador's (vfx/ConjurerFx, ours, 3D)
-                                 "placeSwap", "boneLance", "mirrorImage", "detonateSummon", "sacrificeBond", "nightmare", "empowerSummons",
+                                 "placeSwap", "abyssalSwap", "boneLance", "mirrorImage", "detonateSummon", "sacrificeBond", "nightmare", "empowerSummons",
                                  // the ones that had none (vfx/ArmsFx, the two new arrows of vfx/RangerFx; ours, 3D, 2026-10-20)
                                  "provoke", "shieldBash", "bullRush", "executionerStrike", "trip", "shoulderSmash", "stampede", "divineWrath",
                                  "auraOfProtection", "intimidatingPresence", "bloodyShot", "multiShot", "summonFamiliar", "summonFamiliar2",
@@ -275,6 +278,11 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
   if (targets.empty() && kind != "piercingThrust" && kind != "doubleStrike" && kind != "steelWhirlwind" && kind != "warCry" && kind != "sentinelVigil" &&
       kind != "provoke")
     return false;
+  if (kind == "witchStitch") {
+    witchStitch_.cast(targets.front().feet, targets.front().cardHeight, impact);
+    return true;
+  }
+  if (kind == "burialWeight") return true;  // syncFamiliarSpellFx starts the terrain field from the resolved battle state
   // The cures', the meal's and the potion's light (HolyLight), on every unit it reaches.
   if (isHoly(kind, look)) {
     using Style = HolyLight::Style;
@@ -490,6 +498,8 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     if (kind == "placeSwap") {
       if (targets.size() >= 2) conjurer_.swap({targets[1].feet, heightOf(targets[1])}, {targets[0].feet, heightOf(targets[0])}, impact, impact + 0.42f);
       else conjurer_.swap({caster.feet, caster.cardHeight}, {targets.front().feet, heightOf(targets.front())}, impact, impact + 0.42f);
+    } else if (kind == "abyssalSwap") {
+      if (targets.size() >= 2) conjurer_.abyssalSwap({targets[1].feet, heightOf(targets[1])}, {targets[0].feet, heightOf(targets[0])}, start, impact, look);
     } else if (kind == "boneLance") {
       std::vector<glm::vec3> hexes;
       for (const Spot& s : targets) hexes.push_back(s.feet);
@@ -1011,7 +1021,7 @@ void SpellEffects::disarmed(const Spot& foe, const Spot& from, float at) { lance
 
 bool SpellEffects::active(float now) const {
   if (combat_.active(now) || warrior_.active(now) || arms_.active(now) || ranger_.active(now) || lancer_.active(now) || turnUndead_.active(now) || healer_.active(now) ||
-      conjurer_.active(now) || daggers_.active(now) || mage_.active(now) || crusader_.active(now) || selene_.active(now))
+      conjurer_.active(now) || daggers_.active(now) || mage_.active(now) || crusader_.active(now) || selene_.active(now) || witchStitch_.active(now) || burialWeight_.active(now))
     return true;
   if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
   if (std::any_of(fireballs_.begin(), fireballs_.end(), [&](const Fireball& f) { return !f.done(now); })) return true;
@@ -1096,6 +1106,8 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   healer_.build(now, camera, vfx_, vfxLights);
   crusader_.build(now, camera, vfx_, vfxLights);
   selene_.build(now, camera, vfx_, vfxLights);
+  witchStitch_.build(now, vfx_, vfxLights);
+  burialWeight_.build(now, vfx_, vfxLights);
   conjurer_.build(now, camera, vfx_, vfxLights);
   status_.build(now, camera, vfx_, vfxLights);
   daggers_.build(now, camera, vfx_, vfxLights);

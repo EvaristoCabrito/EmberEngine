@@ -78,6 +78,7 @@ add_library(EmberEngine STATIC
   world/BattleSave.cpp
   world/Combat.cpp
   world/BattleTurns.cpp
+  world/ActionPoints.cpp
   world/Spells.cpp
   world/Campaign.cpp
   world/Locais.cpp

@@ -119,6 +119,29 @@ struct CombatProfile {
 struct ReachCell {
   int x = 0, y = 0, cost = 0;
   int parentX = -1, parentY = -1;
+  int ap = 0;  // the Action Points the walk there costs (world/ActionPoints.h apStepCost summed hex by hex; 0 at the start)
+};
+
+// --- Action Points (PA), EmberEngine's own (world/ActionPoints.h) ---
+// Where a modifier comes from (the design's APModifierSource).
+enum class ApModifierSource {
+  Attribute, Armor, Equipment, Talent, PassiveAbility, ActiveAbility, Buff, Debuff, StatusEffect, Terrain, EnvironmentalEffect, Other
+};
+// What one modifier changes: the maximum (scope Max), an action's cost (Action: `filter` = "" for every action, a spell kind, a
+// weapon category, "attack", "offhand", "spell", "potion", "examine", "lockpick", "counter" or "counter:<type>") or a hex's
+// movement cost (Movement: `filter` = "" for every terrain, else a terrain id or its category). `turns` own turns left (-1 =
+// for the rest of the fight), counted down as each of the unit's turns begins; gone at 0.
+struct ApModifier {
+  enum class Scope { Max, Action, Movement };
+  ApModifierSource source = ApModifierSource::Other;
+  Scope scope = Scope::Max;
+  std::string id;  // what gave it (a spell kind, an item id, a talent) for the save and the sheet
+  std::string filter;
+  int flat = 0;
+  double pct = 0;  // +10 = ten percent more
+  int turns = -1;
+  nlohmann::json toJson() const;
+  static std::optional<ApModifier> fromJson(const nlohmann::json& j);
 };
 
 // An Inn quest's pickup lying on the map (quests.ts activePickupsFor): its key "<quest>:<pickup>", name and hex (world/Quests.h).
@@ -161,6 +184,13 @@ struct BattleUnit {
   std::optional<std::vector<BattleHex>> footprintOffsets;  // an authored body shape (dx, dy), else by size
   int footprintW = 2, footprintH = 4;                       // the size >= 4 rectangle
   std::vector<ReachCell> reference;                         // Ember's reach at the start (the check's reference)
+
+  // --- Action Points (PA), EmberEngine's own (world/ActionPoints.h): one reserve for every action, walk and counter ---
+  int ap = 0;                  // what it has now (never negative; ActionPoints.cpp apTrySpend is the only spend)
+  int apRefreshRound = -1;     // the round its AP was last refreshed in (Battle::beginTurn: once per round)
+  std::string armorCategory;   // the rules' armor category of what it wears on the chest ("" = the default, unarmored)
+  std::vector<std::string> wornItems;  // a hero's worn equipment ids (the rules' equipment bonuses)
+  std::vector<ApModifier> apMods;      // its modifiers (talents, buffs, debuffs ...), expiring or not
 
   // --- Spells, training, experience (Ember spell-source / BattleEngine) ---
   int spells[10] = {};  // uses left per tier (Ember Unit.spells tier1..tier10)
@@ -240,10 +270,21 @@ struct BattleUnit {
     // arcaneMarkFaces arcane (from the unit arcaneMarkBy, a battle index) when the unit walks, and lifts unburst after arcaneMarkTurns
     // more of the unit's own turns, counted like the Quebra-Guarda
     int arcaneMarkDice = 0, arcaneMarkFaces = 0, arcaneMarkTurns = 0, arcaneMarkBy = -1;
+    // Witch's Stitch: one live mark per target, attributed to the familiar by stable unit id.
+    int witchStitchDice = 0, witchStitchFaces = 0;
+    double witchStitchMag = 0.0;
+    double witchStitchMul = 1.0;
+    std::string witchStitchSource;
+    int witchStitchAnchorX = 0, witchStitchAnchorY = 0;
+    // Burial Weight can root through multiple overlapping casts; each source expires independently.
+    std::vector<std::string> burialRootSources;
+    // Ressonância Geminada: paired enemy link, stored on the Hipóstase until its next turn begins.
+    std::vector<std::string> twinResonanceTargets;
+    int twinResonancePercent = 0;
     bool any() const {
       return markTurns > 0 || plagueSpread > 0 || plagueBurst || bleedTurns > 0 || silenceTurns > 0 || decayTurns > 0 || sunderPct > 0 || rallyPct > 0 ||
              hobblePct > 0 || disarmPct > 0 || staggered || vigilPct > 0 || mirrorCopies > 0 || bondPct > 0 || empowerPct > 0 || reflectTurns > 0 || daggers > 0 ||
-             acidTurns > 0 || mantleDice > 0 || arcaneMarkDice > 0;
+             acidTurns > 0 || mantleDice > 0 || arcaneMarkDice > 0 || witchStitchDice > 0 || twinResonancePercent > 0 || !burialRootSources.empty();
     }
   } cond;
   std::optional<int> hobbleBase;       // its MOV before Tiro Paralisante (given back when it lifts)
@@ -281,6 +322,8 @@ struct BattleUnit {
   double blessedHitBonusPct = 0;     // Bênção: +hit chance (a fraction) for some rounds
   int blessedRoundsLeft = 0;
   std::string summonerId;            // a familiar's conjurer
+  bool burialWeightActive = false;   // Titan pressure commitment; lifted with its source effects
+  int burialWeightAnchorX = 0, burialWeightAnchorY = 0;
   int spellCharges = 0;              // a familiar's own spell (Míssil Mágico / Bola de Fogo / Veneno Menor)
   std::optional<int> lifeDrainCharges;  // a Familiar Maior / Radiante's Dreno de Vida
 };
@@ -427,6 +470,8 @@ class Battle {
   static std::vector<BattleHex> path(const std::vector<ReachCell>& reach, int x, int y);
   // Moves the unit to (x, y) along a reachable path, spending its cost. False when (x, y) is not reachable.
   bool move(size_t unit, int x, int y);
+  // Validates an entire voluntary route before any movement-triggered effect may resolve.
+  bool legalVoluntaryPath(size_t unit, const std::vector<BattleHex>& path) const;
   // A new turn: every unit's movement is whole again and it may act.
   void newTurn();
   // The party's affinity bonus between two names (0 = none): from the pair's score (25 -> 2%, 50 -> 5%, 90 -> 8%; and the
@@ -556,6 +601,10 @@ class Battle {
   void setQuestPickups(std::vector<QuestPickup> p) { questPickups_ = std::move(p); }
   const std::vector<QuestPickup>& questPickups() const { return questPickups_; }
   const std::vector<std::string>& questFound() const { return questFound_; }
+  // Examinar (world/ActionPoints.h apExamine): the units the party has examined this fight, by id (kept in the snapshot).
+  bool examined(const std::string& unitId) const { return examined_.contains(unitId); }
+  void markExamined(const std::string& unitId) { examined_.insert(unitId); }
+  const std::set<std::string>& examinedIds() const { return examined_; }
   // engine.ts collectQuestPickups: a living hero standing on a pickup's hex picks it up (once `settled` says its walk is over;
   // Ember checks after every walk), and the combat log says who found what. Returns the finds.
   std::vector<QuestPickup> collectQuestPickups(const std::function<bool(size_t)>& settled);
@@ -724,7 +773,7 @@ class Battle {
   static int distance(BattleHex a, BattleHex b);
 
  private:
-  std::optional<int> stepCost(int x, int y, const BattleUnit& self, const std::vector<int>& occupancy, bool stop) const;
+  std::optional<int> stepCost(int x, int y, const BattleUnit& self, const std::vector<int>& occupancy, bool stop, int* ap = nullptr) const;
   std::vector<int> occupancy() const;  // per cell: the unit standing there, or -1
 
   std::string map_;
@@ -776,6 +825,7 @@ class Battle {
   std::vector<QuestPickup> questPickups_;
   std::vector<std::string> questFound_;
   bool turnRestrained_ = false;
+  std::set<std::string> examined_;
 };
 
 }  // namespace ember

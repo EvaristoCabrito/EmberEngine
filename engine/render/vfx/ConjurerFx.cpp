@@ -25,6 +25,7 @@ constexpr float kSwapLead = 0.3f, kLanceLead = 0.3f, kMirrorLead = 0.5f, kDetona
 constexpr float kDetonateSpread = 0.3f, kNightmareSpread = 0.45f;
 
 constexpr glm::vec3 kViolet{0.62f, 0.42f, 1.0f}, kCore{0.92f, 0.86f, 1.0f}, kIndigo{0.34f, 0.2f, 0.72f}, kBone{0.93f, 0.9f, 0.8f};
+constexpr glm::vec3 kResonanceAmber{1.0f, 0.57f, 0.12f}, kResonanceCore{1.0f, 0.86f, 0.48f};
 constexpr glm::vec3 kShadow{0.09f, 0.05f, 0.14f}, kAsh{0.2f, 0.16f, 0.24f}, kEye{1.0f, 0.55f, 0.75f};
 
 float ease(float edge0, float edge1, float x) {
@@ -233,7 +234,7 @@ glm::mat4 along(glm::vec3 p, glm::vec3 dir, float length, float thick) {
 }  // namespace
 
 float ConjurerFx::leadIn(const std::string& kind) {
-  if (kind == "placeSwap") return kSwapLead;
+  if (kind == "placeSwap" || kind == "abyssalSwap") return kSwapLead;
   if (kind == "boneLance") return kLanceLead;
   if (kind == "mirrorImage") return kMirrorLead;
   if (kind == "detonateSummon") return kDetonateLead;
@@ -248,6 +249,41 @@ void ConjurerFx::swap(const Target& a, const Target& b, float start, float finis
   e.kind = Kind::Swap, e.from = a.feet, e.fromHeight = bodyHeight(a.height), e.centre = b.feet, e.height = bodyHeight(b.height);
   e.start = start, e.impact = start, e.finish = finish, e.seed = 0x5a7u + 7919u * ++serial_;
   effects_.push_back(std::move(e));
+}
+void ConjurerFx::abyssalSwap(const Target& familiar, const Target& foe, float start, float impact, int tier, bool resisted) {
+  Effect e;
+  e.kind = Kind::AbyssalSwap, e.from = familiar.feet, e.fromHeight = bodyHeight(familiar.height), e.centre = foe.feet, e.height = bodyHeight(foe.height);
+  e.start = start, e.impact = impact, e.finish = impact + 0.42f, e.tier = std::clamp(tier, 1, 3), e.resisted = resisted, e.seed = 0xa651u + 7919u * ++serial_;
+  effects_.push_back(std::move(e));
+}
+int ConjurerFx::arcaneBanquet(const Target& foe, const Target& familiar, float impact, int tier, const std::string& buff) {
+  Effect e;
+  e.kind = Kind::ArcaneBanquet, e.from = foe.feet, e.fromHeight = bodyHeight(foe.height), e.centre = familiar.feet, e.height = bodyHeight(familiar.height);
+  e.start = impact - 0.34f, e.impact = impact, e.finish = impact + 0.56f, e.tier = std::clamp(tier, 1, 3), e.buff = buff;
+  e.id = static_cast<int>(++serial_), e.seed = 0xba7u + 7919u * serial_;
+  effects_.push_back(std::move(e));
+  return effects_.back().id;
+}
+void ConjurerFx::arcaneBanquetResult(int id, bool resisted) {
+  for (Effect& e : effects_)
+    if (e.kind == Kind::ArcaneBanquet && e.id == id) e.resisted = resisted;
+}
+int ConjurerFx::twinResonanceStart(Target a, Target b, int percent, int tier, float now) {
+  Effect e;
+  e.kind = Kind::TwinResonance, e.bodies = {a, b}, e.start = now, e.impact = now, e.copies = percent;
+  e.tier = std::clamp(tier, 1, 5), e.id = static_cast<int>(++serial_), e.seed = 0x71a1u + 7919u * serial_;
+  effects_.push_back(std::move(e));
+  return effects_.back().id;
+}
+void ConjurerFx::twinResonanceUpdate(int id, Target a, Target b, int percent, float /*now*/) {
+  for (Effect& e : effects_) {
+    if (e.kind != Kind::TwinResonance || e.id != id || e.endAt >= 0.0f) continue;
+    e.bodies = {a, b}, e.copies = percent;
+  }
+}
+void ConjurerFx::twinResonanceEnd(int id, float now) {
+  for (Effect& e : effects_)
+    if (e.kind == Kind::TwinResonance && e.id == id && e.endAt < 0.0f) e.endAt = now;
 }
 void ConjurerFx::lance(glm::vec3 from, float fromHeight, const std::vector<glm::vec3>& hexes, std::vector<Target> bodies, float release, float impact) {
   Effect e;
@@ -308,6 +344,9 @@ void ConjurerFx::empower(glm::vec3 from, float fromHeight, std::vector<Target> s
 float ConjurerFx::Effect::end() const {
   switch (kind) {
     case Kind::Swap: return finish + 0.6f;
+    case Kind::AbyssalSwap: return finish + 0.3f;
+    case Kind::ArcaneBanquet: return finish + 0.18f;
+    case Kind::TwinResonance: return endAt < 0.0f ? 1e30f : endAt + 0.35f;
     case Kind::Lance: return finish + 1.3f;
     case Kind::MirrorBurst: return impact + 1.2f;
     case Kind::Mirror: return endAt < 0.0f ? 1e30f : endAt + 0.7f;
@@ -320,12 +359,12 @@ float ConjurerFx::Effect::end() const {
 }
 
 bool ConjurerFx::active(float now) const {
-  return std::any_of(effects_.begin(), effects_.end(), [&](const Effect& e) { return e.kind != Kind::Mirror && e.end() > now; });
+  return std::any_of(effects_.begin(), effects_.end(), [&](const Effect& e) { return e.kind != Kind::Mirror && e.kind != Kind::TwinResonance && e.end() > now; });
 }
 float ConjurerFx::latestEnd() const {
   float end = -1.0f;
   for (const Effect& e : effects_)
-    if (e.kind != Kind::Mirror) end = std::max(end, e.end());
+    if (e.kind != Kind::Mirror && e.kind != Kind::TwinResonance) end = std::max(end, e.end());
   return end;
 }
 
@@ -354,6 +393,9 @@ void ConjurerFx::build(float now, const Camera& camera, VfxFrame& frame, std::ve
   for (const Effect& e : effects_) {
     switch (e.kind) {
       case Kind::Swap: if (now >= e.start) buildSwap(e, now, camera, frame, lights); break;
+      case Kind::AbyssalSwap: if (now >= e.start) buildAbyssalSwap(e, now, camera, frame, lights); break;
+      case Kind::ArcaneBanquet: if (now >= e.start) buildArcaneBanquet(e, now, camera, frame, lights); break;
+      case Kind::TwinResonance: buildTwinResonance(e, now, camera, frame, lights); break;
       case Kind::Lance: if (now >= e.start - kLanceLead) buildLance(e, now, camera, frame, lights); break;
       case Kind::MirrorBurst: if (now >= e.impact - kMirrorLead) buildMirrorBurst(e, now, camera, frame, lights); break;
       case Kind::Mirror: buildMirror(e, now, camera, frame, lights); break;
@@ -386,6 +428,105 @@ void ConjurerFx::build(float now, const Camera& camera, VfxFrame& frame, std::ve
     frame.instances.insert(frame.instances.end(), streaks_.begin(), streaks_.end());
     CombatDraw{frame}(quadFirst_, quadCount_, glm::mat4(1.0f), kModeStreak, now, 1.0f, 1.0f, glm::vec3(1.0f), 1.0f, glm::vec4(kCore, 0.0f), sight,
                       VfxBlend::Additive, first, static_cast<uint32_t>(streaks_.size()));
+  }
+}
+
+// Paired world-space fissures. A dark ellipsoid supplies visible depth; a narrow violet core and broken edge
+// streaks keep the opening legible while scene depth continues to occlude it behind terrain and units.
+void ConjurerFx::buildAbyssalSwap(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) {
+  const CombatDraw combat{frame};
+  const glm::vec3 right = flatDir(camera.right, glm::vec3(1.0f, 0.0f, 0.0f));
+  const float age = now - e.start;
+  const float opening = ease(0.0f, 0.14f, age);
+  const float close = 1.0f - ease(e.impact, e.impact + (e.resisted ? 0.24f : 0.34f), now);
+  const float pulse = 0.92f + 0.08f * std::sin(age * 18.0f);
+  const float alpha = opening * close;
+  if (alpha <= 0.002f) return;
+  for (int end = 0; end < 2; ++end) {
+    const glm::vec3 feet = end == 0 ? e.from : e.centre;
+    const float height = end == 0 ? e.fromHeight : e.height;
+    const glm::vec3 toward = flatDir(camera.position - feet, glm::vec3(0.0f, 0.0f, 1.0f));
+    const glm::vec3 centre = feet - toward * 0.48f + kUp * (height * 0.5f);
+    const float collapse = std::max(0.035f, close) * pulse;
+    auto riftModel = [&](float width, float depth) {
+      glm::mat4 m(1.0f);
+      m[0] = glm::vec4(right * width * collapse, 0.0f);
+      m[1] = glm::vec4(kUp * (height * 0.58f * opening), 0.0f);
+      m[2] = glm::vec4(toward * depth, 0.0f);
+      m[3] = glm::vec4(pulled(centre, camera.position, kPull * 0.65f), 1.0f);
+      return m;
+    };
+    combat(sphereFirst_, sphereCount_, riftModel(0.38f, 0.16f), kModeEnergy, age, 0.9f, 0.78f * alpha, kShadow, 0.92f,
+           glm::vec4(kIndigo, 0.8f), centre, VfxBlend::Alpha);
+    combat(sphereFirst_, sphereCount_, riftModel(0.29f, 0.075f), kModeEnergy, age, 1.0f, 0.9f * alpha, kViolet, 0.0f,
+           glm::vec4(kCore, 0.62f), centre, VfxBlend::Additive);
+    // Irregular edges and tension threads become more intricate at the developed/mastered tiers (encoded by caster height scale).
+    const int threads = e.tier >= 3 ? 18 : e.tier == 2 ? 13 : 8;
+    for (int i = 0; i < threads; ++i) {
+      const float y = (static_cast<float>(i) + 0.5f) / threads;
+      const float jitter = (hash01(e.seed, static_cast<uint32_t>(i), static_cast<uint32_t>(end)) - 0.5f) * (0.12f + 0.035f * e.tier);
+      const glm::vec3 p = centre + kUp * ((y - 0.5f) * height * 0.58f * opening) + right * ((i & 1 ? 1.0f : -1.0f) * (0.34f + jitter) * collapse);
+      streaks_.push_back(streak(pulled(p, camera.position, kPull * 0.6f), right * -((i & 1) ? 1.0f : -1.0f), 0.055f, alpha * (0.5f + 0.5f * hash01(e.seed, i, 7)), (i & 1) ? kCore : kViolet, 2.4f));
+    }
+    for (int i = 0; i < 7; ++i) {
+      const float phase = std::fmod(hash01(e.seed, static_cast<uint32_t>(i), static_cast<uint32_t>(end + 4)) + age * 0.9f, 1.0f);
+      const float side = (i & 1) ? 1.0f : -1.0f;
+      const glm::vec3 p = centre + right * (side * (0.48f - phase * 0.22f)) + kUp * ((phase - 0.5f) * height * 0.62f);
+      motes_.push_back(mote(pulled(p, camera.position, kPull * 0.5f), 0.045f, alpha * std::sin(kPi * phase), (i & 1) ? kCore : kViolet));
+    }
+    lights.push_back({centre, {0.52f, 0.25f, 0.92f}, 1.5f + 5.0f * alpha, 2.6f});
+  }
+  const glm::vec3 mid = glm::mix(e.from, e.centre, 0.5f) + kUp * 0.8f;
+  if (now < e.impact + 0.2f) lights.push_back({mid, {0.42f, 0.2f, 0.82f}, 2.0f + 4.0f * alpha, 3.0f});
+}
+
+void ConjurerFx::buildArcaneBanquet(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) {
+  const CombatDraw combat{frame};
+  const glm::vec3 right = flatDir(camera.right, glm::vec3(1.0f, 0.0f, 0.0f));
+  const float age = now - e.start;
+  const float opening = ease(0.0f, 0.13f, age);
+  const float collapse = 1.0f - ease(e.impact, e.impact + (e.resisted ? 0.2f : 0.44f), now);
+  const float alpha = opening * collapse;
+  if (alpha <= 0.002f) return;
+  auto colorFor = [&]() {
+    if (e.buff == "rally" || e.buff == "mantle") return glm::vec3(1.0f, 0.52f, 0.2f);
+    if (e.buff == "daggers" || e.buff == "reflection") return glm::vec3(0.3f, 0.72f, 1.0f);
+    if (e.buff == "mirror") return glm::vec3(0.72f, 0.8f, 1.0f);
+    if (e.buff == "empower") return glm::vec3(0.95f, 0.48f, 0.96f);
+    return glm::vec3(0.63f, 0.4f, 1.0f);
+  };
+  const glm::vec3 identity = colorFor();
+  for (int end = 0; end < 2; ++end) {
+    const glm::vec3 feet = end == 0 ? e.from : e.centre;
+    const float height = end == 0 ? e.fromHeight : e.height;
+    const glm::vec3 toward = flatDir(camera.position - feet, glm::vec3(0.0f, 0.0f, 1.0f));
+    const glm::vec3 centre = feet - toward * 0.5f + kUp * (height * 0.52f);
+    const float envelope = end == 0 && !e.resisted ? (now < e.impact ? 1.0f : 0.62f) : 1.0f;
+    const float width = 0.3f * collapse * envelope;
+    glm::mat4 shell(1.0f);
+    shell[0] = glm::vec4(right * width, 0.0f);
+    shell[1] = glm::vec4(kUp * (height * 0.42f * opening), 0.0f);
+    shell[2] = glm::vec4(toward * 0.08f, 0.0f);
+    shell[3] = glm::vec4(pulled(centre, camera.position, kPull * 0.7f), 1.0f);
+    combat(sphereFirst_, sphereCount_, shell, kModeEnergy, age, 0.9f, alpha * 0.78f, kShadow, 0.9f, glm::vec4(identity, 0.9f), centre, VfxBlend::Alpha);
+    glm::mat4 core = shell;
+    core[0] *= 0.7f, core[1] *= 0.92f, core[2] *= 0.72f;
+    combat(sphereFirst_, sphereCount_, core, kModeEnergy, age, 1.0f, alpha * 0.68f, identity, 0.0f, glm::vec4(kCore, 0.72f), centre, VfxBlend::Additive);
+    lights.push_back({centre, identity, 1.5f + 4.2f * alpha, 2.3f});
+  }
+  const float travel = e.resisted ? 0.0f : ease(e.impact, e.impact + 0.36f, now);
+  if (travel > 0.0f && travel < 1.0f) {
+    const glm::vec3 start = e.from + kUp * (e.fromHeight * 0.48f);
+    const glm::vec3 finish = e.centre + kUp * (e.height * 0.48f);
+    for (int i = 0; i < 20; ++i) {
+      const float phase = std::fmod(hash01(e.seed, static_cast<uint32_t>(i), 3) + travel * 0.92f, 1.0f);
+      const float t = std::clamp(phase, 0.0f, 1.0f);
+      const glm::vec3 p = glm::mix(start, finish, t) + kUp * (0.18f * std::sin(kPi * t)) + right * (std::sin(t * kTau + i) * 0.08f);
+      motes_.push_back(mote(pulled(p, camera.position, kPull * 0.55f), 0.045f + 0.03f * hash01(e.seed, i, 8),
+                            std::sin(kPi * phase) * alpha, (i & 1) ? identity : kCore));
+    }
+    const glm::vec3 beam = glm::mix(start, finish, travel);
+    lights.push_back({beam, identity, 2.4f + 2.6f * alpha, 2.0f});
   }
 }
 
@@ -709,6 +850,41 @@ void ConjurerFx::buildBond(const Effect& e, float now, const Camera& camera, Vfx
     }
   }
   if (env > 0.0f) lights.push_back({chest, {0.45f, 0.3f, 0.9f}, 6.0f * env + (age >= 0.0f ? 8.0f * (1.0f - ease(0.0f, 0.4f, age)) : 0.0f), 3.5f * k});
+}
+
+void ConjurerFx::buildTwinResonance(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) {
+  if (e.bodies.size() != 2 || now < e.start) return;
+  const HolyDraw holy{frame};
+  const glm::vec3 eye = camera.position;
+  const float age = std::max(0.0f, now - e.start);
+  const float fade = e.endAt < 0.0f ? 1.0f : 1.0f - ease(e.endAt, e.endAt + 0.35f, now);
+  const Target& a = e.bodies[0];
+  const Target& b = e.bodies[1];
+  const glm::vec3 from = a.feet + kUp * (bodyHeight(a.height) * 0.56f);
+  const glm::vec3 to = b.feet + kUp * (bodyHeight(b.height) * 0.56f);
+  const glm::vec3 side = flatDir(glm::cross(to - from, kUp), glm::vec3(1.0f, 0.0f, 0.0f));
+  const float pulse = std::fmod(age, 2.0f) / 2.0f;
+  const int filaments = e.tier >= 4 ? 3 : e.tier >= 2 ? 2 : 1;
+  for (int strand = 0; strand < filaments; ++strand) {
+    const float offset = (static_cast<float>(strand) - (filaments - 1) * 0.5f) * (e.tier >= 4 ? 0.12f : 0.07f);
+    const glm::vec3 lift = kUp * (0.18f + 0.035f * e.tier);
+    const glm::vec3 c1 = glm::mix(from, to, 0.32f) + lift + side * offset;
+    const glm::vec3 c2 = glm::mix(from, to, 0.68f) + lift - side * offset;
+    const three::CatmullRom curve{{from + side * offset, c1, c2, to + side * offset}};
+    const std::vector<VfxVertex> tube = vfxgeo::tube(curve, e.tier >= 4 ? 44 : 32, (0.025f + 0.006f * std::min(e.tier, 5)) * (strand == 0 ? 1.0f : 0.65f), 5);
+    holy(frame.addVertices(tube), static_cast<uint32_t>(tube.size()), glm::mat4(1.0f), kHolyTube, age, 0.8f,
+         fade * (strand == 0 ? 0.9f : 0.62f), kResonanceAmber, kResonanceCore, 0.0f, from);
+    const glm::vec3 bead = curve.getPoint(std::fmod(pulse + strand * 0.16f, 1.0f));
+    streaks_.push_back(streak(pulled(bead, eye, kPull), glm::vec3(0.0f), 0.23f + 0.05f * e.tier, fade, kResonanceCore, 2.6f));
+    for (int i = 0; i < 5; ++i) {
+      const uint32_t n = static_cast<uint32_t>(i + strand * 5);
+      const float phase = std::fmod(pulse + hash01(e.seed, n, 1), 1.0f);
+      motes_.push_back(mote(pulled(curve.getPoint(phase), eye, kPull), 0.04f, fade * (1.0f - phase * 0.35f), kResonanceAmber));
+    }
+  }
+  const float intensity = fade * (2.2f + 2.2f * (0.5f + 0.5f * std::sin(pulse * kTau)));
+  lights.push_back({from, {1.0f, 0.43f, 0.08f}, intensity, 1.8f});
+  lights.push_back({to, {1.0f, 0.43f, 0.08f}, intensity, 1.8f});
 }
 
 // --- Pesadelo ----------------------------------------------------------------------------------------------------------

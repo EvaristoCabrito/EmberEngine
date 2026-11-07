@@ -26,6 +26,7 @@
 #include "GamePrefs.h"
 #include "Portraits.h"
 #include "render/UiArt.h"
+#include "world/ActionPoints.h"
 #include "world/Battle.h"
 #include "world/FieldSpells.h"
 #include "world/Spells.h"
@@ -101,7 +102,7 @@ class BattleStatusSheet {
     y = drawHeader(dl, battle, u, top, inner, publicDir, hooks, en);
     y = drawHp(dl, u, top.x, y, inner);
     if (u.side == "player" && hooks.adjust) y = drawPointsBox(dl, u, top.x, y, inner, publicDir, hooks, en);
-    y = drawAttributes(dl, u, top.x, y, inner, hooks, en);
+    y = drawAttributes(dl, battle, u, top.x, y, inner, hooks, en);
     if (u.side == "player") y = drawPotions(dl, u, top.x, y, inner, publicDir, hooks, en);
     ImGui::SetCursorScreenPos({top.x, y});
     ImGui::Dummy({inner, 4.0f});
@@ -379,7 +380,7 @@ class BattleStatusSheet {
     return b.y + 14.0f;
   }
 
-  float drawAttributes(ImDrawList* dl, const ember::BattleUnit& u, float x, float y, float inner, const Hooks& hooks, bool en) {
+  float drawAttributes(ImDrawList* dl, const ember::Battle& battle, const ember::BattleUnit& u, float x, float y, float inner, const Hooks& hooks, bool en) {
     ImFont* ui = uiFont(UiFont::Ui);
     sectionTitle(dl, {x, y}, en ? "Attributes" : "Atributos");
     y += 26.0f;
@@ -389,13 +390,16 @@ class BattleStatusSheet {
     const Condition cond = statusCondition(u, en);
     struct Cell { const char* label; std::string value; int gear; bool penalised; int stat; };
     const std::string range = u.minRange == u.maxRange ? std::to_string(u.maxRange) : std::format("{}-{}", u.minRange, u.maxRange);
-    const Cell cells[8] = {{"VIT", std::to_string(u.maxHp), u.gearHp, hungry, 0},   {"ATK", std::to_string(static_cast<int>(u.atk)), u.gearAtk, hungry, 1},
+    // Action Points (world/ActionPoints.h): the reserve of its maximum; its armor's bonus shown like gear (the tooltip names the category)
+    const int apMaxNow = ember::apMax(battle, u), armorAp = ember::apArmorBonus(u);
+    const Cell cells[9] = {{"VIT", std::to_string(u.maxHp), u.gearHp, hungry, 0},   {"ATK", std::to_string(static_cast<int>(u.atk)), u.gearAtk, hungry, 1},
                            {"MAG", std::to_string(static_cast<int>(u.mag)), u.gearMag, hungry, 2}, {"DEF", std::to_string(static_cast<int>(u.def)), u.gearDef, hungry, 3},
                            {"DEX", std::to_string(static_cast<int>(u.dex)), u.gearDex, hungry, 4}, {"INI", std::to_string(u.initiative), 0, false, -1},
-                           {"MOV", u.mov > 0 ? std::to_string(u.mov) : "0", u.gearMov, false, -1}, {en ? "Range" : "Alcance", range, 0, false, -1}};
+                           {"MOV", u.mov > 0 ? std::to_string(u.mov) : "0", u.gearMov, false, -1}, {en ? "Range" : "Alcance", range, 0, false, -1},
+                           {en ? "AP" : "PA", std::format("{}/{}", u.ap, apMaxNow), armorAp, false, -2}};
     const bool controls = u.side == "player" && hooks.adjust;
     const float gap = 6.0f, cw = (inner - 3 * gap) / 4.0f, ch = controls ? 70.0f : 46.0f;
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 9; ++i) {
       const ImVec2 a{x + (i % 4) * (cw + gap), y + (i / 4) * (ch + gap)};
       ImGui::SetCursorScreenPos(a);
       ImGui::PushID(i);
@@ -404,7 +408,13 @@ class BattleStatusSheet {
       const bool hovered = ImGui::IsItemHovered();
       ImGui::PopID();
       if (hovered && cells[i].penalised) ImGui::SetTooltip("%s", cond.detail.c_str());
-      else if (hovered && cells[i].gear != 0) {
+      else if (hovered && cells[i].stat == -2) {
+        const std::string tip = en ? std::format("Action Points: 12 + DEX/10 ({}) + armor {} ({:+d}){}", std::max(0, static_cast<int>(u.dex)) / ember::apRules().dexPerAp,
+                                                 ember::apArmorName(u.armorCategory, true), armorAp, ember::apRules().examine.spendsAction ? "" : "")
+                                   : std::format("Pontos de Ação: 12 + DEX/10 ({}) + armadura {} ({:+d})", std::max(0, static_cast<int>(u.dex)) / ember::apRules().dexPerAp,
+                                                 ember::apArmorName(u.armorCategory, false), armorAp);
+        ImGui::SetTooltip("%s", tip.c_str());
+      } else if (hovered && cells[i].gear != 0) {
         static const char* kStatNames[8] = {"hp", "atk", "mag", "def", "dex", "", "mov", ""};
         std::string tip = en ? "Equipment bonus:" : "Bônus de equipamento:";
         if (hooks.gearLines) {
@@ -448,7 +458,7 @@ class BattleStatusSheet {
         if (plus) hooks.adjust(unit_, stat, +1);
       }
     }
-    return y + 2 * (ch + gap) + 6.0f;
+    return y + 3 * (ch + gap) + 6.0f;  // three rows now (the PA cell opens the third)
   }
 
   // content/data/status-rows.json: the rows per rules class and level.
