@@ -58,6 +58,13 @@ inline constexpr EmberGroundVariant kEmberGroundVariants[] = {
     {"plains", "ember-plains-grass-v3-seamless", "content/ground/plains-grass-ground-v03-seamless.png", 74, 4.0f},
 };
 inline constexpr EmberGroundTile kEmberGroundTiles[] = {
+    {"ashen-straight-road-v01", "plains", "ember-ashen-straight-road-v01-plains", "content/backdrops/bosque-ground-v01.jpg", 16.0f, true},
+    {"ashen-straight-road-v01", "woods", "ember-ashen-straight-road-v01-woods", "content/backdrops/bosque-ground-v01.jpg", 16.0f, true},
+    {"ashen-straight-road-v01", "hill", "ember-ashen-straight-road-v01-hill", "content/backdrops/bosque-ground-v01.jpg", 16.0f, true},
+    {"ashen-straight-road-v01", "ruins", "ember-ashen-straight-road-v01-road", "content/ground/ashen-crossing-cart-road-tile-v02.png", 4.0f, true},
+    {"ashen-neutral-photo-v01", "plains", "ember-ashen-neutral-photo-v01-plains", "content/ground/ashen-photographic-white-ash-v01.png", 1.7f, true},
+    {"ashen-neutral-photo-v01", "woods", "ember-ashen-neutral-photo-v01-woods", "content/ground/ashen-photographic-white-ash-v01.png", 1.7f, true},
+    {"ashen-neutral-photo-v01", "hill", "ember-ashen-neutral-photo-v01-hill", "content/ground/ashen-photographic-white-ash-v01.png", 1.7f, true},
     {"ashen-white-v03", "plains", "ember-ashen-white-v03-plains", "content/ground/ashen-crossing-white-ash-world-v03.png", 176.0f, true},
     {"ashen-white-v03", "woods", "ember-ashen-white-v03-woods", "content/ground/ashen-crossing-white-ash-world-v03.png", 176.0f, true},
     {"ashen-white-v03", "hill", "ember-ashen-white-v03-hill", "content/ground/ashen-crossing-white-ash-world-v03.png", 176.0f, true},

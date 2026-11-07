@@ -31,6 +31,7 @@ class DialogEditorUi {
     ImGui::OpenPopup("##dialogeditor");
   }
   bool isOpen() const { return open_; }
+  void requestClose() { closeRequested_ = true; }
 
   // Drawn every frame (a modal over the editor).
   void draw(const std::vector<Portrait>& portraits, const std::vector<std::string>& affinityHeroes) {
@@ -40,6 +41,9 @@ class DialogEditorUi {
     ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f}, ImGuiCond_Always, {0.5f, 0.5f});
     ImGui::SetNextWindowSize({std::min(720.0f, io.DisplaySize.x - 32), io.DisplaySize.y * 0.88f}, ImGuiCond_Always);
     if (!ImGui::BeginPopupModal("##dialogeditor", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize)) return;
+    if (std::exchange(closeRequested_, false)) {
+      close(); ImGui::EndPopup(); return;
+    }
     ImGui::PushFont(nullptr, 22.0f);
     ImGui::TextUnformatted(title_.c_str());
     ImGui::PopFont();
@@ -181,6 +185,7 @@ class DialogEditorUi {
   }
 
  private:
+  bool closeRequested_ = false;
   void close() {
     open_ = false;
     ImGui::CloseCurrentPopup();

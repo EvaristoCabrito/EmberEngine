@@ -752,7 +752,10 @@ int InnRules::bagCapacity(const Json& save) const {
     for (const Json& e : world_.tables()["equipment"])
       if (e["id"] == waist) pouches += e.value("pouch", 0);
   }
-  return world_.tables().value("partyBagPerHero", 10) * std::max(1, heroes) + pouches;
+  int bonusHeroes = 0;
+  for (const char* h : Overworld::kPartyHeroes) if (world_.heroRecruited(h, save)) ++bonusHeroes;
+  const int holding = std::max(0, save.value("bagSlotsPerHeroBonus", 0)) * bonusHeroes;
+  return world_.tables().value("partyBagPerHero", 10) * std::max(1, heroes) + pouches + holding;
 }
 
 // --- quests ------------------------------------------------------------------------------------------------------------
@@ -850,6 +853,7 @@ std::optional<Json> InnRules::turnInQuest(const Json& save, const std::string& q
   if (!weapons.is_object()) weapons = Json::object();
   for (const Json& id : rewardWeapons)
     if (id.is_string() && !weapons.contains(id.get<std::string>())) weapons[id.get<std::string>()] = 0;
+  next["bagSlotsPerHeroBonus"] = std::max(0, save.value("bagSlotsPerHeroBonus", 0)) + std::max(0, quest->value("rewardBagSlotsPerHero", 0));
   next["ember"] = ember(save) + quest->value("reward", 0);
   next["emberSeeded"] = true;
   Json active = Json::array();

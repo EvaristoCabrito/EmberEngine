@@ -67,7 +67,25 @@ struct NpcTalk {
       inn.emplace(a == "smith" ? InnScreen::Entry::Smith : a == "healer" ? InnScreen::Entry::Healer : InnScreen::Entry::Tavern);
       return;
     }
-    if (!record || testSave) return;  // GameApp: these two write nothing in Modo teste or a playtest
+    if (a.starts_with("acceptQuest:") || a.starts_with("turnInQuest:")) {
+      if (!world || !hasInn) return;
+      ember::Json current = storySave();
+      ember::foldQuestProgress(current, map.questFound(), map.questKills());
+      const ember::InnRules rules(innData, *world);
+      const bool accept = a.starts_with("acceptQuest:");
+      const std::string id = a.substr(a.find(':') + 1);
+      if (accept && !rules.questOffered(current, id)) return;
+      const auto next = accept ? rules.acceptQuest(current, id) : rules.turnInQuest(current, id);
+      if (!next) return map.battleLog(tr("Os objetivos ainda não foram cumpridos.", "The objectives have not been completed yet."));
+      saveRef() = *next;
+      if (!testSave) save = *next;
+      write();
+      map.refreshQuestPickups(saveRef());
+      map.battleLog(accept ? tr("Missão aceita. Consulte o diário de missões.", "Quest accepted. Check the quest log.")
+                          : tr("Missão concluída. Recompensa recebida.", "Quest completed. Reward received."));
+      return;
+    }
+    if (!record || testSave) return;  // legacy campaign-only actions
     ember::Json s = record->activeSave();
     auto addTo = [&](const char* key, const std::string& v) {
       ember::Json& list = s[key];
@@ -84,6 +102,22 @@ struct NpcTalk {
       return;
     }
     record->saveActive(std::move(s));
+  }
+
+  ember::Json questDialogue(MapStage& map, const ember::Json& tree) {
+    if (!world || !hasInn || !tree.contains("questId") || !tree.contains("questStates")) return tree;
+    ember::Json current = storySave();
+    ember::foldQuestProgress(current, map.questFound(), map.questKills());
+    const ember::InnRules rules(innData, *world);
+    const std::string id = tree.value("questId", "");
+    for (const auto& q : world->tables()["quests"]) {
+      if (q.value("id", "") != id) continue;
+      std::string state = rules.questStatus(current, q);
+      if (state == "available" && !rules.questOffered(current, id)) state = "locked";
+      const auto& states = tree["questStates"];
+      if (states.contains(state)) return states[state];
+    }
+    return tree;
   }
 
   // The save a story moment writes into: Modo teste's own, else the campaign's active one, else the scratch one (a playtest).
@@ -147,7 +181,8 @@ struct NpcTalk {
           scene = std::move(sc);
           afterFilm = std::move(t);
         } else {
-          dialog.emplace(t->tree, npcPortraits(t->tree, map.characters()), artRoot);
+          const auto tree = questDialogue(map, t->tree);
+          dialog.emplace(tree, npcPortraits(tree, map.characters()), artRoot);
           action.clear();
         }
       }
@@ -164,7 +199,8 @@ struct NpcTalk {
         film.reset();
         finishInnScene(map);
         if (std::optional<MapStage::Talk> t = std::exchange(afterFilm, std::nullopt)) {
-          dialog.emplace(t->tree, npcPortraits(t->tree, map.characters()), artRoot);
+          const auto tree = questDialogue(map, t->tree);
+          dialog.emplace(tree, npcPortraits(tree, map.characters()), artRoot);
           action.clear();
         }
       }
@@ -224,6 +260,13 @@ inline std::shared_ptr<NpcTalk> attachNpcTalk(MapStage& map, const std::filesyst
   talk->previous = std::move(map.overlay);
   MapStage* stage = &map;
   map.overlay = [talk, stage] { talk->draw(*stage); };
+  const auto previousEscape = std::move(map.escapeOverlay);
+  map.escapeOverlay = [talk, previousEscape] {
+    if (talk->film) { talk->film.reset(); talk->afterFilm.reset(); return true; }
+    if (talk->dialog) { talk->dialog.reset(); talk->action.clear(); return true; }
+    if (talk->inn) { if (talk->inn->escape()) talk->inn.reset(); return true; }
+    return previousEscape && previousEscape();
+  };
   return talk;
 }
 

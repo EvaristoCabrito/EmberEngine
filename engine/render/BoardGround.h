@@ -83,6 +83,7 @@ struct TerrainView {
   static constexpr uint32_t kWallsLit = 0x80000000u;
   // wallFrom's bit 30: the added side walls wear the cliff texture (the map's tile set has a "side" rock wall) instead of the top's.
   static constexpr uint32_t kWallsRock = 0x40000000u;
+  static constexpr uint32_t kAshNeutral = 0x20000000u;  // Ashen terrain: keep the shaded ground neutral under colored light.
   explicit operator bool() const { return record != 0 && count != 0; }
 };
 

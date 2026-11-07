@@ -417,6 +417,8 @@ class InventoryScreen {
     emberPlate("##count", {cw, 36}, [&](ImDrawList* d, ImVec2 p, ImVec2 q, ImU32) {
       d->AddText(uiFont(UiFont::Ui), 14.0f, {p.x + 10, (p.y + q.y) / 2 - 8}, used >= cap ? kDanger : kFg, count.c_str());
     });
+    if (ImGui::IsItemHovered() && c.save.value("bagSlotsPerHeroBonus", 0) > 0)
+      ImGui::SetTooltip("Bag of Holding +%d · slots extras por personagem recrutado", c.save.value("bagSlotsPerHeroBonus", 0));
     x -= 8;
     heroArrows(heroes, x, a.y + 12);
     if (heroes.size() > 1) {

@@ -1,0 +1,17 @@
+'vswhere.exe' não é reconhecido como um comando interno
+ou externo, um programa operável ou um arquivo em lotes.
+[0/2] Re-checking globbed directories...
+[1/120] Generating CXX dyndep file CMakeFiles\bc7.dir\CXX.dd
+[2/116] Scanning C:\EmberEngineBOSTA\engine\render\vfx\ConjurerFx.cpp for CXX dependencies
+[3/116] Scanning C:\EmberEngineBOSTA\tools\BattleCheck.cpp for CXX dependencies
+[4/116] Scanning C:\EmberEngineBOSTA\apps\cooker\main.cpp for CXX dependencies
+[5/116] Generating CXX dyndep file engine\CMakeFiles\EmberEngine.dir\CXX.dd
+[6/23] Generating CXX dyndep file apps\cooker\CMakeFiles\Cooker.dir\CXX.dd
+[7/23] Generating CXX dyndep file tools\CMakeFiles\EmberTools.dir\CXX.dd
+[8/14] Building CXX object engine\CMakeFiles\EmberEngine.dir\render\vfx\ConjurerFx.cpp.obj
+C:\EmberEngineBOSTA\engine\render\vfx\ConjurerFx.cpp(278): warning C4100: 'now': parâmetro não referenciado
+[9/14] Linking CXX static library engine\EmberEngine.lib
+[10/14] Building CXX object apps\cooker\CMakeFiles\Cooker.dir\main.cpp.obj
+[11/14] Building CXX object tools\CMakeFiles\EmberTools.dir\BattleCheck.cpp.obj
+[12/14] Linking CXX static library tools\EmberTools.lib
+[13/14] Linking CXX executable bin\Cooker.exe

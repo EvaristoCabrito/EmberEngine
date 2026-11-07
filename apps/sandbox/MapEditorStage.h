@@ -284,7 +284,18 @@ class MapEditorStage : public Stage {
     }
   }
 
+  bool ownsEscapePopup() const override { return dialogUi_.isOpen(); }
   void event(const SDL_Event& e) override {
+    if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.key == SDLK_ESCAPE) {
+      if (dialogUi_.isOpen()) dialogUi_.requestClose();
+      else if (bigNote_) bigNote_.reset();
+      else if (showEncounters_) showEncounters_ = false;
+      else if (showLocations_) showLocations_ = false;
+      else if (showTechnical_) showTechnical_ = false;
+      else if (heldUnit_ || heldDeco_) { heldUnit_.reset(); heldDeco_.reset(); }
+      else if (callbacks_.back) callbacks_.back(draft_);
+      return;
+    }
     if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && !(ImGui::GetCurrentContext() && ImGui::GetIO().WantTextInput)) {
       const bool ctrl = (e.key.mod & SDL_KMOD_CTRL) != 0;
       if (ctrl && e.key.key == SDLK_Z) return (e.key.mod & SDL_KMOD_SHIFT) ? redo() : undo();
@@ -294,7 +305,6 @@ class MapEditorStage : public Stage {
         if (heldUnit_) return deleteHeldUnit();
         return removeSelectedDecoration();
       }
-      if (e.key.key == SDLK_ESCAPE) return;  // the preview's pause menu is not part of the editor
     }
     if (preview_ && showPreview_) preview_->event(e);
   }
@@ -340,7 +350,7 @@ class MapEditorStage : public Stage {
   };
   struct ClassEntry {
     std::string name, role, sprite;
-    bool summon = false;
+    bool summon = false, npcOnly = false;
   };
   struct DecoMeta {
     std::string model3d, exitKind, doorStyle, wallTexture, art;
@@ -472,7 +482,7 @@ class MapEditorStage : public Stage {
                                 d.value("chest", false)};
     const ember::Json doorVariantsTable = e.value("doorVariants", ember::Json::object());  // a copy: items() of a temporary dangles
     for (const auto& [style, v] : doorVariantsTable.items()) t.doorVariants[style] = {s(v, "open"), s(v, "closed")};
-    for (const auto& [id, c] : e["classes"].items()) t.classes[id] = {s(c, "name"), s(c, "role"), {}, c.value("summon", false)};
+    for (const auto& [id, c] : e["classes"].items()) t.classes[id] = {s(c, "name"), s(c, "role"), {}, c.value("summon", false), c.value("npcOnly", false)};
     const ember::Json classSpriteTable = e.value("classSprite", ember::Json::object());  // a copy: items() of a temporary dangles
     for (const auto& [id, sprite] : classSpriteTable.items())
       if (sprite.is_string()) t.classes[id].sprite = sprite.get<std::string>();
@@ -859,8 +869,13 @@ class MapEditorStage : public Stage {
     if (!brush.model3d.empty()) placed["rot"] = wallVertical_ ? 1 : 0, placed["wallOrientation"] = wallVertical_ ? "vertical" : "horizontal";
     else if (editor_.decoBlocks.contains(decoBrush_)) placed["blocksPath"] = true;
     const std::set<std::pair<int, int>> covered = otherCells(decos, placed);
-    for (const ember::FootOffset& f : footprintOf(placed))
-      if (brush.exitKind.empty() && covered.contains({x + f.dx, y + f.dy})) return;
+    for (const ember::FootOffset& f : footprintOf(placed)) {
+      const int cx = x + f.dx, cy = y + f.dy;
+      if (cx < 0 || cy < 0 || cx >= cols() || cy >= rows())
+        return note(std::format("{} não cabe aí: parte do objeto sairia do mapa.", decoName(decoBrush_)));
+      if (brush.exitKind.empty() && covered.contains({cx, cy}))
+        return note(std::format("{} não cabe aí: outra decoração ocupa essa área.", decoName(decoBrush_)));
+    }
     beginEdit();
     if (const auto t = editor_.decoTile.find(decoBrush_); t != editor_.decoTile.end())
       for (const ember::FootOffset& f : def->footprint) {
@@ -868,6 +883,7 @@ class MapEditorStage : public Stage {
         if (cx >= 0 && cy >= 0 && cx < cols() && cy < rows()) draft_["tiles"][cy * cols() + cx] = t->second;
       }
     arr("decorations").push_back(std::move(placed));
+    note(std::format("{} colocado em {},{}.", decoName(decoBrush_), x, y));
     cleanEntrances();
   }
 
@@ -877,11 +893,17 @@ class MapEditorStage : public Stage {
     const std::string id = p.value("id", "");
     if (!catalog_.decoration(id)) return;
     const bool model = !meta(id).model3d.empty();
-    if (!model || mode_ != Mode::Architecture) decoBrush_ = id;
-    if (model) mode_ = Mode::Architecture;
-    else if (mode_ == Mode::Architecture) mode_ = Mode::Decoration;
+    decoBrush_ = id;
+    if (model) {
+      mode_ = Mode::Architecture;
+      architectureDecorations_ = meta(id).props3d;
+      thickWalls_ = meta(id).thickWall;
+    } else if (mode_ == Mode::Architecture) mode_ = Mode::Decoration;
     if (tab_ != Tab::Rules) tab_ = Tab::Decor;
-    if (const auto s = editor_.decoSection.find(id); s != editor_.decoSection.end()) decoSection_ = s->second;
+    if (const auto section = editor_.decoSection.find(id); section != editor_.decoSection.end()) {
+      if (model && meta(id).props3d) decoSection3d_ = section->second;
+      else if (!model) decoSection_ = section->second;
+    }
   }
 
   // Restores the base ground under a prop that stamped its own terrain, over `cells`.
@@ -1022,6 +1044,7 @@ class MapEditorStage : public Stage {
   }
   // A road NPC's class (the NPC brush's characters): an NPC, never a foe.
   bool isNpc(const std::string& classId) const {
+    if (const auto it = editor_.classes.find(classId); it != editor_.classes.end() && it->second.npcOnly) return true;
     for (const auto& [id, spawn] : editor_.npcSpawn)
       if (spawn.value("classId", std::string()) == classId) return true;
     return false;
@@ -1235,7 +1258,15 @@ class MapEditorStage : public Stage {
     ember::SceneData scene = ember::buildScene(board, catalog_, &skipped);
     // An edit of the cells or of what stands on them goes onto the open preview: nothing reloads, nothing blinks.
     ember::Json settings = previewSettings(draft_);
-    if (preview_ && settings == previewSettings_ && preview_->applyEditorDraft(*draft, scene)) return;
+    ember::Json terrain = ember::Json::object();
+    for (const char* key : {"tiles", "tileVariants", "tileRots", "terrainElevations", "waterLevels", "waterFootprints", "waterPatches"})
+      if (draft_.contains(key)) terrain[key] = draft_[key];
+    const bool terrainChanged = terrain != previewTerrain_;
+    if (preview_ && settings == previewSettings_ && preview_->applyEditorDraft(*draft, scene, terrainChanged)) {
+      previewTerrain_ = std::move(terrain);
+      return;
+    }
+    previewTerrain_ = std::move(terrain);
     previewSettings_ = std::move(settings);
     MapStageOptions options = base_;
     options.map.clear(), options.scene.clear(), options.battle.clear();
@@ -1566,6 +1597,15 @@ class MapEditorStage : public Stage {
     if (it == saved_.end() || it->second.files.empty()) return std::nullopt;
     return it->second.files.back().file;
   }
+  // Use the same active version the campaign uses, otherwise the newest saved version.
+  std::optional<std::filesystem::path> selectedFile(const std::string& id) const {
+    const auto found = saved_.find(id);
+    if (found == saved_.end() || found->second.files.empty()) return std::nullopt;
+    if (const auto active = activeMapSerial(id))
+      for (auto it = found->second.files.rbegin(); it != found->second.files.rend(); ++it)
+        if (it->serial == *active && std::filesystem::exists(it->file)) return it->file;
+    return found->second.files.back().file;
+  }
   static ember::Json readDraft(const std::filesystem::path& file) {
     std::ifstream in(file, std::ios::binary);
     const ember::Json j = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
@@ -1725,10 +1765,12 @@ class MapEditorStage : public Stage {
   std::string locationOf(const std::string& missionId) const {
     for (const ember::Locais::Base& l : locais_.locations())
       if (std::find(l.missionIds.begin(), l.missionIds.end(), missionId) != l.missionIds.end()) return l.id;
+    for (const auto& [loc, floors] : locais_.submaps)
+      for (const auto& floor : floors) if (floor.missionId == missionId) return loc;
     return "";
   }
   void loadCampaignMap(const std::string& id) {
-    const std::optional<std::filesystem::path> file = newestFile(id);
+    const std::optional<std::filesystem::path> file = selectedFile(id);
     if (!file) return note("Esse mapa não tem arquivo salvo.");
     ember::Json d = missionToDraft(readDraft(*file));
     if (d.is_null()) return note("Não consegui ler " + file->generic_string() + ".");
@@ -1826,19 +1868,29 @@ class MapEditorStage : public Stage {
   // meaning locais"): each location's missions and its floors (submaps: the crypt's, the cave's levels).
   std::set<std::string> campaignIds() const {
     std::set<std::string> ids;
-    std::map<std::string, std::vector<ember::LocaisFloor>> floors = locais_.defaultSubmaps;
-    for (const auto& [loc, list] : locais_.submaps) floors[loc] = list;
-    for (const std::string& loc : locais_.locationOrder) {
-      const auto it = order_.find(loc);
-      if (it != order_.end()) ids.insert(it->second.begin(), it->second.end());
-      else
-        for (const ember::Locais::Base& b : locais_.base)
-          if (b.id == loc) ids.insert(b.missionIds.begin(), b.missionIds.end());
-      if (const auto f = floors.find(loc); f != floors.end())
-        for (const ember::LocaisFloor& floor : f->second) ids.insert(floor.missionId);
+    for (const auto& [loc, maps] : order_) ids.insert(maps.begin(), maps.end());
+    auto addFloors = [&](const auto& groups) {
+      for (const auto& [loc, floors] : groups)
+        for (const auto& floor : floors) ids.insert(floor.missionId);
+    };
+    addFloors(locais_.submaps);
+    bool changed = true;
+    while (changed) {
+      changed = false;
+      for (const auto& [id, map] : saved_) {
+        if (isRandomEncounter(id)) continue;
+        for (const std::string& target : map.floors) {
+          if (isRandomEncounter(target)) continue;
+          if (ids.contains(id)) changed = ids.insert(target).second || changed;
+          if (ids.contains(target)) changed = ids.insert(id).second || changed;
+        }
+      }
     }
+    for (auto it = ids.begin(); it != ids.end(); )
+      if (isRandomEncounter(*it)) it = ids.erase(it); else ++it;
     return ids;
   }
+
   // A random-encounter map (the user, 2026-11-05: "uma seção de random ... eu saber que é random"): its id starts with "random-"
   // or it sits in an R-Encounter region. Listed only under "Random encounters", never with the campaign's or the saved maps.
   bool isRandomEncounter(const std::string& id) const {
@@ -1866,7 +1918,7 @@ class MapEditorStage : public Stage {
   std::vector<MapRef> campaignRefs() const {
     std::vector<MapRef> out;
     for (const std::string& id : campaignIds())
-      if (const auto m = missionInfo(id); m && !m->hub && !isRandomEncounter(id)) out.push_back({id, m->title, m->index});
+      if (const auto m = missionInfo(id); m && !isRandomEncounter(id)) out.push_back({id, m->title, m->index});
     sortRefs(out);
     return out;
   }
@@ -1875,9 +1927,9 @@ class MapEditorStage : public Stage {
     const std::set<std::string> campaign = campaignIds();
     std::map<std::string, MapRef> known;
     for (const auto& [id, s] : saved_)
-      if (!campaign.contains(id)) known[id] = {id, s.title, s.index};
+      if (!campaign.contains(id) && !isRandomEncounter(id)) known[id] = {id, s.title, s.index};
     for (const MissionInfo& m : editor_.missions)
-      if (!m.hub && !campaign.contains(m.id) && !known.contains(m.id)) known[m.id] = {m.id, m.title, m.index};
+      if (!campaign.contains(m.id) && !isRandomEncounter(m.id) && !known.contains(m.id)) known[m.id] = {m.id, m.title, m.index};
     std::vector<MapRef> out;
     for (auto& [id, r] : known) out.push_back(r);
     sortRefs(out);
@@ -2423,9 +2475,9 @@ class MapEditorStage : public Stage {
       setDraft(blankDraft());
       note(std::format("Mapa novo em branco — cenário \"{}\", {}x{}.", draft_["id"].get<std::string>(), cols(), rows()));
     }
-    fieldLabel("Mapa da campanha");
+    fieldLabel("Mapa salvo da campanha");
     ImGui::SetNextItemWidth(-1);
-    if (ImGui::BeginCombo("##campaignmap", "Carregar mapa da campanha…")) {
+    if (ImGui::BeginCombo("##campaignmap", "Abrir mapa salvo da campanha…")) {
       LetterJump jump;
       jump.begin();
       for (const MapRef& m : campaignRefs()) {
@@ -2435,21 +2487,15 @@ class MapEditorStage : public Stage {
       jump.end();
       ImGui::EndCombo();
     }
-    // Abrir mapa salvo: the maps placed nowhere (the user: "saved maps are additional maps not placed anywhere"): not in a Local,
-    // not a random encounter, not a hub or its floor. The newest save of each.
     const std::set<std::string> campaign = campaignIds();
     std::vector<const Scenario*> pickable;
-    {
-      std::set<std::string> hubIds;
-      for (const MapRef& h : cityHubs()) hubIds.insert(h.id);
-      for (const auto& [id, s] : saved_)
-        if (!campaign.contains(id) && !isRandomEncounter(id) && !hubIds.contains(id) && !s.hub) pickable.push_back(&s);
-    }
+    for (const auto& [id, scenario] : saved_)
+      if (!campaign.contains(id) && !isRandomEncounter(id)) pickable.push_back(&scenario);
     std::sort(pickable.begin(), pickable.end(), [](const Scenario* a, const Scenario* b) {
       return mapTitleBefore(a->title, b->title) || (!mapTitleBefore(b->title, a->title) && a->id < b->id);
     });
     if (!pickable.empty()) {
-      fieldLabel("Mapa salvo");
+      fieldLabel("Mapas salvos");
       ImGui::SetNextItemWidth(-1);
       if (ImGui::BeginCombo("##savedmap", "Abrir mapa salvo…")) {
         const std::map<std::string, int> active = activeMaps();
@@ -2468,26 +2514,6 @@ class MapEditorStage : public Stage {
       }
       if (ImGui::IsItemHovered()) ImGui::SetTooltip("Abre o save mais recente desse cenário — a lista de versões abaixo deixa escolher outro serial");
     }
-    const std::vector<MapRef> hubs = cityHubs();
-    if (!hubs.empty()) {
-      fieldLabel("CityHubs");
-      ImGui::SetNextItemWidth(-1);
-      if (ImGui::BeginCombo("##cityhubs", "Abrir hub…")) {
-        LetterJump jump;
-        jump.begin();
-        for (const MapRef& m : hubs) {
-          if (ImGui::Selectable(std::format("{}##{}", m.title, m.id).c_str())) loadCampaignMap(m.id);
-          jump.item(m.title);
-        }
-        jump.end();
-        ImGui::EndCombo();
-      }
-      if (ImGui::IsItemHovered()) ImGui::SetTooltip("Mapas de hub (a Estalagem, cidades) e os andares ligados a eles por escada — sem combate");
-    }
-  }
-
-  // Locais / R-Encounter: the campaign's own windows.
-  void drawCampaignWindows() {
     const std::vector<MapRef> randoms = randomRefs();
     if (!randoms.empty()) {
       fieldLabel("Random encounters (%d)", static_cast<int>(randoms.size()));
@@ -2508,6 +2534,10 @@ class MapEditorStage : public Stage {
       }
       if (ImGui::IsItemHovered()) ImGui::SetTooltip("Mapas de encontro aleatório (id random-… ou numa região do R-Encounter) — fora da lista da campanha");
     }
+  }
+
+  // Locais / R-Encounter: the campaign's own windows.
+  void drawCampaignWindows() {
     if (ImGui::Button("Locais", {150, 0})) openLocais();
     ImGui::SameLine();
     hint("A progressão entre os locais da campanha, suas missões, vagas e andares.");
@@ -2587,8 +2617,13 @@ class MapEditorStage : public Stage {
     std::sort(cutFiles_.begin(), cutFiles_.end());
     cutScanned_ = true;
   }
-  // triggers.json onOpen[<map id>]: one scene id or a list, played in that order every time the map opens (MapStage
-  // runCutsceneTriggers). The only trigger the game has today.
+  // triggers.json: by event ("onOpen": every time the map opens; "onVictory": once its fight is won, before the result screen), by
+  // map id, one scene id or a list played in that order (MapStage runCutsceneTriggers / queueVictoryScenes).
+  struct CutEvent {
+    const char* key;
+    const char* label;  // "ao abrir" / "na vitória"
+  };
+  static constexpr CutEvent kCutEvents[] = {{"onOpen", "ao abrir"}, {"onVictory", "na vitória"}};
   static std::vector<std::string> openingListOf(const ember::Json& entry) {
     std::vector<std::string> out;
     if (entry.is_string() && !entry.get<std::string>().empty()) out.push_back(entry.get<std::string>());
@@ -2597,36 +2632,98 @@ class MapEditorStage : public Stage {
         if (id.is_string() && !id.get<std::string>().empty()) out.push_back(id.get<std::string>());
     return out;
   }
-  std::vector<std::string> cutOpeningList() const {
+  std::vector<std::string> cutTriggerList(const char* event) const {
     const ember::Json t = readJsonFile(triggersFile());
-    const ember::Json on = t.is_object() ? t.value("onOpen", ember::Json::object()) : ember::Json::object();
+    const ember::Json on = t.is_object() ? t.value(event, ember::Json::object()) : ember::Json::object();
     const std::string map = draft_.value("id", "");
     return on.is_object() && on.contains(map) ? openingListOf(on[map]) : std::vector<std::string>{};
   }
-  // Every scene's triggers: the maps that open with it and its place in each map's order (1-based).
-  std::map<std::string, std::vector<std::pair<std::string, int>>> cutTriggersByScene() const {
-    std::map<std::string, std::vector<std::pair<std::string, int>>> out;
+  // Every scene's triggers, as the list shows them: "ao abrir <map> (1ª)", "na vitória de <map> (2ª)".
+  std::map<std::string, std::vector<std::string>> cutTriggersByScene() const {
+    std::map<std::string, std::vector<std::string>> out;
     const ember::Json t = readJsonFile(triggersFile());
-    const ember::Json on = t.is_object() ? t.value("onOpen", ember::Json::object()) : ember::Json::object();
-    if (on.is_object())
+    for (const CutEvent& ev : kCutEvents) {
+      const ember::Json on = t.is_object() ? t.value(ev.key, ember::Json::object()) : ember::Json::object();
+      if (!on.is_object()) continue;
       for (const auto& [map, entry] : on.items()) {
         const std::vector<std::string> list = openingListOf(entry);
-        for (size_t i = 0; i < list.size(); ++i) out[list[i]].push_back({map, static_cast<int>(i) + 1});
+        for (size_t i = 0; i < list.size(); ++i)
+          out[list[i]].push_back(std::format("{} {}{} ({}ª)", ev.label, std::string_view(ev.key) == "onVictory" ? "de " : "", map, i + 1));
       }
+    }
     return out;
   }
-  void setCutOpeningList(const std::vector<std::string>& list) {  // empty = the map opens with no scene
+  void setCutTriggerList(const char* event, const std::vector<std::string>& list) {  // empty = no scene on that event
     ember::Json t = readJsonFile(triggersFile());
     if (!t.is_object()) t = ember::Json::object();
     if (!t.contains("format")) t["format"] = "ember-cutscene-triggers-1";
-    if (!t.contains("onOpen") || !t["onOpen"].is_object()) t["onOpen"] = ember::Json::object();
+    if (!t.contains(event) || !t[event].is_object()) t[event] = ember::Json::object();
     const std::string map = draft_.value("id", "");
-    if (list.empty()) t["onOpen"].erase(map);
-    else t["onOpen"][map] = list;
+    if (list.empty()) t[event].erase(map);
+    else t[event][map] = list;
     if (!writeJsonFile(triggersFile(), t)) return note("Não consegui gravar content/cutscenes/triggers.json.");
     std::string ids;
     for (size_t i = 0; i < list.size(); ++i) ids += std::format("{}{}. {}", i ? ", " : "", i + 1, list[i]);
-    note(list.empty() ? std::format("{} abre sem cena.", map) : std::format("{} abre com: {}.", map, ids));
+    const bool victory = std::string_view(event) == "onVictory";
+    note(list.empty() ? std::format("{}: nenhuma cena {}.", map, victory ? "na vitória" : "ao abrir")
+                      : std::format("{} {}: {}.", map, victory ? "na vitória" : "ao abrir", ids));
+  }
+  // The open map's scenes on one event, in order: ▲ ▼ Tirar, + Cena.
+  void drawCutOrder(const CutEvent& ev, const std::string& map) {
+    std::vector<std::string> list = cutTriggerList(ev.key);
+    const bool victory = std::string_view(ev.key) == "onVictory";
+    if (list.empty()) hint(victory ? "Nenhuma cena toca quando a luta deste mapa é vencida." : "Nenhuma cena toca quando este mapa abre.");
+    int up = -1, down = -1, out = -1;
+    for (int i = 0; i < static_cast<int>(list.size()); ++i) {
+      ImGui::PushID(std::format("{}:{}", ev.key, i).c_str());
+      const std::string& id = list[static_cast<size_t>(i)];
+      const bool exists = std::find(cutFiles_.begin(), cutFiles_.end(), id) != cutFiles_.end();
+      ImGui::Text("%d.", i + 1);
+      ImGui::SameLine();
+      if (ImGui::Selectable(id.c_str(), id == cutId_, 0, {220, 0}) && exists) openCutscene(id);
+      if (!exists) {
+        ImGui::SameLine();
+        ImGui::TextColored(ImColor(255, 120, 100), "arquivo não existe");
+      }
+      ImGui::SameLine();
+      if (ImGui::SmallButton("▲") && i > 0) up = i;
+      ImGui::SameLine();
+      if (ImGui::SmallButton("▼") && i + 1 < static_cast<int>(list.size())) down = i;
+      ImGui::SameLine();
+      if (ImGui::SmallButton("Tirar")) out = i;
+      ImGui::PopID();
+    }
+    if (up > 0) std::swap(list[static_cast<size_t>(up)], list[static_cast<size_t>(up - 1)]), setCutTriggerList(ev.key, list);
+    if (down >= 0) std::swap(list[static_cast<size_t>(down)], list[static_cast<size_t>(down + 1)]), setCutTriggerList(ev.key, list);
+    if (out >= 0) list.erase(list.begin() + out), setCutTriggerList(ev.key, list);
+    ImGui::SetNextItemWidth(-1);
+    if (ImGui::BeginCombo(std::format("##add{}", ev.key).c_str(), victory ? "+ Cena na vitória deste mapa…" : "+ Cena ao abrir este mapa…")) {
+      for (const std::string& id : cutFiles_)
+        if (std::find(list.begin(), list.end(), id) == list.end() && ImGui::Selectable(id.c_str())) {
+          list.push_back(id);
+          setCutTriggerList(ev.key, list);
+        }
+      ImGui::EndCombo();
+    }
+    (void)map;
+  }
+  // content/cutscenes/battle-lines.json: this map's lines during the fight (MapStage runBattleLines), shown as they are.
+  void drawBattleLines(const std::string& map) {
+    const ember::Json j = readJsonFile(cutscenesDir() / "battle-lines.json");
+    const ember::Json lines = j.is_object() && j.contains("maps") && j["maps"].is_object() && j["maps"].contains(map) ? j["maps"][map] : ember::Json();
+    if (!lines.is_array() || lines.empty()) return hint("Nenhuma fala durante a luta deste mapa (content/cutscenes/battle-lines.json).");
+    static const std::map<std::string, std::string> kWhen = {{"battleStart", "Primeiro turno do grupo"},
+                                                             {"bossRegenerates", "O chefe regenera"},
+                                                             {"allyBadlyWounded", "Um aliado muito ferido"},
+                                                             {"bossNearDefeat", "O chefe quase derrotado"}};
+    for (const ember::Json& l : lines) {
+      if (!l.is_object()) continue;
+      const std::string when = l.value("when", std::string());
+      const auto w = kWhen.find(when);
+      ImGui::TextColored(ImColor(252, 211, 77), "%s", w != kWhen.end() ? w->second.c_str() : when.c_str());
+      ImGui::TextWrapped("%s: \"%s\"", l.value("speaker", std::string()).c_str(), l.value("text", std::string()).c_str());
+    }
+    hint("Cada fala é dita uma vez por luta, entre as ações, pela unidade que fala (se estiver de pé).");
   }
   void openCutscene(const std::string& id) {
     cutId_ = id;
@@ -2697,13 +2794,12 @@ class MapEditorStage : public Stage {
     const std::string map = draft_.value("id", "");
     section("Cenas");
     hint("Uma cena dirige as unidades que já estão no mapa: mover, virar, falar (na caixa de diálogo do jogo) e esperar, um passo depois do outro. "
-         "Cada cena é um arquivo em content/cutscenes. Ela só toca no jogo com um gatilho: hoje o gatilho é \"Ao abrir o mapa\" "
-         "(toda vez que o mapa abre, no jogo e no Testar, na ordem do mapa). Sem gatilho a cena nunca toca no jogo.");
+         "Cada cena é um arquivo em content/cutscenes. Ela só toca no jogo com um gatilho: \"ao abrir\" (toda vez que o mapa abre) ou "
+         "\"na vitória\" (a luta vencida, antes da tela de resultado), na ordem do mapa. Sem gatilho a cena nunca toca no jogo.");
     if (ImGui::SmallButton("Nova cena")) newCutscene();
     ImGui::SameLine();
     if (ImGui::SmallButton("Reler a pasta")) refreshCutscenes();
-    const std::map<std::string, std::vector<std::pair<std::string, int>>> where = cutTriggersByScene();
-    std::vector<std::string> opening = cutOpeningList();
+    const std::map<std::string, std::vector<std::string>> where = cutTriggersByScene();
     for (const std::string& id : cutFiles_) {
       ImGui::PushID(id.c_str());
       const bool sel = id == cutId_;
@@ -2712,9 +2808,9 @@ class MapEditorStage : public Stage {
       }
       ImGui::Indent(14);
       if (const auto it = where.find(id); it != where.end()) {
-        std::string maps;
-        for (const auto& [m, n] : it->second) maps += std::format("{}{} ({}ª)", maps.empty() ? "" : ", ", m, n);
-        ImGui::TextColored(ImColor(252, 211, 77), "Toca ao abrir: %s", maps.c_str());
+        std::string text;
+        for (const std::string& w : it->second) text += (text.empty() ? "" : ", ") + w;
+        ImGui::TextColored(ImColor(252, 211, 77), "Toca %s", text.c_str());
       } else {
         ImGui::TextColored(ImColor(150, 136, 120), "Sem gatilho: não toca em nenhum mapa");
       }
@@ -2723,43 +2819,15 @@ class MapEditorStage : public Stage {
     }
     if (cutFiles_.empty()) hint("Nenhuma cena ainda. Nova cena cria content/cutscenes/%s-cena-01.json.", scenarioId(map).c_str());
 
-    // The open map's opening: its scenes in the order they play.
+    // The open map: its opening, its victory, its lines in the fight.
     section(std::format("Ao abrir o mapa \"{}\": ordem", map).c_str());
-    if (opening.empty()) hint("Nenhuma cena toca quando este mapa abre.");
-    int openUp = -1, openDown = -1, openOut = -1;
-    for (int i = 0; i < static_cast<int>(opening.size()); ++i) {
-      ImGui::PushID(("open:" + std::to_string(i)).c_str());
-      const bool exists = std::find(cutFiles_.begin(), cutFiles_.end(), opening[static_cast<size_t>(i)]) != cutFiles_.end();
-      ImGui::Text("%d.", i + 1);
-      ImGui::SameLine();
-      if (ImGui::Selectable(opening[static_cast<size_t>(i)].c_str(), opening[static_cast<size_t>(i)] == cutId_, 0, {200, 0}) && exists)
-        openCutscene(opening[static_cast<size_t>(i)]);
-      if (!exists) {
-        ImGui::SameLine();
-        ImGui::TextColored(ImColor(255, 120, 100), "arquivo não existe");
-      }
-      ImGui::SameLine();
-      if (ImGui::SmallButton("▲") && i > 0) openUp = i;
-      ImGui::SameLine();
-      if (ImGui::SmallButton("▼") && i + 1 < static_cast<int>(opening.size())) openDown = i;
-      ImGui::SameLine();
-      if (ImGui::SmallButton("Tirar")) openOut = i;
-      ImGui::PopID();
-    }
-    if (openUp > 0) std::swap(opening[static_cast<size_t>(openUp)], opening[static_cast<size_t>(openUp - 1)]), setCutOpeningList(opening);
-    if (openDown >= 0) std::swap(opening[static_cast<size_t>(openDown)], opening[static_cast<size_t>(openDown + 1)]), setCutOpeningList(opening);
-    if (openOut >= 0) opening.erase(opening.begin() + openOut), setCutOpeningList(opening);
-    ImGui::SetNextItemWidth(-1);
-    if (ImGui::BeginCombo("##addopening", "+ Cena ao abrir este mapa…")) {
-      for (const std::string& id : cutFiles_)
-        if (std::find(opening.begin(), opening.end(), id) == opening.end() && ImGui::Selectable(id.c_str())) {
-          opening.push_back(id);
-          setCutOpeningList(opening);
-        }
-      ImGui::EndCombo();
-    }
+    drawCutOrder(kCutEvents[0], map);
     if (ImGui::Button("Testar a abertura deste mapa", {-1, 0}) && !playtest_.valid()) playtest();
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("Testar: o mapa abre e as cenas acima tocam nessa ordem.");
+    section(std::format("Na vitória de \"{}\": ordem", map).c_str());
+    drawCutOrder(kCutEvents[1], map);
+    section(std::format("Falas durante a luta de \"{}\"", map).c_str());
+    drawBattleLines(map);
     if (cutId_.empty()) return;
 
     section(std::format("Cena \"{}\"{}", cutId_, cutDirty_ ? " (não gravada)" : "").c_str());
@@ -2775,18 +2843,24 @@ class MapEditorStage : public Stage {
     // Where and when it plays.
     fieldLabel("Onde e quando toca");
     if (const auto it = where.find(cutId_); it != where.end()) {
-      for (const auto& [m, n] : it->second) ImGui::TextColored(ImColor(252, 211, 77), "Ao abrir o mapa %s, %dª da ordem", m.c_str(), n);
+      for (const std::string& w : it->second) ImGui::TextColored(ImColor(252, 211, 77), "Toca %s", w.c_str());
     } else {
       ImGui::TextColored(ImColor(150, 136, 120), "Sem gatilho: esta cena não toca em nenhum mapa (só no botão Testar esta cena).");
     }
-    const auto here = std::find(opening.begin(), opening.end(), cutId_);
-    bool isOpening = here != opening.end();
-    if (ImGui::Checkbox(std::format("Toca ao abrir o mapa \"{}\"", map).c_str(), &isOpening)) {
-      if (isOpening) opening.push_back(cutId_);
-      else opening.erase(std::find(opening.begin(), opening.end(), cutId_));
-      setCutOpeningList(opening);
+    for (const CutEvent& ev : kCutEvents) {
+      std::vector<std::string> list = cutTriggerList(ev.key);
+      const auto here = std::find(list.begin(), list.end(), cutId_);
+      bool on = here != list.end();
+      const bool victory = std::string_view(ev.key) == "onVictory";
+      if (ImGui::Checkbox(std::format("Toca {} \"{}\"", victory ? "na vitória de" : "ao abrir o mapa", map).c_str(), &on)) {
+        if (on) list.push_back(cutId_);
+        else list.erase(std::find(list.begin(), list.end(), cutId_));
+        setCutTriggerList(ev.key, list);
+      }
     }
-    hint("Os atores são unidades deste mapa (%s), pelo nome. A cena toca no jogo e no Testar, não na prévia do editor.", map.c_str());
+    hint("Os atores são unidades deste mapa (%s), pelo nome, e precisam estar de pé quando a cena começa. A cena toca no jogo e no Testar, "
+         "não na prévia do editor.", map.c_str());
+
 
     // Actors
     fieldLabel("Atores (nome na cena -> unidade no mapa)");
@@ -2856,8 +2930,8 @@ class MapEditorStage : public Stage {
 
     // Steps
     fieldLabel("Passos");
-    static const char* kKinds[] = {"move", "face", "say", "wait", "enter"};
-    static const char* kKindNames[] = {"Mover", "Virar", "Falar", "Esperar", "Entrar"};
+    static const char* kKinds[] = {"move", "face", "say", "wait", "enter", "exit"};
+    static const char* kKindNames[] = {"Mover", "Virar", "Falar", "Esperar", "Entrar", "Sair"};
     static const char* kDirNames[] = {"leste (e)", "nordeste (ne)", "noroeste (nw)", "oeste (w)", "sudoeste (sw)", "sudeste (se)"};
     ember::Json& steps = cutSteps();
     int remove = -1, up = -1, down = -1, dup = -1;
@@ -2869,10 +2943,10 @@ class MapEditorStage : public Stage {
       ImGui::Text("%d.", i + 1);
       ImGui::SameLine();
       int kind = 3;
-      for (int k = 0; k < 5; ++k)
+      for (int k = 0; k < 6; ++k)
         if (st.value("do", "") == kKinds[k]) kind = k;
       ImGui::SetNextItemWidth(100);
-      if (ImGui::Combo("##kind", &kind, kKindNames, 5)) {
+      if (ImGui::Combo("##kind", &kind, kKindNames, 6)) {
         ember::Json next = {{"do", kKinds[kind]}};
         if (kind != 3) next["actor"] = st.value("actor", actorNames.empty() ? "" : actorNames.front());
         if (kind == 0 || kind == 4) next["to"] = ember::Json::array({0, 0});
@@ -3507,6 +3581,8 @@ class MapEditorStage : public Stage {
   bool thumbButton(const char* id, const std::string& thumb, const std::string& swatch, float size, bool selected, const std::string& tip, const char* text = nullptr) {
     const ImVec2 at = ImGui::GetCursorScreenPos();
     const bool clicked = ImGui::InvisibleButton(id, {size, size});
+    // Defer decoding and GPU uploads for palette entries outside the scroll window.
+    if (!ImGui::IsRectVisible(at, {at.x + size, at.y + size})) return clicked;
     ImDrawList* dl = ImGui::GetWindowDrawList();
     constexpr std::string_view decor = "/game/decorations/", ownTexture = "/ember/";  // "/ember/x": the game's own content/x (Cooker architecture)
     constexpr std::string_view ownGround = "content/ground/", ownModel = "content/ui/thumbs3d/";
@@ -3603,7 +3679,7 @@ class MapEditorStage : public Stage {
           jump.end();
           ImGui::EndCombo();
         }
-        hint("Os novos personagens têm animação de quatro quadros e diálogo próprio.");
+        hint("Personagens de ambientação. Use + Diálogo na unidade para adicionar uma conversa.");
       }
       if (mode_ == Mode::Summon) {
         fieldLabel("Lado");
@@ -4356,7 +4432,7 @@ class MapEditorStage : public Stage {
   void drawLocais() {
     const ImGuiIO& io = ImGui::GetIO();
     ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f}, ImGuiCond_Appearing, {0.5f, 0.5f});
-    ImGui::SetNextWindowSize({620, io.DisplaySize.y * 0.85f}, ImGuiCond_Appearing);
+    ImGui::SetNextWindowSize({std::min(1100.0f, io.DisplaySize.x * 0.95f), io.DisplaySize.y * 0.90f}, ImGuiCond_Appearing);
     if (!ImGui::Begin("Locais", &showLocations_, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings)) return ImGui::End();
     hint("Setas do título mudam a progressão entre Locais; setas das missões mudam a sequência interna.");
     if (ImGui::Button("Salvar")) {
@@ -4367,6 +4443,24 @@ class MapEditorStage : public Stage {
       } else {
         bigNote_ = BigNote{false, "NÃO SALVOU", {"Não foi possível gravar " + ember::Locais::file().generic_string() + "."}};
       }
+    }
+    static char mapSearch[160] = {};
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputTextWithHint("##findmap", "Buscar em todos os mapas: nome ou identificador", mapSearch, sizeof(mapSearch));
+    auto mapRow = [&](const std::string& id, const std::string& title) {
+      ImGui::PushID(id.c_str());
+      if (ImGui::SmallButton("Editar")) { loadCampaignMap(id); showLocations_ = false; }
+      ImGui::SameLine();
+      ImGui::TextWrapped("%s · %s", title.c_str(), id.c_str());
+      if (const auto file = selectedFile(id)) ImGui::TextDisabled("%s", file->generic_string().c_str());
+      ImGui::PopID();
+    };
+    if (mapSearch[0]) {
+      const std::string query = mapNameKey(mapSearch);
+      for (const auto& [id, scenario] : saved_)
+        if (mapNameKey(scenario.title + " " + id).find(query) != std::string::npos) mapRow(id, scenario.title);
+      ImGui::End();
+      return;
     }
     const std::vector<MapRef> reserve = reserveRefs(), campaign = campaignRefs(), targets = connectorTargets();
     const std::set<std::string> inCampaign = campaignIds();
@@ -4464,6 +4558,15 @@ class MapEditorStage : public Stage {
         ImGui::EndDisabled();
         ImGui::TableNextColumn();
         ImGui::TextWrapped("%s", title.c_str());
+        ImGui::TextDisabled("%s", r.id.c_str());
+        if (const auto file = selectedFile(r.id)) ImGui::TextDisabled("%s", file->filename().string().c_str());
+        if (const auto saved = saved_.find(r.id); saved != saved_.end())
+          for (const std::string& target : saved->second.floors) {
+            const auto info = missionInfo(target);
+            if (ImGui::SmallButton(("→ " + (info ? info->title : target) + "##link-" + target).c_str()))
+              act = [this, target] { loadCampaignMap(target); showLocations_ = false; };
+          }
+
         ImGui::TableNextColumn();
         if (ImGui::SmallButton("Editar")) act = [this, id = r.id] {
             loadCampaignMap(id);
@@ -4542,6 +4645,18 @@ class MapEditorStage : public Stage {
         break;  // the lists changed under the loop
       }
     }
+    ImGui::Separator();
+    fieldLabel("ENCONTROS ALEATÓRIOS");
+    for (const ember::EncounterRegion& region : locais_.regions) {
+      if (ImGui::CollapsingHeader((region.name + "##region-" + region.id).c_str()))
+        for (const std::string& id : region.encounterIds)
+          if (const auto info = missionInfo(id)) mapRow(id, info->title);
+    }
+    std::set<std::string> assigned = campaignIds();
+    for (const auto& region : locais_.regions) assigned.insert(region.encounterIds.begin(), region.encounterIds.end());
+    fieldLabel("OUTROS MAPAS / SEM ASSOCIAÇÃO");
+    for (const auto& [id, scenario] : saved_)
+      if (!assigned.contains(id)) mapRow(id, scenario.title);
     if (moveLocation) {
       auto& v = locais_.locationOrder;
       const auto it = std::find(v.begin(), v.end(), moveLocation->first);
@@ -4691,6 +4806,7 @@ class MapEditorStage : public Stage {
   std::chrono::steady_clock::time_point lastEdit_{};
   bool dirty_ = false;
   ember::Json previewWeatherBase_;  // full last-applied draft excluding live weather settings
+  ember::Json previewTerrain_;
   ember::Json previewSettings_;  // the draft's settings the open preview was made with (previewSettings)
   // The brush stroke (Terreno / Elevação dragged over the preview): the hexes painted so far, the last one, the hexes raised.
   // Personagens: what a click in Herói / Inimigo places (a named hero's name or "", class), and the palette's search.

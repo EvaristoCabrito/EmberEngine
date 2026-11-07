@@ -117,7 +117,9 @@ class TitleStage : public Stage {
 
   void event(const SDL_Event& e) override {
     if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.key == SDLK_ESCAPE) {
-      if (help_.isOpen() || options_.isOpen()) return;  // they close themselves
+      if (help_.isOpen()) { help_.close(); return; }
+      if (options_.isOpen()) { options_.close(); return; }
+      if (screen_ == Screen::Title) { if (quit_) quit_(); return; }
       if (screen_ == Screen::Missions || screen_ == Screen::Slots) screen_ = Screen::Title;
       else if (screen_ == Screen::Briefing) screen_ = Screen::Missions;
     }

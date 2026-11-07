@@ -6136,7 +6136,9 @@ class MapStage final : public Stage {
     }
     const ImGuiIO& io = ImGui::GetIO();
     const float width = spellMode_ == "arcaneBanquet" ? 460.0f : 320.0f;
-    ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, io.DisplaySize.y - 132.0f - 12.0f}, ImGuiCond_Always, {0.5f, 1.0f});
+    // At the top, under the round's header, never over the action (the user, 2026-11-06: "bem mais acima no topo ou ela vai
+    // esconder toda a ação").
+    ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, 60.0f}, ImGuiCond_Always, {0.5f, 0.0f});
     ImGui::SetNextWindowSize({width, 0.0f});
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {16.0f, 12.0f});
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {8.0f, 6.0f});
@@ -6724,6 +6726,9 @@ class MapStage final : public Stage {
           unitShot_[eui] = {};
           unitWalk_[eui] = Walk{};
           unitPos_[eui] = anchorWorld(eu, {toX, toY});
+          // Its feet on the ground of the hex it enters at, not its spawn's measured ground (unitWorld: a unit that never moved
+          // keeps its spawn's height; Voss entering on the Vau's hill at (21, 8) sank into it, the user, 2026-11-06).
+          unitMoved_[eui] = 1;
           unitEnterAt_[eui] = now_;
           refreshReach();
           logInfo("cutscene {}: step {} enter {} at ({}, {})", c.script.id, c.step, st.actor, toX, toY);

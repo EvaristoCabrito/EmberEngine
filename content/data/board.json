@@ -102,7 +102,7 @@
     "door",
     "snow"
   ],
-  "groundLayerCount": 55,
+  "groundLayerCount": 64,
   "groundLayers": [
     {
       "index": 0,
@@ -562,6 +562,62 @@
       "normal": null,
       "rough": null,
       "reliefGrid": null
+    },
+    {
+      "index": 55,
+      "key": "random-encounter-v01-barricade",
+      "color": "/game/ground-random-encounters-v01/re-tile-earth-06-v01/color.png",
+      "relief": 0
+    },
+    {
+      "index": 56,
+      "key": "random-encounter-v01-column",
+      "color": "/game/ground-random-encounters-v01/re-tile-ruins-04-v01/color.png",
+      "relief": 0
+    },
+    {
+      "index": 57,
+      "key": "random-encounter-v01-highwood",
+      "color": "/game/ground-random-encounters-v01/re-tile-forest-01-v01/color.png",
+      "relief": 0
+    },
+    {
+      "index": 58,
+      "key": "random-encounter-v01-hill",
+      "color": "/game/ground-random-encounters-v01/re-tile-hill-03-v01/color.png",
+      "relief": 0
+    },
+    {
+      "index": 59,
+      "key": "random-encounter-v01-nave",
+      "color": "/game/ground-random-encounters-v01/re-tile-stone-05-v01/color.png",
+      "relief": 0
+    },
+    {
+      "index": 60,
+      "key": "random-encounter-v01-plains",
+      "color": "/game/ground-random-encounters-v01/re-tile-grass-02-v01/color.png",
+      "relief": 0
+    },
+    {
+      "index": 61,
+      "key": "random-encounter-v01-ruins",
+      "color": "/game/ground-random-encounters-v01/re-tile-ruins-04-v01/color.png",
+      "relief": 0
+    },
+    {
+      "index": 62,
+      "key": "random-encounter-v01-snow",
+      "color": "/game/ground-random-encounters-v01/re-tile-snow-08-v01/color.png",
+      "relief": 0,
+      "normal": "/game/ground-random-encounters-v01/re-tile-snow-08-v01/normal.png",
+      "rough": "/game/ground-random-encounters-v01/re-tile-snow-08-v01/rough.png"
+    },
+    {
+      "index": 63,
+      "key": "random-encounter-v01-woods",
+      "color": "/game/ground-random-encounters-v01/re-tile-forest-01-v01/color.png",
+      "relief": 0
     }
   ],
   "groundVariantLayers": [
@@ -883,6 +939,78 @@
       "variant": 19,
       "file": "wisp-photo-moss-v01.jpg",
       "label": "Wisp — Musgo com folhas",
+      "relief": 0
+    },
+    {
+      "key": "random-encounter-v01-barricade",
+      "terrain": "barricade",
+      "variant": 100,
+      "file": "color.png",
+      "label": "R-Encounter exclusivo · barricade",
+      "relief": 0
+    },
+    {
+      "key": "random-encounter-v01-column",
+      "terrain": "column",
+      "variant": 100,
+      "file": "color.png",
+      "label": "R-Encounter exclusivo · column",
+      "relief": 0
+    },
+    {
+      "key": "random-encounter-v01-highwood",
+      "terrain": "highwood",
+      "variant": 100,
+      "file": "color.png",
+      "label": "R-Encounter exclusivo · highwood",
+      "relief": 0
+    },
+    {
+      "key": "random-encounter-v01-hill",
+      "terrain": "hill",
+      "variant": 100,
+      "file": "color.png",
+      "label": "R-Encounter exclusivo · hill",
+      "relief": 0
+    },
+    {
+      "key": "random-encounter-v01-nave",
+      "terrain": "nave",
+      "variant": 100,
+      "file": "color.png",
+      "label": "R-Encounter exclusivo · nave",
+      "relief": 0
+    },
+    {
+      "key": "random-encounter-v01-plains",
+      "terrain": "plains",
+      "variant": 100,
+      "file": "color.png",
+      "label": "R-Encounter exclusivo · plains",
+      "relief": 0
+    },
+    {
+      "key": "random-encounter-v01-ruins",
+      "terrain": "ruins",
+      "variant": 100,
+      "file": "color.png",
+      "label": "R-Encounter exclusivo · ruins",
+      "relief": 0
+    },
+    {
+      "key": "random-encounter-v01-snow",
+      "terrain": "snow",
+      "variant": 100,
+      "file": "color.png",
+      "label": "R-Encounter exclusivo · snow",
+      "relief": 0
+    },
+    {
+      "key": "random-encounter-v01-woods",
+      "terrain": "woods",
+      "variant": 100,
+      "file": "color.png",
+      "label": "R-Encounter exclusivo · woods",
       "relief": 0
     }
   ],

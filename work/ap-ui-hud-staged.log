@@ -1,0 +1,229 @@
+[info] mounted build\sprites\battle.pak (3340 assets)
+[info] mounted build\meshes\props-v42.pak (780 assets)
+[info] mounted build\meshes\architecture.pak (32 assets)
+[info] mounted build\meshes\effects.pak (5 assets)
+[info] mounted build\ground\ground-v77-random-encounters-v01.pak (360 assets)
+[info] GPU: AMD Radeon(TM) RX 6400 (Vulkan 1.4.315, driver 0x800161)
+[info] transfer queue: dedicated (family 2)
+[info] pipeline cache: 101586444 bytes restored for this GPU/driver
+[info] bindless: 65536 textures, 16384 storage images, 256 samplers, 4096 storage buffers
+[info] bindless: creating descriptor set layout
+[info] bindless: descriptor set layout ready
+[info] bindless: creating descriptor pool
+[info] bindless: descriptor pool ready
+[info] bindless: allocating descriptor set
+[info] bindless: descriptor set ready
+[info] bindless: creating pipeline layout
+[info] bindless: ready
+[info] startup: GPU timer ready
+[info] startup: renderer resources begin
+[info] startup: renderer frame buffers ready
+[info] pipeline compute: volumetrics_v1.CSInject creating
+[info] pipeline compute: volumetrics_v1.CSInject ready in 0 ms
+[info] pipeline compute: volumetrics_v1.CSIntegrate creating
+[info] pipeline compute: volumetrics_v1.CSIntegrate ready in 0 ms
+[info] pipeline compute: volumetrics_clouds006.CSMaterial creating
+[info] pipeline compute: volumetrics_clouds006.CSMaterial ready in 0 ms
+[info] pipeline compute: volumetrics_clouds006.CSInject creating
+[info] pipeline compute: volumetrics_clouds006.CSInject ready in 0 ms
+[info] pipeline compute: volumetrics_clouds006.CSIntegrate creating
+[info] pipeline compute: volumetrics_clouds006.CSIntegrate ready in 0 ms
+[info] startup: renderer volumetrics ready
+[info] startup: renderer images and buffers ready
+[info] startup: renderer targets ready
+[info] pipeline graphics: triangle.VSMain + triangle.PSMain creating
+[info] pipeline graphics: triangle.VSMain + triangle.PSMain ready in 0 ms
+[info] pipeline graphics: tonemap.VSMain + tonemap.PSMain creating
+[info] pipeline graphics: tonemap.VSMain + tonemap.PSMain ready in 0 ms
+[info] pipeline graphics: ground.VSMain + ground.PSMain creating
+[info] pipeline graphics: ground.VSMain + ground.PSMain ready in 0 ms
+[info] pipeline graphics: terrain.VSMain + terrain.PSMain creating
+[info] pipeline graphics: terrain.VSMain + terrain.PSMain ready in 1 ms
+[info] pipeline graphics: terrain.VSShadow + terrain.PSShadow creating
+[info] pipeline graphics: terrain.VSShadow + terrain.PSShadow ready in 0 ms
+[info] pipeline graphics: water.VSMain + water.PSMain creating
+[info] pipeline graphics: water.VSMain + water.PSMain ready in 3 ms
+[info] pipeline graphics: sprites.VSMain + sprites.PSMain creating
+[info] pipeline graphics: sprites.VSMain + sprites.PSMain ready in 0 ms
+[info] pipeline graphics: sprites.VSMain + sprites.PSDepth creating
+[info] pipeline graphics: sprites.VSMain + sprites.PSDepth ready in 0 ms
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSDepth creating
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSDepth ready in 0 ms
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSMain creating
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSMain ready in 0 ms
+[info] pipeline graphics: effects.VSMain + effects.PSMain creating
+[info] pipeline graphics: effects.VSMain + effects.PSMain ready in 0 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
+[info] startup: renderer graphics pipelines ready
+[info] pipeline compute: cull.CSInstancesEarly creating
+[info] pipeline compute: cull.CSInstancesEarly ready in 0 ms
+[info] pipeline compute: cull.CSInstancesLate creating
+[info] pipeline compute: cull.CSInstancesLate ready in 0 ms
+[info] pipeline compute: hiz.CSDownsample creating
+[info] pipeline compute: hiz.CSDownsample ready in 0 ms
+[info] pipeline compute: bloom.CSDown creating
+[info] pipeline compute: bloom.CSDown ready in 0 ms
+[info] pipeline compute: bloom.CSUp creating
+[info] pipeline compute: bloom.CSUp ready in 0 ms
+[info] pipeline compute: cull.CSPrepare creating
+[info] pipeline compute: cull.CSPrepare ready in 0 ms
+[info] pipeline compute: cull.CSTraverse creating
+[info] pipeline compute: cull.CSTraverse ready in 0 ms
+[info] pipeline compute: cull.CSPrepareDraw creating
+[info] pipeline compute: cull.CSPrepareDraw ready in 0 ms
+[info] pipeline compute: resolve.CSResolve creating
+[info] pipeline compute: resolve.CSResolve ready in 1 ms
+[info] pipeline compute: resolve.CSSky creating
+[info] pipeline compute: resolve.CSSky ready in 1 ms
+[info] pipeline compute: resolve_panorama.CSResolve creating
+[info] pipeline compute: resolve_panorama.CSResolve ready in 1 ms
+[info] pipeline compute: resolve_panorama.CSSky creating
+[info] pipeline compute: resolve_panorama.CSSky ready in 1 ms
+[info] pipeline compute: lights.CSClusters creating
+[info] pipeline compute: lights.CSClusters ready in 0 ms
+[info] pipeline compute: volume.CSInject creating
+[info] pipeline compute: volume.CSInject ready in 0 ms
+[info] pipeline compute: atmosphere.CSTransmittance creating
+[info] pipeline compute: atmosphere.CSTransmittance ready in 0 ms
+[info] pipeline compute: atmosphere.CSMultiScattering creating
+[info] pipeline compute: atmosphere.CSMultiScattering ready in 0 ms
+[info] pipeline compute: atmosphere.CSSkyView creating
+[info] pipeline compute: atmosphere.CSSkyView ready in 0 ms
+[info] pipeline compute: atmosphere.CSAerial creating
+[info] pipeline compute: atmosphere.CSAerial ready in 0 ms
+[info] pipeline compute: atmosphere.CSAmbient creating
+[info] pipeline compute: atmosphere.CSAmbient ready in 0 ms
+[info] pipeline compute: skyreflect.CSBase creating
+[info] pipeline compute: skyreflect.CSBase ready in 0 ms
+[info] pipeline compute: skyreflect.CSFilter creating
+[info] pipeline compute: skyreflect.CSFilter ready in 0 ms
+[info] pipeline compute: skyreflect.CSCloudShadow creating
+[info] pipeline compute: skyreflect.CSCloudShadow ready in 0 ms
+[info] pipeline compute: cloudsvol.CSNoiseBase creating
+[info] pipeline compute: cloudsvol.CSNoiseBase ready in 0 ms
+[info] pipeline compute: cloudsvol.CSNoiseDetail creating
+[info] pipeline compute: cloudsvol.CSNoiseDetail ready in 0 ms
+[info] pipeline compute: cloudsvol.CSMarch creating
+[info] pipeline compute: cloudsvol.CSMarch ready in 0 ms
+[info] pipeline compute: sunglare.CSGlare creating
+[info] pipeline compute: sunglare.CSGlare ready in 0 ms
+[info] pipeline compute: probes.CSRelight creating
+[info] pipeline compute: probes.CSRelight ready in 0 ms
+[info] pipeline compute: volume.CSIntegrate creating
+[info] pipeline compute: volume.CSIntegrate ready in 0 ms
+[info] pipeline compute: fog_look001.CSMarch creating
+[info] pipeline compute: fog_look001.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look001.CSComposite creating
+[info] pipeline compute: fog_look001.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look002.CSMarch creating
+[info] pipeline compute: fog_look002.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look002.CSComposite creating
+[info] pipeline compute: fog_look002.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look003.CSMarch creating
+[info] pipeline compute: fog_look003.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look003.CSComposite creating
+[info] pipeline compute: fog_look003.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look004.CSMarch creating
+[info] pipeline compute: fog_look004.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look004.CSComposite creating
+[info] pipeline compute: fog_look004.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look005.CSMarch creating
+[info] pipeline compute: fog_look005.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look005.CSComposite creating
+[info] pipeline compute: fog_look005.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look006.CSMarch creating
+[info] pipeline compute: fog_look006.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look006.CSComposite creating
+[info] pipeline compute: fog_look006.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look007.CSMarch creating
+[info] pipeline compute: fog_look007.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look007.CSComposite creating
+[info] pipeline compute: fog_look007.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look008.CSMarch creating
+[info] pipeline compute: fog_look008.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look008.CSComposite creating
+[info] pipeline compute: fog_look008.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look009.CSMarch creating
+[info] pipeline compute: fog_look009.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look009.CSComposite creating
+[info] pipeline compute: fog_look009.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look011.CSMarch creating
+[info] pipeline compute: fog_look011.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look011.CSComposite creating
+[info] pipeline compute: fog_look011.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look010.CSMarch creating
+[info] pipeline compute: fog_look010.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look010.CSComposite creating
+[info] pipeline compute: fog_look010.CSComposite ready in 0 ms
+[info] startup: renderer compute pipelines ready
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSMain creating
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSMain ready in 0 ms
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSShadow creating
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSShadow ready in 0 ms
+[info] pipeline graphics: sprites.VSShadow + sprites.PSShadow creating
+[info] pipeline graphics: sprites.VSShadow + sprites.PSShadow ready in 0 ms
+[info] startup: renderer ready
+[info] map aldeia 'Aldeia Queimada': 30x25 hexes, smooth 248372 triangles, hard 18234 triangles, 6 baked layers, 25 textures, 15.0 MB geometry
+[info] volumetrics: 7 profiles from content/atmosphere/v1/profiles.json
+[info] world clock: this map has no campaign clock: it starts at 19:30:00 and runs from there
+[info] board heights: lowest ground 0.00, highest 2.00 (the floor image lies under the lowest)
+[info] scene aldeia: 68 cards, 12 models, 14 units, 0 architecture pieces (0 built)
+[info] poses: 14 of 14 map units in the catalog, 16 poses between them
+[info] progression: 7 heroes; enemies keep their class's own gains
+[info] enemy ranks: 10 ranks, 26 classes ranked (others F)
+[info] battle: 16 cells made solid under EmberEngine props
+[info] battle aldeia: 14 of 14 units in play
+[info] panoramas aldeia: 3 (the newest opens: aldeia-paisagem-v01.png)
+[info] pipeline compute: cloud_legacy004.CSMarch creating
+[info] pipeline compute: cloud_legacy004.CSMarch ready in 0 ms
+[info] pipeline compute: cloud_legacy004_sky.CSCloudShadow creating
+[info] pipeline compute: cloud_legacy004_sky.CSCloudShadow ready in 0 ms
+[info] pipeline compute: cloud_legacy004_sky.CSBase creating
+[info] pipeline compute: cloud_legacy004_sky.CSBase ready in 0 ms
+[info] sprites: roster lists 1113 clips
+[info] sprites: Personagens Alta: the cast 555 MB at full resolution, the others 131 MB (GPU 2699 MB free before the fight)
+[info] sprites: full-clip pool 9 x 144 MB (largest clip 144.5 MB)
+[info] sprites: full-clip pool set up in 204.9 ms
+[info] sprites: the fight's 57 clips on the GPU 2.48 s after they were asked for
+[info] sprites:   voss-veo-leve-passo 131 MB (full 131 MB)
+[info] sprites:   neera/neera-v2-001 110 MB (full 110 MB)
+[info] sprites:   BasePikeman 87 MB (full 87 MB)
+[info] sprites:   militia-v2 74 MB (full 74 MB)
+[info] sprites:   BaseCrossbowman 66 MB (full 66 MB)
+[info] sprites:   theButcher 60 MB (full 60 MB)
+[info] sprites:   cultist-v2 41 MB (full 41 MB)
+[info] sprites:   Kael_Final/kael-final-002 33 MB (full 33 MB)
+[info] sprites:   wardog2 30 MB (full 30 MB)
+[info] sprites:   cultist-v2-ember 25 MB (full 25 MB)
+[info] sprites:   neera-hydra 17 MB (full 17 MB)
+[info] sprites:   neera 8 MB (full 8 MB)
+[info] sprites:   voss-final 0 MB (full 0 MB)
+[info] sprites: GPU memory 2043 MB allocated by the game, 2087 MB used, budget 3227 MB, heap 3824 MB
+[info] meshes: textures 4 of 4 at the size the camera needs, 4 at full size (1 MB on the GPU, 1131 MB free)
+[info] camera: meter 2.896 lux, EV 0.21, darkening 2.00 stops, exposure 0.17988, key 5.13 lux at elevation 21.4 deg
+[info] sky: hour 19.50, moon full (default) (disc texture 63, radius 2.70 deg, glow 5.56) at elevation 21.4 deg, azimuth -121.9 deg (the camera looks at azimuth 150.0, elevation -20.0), off screen
+[info] battle script: stage Kael -> Piqueiro: strike staged, waiting for Confirmar
+[info] battle script: PASS (1 steps)
+[info] captured 1600x900 -> work\ap-ui-hud-staged.png
+[info] capture GPU frame: 27.5354 ms
+[info] capture GPU light clusters: 0.0109 ms
+[info] capture GPU atmosphere: 1.1131 ms
+[info] capture GPU clouds: 0.0308 ms
+[info] capture GPU cloud shadow: 0.1192 ms
+[info] capture GPU sky reflect: 3.0697 ms
+[info] capture GPU card shadow: 0.0680 ms
+[info] capture GPU volumetrics: 0.3306 ms
+[info] capture GPU fog injection: 0.3085 ms
+[info] capture GPU fog integration: 0.0210 ms
+[info] capture GPU sky: 0.7729 ms
+[info] capture GPU scene: 20.8866 ms
+[info] capture GPU terrain: 19.9652 ms
+[info] capture GPU bloom: 0.3272 ms
+[info] capture GPU tonemap: 0.1586 ms
+[info] capture GPU ui: 0.1666 ms
+[info] pipeline cache: 101586444 bytes saved

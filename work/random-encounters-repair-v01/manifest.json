@@ -1,0 +1,803 @@
+{
+  "root": "C:\\EmberEngineBOSTA",
+  "shared_hashes": {
+    "content/data/board.json": "237be4b623df1abea590f1c56a4fa68d2eccf2a5ff53fe56298a7e882b9428a1",
+    "content/data/editor-catalog.json": "fb13ffa9a0406b56ab28ef31d088e9b45874f92846deccef1aae56e25a06b888",
+    "content/data/backdrop-fit.json": "f37beca16868923b961f484564655ea15526604c73c0bd4c964cd5b13bbfcb46",
+    "content/maps/active.json": "6f91ced7e3a4b647ad95a48a3b5012012a28e693072d63433ba3862211e2f9bf",
+    "JOGAR.bat": "886d6b51ac327879fc6fb4781706eabf71312532c0042fc14f2760ef996dbec5"
+  },
+  "copies": [
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-tile-forest-01-v01.png",
+      "dest": "content/assets/game/ground-random-encounters-v01/re-tile-forest-01-v01/color.png",
+      "sha256": "a31a88969f7beaa753e583cfacf3fe57196bc98ac0b8db8c89e4f05da3f2c3b8"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-tile-grass-02-v01.png",
+      "dest": "content/assets/game/ground-random-encounters-v01/re-tile-grass-02-v01/color.png",
+      "sha256": "2d32be4177defeae776c6a6754dd87218e16076395a013c39f05cd5f98c59933"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-tile-hill-03-v01.png",
+      "dest": "content/assets/game/ground-random-encounters-v01/re-tile-hill-03-v01/color.png",
+      "sha256": "c33c8603a4cbe97c9522e4e1cb9a40e6da3746b52bd4890804fe5d5cc847504a"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-tile-ruins-04-v01.png",
+      "dest": "content/assets/game/ground-random-encounters-v01/re-tile-ruins-04-v01/color.png",
+      "sha256": "61a644fdd443a9f80c14ab63746e555b29b2126dc3758cfab4716be442582876"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-tile-stone-05-v01.png",
+      "dest": "content/assets/game/ground-random-encounters-v01/re-tile-stone-05-v01/color.png",
+      "sha256": "612f4d6f8db893510fa8218ce1134066384c5ad4bef9f689c49b9d66635570d6"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-tile-earth-06-v01.png",
+      "dest": "content/assets/game/ground-random-encounters-v01/re-tile-earth-06-v01/color.png",
+      "sha256": "b59226cfebb8aace5ae390e29329f13fd99443495937443c29ece2dab09766d0"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-tile-rock-07-v01.jpg",
+      "dest": "content/assets/game/ground-random-encounters-v01/re-tile-rock-07-v01/color.jpg",
+      "sha256": "c7169827afa47148833a3d778bd2827f12b124852efcabf3364910b1cb6d4beb"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-tile-snow-08-v01.png",
+      "dest": "content/assets/game/ground-random-encounters-v01/re-tile-snow-08-v01/color.png",
+      "sha256": "9abe413e1740fa91564ce8111eb9cf11ae52b8de2914b884dda39c162e598289"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-panorama-09-v01.png",
+      "dest": "content/backdrops/re-panorama-09-v01.png",
+      "sha256": "3c87a27dc27feded583a918cb5960d345fc2fe271dd42cf2d066528145983b93"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-ground-10-v01.png",
+      "dest": "content/backdrops/re-ground-10-v01.png",
+      "sha256": "c3a2a4667a48cd3d54323945e1177d68b6b06cb5165817b25c3a26becb6eb574"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-panorama-11-v01.jpg",
+      "dest": "content/backdrops/re-panorama-11-v01.jpg",
+      "sha256": "869b7f99f80efd493a98fdfb9e1e748f456d4233f91aa8dece08fb87a7e917dd"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-ground-12-v01.png",
+      "dest": "content/backdrops/re-ground-12-v01.png",
+      "sha256": "9abe413e1740fa91564ce8111eb9cf11ae52b8de2914b884dda39c162e598289"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-panorama-13-v01.png",
+      "dest": "content/backdrops/re-panorama-13-v01.png",
+      "sha256": "45d40b15fe7c948c93093ffa3b68cdafd29c3cf222f0d24213bacce81f8ab7e8"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-panorama-14-v01.png",
+      "dest": "content/backdrops/re-panorama-14-v01.png",
+      "sha256": "77e1fcbbbca85671ee6c76500569e7f80fba194a866383ab8a8872a12a03313a"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-ground-15-v01.jpg",
+      "dest": "content/backdrops/re-ground-15-v01.jpg",
+      "sha256": "62cd95292485bafc5e56d1874a7016fd55d8027457736e0dd491e09bd0361dbe"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-panorama-16-v01.png",
+      "dest": "content/backdrops/re-panorama-16-v01.png",
+      "sha256": "95a9e5da1569ebe9f91baf9a537291b1f3c749ed1367e931401222c21041f576"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-ground-17-v01.jpg",
+      "dest": "content/backdrops/re-ground-17-v01.jpg",
+      "sha256": "c7169827afa47148833a3d778bd2827f12b124852efcabf3364910b1cb6d4beb"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-panorama-18-v01.png",
+      "dest": "content/backdrops/re-panorama-18-v01.png",
+      "sha256": "a337ff5a73653cf64c1bd9b64fddc7a6212d4fa3e1d289ecbcc04ed75ee8e78e"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-ground-19-v01.png",
+      "dest": "content/backdrops/re-ground-19-v01.png",
+      "sha256": "6986deac507511ea63a83f00560b82256cd380337ce65beb7061c074b4871e92"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-panorama-20-v01.jpg",
+      "dest": "content/backdrops/re-panorama-20-v01.jpg",
+      "sha256": "6211bfe3907918ee36cf70d6a3e11f5dcbd074931d84ac8184d1d7af75147a06"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-panorama-21-v01.jpg",
+      "dest": "content/backdrops/re-panorama-21-v01.jpg",
+      "sha256": "6e08f0a3ae6f6b0a024e0a455d8e2919269b25c8859e3a716ec1c5762097634c"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-panorama-22-v01.png",
+      "dest": "content/backdrops/re-panorama-22-v01.png",
+      "sha256": "16f19ba406b61de7d83271af226d30ecf8d9b84d8ab23b31c55dc099cb4f6c6c"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-ground-23-v01.jpg",
+      "dest": "content/backdrops/re-ground-23-v01.jpg",
+      "sha256": "d3b44c73748b45a98721e20385d86b4c0ebcbd1126bb4df71e66511ded482eff"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-panorama-24-v01.jpg",
+      "dest": "content/backdrops/re-panorama-24-v01.jpg",
+      "sha256": "8ba72bd790dc9db00867b89b81694e304fc2c20d3f7648bfc03f54e56f4c405d"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-propostas-v02\\propostas\\re-panorama-25-v01.png",
+      "dest": "content/backdrops/re-panorama-25-v01.png",
+      "sha256": "93804f5e8b735d160a71f40aad8c33630cf01bd72e115ff6f4d91041106bb497"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-auditoria-v01\\sources\\snow_02\\nor_gl.png",
+      "dest": "content/assets/game/ground-random-encounters-v01/re-tile-snow-08-v01/normal.png",
+      "sha256": "719e5acd81ee61cf19506a8e0069ea297ed00d2eb71a40101c4002cf35ac2e19"
+    },
+    {
+      "source": "C:\\Users\\evari\\Documents\\Codex\\2026-11-06\\eu-x20\\outputs\\encontros-auditoria-v01\\sources\\snow_02\\Rough.png",
+      "dest": "content/assets/game/ground-random-encounters-v01/re-tile-snow-08-v01/rough.png",
+      "sha256": "0dcb2775b1220cee03dae5b92b57cc3e55bcece6a7e9fa0ac7a22b56dbbb6863"
+    }
+  ],
+  "maps": [
+    {
+      "id": "random-amanita-glade",
+      "old": "content/maps/ember/random-amanita-glade005.json",
+      "new": "content/maps/ember/random-amanita-glade006.json",
+      "old_sha256": "705eb1305cae01df9942d8c404c0fedf0a9bf96b7d9e7d31ab3a5ed8ab764224",
+      "serial": 6,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-backward-hunt",
+      "old": "content/maps/ember/random-backward-hunt003.json",
+      "new": "content/maps/ember/random-backward-hunt004.json",
+      "old_sha256": "7edfbbf2d574d38cb2eb8eaf6dff6fc7291d718bfa863deeb4b257d71c5957be",
+      "serial": 4,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-bell-beneath-ice",
+      "old": "content/maps/ember/random-bell-beneath-ice003.json",
+      "new": "content/maps/ember/random-bell-beneath-ice004.json",
+      "old_sha256": "405912fd2472eaf7b22d404d722b6eb5390ba884aa3ea5f30154867c6b5a3034",
+      "serial": 4,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-blightwood-verge",
+      "old": "content/maps/ember/random-blightwood-verge003.json",
+      "new": "content/maps/ember/random-blightwood-verge004.json",
+      "old_sha256": "2be68c1296ecbbe8ffb5c9507b612ce35c62feab88fcbef06c8c3721003864de",
+      "serial": 4,
+      "panorama": "re-panorama-13-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-broken-antler-grove",
+      "old": "content/maps/ember/random-broken-antler-grove004.json",
+      "new": "content/maps/ember/random-broken-antler-grove005.json",
+      "old_sha256": "0105f5af63cc1c9a31d166494baca664268217464e6843f479ee34563caa4835",
+      "serial": 5,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-cairnkeepers-rise",
+      "old": "content/maps/ember/random-cairnkeepers-rise003.json",
+      "new": "content/maps/ember/random-cairnkeepers-rise004.json",
+      "old_sha256": "4fde522fc86c18720fcab4ad067952ff73bbe7c114609af36f2d9401b91248e3",
+      "serial": 4,
+      "panorama": "re-panorama-14-v01.png",
+      "ground": "re-ground-15-v01.jpg"
+    },
+    {
+      "id": "random-caravan-green-road",
+      "old": "content/maps/ember/random-caravan-green-road005.json",
+      "new": "content/maps/ember/random-caravan-green-road006.json",
+      "old_sha256": "cc604ee3dbe01b3967a4bde4ec3fd11f8822e422451c574842ebace2d84fc478",
+      "serial": 6,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-coldwind-saddle",
+      "old": "content/maps/ember/random-coldwind-saddle004.json",
+      "new": "content/maps/ember/random-coldwind-saddle005.json",
+      "old_sha256": "57492e61d7c227e15ad26fbd75c70614cd43a97c176c0e5d50d32fc9c5ede489",
+      "serial": 5,
+      "panorama": "re-panorama-14-v01.png",
+      "ground": "re-ground-15-v01.jpg"
+    },
+    {
+      "id": "random-crystal-ossuary",
+      "old": "content/maps/ember/random-crystal-ossuary002.json",
+      "new": "content/maps/ember/random-crystal-ossuary003.json",
+      "old_sha256": "3d33c40eeddbb3dac895f071f71e77b020c8f769db78b974bd11b37b70a1f0a7",
+      "serial": 3,
+      "panorama": "re-panorama-16-v01.png",
+      "ground": "re-ground-17-v01.jpg"
+    },
+    {
+      "id": "random-encounter-1",
+      "old": "content/maps/ember/random-encounter-1005.json",
+      "new": "content/maps/ember/random-encounter-1006.json",
+      "old_sha256": "81b439ec38eda5462360cf899c27c96d50a78af2c9f5c1ceb652a43c503532df",
+      "serial": 6,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-encounter-10",
+      "old": "content/maps/ember/random-encounter-10004.json",
+      "new": "content/maps/ember/random-encounter-10005.json",
+      "old_sha256": "7eafa1c47271f107b0b8d61ed4fba7bb7a404ad965bb1b1864571ae769e6981d",
+      "serial": 5,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-encounter-11",
+      "old": "content/maps/ember/random-encounter-11005.json",
+      "new": "content/maps/ember/random-encounter-11006.json",
+      "old_sha256": "5b47cfda2fec812eea1d3e7da45af8d6c1fdb1769bd6d14dec8d7835dc90e027",
+      "serial": 6,
+      "panorama": "re-panorama-20-v01.jpg",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-encounter-12",
+      "old": "content/maps/ember/random-encounter-12003.json",
+      "new": "content/maps/ember/random-encounter-12004.json",
+      "old_sha256": "a45548813bc6cf4d1729e48c141b8c94b538fb1b757936448d3d68c9cbd3c408",
+      "serial": 4,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-encounter-13",
+      "old": "content/maps/ember/random-encounter-13004.json",
+      "new": "content/maps/ember/random-encounter-13005.json",
+      "old_sha256": "a532a3d461bc684f722b24fe3ea2e75c744be567d8e8cc25e2a0e6b1cd2ef6bc",
+      "serial": 5,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-encounter-14",
+      "old": "content/maps/ember/random-encounter-14001.json",
+      "new": "content/maps/ember/random-encounter-14002.json",
+      "old_sha256": "9c4112a7d23da09ac61a820a2faddad78568066fcab435fa1a3f8f694cbaf03b",
+      "serial": 2,
+      "panorama": "re-panorama-21-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-encounter-2",
+      "old": "content/maps/ember/random-encounter-2005.json",
+      "new": "content/maps/ember/random-encounter-2006.json",
+      "old_sha256": "c0fe177053bae75e8866558da409bf468d69cb8db94e55ab22fd293f3a2fc526",
+      "serial": 6,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-encounter-3",
+      "old": "content/maps/ember/random-encounter-3-001.json",
+      "new": "content/maps/ember/random-encounter-3006.json",
+      "old_sha256": "23074ab111800af6f182b95c7bf9466279f51a5e10be5b8733b8e376489408db",
+      "serial": 6,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-encounter-4",
+      "old": "content/maps/ember/random-encounter-4-001.json",
+      "new": "content/maps/ember/random-encounter-4003.json",
+      "old_sha256": "0108f256ed7ef9121e0c229ab5e84f19997a4cf6225d79e12085fbd3fb308a92",
+      "serial": 3,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-encounter-5",
+      "old": "content/maps/ember/random-encounter-5004.json",
+      "new": "content/maps/ember/random-encounter-5005.json",
+      "old_sha256": "5c45f22ced300af31772443c36654e2f8e52714ced8695dcdfa9471d5cec69d4",
+      "serial": 5,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-encounter-6",
+      "old": "content/maps/ember/random-encounter-6003.json",
+      "new": "content/maps/ember/random-encounter-6004.json",
+      "old_sha256": "e81fd4f91a74462ba0d42c3f9d337b4969b63d959dbcbb3624eadb5ea7008009",
+      "serial": 4,
+      "panorama": "re-panorama-22-v01.png",
+      "ground": "re-ground-23-v01.jpg"
+    },
+    {
+      "id": "random-encounter-7",
+      "old": "content/maps/ember/random-encounter-7002.json",
+      "new": "content/maps/ember/random-encounter-7003.json",
+      "old_sha256": "273a0e11d662aa9b961a3f9745bd9b54b862f28c7dc9d5c30c54d6e502181ca1",
+      "serial": 3,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-encounter-8",
+      "old": "content/maps/ember/random-encounter-8002.json",
+      "new": "content/maps/ember/random-encounter-8003.json",
+      "old_sha256": "4d3acfb770fdc28ad2d1d8cfd26929f67e702b24805a043170c42f15c9359c19",
+      "serial": 3,
+      "panorama": "re-panorama-24-v01.jpg",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-encounter-9",
+      "old": "content/maps/ember/random-encounter-9004.json",
+      "new": "content/maps/ember/random-encounter-9005.json",
+      "old_sha256": "856d9c8e9a02099d1f76634f0a2ac491738fdfc3e45a26cfa1e8b7866e88d9d7",
+      "serial": 5,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-forest011-cedar-glade",
+      "old": "content/maps/ember/random-forest011-cedar-glade004.json",
+      "new": "content/maps/ember/random-forest011-cedar-glade005.json",
+      "old_sha256": "efb86356b93bcd175107012d536f264b4e87029bb1971051edeb195e917b8d58",
+      "serial": 5,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-forest011-hemlock-trail",
+      "old": "content/maps/ember/random-forest011-hemlock-trail005.json",
+      "new": "content/maps/ember/random-forest011-hemlock-trail006.json",
+      "old_sha256": "9951cab93541a46826ae2e771efc9adef81dd1fbb85699f2ea6ca5a084058401",
+      "serial": 6,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-forest011-hollow-grove",
+      "old": "content/maps/ember/random-forest011-hollow-grove004.json",
+      "new": "content/maps/ember/random-forest011-hollow-grove005.json",
+      "old_sha256": "7ca3dc0745cc75a3132458f85c201a3232722bb8ce4c9617ef2fe242312cdc74",
+      "serial": 5,
+      "panorama": "re-panorama-13-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-forest011-needle-crossing",
+      "old": "content/maps/ember/random-forest011-needle-crossing005.json",
+      "new": "content/maps/ember/random-forest011-needle-crossing006.json",
+      "old_sha256": "7a2f52eb50c523a9eca42d53ac160ceafe35a797cf7ab37a59609bb4162d0821",
+      "serial": 6,
+      "panorama": "re-panorama-13-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-frostbound-sanctuary",
+      "old": "content/maps/ember/random-frostbound-sanctuary002.json",
+      "new": "content/maps/ember/random-frostbound-sanctuary003.json",
+      "old_sha256": "d490ecfbd29f997021cf5fb0e0920f3b44896286cedde59ce37c67c2f3310ba6",
+      "serial": 3,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-greycairn-plateau",
+      "old": "content/maps/ember/random-greycairn-plateau002.json",
+      "new": "content/maps/ember/random-greycairn-plateau003.json",
+      "old_sha256": "87bc8233cd6f687e0d835dc3c607560d0ec9c40b072912bccf74649cb158adaa",
+      "serial": 3,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-hollow-pine-basin",
+      "old": "content/maps/ember/random-hollow-pine-basin001.json",
+      "new": "content/maps/ember/random-hollow-pine-basin002.json",
+      "old_sha256": "1b4cbe600d96923551ad830afdf2a6646068c9ce02b12708f1fa6707f8c4d5d2",
+      "serial": 2,
+      "panorama": "re-panorama-14-v01.png",
+      "ground": "re-ground-15-v01.jpg"
+    },
+    {
+      "id": "random-hollow-root-den",
+      "old": "content/maps/ember/random-hollow-root-den006.json",
+      "new": "content/maps/ember/random-hollow-root-den007.json",
+      "old_sha256": "cf8eda271a6098c333814c0fbe59e155e91ab089c12ef8dda0db2cc4ce0eae73",
+      "serial": 7,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-icelands-blue-antlers",
+      "old": "content/maps/ember/random-icelands-blue-antlers002.json",
+      "new": "content/maps/ember/random-icelands-blue-antlers003.json",
+      "old_sha256": "ef9e03855387632de9b1591fc973736b3d73777ec3ca41195a2263aaa4012171",
+      "serial": 3,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-icelands-i1",
+      "old": "content/maps/ember/random-icelands-i1003.json",
+      "new": "content/maps/ember/random-icelands-i1004.json",
+      "old_sha256": "c94ee2512ed2c3b6068e01bf07d4ad242cb05e27806b795b15e1cd5ad8da3882",
+      "serial": 4,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-icelands-i10",
+      "old": "content/maps/ember/random-icelands-i10004.json",
+      "new": "content/maps/ember/random-icelands-i10005.json",
+      "old_sha256": "50e1d7e48a25e83bf50a705ba967f1ce1120782a27e947c6089664aa928fac12",
+      "serial": 5,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-icelands-i11",
+      "old": "content/maps/ember/random-icelands-i11003.json",
+      "new": "content/maps/ember/random-icelands-i11004.json",
+      "old_sha256": "fb4bfd5847bf6dcbe99b869e3b4c2bacfcdc231090e49efec87580b652df3e30",
+      "serial": 4,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-icelands-i12",
+      "old": "content/maps/ember/random-icelands-i12004.json",
+      "new": "content/maps/ember/random-icelands-i12005.json",
+      "old_sha256": "d193b0c3ef50b5cd459a6edf7de38532e84a1928841834f918ca0d497ae882dd",
+      "serial": 5,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-icelands-i13",
+      "old": "content/maps/ember/random-icelands-i13003.json",
+      "new": "content/maps/ember/random-icelands-i13004.json",
+      "old_sha256": "453fd37a37ef7200e8fa2cd098b942e508e692f4f1cfba7641e4fde94a227339",
+      "serial": 4,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-icelands-i14",
+      "old": "content/maps/ember/random-icelands-i14004.json",
+      "new": "content/maps/ember/random-icelands-i14005.json",
+      "old_sha256": "e1614c9bb5e65dbb40a949c6bab59b30b453397a0b8607c92ad86a04f21fcb1e",
+      "serial": 5,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-icelands-i2",
+      "old": "content/maps/ember/random-icelands-i2004.json",
+      "new": "content/maps/ember/random-icelands-i2005.json",
+      "old_sha256": "292f2475b9612d34c2943c62237f1730e560bbf2e61a4deecd8c8da3b7ccba90",
+      "serial": 5,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-icelands-i3",
+      "old": "content/maps/ember/random-icelands-i3003.json",
+      "new": "content/maps/ember/random-icelands-i3004.json",
+      "old_sha256": "066b661a5f8196a0019a33a0789120f0a1f2f9dfebe0c3ba5e86079673dd6138",
+      "serial": 4,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-icelands-i4",
+      "old": "content/maps/ember/random-icelands-i4004.json",
+      "new": "content/maps/ember/random-icelands-i4005.json",
+      "old_sha256": "3978153c6448e0834b0dfba86d0648ceefb1f31aba1328c75df85393f2cf7fad",
+      "serial": 5,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-icelands-i5",
+      "old": "content/maps/ember/random-icelands-i5003.json",
+      "new": "content/maps/ember/random-icelands-i5004.json",
+      "old_sha256": "94ef59e0af98b99ef49c5fd8c89124b524af9b7f6552c455819cf12bc4bed899",
+      "serial": 4,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-icelands-i6",
+      "old": "content/maps/ember/random-icelands-i6004.json",
+      "new": "content/maps/ember/random-icelands-i6005.json",
+      "old_sha256": "1019822486ea22cb1baa6f35611e91a3a290e7f1d07b61a299ca7aa6cb77504c",
+      "serial": 5,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-icelands-i7",
+      "old": "content/maps/ember/random-icelands-i7003.json",
+      "new": "content/maps/ember/random-icelands-i7004.json",
+      "old_sha256": "9a19c1f40e1e044ff59aa8773e7251310b214eeff070e53a482c1292957d67b1",
+      "serial": 4,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-icelands-i8",
+      "old": "content/maps/ember/random-icelands-i8004.json",
+      "new": "content/maps/ember/random-icelands-i8005.json",
+      "old_sha256": "842d9eb92393be90cca610f9080d0c04c936af194e3e974c9a99370610c825f6",
+      "serial": 5,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-icelands-i9",
+      "old": "content/maps/ember/random-icelands-i9003.json",
+      "new": "content/maps/ember/random-icelands-i9004.json",
+      "old_sha256": "edf14ca7046194bffc9aa09dcea08b952d378f80156ed79a761ae1465bc65993",
+      "serial": 4,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-icelands-last-beacon",
+      "old": "content/maps/ember/random-icelands-last-beacon003.json",
+      "new": "content/maps/ember/random-icelands-last-beacon004.json",
+      "old_sha256": "9159a3736a10cfc513e92f89cd2ebea3a5f6895734c3b1dce0fe6eea7c0c8334",
+      "serial": 4,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-mora-hollow-stream",
+      "old": "content/maps/ember/random-mora-hollow-stream005.json",
+      "new": "content/maps/ember/random-mora-hollow-stream006.json",
+      "old_sha256": "13de5043311d53fecfad6d4a149c18f6800dbd335964c4b48100416a169ffba1",
+      "serial": 6,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-mora-rootwatch",
+      "old": "content/maps/ember/random-mora-rootwatch003.json",
+      "new": "content/maps/ember/random-mora-rootwatch004.json",
+      "old_sha256": "ab5622a346f60bb9f9a3b5cd0c4f3b6efa98441d2eabec8792b72d2eacc02c33",
+      "serial": 4,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-photographic-grassland",
+      "old": "content/maps/ember/random-photographic-grassland004.json",
+      "new": "content/maps/ember/random-photographic-grassland005.json",
+      "old_sha256": "c4feddeec47a1f886ef820607c349b0d0af6de9964baa55f938dfbb380a3ca9f",
+      "serial": 5,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-photographic-meadow",
+      "old": "content/maps/ember/random-photographic-meadow003.json",
+      "new": "content/maps/ember/random-photographic-meadow004.json",
+      "old_sha256": "31d8af03adae2596216aab5cce9d651d8a172f4837a1cd3aa0f098f90b904c6c",
+      "serial": 4,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-photographic-prairie",
+      "old": "content/maps/ember/random-photographic-prairie004.json",
+      "new": "content/maps/ember/random-photographic-prairie005.json",
+      "old_sha256": "a2b17cf9b7f8fd4e710951ac40c10fbf9f4442cee84e983f10dc4582ab5b8733",
+      "serial": 5,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-plains-broken-caravan",
+      "old": "content/maps/ember/random-plains-broken-caravan004.json",
+      "new": "content/maps/ember/random-plains-broken-caravan005.json",
+      "old_sha256": "662b1d3ab2b0a201f144ab49e84c77e1f6727b84147aec2934af81d7b306db06",
+      "serial": 5,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-plains-hill-patrol",
+      "old": "content/maps/ember/random-plains-hill-patrol004.json",
+      "new": "content/maps/ember/random-plains-hill-patrol005.json",
+      "old_sha256": "e4212eaf762c40480c4e362657e539112ce9d025e67ccc5b5b7cebe1c7ab109e",
+      "serial": 5,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-plains-old-stones",
+      "old": "content/maps/ember/random-plains-old-stones003.json",
+      "new": "content/maps/ember/random-plains-old-stones004.json",
+      "old_sha256": "804ac18c024e6080b42d944ee6b672b4b14f67b389ef942e58ad63f9a900ea9f",
+      "serial": 4,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-plains-silent-harvest",
+      "old": "content/maps/ember/random-plains-silent-harvest003.json",
+      "new": "content/maps/ember/random-plains-silent-harvest004.json",
+      "old_sha256": "602f747b5ab6051fba5e74ca3f9d6741ca621a46771ac6ef4264200140e138cc",
+      "serial": 4,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-plains-sunken-ford",
+      "old": "content/maps/ember/random-plains-sunken-ford004.json",
+      "new": "content/maps/ember/random-plains-sunken-ford005.json",
+      "old_sha256": "74aceafa8ac6d32720cacbd514b409ba5438b54e21b510055a8a8ceb470b311d",
+      "serial": 5,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-plains-windgrass",
+      "old": "content/maps/ember/random-plains-windgrass003.json",
+      "new": "content/maps/ember/random-plains-windgrass004.json",
+      "old_sha256": "a2a48cfc13b3f199eacff470a9ab6f551b8949a008aa0a88a69530e40d636c7d",
+      "serial": 4,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-rimewater-shrine",
+      "old": "content/maps/ember/random-rimewater-shrine002.json",
+      "new": "content/maps/ember/random-rimewater-shrine003.json",
+      "old_sha256": "3cd5f292ff603f3daaf5e03188bb903e20cc594aaf1e2379a98db4a60feeb0b9",
+      "serial": 3,
+      "panorama": "re-panorama-14-v01.png",
+      "ground": "re-ground-15-v01.jpg"
+    },
+    {
+      "id": "random-river-rope-ambush",
+      "old": "content/maps/ember/random-river-rope-ambush006.json",
+      "new": "content/maps/ember/random-river-rope-ambush007.json",
+      "old_sha256": "5c928853cb2c1a17db59ab5589c2335a9868c54bedcfda4667b2b872742bc63b",
+      "serial": 7,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-road-broken-milepost",
+      "old": "content/maps/ember/random-road-broken-milepost004.json",
+      "new": "content/maps/ember/random-road-broken-milepost005.json",
+      "old_sha256": "d00558e5d84ca714d3fe6a728a751e19836eeef43c28052a29ec4c60ec412421",
+      "serial": 5,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-road-three-routes-market",
+      "old": "content/maps/ember/random-road-three-routes-market004.json",
+      "new": "content/maps/ember/random-road-three-routes-market005.json",
+      "old_sha256": "9d5b1269016b0db9aaafb2d7fd6dc177446e3a29cf2645a05fcd484fd88bafd1",
+      "serial": 5,
+      "panorama": "re-panorama-20-v01.jpg",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-small-toll-collector",
+      "old": "content/maps/ember/random-small-toll-collector005.json",
+      "new": "content/maps/ember/random-small-toll-collector006.json",
+      "old_sha256": "cef44390575fb77039690d23118c957131fd622df07b3e4ae57a077259225003",
+      "serial": 6,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-splintered-trunk-pass",
+      "old": "content/maps/ember/random-splintered-trunk-pass003.json",
+      "new": "content/maps/ember/random-splintered-trunk-pass004.json",
+      "old_sha256": "e853be38ae1b7199b59f721fe38d527cea2a082744397b2c18571a094c388389",
+      "serial": 4,
+      "panorama": "re-panorama-14-v01.png",
+      "ground": "re-ground-15-v01.jpg"
+    },
+    {
+      "id": "random-stoneshelf-pass",
+      "old": "content/maps/ember/random-stoneshelf-pass004.json",
+      "new": "content/maps/ember/random-stoneshelf-pass005.json",
+      "old_sha256": "154a806d9220ff9a2fadc5d89ddc88d6cd394015518647d33945fd3467195c6e",
+      "serial": 5,
+      "panorama": "re-panorama-25-v01.png",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-walking-campfire",
+      "old": "content/maps/ember/random-walking-campfire004.json",
+      "new": "content/maps/ember/random-walking-campfire005.json",
+      "old_sha256": "f967839b223ed65c820191c3557b351467724109b21772559b93fccc5db7631c",
+      "serial": 5,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-whispering-reeds",
+      "old": "content/maps/ember/random-whispering-reeds005.json",
+      "new": "content/maps/ember/random-whispering-reeds006.json",
+      "old_sha256": "6da1ad053205275369d904a3a381624dffa696171df6194f8738615d47978db3",
+      "serial": 6,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    }
+  ],
+  "variants": {
+    "barricade": [
+      "re-tile-earth-06-v01",
+      100
+    ],
+    "column": [
+      "re-tile-ruins-04-v01",
+      100
+    ],
+    "highwood": [
+      "re-tile-forest-01-v01",
+      100
+    ],
+    "hill": [
+      "re-tile-hill-03-v01",
+      100
+    ],
+    "nave": [
+      "re-tile-stone-05-v01",
+      100
+    ],
+    "plains": [
+      "re-tile-grass-02-v01",
+      100
+    ],
+    "ruins": [
+      "re-tile-ruins-04-v01",
+      100
+    ],
+    "snow": [
+      "re-tile-snow-08-v01",
+      100
+    ],
+    "woods": [
+      "re-tile-forest-01-v01",
+      100
+    ]
+  },
+  "layer_keys": [
+    "random-encounter-v01-barricade",
+    "random-encounter-v01-column",
+    "random-encounter-v01-highwood",
+    "random-encounter-v01-hill",
+    "random-encounter-v01-nave",
+    "random-encounter-v01-plains",
+    "random-encounter-v01-ruins",
+    "random-encounter-v01-snow",
+    "random-encounter-v01-woods"
+  ],
+  "old_pak": "build/ground/ground-v76-ashen-panorama.pak",
+  "new_pak": "build/ground/ground-v77-random-encounters-v01.pak"
+}

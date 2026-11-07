@@ -1484,7 +1484,21 @@ int runWindow(const Options& o) {
   logInfo("startup: first screen at {:.0f} ms", bootMs());
 
   window.setEventHook([&](const SDL_Event& event) {
-    if (ui.processEvent(event)) return;
+    const bool escape = event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat && event.key.key == SDLK_ESCAPE;
+    const bool captured = ui.processEvent(event);
+    if (escape) {
+      // Combos close in ImGui; screen navigation must still work with keyboard/text focus.
+      if (ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId) && stage && !stage->ownsEscapePopup()) return;
+      if (curtain.up()) {
+        if (dynamic_cast<TitleStage*>(stage.get())) {
+          SDL_Event quit{}; quit.type = SDL_EVENT_QUIT; SDL_PushEvent(&quit);
+        } else backToTitle = true;
+      } else if (stage) {
+        if (!stage->escapeOverlay || !stage->escapeOverlay()) stage->event(event);
+      }
+      return;
+    }
+    if (captured) return;
     if (stage && !curtain.up()) stage->event(event);
     if (event.type != SDL_EVENT_KEY_DOWN || event.key.repeat) return;
     // Modo teste only; Ctrl+F1, since F1..F12 are the battle bar's sockets (the user, 2026-10-18)
@@ -1570,6 +1584,16 @@ int runWindow(const Options& o) {
           // An Interlude exploration map left by its passage: done for the chapter, the next map pending (markVisited advances it)
           if (!test && map->explores() && hasInterlude && interlude.hasMission(playing)) markVisited(playing, map);
           advanceTestInterlude(*map);
+          // Exploration pickups and quest targets survive a floor change without requiring a map victory.
+          if (testSession) ember::foldQuestProgress(testSession->save, map->questFound(), map->questKills());
+          else if (map->explores()) {
+            auto checkpoint = campaign.activeSave();
+            ember::foldQuestProgress(checkpoint, map->questFound(), map->questKills());
+            if (!campaign.saveActive(std::move(checkpoint))) {
+              logWarn("{}: quest progress could not be saved before taking the stairs", playing);
+              continue;
+            }
+          }
           arriveFrom = map->draftId();
           preserveKnockouts = true;
           pending = std::move(next);
@@ -1586,6 +1610,7 @@ int runWindow(const Options& o) {
         } else if (inSpells) {
           openTest = TestModeStage::Screen::Menu;  // Teste de Magias: back to the test menu
         } else if (testSession) {
+          ember::foldQuestProgress(testSession->save, map->questFound(), map->questKills());
           // A test fight that ended is folded into the session's save as the campaign folds its own (levels, XP, HP, skills,
           // loot, completed); back to the test map.
           if (!map->explores() && !map->battleResult().empty()) foldFight(testSession->save, *map, map->draftId());

@@ -1,0 +1,21 @@
+'vswhere.exe' não é reconhecido como um comando interno
+ou externo, um programa operável ou um arquivo em lotes.
+[0/2] Re-checking globbed directories...
+[1/107] Scanning C:\EmberEngineBOSTA\engine\world\BattleSave.cpp for CXX dependencies
+[2/107] Scanning C:\EmberEngineBOSTA\engine\world\Battle.cpp for CXX dependencies
+[3/107] Scanning C:\EmberEngineBOSTA\engine\world\Combat.cpp for CXX dependencies
+[4/107] Scanning C:\EmberEngineBOSTA\tools\ActionPointsCheck.cpp for CXX dependencies
+[5/107] Scanning C:\EmberEngineBOSTA\engine\world\ActionPoints.cpp for CXX dependencies
+[6/107] Scanning C:\EmberEngineBOSTA\engine\world\BattleTurns.cpp for CXX dependencies
+[7/107] Scanning C:\EmberEngineBOSTA\engine\world\Spells.cpp for CXX dependencies
+[8/107] Generating CXX dyndep file tools\CMakeFiles\ActionPointsCheck.dir\CXX.dd
+[9/107] Generating CXX dyndep file engine\CMakeFiles\EmberEngine.dir\CXX.dd
+[10/19] Building CXX object engine\CMakeFiles\EmberEngine.dir\world\Combat.cpp.obj
+[11/19] Building CXX object engine\CMakeFiles\EmberEngine.dir\world\BattleTurns.cpp.obj
+[12/19] Building CXX object tools\CMakeFiles\ActionPointsCheck.dir\ActionPointsCheck.cpp.obj
+[13/19] Building CXX object engine\CMakeFiles\EmberEngine.dir\world\ActionPoints.cpp.obj
+[14/19] Building CXX object engine\CMakeFiles\EmberEngine.dir\world\Battle.cpp.obj
+[15/19] Building CXX object engine\CMakeFiles\EmberEngine.dir\world\BattleSave.cpp.obj
+[16/19] Building CXX object engine\CMakeFiles\EmberEngine.dir\world\Spells.cpp.obj
+[17/19] Linking CXX static library engine\EmberEngine.lib
+[18/19] Linking CXX executable bin\ActionPointsCheck.exe

@@ -1,0 +1,8 @@
+'vswhere.exe' não é reconhecido como um comando interno
+ou externo, um programa operável ou um arquivo em lotes.
+[0/2] Re-checking globbed directories...
+[1/99] Scanning C:\EmberEngineBOSTA\engine\render\vfx\ConjurerFx.cpp for CXX dependencies
+[2/99] Generating CXX dyndep file engine\CMakeFiles\EmberEngine.dir\CXX.dd
+[3/6] Building CXX object engine\CMakeFiles\EmberEngine.dir\render\vfx\ConjurerFx.cpp.obj
+[4/6] Linking CXX static library engine\EmberEngine.lib
+[5/6] Linking CXX executable bin\ActionPointsCheck.exe

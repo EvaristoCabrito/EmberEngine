@@ -199,6 +199,11 @@ bool BoardGround::buildInto(Geometry& geo, const ember::Board& board) {
   geo.meshes[0].wallFrom = wallFrom;
   if (!sideAsset.empty())
     for (Mesh& m : geo.meshes) m.wallFrom |= TerrainView::kWallsRock;
+  // The ash never pink (the user, 2026-11-06: "nunca mais essa cor ... ela nunca mais pode aparecer"): every board on an ashen tile
+  // set, whatever the map's id (a copy, an editor draft, a new map), not only the two Ashen maps.
+  if (board.draft().id == "ashen-forest-crossing" || board.draft().id == "deep-ashen-forest" ||
+      board.draft().emberTiles.rfind("ashen", 0) == 0)
+    for (Mesh& m : geo.meshes) m.wallFrom |= TerrainView::kAshNeutral;
   if (board.draft().id.rfind("estalagem", 0) == 0)
     for (Mesh& m : geo.meshes) m.wallFrom |= TerrainView::kWallsLit;
   for (int i = 0; i < 3; ++i) {

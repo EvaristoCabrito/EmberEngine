@@ -1,0 +1,793 @@
+#pragma once
+
+// A battle on an Ember map: the board as the movement rules see it, the units and their movement reach. The rules are
+// Ember's (Ember src/game/pathfinding.ts: footprint, footprintCost, computeReachable, reconstructPath), ported
+// step for step so a unit reaches exactly the hexes, at the costs and along the paths, it does there; Cooker
+// check-battle compares every unit's reach with Ember's own (tools/scripts/data/export_battle.ts).
+//
+// Hexes are (column, row) on Ember's odd-r board: odd rows sit half a hex to the right.
+
+#include <algorithm>
+#include <array>
+#include <map>
+#include <set>
+#include <filesystem>
+#include <functional>
+#include <memory>
+#include <optional>
+#include <cstdint>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
+
+#include <nlohmann/json.hpp>
+
+namespace ember {
+
+struct BattleHex {
+  int x = 0, y = 0;  // column, row
+  bool operator==(const BattleHex&) const = default;
+};
+
+// One cell as movement reads it (Ember hexprops.hexDef: the terrain with the decorations' blocking folded in).
+struct BattleCell {
+  std::string terrain;  // the tile's terrain id ("plains", "water", "barricade", ...)
+  bool passable = true;
+  int moveCost = 1;
+  int def = 0, atk = 0;
+  bool blocked = false;  // a decoration stands here and stops walking (HEX_BLOCKED)
+  int cover = 0;         // cover with the decorations folded in (hexDef: a spell's target cover)
+  int hazardDice = 0, hazardFaces = 8;  // standing here hurts at the start of each own turn (flames, embers)
+  // Combat: the tile's own terrain (combat.ts terrainBonus, effectiveMaxRange; counters' line of fire) and the cell
+  // with the decorations folded in (a shot's line of fire).
+  struct Terrain {
+    int def = 0, atk = 0, height = 0, cover = 0;
+    bool blocksShot = false;
+  } raw;
+  struct Shot {
+    int height = 0;
+    bool blocksShot = false;
+  } shot;
+  // The board's real elevation here (Board Cell::level, set by the stage from its board; 0 without one). An arrow shot from a
+  // higher cell flies over whatever stands on a lower one (the user, 2026-10-22: clearShot).
+  double level = 0;
+};
+
+// The loot tables a chest rolls on (data.ts CHEST_LOOT, POTION_LOOT_WEIGHT, weightedLootPick's pool), read once from
+// content/data/overworld.json (the world map's tables hold the same ones).
+struct LootTables {
+  struct Entry {
+    bool weapon = true;
+    std::string id, name;
+    double price = 0;
+    int power = 1;
+    bool starting = false;
+  };
+  struct Potion {
+    std::string id, name;
+    double weight = 0;
+    int carryMax = 5;
+  };
+  std::vector<Entry> entries;  // weapons, then equipment, in Ember's order
+  std::vector<Potion> potions;
+  nlohmann::json chest;
+  int maxLevel = 30;
+  // Null when the file is missing.
+  static std::shared_ptr<const LootTables> shared();
+};
+// Itens desconhecidos (ours, 2026-10-21, docs/SKILLS_MAGE.md; content/unknown-items.json): what comes out of a chest unknown.
+struct UnknownItemRules {
+  int weaponPowerAbove = 3, gearPowerAbove = 3;  // a weapon / a piece of gear above this power is unknown
+  std::vector<std::string> potions;              // these potion kinds are unknown
+  double sellShare = 0.1;                        // the Inn pays this share of the price for an unknown item
+  bool weaponUnknown(int power) const { return power > weaponPowerAbove; }
+  bool gearUnknown(int power) const { return power > gearPowerAbove; }
+  bool potionUnknown(const std::string& kind) const { return std::find(potions.begin(), potions.end(), kind) != potions.end(); }
+  static const UnknownItemRules& shared();  // the file read once (defaults when it is missing)
+};
+
+// What a unit fights with, as Ember resolves it (weapon tables, weapon skills, staff magic, off-hand).
+struct CombatProfile {
+  bool hasWeapon = false;  // a weapon definition: its dice are rolled
+  int dice = 0, faces = 0, bonus = 0, enh = 0;
+  bool ranged = false;      // a ranged weapon: +1 reach from high ground
+  bool classBonus = false;  // the weapon is tuned for this class: x1.1
+  double accuracy = 100, damageMul = 1;        // main-hand mastery
+  double offAccuracy = 100, offDamageMul = 1;  // off-hand mastery
+  bool offHandWeapon = false;
+  bool offHandShield = false;  // a shield in the off hand (Golpe de Escudo needs one; Investida de Ombro none)
+  int offMinRange = 1, offMaxRange = 1, offDice = 1, offFaces = 4, offBonus = 0;
+  double offShieldMul = 0.75;  // a shield's blow: its damage multiplier (the off-hand action; Golpe de Escudo uses its own power)
+  bool staff = false;  // staff magic: its element and bonus
+  std::string staffElement = "arcane";
+  double staffBonusPct = 0;
+  std::vector<std::pair<std::string, double>> staffBonuses;  // the staff's bonus % per element (spells too)
+  double staffLifeStealPct = 0;
+  double staffRegen = 0;  // the staff's regeneration: HP back at the start of its wielder's turn (cajado da renovação, da esperança ...)
+  bool arcane = false;  // an arcane caster: its plain attack is an arcane bolt
+  bool arrow = false;   // its plain attack is an arrow
+  std::vector<std::pair<std::string, double>> resistances;
+  double resistance(const std::string& element) const {
+    for (const auto& [e, v] : resistances)
+      if (e == element) return v;
+    return 0;
+  }
+};
+
+// One reachable hex: the movement it costs and the hex it is reached from (none for the start).
+struct ReachCell {
+  int x = 0, y = 0, cost = 0;
+  int parentX = -1, parentY = -1;
+};
+
+// An Inn quest's pickup lying on the map (quests.ts activePickupsFor): its key "<quest>:<pickup>", name and hex (world/Quests.h).
+struct QuestPickup {
+  std::string key, name;
+  int x = 0, y = 0;
+};
+
+// Potions in the bag's order (Ember GameApp ALL_POTIONS; data.ts POTIONS).
+inline constexpr const char* kPotionIds[7] = {"weak", "mid", "potent", "disease", "manaSmall", "manaMid", "manaLarge"};
+// DEX counts in thirds, and only in three places (the user, 2026-10-18): hit, dodge (Combat.h hitChance) and escape (fleeChance).
+inline constexpr double kDexDivisor = 3.0;
+// High ground for archers (the user, 2026-10-22: "high ground should give archers bonus to hit chance and ATT, plus get past
+// blocked areas"): a bow / crossbow blow from a cell whose real elevation (BattleCell::level) is above the target's gets
+// +kHighGroundHit to hit (AD&D 2e's +1 on the d20) and +kHighGroundAtkPct % of its ATK (the size of the tile high-ground bonus);
+// its arrows also fly over whatever stands on lower cells (Combat.cpp clearShot).
+inline constexpr double kHighGroundHit = 5.0;
+inline constexpr double kHighGroundAtkPct = 10.0;
+
+struct BattleUnit {
+  std::string id, side, name, classId, sprite, className;
+  int x = 0, y = 0;  // the anchor hex: for a big body, its front row (closest to the player)
+  bool alive = true;
+  int mov = 0, moveUsed = 0;  // movement this turn and what is spent of it
+  bool acted = false;         // it has acted this turn (its movement may still be used)
+  bool moved = false;         // its turn in this round is over (Ember Unit.moved)
+  int initiativeBonus = 0, initiative = 0;  // its class's bonus; the battle-opening roll + bonus
+  int hp = 0, maxHp = 0, atk = 0, def = 0, mag = 0, dex = 0, minRange = 1, maxRange = 1;
+  // Ours (2026-10-19): Ember strikes with MAG (and past DEF) whenever MAG > 0; a class that had no MAG in its battle file
+  // keeps striking with ATK now that every class has MAG for its magic skills (set by Battle::load).
+  bool atkBlows = false;
+  int size = 1;
+  int level = 1;
+  bool summoned = false;
+  bool undead = false;  // creatureType "undead" (Expulsar Mortos-Vivos)
+  bool boss = false;    // a boss class: a "boss" mission is won when none stands
+  CombatProfile combat;
+  std::optional<double> faceDx, faceDy;  // its last heading on the board (Ember screen units), if any
+  int facing = 1;
+  std::optional<std::vector<BattleHex>> footprintOffsets;  // an authored body shape (dx, dy), else by size
+  int footprintW = 2, footprintH = 4;                       // the size >= 4 rectangle
+  std::vector<ReachCell> reference;                         // Ember's reach at the start (the check's reference)
+
+  // --- Spells, training, experience (Ember spell-source / BattleEngine) ---
+  int spells[10] = {};  // uses left per tier (Ember Unit.spells tier1..tier10)
+  std::vector<std::string> spellList;  // what it may cast (classSpells for its class, level and name)
+  int shockCharges = 0, frostCharges = 0, fantomForceCharges = 0;
+  int spectralCharges = 0;  // Raio Espectral (the Aparição's and the Espectro em Brasa's, ours): its casts this fight
+  int fantomDice = 0, fantomFaces = 0;
+  int xp = 0;
+  bool guaranteedDrop = false;
+  bool hidden = false;  // under the fog of war for the party: cannot be aimed at (unitHidden)
+  std::string weaponType;     // its weapon's type ("bow", "sword", ...), empty = none
+  bool trainsWeapon = false;  // a hero whose weapon type its class trains (weaponSkills.ts)
+  double weaponSkill = 0, healingSkill = 0;
+  // its off-hand weapon's type, whether its class trains it, and its skill (an off-hand counter trains it)
+  std::string offWeaponType;
+  bool offTrainsWeapon = false;
+  double offWeaponSkill = 0;
+  std::vector<std::pair<std::string, double>> skills;  // trained skills by id ("fireResistance", ...)
+  std::string rank;  // ours: a non-party unit's class of strength, F .. S++ (content/enemy-ranks.json); empty = none
+  // A hero's growth: per level 1..30 the class's hp atk mag def dex and its uses per tier (levelUpUnit), and what its
+  // gear adds over the class's stats.
+  std::vector<std::array<int, 16>> growth;  // hp atk mag def dex, tier1..tier10 uses, mov
+  int gearHp = 0, gearAtk = 0, gearMag = 0, gearDef = 0, gearDex = 0, gearMov = 0;
+  // The level-up points spent on each attribute (Ember statPointAllocation: three per level, +1 to the stat each).
+  int pointHp = 0, pointAtk = 0, pointMag = 0, pointDef = 0, pointDex = 0;
+  struct Echo {
+    int dice = 0, faces = 0, bonus = 0;
+    double mag = 0;
+  };
+  std::optional<Echo> shock;  // a lightning echo that strikes when its own turn begins
+
+  // --- EmberEngine's own conditions (the Bruxo's spells, world/Spells.cpp "Ember spells"): each counts down in the
+  // victim's own turns (applied at the start of its turn, then one less) ---
+  struct Conditions {
+    int markPct = 0, markTurns = 0;      // Marca da Ruína: takes +pct% damage from everything
+    int plagueSpread = 0;                // Praga Rastejante: its poison jumps to this many adjacent allies each turn
+    bool plagueBurst = false;            // Peste Negra: dying poisoned spreads Veneno Maior to its neighbours
+    double poisonMag = 0;                // the MAG of whoever poisoned it (the tick's resistance penetration)
+    int bleedDice = 0, bleedFaces = 0, bleedTurns = 0;  // Hemorragia: bleeds this at each turn; heals received halved
+    int silenceTurns = 0;                // Silêncio Profano: cannot cast
+    int decayTurns = 0, decayPct = 0, decayCap = 0, decayStep = 0;  // Maldição da Decadência: -step% of every stat per turn, to the cap
+    int decayDice = 0, decayFaces = 0;
+    double decayMul = 0, decayMag = 0;   // ... and its Escuridão tick: floor(floor(mag / 2) * mul) + dice
+    // The Guerreiro's (docs/SKILLS_WARRIOR.md): on while pct > 0; `turns` more of the unit's own turns after the current one
+    int sunderPct = 0, sunderTurns = 0;  // Quebra-Guarda: DEF down by pct %
+    int rallyPct = 0, rallyTurns = 0;    // Grito de Guerra: ATK up by pct %
+    int hobblePct = 0, hobbleTurns = 0;  // Tiro Paralisante (the Arqueiro's): MOV down by pct % (hobbleBase keeps the whole)
+    // The Lanceiro's (docs/SKILLS_LANCER.md): Desarmado (ATK down by pct %, no counter; disarmBase keeps the whole ATK),
+    // Desequilibrado (Gancho: no counter until its next turn, staggerTurns more of its own turns), the Vigília da
+    // Sentinela (a stance, on while vigilPct > 0: it thrusts first at whoever attacks it or an ally within vigilRadius)
+    int disarmPct = 0, disarmTurns = 0;
+    bool staggered = false;
+    int staggerTurns = 0;
+    int vigilPct = 0, vigilRadius = 0;
+    // The Conjurador's (docs/SKILLS_CONJURER.md): Imagem Espelhada (mirrorCopies illusions for mirrorRounds rounds: each hostile hit has
+    // one chance in three of striking a copy, which vanishes), Elo de Sacrifício (bondPct % of every hit on the unit goes to its nearest
+    // living summon instead, for the rest of the fight), Fortalecer Invocações (every stat x (1 + empowerPct / 100) for empowerRounds
+    // rounds; empowerBase keeps the whole)
+    int mirrorCopies = 0, mirrorRounds = 0;
+    int bondPct = 0;
+    int empowerPct = 0, empowerRounds = 0;
+    // Reflexo Arcano: the first hostile spell to reach the unit while reflectTurns > 0 (its own turns, counted as each begins) goes
+    // back to its caster by reflectPct %; reflectHealPct % of it heals the unit (the talent); then the ward is spent
+    int reflectTurns = 0, reflectPct = 0, reflectHealPct = 0;
+    // The Mago Negro's Nuvem de Adagas (docs/SKILLS_MAGE.md): this many daggers circling the unit until used or the fight ends; each
+    // reacts on its own (an enemy ending its walk beside it, a melee blow on it, an arrow aimed at it) and is spent
+    int daggers = 0;
+    // Milf's Acid Arrow (the Corrosive Slime's; AD&D 2e): the acid keeps burning acidDice D acidFaces (Veneno, resisted with acidMag's
+    // penetration) at the start of the victim's own turns, acidTurns more
+    int acidTurns = 0, acidDice = 0, acidFaces = 0;
+    double acidMag = 0;
+    // The Cruzado's (docs/SKILLS_CRUSADER.md): Manto do Cruzado (every weapon blow of the unit adds mantleDice D mantleFaces holy while
+    // mantleTurns lasts, counted like the Grito de Guerra's), and whether its Juramento has been announced this fight
+    int mantleTurns = 0, mantleDice = 0, mantleFaces = 0;
+    bool oathShown = false;
+    // Selene's Lâmina Arcana (docs/SKILLS_CONJURER.md): the arcane mark, on while arcaneMarkDice > 0; it bursts for arcaneMarkDice D
+    // arcaneMarkFaces arcane (from the unit arcaneMarkBy, a battle index) when the unit walks, and lifts unburst after arcaneMarkTurns
+    // more of the unit's own turns, counted like the Quebra-Guarda
+    int arcaneMarkDice = 0, arcaneMarkFaces = 0, arcaneMarkTurns = 0, arcaneMarkBy = -1;
+    // Witch's Stitch: one live mark per target, attributed to the familiar by stable unit id.
+    int witchStitchDice = 0, witchStitchFaces = 0;
+    double witchStitchMag = 0.0;
+    double witchStitchMul = 1.0;
+    std::string witchStitchSource;
+    int witchStitchAnchorX = 0, witchStitchAnchorY = 0;
+    // Burial Weight can root through multiple overlapping casts; each source expires independently.
+    std::vector<std::string> burialRootSources;
+    bool any() const {
+      return markTurns > 0 || plagueSpread > 0 || plagueBurst || bleedTurns > 0 || silenceTurns > 0 || decayTurns > 0 || sunderPct > 0 || rallyPct > 0 ||
+             hobblePct > 0 || disarmPct > 0 || staggered || vigilPct > 0 || mirrorCopies > 0 || bondPct > 0 || empowerPct > 0 || reflectTurns > 0 || daggers > 0 ||
+             acidTurns > 0 || mantleDice > 0 || arcaneMarkDice > 0 || witchStitchDice > 0 || !burialRootSources.empty();
+    }
+  } cond;
+  std::optional<int> hobbleBase;       // its MOV before Tiro Paralisante (given back when it lifts)
+  std::optional<int> disarmBase;       // its ATK before Desarmar (given back when it lifts)
+
+  // --- Items and conditions a hero brings into the fight (Ember Unit.bag / diseased / poisoned / fullness) ---
+  int bag[7] = {};  // potions carried, in kPotionIds order
+  int lockpick = 0;  // Ember bag.lockpick (the sheet lists them: "Gazua")
+  bool diseased = false;
+  std::string diseaseTier = "lesser", diseaseType = "disease";
+  int poisonMinutesLeft = -1, diseaseMinutesLeft = -1;
+  struct Stats {
+    int atk = 0, mag = 0, def = 0, dex = 0, mov = 0;
+  };
+  std::optional<Stats> diseaseBase;  // its stats before the disease's penalty (curePlayerDisease restores them)
+  std::optional<Stats> decayBase;    // its stats before Maldição da Decadência (given back when the curse lifts)
+  std::optional<Stats> empowerBase;  // a summon's stats before Fortalecer Invocações (given back when it ends)
+  bool poisoned = false;
+  std::string poisonTier;            // save.heroPoisons' value ("lesser", ...), kept for the save
+  std::optional<double> fullness;    // hunger.ts fullness 0..120; unset reads as 100
+  double hungerPenaltyPct = 0;       // a starving hero's stat loss (0..0.9), gone once fed
+
+  // --- Ember's status conditions (Ember Unit.stunned / asleep / bleeding / crippled / fearTurns / blessed...) ---
+  bool stunned = false;              // loses its next turns (Golpe de Escudo, an off-hand bash)
+  int stunTurns = 0;
+  bool asleep = false;               // Teia dos Sonhos: loses its turns, wakes on a hit (which hurts 25% more)
+  int sleepTurns = 0;
+  bool bleeding = false;             // 1D8 whenever it acts (Tiro Sangrento for some rounds, Rasteira for good)
+  std::optional<int> bleedRoundsLeft;   // rounds left of Tiro Sangrento's bleed (none = until cured, Rasteira)
+  std::optional<int> bleedRoundMarker;  // the round it was last counted down in
+  bool bleedMovedThisTurn = false;   // walking opens the wound once per own turn
+  bool crippled = false;             // Rasteira: 10% off every stat for the rest of the fight
+  int fearTurns = 0;                 // Expulsar Mortos-Vivos: flees instead of fighting
+  std::string fearSourceId;
+  double blessedHitBonusPct = 0;     // Bênção: +hit chance (a fraction) for some rounds
+  int blessedRoundsLeft = 0;
+  std::string summonerId;            // a familiar's conjurer
+  bool burialWeightActive = false;   // Titan pressure commitment; lifted with its source effects
+  int burialWeightAnchorX = 0, burialWeightAnchorY = 0;
+  int spellCharges = 0;              // a familiar's own spell (Míssil Mágico / Bola de Fogo / Veneno Menor)
+  std::optional<int> lifeDrainCharges;  // a Familiar Maior / Radiante's Dreno de Vida
+};
+
+// The Cruzado's Juramento (docs/SKILLS_CRUSADER.md), a passive: while the unit knows it and stands under kOathHpPct % of its HP, its ATK
+// is up by kOathAtkPct % (Combat.cpp fighterAt); it lifts as soon as the HP is back over the line.
+inline constexpr int kOathHpPct = 25, kOathAtkPct = 20;
+inline bool oathActive(const BattleUnit& u) {
+  return u.alive && u.maxHp > 0 && u.hp * 100 < u.maxHp * kOathHpPct &&
+         std::find(u.spellList.begin(), u.spellList.end(), std::string("crusaderOath")) != u.spellList.end();
+}
+
+// An enemy's decision (Ember runAiFor's plain branch): the walk (start first; empty = stays) and the foe it strikes.
+struct AiPlan {
+  std::vector<BattleHex> path;
+  int target = -1;
+};
+struct AiReference {
+  int unit = 0;
+  std::optional<BattleHex> at;  // placed here first (the near-party scenario)
+  std::vector<BattleHex> gates; // a Warp gate open on these two hexes (the pursuit scenario)
+  AiPlan plan;
+  bool spell = false;           // Ember cast something instead
+  struct Cast {
+    std::string kind;
+    std::vector<int> ids;
+    std::vector<BattleHex> tiles;
+  };
+  std::vector<Cast> casts;      // what it cast (its spell steps)
+};
+// One reference cast (export_battle.ts casts): the caster placed at `at`, the spell aimed at `cell`; when valid, the
+// seed it was cast with, how many random numbers it drew and every unit afterwards (hp, alive, echo, maxHp, level, xp)
+// plus the caster's charges.
+struct CastReference {
+  int caster = 0;
+  std::string kind;
+  BattleHex cell, at;
+  bool valid = false;
+  uint32_t seed = 0;
+  int calls = 0;
+  struct After {
+    int hp = 0, maxHp = 0, level = 0, xp = 0;
+    bool alive = false;
+    std::optional<BattleUnit::Echo> shock;
+    // the support casts' scene (`hurt`): conditions and hunger afterwards
+    bool hasStatus = false;
+    int atk = 0, mag = 0, def = 0, dex = 0, mov = 0;
+    bool diseased = false, poisoned = false;
+    double fullness = 100;
+    int spells[10] = {};
+    int bag[7] = {};
+  };
+  std::vector<After> after;
+  int spells[10] = {};
+  int shockCharges = 0, frostCharges = 0;
+  // Cast in the hurt scene (export_battle.ts hurtScene: everyone at half HP, some diseased / poisoned, all hungry).
+  bool hurt = false;
+  int lootRations = 0;
+  std::string potion;  // a potion used instead of a spell (its id; `kind` is then "potion")
+  // A skill cast (export_battle.ts skillCasts): every unit's state afterwards as numbers (Spells.h unitStateNumbers), the
+  // zones and the enmity entries.
+  bool skill = false;
+  std::vector<std::vector<double>> ext;
+  nlohmann::json zones, enmity;
+  int unitCount = 0;
+  int patchTier = 0, patchValue = 0;  // the caster was given this tier's uses first (a start-method needs some)
+  nlohmann::json affinity;            // the pairs' scores afterwards
+  nlohmann::json offHand;             // an off-hand action: the item given to the caster first (kind, reach, dice, dmgMul, weapon type, mastery)
+};
+
+// A unit's turn beginning under a condition (export_battle.ts turnStarts): the board right after Ember's beginUnitTurn.
+// Opening a lock with a Gazua (export_battle.ts lockCasts): the hero stands at `at`, one lock is opened; what Ember holds afterwards.
+struct LockReference {
+  int lock = 0, caster = 0;
+  BattleHex at;
+  bool valid = false;
+  uint32_t seed = 0;
+  int calls = 0;
+  std::vector<size_t> turnOrder;
+  std::vector<std::vector<double>> ext;
+  nlohmann::json bags, loot, affinity;
+};
+
+struct TurnStartReference {
+  int unit = 0;
+  std::string scenario;
+  uint32_t seed = 0;
+  int calls = 0;
+  std::vector<std::vector<double>> ext;
+  nlohmann::json zones, enmity;
+  bool moved = false, acted = false, restrained = false;
+  std::vector<BattleHex> flee;
+};
+
+// Ember's reference answers for the combat check (export_battle.ts).
+struct ForecastReference {
+  int attacker = 0, defender = 0, x = 0, y = 0, dmgOut = 0, dmgBack = 0;
+  double hitOut = 0, hitBack = 0;
+  bool canCounter = false, kill = false, canHit = false;
+};
+struct RollReference {
+  int attacker = 0, defender = 0, x = 0, y = 0;
+  uint32_t seed = 0;
+  int dmg = 0;
+  bool crit = false, landed = false;
+  double hitChance = 0;
+  int preCritDmg = 0, finalDmg = 0;
+};
+
+class Battle {
+ public:
+  static std::optional<Battle> load(const std::filesystem::path& battleJson);
+
+  int cols() const { return cols_; }
+  int rows() const { return rows_; }
+  const std::string& map() const { return map_; }
+  // Ember BattleEngine debugFreeCast (Modo teste's battles, export_battle.ts TEST_LEVEL): spells may be aimed at any
+  // visible unit, allies included, and cures at anyone, hurt or not.
+  bool debugFreeCast() const { return debugFreeCast_; }
+  // An explore mission (Ember mission.explore): no win or defeat rule of its own, only its waypoints.
+  bool explore() const { return explore_; }
+  // A map that ends only at its waypoints, like an explore mission, whatever its own rule (MapStage: every map with fog of war).
+  void setWaypointsOnly(bool on) { waypointsOnly_ = on; }
+  // Free roam: no turns, any reachable hex in one walk. An explore mission starts so, and MapStage starts every map with fog
+  // of war so too (the user, 2026-10-17); the party meeting an enemy ends it (Ember's rule, the user's: then the fight starts
+  // with every unit's own movement), and it begins again once the foes it met have fallen and none is in sight
+  // (MapStage::updateRoaming).
+  bool roaming() const { return roaming_; }
+  void endRoaming() { roaming_ = false; }
+  void resumeRoaming() { roaming_ = true; }
+  const BattleCell& cell(int x, int y) const { return cells_[static_cast<size_t>(y * cols_ + x)]; }
+  bool inBounds(int x, int y) const { return x >= 0 && y >= 0 && x < cols_ && y < rows_; }
+  std::vector<BattleUnit>& units() { return units_; }
+  const std::vector<BattleUnit>& units() const { return units_; }
+
+  // The hexes a unit's body covers with its anchor at (x, y) (pathfinding.ts footprint).
+  static std::vector<BattleHex> footprint(const BattleUnit& u, int x, int y);
+  // The living unit whose body covers (x, y), or -1.
+  int unitAt(int x, int y) const;
+  // Every hex the unit can end its move on with the movement it has left (computeReachable with stop points
+  // pruned), the start included at cost 0. pruneStops = false keeps hexes it may only pass through.
+  std::vector<ReachCell> reachable(size_t unit, bool pruneStops = true) const;
+  // The walk from the unit's hex to (x, y) through a reach map, start first; empty when (x, y) is not in it.
+  static std::vector<BattleHex> path(const std::vector<ReachCell>& reach, int x, int y);
+  // Moves the unit to (x, y) along a reachable path, spending its cost. False when (x, y) is not reachable.
+  bool move(size_t unit, int x, int y);
+  // Validates an entire voluntary route before any movement-triggered effect may resolve.
+  bool legalVoluntaryPath(size_t unit, const std::vector<BattleHex>& path) const;
+  // A new turn: every unit's movement is whole again and it may act.
+  void newTurn();
+  // The party's affinity bonus between two names (0 = none): from the pair's score (25 -> 2%, 50 -> 5%, 90 -> 8%; and the
+  // penalty below zero: -25 -> -2%, -50 -> -5%, -90 -> -8%), or the file's own list for a battle file that carries no scores.
+  double affinityBonus(const std::string& a, const std::string& b) const;
+  // The pairs' scores -100..100 ("A|B" with the names in order), which a fight moves (friendly fire -1, healing +0.2, fighting side
+  // by side +0.1) and the campaign's save keeps.
+  const std::map<std::string, double>& affinityScores() const { return affinityScores_; }
+  void setAffinityScores(std::map<std::string, double> scores) { affinityScores_ = std::move(scores), scoresKnown_ = true; }
+  // Both must be of the six heroes; the score is kept to a tenth within -100..100; the change is logged.
+  void adjustAffinity(const std::string& a, const std::string& b, double delta);
+  std::map<size_t, std::set<size_t>>& supportRecipients() { return supportRecipients_; }
+  // Who each unit has hurt this action (friendly fire): they gain nothing for standing beside it when the action ends.
+  std::map<size_t, std::set<size_t>>& hurtAllies() { return hurtAllies_; }
+  // Drops Ember's reference answers (a copy of the battle for one cast does not need them).
+  void clearReferences() { forecastRefs_.clear(), rollRefs_.clear(), aiRefs_.clear(), castRefs_.clear(), turnRefs_.clear(), lockRefs_.clear(); }
+  const std::vector<ForecastReference>& forecastReferences() const { return forecastRefs_; }
+  const std::vector<RollReference>& rollReferences() const { return rollRefs_; }
+  const std::vector<AiReference>& aiReferences() const { return aiRefs_; }
+  const std::vector<CastReference>& castReferences() const { return castRefs_; }
+  const std::vector<TurnStartReference>& turnStartReferences() const { return turnRefs_; }
+  const std::vector<LockReference>& lockReferences() const { return lockRefs_; }
+  // Ember's enmity hooks for spells and support (spell damage, heals noticed by every enemy).
+  void noteDamage(size_t attacker, size_t target, int dmg, bool spell);
+  void noteAware(size_t hero, double ce, double ve);
+  // Every enmity entry as [enemy, hero, ce, ve], sorted (the cast check compares them with Ember's table).
+  std::vector<std::array<double, 4>> enmityDump() const;
+  // Ember addEnmity: this much enmity of `foe` for `hero` (an enemy and a hero, both standing).
+  void addEnmity(size_t foe, size_t hero, double ce, double ve);
+  // Rations conjured in this fight (Ember lootRations: Criar Comida e Água), added to the save's at its end.
+  int lootRations() const { return lootRations_; }
+  void addLootRations(int n) { lootRations_ += n; }
+  // The combat log (Ember engine.ts log / pushLog): attacks, spells, heals, kills, conditions, skill gains and level-ups,
+  // newest last, capped at 200 lines. Saved in the snapshot.
+  const std::vector<std::string>& log() const { return log_; }
+  void pushLog(std::string line) {
+    log_.push_back(std::move(line));
+    if (log_.size() > 200) log_.erase(log_.begin());
+  }
+
+  // --- Ember's zones (engine.ts webZones / iceStormZones / auraZones / warpGates), each one round shorter at every new round ---
+  struct WebZone {  // Teia dos Sonhos: anyone starting its turn inside may fall asleep; its movement is clamped to 1 hex
+    std::vector<BattleHex> cells;
+    int roundsLeft = 0;
+    BattleHex center;
+    int radius = 0;
+    double sleepChance = 0.25;
+    std::string side;  // ours: who laid it (Dissipar Magia erases an enemy's)
+  };
+  struct IceZone {  // Tempestade de Gelo: strikes everyone in it as it lands, then whoever starts its turn inside or walks into it
+    std::vector<BattleHex> cells;
+    int roundsLeft = 0;
+    BattleHex center;
+    int radius = 0;
+    int damageDice = 1, damageFaces = 6;
+    double damageMul = 0.65;
+    double casterMag = 0;
+    int casterLevel = 1;
+    std::string casterId;
+    std::string side;
+    std::map<std::string, int> struckRound;  // unit id -> the round it was last struck (once a round per body)
+  };
+  struct AuraZone {  // Aura de Proteção / Presença Intimidante
+    std::vector<BattleHex> cells;
+    int roundsLeft = 0;
+    std::string kind;  // "protection" | "intimidation"
+    std::string side;
+    double pct = 0;
+  };
+  struct WarpGate {  // Portal: a pair of gates a unit may cross
+    BattleHex a, b;
+    int roundsLeft = 0;
+    int level = 1;
+  };
+  std::vector<WebZone>& webZones() { return webZones_; }
+  const std::vector<WebZone>& webZones() const { return webZones_; }
+  std::vector<IceZone>& iceZones() { return iceZones_; }
+  const std::vector<IceZone>& iceZones() const { return iceZones_; }
+  std::vector<AuraZone>& auraZones() { return auraZones_; }
+  const std::vector<AuraZone>& auraZones() const { return auraZones_; }
+  // --- Ember's locks (a chest, a door decoration or a door tile) and what the fight has found ---
+  struct Lock {
+    int x = 0, y = 0;
+    std::string kind;  // "doorTile" | "doorDecor" | "chest"
+    std::string id;    // the decoration
+    std::string tier;  // a chest's loot: "base" | "better" | "best"
+    std::vector<std::pair<int, BattleCell>> after;  // the cells opening it changes (index, the cell as it becomes)
+    bool open = false;
+  };
+  std::vector<Lock>& locks() { return locks_; }
+  const std::vector<Lock>& locks() const { return locks_; }
+  // Ember adjacentLock: the first neighbour (hexNeighbors order) of the unit's hex that holds a closed lock; its index, else -1.
+  int adjacentLock(size_t unit) const;
+  void setCell(int index, const BattleCell& c) { cells_[static_cast<size_t>(index)] = c; }
+  std::set<std::string>& ownedWeapons() { return ownedWeapons_; }
+  const std::set<std::string>& ownedWeapons() const { return ownedWeapons_; }
+  int lootEmber() const { return lootEmber_; }
+  void addLootEmber(int n) { lootEmber_ += n; }
+  std::vector<std::string>& lootWeapons() { return lootWeapons_; }
+  const std::vector<std::string>& lootWeapons() const { return lootWeapons_; }
+  std::vector<std::string>& lootEquipment() { return lootEquipment_; }
+  const std::vector<std::string>& lootEquipment() const { return lootEquipment_; }
+  // Itens desconhecidos (ours, docs/SKILLS_MAGE.md): the chest drops above the power line (content/unknown-items.json) come unknown
+  // (lootUnknown: their ids, among lootWeapons / lootEquipment), and so do the listed potions, kept apart from the finder's bag
+  // (lootUnknownPotions: the potion kind and who holds it) until identified.
+  std::set<std::string>& lootUnknown() { return lootUnknown_; }
+  const std::set<std::string>& lootUnknown() const { return lootUnknown_; }
+  std::vector<std::pair<std::string, std::string>>& lootUnknownPotions() { return lootUnknownPotions_; }
+  const std::vector<std::pair<std::string, std::string>>& lootUnknownPotions() const { return lootUnknownPotions_; }
+  // The chest just opened (Ember chestLoot): who, the Ember and what else it held; shown until the player says Ok.
+  struct ChestLoot {
+    struct Item {
+      std::string name;
+      std::string kind;  // "potion" | "weapon" | "gear" | "rations": which icon the popup draws
+      std::string id;    // the potion's / weapon's / gear's id
+    };
+    std::string unit;
+    int ember = 0;
+    std::vector<Item> items;
+  };
+  const std::optional<ChestLoot>& chestLoot() const { return chestLoot_; }
+  void setChestLoot(ChestLoot c) { chestLoot_ = std::move(c); }
+  void clearChestLoot() { chestLoot_.reset(); }
+  // --- Ember's Inn-quest pickups (engine.ts questPickups / questFound; world/Quests.cpp) ---
+  // The pickups lying here (the window sets them from the save: quests.ts activePickupsFor), and the keys found in this fight
+  // (folded into save.questItems at its end; kept in the snapshot).
+  void setQuestPickups(std::vector<QuestPickup> p) { questPickups_ = std::move(p); }
+  const std::vector<QuestPickup>& questPickups() const { return questPickups_; }
+  const std::vector<std::string>& questFound() const { return questFound_; }
+  // engine.ts collectQuestPickups: a living hero standing on a pickup's hex picks it up (once `settled` says its walk is over;
+  // Ember checks after every walk), and the combat log says who found what. Returns the finds.
+  std::vector<QuestPickup> collectQuestPickups(const std::function<bool(size_t)>& settled);
+  void setTurnOrder(std::vector<size_t> order) { turnOrder_ = std::move(order); }
+  std::vector<WarpGate>& warpGates() { return warpGates_; }
+  const std::vector<WarpGate>& warpGates() const { return warpGates_; }
+  // engine.ts isWebCell / webCellSleepChance / zoneDamageMul
+  bool isWebCell(int x, int y) const;
+  double webCellSleepChance(int x, int y) const;
+  double zoneDamageMul(const BattleUnit& defender) const;
+  // The unit begins its turn restrained (its cell is webbed): its movement is clamped to one hex for the turn.
+  bool turnRestrained() const { return turnRestrained_; }
+  void setTurnRestrained(bool v) { turnRestrained_ = v; }
+
+  // --- Zones (EmberEngine's own: the Elementalista's burning ground and Meteoro, the Bruxo's Mortalha de Sombras) ---
+  // A zone lies on the hexes within `radius` of its centre (`ring`: only at exactly that distance) for `rounds` rounds
+  // (one less at every new round; gone at 0). What it does to whoever starts a turn inside: a hazard (dice of its
+  // element, like Ember's flames), a weighted tick (floor(floor(mag / 2) * mul) + dice of its element) and a stat
+  // penalty while inside (statPct % off ATK and MAG). "meteor": nothing until its caster's next turn begins, when it
+  // lands (world/Spells.cpp startOfTurnEffects).
+  struct Zone {
+    int id = 0;
+    std::string kind;
+    BattleHex centre;
+    int radius = 1, rounds = 1;
+    bool ring = false;
+    size_t caster = 0;
+    std::string element;
+    int hazardDice = 0, hazardFaces = 8;
+    int dice = 0, faces = 0;
+    double mul = 0, mag = 0;
+    std::string casterId;
+    double poisonChance = 0;
+    std::map<std::string, int> struckRound;  // persistent damage fields: once per round per unit
+    int statPct = 0;
+    // Meteoro: what lands (the centre hex's and the ring's weight and dice)
+    double centreMul = 0, ringMul = 0;
+    int centreDice = 0, centreFaces = 0, ringDice = 0, ringFaces = 0;
+    std::vector<BattleHex> cells;  // its own hexes when its area is a stage (Spells.cpp areaTiles); empty = by the radius
+    bool covers(BattleHex h) const {
+      if (!cells.empty() && !ring) {
+        for (const BattleHex& c : cells)
+          if (c.x == h.x && c.y == h.y) return true;
+        return false;
+      }
+      const int d = Battle::distance(centre, h);
+      return ring ? d == radius : d <= radius;
+    }
+  };
+  const std::vector<Zone>& zones() const { return zones_; }
+  int addZone(Zone z) {
+    z.id = ++zoneSerial_;
+    zones_.push_back(std::move(z));
+    return zoneSerial_;
+  }
+  void removeZone(int id) { std::erase_if(zones_, [&](const Zone& z) { return z.id == id; }); }
+  std::vector<Zone>& zonesMutable() { return zones_; }
+  // The stat penalty on a unit standing in a Mortalha (the strongest zone it stands in), in %.
+  int weakenAt(const BattleUnit& u) const;
+  // Whether the unit stands in a zone of this element (Zero Absoluto: ×1.5 inside a Tempestade de Gelo).
+  bool inZoneOf(const BattleUnit& u, const std::string& element) const;
+  // Meteoros that landed since the last call (their zones, for the window to draw the fall).
+  std::vector<Zone> takeLanded() { return std::exchange(landed_, {}); }
+  void noteLanded(const Zone& z) { landed_.push_back(z); }
+
+  // --- Globo de Invulnerabilidade (the Mago Negro's, docs/SKILLS_MAGE.md): a bubble fixed where it was cast, for `rounds` of its
+  // caster's turns (one less as each of its turns begins; a dead caster's counts down at every new round). Spells of tier `maxTier`
+  // or under cast from outside into it fail on whoever stands inside (both sides, heals too); zones do nothing on its hexes; blows,
+  // arrows and lances pass; whoever stands inside casts out freely. ---
+  struct Globe {
+    int id = 0;
+    BattleHex centre;
+    int radius = 1, rounds = 2, maxTier = 3;
+    size_t caster = 0;
+    std::vector<BattleHex> cells;
+    bool covers(BattleHex h) const {
+      for (const BattleHex& c : cells)
+        if (c.x == h.x && c.y == h.y) return true;
+      return false;
+    }
+  };
+  const std::vector<Globe>& globes() const { return globes_; }
+  std::vector<Globe>& globesMutable() { return globes_; }
+  int addGlobe(Globe g) {
+    const int id = ++zoneSerial_;
+    g.id = id;
+    globes_.push_back(std::move(g));
+    return id;
+  }
+  // The globe covering the hex (the newest wins), or none.
+  const Globe* globeAt(BattleHex h) const {
+    const Globe* found = nullptr;
+    for (const Globe& g : globes_)
+      if (g.covers(h)) found = &g;
+    return found;
+  }
+  // The unit stands inside a globe (its anchor hex): zones do nothing to it.
+  bool shielded(const BattleUnit& u) const { return u.alive && globeAt({u.x, u.y}) != nullptr; }
+
+  // --- Turns (Ember BattleEngine: one battle-opening initiative roll, a round in initiative order) ---
+  // Every unit that takes turns (alive, not neutral) rolls 1d20 + its bonus; the order is highest first, the party
+  // winning a draw, then the unit's id.
+  template <typename Rng>
+  void rollInitiative(Rng& rng) {
+    for (BattleUnit& u : units_)
+      if (u.alive && u.side != "neutral") u.initiative = 1 + static_cast<int>(rng() * 20) + u.initiativeBonus;
+    sortTurnOrder();
+  }
+  // The first unit in this round's order still to act, or -1 when everyone has gone.
+  int activeUnit() const;
+  // A new round: volatile enmity fades, every unit may act again, the order is sorted again.
+  void startNewRound();
+  // The unit's own turn begins: its movement pool is whole.
+  void beginTurn(size_t unit);
+  void advanceConditionMinutes(int minutes);
+  int round() const { return round_; }
+  const std::vector<size_t>& turnOrder() const { return turnOrder_; }
+  // Ember evaluateEnd: "defeat" once no hero stands (a summon does not count), "victory" once the mission was ended
+  // (confirmFinish); empty while it goes on. Winning does not end it by itself: winAvailable() offers the end.
+  std::string result() const;
+  // The mission's win rule ("rout": no enemy stands; "boss": no boss stands; "escape": only a waypoint) and its waypoints.
+  const std::string& win() const { return win_; }
+  struct Exit {
+    std::string id, kind;  // "escape" (a DEX chance to get away), "dungeon" and "connector" (leave at once)
+    int x = 0, y = 0;      // the placement's own hex (its footprint's anchor)
+    std::vector<BattleHex> cells;
+    std::string targetMapId;
+    // A floor connector: the way back to the floor it came from (Ember DecorationPlacement.returnConnector), and the
+    // direction the map author picked ("up" / "down", empty = floorConnectorDirection's own rule).
+    bool returnConnector = false;
+    std::string connectorDirection;
+  };
+  const std::vector<Exit>& exits() const { return exits_; }
+  std::vector<Exit>& exits() { return exits_; }  // a mission's own routing (wispCrossing.ts routeWispCrossing)
+  // The end is on offer: a hero stands on a waypoint, or the win rule is met.
+  bool winAvailable() const;
+  // The waypoint a living hero is standing on, if any, and that hero.
+  const Exit* activeExit(size_t* hero = nullptr) const;
+  // Ember fleeChance: min(100, 60 + DEX / kDexDivisor) with the affinity bonus.
+  double fleeChance(size_t unit) const;
+  void setFinished() { finished_ = true; }
+  bool finished() const { return finished_; }
+
+  // --- A fight in progress, saved and resumed (Ember captureSnapshot / applySnapshot; world/BattleSave.cpp) ---
+  // The units' live state, the round ("turn"), its initiative order and the enmity tables, in BattleSnapshot's names.
+  nlohmann::json snapshot() const;
+  // Overlays a snapshot on this battle (just loaded); false, and nothing changed, when its units are not this battle's.
+  bool applySnapshot(const nlohmann::json& snap);
+
+  // --- Enmity (Ember enmity.ts): who each enemy goes after ---
+  void noteWeaponDamage(size_t attacker, size_t target, int dmg);
+  int enmityTarget(size_t enemy) const;  // the hero topping its table, or -1
+  // Ours (2026-10-28): the enmity (ce + ve) `enemy` holds for `hero`, 0 when none; a weight in the AI's choice, never a filter.
+  double enmityOf(size_t enemy, size_t hero) const;
+  // The score bonus that enmity gives a foe in the AI's choice (kEnmityScoreWeight x the enmity).
+  double enmityBonus(size_t enemy, size_t hero) const;
+  // Every hero standing, the one topping the enemy's table first (then table order); the AI's candidate list.
+  std::vector<size_t> aiTargets(size_t enemy) const;
+  // Ember terrainDistanceField: the walking cost from a hex to every hex, terrain only.
+  std::vector<int> distanceField(BattleHex from) const;  // per cell, -1 = unreachable
+  // The enemy's decision for its turn (runAiFor's plain branch: strike the best foe it can reach, else close in).
+  AiPlan planEnemy(size_t unit) const;
+
+  // Ember's hex neighbours in its own order (east, then counter-clockwise from the top); not clipped to the board.
+  static std::vector<BattleHex> neighbors(int x, int y);
+  static int distance(BattleHex a, BattleHex b);
+
+ private:
+  std::optional<int> stepCost(int x, int y, const BattleUnit& self, const std::vector<int>& occupancy, bool stop) const;
+  std::vector<int> occupancy() const;  // per cell: the unit standing there, or -1
+
+  std::string map_;
+  bool debugFreeCast_ = false;
+  bool roaming_ = false;
+  bool explore_ = false;
+  bool waypointsOnly_ = false;
+  int cols_ = 0, rows_ = 0;
+  std::vector<BattleCell> cells_;
+  std::vector<BattleUnit> units_;
+  std::vector<std::tuple<std::string, std::string, double>> affinity_;
+  std::vector<ForecastReference> forecastRefs_;
+  std::vector<RollReference> rollRefs_;
+  int lootRations_ = 0;
+  std::vector<std::string> log_;
+  std::vector<AiReference> aiRefs_;
+  std::vector<CastReference> castRefs_;
+  std::vector<TurnStartReference> turnRefs_;
+  std::vector<LockReference> lockRefs_;
+  void sortTurnOrder();
+  std::vector<size_t> turnOrder_;
+  int round_ = 1;
+  struct Enmity {
+    size_t enemy, hero;
+    double ce = 0, ve = 0;
+  };
+  std::vector<Enmity> enmity_;
+  std::vector<Zone> zones_, landed_;
+  std::vector<Globe> globes_;
+  int zoneSerial_ = 0;
+  std::map<std::string, double> affinityScores_;
+  bool scoresKnown_ = false;
+  std::map<size_t, std::set<size_t>> supportRecipients_;  // who each unit has already helped this action (gainSupportAffinity)
+  std::map<size_t, std::set<size_t>> hurtAllies_;         // who each unit has hurt this action (no side-by-side +0.1 for them)
+  std::string win_ = "rout";
+  std::vector<Exit> exits_;
+  bool finished_ = false;
+  std::vector<WebZone> webZones_;
+  std::vector<IceZone> iceZones_;
+  std::vector<AuraZone> auraZones_;
+  std::vector<WarpGate> warpGates_;
+  std::vector<Lock> locks_;
+  std::set<std::string> ownedWeapons_;
+  int lootEmber_ = 0;
+  std::vector<std::string> lootWeapons_, lootEquipment_;
+  std::set<std::string> lootUnknown_;
+  std::vector<std::pair<std::string, std::string>> lootUnknownPotions_;
+  std::optional<ChestLoot> chestLoot_;
+  std::vector<QuestPickup> questPickups_;
+  std::vector<std::string> questFound_;
+  bool turnRestrained_ = false;
+};
+
+}  // namespace ember

@@ -1,0 +1,588 @@
+{
+  "shared_before": {
+    "content/data/campaign.json": "12722fee213df2dec4fdadec1b9332fc5e1abc39c9cddd6b65604948e6568a84",
+    "content/data/editor-catalog.json": "9247dae263b827d6552eb609dc9da62bed8d258118e84e5ea0990fffbb5bd5c8",
+    "content/data/backdrop-fit.json": "a455dff24748fd6d1cf7e9d8a02f8cace2fb014f29998c34280962d9ec918672",
+    "content/maps/active.json": "6a6a5d18318203c1a0416e1718e99314189dded9ebae93cbb8cc4bbd1125df43",
+    "content/data/battle-rules.json": "05256a8343c93c7779d7892e9eb6f006e539bc41c94ff3352555807b2ad845d6",
+    "content/data/overworld.json": "9f356ad29527e8c1332d405dcbce1bd3f630ff5edb71aa98c020d1bbd9e60033",
+    "content/data/overworld-half.json": "1b10804beac09598e55742b44a3c4175f860acfcf776812de763fdaee2810b1a",
+    "content/data/undead-encounters.json": "2d66d88b3287a46848c5cdc67370be5f12fe403d183cb8a91b460dae208d649f"
+  },
+  "maps": [
+    {
+      "id": "random-forest-thorn-cache",
+      "region": "forest",
+      "region_name": "Floresta Tropical",
+      "tier": 1,
+      "title": "A Reserva dos Espinhos",
+      "map": "content/maps/ember/random-forest-thorn-cache001.json",
+      "source_preset": "C:\\EmberEngineBOSTA\\content\\maps\\ember\\random-amanita-glade006.json",
+      "level": 8,
+      "commander_level": 10,
+      "enemies": 6,
+      "commander": "Matriarca dos Espinhos",
+      "classes": [
+        "carnivorousPlant",
+        "ranger",
+        "ranger",
+        "mordavianWolfFinal",
+        "mordavianWolfFinal",
+        "cultist"
+      ],
+      "chests": 2,
+      "chest_tier": "better",
+      "world_cells": {
+        "content/data/overworld.json": 4,
+        "content/data/overworld-half.json": 14
+      },
+      "index": 65,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-forest-elder-root-vault",
+      "region": "forest",
+      "region_name": "Floresta Tropical",
+      "tier": 2,
+      "title": "O Cofre das Raízes Antigas",
+      "map": "content/maps/ember/random-forest-elder-root-vault001.json",
+      "source_preset": "C:\\EmberEngineBOSTA\\content\\maps\\ember\\random-amanita-glade006.json",
+      "level": 12,
+      "commander_level": 14,
+      "enemies": 8,
+      "commander": "Devora-Raízes",
+      "classes": [
+        "carnivorousPlant",
+        "giantSpider",
+        "giantSpider",
+        "cultistV2",
+        "cultistV2",
+        "ranger",
+        "ranger",
+        "mordavianWolfFinal"
+      ],
+      "chests": 3,
+      "chest_tier": "best",
+      "world_cells": {
+        "content/data/overworld.json": 4,
+        "content/data/overworld-half.json": 14
+      },
+      "index": 66,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-mountain-quarry-supplies",
+      "region": "mountain",
+      "region_name": "Montanha",
+      "tier": 1,
+      "title": "As Reservas da Pedreira",
+      "map": "content/maps/ember/random-mountain-quarry-supplies001.json",
+      "source_preset": "C:\\EmberEngineBOSTA\\content\\maps\\ember\\random-coldwind-saddle005.json",
+      "level": 8,
+      "commander_level": 10,
+      "enemies": 6,
+      "commander": "Guardião da Pedreira",
+      "classes": [
+        "ancientGolem",
+        "ranger",
+        "ranger",
+        "basePikeman",
+        "basePikeman",
+        "sorcerer"
+      ],
+      "chests": 2,
+      "chest_tier": "better",
+      "world_cells": {
+        "content/data/overworld.json": 17,
+        "content/data/overworld-half.json": 77
+      },
+      "index": 65,
+      "panorama": "re-panorama-14-v01.png",
+      "ground": "re-ground-15-v01.jpg"
+    },
+    {
+      "id": "random-mountain-granite-stronghold",
+      "region": "mountain",
+      "region_name": "Montanha",
+      "tier": 2,
+      "title": "O Reduto do Granito",
+      "map": "content/maps/ember/random-mountain-granite-stronghold001.json",
+      "source_preset": "C:\\EmberEngineBOSTA\\content\\maps\\ember\\random-coldwind-saddle005.json",
+      "level": 12,
+      "commander_level": 14,
+      "enemies": 8,
+      "commander": "Quebra-Granito",
+      "classes": [
+        "troll2",
+        "ancientGolem",
+        "ancientGolem",
+        "ranger",
+        "ranger",
+        "sorcerer",
+        "basePikeman",
+        "captain"
+      ],
+      "chests": 3,
+      "chest_tier": "best",
+      "world_cells": {
+        "content/data/overworld.json": 17,
+        "content/data/overworld-half.json": 77
+      },
+      "index": 66,
+      "panorama": "re-panorama-14-v01.png",
+      "ground": "re-ground-15-v01.jpg"
+    },
+    {
+      "id": "random-swamp-reed-cache",
+      "region": "swamp",
+      "region_name": "Pântano",
+      "tier": 1,
+      "title": "O Depósito dos Juncos",
+      "map": "content/maps/ember/random-swamp-reed-cache001.json",
+      "source_preset": "C:\\EmberEngineBOSTA\\content\\maps\\ember\\random-encounter-4003.json",
+      "level": 8,
+      "commander_level": 10,
+      "enemies": 6,
+      "commander": "Mandíbula dos Juncos",
+      "classes": [
+        "jacare",
+        "corrosiveSlime",
+        "corrosiveSlime",
+        "swampBlueDeer",
+        "swampBlueDeer",
+        "cultist"
+      ],
+      "chests": 2,
+      "chest_tier": "better",
+      "world_cells": {
+        "content/data/overworld.json": 0,
+        "content/data/overworld-half.json": 0
+      },
+      "index": 65,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-swamp-venom-island",
+      "region": "swamp",
+      "region_name": "Pântano",
+      "tier": 2,
+      "title": "A Ilha do Veneno",
+      "map": "content/maps/ember/random-swamp-venom-island001.json",
+      "source_preset": "C:\\EmberEngineBOSTA\\content\\maps\\ember\\random-encounter-4003.json",
+      "level": 12,
+      "commander_level": 14,
+      "enemies": 8,
+      "commander": "Rainha da Turfa",
+      "classes": [
+        "carnivorousPlant",
+        "jacare",
+        "jacare",
+        "giantSpider",
+        "giantSpider",
+        "cultistV2",
+        "cultistV2",
+        "swampBlueDeer"
+      ],
+      "chests": 3,
+      "chest_tier": "best",
+      "world_cells": {
+        "content/data/overworld.json": 0,
+        "content/data/overworld-half.json": 0
+      },
+      "index": 66,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-ice-frozen-convoy",
+      "region": "ice",
+      "region_name": "Gelo",
+      "tier": 1,
+      "title": "O Comboio Congelado",
+      "map": "content/maps/ember/random-ice-frozen-convoy001.json",
+      "source_preset": "C:\\EmberEngineBOSTA\\content\\maps\\ember\\random-small-toll-collector006.json",
+      "level": 8,
+      "commander_level": 10,
+      "enemies": 6,
+      "commander": "Rasga-Geada",
+      "classes": [
+        "troll",
+        "mordavianWolfFinal",
+        "mordavianWolfFinal",
+        "cultist",
+        "cultist",
+        "archer"
+      ],
+      "chests": 2,
+      "chest_tier": "better",
+      "world_cells": {
+        "content/data/overworld.json": 0,
+        "content/data/overworld-half.json": 0
+      },
+      "index": 65,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-ice-white-bastion",
+      "region": "ice",
+      "region_name": "Gelo",
+      "tier": 2,
+      "title": "O Bastião Branco",
+      "map": "content/maps/ember/random-ice-white-bastion001.json",
+      "source_preset": "C:\\EmberEngineBOSTA\\content\\maps\\ember\\random-small-toll-collector006.json",
+      "level": 12,
+      "commander_level": 14,
+      "enemies": 8,
+      "commander": "Vigia da Nevasca",
+      "classes": [
+        "ancientGolem",
+        "troll",
+        "troll",
+        "necromancer",
+        "necromancer",
+        "mordavianWolfFinal",
+        "mordavianWolfFinal",
+        "cultistV2"
+      ],
+      "chests": 3,
+      "chest_tier": "best",
+      "world_cells": {
+        "content/data/overworld.json": 0,
+        "content/data/overworld-half.json": 0
+      },
+      "index": 66,
+      "panorama": "re-panorama-11-v01.jpg",
+      "ground": "re-ground-12-v01.png"
+    },
+    {
+      "id": "random-dead-nature-ashen-stores",
+      "region": "dead-nature",
+      "region_name": "Natureza Morta",
+      "tier": 1,
+      "title": "As Reservas de Cinza",
+      "map": "content/maps/ember/random-dead-nature-ashen-stores001.json",
+      "source_preset": "C:\\EmberEngineBOSTA\\content\\maps\\ember\\random-blightwood-verge004.json",
+      "level": 8,
+      "commander_level": 10,
+      "enemies": 6,
+      "commander": "Boi do Último Celeiro",
+      "classes": [
+        "undeadOx",
+        "zombie",
+        "zombie",
+        "cultist",
+        "cultist",
+        "apparition"
+      ],
+      "chests": 2,
+      "chest_tier": "better",
+      "world_cells": {
+        "content/data/overworld.json": 0,
+        "content/data/overworld-half.json": 0
+      },
+      "index": 65,
+      "panorama": "re-panorama-13-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-dead-nature-hollow-harvest",
+      "region": "dead-nature",
+      "region_name": "Natureza Morta",
+      "tier": 2,
+      "title": "A Colheita dos Vazios",
+      "map": "content/maps/ember/random-dead-nature-hollow-harvest001.json",
+      "source_preset": "C:\\EmberEngineBOSTA\\content\\maps\\ember\\random-blightwood-verge004.json",
+      "level": 12,
+      "commander_level": 14,
+      "enemies": 8,
+      "commander": "Ceifador do Bosque Morto",
+      "classes": [
+        "necromancer",
+        "undeadOx",
+        "undeadOx",
+        "zombie2",
+        "zombie2",
+        "emberedWraith",
+        "emberedWraith",
+        "chainBoundPenitent"
+      ],
+      "chests": 3,
+      "chest_tier": "best",
+      "world_cells": {
+        "content/data/overworld.json": 0,
+        "content/data/overworld-half.json": 0
+      },
+      "index": 66,
+      "panorama": "re-panorama-13-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-underworld-crystal-supplies",
+      "region": "underworld",
+      "region_name": "Submundo",
+      "tier": 1,
+      "title": "O Depósito de Ametista",
+      "map": "content/maps/ember/random-underworld-crystal-supplies001.json",
+      "source_preset": "C:\\EmberEngineBOSTA\\content\\maps\\ember\\random-crystal-ossuary003.json",
+      "level": 8,
+      "commander_level": 10,
+      "enemies": 6,
+      "commander": "Carcereiro de Ametista",
+      "classes": [
+        "chainBoundPenitent",
+        "corrosiveSlime",
+        "corrosiveSlime",
+        "zombie2",
+        "zombie2",
+        "sorcerer"
+      ],
+      "chests": 2,
+      "chest_tier": "better",
+      "world_cells": {
+        "content/data/overworld.json": 0,
+        "content/data/overworld-half.json": 0
+      },
+      "index": 65,
+      "panorama": "re-panorama-16-v01.png",
+      "ground": "re-ground-17-v01.jpg"
+    },
+    {
+      "id": "random-underworld-basalt-treasury",
+      "region": "underworld",
+      "region_name": "Submundo",
+      "tier": 2,
+      "title": "O Tesouro do Basalto",
+      "map": "content/maps/ember/random-underworld-basalt-treasury001.json",
+      "source_preset": "C:\\EmberEngineBOSTA\\content\\maps\\ember\\random-crystal-ossuary003.json",
+      "level": 12,
+      "commander_level": 14,
+      "enemies": 8,
+      "commander": "Devorador de Basalto",
+      "classes": [
+        "troll2",
+        "chainBoundPenitent",
+        "chainBoundPenitent",
+        "corrosiveSlimeLarge",
+        "corrosiveSlimeLarge",
+        "necromancer",
+        "necromancer",
+        "giantSpider"
+      ],
+      "chests": 3,
+      "chest_tier": "best",
+      "world_cells": {
+        "content/data/overworld.json": 0,
+        "content/data/overworld-half.json": 0
+      },
+      "index": 66,
+      "panorama": "re-panorama-16-v01.png",
+      "ground": "re-ground-17-v01.jpg"
+    },
+    {
+      "id": "random-aquatic-ferrymen-cache",
+      "region": "aquatic",
+      "region_name": "Aquática",
+      "tier": 1,
+      "title": "As Reservas dos Barqueiros",
+      "map": "content/maps/ember/random-aquatic-ferrymen-cache001.json",
+      "source_preset": "C:\\EmberEngineBOSTA\\content\\maps\\ember\\random-river-rope-ambush007.json",
+      "level": 8,
+      "commander_level": 10,
+      "enemies": 6,
+      "commander": "Mandíbula do Canal",
+      "classes": [
+        "jacare",
+        "jacare",
+        "jacare",
+        "archer",
+        "archer",
+        "captain"
+      ],
+      "chests": 2,
+      "chest_tier": "better",
+      "world_cells": {
+        "content/data/overworld.json": 0,
+        "content/data/overworld-half.json": 0
+      },
+      "index": 65,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-aquatic-sunken-vault",
+      "region": "aquatic",
+      "region_name": "Aquática",
+      "tier": 2,
+      "title": "O Cofre das Duas Margens",
+      "map": "content/maps/ember/random-aquatic-sunken-vault001.json",
+      "source_preset": "C:\\EmberEngineBOSTA\\content\\maps\\ember\\random-river-rope-ambush007.json",
+      "level": 12,
+      "commander_level": 14,
+      "enemies": 8,
+      "commander": "Guardião das Duas Margens",
+      "classes": [
+        "ancientGolem",
+        "jacare",
+        "jacare",
+        "sorcerer",
+        "sorcerer",
+        "brigandCrossbowman",
+        "brigandCrossbowman",
+        "captain"
+      ],
+      "chests": 3,
+      "chest_tier": "best",
+      "world_cells": {
+        "content/data/overworld.json": 0,
+        "content/data/overworld-half.json": 0
+      },
+      "index": 66,
+      "panorama": "re-panorama-09-v01.png",
+      "ground": "re-ground-10-v01.png"
+    },
+    {
+      "id": "random-road-veteran-supply-train",
+      "region": "road",
+      "region_name": "Estrada",
+      "tier": 1,
+      "title": "O Trem de Suprimentos",
+      "map": "content/maps/ember/random-road-veteran-supply-train001.json",
+      "source_preset": "C:\\EmberEngineBOSTA\\content\\maps\\ember\\random-road-broken-milepost005.json",
+      "level": 8,
+      "commander_level": 10,
+      "enemies": 6,
+      "commander": "Capitão das Cargas",
+      "classes": [
+        "captain",
+        "brigandCrossbowman",
+        "brigandCrossbowman",
+        "basePikeman",
+        "basePikeman",
+        "rogue"
+      ],
+      "chests": 2,
+      "chest_tier": "better",
+      "world_cells": {
+        "content/data/overworld.json": 96,
+        "content/data/overworld-half.json": 384
+      },
+      "index": 65,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-road-black-standard-convoy",
+      "region": "road",
+      "region_name": "Estrada",
+      "tier": 2,
+      "title": "O Comboio do Estandarte Negro",
+      "map": "content/maps/ember/random-road-black-standard-convoy001.json",
+      "source_preset": "C:\\EmberEngineBOSTA\\content\\maps\\ember\\random-road-broken-milepost005.json",
+      "level": 12,
+      "commander_level": 14,
+      "enemies": 8,
+      "commander": "Marechal do Estandarte Negro",
+      "classes": [
+        "heavyKnight",
+        "captain",
+        "captain",
+        "brigandCrossbowman",
+        "brigandCrossbowman",
+        "basePikeman",
+        "basePikeman",
+        "warlock"
+      ],
+      "chests": 3,
+      "chest_tier": "best",
+      "world_cells": {
+        "content/data/overworld.json": 96,
+        "content/data/overworld-half.json": 384
+      },
+      "index": 66,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-plains-highgrass-cache",
+      "region": "plains",
+      "region_name": "Planície",
+      "tier": 1,
+      "title": "O Depósito do Capim Alto",
+      "map": "content/maps/ember/random-plains-highgrass-cache001.json",
+      "source_preset": "C:\\EmberEngineBOSTA\\content\\maps\\ember\\random-plains-windgrass004.json",
+      "level": 8,
+      "commander_level": 10,
+      "enemies": 6,
+      "commander": "Devoradora da Campina",
+      "classes": [
+        "carnivorousPlant",
+        "ranger",
+        "ranger",
+        "mordavianWolfFinal",
+        "mordavianWolfFinal",
+        "brigandCrossbowman"
+      ],
+      "chests": 2,
+      "chest_tier": "better",
+      "world_cells": {
+        "content/data/overworld.json": 5,
+        "content/data/overworld-half.json": 15
+      },
+      "index": 65,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    },
+    {
+      "id": "random-plains-ridge-war-stores",
+      "region": "plains",
+      "region_name": "Planície",
+      "tier": 2,
+      "title": "As Reservas do Espigão",
+      "map": "content/maps/ember/random-plains-ridge-war-stores001.json",
+      "source_preset": "C:\\EmberEngineBOSTA\\content\\maps\\ember\\random-plains-windgrass004.json",
+      "level": 12,
+      "commander_level": 14,
+      "enemies": 8,
+      "commander": "Sentinela do Espigão",
+      "classes": [
+        "sentinel",
+        "troll",
+        "troll",
+        "ranger",
+        "ranger",
+        "basePikeman",
+        "basePikeman",
+        "cultistV2"
+      ],
+      "chests": 3,
+      "chest_tier": "best",
+      "world_cells": {
+        "content/data/overworld.json": 5,
+        "content/data/overworld-half.json": 15
+      },
+      "index": 66,
+      "panorama": "re-panorama-18-v01.png",
+      "ground": "re-ground-19-v01.png"
+    }
+  ],
+  "reserved_indices": [
+    65,
+    66
+  ],
+  "max_original_index": 64,
+  "source_map_hashes": {
+    "content\\maps\\ember\\random-amanita-glade006.json": "71ea8b1475caed01d75dc9afb891a8045d68ecd4dfad9d4477735db2f09c19d8",
+    "content\\maps\\ember\\random-coldwind-saddle005.json": "7504e9fb1de84fe3cc6e6b75e3031f2f933ba63efeecfafeec1922afee5b039d",
+    "content\\maps\\ember\\random-encounter-4003.json": "cdc63612ed36afdfbaf4c2149b25b0b1807b059356ae6efe29252ddf98b20a2a",
+    "content\\maps\\ember\\random-small-toll-collector006.json": "2505c18ef4a607f5e40b255aea7fa7f274e8cf213347e813409627ae054c8c58",
+    "content\\maps\\ember\\random-blightwood-verge004.json": "6c23195e53adaeb5ef8ed85e17e7cff0a0734522e55c75fec4141b55a3a241fc",
+    "content\\maps\\ember\\random-crystal-ossuary003.json": "06ddfa308cae747d7918765084f42bdbd853281608e4884f5324747da98a8ced",
+    "content\\maps\\ember\\random-river-rope-ambush007.json": "2df4d24fa5d7350ea089da7a938d7dece138ce7a1269e91808c5c5f3dc1b2db6",
+    "content\\maps\\ember\\random-road-broken-milepost005.json": "237d73f55ec5a523be43757280df3832c255ad78ef2d6b1c650681de9a1ac694",
+    "content\\maps\\ember\\random-plains-windgrass004.json": "54969c20d5ae62f7875451b35d2f30c624a45e5b97095884915b47c10d73cb85"
+  }
+}

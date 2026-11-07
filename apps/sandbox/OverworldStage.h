@@ -336,7 +336,14 @@ class OverworldStage : public Stage {
   void event(const SDL_Event& e) override {
     if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.key == SDLK_ESCAPE) {
       // Esc: closes what is open; on the bare map it opens Opções (OptionsButton escapeKey).
-      if (convDialog_) convDialog_.reset();
+      if (film_) { film_.reset(); afterFilm_ = {}; }
+      else if (inventory_) {
+        inventory_.reset();
+        if (!sheetReturn_.empty()) openSheet(std::exchange(sheetReturn_, {}));
+      }
+      else if (inn_) { if (inn_->escape()) inn_.reset(); }
+      else if (event_) event_.reset();
+      else if (convDialog_) convDialog_.reset();
       else if (sheet_.isOpen()) sheet_.closeConditionOrSheet();
       else if (!warpHero_.empty()) warpHero_.clear();
       else if (!recallHero_.empty()) recallHero_.clear();
@@ -349,7 +356,7 @@ class OverworldStage : public Stage {
       else if (questLog_) questLog_ = false;
       else if (party_) party_ = false;
       else if (movementOpen_) movementOpen_ = false;
-      else options_ = true;
+      else if (callbacks_.title) callbacks_.title();
     }
   }
 

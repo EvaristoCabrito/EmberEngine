@@ -4212,6 +4212,13 @@
         "x": 16,
         "y": 23,
         "level": 15
+      },
+      {
+        "name": "Lio",
+        "classId": "villagerF1",
+        "x": 14,
+        "y": 22,
+        "level": 4
       }
     ],
     "enemySpawns": [
@@ -4293,6 +4300,17 @@
         "level": 2
       }
     ],
-    "neutralSpawns": []
+    "neutralSpawns": [
+      {
+        "name": "Odrin",
+        "classId": "charcoalBurner",
+        "x": 16,
+        "y": 9,
+        "level": 4
+      }
+    ],
+    "guestHeroes": [
+      "Lio"
+    ]
   }
 }

@@ -12,6 +12,9 @@
     ],
     "wisp-forest-crossing-boss": [
       "the-devouring-root-01-the-warning"
+    ],
+    "aldeia": [
+      "aldeia-em-chamas-01-carne-entregue"
     ]
   },
   "onVictory": {
@@ -20,6 +23,9 @@
     ],
     "wisp-forest-crossing-boss": [
       "the-devouring-root-02-after-the-battle"
+    ],
+    "aldeia": [
+      "aldeia-em-chamas-02-o-gancho-vazio"
     ]
   }
 }

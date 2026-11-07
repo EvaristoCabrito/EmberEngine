@@ -38,6 +38,13 @@ class InnScreen {
   explicit InnScreen(Entry entry = Entry::Tavern) : entry_(entry) {}
   // Vargan's first-visit film is on (GameApp: the Inn's music waits for it).
   bool filmPlaying() const { return film_.has_value(); }
+  // True only after all nested service screens have been left.
+  bool escape() {
+    if (inventory_) { inventory_.reset(); return false; }
+    if (film_) { film_.reset(); view_ = View::Smith; return false; }
+    if (view_ != View::Main) { view_ = View::Main; return false; }
+    return true;
+  }
   struct Context {
     ember::Json& save;
     std::function<void()> write;  // persists `save`

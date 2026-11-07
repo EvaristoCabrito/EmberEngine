@@ -12,7 +12,10 @@ if not exist "%EXE%" (
   goto :fim
 )
 
-set "GROUND=%ART%\ground\ground-v74.pak"
+set "GROUND=%ART%\ground\ground-v77-random-encounters-v01.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v76-ashen-panorama.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v75-ashen.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v74.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v69.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v68.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v67.pak"
@@ -127,13 +130,18 @@ for %%P in ("%GROUND%" "%SPRITES%" "%MESHES%" "%ART%\scenes" "%HERE%\content\map
   )
 )
 
+rem O log: JOGAR-log.txt; se outro programa o prende (aberto / mapeado, o Windows nao deixa reescrever), outro arquivo,
+rem senao o jogo nem abre (06/11/2026).
+set "LOG=%HERE%\JOGAR-log.txt"
+(break > "%LOG%") 2>nul || set "LOG=%HERE%\JOGAR-log-2.txt"
+(break > "%LOG%") 2>nul || set "LOG=%TEMP%\JOGAR-log.txt"
 echo Abrindo o Ember...
-"%EXE%" --title --ground "%GROUND%" --sprites "%SPRITES%" --meshes "%MESHES%" --scenes "%ART%\scenes" --maps "%HERE%\content\maps\ember" --game-assets "%HERE%\content\assets" %HEROES% > "%HERE%\JOGAR-log.txt" 2>&1
+"%EXE%" --title --ground "%GROUND%" --sprites "%SPRITES%" --meshes "%MESHES%" --scenes "%ART%\scenes" --maps "%HERE%\content\maps\ember" --game-assets "%HERE%\content\assets" %HEROES% > "%LOG%" 2>&1
 set "RUNERR=%ERRORLEVEL%"
 if not "%RUNERR%"=="0" (
   echo.
   echo O jogo fechou com erro ^(codigo %RUNERR%^). Ultimas linhas:
-  powershell -NoProfile -Command "Get-Content '%HERE%\JOGAR-log.txt' -Tail 25"
+  powershell -NoProfile -Command "Get-Content '%LOG%' -Tail 25"
   echo Tire uma foto desta tela e mande para o Claude.
   goto :fim
 )

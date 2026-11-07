@@ -42,6 +42,8 @@ struct Stage {
   virtual Loading loading() const { return {}; }
   // Drawn over the stage's own panel in the same UI frame (a campaign dialog over a fight, say); set by its owner.
   std::function<void()> overlay;
+  std::function<bool()> escapeOverlay;  // closes only the top conversation / service
+  virtual bool ownsEscapePopup() const { return false; }
 };
 
 }  // namespace ember

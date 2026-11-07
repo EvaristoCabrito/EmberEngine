@@ -93,7 +93,7 @@ inline bool drawQuestLogPanel(const ember::Json& quests, const ember::Json& poti
   ImGui::SetCursorScreenPos({head.x, head.y + 64});
   const std::vector<Entry>* lists[2] = {&active, &done};
   const std::string titles[2] = {tr("Missões ativas", "Active quests"), tr("Missões concluídas", "Completed quests")};
-  const std::string empties[2] = {tr("Nenhuma missão ativa. Fale com o pessoal da Estalagem.", "No active quests. Talk to the people at the Inn."),
+  const std::string empties[2] = {tr("Nenhuma missão ativa. Explore e converse com os personagens.", "No active quests. Explore and talk to people."),
                                   tr("Nenhuma missão concluída ainda.", "No quests completed yet.")};
   for (int s = 0; s < 2; ++s) {
     kicker(std::format("{} · {}", titles[s], lists[s]->size()), 14.0f);
@@ -121,9 +121,10 @@ inline bool drawQuestLogPanel(const ember::Json& quests, const ember::Json& poti
       const std::string what = (kind == "kill" ? tr("Abater ", "Slay ") + target : tr(std::format("Recolher {} itens", e.total), std::format("Collect {} items", e.total))) + " · " + place;
       dl->AddText(ui, 14.0f, {a.x + 36, a.y + 36}, kMuted, what.c_str(), nullptr, inner - 48);
       if (e.status != "done") {
-        std::string line = kind == "kill" ? (e.have >= e.total ? tr("Alvo abatido — entregar na Estalagem", "Target slain — hand in at the Inn") : tr("Alvo ainda vivo", "Target still alive"))
+        std::string line = kind == "kill" ? (e.have >= e.total ? tr("Alvo abatido — fale com " + q.value("turnInName", std::string("o responsável na Estalagem")), "Target slain — talk to " + q.value("turnInName", std::string("the quest giver at the Inn"))) : tr("Alvo ainda vivo", "Target still alive"))
                                           : tr(std::format("Encontrados {} / {}", e.have, e.total), std::format("Found {} / {}", e.have, e.total));
-        line += tr(std::format(" · Recompensa {} Gold", q.value("reward", 0)), std::format(" · Reward {} Gold", q.value("reward", 0)));
+        if (q.value("reward", 0) > 0) line += tr(std::format(" · Recompensa {} Gold", q.value("reward", 0)), std::format(" · Reward {} Gold", q.value("reward", 0)));
+        if (q.value("rewardBagSlotsPerHero", 0) > 0) line += tr(" · Bag of Holding +1: +1 slot por personagem", " · Bag of Holding +1: +1 slot per hero");
         if (q.contains("rewardPotions") && q["rewardPotions"].is_array() && potions.is_array())
           for (const ember::Json& p : q["rewardPotions"])
             for (const ember::Json& pd : potions)

@@ -44,46 +44,60 @@
       "wisp-forest-crossing-panorama-v14-alpha.png"
     ],
     "random-amanita-glade": [
-      "vau-panorama-tira-teima-v05.png"
+      "vau-panorama-tira-teima-v05.png",
+      "re-panorama-09-v01.png"
     ],
     "random-blightwood-verge": [
-      "vau-panorama-tira-teima-v05.png"
+      "vau-panorama-tira-teima-v05.png",
+      "re-panorama-13-v01.png"
     ],
     "random-broken-antler-grove": [
-      "vau-panorama-tira-teima-v05.png"
+      "vau-panorama-tira-teima-v05.png",
+      "re-panorama-09-v01.png"
     ],
     "random-caravan-green-road": [
-      "vau-panorama-tira-teima-v05.png"
+      "vau-panorama-tira-teima-v05.png",
+      "re-panorama-09-v01.png"
     ],
     "random-encounter-1": [
-      "vau-panorama-tira-teima-v05.png"
+      "vau-panorama-tira-teima-v05.png",
+      "re-panorama-09-v01.png"
     ],
     "random-encounter-2": [
-      "vau-panorama-tira-teima-v05.png"
+      "vau-panorama-tira-teima-v05.png",
+      "re-panorama-09-v01.png"
     ],
     "random-forest011-cedar-glade": [
-      "vau-panorama-tira-teima-v05.png"
+      "vau-panorama-tira-teima-v05.png",
+      "re-panorama-09-v01.png"
     ],
     "random-forest011-hemlock-trail": [
-      "vau-panorama-tira-teima-v05.png"
+      "vau-panorama-tira-teima-v05.png",
+      "re-panorama-09-v01.png"
     ],
     "random-forest011-hollow-grove": [
-      "vau-panorama-tira-teima-v05.png"
+      "vau-panorama-tira-teima-v05.png",
+      "re-panorama-13-v01.png"
     ],
     "random-forest011-needle-crossing": [
-      "vau-panorama-tira-teima-v05.png"
+      "vau-panorama-tira-teima-v05.png",
+      "re-panorama-13-v01.png"
     ],
     "random-hollow-root-den": [
-      "vau-panorama-tira-teima-v05.png"
+      "vau-panorama-tira-teima-v05.png",
+      "re-panorama-09-v01.png"
     ],
     "random-mora-hollow-stream": [
-      "vau-panorama-tira-teima-v05.png"
+      "vau-panorama-tira-teima-v05.png",
+      "re-panorama-09-v01.png"
     ],
     "random-mora-rootwatch": [
-      "vau-panorama-tira-teima-v05.png"
+      "vau-panorama-tira-teima-v05.png",
+      "re-panorama-09-v01.png"
     ],
     "random-river-rope-ambush": [
-      "vau-panorama-tira-teima-v05.png"
+      "vau-panorama-tira-teima-v05.png",
+      "re-panorama-09-v01.png"
     ],
     "farmlands": [
       "fields-revisited-panorama-v01.png"
@@ -102,7 +116,221 @@
     ],
     "ashen-forest-crossing": [
       "ashen-forest-panorama-v06-wide-alpha.png",
-      "ashen-forest-panorama-v06-wide-alpha.png#cinzas"
+      "ashen-forest-panorama-v06-wide-alpha.png#cinzas",
+      "ashen-forest-panorama-user-v01-alpha.png"
+    ],
+    "random-backward-hunt": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-bell-beneath-ice": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-cairnkeepers-rise": [
+      "re-panorama-14-v01.png"
+    ],
+    "random-coldwind-saddle": [
+      "re-panorama-14-v01.png"
+    ],
+    "random-crystal-ossuary": [
+      "re-panorama-16-v01.png"
+    ],
+    "random-encounter-10": [
+      "re-panorama-18-v01.png"
+    ],
+    "random-encounter-11": [
+      "re-panorama-20-v01.jpg"
+    ],
+    "random-encounter-12": [
+      "re-panorama-09-v01.png"
+    ],
+    "random-encounter-13": [
+      "re-panorama-18-v01.png"
+    ],
+    "random-encounter-14": [
+      "re-panorama-21-v01.jpg"
+    ],
+    "random-encounter-3": [
+      "re-panorama-18-v01.png"
+    ],
+    "random-encounter-4": [
+      "re-panorama-09-v01.png"
+    ],
+    "random-encounter-5": [
+      "re-panorama-18-v01.png"
+    ],
+    "random-encounter-6": [
+      "re-panorama-22-v01.png"
+    ],
+    "random-encounter-7": [
+      "re-panorama-18-v01.png"
+    ],
+    "random-encounter-8": [
+      "re-panorama-24-v01.jpg"
+    ],
+    "random-encounter-9": [
+      "re-panorama-09-v01.png"
+    ],
+    "random-frostbound-sanctuary": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-greycairn-plateau": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-hollow-pine-basin": [
+      "re-panorama-14-v01.png"
+    ],
+    "random-icelands-blue-antlers": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-icelands-i1": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-icelands-i10": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-icelands-i11": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-icelands-i12": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-icelands-i13": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-icelands-i14": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-icelands-i2": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-icelands-i3": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-icelands-i4": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-icelands-i5": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-icelands-i6": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-icelands-i7": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-icelands-i8": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-icelands-i9": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-icelands-last-beacon": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-photographic-grassland": [
+      "re-panorama-18-v01.png"
+    ],
+    "random-photographic-meadow": [
+      "re-panorama-18-v01.png"
+    ],
+    "random-photographic-prairie": [
+      "re-panorama-18-v01.png"
+    ],
+    "random-plains-broken-caravan": [
+      "re-panorama-18-v01.png"
+    ],
+    "random-plains-hill-patrol": [
+      "re-panorama-18-v01.png"
+    ],
+    "random-plains-old-stones": [
+      "re-panorama-18-v01.png"
+    ],
+    "random-plains-silent-harvest": [
+      "re-panorama-18-v01.png"
+    ],
+    "random-plains-sunken-ford": [
+      "re-panorama-18-v01.png"
+    ],
+    "random-plains-windgrass": [
+      "re-panorama-18-v01.png"
+    ],
+    "random-rimewater-shrine": [
+      "re-panorama-14-v01.png"
+    ],
+    "random-road-broken-milepost": [
+      "re-panorama-18-v01.png"
+    ],
+    "random-road-three-routes-market": [
+      "re-panorama-20-v01.jpg"
+    ],
+    "random-small-toll-collector": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-splintered-trunk-pass": [
+      "re-panorama-14-v01.png"
+    ],
+    "random-stoneshelf-pass": [
+      "re-panorama-25-v01.png"
+    ],
+    "random-walking-campfire": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-whispering-reeds": [
+      "re-panorama-18-v01.png"
+    ],
+    "random-forest-thorn-cache": [
+      "re-panorama-09-v01.png"
+    ],
+    "random-forest-elder-root-vault": [
+      "re-panorama-09-v01.png"
+    ],
+    "random-mountain-quarry-supplies": [
+      "re-panorama-14-v01.png"
+    ],
+    "random-mountain-granite-stronghold": [
+      "re-panorama-14-v01.png"
+    ],
+    "random-swamp-reed-cache": [
+      "re-panorama-09-v01.png"
+    ],
+    "random-swamp-venom-island": [
+      "re-panorama-09-v01.png"
+    ],
+    "random-ice-frozen-convoy": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-ice-white-bastion": [
+      "re-panorama-11-v01.jpg"
+    ],
+    "random-dead-nature-ashen-stores": [
+      "re-panorama-13-v01.png"
+    ],
+    "random-dead-nature-hollow-harvest": [
+      "re-panorama-13-v01.png"
+    ],
+    "random-underworld-crystal-supplies": [
+      "re-panorama-16-v01.png"
+    ],
+    "random-underworld-basalt-treasury": [
+      "re-panorama-16-v01.png"
+    ],
+    "random-aquatic-ferrymen-cache": [
+      "re-panorama-09-v01.png"
+    ],
+    "random-aquatic-sunken-vault": [
+      "re-panorama-09-v01.png"
+    ],
+    "random-road-veteran-supply-train": [
+      "re-panorama-18-v01.png"
+    ],
+    "random-road-black-standard-convoy": [
+      "re-panorama-18-v01.png"
+    ],
+    "random-plains-highgrass-cache": [
+      "re-panorama-18-v01.png"
+    ],
+    "random-plains-ridge-war-stores": [
+      "re-panorama-18-v01.png"
     ]
   },
   "paintings": {
@@ -600,6 +828,157 @@
       "groundFromDegrees": 3.0,
       "groundDepth": 0.0,
       "_note": "Ashen Forest Crossing 007 (2026-11-05): the same painting over the Bosque Morto's ash ground photo at real size, as the Bosque itself (the user: 'o Bosque Morto tem as cinzas perfeitas')"
+    },
+    "ashen-forest-panorama-user-v01-alpha.png": {
+      "horizon": 0.84,
+      "bottom": 1.0,
+      "skyTop": 0.0,
+      "degreesPerHeight": 45.0,
+      "bottomDegrees": 7.2,
+      "spanDegrees": 105.0,
+      "glowColumn": 0.5,
+      "horizonDegrees": 1.5,
+      "alphaSky": true,
+      "ground": "bosque-ground-v01.jpg",
+      "groundTile": 16.0,
+      "groundFar": 300.0,
+      "groundFromDegrees": 3.0,
+      "groundDepth": 0.0,
+      "_note": "Panorama supplied directly by the user, unchanged, with true alpha."
+    },
+    "re-panorama-09-v01.png": {
+      "horizon": 0.47,
+      "bottom": 1.0,
+      "skyTop": 0.0,
+      "degreesPerHeight": 40.0,
+      "bottomDegrees": 23.6,
+      "spanDegrees": 119.0,
+      "glowColumn": 0.5,
+      "horizonDegrees": 2.0,
+      "alphaSky": true,
+      "groundTile": 16.0,
+      "groundFar": 300.0,
+      "groundFromDegrees": 3.0
+    },
+    "re-panorama-11-v01.jpg": {
+      "horizon": 0.35,
+      "bottom": 1.0,
+      "skyTop": 0.08,
+      "degreesPerHeight": 30.0,
+      "bottomDegrees": 40.0,
+      "spanDegrees": 150.0,
+      "glowColumn": 0.5,
+      "horizonDegrees": 0,
+      "groundTile": 4.0
+    },
+    "re-panorama-13-v01.png": {
+      "horizon": 0.55,
+      "bottom": 1,
+      "skyTop": 0,
+      "degreesPerHeight": 40,
+      "bottomDegrees": 23.6,
+      "spanDegrees": 119,
+      "glowColumn": 0.5,
+      "horizonDegrees": 2,
+      "alphaSky": true,
+      "groundTile": 16,
+      "groundFar": 300,
+      "groundFromDegrees": 3
+    },
+    "re-panorama-14-v01.png": {
+      "horizon": 0.48,
+      "bottom": 1.0,
+      "skyTop": 0,
+      "degreesPerHeight": 30.0,
+      "bottomDegrees": 40.0,
+      "spanDegrees": 150.0,
+      "glowColumn": 0.5,
+      "horizonDegrees": 0,
+      "alphaSky": true,
+      "groundTile": 36.0
+    },
+    "re-panorama-16-v01.png": {
+      "horizon": 0.4,
+      "bottom": 1.0,
+      "skyTop": 0.08,
+      "degreesPerHeight": 30.0,
+      "bottomDegrees": 40.0,
+      "spanDegrees": 150.0,
+      "glowColumn": 0.5,
+      "horizonDegrees": -6.0,
+      "groundTile": 4.0
+    },
+    "re-panorama-18-v01.png": {
+      "horizon": 0.44,
+      "bottom": 1,
+      "skyTop": 0,
+      "degreesPerHeight": 40,
+      "bottomDegrees": 23.6,
+      "spanDegrees": 119,
+      "glowColumn": 0.8,
+      "horizonDegrees": 0,
+      "groundTile": 180,
+      "groundFar": 300,
+      "groundFromDegrees": 3
+    },
+    "re-panorama-20-v01.jpg": {
+      "horizon": 0.4,
+      "bottom": 1.0,
+      "skyTop": 0.08,
+      "degreesPerHeight": 30.0,
+      "bottomDegrees": 40.0,
+      "spanDegrees": 150.0,
+      "glowColumn": 0.5,
+      "horizonDegrees": -6.0
+    },
+    "re-panorama-21-v01.jpg": {
+      "horizon": 0.4,
+      "bottom": 1.0,
+      "skyTop": 0.08,
+      "degreesPerHeight": 30.0,
+      "bottomDegrees": 40.0,
+      "spanDegrees": 150.0,
+      "glowColumn": 0.5,
+      "horizonDegrees": -6.0,
+      "groundTile": 4.0
+    },
+    "re-panorama-22-v01.png": {
+      "horizon": 0.41,
+      "bottom": 1.0,
+      "skyTop": 0.0,
+      "degreesPerHeight": 40.0,
+      "bottomDegrees": 23.6,
+      "spanDegrees": 119.0,
+      "glowColumn": 0.65,
+      "horizonDegrees": 0.0,
+      "alphaSky": true,
+      "groundTile": 36.0,
+      "groundFar": 300.0,
+      "groundFromDegrees": 3.0
+    },
+    "re-panorama-24-v01.jpg": {
+      "horizon": 0.4,
+      "bottom": 1.0,
+      "skyTop": 0.08,
+      "degreesPerHeight": 30.0,
+      "bottomDegrees": 40.0,
+      "spanDegrees": 150.0,
+      "glowColumn": 0.5,
+      "horizonDegrees": -6.0
+    },
+    "re-panorama-25-v01.png": {
+      "horizon": 0.29,
+      "bottom": 1.0,
+      "skyTop": 0.0,
+      "degreesPerHeight": 40.0,
+      "bottomDegrees": 23.6,
+      "spanDegrees": 119.0,
+      "glowColumn": 0.5,
+      "horizonDegrees": 0.0,
+      "alphaSky": true,
+      "groundTile": 36.0,
+      "groundFar": 300.0,
+      "groundFromDegrees": 3.0
     }
   }
 }

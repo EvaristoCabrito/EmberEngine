@@ -1,0 +1,3 @@
+[warn] slow stage frame: 274.1 ms = sprites 271.7, uploads 1.3, rest 0.1
+[warn] slow frame: 281.5 ms busy = assets 0.0, stage 274.4, ui 0.8, render 6.3 (record 6.0, submit 0.1, present 0.0; waits 0.1 not counted)
+[ERROR] cutscene estranhos-na-costa: FAIL at step 1 ((17, 8) is off the board); controls back

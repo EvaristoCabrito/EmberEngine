@@ -1,0 +1,833 @@
+[info] mounted build\sprites\battle.pak (3340 assets)
+[info] mounted build\meshes\props-v42.pak (780 assets)
+[info] mounted build\meshes\architecture.pak (32 assets)
+[info] mounted build\meshes\effects.pak (5 assets)
+[info] mounted build\ground\ground-v77-random-encounters-v01.pak (360 assets)
+[info] GPU: AMD Radeon(TM) RX 6400 (Vulkan 1.4.315, driver 0x800161)
+[info] transfer queue: dedicated (family 2)
+[info] pipeline cache: 101586444 bytes restored for this GPU/driver
+[info] bindless: 65536 textures, 16384 storage images, 256 samplers, 4096 storage buffers
+[info] bindless: creating descriptor set layout
+[info] bindless: descriptor set layout ready
+[info] bindless: creating descriptor pool
+[info] bindless: descriptor pool ready
+[info] bindless: allocating descriptor set
+[info] bindless: descriptor set ready
+[info] bindless: creating pipeline layout
+[info] bindless: ready
+[info] startup: GPU timer ready
+[info] startup: renderer resources begin
+[info] startup: renderer frame buffers ready
+[info] pipeline compute: volumetrics_v1.CSInject creating
+[info] pipeline compute: volumetrics_v1.CSInject ready in 1 ms
+[info] pipeline compute: volumetrics_v1.CSIntegrate creating
+[info] pipeline compute: volumetrics_v1.CSIntegrate ready in 0 ms
+[info] pipeline compute: volumetrics_clouds006.CSMaterial creating
+[info] pipeline compute: volumetrics_clouds006.CSMaterial ready in 0 ms
+[info] pipeline compute: volumetrics_clouds006.CSInject creating
+[info] pipeline compute: volumetrics_clouds006.CSInject ready in 0 ms
+[info] pipeline compute: volumetrics_clouds006.CSIntegrate creating
+[info] pipeline compute: volumetrics_clouds006.CSIntegrate ready in 0 ms
+[info] startup: renderer volumetrics ready
+[info] startup: renderer images and buffers ready
+[info] startup: renderer targets ready
+[info] pipeline graphics: triangle.VSMain + triangle.PSMain creating
+[info] pipeline graphics: triangle.VSMain + triangle.PSMain ready in 0 ms
+[info] pipeline graphics: tonemap.VSMain + tonemap.PSMain creating
+[info] pipeline graphics: tonemap.VSMain + tonemap.PSMain ready in 0 ms
+[info] pipeline graphics: ground.VSMain + ground.PSMain creating
+[info] pipeline graphics: ground.VSMain + ground.PSMain ready in 0 ms
+[info] pipeline graphics: terrain.VSMain + terrain.PSMain creating
+[info] pipeline graphics: terrain.VSMain + terrain.PSMain ready in 1 ms
+[info] pipeline graphics: terrain.VSShadow + terrain.PSShadow creating
+[info] pipeline graphics: terrain.VSShadow + terrain.PSShadow ready in 0 ms
+[info] pipeline graphics: water.VSMain + water.PSMain creating
+[info] pipeline graphics: water.VSMain + water.PSMain ready in 3 ms
+[info] pipeline graphics: sprites.VSMain + sprites.PSMain creating
+[info] pipeline graphics: sprites.VSMain + sprites.PSMain ready in 0 ms
+[info] pipeline graphics: sprites.VSMain + sprites.PSDepth creating
+[info] pipeline graphics: sprites.VSMain + sprites.PSDepth ready in 0 ms
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSDepth creating
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSDepth ready in 0 ms
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSMain creating
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSMain ready in 0 ms
+[info] pipeline graphics: effects.VSMain + effects.PSMain creating
+[info] pipeline graphics: effects.VSMain + effects.PSMain ready in 0 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 2 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 2 ms
+[info] startup: renderer graphics pipelines ready
+[info] pipeline compute: cull.CSInstancesEarly creating
+[info] pipeline compute: cull.CSInstancesEarly ready in 0 ms
+[info] pipeline compute: cull.CSInstancesLate creating
+[info] pipeline compute: cull.CSInstancesLate ready in 0 ms
+[info] pipeline compute: hiz.CSDownsample creating
+[info] pipeline compute: hiz.CSDownsample ready in 0 ms
+[info] pipeline compute: bloom.CSDown creating
+[info] pipeline compute: bloom.CSDown ready in 0 ms
+[info] pipeline compute: bloom.CSUp creating
+[info] pipeline compute: bloom.CSUp ready in 0 ms
+[info] pipeline compute: cull.CSPrepare creating
+[info] pipeline compute: cull.CSPrepare ready in 0 ms
+[info] pipeline compute: cull.CSTraverse creating
+[info] pipeline compute: cull.CSTraverse ready in 0 ms
+[info] pipeline compute: cull.CSPrepareDraw creating
+[info] pipeline compute: cull.CSPrepareDraw ready in 0 ms
+[info] pipeline compute: resolve.CSResolve creating
+[info] pipeline compute: resolve.CSResolve ready in 2 ms
+[info] pipeline compute: resolve.CSSky creating
+[info] pipeline compute: resolve.CSSky ready in 2 ms
+[info] pipeline compute: resolve_panorama.CSResolve creating
+[info] pipeline compute: resolve_panorama.CSResolve ready in 2 ms
+[info] pipeline compute: resolve_panorama.CSSky creating
+[info] pipeline compute: resolve_panorama.CSSky ready in 2 ms
+[info] pipeline compute: lights.CSClusters creating
+[info] pipeline compute: lights.CSClusters ready in 0 ms
+[info] pipeline compute: volume.CSInject creating
+[info] pipeline compute: volume.CSInject ready in 0 ms
+[info] pipeline compute: atmosphere.CSTransmittance creating
+[info] pipeline compute: atmosphere.CSTransmittance ready in 0 ms
+[info] pipeline compute: atmosphere.CSMultiScattering creating
+[info] pipeline compute: atmosphere.CSMultiScattering ready in 1 ms
+[info] pipeline compute: atmosphere.CSSkyView creating
+[info] pipeline compute: atmosphere.CSSkyView ready in 0 ms
+[info] pipeline compute: atmosphere.CSAerial creating
+[info] pipeline compute: atmosphere.CSAerial ready in 0 ms
+[info] pipeline compute: atmosphere.CSAmbient creating
+[info] pipeline compute: atmosphere.CSAmbient ready in 0 ms
+[info] pipeline compute: skyreflect.CSBase creating
+[info] pipeline compute: skyreflect.CSBase ready in 1 ms
+[info] pipeline compute: skyreflect.CSFilter creating
+[info] pipeline compute: skyreflect.CSFilter ready in 0 ms
+[info] pipeline compute: skyreflect.CSCloudShadow creating
+[info] pipeline compute: skyreflect.CSCloudShadow ready in 0 ms
+[info] pipeline compute: cloudsvol.CSNoiseBase creating
+[info] pipeline compute: cloudsvol.CSNoiseBase ready in 0 ms
+[info] pipeline compute: cloudsvol.CSNoiseDetail creating
+[info] pipeline compute: cloudsvol.CSNoiseDetail ready in 0 ms
+[info] pipeline compute: cloudsvol.CSMarch creating
+[info] pipeline compute: cloudsvol.CSMarch ready in 0 ms
+[info] pipeline compute: sunglare.CSGlare creating
+[info] pipeline compute: sunglare.CSGlare ready in 0 ms
+[info] pipeline compute: probes.CSRelight creating
+[info] pipeline compute: probes.CSRelight ready in 0 ms
+[info] pipeline compute: volume.CSIntegrate creating
+[info] pipeline compute: volume.CSIntegrate ready in 0 ms
+[info] pipeline compute: fog_look001.CSMarch creating
+[info] pipeline compute: fog_look001.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look001.CSComposite creating
+[info] pipeline compute: fog_look001.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look002.CSMarch creating
+[info] pipeline compute: fog_look002.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look002.CSComposite creating
+[info] pipeline compute: fog_look002.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look003.CSMarch creating
+[info] pipeline compute: fog_look003.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look003.CSComposite creating
+[info] pipeline compute: fog_look003.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look004.CSMarch creating
+[info] pipeline compute: fog_look004.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look004.CSComposite creating
+[info] pipeline compute: fog_look004.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look005.CSMarch creating
+[info] pipeline compute: fog_look005.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look005.CSComposite creating
+[info] pipeline compute: fog_look005.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look006.CSMarch creating
+[info] pipeline compute: fog_look006.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look006.CSComposite creating
+[info] pipeline compute: fog_look006.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look007.CSMarch creating
+[info] pipeline compute: fog_look007.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look007.CSComposite creating
+[info] pipeline compute: fog_look007.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look008.CSMarch creating
+[info] pipeline compute: fog_look008.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look008.CSComposite creating
+[info] pipeline compute: fog_look008.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look009.CSMarch creating
+[info] pipeline compute: fog_look009.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look009.CSComposite creating
+[info] pipeline compute: fog_look009.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look011.CSMarch creating
+[info] pipeline compute: fog_look011.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look011.CSComposite creating
+[info] pipeline compute: fog_look011.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look010.CSMarch creating
+[info] pipeline compute: fog_look010.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look010.CSComposite creating
+[info] pipeline compute: fog_look010.CSComposite ready in 0 ms
+[info] startup: renderer compute pipelines ready
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSMain creating
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSMain ready in 0 ms
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSShadow creating
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSShadow ready in 0 ms
+[info] pipeline graphics: sprites.VSShadow + sprites.PSShadow creating
+[info] pipeline graphics: sprites.VSShadow + sprites.PSShadow ready in 0 ms
+[info] startup: renderer ready
+[info] campaign: save bank C:\Users\evari\AppData\Local\Ember\ember-save-bank.json (6 of 6 slots used)
+[info] mission vau: build/campaign/maps/vau035.json / build/campaign/scenes/vau035.scene.json / build/campaign/battles/vau035.battle.json
+[info] overworld: 490 cells, 16 locations, 31 missions
+[info] overworld: 13 road encounters field undead
+[info] map vau 'O Vau': 22x16 hexes, smooth 116978 triangles, hard 8716 triangles, 3 baked layers, 18 textures, 8.2 MB geometry
+[info] volumetrics: 7 profiles from content/atmosphere/v1/profiles.json
+[info] world clock: this map has no campaign clock: it starts at 19:30:00 and runs from there
+[info] board heights: lowest ground -1.00, highest 1.00 (the floor image lies under the lowest)
+[info] scene build/campaign/scenes/vau035.scene.json: built by SceneBuilder (EmberEngine props); 2 kinds left out
+[info] scene vau: 9 cards, 9 models, 13 units, 0 architecture pieces (0 built)
+[info] poses: 11 of 11 map units in the catalog, 16 poses between them
+[info] progression: 7 heroes; enemies keep their class's own gains
+[info] enemy ranks: 10 ranks, 26 classes ranked (others F)
+[info] battle: 18 cells made solid under EmberEngine props
+[info] Kael (level 30, swordsman): every spell of the class: doubleStrike, provoke, bullRush, cleave, shieldBash, executionerStrike, steelWhirlwind, guardBreak, warCry, leapingStrike
+[info] Neera (level 30, neera): every spell of the class: longShot, piercing, bloodyShot, multiShot, venomArrow, arrowRain, explosiveArrow, cripplingShot, arrowStorm, deathShot
+[info] Voss (level 30, voss): every spell of the class: magicMissile, poisonBreath, frost, lightning, fireball, iceStorm, causticVenom, warp, dispelMagic, cloudOfDaggers, globeOfInvulnerability
+[info] Salazar (level 30, healer): every spell of the class: cureMinor, bless, cureWounds, burningHands, cureDisease, turnUndead, createFoodAndWater, divineBolt, circleOfHealing, resurrection, judgment
+[info] Aldric (level 30, aldric): every spell of the class: piercingThrust, sweep, trip, spearToss, hookPull, poleVault, disarm, swapPost, impaleDrag, sentinelVigil
+[info] Isolde (level 30, conjurer): every spell of the class: summonFamiliar, phantasmalForce, webOfDreams, summonFamiliar2, summonFamiliar4, placeSwap, mirrorImage, arcaneReflection, nightmare, empowerSummons, detonateSummon, sacrificeBond
+[info] cutscene: Neera waits off the board for its scene
+[info] cutscene: Voss waits off the board for its scene
+[info] battle vau: 11 of 11 units in play
+[info] formation: the map splits the party into 2 groups: every hero keeps the map's place
+[info] panoramas vau: 3 (the newest opens: vau-panorama-v03.png)
+[info] inn: 135 weapons, 292 gear, 7 potions
+[info] weapons: 135 main-hand, 27 off-hand, 93 classes
+[info] inn: 135 weapons, 292 gear, 7 potions
+[info] pipeline compute: cloud_legacy004.CSMarch creating
+[info] pipeline compute: cloud_legacy004.CSMarch ready in 1 ms
+[info] pipeline compute: cloud_legacy004_sky.CSCloudShadow creating
+[info] pipeline compute: cloud_legacy004_sky.CSCloudShadow ready in 1 ms
+[info] pipeline compute: cloud_legacy004_sky.CSBase creating
+[info] pipeline compute: cloud_legacy004_sky.CSBase ready in 0 ms
+[info] sprites: roster lists 1113 clips
+[info] sprites: Personagens Alta: the cast 466 MB at full resolution, the others 209 MB (GPU 2704 MB free before the fight)
+[info] sprites: full-clip pool 9 x 144 MB (largest clip 144.5 MB)
+[info] sprites: full-clip pool set up in 199.0 ms
+[info] sprites: the fight's 54 clips on the GPU 2.77 s after they were asked for
+[info] sprites:   voss-veo-leve-passo 131 MB (full 131 MB)
+[info] sprites:   neera/neera-v2-001 110 MB (full 110 MB)
+[info] sprites:   salazar-v3 79 MB (full 79 MB)
+[info] sprites:   isolde-veo-36-media 78 MB (full 78 MB)
+[info] sprites:   aldric 76 MB (full 76 MB)
+[info] sprites:   militia-v2 74 MB (full 74 MB)
+[info] sprites:   BaseCrossbowman 66 MB (full 66 MB)
+[info] sprites:   Kael_Final/kael-final-002 33 MB (full 33 MB)
+[info] sprites:   neera-hydra 17 MB (full 17 MB)
+[info] sprites:   neera 8 MB (full 8 MB)
+[info] sprites:   voss-final 0 MB (full 0 MB)
+[info] sprites: GPU memory 2043 MB allocated by the game, 2155 MB used, budget 3227 MB, heap 3824 MB
+[info] camera: meter 2.895 lux, EV 0.21, darkening 2.00 stops, exposure 0.17989, key 5.13 lux at elevation 21.4 deg
+[info] sky: hour 19.50, moon full (default) (disc texture 57, radius 2.70 deg, glow 5.56) at elevation 21.4 deg, azimuth -121.9 deg (the camera looks at azimuth 150.0, elevation -20.0), off screen
+[info] meshes: textures 20 of 20 at the size the camera needs, 20 at full size (6 MB on the GPU, 1072 MB free)
+[info] cutscene trigger: vau opens with estranhos-na-costa
+[info] cutscene estranhos-na-costa: start (3 actors, 132 steps)
+[info] cutscene estranhos-na-costa: step 0 wait 0.80 s
+[info] cutscene estranhos-na-costa: step 1 move kael (4, 12) -> (17, 8), 15 hexes
+[info] cutscene estranhos-na-costa: step 2 face kael nw
+[info] cutscene estranhos-na-costa: step 3 wait 1.40 s
+[info] cutscene estranhos-na-costa: step 4 say kael: "Desgraçados."
+[info] captured 1600x900 -> work\ap-vau-scene-000.png
+[info] capture GPU frame: 23.2873 ms
+[info] capture GPU atmosphere: 1.1129 ms
+[info] capture GPU clouds: 0.0310 ms
+[info] capture GPU cloud shadow: 0.1202 ms
+[info] capture GPU sky reflect: 3.0798 ms
+[info] capture GPU card shadow: 0.0318 ms
+[info] capture GPU volumetrics: 0.1780 ms
+[info] capture GPU fog injection: 0.1571 ms
+[info] capture GPU fog integration: 0.0198 ms
+[info] capture GPU cull early: 0.0972 ms
+[info] capture GPU draw early: 0.2192 ms
+[info] capture GPU depth pyramid: 0.0588 ms
+[info] capture GPU cull late: 0.0384 ms
+[info] capture GPU draw late: 0.0067 ms
+[info] capture GPU depth pyramid (next frame): 0.0573 ms
+[info] capture GPU resolve: 1.2187 ms
+[info] capture GPU scene: 16.1985 ms
+[info] capture GPU terrain: 10.6676 ms
+[info] capture GPU water backdrop: 0.1527 ms
+[info] capture GPU water: 5.3430 ms
+[info] capture GPU bloom: 0.3238 ms
+[info] capture GPU tonemap: 0.1460 ms
+[info] capture GPU ui: 0.3376 ms
+[info] captured 1600x900 -> work\ap-vau-scene-001.png
+[info] capture GPU frame: 22.9760 ms
+[info] capture GPU atmosphere: 1.1225 ms
+[info] capture GPU clouds: 0.0317 ms
+[info] capture GPU cloud shadow: 0.1198 ms
+[info] capture GPU sky reflect: 3.0134 ms
+[info] capture GPU card shadow: 0.0383 ms
+[info] capture GPU volumetrics: 0.1858 ms
+[info] capture GPU fog injection: 0.1642 ms
+[info] capture GPU fog integration: 0.0206 ms
+[info] capture GPU cull early: 0.0999 ms
+[info] capture GPU draw early: 0.2196 ms
+[info] capture GPU depth pyramid: 0.0600 ms
+[info] capture GPU cull late: 0.0384 ms
+[info] capture GPU draw late: 0.0068 ms
+[info] capture GPU depth pyramid (next frame): 0.0587 ms
+[info] capture GPU resolve: 1.2200 ms
+[info] capture GPU scene: 15.9204 ms
+[info] capture GPU terrain: 10.6572 ms
+[info] capture GPU water backdrop: 0.1535 ms
+[info] capture GPU water: 5.0740 ms
+[info] capture GPU bloom: 0.3281 ms
+[info] capture GPU tonemap: 0.1554 ms
+[info] capture GPU ui: 0.3258 ms
+[info] captured 1600x900 -> work\ap-vau-scene-002.png
+[info] capture GPU frame: 22.9285 ms
+[info] capture GPU atmosphere: 1.1161 ms
+[info] capture GPU clouds: 0.0314 ms
+[info] capture GPU cloud shadow: 0.1197 ms
+[info] capture GPU sky reflect: 2.9935 ms
+[info] capture GPU card shadow: 0.0360 ms
+[info] capture GPU volumetrics: 0.1804 ms
+[info] capture GPU fog injection: 0.1604 ms
+[info] capture GPU fog integration: 0.0189 ms
+[info] capture GPU cull early: 0.0989 ms
+[info] capture GPU draw early: 0.2229 ms
+[info] capture GPU depth pyramid: 0.0593 ms
+[info] capture GPU cull late: 0.0372 ms
+[info] capture GPU draw late: 0.0069 ms
+[info] capture GPU depth pyramid (next frame): 0.0582 ms
+[info] capture GPU resolve: 1.2198 ms
+[info] capture GPU scene: 15.9114 ms
+[info] capture GPU terrain: 10.5885 ms
+[info] capture GPU water backdrop: 0.1532 ms
+[info] capture GPU water: 5.1345 ms
+[info] capture GPU bloom: 0.3269 ms
+[info] capture GPU tonemap: 0.1592 ms
+[info] capture GPU ui: 0.3202 ms
+[info] captured 1600x900 -> work\ap-vau-scene-003.png
+[info] capture GPU frame: 24.2154 ms
+[info] capture GPU atmosphere: 1.1906 ms
+[info] capture GPU clouds: 0.0333 ms
+[info] capture GPU cloud shadow: 0.1223 ms
+[info] capture GPU sky reflect: 3.1984 ms
+[info] capture GPU card shadow: 0.0439 ms
+[info] capture GPU volumetrics: 0.2058 ms
+[info] capture GPU fog injection: 0.1716 ms
+[info] capture GPU fog integration: 0.0270 ms
+[info] capture GPU cull early: 0.2335 ms
+[info] capture GPU draw early: 0.2432 ms
+[info] capture GPU depth pyramid: 0.1397 ms
+[info] capture GPU cull late: 0.1474 ms
+[info] capture GPU draw late: 0.0133 ms
+[info] capture GPU depth pyramid (next frame): 0.1551 ms
+[info] capture GPU resolve: 1.2567 ms
+[info] capture GPU scene: 16.1241 ms
+[info] capture GPU terrain: 10.8353 ms
+[info] capture GPU water backdrop: 0.1761 ms
+[info] capture GPU water: 5.0545 ms
+[info] capture GPU bloom: 0.4058 ms
+[info] capture GPU tonemap: 0.2118 ms
+[info] capture GPU ui: 0.4256 ms
+[info] captured 1600x900 -> work\ap-vau-scene-004.png
+[info] capture GPU frame: 23.4188 ms
+[info] capture GPU atmosphere: 1.1170 ms
+[info] capture GPU clouds: 0.0315 ms
+[info] capture GPU cloud shadow: 0.1205 ms
+[info] capture GPU sky reflect: 3.0818 ms
+[info] capture GPU card shadow: 0.0356 ms
+[info] capture GPU volumetrics: 0.1858 ms
+[info] capture GPU fog injection: 0.1637 ms
+[info] capture GPU fog integration: 0.0210 ms
+[info] capture GPU cull early: 0.0988 ms
+[info] capture GPU draw early: 0.2218 ms
+[info] capture GPU depth pyramid: 0.0595 ms
+[info] capture GPU cull late: 0.0369 ms
+[info] capture GPU draw late: 0.0072 ms
+[info] capture GPU depth pyramid (next frame): 0.0578 ms
+[info] capture GPU resolve: 1.2238 ms
+[info] capture GPU scene: 16.3050 ms
+[info] capture GPU terrain: 10.6334 ms
+[info] capture GPU water backdrop: 0.1539 ms
+[info] capture GPU water: 5.4825 ms
+[info] capture GPU bloom: 0.3244 ms
+[info] capture GPU tonemap: 0.1499 ms
+[info] capture GPU ui: 0.3304 ms
+[info] captured 1600x900 -> work\ap-vau-scene-005.png
+[info] capture GPU frame: 22.7691 ms
+[info] capture GPU atmosphere: 1.1136 ms
+[info] capture GPU clouds: 0.0314 ms
+[info] capture GPU cloud shadow: 0.1208 ms
+[info] capture GPU sky reflect: 2.9945 ms
+[info] capture GPU card shadow: 0.0348 ms
+[info] capture GPU volumetrics: 0.1822 ms
+[info] capture GPU fog injection: 0.1607 ms
+[info] capture GPU fog integration: 0.0204 ms
+[info] capture GPU cull early: 0.0989 ms
+[info] capture GPU draw early: 0.2207 ms
+[info] capture GPU depth pyramid: 0.0598 ms
+[info] capture GPU cull late: 0.0367 ms
+[info] capture GPU draw late: 0.0067 ms
+[info] capture GPU depth pyramid (next frame): 0.0588 ms
+[info] capture GPU resolve: 1.2196 ms
+[info] capture GPU scene: 15.7509 ms
+[info] capture GPU terrain: 10.6350 ms
+[info] capture GPU water backdrop: 0.1538 ms
+[info] capture GPU water: 4.9262 ms
+[info] capture GPU bloom: 0.3245 ms
+[info] capture GPU tonemap: 0.1516 ms
+[info] capture GPU ui: 0.3326 ms
+[info] captured 1600x900 -> work\ap-vau-scene-006.png
+[info] capture GPU frame: 22.8200 ms
+[info] capture GPU atmosphere: 1.1124 ms
+[info] capture GPU clouds: 0.0316 ms
+[info] capture GPU cloud shadow: 0.1204 ms
+[info] capture GPU sky reflect: 3.1010 ms
+[info] capture GPU card shadow: 0.0386 ms
+[info] capture GPU volumetrics: 0.1864 ms
+[info] capture GPU fog injection: 0.1648 ms
+[info] capture GPU fog integration: 0.0205 ms
+[info] capture GPU cull early: 0.1001 ms
+[info] capture GPU draw early: 0.2210 ms
+[info] capture GPU depth pyramid: 0.0598 ms
+[info] capture GPU cull late: 0.0369 ms
+[info] capture GPU draw late: 0.0067 ms
+[info] capture GPU depth pyramid (next frame): 0.0583 ms
+[info] capture GPU resolve: 1.2194 ms
+[info] capture GPU scene: 15.6939 ms
+[info] capture GPU terrain: 10.6298 ms
+[info] capture GPU water backdrop: 0.1533 ms
+[info] capture GPU water: 4.8760 ms
+[info] capture GPU bloom: 0.3294 ms
+[info] capture GPU tonemap: 0.1548 ms
+[info] capture GPU ui: 0.3182 ms
+[info] captured 1600x900 -> work\ap-vau-scene-007.png
+[info] capture GPU frame: 22.9729 ms
+[info] capture GPU atmosphere: 1.1119 ms
+[info] capture GPU clouds: 0.0313 ms
+[info] capture GPU cloud shadow: 0.1206 ms
+[info] capture GPU sky reflect: 3.0126 ms
+[info] capture GPU card shadow: 0.0339 ms
+[info] capture GPU volumetrics: 0.1859 ms
+[info] capture GPU fog injection: 0.1649 ms
+[info] capture GPU fog integration: 0.0199 ms
+[info] capture GPU cull early: 0.0982 ms
+[info] capture GPU draw early: 0.2181 ms
+[info] capture GPU depth pyramid: 0.0593 ms
+[info] capture GPU cull late: 0.0369 ms
+[info] capture GPU draw late: 0.0067 ms
+[info] capture GPU depth pyramid (next frame): 0.0584 ms
+[info] capture GPU resolve: 1.2209 ms
+[info] capture GPU scene: 15.9452 ms
+[info] capture GPU terrain: 10.5841 ms
+[info] capture GPU water backdrop: 0.1536 ms
+[info] capture GPU water: 5.1731 ms
+[info] capture GPU bloom: 0.3251 ms
+[info] capture GPU tonemap: 0.1569 ms
+[info] capture GPU ui: 0.3189 ms
+[info] captured 1600x900 -> work\ap-vau-scene-008.png
+[info] capture GPU frame: 23.3082 ms
+[info] capture GPU atmosphere: 1.1192 ms
+[info] capture GPU clouds: 0.0314 ms
+[info] capture GPU cloud shadow: 0.1209 ms
+[info] capture GPU sky reflect: 3.1014 ms
+[info] capture GPU card shadow: 0.0339 ms
+[info] capture GPU volumetrics: 0.1864 ms
+[info] capture GPU fog injection: 0.1649 ms
+[info] capture GPU fog integration: 0.0204 ms
+[info] capture GPU cull early: 0.0992 ms
+[info] capture GPU draw early: 0.2205 ms
+[info] capture GPU depth pyramid: 0.0602 ms
+[info] capture GPU cull late: 0.0366 ms
+[info] capture GPU draw late: 0.0073 ms
+[info] capture GPU depth pyramid (next frame): 0.0592 ms
+[info] capture GPU resolve: 1.2198 ms
+[info] capture GPU scene: 16.1742 ms
+[info] capture GPU terrain: 10.6140 ms
+[info] capture GPU water backdrop: 0.1541 ms
+[info] capture GPU water: 5.3711 ms
+[info] capture GPU bloom: 0.3253 ms
+[info] capture GPU tonemap: 0.1679 ms
+[info] capture GPU ui: 0.3116 ms
+[info] captured 1600x900 -> work\ap-vau-scene-009.png
+[info] capture GPU frame: 23.5278 ms
+[info] capture GPU atmosphere: 1.1241 ms
+[info] capture GPU clouds: 0.0314 ms
+[info] capture GPU cloud shadow: 0.1205 ms
+[info] capture GPU sky reflect: 3.0646 ms
+[info] capture GPU card shadow: 0.0345 ms
+[info] capture GPU volumetrics: 0.1847 ms
+[info] capture GPU fog injection: 0.1634 ms
+[info] capture GPU fog integration: 0.0202 ms
+[info] capture GPU cull early: 0.0995 ms
+[info] capture GPU draw early: 0.2198 ms
+[info] capture GPU depth pyramid: 0.0603 ms
+[info] capture GPU cull late: 0.0375 ms
+[info] capture GPU draw late: 0.0070 ms
+[info] capture GPU depth pyramid (next frame): 0.0588 ms
+[info] capture GPU resolve: 1.2172 ms
+[info] capture GPU scene: 16.4312 ms
+[info] capture GPU terrain: 10.7151 ms
+[info] capture GPU water backdrop: 0.1538 ms
+[info] capture GPU water: 5.5281 ms
+[info] capture GPU bloom: 0.3253 ms
+[info] capture GPU tonemap: 0.1612 ms
+[info] capture GPU ui: 0.3198 ms
+[info] captured 1600x900 -> work\ap-vau-scene-010.png
+[info] capture GPU frame: 24.1619 ms
+[info] capture GPU atmosphere: 1.1162 ms
+[info] capture GPU clouds: 0.0312 ms
+[info] capture GPU cloud shadow: 0.1197 ms
+[info] capture GPU sky reflect: 3.1308 ms
+[info] capture GPU card shadow: 0.0339 ms
+[info] capture GPU volumetrics: 0.1853 ms
+[info] capture GPU fog injection: 0.1644 ms
+[info] capture GPU fog integration: 0.0198 ms
+[info] capture GPU cull early: 0.0993 ms
+[info] capture GPU draw early: 0.2197 ms
+[info] capture GPU depth pyramid: 0.0600 ms
+[info] capture GPU cull late: 0.0370 ms
+[info] capture GPU draw late: 0.0068 ms
+[info] capture GPU depth pyramid (next frame): 0.0589 ms
+[info] capture GPU resolve: 1.2182 ms
+[info] capture GPU scene: 17.0058 ms
+[info] capture GPU terrain: 10.6505 ms
+[info] capture GPU water backdrop: 0.1528 ms
+[info] capture GPU water: 6.1667 ms
+[info] capture GPU bloom: 0.3238 ms
+[info] capture GPU tonemap: 0.1464 ms
+[info] capture GPU ui: 0.3383 ms
+[info] captured 1600x900 -> work\ap-vau-scene-011.png
+[info] capture GPU frame: 23.4434 ms
+[info] capture GPU atmosphere: 1.1163 ms
+[info] capture GPU clouds: 0.0314 ms
+[info] capture GPU cloud shadow: 0.1204 ms
+[info] capture GPU sky reflect: 3.0386 ms
+[info] capture GPU card shadow: 0.0318 ms
+[info] capture GPU volumetrics: 0.1860 ms
+[info] capture GPU fog injection: 0.1646 ms
+[info] capture GPU fog integration: 0.0204 ms
+[info] capture GPU cull early: 0.0990 ms
+[info] capture GPU draw early: 0.2217 ms
+[info] capture GPU depth pyramid: 0.0603 ms
+[info] capture GPU cull late: 0.0383 ms
+[info] capture GPU draw late: 0.0070 ms
+[info] capture GPU depth pyramid (next frame): 0.0585 ms
+[info] capture GPU resolve: 1.2196 ms
+[info] capture GPU scene: 16.3759 ms
+[info] capture GPU terrain: 10.7220 ms
+[info] capture GPU water backdrop: 0.1532 ms
+[info] capture GPU water: 5.4650 ms
+[info] capture GPU bloom: 0.3273 ms
+[info] capture GPU tonemap: 0.1600 ms
+[info] capture GPU ui: 0.3205 ms
+[info] meshes: textures 20 of 20 at the size the camera needs, 20 at full size (6 MB on the GPU, 1072 MB free)
+[info] captured 1600x900 -> work\ap-vau-scene-012.png
+[info] capture GPU frame: 23.1881 ms
+[info] capture GPU atmosphere: 1.1090 ms
+[info] capture GPU clouds: 0.0315 ms
+[info] capture GPU cloud shadow: 0.1206 ms
+[info] capture GPU sky reflect: 3.0958 ms
+[info] capture GPU card shadow: 0.0338 ms
+[info] capture GPU volumetrics: 0.1849 ms
+[info] capture GPU fog injection: 0.1637 ms
+[info] capture GPU fog integration: 0.0201 ms
+[info] capture GPU cull early: 0.0989 ms
+[info] capture GPU draw early: 0.2191 ms
+[info] capture GPU depth pyramid: 0.0601 ms
+[info] capture GPU cull late: 0.0367 ms
+[info] capture GPU draw late: 0.0067 ms
+[info] capture GPU depth pyramid (next frame): 0.0594 ms
+[info] capture GPU resolve: 1.2193 ms
+[info] capture GPU scene: 16.0672 ms
+[info] capture GPU terrain: 10.6258 ms
+[info] capture GPU water backdrop: 0.1540 ms
+[info] capture GPU water: 5.2520 ms
+[info] capture GPU bloom: 0.3300 ms
+[info] capture GPU tonemap: 0.1463 ms
+[info] capture GPU ui: 0.3365 ms
+[info] captured 1600x900 -> work\ap-vau-scene-013.png
+[info] capture GPU frame: 23.6529 ms
+[info] capture GPU atmosphere: 1.1120 ms
+[info] capture GPU clouds: 0.0314 ms
+[info] capture GPU cloud shadow: 0.1203 ms
+[info] capture GPU sky reflect: 3.1436 ms
+[info] capture GPU card shadow: 0.0338 ms
+[info] capture GPU volumetrics: 0.1864 ms
+[info] capture GPU fog injection: 0.1651 ms
+[info] capture GPU fog integration: 0.0202 ms
+[info] capture GPU cull early: 0.1004 ms
+[info] capture GPU draw early: 0.2192 ms
+[info] capture GPU depth pyramid: 0.0594 ms
+[info] capture GPU cull late: 0.0376 ms
+[info] capture GPU draw late: 0.0117 ms
+[info] capture GPU depth pyramid (next frame): 0.0585 ms
+[info] capture GPU resolve: 1.2199 ms
+[info] capture GPU scene: 16.4522 ms
+[info] capture GPU terrain: 10.6876 ms
+[info] capture GPU water backdrop: 0.1527 ms
+[info] capture GPU water: 5.5675 ms
+[info] capture GPU bloom: 0.3342 ms
+[info] capture GPU tonemap: 0.1514 ms
+[info] capture GPU ui: 0.3478 ms
+[info] captured 1600x900 -> work\ap-vau-scene-014.png
+[info] capture GPU frame: 23.0580 ms
+[info] capture GPU atmosphere: 1.1185 ms
+[info] capture GPU clouds: 0.0314 ms
+[info] capture GPU cloud shadow: 0.1202 ms
+[info] capture GPU sky reflect: 3.0614 ms
+[info] capture GPU card shadow: 0.0329 ms
+[info] capture GPU volumetrics: 0.1828 ms
+[info] capture GPU fog injection: 0.1615 ms
+[info] capture GPU fog integration: 0.0202 ms
+[info] capture GPU cull early: 0.0981 ms
+[info] capture GPU draw early: 0.2230 ms
+[info] capture GPU depth pyramid: 0.0591 ms
+[info] capture GPU cull late: 0.0363 ms
+[info] capture GPU draw late: 0.0070 ms
+[info] capture GPU depth pyramid (next frame): 0.0576 ms
+[info] capture GPU resolve: 1.2194 ms
+[info] capture GPU scene: 15.9691 ms
+[info] capture GPU terrain: 10.6572 ms
+[info] capture GPU water backdrop: 0.1534 ms
+[info] capture GPU water: 5.1218 ms
+[info] capture GPU bloom: 0.3282 ms
+[info] capture GPU tonemap: 0.1564 ms
+[info] capture GPU ui: 0.3259 ms
+[info] captured 1600x900 -> work\ap-vau-scene-015.png
+[info] capture GPU frame: 23.0113 ms
+[info] capture GPU atmosphere: 1.1116 ms
+[info] capture GPU clouds: 0.0313 ms
+[info] capture GPU cloud shadow: 0.1198 ms
+[info] capture GPU sky reflect: 3.0164 ms
+[info] capture GPU card shadow: 0.0340 ms
+[info] capture GPU volumetrics: 0.1831 ms
+[info] capture GPU fog injection: 0.1618 ms
+[info] capture GPU fog integration: 0.0201 ms
+[info] capture GPU cull early: 0.0994 ms
+[info] capture GPU draw early: 0.2226 ms
+[info] capture GPU depth pyramid: 0.0599 ms
+[info] capture GPU cull late: 0.0373 ms
+[info] capture GPU draw late: 0.0115 ms
+[info] capture GPU depth pyramid (next frame): 0.0580 ms
+[info] capture GPU resolve: 1.2161 ms
+[info] capture GPU scene: 15.9666 ms
+[info] capture GPU terrain: 10.7050 ms
+[info] capture GPU water backdrop: 0.1544 ms
+[info] capture GPU water: 5.0716 ms
+[info] capture GPU bloom: 0.3250 ms
+[info] capture GPU tonemap: 0.1536 ms
+[info] capture GPU ui: 0.3331 ms
+[info] captured 1600x900 -> work\ap-vau-scene-016.png
+[info] capture GPU frame: 23.2618 ms
+[info] capture GPU atmosphere: 1.3424 ms
+[info] capture GPU clouds: 0.0314 ms
+[info] capture GPU cloud shadow: 0.1222 ms
+[info] capture GPU sky reflect: 3.0879 ms
+[info] capture GPU card shadow: 0.0305 ms
+[info] capture GPU volumetrics: 0.1859 ms
+[info] capture GPU fog injection: 0.1650 ms
+[info] capture GPU fog integration: 0.0198 ms
+[info] capture GPU cull early: 0.1008 ms
+[info] capture GPU draw early: 0.2212 ms
+[info] capture GPU depth pyramid: 0.0600 ms
+[info] capture GPU cull late: 0.0364 ms
+[info] capture GPU draw late: 0.0068 ms
+[info] capture GPU depth pyramid (next frame): 0.0578 ms
+[info] capture GPU resolve: 1.2183 ms
+[info] capture GPU scene: 15.9185 ms
+[info] capture GPU terrain: 10.6062 ms
+[info] capture GPU water backdrop: 0.1539 ms
+[info] capture GPU water: 5.1226 ms
+[info] capture GPU bloom: 0.3240 ms
+[info] capture GPU tonemap: 0.1448 ms
+[info] capture GPU ui: 0.3421 ms
+[info] captured 1600x900 -> work\ap-vau-scene-017.png
+[info] capture GPU frame: 23.7544 ms
+[info] capture GPU atmosphere: 1.1230 ms
+[info] capture GPU clouds: 0.0315 ms
+[info] capture GPU cloud shadow: 0.1194 ms
+[info] capture GPU sky reflect: 3.0370 ms
+[info] capture GPU card shadow: 0.0315 ms
+[info] capture GPU volumetrics: 0.1853 ms
+[info] capture GPU fog injection: 0.1646 ms
+[info] capture GPU fog integration: 0.0198 ms
+[info] capture GPU cull early: 0.0995 ms
+[info] capture GPU draw early: 0.2210 ms
+[info] capture GPU depth pyramid: 0.0591 ms
+[info] capture GPU cull late: 0.0368 ms
+[info] capture GPU draw late: 0.0068 ms
+[info] capture GPU depth pyramid (next frame): 0.0586 ms
+[info] capture GPU resolve: 1.2194 ms
+[info] capture GPU scene: 16.6807 ms
+[info] capture GPU terrain: 10.6302 ms
+[info] capture GPU water backdrop: 0.1528 ms
+[info] capture GPU water: 5.8616 ms
+[info] capture GPU bloom: 0.3276 ms
+[info] capture GPU tonemap: 0.1456 ms
+[info] capture GPU ui: 0.3378 ms
+[info] captured 1600x900 -> work\ap-vau-scene-018.png
+[info] capture GPU frame: 23.7470 ms
+[info] capture GPU atmosphere: 1.1174 ms
+[info] capture GPU clouds: 0.0312 ms
+[info] capture GPU cloud shadow: 0.1193 ms
+[info] capture GPU sky reflect: 3.0419 ms
+[info] capture GPU card shadow: 0.0307 ms
+[info] capture GPU volumetrics: 0.1846 ms
+[info] capture GPU fog injection: 0.1628 ms
+[info] capture GPU fog integration: 0.0207 ms
+[info] capture GPU cull early: 0.0982 ms
+[info] capture GPU draw early: 0.2198 ms
+[info] capture GPU depth pyramid: 0.0594 ms
+[info] capture GPU cull late: 0.0366 ms
+[info] capture GPU draw late: 0.0070 ms
+[info] capture GPU depth pyramid (next frame): 0.0572 ms
+[info] capture GPU resolve: 1.2212 ms
+[info] capture GPU scene: 16.6794 ms
+[info] capture GPU terrain: 10.6424 ms
+[info] capture GPU water backdrop: 0.1526 ms
+[info] capture GPU water: 5.8493 ms
+[info] capture GPU bloom: 0.3265 ms
+[info] capture GPU tonemap: 0.1600 ms
+[info] capture GPU ui: 0.3265 ms
+[info] captured 1600x900 -> work\ap-vau-scene-019.png
+[info] capture GPU frame: 23.3843 ms
+[info] capture GPU atmosphere: 1.1210 ms
+[info] capture GPU clouds: 0.0315 ms
+[info] capture GPU cloud shadow: 0.1191 ms
+[info] capture GPU sky reflect: 3.1143 ms
+[info] capture GPU card shadow: 0.0308 ms
+[info] capture GPU volumetrics: 0.1848 ms
+[info] capture GPU fog injection: 0.1636 ms
+[info] capture GPU fog integration: 0.0201 ms
+[info] capture GPU cull early: 0.0988 ms
+[info] capture GPU draw early: 0.2204 ms
+[info] capture GPU depth pyramid: 0.0594 ms
+[info] capture GPU cull late: 0.0368 ms
+[info] capture GPU draw late: 0.0070 ms
+[info] capture GPU depth pyramid (next frame): 0.0578 ms
+[info] capture GPU resolve: 1.2189 ms
+[info] capture GPU scene: 16.2394 ms
+[info] capture GPU terrain: 10.6764 ms
+[info] capture GPU water backdrop: 0.1538 ms
+[info] capture GPU water: 5.3740 ms
+[info] capture GPU bloom: 0.3255 ms
+[info] capture GPU tonemap: 0.1473 ms
+[info] capture GPU ui: 0.3401 ms
+[info] captured 1600x900 -> work\ap-vau-scene-020.png
+[info] capture GPU frame: 22.8096 ms
+[info] capture GPU atmosphere: 1.1195 ms
+[info] capture GPU clouds: 0.0315 ms
+[info] capture GPU cloud shadow: 0.1192 ms
+[info] capture GPU sky reflect: 3.0962 ms
+[info] capture GPU card shadow: 0.0312 ms
+[info] capture GPU volumetrics: 0.1867 ms
+[info] capture GPU fog injection: 0.1649 ms
+[info] capture GPU fog integration: 0.0207 ms
+[info] capture GPU cull early: 0.0974 ms
+[info] capture GPU draw early: 0.2214 ms
+[info] capture GPU depth pyramid: 0.0591 ms
+[info] capture GPU cull late: 0.0359 ms
+[info] capture GPU draw late: 0.0067 ms
+[info] capture GPU depth pyramid (next frame): 0.0578 ms
+[info] capture GPU resolve: 1.2192 ms
+[info] capture GPU scene: 15.6833 ms
+[info] capture GPU terrain: 10.6402 ms
+[info] capture GPU water backdrop: 0.1534 ms
+[info] capture GPU water: 4.8542 ms
+[info] capture GPU bloom: 0.3281 ms
+[info] capture GPU tonemap: 0.1625 ms
+[info] capture GPU ui: 0.3252 ms
+[info] captured 1600x900 -> work\ap-vau-scene-021.png
+[info] capture GPU frame: 24.4150 ms
+[info] capture GPU atmosphere: 1.1179 ms
+[info] capture GPU clouds: 0.0315 ms
+[info] capture GPU cloud shadow: 0.1190 ms
+[info] capture GPU sky reflect: 3.1087 ms
+[info] capture GPU card shadow: 0.0326 ms
+[info] capture GPU volumetrics: 0.1876 ms
+[info] capture GPU fog injection: 0.1662 ms
+[info] capture GPU fog integration: 0.0203 ms
+[info] capture GPU cull early: 0.1001 ms
+[info] capture GPU draw early: 0.2198 ms
+[info] capture GPU depth pyramid: 0.0595 ms
+[info] capture GPU cull late: 0.0368 ms
+[info] capture GPU draw late: 0.0067 ms
+[info] capture GPU depth pyramid (next frame): 0.0580 ms
+[info] capture GPU resolve: 1.2196 ms
+[info] capture GPU scene: 17.2735 ms
+[info] capture GPU terrain: 10.7028 ms
+[info] capture GPU water backdrop: 0.1536 ms
+[info] capture GPU water: 6.3829 ms
+[info] capture GPU bloom: 0.3246 ms
+[info] capture GPU tonemap: 0.1549 ms
+[info] capture GPU ui: 0.3328 ms
+[info] captured 1600x900 -> work\ap-vau-scene-022.png
+[info] capture GPU frame: 23.2916 ms
+[info] capture GPU atmosphere: 1.1178 ms
+[info] capture GPU clouds: 0.0317 ms
+[info] capture GPU cloud shadow: 0.1189 ms
+[info] capture GPU sky reflect: 3.0507 ms
+[info] capture GPU card shadow: 0.0315 ms
+[info] capture GPU volumetrics: 0.1839 ms
+[info] capture GPU fog injection: 0.1634 ms
+[info] capture GPU fog integration: 0.0195 ms
+[info] capture GPU cull early: 0.0988 ms
+[info] capture GPU draw early: 0.2205 ms
+[info] capture GPU depth pyramid: 0.0593 ms
+[info] capture GPU cull late: 0.0362 ms
+[info] capture GPU draw late: 0.0068 ms
+[info] capture GPU depth pyramid (next frame): 0.0571 ms
+[info] capture GPU resolve: 1.2194 ms
+[info] capture GPU scene: 16.2158 ms
+[info] capture GPU terrain: 10.5996 ms
+[info] capture GPU water backdrop: 0.1535 ms
+[info] capture GPU water: 5.4276 ms
+[info] capture GPU bloom: 0.3248 ms
+[info] capture GPU tonemap: 0.1430 ms
+[info] capture GPU ui: 0.3444 ms
+[info] captured 1600x900 -> work\ap-vau-scene-023.png
+[info] capture GPU frame: 23.3402 ms
+[info] capture GPU atmosphere: 1.1170 ms
+[info] capture GPU clouds: 0.0315 ms
+[info] capture GPU cloud shadow: 0.1191 ms
+[info] capture GPU sky reflect: 3.0524 ms
+[info] capture GPU card shadow: 0.0311 ms
+[info] capture GPU volumetrics: 0.1807 ms
+[info] capture GPU fog injection: 0.1615 ms
+[info] capture GPU fog integration: 0.0182 ms
+[info] capture GPU cull early: 0.0986 ms
+[info] capture GPU draw early: 0.2193 ms
+[info] capture GPU depth pyramid: 0.0598 ms
+[info] capture GPU cull late: 0.0368 ms
+[info] capture GPU draw late: 0.0070 ms
+[info] capture GPU depth pyramid (next frame): 0.0583 ms
+[info] capture GPU resolve: 1.2188 ms
+[info] capture GPU scene: 16.2678 ms
+[info] capture GPU terrain: 10.5856 ms
+[info] capture GPU water backdrop: 0.1536 ms
+[info] capture GPU water: 5.4941 ms
+[info] capture GPU bloom: 0.3252 ms
+[info] capture GPU tonemap: 0.1574 ms
+[info] capture GPU ui: 0.3314 ms
+[info] captured 1600x900 -> work\ap-vau-scene.png
+[info] capture GPU frame: 23.0152 ms
+[info] capture GPU atmosphere: 1.1118 ms
+[info] capture GPU clouds: 0.0316 ms
+[info] capture GPU cloud shadow: 0.1194 ms
+[info] capture GPU sky reflect: 3.1085 ms
+[info] capture GPU card shadow: 0.0308 ms
+[info] capture GPU volumetrics: 0.1878 ms
+[info] capture GPU fog injection: 0.1660 ms
+[info] capture GPU fog integration: 0.0207 ms
+[info] capture GPU cull early: 0.0992 ms
+[info] capture GPU draw early: 0.2225 ms
+[info] capture GPU depth pyramid: 0.0602 ms
+[info] capture GPU cull late: 0.0372 ms
+[info] capture GPU draw late: 0.0069 ms
+[info] capture GPU depth pyramid (next frame): 0.0584 ms
+[info] capture GPU resolve: 1.2191 ms
+[info] capture GPU scene: 15.8830 ms
+[info] capture GPU terrain: 10.5988 ms
+[info] capture GPU water backdrop: 0.1537 ms
+[info] capture GPU water: 5.0953 ms
+[info] capture GPU bloom: 0.3284 ms
+[info] capture GPU tonemap: 0.1540 ms
+[info] capture GPU ui: 0.3236 ms
+[info] pipeline cache: 101586444 bytes saved

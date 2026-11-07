@@ -473,7 +473,10 @@ bool Overworld::bagHasRoom(const Json& save, int extra, bool test) const {
     for (const Json& e : tables_["equipment"])
       if (e["id"].get<std::string>() == waist.get<std::string>()) pouches += e.value("pouch", 0);
   }
-  const double capacity = tables_.value("partyBagPerHero", 10) * std::max(1, heroes) + pouches;
+  int bonusHeroes = 0;
+  for (const char* h : kPartyHeroes) if (inParty(h, save, test)) ++bonusHeroes;
+  const int holding = std::max(0, save.value("bagSlotsPerHeroBonus", 0)) * bonusHeroes;
+  const double capacity = tables_.value("partyBagPerHero", 10) * std::max(1, heroes) + pouches + holding;
   return used + gear + stacks + extra <= capacity;
 }
 

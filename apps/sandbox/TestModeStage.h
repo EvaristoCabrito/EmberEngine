@@ -128,7 +128,8 @@ class TestModeStage : public Stage {
     else if (screen_ == Screen::Briefing) screen_ = briefingFrom_;
     else if (screen_ == Screen::Scenarios) screen_ = Screen::WorldMap;
     else if (screen_ == Screen::DevControls) screen_ = Screen::Menu;
-    else if (screen_ == Screen::WorldMap) options_ = true;  // OptionsButton escapeKey
+    else if (screen_ == Screen::WorldMap || screen_ == Screen::MapChoice) screen_ = Screen::Menu;
+    else if (callbacks_.title) callbacks_.title();
   }
 
   void drawPanel() override {

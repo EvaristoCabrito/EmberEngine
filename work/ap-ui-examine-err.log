@@ -1,0 +1,22 @@
+[ERROR] asset 0a88a21dc19a98b5 is in no mounted archive
+[ERROR] asset 0ef6bdb459b19b17 is in no mounted archive
+[ERROR] asset 780eb6124001ccf1 is in no mounted archive
+[ERROR] meshes: 0a88a21dc19a98b5 is missing
+[ERROR] meshes: 0ef6bdb459b19b17 is missing
+[ERROR] meshes: 780eb6124001ccf1 is missing
+[warn] scene: model meshes/models/trees/broadleaf.mesh is not in the mesh pack
+[warn] scene: model meshes/models/trees/dead-oak.mesh is not in the mesh pack
+[warn] scene: model meshes/models/trees/broadleaf.mesh is not in the mesh pack
+[warn] scene: model meshes/models/trees/broadleaf.mesh is not in the mesh pack
+[warn] scene: model meshes/models/trees/dead-oak.mesh is not in the mesh pack
+[warn] scene: model meshes/models/trees/broadleaf.mesh is not in the mesh pack
+[warn] scene: model meshes/models/trees/broadleaf.mesh is not in the mesh pack
+[warn] scene: model meshes/models/trees/twisted-stump.mesh is not in the mesh pack
+[warn] scene: model meshes/models/trees/dead-oak.mesh is not in the mesh pack
+[warn] scene: model meshes/models/trees/dead-oak.mesh is not in the mesh pack
+[warn] scene: model meshes/models/trees/dead-oak.mesh is not in the mesh pack
+[warn] scene: model meshes/models/trees/twisted-stump.mesh is not in the mesh pack
+[warn] slow stage frame: 238.7 ms = sprites 236.6, uploads 1.2, rest 0.1
+[warn] slow frame: 242.2 ms busy = assets 0.6, stage 238.9, ui 0.7, render 2.1 (record 1.9, submit 0.1, present 0.0; waits 0.1 not counted)
+[warn] slow stage frame: 53.3 ms = sprites 48.1, uploads 5.0, rest 0.1
+[warn] slow frame: 56.1 ms busy = assets 0.1, stage 54.0, ui 0.7, render 1.4 (record 0.9, submit 0.2, present 0.0; waits 0.1 not counted)

@@ -94,7 +94,7 @@ VSOut VSMain(uint id : SV_VertexID) {
   o.layers4 = unpackUnorm8(lb.z);
   o.layers5 = unpackUnorm8(lb.w);
   // 0 the ground; 1 a side wall that takes no light or shadow of its own; 2 a side wall lit like the ground (wallFrom's top bit: the Inn).
-  const uint wallFrom = push.wallFrom & 0x3FFFFFFFu;  // bits 31 (the Inn's lit sides) and 30 (rock walls) are flags
+  const uint wallFrom = push.wallFrom & 0x1FFFFFFFu;  // bits 31 (the Inn's lit sides) and 30 (rock walls) are flags
   o.wall = wallFrom != 0 && index >= wallFrom ? ((push.wallFrom & 0x80000000u) != 0 ? 2.0 : 1.0) : 0.0;
   return o;
 }
@@ -371,5 +371,10 @@ float4 PSMain(VSOut i) : SV_Target0 {
     surface.receivesCardShadow = 1.0 - side;
     surface.specular = 1.0 - side;
   }
-  return float4(applyGroundMarks(shade(f, surface), wp, smoothstep(0.5, 0.7, geometric.y)), 1.0);
+  float3 litGround = shade(f, surface);
+  if ((push.wallFrom & 0x20000000u) != 0) {
+    const float neutral = dot(litGround, float3(0.2126, 0.7152, 0.0722));
+    litGround = neutral.xxx;
+  }
+  return float4(applyGroundMarks(litGround, wp, smoothstep(0.5, 0.7, geometric.y)), 1.0);
 }
