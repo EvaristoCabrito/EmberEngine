@@ -77,6 +77,7 @@ struct BattleTalk {
   const ember::Overworld* world = nullptr;
   bool introDone = false, outroDone = false, epilogueDone = false;
   std::optional<DialogScreen> dialog;
+  bool heldTurns = false;  // the turns are held by this conversation / film (given back when it closes)
   std::optional<CutsceneScreen> film;
 
   // A conversation opens unless this campaign already had it; it is recorded the moment it opens (markDialogSeen).
@@ -130,7 +131,11 @@ struct BattleTalk {
       ImGui::End();
       ImGui::PopStyleVar();
     }
-    map.holdTurns = dialog.has_value() || film.has_value();
+    // The turns held while a conversation or a film is up, released when they close; never overwritten every frame (the user,
+    // 2026-11-06: an on-map cutscene holds the turns itself, and this line let the enemies strike under the scene).
+    const bool holdNow = dialog.has_value() || film.has_value();
+    if (holdNow) map.holdTurns = true, heldTurns = true;
+    else if (heldTurns) map.holdTurns = false, heldTurns = false;
     map.musicHeld = film.has_value();  // GameApp: the epilogue film is a music-free screen
   }
 };

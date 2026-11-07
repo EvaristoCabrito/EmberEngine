@@ -528,18 +528,20 @@ FADE-OUT. BARRAS somem com o preto.
 
 Regra: o rio nunca sai da mixagem, exceto entre o segundo TOC e o fim da batalha. A ausência dele é o que avisa que Vora chegou.
 
-## O que o `ember-cutscene-1` precisa ganhar para tocar isto
+## No engine (2026-11-06)
 
-| Passo | Campos | Por que |
-|---|---|---|
-| `shot` | `on` (ator, `[x,y]` ou `between: [a,b]`), `turn`, `tilt`, `distance`, `lift`, `over` (s), `cut: true` | todo plano acima; reaproveita `ShotKey` / `openShot` da câmera de ação |
-| `shake` | `seconds`, `strength` | P23, P28, P31, P40, P45, P47 |
-| `tint` | `percent`, `over` | P26 |
-| `bars` | `on` / `off` | abertura e fecho |
-| `fade` | `out` / `in`, `seconds`, `caption` | P01, P66, P74 |
-| `sfx` / `bgm` | `file`, `stop`, `fade` | a tabela de som |
-| `emote` | `actor`, `kind` (`!`, `!!`, suor) | já existe na batalha; falta expor |
-| `status` | `text`, `color` | as caixas vermelha e azul |
-| `flash` | `seconds` | P52 |
+Os passos `shot`, `cut`, `shake`, `tint`, `bars`, `fade`, `sfx`, `music`, `caption`, `emote` e `flash` existem no formato
+`ember-cutscene-1` (docs/CUTSCENES.md, "Film steps"). As duas cenas que tocam este roteiro:
 
-Com `shot` e `cut` sozinhos já dá para tocar uns 80% da forma; o resto é acabamento.
+- `content/cutscenes/stone-bridge-01-o-pedagio.json` (ao abrir o mapa `thebridge`): P01–P39.
+- `content/cutscenes/stone-bridge-02-a-promessa.json` (ao vencer): P40–P74.
+
+O mapa (`content/maps/ember/thebridge030.json`) corre de oeste para leste: [A] a saída do poço em x 2–5, [B] os nichos em x 11,
+[C] o vão em x 16–24, [D] a torre de pedágio (os aparelhos de tortura) em x 29–34, [E] a cabeceira em x 36–39; o rio fica além do
+muro sul (y 20), então "a borda" é a fileira y 19 e "pelo lado de fora" é a câmera olhando para `n` a partir dela. O "norte" do
+roteiro é o `e` do mapa. O que não dá para tocar como escrito: a câmera **por baixo** da ponte (o olho nunca desce do convés:
+P54 e P61 são rasantes e uma grua para baixo olhando o rio), o Butcher sentado (não há pose), o golpe final de Voss (é a batalha),
+a caixa de diálogo vazia por 3 s (é um `wait`).
+
+Vora morre na batalha e é uma atriz `fallen`: o corpo fica na ponte para a cena de vitória. O Carniceiro é um neutro do mapa
+(não luta, não morre) para estar vivo na cena final; o `exit` dele é a queda.

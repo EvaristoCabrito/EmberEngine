@@ -1,0 +1,1277 @@
+{
+  "format": "ember-cutscene-1",
+  "id": "stone-bridge-02-a-promessa",
+  "_note": "Stone Bridge, cena 02 'A Promessa' (the user's script, Cenário 4, 2026-11-06; its film cut in docs/STONE_BRIDGE.md), played once the fight on A Ponte de Pedra is won. Vora is a 'fallen' actor: her body stays on the board where she fell (keptBodies). O Carniceiro is the map's neutral, alive through the fight; the scene walks him to her, then at Lio, then to the edge (16, 19), and his 'exit' is the fall into the river. The heroes are walked to known hexes first, wherever the fight left them. '…mais tarde' is a fade with a caption; the toll tower's mark is the niche wall at (31, 0).",
+  "actors": {
+    "kael": {
+      "unit": "Kael"
+    },
+    "neera": {
+      "unit": "Neera"
+    },
+    "voss": {
+      "unit": "Voss"
+    },
+    "lio": {
+      "unit": "Lio"
+    },
+    "butcher": {
+      "unit": "O Carniceiro"
+    },
+    "vora": {
+      "unit": "Vora",
+      "fallen": true
+    }
+  },
+  "steps": [
+    {
+      "do": "bars",
+      "on": true
+    },
+    {
+      "do": "music",
+      "stop": true
+    },
+    {
+      "do": "shot",
+      "on": "vora",
+      "turn": "e",
+      "tilt": 84,
+      "distance": 9,
+      "cut": true
+    },
+    {
+      "do": "shake",
+      "seconds": 0.8,
+      "strength": 0.25
+    },
+    {
+      "do": "sfx",
+      "file": "WarDog2Death001.mp3",
+      "volume": 1.0
+    },
+    {
+      "do": "wait",
+      "seconds": 2.0
+    },
+    {
+      "do": "sfx",
+      "file": "ZombieDogDeath2001.mp3",
+      "volume": 0.6
+    },
+    {
+      "do": "wait",
+      "seconds": 1.2
+    },
+    {
+      "do": "sfx",
+      "file": "ZombieDogDeath2001.mp3",
+      "volume": 0.6
+    },
+    {
+      "do": "wait",
+      "seconds": 1.5
+    },
+    {
+      "do": "shot",
+      "on": "vora",
+      "tilt": 30,
+      "distance": 18,
+      "over": 4.0,
+      "async": true
+    },
+    {
+      "do": "move",
+      "actor": "butcher",
+      "near": "vora"
+    },
+    {
+      "do": "face",
+      "actor": "butcher",
+      "direction": "w"
+    },
+    {
+      "do": "say",
+      "actor": "butcher",
+      "text": "…Vora.",
+      "translations": {
+        "en": "…Vora."
+      }
+    },
+    {
+      "do": "shot",
+      "between": [
+        "butcher",
+        "vora"
+      ],
+      "behind": "butcher",
+      "tilt": 4,
+      "distance": "close",
+      "lift": 0.3,
+      "over": 2.0
+    },
+    {
+      "do": "wait",
+      "seconds": 2.5
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        15,
+        10
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "neera",
+      "to": [
+        13,
+        12
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "voss",
+      "to": [
+        13,
+        9
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "lio",
+      "to": [
+        14,
+        11
+      ]
+    },
+    {
+      "do": "shot",
+      "on": "neera",
+      "behind": "lio",
+      "tilt": 10,
+      "distance": "close",
+      "lift": 0.38
+    },
+    {
+      "do": "say",
+      "actor": "lio",
+      "text": "Ele… está de luto?",
+      "translations": {
+        "en": "Is he… grieving?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Até monstro tem coisa que ama. É isso que deixa tudo pior.",
+      "translations": {
+        "en": "Even a monster has something it loves. That's what makes it all worse."
+      }
+    },
+    {
+      "do": "shot",
+      "on": "butcher",
+      "look": "lio",
+      "tilt": -8,
+      "distance": 5,
+      "lift": 0.0,
+      "cut": true
+    },
+    {
+      "do": "sfx",
+      "file": "HeavySteps1-Balanced-Medium.mp3",
+      "volume": 0.9
+    },
+    {
+      "do": "shake",
+      "seconds": 0.15,
+      "strength": 0.1
+    },
+    {
+      "do": "say",
+      "actor": "butcher",
+      "text": "Eu só queria tirar o que ela não precisava. Agora vou tirar tudo.",
+      "translations": {
+        "en": "I only wanted to take what she didn't need. Now I'll take everything."
+      }
+    },
+    {
+      "do": "shot",
+      "on": [
+        17,
+        10
+      ],
+      "turn": "n",
+      "tilt": 10,
+      "distance": 12,
+      "lift": 0.4,
+      "cut": true
+    },
+    {
+      "do": "sfx",
+      "file": "HeavySteps1-Balanced-Medium.mp3",
+      "volume": 1.0
+    },
+    {
+      "do": "move",
+      "actor": "butcher",
+      "to": [
+        17,
+        10
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        16,
+        10
+      ]
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "toward": "butcher"
+    },
+    {
+      "do": "face",
+      "actor": "butcher",
+      "toward": "kael"
+    },
+    {
+      "do": "shot",
+      "between": [
+        "kael",
+        "butcher"
+      ],
+      "behind": "kael",
+      "tilt": 12,
+      "distance": "close",
+      "lift": 0.38,
+      "cut": true
+    },
+    {
+      "do": "sfx",
+      "file": "HeavyCleave-Balanced-Medium.mp3",
+      "volume": 1.0
+    },
+    {
+      "do": "flash",
+      "seconds": 0.12
+    },
+    {
+      "do": "shake",
+      "seconds": 2.0,
+      "strength": 0.12
+    },
+    {
+      "do": "wait",
+      "seconds": 1.0
+    },
+    {
+      "do": "shot",
+      "on": [
+        16,
+        14
+      ],
+      "turn": "n",
+      "tilt": 6,
+      "distance": 9,
+      "lift": 0.4,
+      "cut": true
+    },
+    {
+      "do": "shot",
+      "on": [
+        16,
+        18
+      ],
+      "over": 8.0,
+      "async": true
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        16,
+        12
+      ]
+    },
+    {
+      "do": "sfx",
+      "file": "HeavyCleave-Balanced-Medium.mp3",
+      "volume": 0.9
+    },
+    {
+      "do": "shake",
+      "seconds": 0.3,
+      "strength": 0.15
+    },
+    {
+      "do": "move",
+      "actor": "butcher",
+      "to": [
+        16,
+        11
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        16,
+        14
+      ]
+    },
+    {
+      "do": "sfx",
+      "file": "HeavyCleave-Balanced-Medium.mp3",
+      "volume": 0.9
+    },
+    {
+      "do": "shake",
+      "seconds": 0.3,
+      "strength": 0.15
+    },
+    {
+      "do": "move",
+      "actor": "butcher",
+      "to": [
+        16,
+        13
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        16,
+        16
+      ]
+    },
+    {
+      "do": "sfx",
+      "file": "HeavyCleave-Balanced-Medium.mp3",
+      "volume": 0.9
+    },
+    {
+      "do": "shake",
+      "seconds": 0.3,
+      "strength": 0.15
+    },
+    {
+      "do": "move",
+      "actor": "butcher",
+      "to": [
+        16,
+        15
+      ]
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "KAEL!",
+      "translations": {
+        "en": "KAEL!"
+      }
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        16,
+        18
+      ]
+    },
+    {
+      "do": "sfx",
+      "file": "HeavyCleave-Balanced-Medium.mp3",
+      "volume": 0.9
+    },
+    {
+      "do": "shake",
+      "seconds": 0.3,
+      "strength": 0.15
+    },
+    {
+      "do": "move",
+      "actor": "butcher",
+      "to": [
+        16,
+        17
+      ]
+    },
+    {
+      "do": "shot",
+      "between": [
+        "kael",
+        "butcher"
+      ],
+      "turn": "w",
+      "tilt": 8,
+      "distance": "close",
+      "lift": 0.4
+    },
+    {
+      "do": "say",
+      "actor": "butcher",
+      "text": "Você prometeu. Pra quem? Pros ganchos? Eles não estão ouvindo.",
+      "translations": {
+        "en": "You promised. To whom? To the hooks? They aren't listening."
+      }
+    },
+    {
+      "do": "shot",
+      "on": [
+        16,
+        19
+      ],
+      "turn": "n",
+      "tilt": 2,
+      "distance": 4,
+      "lift": 0.2,
+      "cut": true
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        16,
+        19
+      ]
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Prometi pra mim.",
+      "translations": {
+        "en": "I promised myself."
+      }
+    },
+    {
+      "do": "sfx",
+      "file": "Blade3.mp3",
+      "volume": 0.9
+    },
+    {
+      "do": "wait",
+      "seconds": 0.5
+    },
+    {
+      "do": "shot",
+      "between": [
+        "kael",
+        "butcher"
+      ],
+      "turn": "e",
+      "tilt": 10,
+      "distance": "medium",
+      "lift": 0.4,
+      "over": 1.5,
+      "async": true
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        15,
+        18
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "butcher",
+      "to": [
+        16,
+        19
+      ]
+    },
+    {
+      "do": "sfx",
+      "file": "DeadArmor.mp3",
+      "volume": 1.0
+    },
+    {
+      "do": "flash",
+      "seconds": 0.2
+    },
+    {
+      "do": "shot",
+      "on": "kael",
+      "look": "butcher",
+      "tilt": 8,
+      "distance": "close",
+      "lift": 0.4
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Desta vez eu fico olhando.",
+      "translations": {
+        "en": "This time I keep watching."
+      }
+    },
+    {
+      "do": "shot",
+      "on": "butcher",
+      "turn": "n",
+      "tilt": 2,
+      "distance": 5,
+      "lift": 0.1,
+      "cut": true
+    },
+    {
+      "do": "sfx",
+      "file": "DeadArmor.mp3",
+      "volume": 0.8
+    },
+    {
+      "do": "wait",
+      "seconds": 3.0
+    },
+    {
+      "do": "shot",
+      "on": "voss",
+      "look": "kael",
+      "tilt": 12,
+      "distance": "medium",
+      "lift": 0.4
+    },
+    {
+      "do": "move",
+      "actor": "voss",
+      "to": [
+        14,
+        17
+      ]
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "Kael, solta! Ele vai te puxar junto!",
+      "translations": {
+        "en": "Kael, let go! He'll pull you down with him!"
+      }
+    },
+    {
+      "do": "shot",
+      "on": "kael",
+      "look": "butcher",
+      "tilt": 8,
+      "distance": "close",
+      "lift": 0.4
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Se eu soltar, ele cai. Se cair, some. Se sumir, volta.",
+      "translations": {
+        "en": "If I let go, he falls. If he falls, he vanishes. If he vanishes, he comes back."
+      }
+    },
+    {
+      "do": "shot",
+      "on": "lio",
+      "look": "butcher",
+      "tilt": 6,
+      "distance": "medium",
+      "lift": 0.4,
+      "async": true
+    },
+    {
+      "do": "move",
+      "actor": "lio",
+      "to": [
+        14,
+        19
+      ]
+    },
+    {
+      "do": "say",
+      "actor": "lio",
+      "text": "NÃO! Ele sabe onde ela está! Kael, ele SABE!",
+      "translations": {
+        "en": "NO! He knows where she is! Kael, he KNOWS!"
+      }
+    },
+    {
+      "do": "shot",
+      "on": [
+        15,
+        19
+      ],
+      "turn": "n",
+      "tilt": 84,
+      "distance": 12,
+      "cut": true
+    },
+    {
+      "do": "say",
+      "actor": "butcher",
+      "text": "…Ouviu, garoto? A menina quer que eu viva. Puxa. Me sobe. Eu levo ela até a mãe.",
+      "translations": {
+        "en": "…Hear that, boy? The girl wants me alive. Pull. Bring me up. I'll take her to her mother."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "butcher",
+      "text": "Ou corta. E escolhe por ela. Igual eu escolhia pela Vora.",
+      "translations": {
+        "en": "Or cut. And choose for her. The way I chose for Vora."
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 3.0
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Kael… é ele que está escolhendo agora. Não você.",
+      "translations": {
+        "en": "Kael… he's the one choosing now. Not you."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "butcher",
+      "text": "E antes de decidir… me diz… o que vocês vieram buscar.",
+      "translations": {
+        "en": "And before you decide… tell me… what you came here for."
+      }
+    },
+    {
+      "do": "shot",
+      "on": "kael",
+      "look": "butcher",
+      "tilt": 8,
+      "distance": "close",
+      "lift": 0.4,
+      "cut": true
+    },
+    {
+      "do": "wait",
+      "seconds": 3.0
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Não interessa mais.",
+      "translations": {
+        "en": "It doesn't matter anymore."
+      }
+    },
+    {
+      "do": "shot",
+      "distance": 3.0,
+      "tilt": 20,
+      "lift": 0.2,
+      "over": 0.8
+    },
+    {
+      "do": "sfx",
+      "file": "Blade3.mp3",
+      "volume": 1.0
+    },
+    {
+      "do": "wait",
+      "seconds": 0.8
+    },
+    {
+      "do": "say",
+      "actor": "lio",
+      "text": "NÃÃÃO!",
+      "translations": {
+        "en": "NOOOO!"
+      }
+    },
+    {
+      "do": "shot",
+      "on": [
+        16,
+        19
+      ],
+      "turn": "n",
+      "tilt": 60,
+      "distance": 6,
+      "over": 5.0,
+      "async": true
+    },
+    {
+      "do": "exit",
+      "actor": "butcher"
+    },
+    {
+      "do": "wait",
+      "seconds": 3.5
+    },
+    {
+      "do": "shot",
+      "on": [
+        15,
+        19
+      ],
+      "turn": "n",
+      "tilt": 10,
+      "distance": 8,
+      "lift": 0.4,
+      "over": 6.0,
+      "async": true
+    },
+    {
+      "do": "music",
+      "file": "OldTowwerDrone  trax 4 Persona 884-Balanced-High.mp3",
+      "volume": 0.3
+    },
+    {
+      "do": "move",
+      "actor": "lio",
+      "to": [
+        15,
+        19
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        16,
+        18
+      ]
+    },
+    {
+      "do": "wait",
+      "seconds": 2.0
+    },
+    {
+      "do": "say",
+      "actor": "lio",
+      "text": "Você prometeu pra você. Eu prometi pra ela.",
+      "translations": {
+        "en": "You promised yourself. I promised her."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Lio…",
+      "translations": {
+        "en": "Lio…"
+      }
+    },
+    {
+      "do": "move",
+      "actor": "lio",
+      "to": [
+        12,
+        16
+      ]
+    },
+    {
+      "do": "say",
+      "actor": "lio",
+      "text": "Não.",
+      "translations": {
+        "en": "No."
+      }
+    },
+    {
+      "do": "caption",
+      "text": "Confiança de LIO diminuiu",
+      "translations": {
+        "en": "LIO's trust has fallen"
+      },
+      "style": "blue",
+      "seconds": 2.5
+    },
+    {
+      "do": "move",
+      "actor": "neera",
+      "to": [
+        13,
+        14
+      ]
+    },
+    {
+      "do": "shot",
+      "on": "neera",
+      "behind": "voss",
+      "tilt": 10,
+      "distance": "close",
+      "lift": 0.38
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "…Ele fez certo?",
+      "translations": {
+        "en": "…Did he do right?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Ele fez o que tinha prometido. Não sei se é a mesma coisa.",
+      "translations": {
+        "en": "He did what he had promised. I don't know if that's the same thing."
+      }
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        16,
+        19
+      ]
+    },
+    {
+      "do": "shot",
+      "on": "kael",
+      "turn": "n",
+      "tilt": 4,
+      "distance": "close",
+      "lift": 0.45,
+      "over": 2.0
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Eu vi ele entrar. Desta vez eu vi.",
+      "translations": {
+        "en": "I saw him go in. This time I saw."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "Ninguém sai daquilo. Nem ele.",
+      "translations": {
+        "en": "Nobody comes out of that. Not even him."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Vou ficar mais um pouco.",
+      "translations": {
+        "en": "I'll stay a little longer."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Quanto tempo?",
+      "translations": {
+        "en": "How long?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Até o rio parar de borbulhar.",
+      "translations": {
+        "en": "Until the river stops bubbling."
+      }
+    },
+    {
+      "do": "fade",
+      "to": "black",
+      "seconds": 0.8
+    },
+    {
+      "do": "caption",
+      "text": "…mais tarde",
+      "translations": {
+        "en": "…later"
+      },
+      "style": "plain",
+      "seconds": 2.5
+    },
+    {
+      "do": "move",
+      "actor": "lio",
+      "to": [
+        16,
+        3
+      ]
+    },
+    {
+      "do": "fade",
+      "to": "clear",
+      "seconds": 0.8
+    },
+    {
+      "do": "wait",
+      "seconds": 3.0
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Acabou.",
+      "translations": {
+        "en": "It's over."
+      }
+    },
+    {
+      "do": "shot",
+      "on": [
+        18,
+        10
+      ],
+      "turn": "e",
+      "tilt": 12,
+      "distance": 12,
+      "lift": 0.5,
+      "cut": true
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        19,
+        10
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "voss",
+      "to": [
+        18,
+        9
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "neera",
+      "to": [
+        18,
+        11
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "lio",
+      "near": "vora"
+    },
+    {
+      "do": "shot",
+      "on": "vora",
+      "behind": "lio",
+      "tilt": 6,
+      "distance": "close",
+      "lift": 0.2,
+      "over": 1.0
+    },
+    {
+      "do": "wait",
+      "seconds": 1.5
+    },
+    {
+      "do": "flash",
+      "seconds": 0.12
+    },
+    {
+      "do": "say",
+      "actor": "lio",
+      "text": "Desculpa. Não foi escolha sua.",
+      "translations": {
+        "en": "I'm sorry. It wasn't your choice."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Lio. Vem.",
+      "translations": {
+        "en": "Lio. Come."
+      }
+    },
+    {
+      "do": "move",
+      "actor": "voss",
+      "to": [
+        31,
+        2
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "neera",
+      "to": [
+        30,
+        3
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        29,
+        4
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "lio",
+      "to": [
+        32,
+        2
+      ]
+    },
+    {
+      "do": "shot",
+      "on": [
+        31,
+        1
+      ],
+      "turn": "n",
+      "tilt": 5,
+      "distance": 4,
+      "lift": 0.6,
+      "cut": true
+    },
+    {
+      "do": "face",
+      "actor": "voss",
+      "direction": "nw"
+    },
+    {
+      "do": "face",
+      "actor": "neera",
+      "direction": "nw"
+    },
+    {
+      "do": "face",
+      "actor": "lio",
+      "direction": "nw"
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "Isso foi feito agora há pouco.",
+      "translations": {
+        "en": "This was made just now."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Ele ficou esperando a gente aqui. Pode ter feito antes.",
+      "translations": {
+        "en": "He waited for us here. He could have made it before."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "Antes, a pedra não estaria soltando pó.",
+      "translations": {
+        "en": "Before, the stone wouldn't still be shedding dust."
+      }
+    },
+    {
+      "do": "shot",
+      "on": [
+        31,
+        1
+      ],
+      "turn": "n",
+      "tilt": 5,
+      "distance": 3,
+      "lift": 0.3,
+      "over": 2.0
+    },
+    {
+      "do": "emote",
+      "actor": "lio",
+      "text": "!!"
+    },
+    {
+      "do": "say",
+      "actor": "lio",
+      "text": "…É a letra dele. É a letra do meu irmão.",
+      "translations": {
+        "en": "…It's his writing. It's my brother's writing."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Ele passou por aqui. Ele está vivo, Lio.",
+      "translations": {
+        "en": "He came through here. He's alive, Lio."
+      }
+    },
+    {
+      "do": "shot",
+      "between": [
+        "lio",
+        "kael"
+      ],
+      "behind": "lio",
+      "tilt": 10,
+      "distance": "medium",
+      "lift": 0.4
+    },
+    {
+      "do": "face",
+      "actor": "lio",
+      "toward": "kael"
+    },
+    {
+      "do": "say",
+      "actor": "lio",
+      "text": "Então eu vou achar ele. Sem precisar de quem você jogou no rio.",
+      "translations": {
+        "en": "Then I'll find him. Without the one you threw in the river."
+      }
+    },
+    {
+      "do": "move",
+      "actor": "lio",
+      "to": [
+        36,
+        10
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "voss",
+      "to": [
+        33,
+        4
+      ]
+    },
+    {
+      "do": "shot",
+      "on": [
+        30,
+        2
+      ],
+      "turn": "n",
+      "tilt": 8,
+      "distance": "medium",
+      "lift": 0.5
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        31,
+        2
+      ]
+    },
+    {
+      "do": "wait",
+      "seconds": 1.0
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Andando.",
+      "translations": {
+        "en": "Moving."
+      }
+    },
+    {
+      "do": "shot",
+      "on": [
+        34,
+        10
+      ],
+      "turn": "e",
+      "tilt": 10,
+      "distance": 14,
+      "lift": 0.5,
+      "cut": true
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        37,
+        10
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "neera",
+      "to": [
+        36,
+        9
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "voss",
+      "to": [
+        36,
+        11
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "lio",
+      "to": [
+        38,
+        10
+      ]
+    },
+    {
+      "do": "wait",
+      "seconds": 1.5
+    },
+    {
+      "do": "shot",
+      "on": [
+        16,
+        19
+      ],
+      "turn": "n",
+      "tilt": 10,
+      "distance": 7,
+      "lift": 0.3,
+      "over": 8.0
+    },
+    {
+      "do": "sfx",
+      "file": "DeadArmor.mp3",
+      "volume": 1.0
+    },
+    {
+      "do": "shake",
+      "seconds": 0.4,
+      "strength": 0.05
+    },
+    {
+      "do": "shot",
+      "tilt": 25,
+      "over": 2.0
+    },
+    {
+      "do": "wait",
+      "seconds": 2.0
+    },
+    {
+      "do": "fade",
+      "to": "black",
+      "seconds": 1.5
+    },
+    {
+      "do": "caption",
+      "text": "STONE BRIDGE — CONCLUÍDO",
+      "translations": {
+        "en": "STONE BRIDGE — COMPLETE"
+      },
+      "style": "plain",
+      "seconds": 3.0
+    },
+    {
+      "do": "bars",
+      "on": false
+    }
+  ]
+}

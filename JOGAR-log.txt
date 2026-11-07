@@ -7,8 +7,8 @@
 [info] mounted C:\EmberEngineBOSTA\build\ground\ground-v77-random-encounters-v01.pak (360 assets)
 [info] overworld: 490 cells, 16 locations, 31 missions
 [info] overworld: 13 road encounters field undead
-[info] startup: data loaded at 129 ms
-[info] startup: window at 204 ms
+[info] startup: data loaded at 316 ms
+[info] startup: window at 340 ms
 [info] GPU: AMD Radeon(TM) RX 6400 (Vulkan 1.4.315, driver 0x800161)
 [info] transfer queue: dedicated (family 2)
 [info] pipeline cache: 101586444 bytes restored for this GPU/driver
@@ -25,11 +25,11 @@
 [info] startup: renderer resources begin
 [info] startup: renderer frame buffers ready
 [info] pipeline compute: volumetrics_v1.CSInject creating
-[info] pipeline compute: volumetrics_v1.CSInject ready in 0 ms
+[info] pipeline compute: volumetrics_v1.CSInject ready in 1 ms
 [info] pipeline compute: volumetrics_v1.CSIntegrate creating
 [info] pipeline compute: volumetrics_v1.CSIntegrate ready in 0 ms
 [info] pipeline compute: volumetrics_clouds006.CSMaterial creating
-[info] pipeline compute: volumetrics_clouds006.CSMaterial ready in 0 ms
+[info] pipeline compute: volumetrics_clouds006.CSMaterial ready in 1 ms
 [info] pipeline compute: volumetrics_clouds006.CSInject creating
 [info] pipeline compute: volumetrics_clouds006.CSInject ready in 0 ms
 [info] pipeline compute: volumetrics_clouds006.CSIntegrate creating
@@ -44,7 +44,7 @@
 [info] pipeline graphics: ground.VSMain + ground.PSMain creating
 [info] pipeline graphics: ground.VSMain + ground.PSMain ready in 0 ms
 [info] pipeline graphics: terrain.VSMain + terrain.PSMain creating
-[info] pipeline graphics: terrain.VSMain + terrain.PSMain ready in 1 ms
+[info] pipeline graphics: terrain.VSMain + terrain.PSMain ready in 2 ms
 [info] pipeline graphics: terrain.VSShadow + terrain.PSShadow creating
 [info] pipeline graphics: terrain.VSShadow + terrain.PSShadow ready in 0 ms
 [info] pipeline graphics: water.VSMain + water.PSMain creating
@@ -58,13 +58,13 @@
 [info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSMain creating
 [info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSMain ready in 1 ms
 [info] pipeline graphics: effects.VSMain + effects.PSMain creating
-[info] pipeline graphics: effects.VSMain + effects.PSMain ready in 0 ms
+[info] pipeline graphics: effects.VSMain + effects.PSMain ready in 1 ms
 [info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
-[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 2 ms
 [info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
-[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 2 ms
 [info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
-[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 2 ms
 [info] startup: renderer graphics pipelines ready
 [info] pipeline compute: cull.CSInstancesEarly creating
 [info] pipeline compute: cull.CSInstancesEarly ready in 0 ms
@@ -83,13 +83,13 @@
 [info] pipeline compute: cull.CSPrepareDraw creating
 [info] pipeline compute: cull.CSPrepareDraw ready in 0 ms
 [info] pipeline compute: resolve.CSResolve creating
-[info] pipeline compute: resolve.CSResolve ready in 1 ms
+[info] pipeline compute: resolve.CSResolve ready in 2 ms
 [info] pipeline compute: resolve.CSSky creating
-[info] pipeline compute: resolve.CSSky ready in 1 ms
+[info] pipeline compute: resolve.CSSky ready in 2 ms
 [info] pipeline compute: resolve_panorama.CSResolve creating
-[info] pipeline compute: resolve_panorama.CSResolve ready in 1 ms
+[info] pipeline compute: resolve_panorama.CSResolve ready in 2 ms
 [info] pipeline compute: resolve_panorama.CSSky creating
-[info] pipeline compute: resolve_panorama.CSSky ready in 1 ms
+[info] pipeline compute: resolve_panorama.CSSky ready in 2 ms
 [info] pipeline compute: lights.CSClusters creating
 [info] pipeline compute: lights.CSClusters ready in 0 ms
 [info] pipeline compute: volume.CSInject creating
@@ -97,7 +97,7 @@
 [info] pipeline compute: atmosphere.CSTransmittance creating
 [info] pipeline compute: atmosphere.CSTransmittance ready in 0 ms
 [info] pipeline compute: atmosphere.CSMultiScattering creating
-[info] pipeline compute: atmosphere.CSMultiScattering ready in 0 ms
+[info] pipeline compute: atmosphere.CSMultiScattering ready in 1 ms
 [info] pipeline compute: atmosphere.CSSkyView creating
 [info] pipeline compute: atmosphere.CSSkyView ready in 0 ms
 [info] pipeline compute: atmosphere.CSAerial creating
@@ -105,13 +105,13 @@
 [info] pipeline compute: atmosphere.CSAmbient creating
 [info] pipeline compute: atmosphere.CSAmbient ready in 0 ms
 [info] pipeline compute: skyreflect.CSBase creating
-[info] pipeline compute: skyreflect.CSBase ready in 0 ms
+[info] pipeline compute: skyreflect.CSBase ready in 1 ms
 [info] pipeline compute: skyreflect.CSFilter creating
 [info] pipeline compute: skyreflect.CSFilter ready in 0 ms
 [info] pipeline compute: skyreflect.CSCloudShadow creating
 [info] pipeline compute: skyreflect.CSCloudShadow ready in 0 ms
 [info] pipeline compute: cloudsvol.CSNoiseBase creating
-[info] pipeline compute: cloudsvol.CSNoiseBase ready in 0 ms
+[info] pipeline compute: cloudsvol.CSNoiseBase ready in 1 ms
 [info] pipeline compute: cloudsvol.CSNoiseDetail creating
 [info] pipeline compute: cloudsvol.CSNoiseDetail ready in 0 ms
 [info] pipeline compute: cloudsvol.CSMarch creating
@@ -170,240 +170,14 @@
 [info] pipeline graphics: meshlet.MSMain + meshlet.PSMain creating
 [info] pipeline graphics: meshlet.MSMain + meshlet.PSMain ready in 0 ms
 [info] pipeline graphics: meshlet.MSMain + meshlet.PSShadow creating
-[info] pipeline graphics: meshlet.MSMain + meshlet.PSShadow ready in 0 ms
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSShadow ready in 1 ms
 [info] pipeline graphics: sprites.VSShadow + sprites.PSShadow creating
 [info] pipeline graphics: sprites.VSShadow + sprites.PSShadow ready in 0 ms
 [info] startup: renderer ready
-[info] startup: GPU ready at 1168 ms
-[info] startup: first screen at 1202 ms
-[warn] slow ui record: 737.5 ms = imgui render 0.0, refine images 0.0, textures + draw 737.5 (78 textures changed, largest 4096x4096)
-[warn] slow frame: 852.6 ms busy = assets 0.0, stage 0.0, ui 111.4, render 741.4 (record 739.6, submit 0.3, present 1.2; waits 0.2 not counted)
-[info] inn: 135 weapons, 292 gear, 7 potions
-[info] underworld: 170 cells, 1 locations, start (5,1)
-[info] pipeline graphics: worldmap.VSMain + worldmap.PSMain creating
-[info] pipeline graphics: worldmap.VSMain + worldmap.PSMain ready in 1 ms
-[info] worldmap: world-map-v04.jpg 4096x4096 on the GPU (64.0 MB)
-[info] worldmap: night-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: dawn-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: day-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: day-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: dusk-v02.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: night-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: surface-wisps-v01.png 2048x2048 on the GPU (16.0 MB)
-[info] worldmap: surface-height-v01.png 2048x2048 on the GPU (16.0 MB)
-[info] worldmap: surface-water-v01.png 2048x2048 on the GPU (16.0 MB)
-[info] worldmap: surface-mist-v01.png 2048x2048 on the GPU (16.0 MB)
-[info] worldmap look: 6 LUTs, lights on, height on, water on, mist on
-[info] worldmap: underworld-atlas-v03.png 4220x5964 on the GPU (96.0 MB)
-[info] worldmap: underworld-bloom-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: underworld-dormant-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: underworld-dormant-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: underworld-awakening-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: underworld-bloom-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: light mask underworld-fungal-v01.png 2110x2982 + glow 527x745 (radius 10) on the GPU
-[info] worldmap: underworld-plants-v01.png 2110x2982 on the GPU (24.0 MB)
-[info] worldmap: underworld-water-v01.png 2110x2982 on the GPU (24.0 MB)
-[info] worldmap: underworld-spores-v01.png 2110x2982 on the GPU (24.0 MB)
-[info] worldmap: underworld-windows-v01.png 2110x2982 on the GPU (24.0 MB)
-[info] worldmap: light mask underworld-ember-v01.png 2110x2982 + glow 527x745 (radius 10) on the GPU
-[info] worldmap: underworld-heat-v01.png 2110x2982 on the GPU (24.0 MB)
-[info] underworld look: 5 LUTs, fungal on, plants on, water on, spores on, windows on, ember on, heat on
-[info] worldmap: light + fog on / on (396.6 MB of textures)
-[warn] slow frame: 3090.6 ms busy = assets 0.0, stage 3086.2, ui 2.7, render 1.9 (record 1.4, submit 0.1, present 0.1; waits 0.1 not counted)
-[info] film title-open.mp4: H.264 (Media Foundation) 1472x800, 145 pictures, decode 10.81 ms a picture (worst 94.93 ms), 8.7 MB
-[warn] slow ui record: 28.4 ms = imgui render 0.0, refine images 0.0, textures + draw 28.4 (1 textures changed, largest 1920x1080)
-[info] film vau-intro.webm: AV1 (dav1d) 1920x1080, 73 pictures, decode 18.07 ms a picture (worst 81.07 ms), 21.7 MB
-[info] ui: 59 images off the GPU (288 MB); each comes back when a screen draws it again
-[info] map vau 'O Vau': 22x16 hexes, smooth 116978 triangles, hard 8716 triangles, 3 baked layers, 18 textures, 8.2 MB geometry
-[info] volumetrics: 7 profiles from content/atmosphere/v1/profiles.json
-[info] board heights: lowest ground -1.00, highest 1.00 (the floor image lies under the lowest)
-[info] scene build/campaign/scenes/vau035.scene.json: built by SceneBuilder (EmberEngine props); 2 kinds left out
-[info] scene vau: 9 cards, 9 models, 13 units, 0 architecture pieces (0 built)
-[info] poses: 8 of 8 map units in the catalog, 14 poses between them
-[info] progression: 7 heroes; enemies keep their class's own gains
-[info] enemy ranks: 10 ranks, 26 classes ranked (others F)
-[info] battle: 18 cells made solid under EmberEngine props
-[info] cutscene: Neera waits off the board for its scene
-[info] cutscene: Voss waits off the board for its scene
-[info] battle vau: 8 of 8 units in play
-[info] formation: the map splits the party into 2 groups: every hero keeps the map's place
-[info] panoramas vau: 3 (the newest opens: vau-panorama-v03.png)
-[info] inn: 135 weapons, 292 gear, 7 potions
-[info] weapons: 135 main-hand, 27 off-hand, 93 classes
-[info] inn: 135 weapons, 292 gear, 7 potions
-[info] weather: rain x0.05 wind 0.58: 2 draws, 534 vertices (spells 0 draws)
-[info] pipeline compute: cloud_legacy004.CSMarch creating
-[info] pipeline compute: cloud_legacy004.CSMarch ready in 0 ms
-[info] pipeline compute: cloud_legacy004_sky.CSCloudShadow creating
-[info] pipeline compute: cloud_legacy004_sky.CSCloudShadow ready in 0 ms
-[info] pipeline compute: cloud_legacy004_sky.CSBase creating
-[info] pipeline compute: cloud_legacy004_sky.CSBase ready in 0 ms
-[info] sprites: roster lists 1113 clips
-[info] sprites: Personagens Alta: the cast 310 MB at full resolution, the others 131 MB (GPU 2119 MB free before the fight)
-[info] sprites: full-clip pool 7 x 144 MB (largest clip 144.5 MB)
-[info] sprites: full-clip pool set up in 611.5 ms
-[warn] slow stage frame: 618.2 ms = sprites 612.2, meshes 3.7, uploads 1.5, rest 0.1
-[warn] slow frame: 620.6 ms busy = assets 0.1, stage 618.3, ui 0.8, render 1.6 (record 1.1, submit 0.1, present 0.1; waits 0.2 not counted)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1110 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1128 vertices (spells 0 draws)
-[info] sprites: the fight's 33 clips on the GPU 17.88 s after they were asked for
-[info] sprites:   voss-veo-leve-passo 131 MB (full 131 MB)
-[info] sprites:   neera/neera-v2-001 110 MB (full 110 MB)
-[info] sprites:   militia-v2 74 MB (full 74 MB)
-[info] sprites:   BaseCrossbowman 66 MB (full 66 MB)
-[info] sprites:   Kael_Final/kael-final-002 33 MB (full 33 MB)
-[info] sprites:   neera-hydra 17 MB (full 17 MB)
-[info] sprites:   neera 8 MB (full 8 MB)
-[info] sprites:   voss-final 0 MB (full 0 MB)
-[info] sprites: GPU memory 2021 MB allocated by the game, 2122 MB used, budget 3227 MB, heap 3824 MB
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1086 vertices (spells 0 draws)
-[info] camera: meter 71236.070 lux, EV 14.80, darkening 0.00 stops, exposure 0.00003, key 99625.56 lux at elevation 31.0 deg
-[info] sky: hour 8.00, moon new (disc texture 53, radius 2.70 deg, glow 4889.24) at elevation 27.9 deg, azimuth -114.4 deg (the camera looks at azimuth 150.0, elevation -20.0), off screen
-[info] meshes: textures 20 of 20 at the size the camera needs, 20 at full size (6 MB on the GPU, 1038 MB free)
-[info] cutscene trigger: vau opens with estranhos-na-costa
-[info] cutscene estranhos-na-costa: start (3 actors, 132 steps)
-[info] cutscene estranhos-na-costa: step 0 wait 0.80 s
-[info] cutscene estranhos-na-costa: step 1 move kael (4, 12) -> (17, 8), 15 hexes
-[info] cutscene estranhos-na-costa: step 2 face kael nw
-[info] cutscene estranhos-na-costa: step 3 wait 1.40 s
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1020 vertices (spells 0 draws)
-[info] cutscene estranhos-na-costa: step 4 say kael: "Desgraçados."
-[info] cutscene estranhos-na-costa: step 5 wait 1.00 s
-[info] cutscene estranhos-na-costa: step 6 say kael: "Todos eles, até o último."
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1068 vertices (spells 0 draws)
-[info] cutscene estranhos-na-costa: step 7 wait 0.80 s
-[info] cutscene estranhos-na-costa: step 8 enter neera at (14, 12)
-[info] cutscene estranhos-na-costa: step 9 face kael toward neera
-[info] cutscene estranhos-na-costa: step 10 say kael: "Apareça."
-[info] cutscene estranhos-na-costa: step 11 move neera (14, 12) -> (15, 10), 2 hexes
-[info] cutscene estranhos-na-costa: step 12 face neera toward kael
-[info] cutscene estranhos-na-costa: step 13 say neera: "Calma. Não estou procurando briga."
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1080 vertices (spells 0 draws)
-[info] cutscene estranhos-na-costa: step 14 say kael: "Então mantenha distância."
-[info] cutscene estranhos-na-costa: step 15 say neera: "Justo."
-[info] cutscene estranhos-na-costa: step 16 face neera w
-[info] cutscene estranhos-na-costa: step 17 wait 0.80 s
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1086 vertices (spells 0 draws)
-[info] cutscene estranhos-na-costa: step 18 say neera: "Parece que você já brigou o bastante por um dia."
-[info] cutscene estranhos-na-costa: step 19 face neera toward kael
-[info] cutscene estranhos-na-costa: step 20 say kael: "O que você quer?"
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1074 vertices (spells 0 draws)
-[info] cutscene estranhos-na-costa: step 21 say neera: "Eu vi o que aconteceu. Achei que você ia precisar de uma mão."
-[info] cutscene estranhos-na-costa: step 22 say kael: "Chegou um pouco tarde."
-[info] cutscene estranhos-na-costa: step 23 say neera: "Pelo visto."
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1098 vertices (spells 0 draws)
-[info] cutscene estranhos-na-costa: step 24 wait 0.60 s
-[info] cutscene estranhos-na-costa: step 25 say kael: "Mãos onde eu possa ver."
-[info] cutscene estranhos-na-costa: step 26 say neera: "Ah, pelo amor dos céus. É uma poção de cura."
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1092 vertices (spells 0 draws)
-[info] cutscene estranhos-na-costa: step 27 move neera (15, 10) -> (16, 9), 2 hexes
-[info] cutscene estranhos-na-costa: step 28 face neera toward kael
-[info] cutscene estranhos-na-costa: step 29 say neera: "Viu? Perfeitamente inofensiva. A não ser que você seja alérgico a continuar vivo."
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1074 vertices (spells 0 draws)
-[info] cutscene estranhos-na-costa: step 30 wait 0.80 s
-[info] cutscene estranhos-na-costa: step 31 say kael: "Por quê?"
-[info] cutscene estranhos-na-costa: step 32 say neera: "Por que o quê?"
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1080 vertices (spells 0 draws)
-[info] cutscene estranhos-na-costa: step 33 say kael: "Por que me dar isso?"
-[info] cutscene estranhos-na-costa: step 34 say neera: "Porque você está sangrando."
-[info] cutscene estranhos-na-costa: step 35 say kael: "Isso não é resposta."
-[info] cutscene estranhos-na-costa: step 36 say neera: "É a única que eu tenho."
-[info] cutscene estranhos-na-costa: step 37 wait 0.50 s
-[info] cutscene estranhos-na-costa: step 38 enter voss at (21, 8)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1092 vertices (spells 0 draws)
-[info] cutscene estranhos-na-costa: step 39 face voss toward kael
-[info] cutscene estranhos-na-costa: step 40 say voss: "Se já terminaram, deveríamos ir embora."
-[info] cutscene estranhos-na-costa: step 41 face kael toward voss
-[info] cutscene estranhos-na-costa: step 42 face neera toward voss
-[info] cutscene estranhos-na-costa: step 43 say kael: "E quem diabos é você?"
-[info] cutscene estranhos-na-costa: step 44 say voss: "Alguém que prefere não estar aqui quando a próxima patrulha chegar."
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1080 vertices (spells 0 draws)
-[info] cutscene estranhos-na-costa: step 45 say kael: "Você estava nos observando?"
-[info] cutscene estranhos-na-costa: step 46 say voss: "Obviamente."
-[info] cutscene estranhos-na-costa: step 47 move kael (17, 8) -> (19, 8), 2 hexes
-[info] cutscene estranhos-na-costa: step 48 face kael toward voss
-[info] cutscene estranhos-na-costa: step 49 say kael: "Você acha alguma graça nisso tudo?"
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1044 vertices (spells 0 draws)
-[info] cutscene estranhos-na-costa: step 50 say voss: "Não."
-[info] cutscene estranhos-na-costa: step 51 say kael: "Homens estão mortos. Os navios nos abandonaram. E você fica aí como se nada disso fosse da sua conta."
-[info] cutscene estranhos-na-costa: step 52 say voss: "Preferiria que eu chorasse?"
-[info] cutscene estranhos-na-costa: step 53 wait 0.60 s
-[info] cutscene estranhos-na-costa: step 54 move neera (16, 9) -> (19, 9), 3 hexes
-[info] cutscene estranhos-na-costa: step 55 face neera toward kael
-[info] cutscene estranhos-na-costa: step 56 say neera: "Muito bem. Será que dá para a gente não se matar por cinco minutos?"
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1104 vertices (spells 0 draws)
-[info] cutscene estranhos-na-costa: step 57 face voss w
-[info] cutscene estranhos-na-costa: step 58 wait 0.80 s
-[info] cutscene estranhos-na-costa: step 59 say voss: "A luta vai ter chamado atenção. O que sobreviveu terra adentro virá investigar."
-[info] cutscene estranhos-na-costa: step 60 say kael: "E como você saberia disso?"
-[info] cutscene estranhos-na-costa: step 61 say voss: "Porque é o que eu faria."
-[info] cutscene estranhos-na-costa: step 62 wait 1.20 s
-[info] cutscene estranhos-na-costa: step 63 say kael: "Você tem nome?"
-[info] cutscene estranhos-na-costa: step 64 face voss toward kael
-[info] cutscene estranhos-na-costa: step 65 say voss: "Voss."
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1086 vertices (spells 0 draws)
-[info] cutscene estranhos-na-costa: step 66 say kael: "Só Voss?"
-[info] cutscene estranhos-na-costa: step 67 say voss: "Basta."
-[info] cutscene estranhos-na-costa: step 68 say kael: "Conveniente."
-[info] cutscene estranhos-na-costa: step 69 face voss w
-[info] cutscene estranhos-na-costa: step 70 wait 1.00 s
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1086 vertices (spells 0 draws)
-[info] cutscene estranhos-na-costa: step 71 face neera toward kael
-[info] cutscene estranhos-na-costa: step 72 say neera: "Eu sou a Neera, aliás. Já que as apresentações estão indo tão bem."
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1068 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1020 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1086 vertices (spells 0 draws)
-[info] meshes: textures 20 of 20 at the size the camera needs, 20 at full size (6 MB on the GPU, 1038 MB free)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1092 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1086 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1080 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1068 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1086 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1050 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1044 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1086 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1092 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1092 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1074 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1074 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1086 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1074 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1098 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1062 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1086 vertices (spells 0 draws)
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1068 vertices (spells 0 draws)
-[info] cutscene estranhos-na-costa: over (72 steps); controls back
-[info] weather: rain x0.10 wind 0.56: 2 draws, 1110 vertices (spells 0 draws)
-[info] inn: 135 weapons, 292 gear, 7 potions
-[info] underworld: 170 cells, 1 locations, start (5,1)
-[info] pipeline graphics: worldmap.VSMain + worldmap.PSMain creating
-[info] pipeline graphics: worldmap.VSMain + worldmap.PSMain ready in 0 ms
-[info] worldmap: world-map-v04.jpg 4096x4096 on the GPU (64.0 MB)
-[info] worldmap: night-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: dawn-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: day-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: day-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: dusk-v02.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: night-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: surface-wisps-v01.png 2048x2048 on the GPU (16.0 MB)
-[info] worldmap: surface-height-v01.png 2048x2048 on the GPU (16.0 MB)
-[info] worldmap: surface-water-v01.png 2048x2048 on the GPU (16.0 MB)
-[info] worldmap: surface-mist-v01.png 2048x2048 on the GPU (16.0 MB)
-[info] worldmap look: 6 LUTs, lights on, height on, water on, mist on
-[info] worldmap: underworld-atlas-v03.png 4220x5964 on the GPU (96.0 MB)
-[info] worldmap: underworld-bloom-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: underworld-dormant-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: underworld-dormant-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: underworld-awakening-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: underworld-bloom-v01.png 1024x32 on the GPU (0.1 MB)
-[info] worldmap: light mask underworld-fungal-v01.png 2110x2982 + glow 527x745 (radius 10) on the GPU
-[info] worldmap: underworld-plants-v01.png 2110x2982 on the GPU (24.0 MB)
-[info] worldmap: underworld-water-v01.png 2110x2982 on the GPU (24.0 MB)
-[info] worldmap: underworld-spores-v01.png 2110x2982 on the GPU (24.0 MB)
-[info] worldmap: underworld-windows-v01.png 2110x2982 on the GPU (24.0 MB)
-[info] worldmap: light mask underworld-ember-v01.png 2110x2982 + glow 527x745 (radius 10) on the GPU
-[info] worldmap: underworld-heat-v01.png 2110x2982 on the GPU (24.0 MB)
-[info] underworld look: 5 LUTs, fungal on, plants on, water on, spores on, windows on, ember on, heat on
-[info] worldmap: light + fog on / on (396.6 MB of textures)
-[warn] slow frame: 2772.2 ms busy = assets 0.0, stage 2769.3, ui 1.0, render 2.1 (record 1.4, submit 0.1, present 0.2; waits 0.1 not counted)
+[info] startup: GPU ready at 2400 ms
+[info] startup: first screen at 2510 ms
+[info] music: LANDR-AsheraIntrol-Balanced-High.mp3 (C:/EmberEngineBOSTA/content/assets/game/MUSIC/LANDR-AsheraIntrol-Balanced-High.mp3)
+[warn] slow ui record: 140.2 ms = imgui render 0.0, refine images 0.0, textures + draw 140.1 (78 textures changed, largest 4096x4096)
+[warn] slow frame: 277.8 ms busy = assets 0.0, stage 0.0, ui 121.1, render 156.8 (record 152.0, submit 1.4, present 2.2; waits 0.2 not counted)
+[warn] slow ui record: 31.2 ms = imgui render 0.0, refine images 0.0, textures + draw 31.2 (0 textures changed, largest 0x0)
 [info] pipeline cache: 101586444 bytes saved

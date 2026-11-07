@@ -44,9 +44,10 @@ class DialogScreen {
     verticalGradient(ImGui::GetWindowDrawList(), {0, 0}, size, {{0.0f, IM_COL32(0, 0, 0, 89)}, {1.0f, IM_COL32(0, 0, 0, 184)}});
     ImGui::End();
     ImGui::PopStyleColor();
-    // The panel: max-w-xl, p-5, centred.
+    // The panel: max-w-xl, p-5, high on the screen (the user, 2026-11-06: "a janela de texto precisa ficar muito mais para cima ou
+    // ela esconde a ação"): its top at 9% of the height, under the round's header, the board and the actors in view below it.
     const float w = std::min(576.0f, size.x - 32);
-    ImGui::SetNextWindowPos({size.x / 2, size.y / 2}, ImGuiCond_Always, {0.5f, 0.5f});
+    ImGui::SetNextWindowPos({size.x / 2, size.y * 0.09f}, ImGuiCond_Always, {0.5f, 0.0f});
     ImGui::SetNextWindowSize({w, 0});
     ImGui::SetNextWindowFocus();
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {20, 20});
@@ -93,6 +94,8 @@ class DialogScreen {
     ImGui::PushFont(uiFont(UiFont::Ui), 16.0f * gamePrefs().dialogueScale);
     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(240, 240, 240, 255));
     ImGui::PushTextWrapPos(textX + textW - ImGui::GetWindowPos().x);  // window-local (the panel is centred: screen x clipped the line)
+    const float textTop = ImGui::GetCursorScreenPos().y;
+    const float lineH = ImGui::GetTextLineHeightWithSpacing();
     ImGui::TextUnformatted(translated(line->value("text", ""), line->value("translations", ember::Json()), lang).c_str());
     ImGui::PopTextWrapPos();
     ImGui::PopStyleColor();
@@ -125,9 +128,15 @@ class DialogScreen {
         }
       }
     } else {
+      // The user's layout (2026-11-06, a Paint mock-up over the box): the text area keeps room for a few lines (four, whatever the
+      // line's length, so the box holds one size over the actors), and a small Ok / Próximo sits in its bottom-right corner instead
+      // of a bar across the box.
       const bool hasNext = line->value("next", ember::Json()).is_string() && !line->value("next", "").empty();
-      const ImVec2 p = ImGui::GetCursorScreenPos();
-      if (emberBigButton("##next", upperUtf8(hasNext ? tr("Próximo") : tr("Ok")).c_str(), p, {textW, 44}, true, 15.0f)) {
+      const float areaBottom = std::max(ImGui::GetCursorScreenPos().y, textTop + lineH * 4.0f + 12.0f);
+      const ImVec2 bsize{hasNext ? 104.0f : 64.0f, 30.0f};
+      const ImVec2 p{textX + textW - bsize.x, areaBottom};
+      ImGui::SetCursorScreenPos(p);
+      if (emberBigButton("##next", upperUtf8(hasNext ? tr("Próximo") : tr("Ok")).c_str(), p, bsize, true, 13.0f)) {
         next = hasNext ? line->value("next", "") : "";
         advance = true;
       }

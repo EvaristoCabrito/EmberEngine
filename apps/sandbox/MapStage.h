@@ -700,12 +700,13 @@ class MapStage final : public Stage {
     // the top of the screen is the board's far side (-z). Its near plane hugs the board (Ember: distance - 200).
     // The action camera's lift raises the eye and the look point together (the figures' chests at the centre of a close shot).
     const float flatDistance = cam_.distance * std::tan(glm::radians(kFov * 0.5f)) / std::tan(glm::radians(kFlatFov * 0.5f));
-    const Camera camera = flat_ ? Camera::lookAt(cam_.target + glm::vec3(0.0f, flatDistance, 0.0f), cam_.target, glm::radians(kFlatFov), aspect,
+    const OrbitView shown = shakenView();  // a scene's "shake" pushes the drawn view about; the camera itself stays put
+    const Camera camera = flat_ ? Camera::lookAt(shown.target + glm::vec3(0.0f, flatDistance, 0.0f), shown.target, glm::radians(kFlatFov), aspect,
                                                  std::max(kNear, flatDistance - 200.0f), {0.0f, 0.0f, -1.0f})
                                 // the camera goes down with the board the room lowered, by exactly as much (the user, 2026-10-25: "sempre perto
                                 // do tabuleiro se o tabuleiro desceu ela desce exatamente na mesma proporção"): no roomDrop on the eye or the look
-                                : Camera::lookAt(eyeOf(eyeView(cam_)) + glm::vec3(0.0f, shotLift_, 0.0f),
-                                                 lookTarget(cam_) + glm::vec3(0.0f, shotLift_, 0.0f), glm::radians(kFov), aspect, kNear);
+                                : Camera::lookAt(eyeOf(eyeView(shown)) + glm::vec3(0.0f, shotLift_, 0.0f),
+                                                 lookTarget(shown) + glm::vec3(0.0f, shotLift_, 0.0f), glm::radians(kFov), aspect, kNear);
     lastCamera_ = camera;
     meshes_.setRegionView(camera.viewProjection());
     meshes_.setView(camera.position, static_cast<float>(size.height) / (2.0f * std::tan(glm::radians((flat_ ? kFlatFov : kFov) * 0.5f))));
@@ -1821,7 +1822,9 @@ class MapStage final : public Stage {
     if (!result_.empty() && !victoryScenesPlaying_ && now_ - resultAt_ > kResultDelay) return drawResultScreen();
     if (options_.editorClick) return drawCameraBar();  // the map editor's preview: its own panels around it
     drawAirParticles();
+    drawCutsceneFx();  // a scene's bars, darkening, fade, flash and caption (and their way out once it is over)
     if (cutscene_) {  // a cutscene owns the board: no grid, no battle bar, only the camera bar and its own dialogue line
+      drawMarks();  // a scene's emotes pop over heads as the fight's numbers do
       drawCameraBar();
       drawCutsceneDialog();
       return;
@@ -4219,6 +4222,10 @@ class MapStage final : public Stage {
         // the Inn's (locked) keep their old hold when they have no death pose
         const float deathLength = hasPose(ui, "death") || innFloor() ? poseSeconds(ui, "death") / unitShot_[ui].rate : 0.0f;
         corpseFade = std::clamp((time - unitDiedAt_[ui] - deathLength) / kCorpseSeconds, 0.0f, 1.0f);
+        // A "fallen" actor of one of this map's scenes keeps its body on the board (Vora, Stone Bridge: the victory scene plays round it).
+        if (corpseFade > 0.0f && !keptBodies_.empty() && ui < unitBattle_.size() && unitBattle_[ui] >= 0 &&
+            keptBodies_.contains(battle_->units()[static_cast<size_t>(unitBattle_[ui])].name))
+          corpseFade = 0.0f;
       }
       if (ui < unitDiedAt_.size() && (unitDiedAt_[ui] <= -999.0f || corpseFade >= 1.0f)) continue;
       // A cutscene's "enter": the card fades in over kEnterSeconds (the corpse's fade run backwards).
@@ -6280,7 +6287,8 @@ class MapStage final : public Stage {
     if (result_ == "victory") queueVictoryScenes();
   }
   void updateTurns() {
-    if (!battle_ || !scene_ || levelUpMoment_ || !result_.empty() || holdTurns || battle_->roaming()) return;
+    // Nobody acts under an on-map cutscene (the user, 2026-11-06: the enemies struck during the Vau's opening), whatever holdTurns says.
+    if (!battle_ || !scene_ || levelUpMoment_ || !result_.empty() || holdTurns || cutscene_ || battle_->roaming()) return;
     const bool walking = std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
     if (exchange_ || walking || sightPause()) return;
     // A strike the player asked for once the walk to its hex is over.
@@ -6519,6 +6527,7 @@ class MapStage final : public Stage {
       const std::optional<ember::CutsceneScript> script = ember::CutsceneScript::load("content/cutscenes/" + id + ".json", nullptr);
       if (!script) continue;
       for (const std::string& actor : script->offstage) names.insert(script->actors.at(actor));
+      for (const std::string& actor : script->fallen) keptBodies_.insert(script->actors.at(actor));
     }
     // A party hero is sent off too (2026-11-06, the Vau opening: Neera and Voss of the party walk in during Estranhos na Costa);
     // its hit points are kept for its "enter", and returnOffstageParty puts it back if no scene brings it in.
@@ -6567,8 +6576,13 @@ class MapStage final : public Stage {
     std::optional<ember::CutsceneScript> script = ember::CutsceneScript::load("content/cutscenes/" + id + ".json", &why);
     if (!script) return logError("cutscene {}: refused ({})", id, why), false;
     if (script->id.empty()) script->id = id;
+    // A map's scene plays once per visit (the user, 2026-11-06: "a cena toca duas vezes quando eu dou skip"): a second start of the same
+    // script in this stage, whatever asked for it, is refused with a log line. A --cutscene test run and the battle script may repeat.
+    if (options_.cutscene.empty() && options_.battleScript.empty() && !playedScenes_.insert(script->id).second)
+      return logError("cutscene {}: refused, it already played on this map", id), false;
     return playCutsceneScript(std::move(*script));
   }
+  std::set<std::string> playedScenes_;  // the scripts already played on this map (playCutscene plays each once)
   // The same with a script made in memory (a line of the fight: battle-lines.json).
   bool playCutsceneScript(ember::CutsceneScript script) {
     const std::string id = script.id;
@@ -6578,6 +6592,7 @@ class MapStage final : public Stage {
     c.script = std::move(script);
     for (const auto& [actor, unit] : c.script.actors) {
       int ui = sceneUnitNamed(unit);
+      if (ui < 0 && c.script.fallen.contains(actor)) ui = sceneUnitNamed(unit, false);  // its body on the board (the fight's dead)
       if (ui < 0 && c.script.offstage.contains(actor)) ui = offstageUnitNamed(unit);  // waiting off the board for its "enter"
       if (ui < 0) return logError("cutscene {}: refused, actor \"{}\" = \"{}\" is not on the map", id, actor, unit), false;
       c.units[actor] = static_cast<size_t>(ui);
@@ -6588,6 +6603,9 @@ class MapStage final : public Stage {
     c.started = now_;
     cutsceneFailed_ = false, cutsceneWhy_.clear(), cutsceneDone_ = false;
     cutscene_ = std::move(c);
+    cutCam_.reset();
+    fx_ = CutsceneFx{};
+    cutsceneMusic_ = music_;
     holdTurns = true;
     spellMode_.clear(), attackMode_ = false, offHandMode_ = false, pendingStrike_ = -1, talkAfterWalk_ = -1;
     select(-1);
@@ -6617,6 +6635,13 @@ class MapStage final : public Stage {
     cutsceneDialog_.reset();
     holdTurns = cutscene_->heldTurns || !options_.battleScript.empty();
     const int back = cutscene_->selected;
+    if (cutCam_) {  // the shots are over: the view the player had, unless the script keeps the last one
+      if (cutscene_->script.cameraBack) target_ = cutCam_->player.target, yaw_ = cutCam_->player.yaw, pitch_ = cutCam_->player.pitch, distance_ = cutCam_->player.distance;
+      shotLiftGoal_ = 0.0f;
+      cutCam_.reset();
+    }
+    music_ = cutsceneMusic_;
+    cutsceneFxOff();
     cutscene_.reset();
     if (back >= 0 && back < static_cast<int>(unitBattle_.size()) && unitBattle_[static_cast<size_t>(back)] >= 0 &&
         battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(back)])].alive)
@@ -6632,7 +6657,9 @@ class MapStage final : public Stage {
     Cutscene& c = *cutscene_;
     // "camera": "actors": the pivot on the middle of the actors standing on the board, gliding as they walk and enter (a scene
     // staged away from the fight stays in view; zoom, turn and tilt are the player's).
-    if (c.script.cameraOnActors) {
+    if (cutCam_) {
+      applyCutsceneCam();
+    } else if (c.script.cameraOnActors) {
       glm::vec3 sum{0.0f};
       int n = 0;
       for (const auto& [actor, ui] : c.units)
@@ -6665,6 +6692,20 @@ class MapStage final : public Stage {
         case ember::CutsceneStep::Kind::Exit:  // its death pose and fade play out before the next step
           if (now_ - c.stepStart < 1.6f) return;
           break;
+        case ember::CutsceneStep::Kind::Shot:  // the camera's move, unless the step lets the scene go on meanwhile
+          if (!c.script.steps[c.step].async && now_ - c.stepStart < c.script.steps[c.step].seconds) return;
+          break;
+        case ember::CutsceneStep::Kind::Fade:
+        case ember::CutsceneStep::Kind::Caption:
+          if (now_ - c.stepStart < c.script.steps[c.step].seconds) return;
+          break;
+        case ember::CutsceneStep::Kind::Shake:  // these play on in the background
+        case ember::CutsceneStep::Kind::Bars:
+        case ember::CutsceneStep::Kind::Tint:
+        case ember::CutsceneStep::Kind::Flash:
+        case ember::CutsceneStep::Kind::Sfx:
+        case ember::CutsceneStep::Kind::Music:
+        case ember::CutsceneStep::Kind::Emote: break;
       }
       c.waiting = false;
       ++c.step;
@@ -6740,32 +6781,40 @@ class MapStage final : public Stage {
       case ember::CutsceneStep::Kind::Move: {
         const std::optional<size_t> ui = unitOf(st.actor);
         if (!ui) return fail("actor \"" + st.actor + "\" is not standing on the map");
+        // "near": the other actor's own hex is the goal (its body may be dead); the taken-hex rule below walks to the free hex nearest it.
+        int wantX = st.x, wantY = st.y;
+        if (!st.near.empty()) {
+          const auto other = c.units.find(st.near);
+          if (other == c.units.end() || unitBattle_[other->second] < 0) return fail("actor \"" + st.near + "\" is not on the map");
+          const ember::BattleUnit& ou = battle_->units()[static_cast<size_t>(unitBattle_[other->second])];
+          wantX = ou.x, wantY = ou.y;
+        }
         const size_t b = static_cast<size_t>(unitBattle_[*ui]);
         ember::BattleUnit& u = battle_->units()[b];
-        if (!battle_->inBounds(st.x, st.y)) return fail(std::format("({}, {}) is off the board", st.x, st.y));
-        if (u.x == st.x && u.y == st.y) return logInfo("cutscene {}: step {} move {}: already there", c.script.id, c.step, st.actor);
-        if (!battle_->cell(st.x, st.y).passable) return fail(std::format("({}, {}) is not walkable", st.x, st.y));
+        if (!battle_->inBounds(wantX, wantY)) return fail(std::format("({}, {}) is off the board", wantX, wantY));
+        if (u.x == wantX && u.y == wantY) return logInfo("cutscene {}: step {} move {}: already there", c.script.id, c.step, st.actor);
+        if (!battle_->cell(wantX, wantY).passable) return fail(std::format("({}, {}) is not walkable", wantX, wantY));
         // Its route with the whole floor in reach (free roam's reach), whatever its movement this turn.
         ember::Battle look = *battle_;
         look.units()[b].mov = look.cols() * look.rows(), look.units()[b].moveUsed = 0;
         look.units()[b].ap = std::numeric_limits<int>::max() / 2;  // a scene's walk spends no Action Points (world/ActionPoints.h)
         const std::vector<ember::ReachCell> reach = look.reachable(b, false);
-        int toX = st.x, toY = st.y;
+        int toX = wantX, toY = wantY;
         // The hex taken (the party's formation puts heroes where the save says, 2026-11-06): the nearest free hex it can reach
         // instead, so a scene written for the map's spawns still plays; the same hex when it is free.
-        if (const int there = battle_->unitAt(st.x, st.y); there >= 0 && there != static_cast<int>(b)) {
+        if (const int there = battle_->unitAt(wantX, wantY); there >= 0 && there != static_cast<int>(b)) {
           int best = -1, bestDist = 1 << 30, bestCost = 1 << 30;
           for (size_t r = 0; r < reach.size(); ++r) {
             const ember::ReachCell& rc = reach[r];
             if (rc.x == u.x && rc.y == u.y) continue;
             if (const int other = battle_->unitAt(rc.x, rc.y); other >= 0 && other != static_cast<int>(b)) continue;
-            const int dist = ember::Battle::distance({rc.x, rc.y}, {st.x, st.y});
+            const int dist = ember::Battle::distance({rc.x, rc.y}, {wantX, wantY});
             if (dist < bestDist || (dist == bestDist && rc.cost < bestCost)) best = static_cast<int>(r), bestDist = dist, bestCost = rc.cost;
           }
           if (best < 0 || bestDist > 3)
-            return fail(std::format("({}, {}) is occupied by {}", st.x, st.y, battle_->units()[static_cast<size_t>(there)].name));
+            return fail(std::format("({}, {}) is occupied by {}", wantX, wantY, battle_->units()[static_cast<size_t>(there)].name));
           toX = reach[static_cast<size_t>(best)].x, toY = reach[static_cast<size_t>(best)].y;
-          logInfo("cutscene {}: step {} move {}: ({}, {}) is taken by {}, walks to ({}, {})", c.script.id, c.step, st.actor, st.x, st.y,
+          logInfo("cutscene {}: step {} move {}: ({}, {}) is taken by {}, walks to ({}, {})", c.script.id, c.step, st.actor, wantX, wantY,
                   battle_->units()[static_cast<size_t>(there)].name, toX, toY);
           if (u.x == toX && u.y == toY) return;
         }
@@ -6812,6 +6861,53 @@ class MapStage final : public Stage {
       case ember::CutsceneStep::Kind::Wait:
         logInfo("cutscene {}: step {} wait {:.2f} s", c.script.id, c.step, st.seconds);
         return;
+      case ember::CutsceneStep::Kind::Shot: {
+        std::string why;
+        if (!cutsceneShot(st, why)) return fail(why);
+        logInfo("cutscene {}: step {} shot: pivot ({:.1f}, {:.1f}) turn {:.0f} deg tilt {:.0f} deg distance {:.1f} lift {:.2f} over {:.1f} s{}{}", c.script.id, c.step,
+                cutCam_->to.target.x, cutCam_->to.target.z, glm::degrees(cutCam_->to.yaw), glm::degrees(cutCam_->to.pitch), cutCam_->to.distance, cutCam_->toLift,
+                cutCam_->over, st.cut ? " (cut)" : "", st.async ? " (async)" : "");
+        return;
+      }
+      case ember::CutsceneStep::Kind::Shake:
+        fx_.shakeAt = now_, fx_.shakeSeconds = st.seconds, fx_.shakeStrength = st.strength;
+        logInfo("cutscene {}: step {} shake {:.2f} s x {:.2f}", c.script.id, c.step, st.seconds, st.strength);
+        return;
+      case ember::CutsceneStep::Kind::Fade:
+        fx_.fadeFrom = fx_.fade, fx_.fadeGoal = st.flag ? 1.0f : 0.0f, fx_.fadeT0 = now_, fx_.fadeOver = st.seconds;
+        logInfo("cutscene {}: step {} fade to {} over {:.2f} s", c.script.id, c.step, st.flag ? "black" : "clear", st.seconds);
+        return;
+      case ember::CutsceneStep::Kind::Bars:
+        fx_.barsGoal = st.flag ? 1.0f : 0.0f;
+        logInfo("cutscene {}: step {} bars {}", c.script.id, c.step, st.flag ? "on" : "off");
+        return;
+      case ember::CutsceneStep::Kind::Tint:
+        fx_.tintFrom = fx_.tint, fx_.tintGoal = st.strength, fx_.tintT0 = now_, fx_.tintOver = st.seconds;
+        logInfo("cutscene {}: step {} tint {:.0f}% over {:.2f} s", c.script.id, c.step, st.strength * 100.0f, st.seconds);
+        return;
+      case ember::CutsceneStep::Kind::Flash:
+        fx_.flashAt = now_, fx_.flashSeconds = st.seconds;
+        logInfo("cutscene {}: step {} flash {:.2f} s", c.script.id, c.step, st.seconds);
+        return;
+      case ember::CutsceneStep::Kind::Sfx:
+        AudioMixer::get().playSfx(st.text, st.strength, false);
+        logInfo("cutscene {}: step {} sfx {} x {:.2f}", c.script.id, c.step, st.text, st.strength);
+        return;
+      case ember::CutsceneStep::Kind::Music:
+        music_ = st.flag ? Music{} : Music{st.text, st.strength};
+        logInfo("cutscene {}: step {} music {}", c.script.id, c.step, st.flag ? std::string("stop") : st.text);
+        return;
+      case ember::CutsceneStep::Kind::Caption:
+        fx_.caption = st.text, fx_.captionTranslations = st.translations, fx_.captionStyle = st.style, fx_.captionAt = now_, fx_.captionSeconds = st.seconds;
+        logInfo("cutscene {}: step {} caption \"{}\" {:.1f} s", c.script.id, c.step, st.text, st.seconds);
+        return;
+      case ember::CutsceneStep::Kind::Emote: {
+        const std::optional<size_t> ui = unitOf(st.actor);
+        if (!ui) return fail("actor \"" + st.actor + "\" is not standing on the map");
+        popups_.push_back({*ui, st.text, IM_COL32(255, 168, 120, 255), now_, true});
+        logInfo("cutscene {}: step {} emote {} \"{}\"", c.script.id, c.step, st.actor, st.text);
+        return;
+      }
     }
   }
 
@@ -6835,6 +6931,154 @@ class MapStage final : public Stage {
   void drawCutsceneDialog() {
     if (!cutsceneDialog_) return;
     if (cutsceneDialog_->draw(ImGui::GetIO().DisplaySize)) cutsceneDialog_.reset();
+  }
+
+  // The "shot" step (world/CutsceneScript.h): the camera's goal from the step's fields, a field left out keeping the camera's own.
+  // The move starts from where the camera is now (cam_) and lasts the step's "over"; "cut" puts the camera there at once.
+  bool cutsceneShot(const ember::CutsceneStep& st, std::string& why) {
+    Cutscene& c = *cutscene_;
+    auto spotOf = [&](const std::string& actor) -> std::optional<SpellEffects::Spot> {
+      const auto it = c.units.find(actor);
+      if (it == c.units.end() || unitBattle_[it->second] < 0) return std::nullopt;
+      const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[it->second])];
+      if (!u.alive && !c.script.fallen.contains(actor)) return std::nullopt;  // off the board (not entered yet, or gone)
+      return unitSpot(it->second);
+    };
+    if (!cutCam_) {
+      CutsceneCam cc;
+      cc.player = {target_, yaw_, pitch_, distance_};
+      cutCam_ = cc;
+    }
+    CutsceneCam& cc = *cutCam_;
+    cc.from = cam_, cc.fromLift = shotLift_;
+    OrbitView to{target_, yaw_, pitch_, distance_};
+    float toLift = shotLiftGoal_;
+    float h = 2.0f, sep = 0.0f;  // the subject's card height and, for two, their separation (a close shot's distance)
+    bool subject = false;
+    if (!st.on.empty() && !st.on2.empty()) {
+      const std::optional<SpellEffects::Spot> a = spotOf(st.on), b = spotOf(st.on2);
+      if (!a || !b) return why = "actor \"" + (a ? st.on2 : st.on) + "\" is not on the board", false;
+      to.target = (a->feet + b->feet) * 0.5f;
+      h = std::max(cardHeightOf(*a), cardHeightOf(*b)), sep = glm::length(glm::vec2(a->feet.x - b->feet.x, a->feet.z - b->feet.z));
+      subject = true;
+    } else if (!st.on.empty()) {
+      const std::optional<SpellEffects::Spot> a = spotOf(st.on);
+      if (!a) return why = "actor \"" + st.on + "\" is not on the board", false;
+      to.target = a->feet, h = cardHeightOf(*a), subject = true;
+    } else if (st.hasHex) {
+      if (!battle_->inBounds(st.x, st.y)) return why = std::format("({}, {}) is off the board", st.x, st.y), false;
+      to.target = hexSpot({st.x, st.y}).feet;
+    }
+    const glm::vec3 pivot = to.target;
+    // The turn: the eye stands at +sin(yaw) x, +cos(yaw) z of the pivot (eyeOf), so a heading h (0 north = -z, +east) is yaw -h.
+    if (st.hasTurn) {
+      to.yaw = -st.turn;
+    } else if (!st.look.empty()) {
+      const std::optional<SpellEffects::Spot> l = spotOf(st.look);
+      if (!l) return why = "actor \"" + st.look + "\" is not on the board", false;
+      const glm::vec2 v{l->feet.x - pivot.x, l->feet.z - pivot.z};
+      if (glm::dot(v, v) > 1e-4f) to.yaw = std::atan2(-v.x, -v.y);  // the eye on the far side of the pivot from the subject
+    } else if (!st.behind.empty()) {
+      const std::optional<SpellEffects::Spot> b = spotOf(st.behind);
+      if (!b) return why = "actor \"" + st.behind + "\" is not on the board", false;
+      const glm::vec2 v{b->feet.x - pivot.x, b->feet.z - pivot.z};
+      if (glm::dot(v, v) > 1e-4f) {  // on its side of the pivot, off the line by the shoulder's angle on the side nearer the current turn
+        const float along = std::atan2(v.x, v.y);
+        const float a = wrapAngle(along + kShotShoulder - yaw_), bb = wrapAngle(along - kShotShoulder - yaw_);
+        to.yaw = yaw_ + (std::abs(a) <= std::abs(bb) ? a : bb);
+      }
+    }
+    to.yaw = yaw_ + wrapAngle(to.yaw - yaw_);  // next to the turn it has: never the long way round
+    if (st.hasTilt) to.pitch = st.tilt;
+    switch (st.distanceKind) {
+      case 1: to.distance = st.distance; break;
+      case 2: to.distance = closeDistance(h, sep); break;
+      case 3: to.distance = closeDistance(h, sep) * 1.8f; break;
+      case 4: to.distance = closeDistance(h, sep) * 3.2f; break;
+      default: break;
+    }
+    if (st.hasLift) toLift = subject ? st.lift * h : st.lift;
+    cc.to = to, cc.toLift = toLift, cc.t0 = now_, cc.over = st.cut ? 0.0f : st.seconds;
+    if (st.cut) {  // the view jumps: nothing left for the glide
+      cam_ = to, cam_.target.y = pivotHeight(to.target), shotLift_ = toLift;
+      cc.from = cam_, cc.fromLift = toLift;
+    }
+    applyCutsceneCam();
+    return true;
+  }
+  // Every frame of a scene with a shot: the goal along the shot's move (the orbit's glide follows it).
+  void applyCutsceneCam() {
+    if (!cutCam_) return;
+    const CutsceneCam& cc = *cutCam_;
+    const float k = cc.over > 0.0f ? std::clamp((now_ - cc.t0) / cc.over, 0.0f, 1.0f) : 1.0f;
+    target_ = glm::mix(cc.from.target, cc.to.target, k);
+    yaw_ = cc.from.yaw + wrapAngle(cc.to.yaw - cc.from.yaw) * k;
+    pitch_ = std::lerp(cc.from.pitch, cc.to.pitch, k);
+    distance_ = cc.from.distance * std::pow(cc.to.distance / std::max(cc.from.distance, 0.01f), k);
+    shotLiftGoal_ = std::lerp(cc.fromLift, cc.toLift, k);
+  }
+  // The orbit view drawn this frame: the camera's, pushed about by a scene's "shake" while it lasts (dying out over its seconds).
+  OrbitView shakenView() const {
+    OrbitView v = cam_;
+    if (fx_.shakeAt >= 0.0f && now_ - fx_.shakeAt < fx_.shakeSeconds) {
+      const float left = 1.0f - (now_ - fx_.shakeAt) / fx_.shakeSeconds;
+      const float a = fx_.shakeStrength * left * (0.4f + 0.6f * std::abs(std::sin(now_ * 97.0f)));
+      v.target += glm::vec3(a * std::sin(now_ * 61.0f), a * 0.5f * std::sin(now_ * 83.0f + 1.3f), a * std::cos(now_ * 71.0f + 0.7f));
+    }
+    return v;
+  }
+  // A scene's end: the bars go, a black or darkened screen lifts over half a second, the caption, the flash and the shake end.
+  void cutsceneFxOff() {
+    fx_.barsGoal = 0.0f;
+    if (fx_.fadeGoal > 0.0f || fx_.fade > 0.0f) fx_.fadeFrom = fx_.fade, fx_.fadeGoal = 0.0f, fx_.fadeT0 = now_, fx_.fadeOver = 0.5f;
+    if (fx_.tintGoal > 0.0f || fx_.tint > 0.0f) fx_.tintFrom = fx_.tint, fx_.tintGoal = 0.0f, fx_.tintT0 = now_, fx_.tintOver = 0.5f;
+    fx_.captionAt = -1.0f, fx_.shakeAt = -1.0f, fx_.flashAt = -1.0f;
+  }
+  // A scene's screen effects (drawPanel: over the board, under the dialogue box and the bars' own panels): the darkening, the cinema
+  // bars, the white flash, the fade to black and the caption. Drawn every frame, since each glides on and off.
+  void drawCutsceneFx() {
+    const ImGuiIO& io = ImGui::GetIO();
+    const ImVec2 size = io.DisplaySize;
+    const float dt = std::min(io.DeltaTime, 0.1f);
+    fx_.bars += (fx_.barsGoal - fx_.bars) * (1.0f - std::exp(-dt * 6.0f));
+    auto eased = [&](float from, float goal, float t0, float over) {
+      return over > 0.0f ? std::lerp(from, goal, std::clamp((now_ - t0) / over, 0.0f, 1.0f)) : goal;
+    };
+    fx_.fade = eased(fx_.fadeFrom, fx_.fadeGoal, fx_.fadeT0, fx_.fadeOver);
+    fx_.tint = eased(fx_.tintFrom, fx_.tintGoal, fx_.tintT0, fx_.tintOver);
+    const bool caption = fx_.captionAt >= 0.0f && now_ - fx_.captionAt < fx_.captionSeconds;
+    const bool flash = fx_.flashAt >= 0.0f && now_ - fx_.flashAt < fx_.flashSeconds;
+    if (fx_.bars < 0.001f && fx_.fade < 0.001f && fx_.tint < 0.001f && !caption && !flash) return;
+    ImDrawList* dl = ImGui::GetBackgroundDrawList();
+    if (fx_.tint > 0.001f) dl->AddRectFilled({0, 0}, size, IM_COL32(0, 0, 0, static_cast<int>(255.0f * std::clamp(fx_.tint, 0.0f, 1.0f))));
+    if (fx_.bars > 0.001f) {
+      const float h = size.y * 0.12f * fx_.bars;
+      dl->AddRectFilled({0, 0}, {size.x, h}, IM_COL32(0, 0, 0, 255));
+      dl->AddRectFilled({0, size.y - h}, size, IM_COL32(0, 0, 0, 255));
+    }
+    if (flash) {
+      const float k = 1.0f - (now_ - fx_.flashAt) / fx_.flashSeconds;
+      dl->AddRectFilled({0, 0}, size, IM_COL32(255, 255, 255, static_cast<int>(255.0f * k)));
+    }
+    if (fx_.fade > 0.001f) dl->AddRectFilled({0, 0}, size, IM_COL32(0, 0, 0, static_cast<int>(255.0f * std::clamp(fx_.fade, 0.0f, 1.0f))));
+    if (caption) {
+      const float t = now_ - fx_.captionAt;
+      const float alpha = std::clamp(std::min({1.0f, t / 0.3f, (fx_.captionSeconds - t) / 0.3f}), 0.0f, 1.0f);
+      const std::string text = ember::translated(fx_.caption, fx_.captionTranslations, gamePrefs().dialogueLanguage);
+      const float rem = 16.0f * std::clamp(size.y / 900.0f, 0.85f, 2.0f);
+      const float fs = fx_.captionStyle == 0 ? rem * 2.2f : rem * 1.4f;
+      const ImVec2 ts = bannerTextSize(text, fs);
+      const ImVec2 centre{size.x * 0.5f, fx_.captionStyle == 0 ? size.y * 0.5f : size.y * 0.2f};
+      const ImU32 a = static_cast<ImU32>(255.0f * alpha) << IM_COL32_A_SHIFT;
+      if (fx_.captionStyle != 0) {  // the status boxes: a dark plate with a red or blue edge
+        const ImVec2 pad{rem * 1.5f, rem * 0.7f};
+        const ImVec2 p0{centre.x - ts.x * 0.5f - pad.x, centre.y - ts.y * 0.5f - pad.y}, p1{centre.x + ts.x * 0.5f + pad.x, centre.y + ts.y * 0.5f + pad.y};
+        const ImU32 edge = fx_.captionStyle == 1 ? IM_COL32(196, 48, 32, 0) : IM_COL32(64, 112, 208, 0);
+        dl->AddRectFilled(p0, p1, IM_COL32(12, 10, 10, 0) | (static_cast<ImU32>(220.0f * alpha) << IM_COL32_A_SHIFT), rem * 0.3f);
+        dl->AddRect(p0, p1, edge | a, rem * 0.3f, 2.0f);
+      }
+      bannerText(dl, centre, text, fs, (fx_.captionStyle == 0 ? IM_COL32(230, 220, 205, 0) : IM_COL32(255, 240, 225, 0)) | a);
+    }
   }
 
   // Map events that start a cutscene (content/cutscenes/triggers.json): "onOpen" by map id, one script or a list played one
@@ -13080,6 +13324,32 @@ class MapStage final : public Stage {
     bool heldTurns = false;
   };
   std::optional<Cutscene> cutscene_;
+  // A scene's camera (the "shot" step, Stone Bridge 2026-11-06; docs/CUTSCENES.md): the goal the step set, reached from where the
+  // camera was over `over` seconds (a straight move; the orbit's own glide rounds its ends), or at once with "cut". The player's
+  // view before the first shot comes back at the scene's end (the script's "cameraBack").
+  struct CutsceneCam {
+    OrbitView from, to;
+    float fromLift = 0.0f, toLift = 0.0f;
+    float t0 = 0.0f, over = 0.0f;
+    OrbitView player;
+  };
+  std::optional<CutsceneCam> cutCam_;
+  // A scene's screen effects: the cinema bars, the fade to black, the darkening, the white flash, the caption and the shake. Each
+  // glides on and off, so a scene's end leaves none of them behind (cutsceneFxOff).
+  struct CutsceneFx {
+    float bars = 0.0f, barsGoal = 0.0f;
+    float fade = 0.0f, fadeFrom = 0.0f, fadeGoal = 0.0f, fadeT0 = 0.0f, fadeOver = 0.0f;
+    float tint = 0.0f, tintFrom = 0.0f, tintGoal = 0.0f, tintT0 = 0.0f, tintOver = 0.0f;
+    float flashAt = -1.0f, flashSeconds = 0.0f;
+    std::string caption;
+    ember::Json captionTranslations;
+    int captionStyle = 0;
+    float captionAt = -1.0f, captionSeconds = 0.0f;
+    float shakeAt = -1.0f, shakeSeconds = 0.0f, shakeStrength = 0.0f;
+  };
+  CutsceneFx fx_;
+  Music cutsceneMusic_;              // the map's track before the scene's "music" steps; back at its end
+  std::set<std::string> keptBodies_;  // units (by name) whose bodies stay on the board when they fall: the "fallen" actors of this map's scenes
   std::optional<DialogScreen> cutsceneDialog_;
   bool cutsceneDone_ = false, cutsceneFailed_ = false;
   std::string cutsceneWhy_;

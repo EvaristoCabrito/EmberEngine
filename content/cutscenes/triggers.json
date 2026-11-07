@@ -15,6 +15,9 @@
     ],
     "aldeia": [
       "aldeia-em-chamas-01-carne-entregue"
+    ],
+    "thebridge": [
+      "stone-bridge-01-o-pedagio"
     ]
   },
   "onVictory": {
@@ -26,6 +29,9 @@
     ],
     "aldeia": [
       "aldeia-em-chamas-02-o-gancho-vazio"
+    ],
+    "thebridge": [
+      "stone-bridge-02-a-promessa"
     ]
   }
 }

@@ -1,0 +1,1355 @@
+{
+  "format": "ember-cutscene-1",
+  "id": "stone-bridge-01-o-pedagio",
+  "_note": "Stone Bridge, cena 01 'O Pedágio' (the user's script, Cenário 4, 2026-11-06; its film cut in docs/STONE_BRIDGE.md), the opening of A Ponte de Pedra (thebridge030). The bridge runs west -> east: [A] the well's exit x 2-5, [B] the headless statues = the niches by x 11, [C] the span x 16-24, [D] the toll tower x 29-34 (the torture gear), [E] the far head x 36-39; the river lies past the south wall (y 20), so 'the edge' is y 19. Lio is a guest hero (villagerF1); O Carniceiro is a neutral spawn kept off the board until the travelling reveals him; Vora (wardog2) and the militia wait off the board and come out of the fog at the end, so the fight begins with them. Ulfred (the lancer at the far head) stays on the board so the fight has a foe from the start. Camera headings: 'e' looks along the bridge toward the far head, 'n' from the river's side across the deck.",
+  "actors": {
+    "kael": {
+      "unit": "Kael"
+    },
+    "neera": {
+      "unit": "Neera"
+    },
+    "voss": {
+      "unit": "Voss"
+    },
+    "lio": {
+      "unit": "Lio"
+    },
+    "butcher": {
+      "unit": "O Carniceiro",
+      "offstage": true
+    },
+    "vora": {
+      "unit": "Vora",
+      "offstage": true
+    },
+    "harlan": {
+      "unit": "Harlan",
+      "offstage": true
+    },
+    "dorn": {
+      "unit": "Dorn",
+      "offstage": true
+    },
+    "pell": {
+      "unit": "Pell",
+      "offstage": true
+    },
+    "brakk": {
+      "unit": "Brakk",
+      "offstage": true
+    },
+    "orso": {
+      "unit": "Orso",
+      "offstage": true
+    },
+    "vinn": {
+      "unit": "Vinn",
+      "offstage": true
+    }
+  },
+  "steps": [
+    {
+      "do": "bars",
+      "on": true
+    },
+    {
+      "do": "fade",
+      "to": "black",
+      "seconds": 0
+    },
+    {
+      "do": "music",
+      "stop": true
+    },
+    {
+      "do": "shot",
+      "on": [
+        3,
+        19
+      ],
+      "turn": "n",
+      "tilt": 84,
+      "distance": 14,
+      "cut": true
+    },
+    {
+      "do": "sfx",
+      "file": "HeavySteps1-Balanced-Medium.mp3",
+      "volume": 0.6
+    },
+    {
+      "do": "wait",
+      "seconds": 1.2
+    },
+    {
+      "do": "sfx",
+      "file": "DeadArmor.mp3",
+      "volume": 0.5
+    },
+    {
+      "do": "wait",
+      "seconds": 1.0
+    },
+    {
+      "do": "sfx",
+      "file": "Blunt2.mp3",
+      "volume": 0.8
+    },
+    {
+      "do": "wait",
+      "seconds": 0.8
+    },
+    {
+      "do": "fade",
+      "to": "clear",
+      "seconds": 2.0
+    },
+    {
+      "do": "wait",
+      "seconds": 2.0
+    },
+    {
+      "do": "shot",
+      "on": [
+        3,
+        10
+      ],
+      "turn": "e",
+      "tilt": 38,
+      "distance": 22,
+      "over": 5.0
+    },
+    {
+      "do": "shot",
+      "on": [
+        15,
+        10
+      ],
+      "turn": "e",
+      "tilt": 20,
+      "distance": 26,
+      "over": 4.0,
+      "async": true
+    },
+    {
+      "do": "music",
+      "file": "Ember Ashes Ambient OST 0-Balanced-High.mp3",
+      "volume": 0.35
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        4,
+        10
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "voss",
+      "to": [
+        3,
+        8
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "neera",
+      "to": [
+        3,
+        12
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "lio",
+      "to": [
+        5,
+        11
+      ]
+    },
+    {
+      "do": "shot",
+      "on": "voss",
+      "behind": "kael",
+      "tilt": 12,
+      "distance": "medium",
+      "lift": 0.4,
+      "over": 1.5
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "Escada, túnel, mais escada… Se eu nunca mais vir um degrau na vida, tá ótimo.",
+      "translations": {
+        "en": "Stairs, tunnel, more stairs… If I never see a step again in my life, that's fine by me."
+      }
+    },
+    {
+      "do": "move",
+      "actor": "lio",
+      "to": [
+        7,
+        19
+      ]
+    },
+    {
+      "do": "shot",
+      "on": "lio",
+      "turn": "n",
+      "tilt": 4,
+      "distance": "close",
+      "lift": 0.45,
+      "cut": true
+    },
+    {
+      "do": "emote",
+      "actor": "lio",
+      "text": "!"
+    },
+    {
+      "do": "say",
+      "actor": "lio",
+      "text": "O rio… está correndo. Cinza correndo como água.",
+      "translations": {
+        "en": "The river… it's flowing. Ash flowing like water."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Sai da borda, Lio. Aquilo não devolve nada que cai.",
+      "translations": {
+        "en": "Get away from the edge, Lio. That gives back nothing that falls in."
+      }
+    },
+    {
+      "do": "shot",
+      "on": "lio",
+      "distance": 3.4,
+      "over": 6.0,
+      "async": true
+    },
+    {
+      "do": "wait",
+      "seconds": 1.5
+    },
+    {
+      "do": "say",
+      "actor": "lio",
+      "text": "Será que levaram eles por aqui? A minha mãe e o Tavi?",
+      "translations": {
+        "en": "Did they bring them this way? My mother and Tavi?"
+      }
+    },
+    {
+      "do": "shot",
+      "on": [
+        7,
+        17
+      ],
+      "turn": "e",
+      "tilt": 18,
+      "distance": 11,
+      "lift": 0.4,
+      "over": 2.0
+    },
+    {
+      "do": "wait",
+      "seconds": 1.2
+    },
+    {
+      "do": "move",
+      "actor": "neera",
+      "to": [
+        7,
+        18
+      ]
+    },
+    {
+      "do": "wait",
+      "seconds": 1.0
+    },
+    {
+      "do": "move",
+      "actor": "lio",
+      "to": [
+        8,
+        16
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "neera",
+      "to": [
+        8,
+        15
+      ]
+    },
+    {
+      "do": "wait",
+      "seconds": 1.5
+    },
+    {
+      "do": "shot",
+      "on": [
+        11,
+        10
+      ],
+      "turn": "w",
+      "tilt": 6,
+      "distance": 9,
+      "lift": 0.3,
+      "cut": true
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        11,
+        10
+      ]
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "direction": "e"
+    },
+    {
+      "do": "shot",
+      "on": "kael",
+      "turn": "w",
+      "tilt": 8,
+      "distance": "close",
+      "lift": 0.38,
+      "over": 16.0,
+      "async": true
+    },
+    {
+      "do": "move",
+      "actor": "voss",
+      "to": [
+        9,
+        9
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "neera",
+      "to": [
+        9,
+        11
+      ]
+    },
+    {
+      "do": "move",
+      "actor": "lio",
+      "to": [
+        10,
+        12
+      ]
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Kael… você não abriu a boca desde o poço.",
+      "translations": {
+        "en": "Kael… you haven't said a word since the well."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Estou contando.",
+      "translations": {
+        "en": "I'm counting."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Contando o quê?",
+      "translations": {
+        "en": "Counting what?"
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Os ganchos daquela praça. Trinta e dois.",
+      "translations": {
+        "en": "The hooks in that square. Thirty-two."
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 1.5
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Odrin falou em cento e quatro pessoas. Sobraram onze. E eu deixei ele descer por uma grade.",
+      "translations": {
+        "en": "Odrin said a hundred and four people. Eleven are left. And I let him go down through a grate."
+      }
+    },
+    {
+      "do": "shot",
+      "on": "kael",
+      "behind": "voss",
+      "tilt": 12,
+      "distance": "close",
+      "lift": 0.38
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "Ninguém deixou nada. O teto caiu em cima dele.",
+      "translations": {
+        "en": "Nobody let anything. The roof came down on him."
+      }
+    },
+    {
+      "do": "shot",
+      "on": "kael",
+      "turn": "w",
+      "tilt": 8,
+      "distance": "close",
+      "lift": 0.38
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "E ele levantou. Da próxima vez eu não confio em teto.",
+      "translations": {
+        "en": "And he got up. Next time I don't trust a roof."
+      }
+    },
+    {
+      "do": "sfx",
+      "file": "DeadArmor.mp3",
+      "volume": 0.9
+    },
+    {
+      "do": "shot",
+      "on": [
+        20,
+        10
+      ],
+      "turn": "e",
+      "tilt": 6,
+      "distance": 9,
+      "lift": 0.5,
+      "cut": true
+    },
+    {
+      "do": "wait",
+      "seconds": 1.2
+    },
+    {
+      "do": "sfx",
+      "file": "DeadArmor.mp3",
+      "volume": 0.9
+    },
+    {
+      "do": "wait",
+      "seconds": 1.3
+    },
+    {
+      "do": "shot",
+      "on": [
+        11,
+        10
+      ],
+      "turn": "w",
+      "tilt": 8,
+      "distance": 9,
+      "lift": 0.4,
+      "cut": true
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "direction": "e"
+    },
+    {
+      "do": "face",
+      "actor": "neera",
+      "direction": "e"
+    },
+    {
+      "do": "face",
+      "actor": "voss",
+      "direction": "e"
+    },
+    {
+      "do": "face",
+      "actor": "lio",
+      "direction": "e"
+    },
+    {
+      "do": "emote",
+      "actor": "kael",
+      "text": "!"
+    },
+    {
+      "do": "emote",
+      "actor": "neera",
+      "text": "!"
+    },
+    {
+      "do": "emote",
+      "actor": "voss",
+      "text": "!"
+    },
+    {
+      "do": "emote",
+      "actor": "lio",
+      "text": "!"
+    },
+    {
+      "do": "wait",
+      "seconds": 1.2
+    },
+    {
+      "do": "say",
+      "actor": "lio",
+      "text": "…Não. Não pode ser.",
+      "translations": {
+        "en": "…No. It can't be."
+      }
+    },
+    {
+      "do": "shot",
+      "on": [
+        12,
+        10
+      ],
+      "turn": "e",
+      "tilt": 5,
+      "distance": 7,
+      "lift": 0.5,
+      "cut": true
+    },
+    {
+      "do": "shot",
+      "on": [
+        18,
+        10
+      ],
+      "over": 8.0,
+      "async": true
+    },
+    {
+      "do": "wait",
+      "seconds": 4.0
+    },
+    {
+      "do": "enter",
+      "actor": "butcher",
+      "to": [
+        21,
+        10
+      ]
+    },
+    {
+      "do": "face",
+      "actor": "butcher",
+      "direction": "w"
+    },
+    {
+      "do": "wait",
+      "seconds": 4.0
+    },
+    {
+      "do": "shot",
+      "on": "butcher",
+      "turn": "e",
+      "tilt": 8,
+      "distance": "close",
+      "lift": 0.38,
+      "over": 6.0,
+      "async": true
+    },
+    {
+      "do": "say",
+      "actor": "butcher",
+      "text": "Demoraram. Achei que o poço tinha ficado com algum.",
+      "translations": {
+        "en": "You took your time. I thought the well had kept one of you."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "butcher",
+      "text": "Ainda são quatro. Que bom. Eu odeio refazer conta.",
+      "translations": {
+        "en": "Still four. Good. I hate counting twice."
+      }
+    },
+    {
+      "do": "shot",
+      "between": [
+        "kael",
+        "butcher"
+      ],
+      "behind": "kael",
+      "tilt": 10,
+      "distance": "medium",
+      "lift": 0.35,
+      "cut": true
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        13,
+        10
+      ]
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Você estava morto.",
+      "translations": {
+        "en": "You were dead."
+      }
+    },
+    {
+      "do": "shot",
+      "between": [
+        "butcher",
+        "kael"
+      ],
+      "behind": "butcher",
+      "tilt": 10,
+      "distance": "close",
+      "lift": 0.38
+    },
+    {
+      "do": "say",
+      "actor": "butcher",
+      "text": "Eu estava debaixo. Não é a mesma coisa. Você vai entender isso cedo demais.",
+      "translations": {
+        "en": "I was underneath. Not the same thing. You'll understand that too soon."
+      }
+    },
+    {
+      "do": "shot",
+      "on": "lio",
+      "look": "butcher",
+      "tilt": 12,
+      "distance": "medium",
+      "lift": 0.4,
+      "over": 1.5,
+      "async": true
+    },
+    {
+      "do": "move",
+      "actor": "lio",
+      "to": [
+        14,
+        11
+      ]
+    },
+    {
+      "do": "face",
+      "actor": "lio",
+      "toward": "butcher"
+    },
+    {
+      "do": "say",
+      "actor": "lio",
+      "text": "Cadê a minha mãe?",
+      "translations": {
+        "en": "Where is my mother?"
+      }
+    },
+    {
+      "do": "shot",
+      "on": "butcher",
+      "look": "lio",
+      "tilt": 8,
+      "distance": "close",
+      "lift": 0.4
+    },
+    {
+      "do": "face",
+      "actor": "butcher",
+      "toward": "lio"
+    },
+    {
+      "do": "say",
+      "actor": "butcher",
+      "text": "Ah. A menina que correu. Ainda segurando a flor.",
+      "translations": {
+        "en": "Ah. The girl who ran. Still holding the flower."
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 1.5
+    },
+    {
+      "do": "say",
+      "actor": "butcher",
+      "text": "Ela está onde eu deixei. Esperando, como todos os escolhidos esperam.",
+      "translations": {
+        "en": "She is where I left her. Waiting, as all the chosen wait."
+      }
+    },
+    {
+      "do": "shot",
+      "on": "lio",
+      "look": "butcher",
+      "tilt": 8,
+      "distance": "close",
+      "lift": 0.4
+    },
+    {
+      "do": "say",
+      "actor": "lio",
+      "text": "ONDE?!",
+      "translations": {
+        "en": "WHERE?!"
+      }
+    },
+    {
+      "do": "shot",
+      "between": [
+        "butcher",
+        "lio"
+      ],
+      "behind": "butcher",
+      "tilt": 10,
+      "distance": "close",
+      "lift": 0.38
+    },
+    {
+      "do": "say",
+      "actor": "butcher",
+      "text": "Do outro lado desta ponte. É só passar por mim.",
+      "translations": {
+        "en": "On the other side of this bridge. You only have to get past me."
+      }
+    },
+    {
+      "do": "move",
+      "actor": "neera",
+      "to": [
+        13,
+        12
+      ]
+    },
+    {
+      "do": "face",
+      "actor": "neera",
+      "toward": "lio"
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Ele está te provocando. Não escuta.",
+      "translations": {
+        "en": "He's baiting you. Don't listen."
+      }
+    },
+    {
+      "do": "shot",
+      "on": "butcher",
+      "look": "kael",
+      "tilt": -8,
+      "distance": 5,
+      "lift": 0.0,
+      "cut": true
+    },
+    {
+      "do": "sfx",
+      "file": "HeavySteps1-Balanced-Medium.mp3",
+      "volume": 0.9
+    },
+    {
+      "do": "shake",
+      "seconds": 0.15,
+      "strength": 0.1
+    },
+    {
+      "do": "say",
+      "actor": "butcher",
+      "text": "Isto aqui é pedágio, cinzomante. Todo mundo passa. Mas ninguém passa inteiro.",
+      "translations": {
+        "en": "This is a toll, ashmancer. Everyone passes. But no one passes whole."
+      }
+    },
+    {
+      "do": "shot",
+      "on": "voss",
+      "look": "butcher",
+      "tilt": 12,
+      "distance": "medium",
+      "lift": 0.4
+    },
+    {
+      "do": "sfx",
+      "file": "DeadArmor.mp3",
+      "volume": 0.8
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "Somos quatro contra um. Faz essa conta aí.",
+      "translations": {
+        "en": "Four of us against one. Do that count."
+      }
+    },
+    {
+      "do": "shot",
+      "on": "butcher",
+      "look": "voss",
+      "tilt": 8,
+      "distance": "close",
+      "lift": 0.4
+    },
+    {
+      "do": "wait",
+      "seconds": 2.0
+    },
+    {
+      "do": "say",
+      "actor": "butcher",
+      "text": "…Um?",
+      "translations": {
+        "en": "…One?"
+      }
+    },
+    {
+      "do": "sfx",
+      "file": "Blunt2.mp3",
+      "volume": 1.0
+    },
+    {
+      "do": "wait",
+      "seconds": 0.7
+    },
+    {
+      "do": "sfx",
+      "file": "Blunt2.mp3",
+      "volume": 1.0
+    },
+    {
+      "do": "music",
+      "stop": true
+    },
+    {
+      "do": "wait",
+      "seconds": 1.0
+    },
+    {
+      "do": "tint",
+      "percent": 30,
+      "over": 1.5
+    },
+    {
+      "do": "sfx",
+      "file": "CaveTroll2ATT001.mp3",
+      "volume": 0.5
+    },
+    {
+      "do": "wait",
+      "seconds": 4.0
+    },
+    {
+      "do": "shot",
+      "on": "lio",
+      "look": "butcher",
+      "tilt": 12,
+      "distance": "medium",
+      "lift": 0.4,
+      "cut": true
+    },
+    {
+      "do": "emote",
+      "actor": "lio",
+      "text": "…"
+    },
+    {
+      "do": "say",
+      "actor": "lio",
+      "text": "K-Kael…",
+      "translations": {
+        "en": "K-Kael…"
+      }
+    },
+    {
+      "do": "shot",
+      "on": [
+        23,
+        10
+      ],
+      "turn": "e",
+      "tilt": 8,
+      "distance": 6,
+      "lift": 0.6,
+      "cut": true
+    },
+    {
+      "do": "sfx",
+      "file": "WarDog2Walk001.mp3",
+      "volume": 1.0
+    },
+    {
+      "do": "enter",
+      "actor": "vora",
+      "to": [
+        26,
+        10
+      ]
+    },
+    {
+      "do": "face",
+      "actor": "vora",
+      "direction": "w"
+    },
+    {
+      "do": "shake",
+      "seconds": 0.25,
+      "strength": 0.12
+    },
+    {
+      "do": "shot",
+      "distance": 10,
+      "over": 4.0,
+      "async": true
+    },
+    {
+      "do": "wait",
+      "seconds": 1.2
+    },
+    {
+      "do": "move",
+      "actor": "vora",
+      "to": [
+        24,
+        10
+      ]
+    },
+    {
+      "do": "shake",
+      "seconds": 0.25,
+      "strength": 0.12
+    },
+    {
+      "do": "wait",
+      "seconds": 0.8
+    },
+    {
+      "do": "sfx",
+      "file": "WarDog2ATT001.mp3",
+      "volume": 0.9
+    },
+    {
+      "do": "wait",
+      "seconds": 2.0
+    },
+    {
+      "do": "shot",
+      "on": "voss",
+      "look": "vora",
+      "tilt": 10,
+      "distance": 4.5,
+      "lift": 0.4,
+      "cut": true
+    },
+    {
+      "do": "shot",
+      "distance": "close",
+      "over": 3.0,
+      "async": true
+    },
+    {
+      "do": "wait",
+      "seconds": 1.5
+    },
+    {
+      "do": "say",
+      "actor": "voss",
+      "text": "…Eu retiro a conta.",
+      "translations": {
+        "en": "…I take back the count."
+      }
+    },
+    {
+      "do": "shot",
+      "on": "butcher",
+      "look": "vora",
+      "tilt": 5,
+      "distance": "medium",
+      "lift": 0.4
+    },
+    {
+      "do": "face",
+      "actor": "butcher",
+      "toward": "vora"
+    },
+    {
+      "do": "say",
+      "actor": "butcher",
+      "text": "Essa é a Vora. Achei ela filhote, comendo o que sobrava dos ganchos da aldeia. Achei bonito. Ela não escolhe.",
+      "translations": {
+        "en": "This is Vora. I found her as a pup, eating what was left on the village hooks. I thought it was beautiful. She doesn't choose."
+      }
+    },
+    {
+      "do": "sfx",
+      "file": "DeadArmor.mp3",
+      "volume": 0.7
+    },
+    {
+      "do": "say",
+      "actor": "butcher",
+      "text": "Eu escolho por ela.",
+      "translations": {
+        "en": "I choose for her."
+      }
+    },
+    {
+      "do": "face",
+      "actor": "butcher",
+      "toward": "kael"
+    },
+    {
+      "do": "move",
+      "actor": "vora",
+      "to": [
+        23,
+        10
+      ]
+    },
+    {
+      "do": "shot",
+      "on": [
+        30,
+        10
+      ],
+      "turn": "w",
+      "tilt": 18,
+      "distance": 24,
+      "cut": true
+    },
+    {
+      "do": "sfx",
+      "file": "WarDog2ATT001.mp3",
+      "volume": 1.2
+    },
+    {
+      "do": "shake",
+      "seconds": 1.2,
+      "strength": 0.35
+    },
+    {
+      "do": "wait",
+      "seconds": 0.9
+    },
+    {
+      "do": "shot",
+      "on": [
+        11,
+        2
+      ],
+      "turn": "n",
+      "tilt": 10,
+      "distance": 6,
+      "lift": 0.8,
+      "cut": true
+    },
+    {
+      "do": "sfx",
+      "file": "Blunt2.mp3",
+      "volume": 0.6
+    },
+    {
+      "do": "wait",
+      "seconds": 0.7
+    },
+    {
+      "do": "caption",
+      "text": "NEEERA, VOSS, LIO estão AMEDRONTADOS",
+      "translations": {
+        "en": "NEEERA, VOSS, LIO are FRIGHTENED"
+      },
+      "style": "red",
+      "seconds": 2.5
+    },
+    {
+      "do": "shot",
+      "on": "neera",
+      "look": "vora",
+      "tilt": 8,
+      "distance": "close",
+      "lift": 0.4,
+      "cut": true
+    },
+    {
+      "do": "emote",
+      "actor": "neera",
+      "text": "…"
+    },
+    {
+      "do": "say",
+      "actor": "neera",
+      "text": "Eu não consigo… minhas mãos não param…",
+      "translations": {
+        "en": "I can't… my hands won't stop…"
+      }
+    },
+    {
+      "do": "shot",
+      "on": [
+        15,
+        10
+      ],
+      "turn": "w",
+      "tilt": 4,
+      "distance": 8,
+      "lift": 0.4,
+      "cut": true
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        15,
+        10
+      ]
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "direction": "w"
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Olhem pra mim. Não pra ele. Pra mim.",
+      "translations": {
+        "en": "Look at me. Not at him. At me."
+      }
+    },
+    {
+      "do": "shot",
+      "on": "kael",
+      "turn": "w",
+      "tilt": 8,
+      "distance": "close",
+      "lift": 0.38
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Butcher.",
+      "translations": {
+        "en": "Butcher."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "butcher",
+      "text": "Vanguarda.",
+      "translations": {
+        "en": "Vanguard."
+      }
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "direction": "e"
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Na aldeia eu deixei você descer. Foi erro meu.",
+      "translations": {
+        "en": "In the village I let you go down. That was my mistake."
+      }
+    },
+    {
+      "do": "sfx",
+      "file": "Blade3.mp3",
+      "volume": 0.7
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Hoje você não desce. Não sobe. Não some. Eu fico nesta ponte até ter certeza de que acabou.",
+      "translations": {
+        "en": "Today you don't go down. You don't go up. You don't vanish. I stay on this bridge until I'm sure it's over."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Você não sai daqui vivo.",
+      "translations": {
+        "en": "You don't leave here alive."
+      }
+    },
+    {
+      "do": "shot",
+      "on": [
+        12,
+        11
+      ],
+      "turn": "e",
+      "tilt": 14,
+      "distance": 7,
+      "lift": 0.5
+    },
+    {
+      "do": "caption",
+      "text": "NEEERA e VOSS não estão mais AMEDRONTADOS",
+      "translations": {
+        "en": "NEEERA and VOSS are no longer FRIGHTENED"
+      },
+      "style": "blue",
+      "seconds": 2.0
+    },
+    {
+      "do": "say",
+      "actor": "lio",
+      "text": "…Kael. Se ele morrer, quem vai dizer onde ela está?",
+      "translations": {
+        "en": "…Kael. If he dies, who will say where she is?"
+      }
+    },
+    {
+      "do": "shot",
+      "on": "kael",
+      "turn": "e",
+      "tilt": 10,
+      "distance": 4,
+      "lift": 0.5
+    },
+    {
+      "do": "wait",
+      "seconds": 2.0
+    },
+    {
+      "do": "shot",
+      "on": "butcher",
+      "look": "kael",
+      "tilt": 10,
+      "distance": "medium",
+      "lift": 0.4
+    },
+    {
+      "do": "sfx",
+      "file": "DeadArmor.mp3",
+      "volume": 1.0
+    },
+    {
+      "do": "say",
+      "actor": "butcher",
+      "text": "Ouviu, garoto? Promessa tem preço. Vora. Come.",
+      "translations": {
+        "en": "Hear that, boy? A promise has a price. Vora. Eat."
+      }
+    },
+    {
+      "do": "shot",
+      "on": "vora",
+      "look": "kael",
+      "tilt": 8,
+      "distance": "close",
+      "lift": 0.5,
+      "cut": true
+    },
+    {
+      "do": "wait",
+      "seconds": 0.8
+    },
+    {
+      "do": "sfx",
+      "file": "WarDog2ATT001.mp3",
+      "volume": 1.0
+    },
+    {
+      "do": "move",
+      "actor": "vora",
+      "to": [
+        18,
+        10
+      ]
+    },
+    {
+      "do": "enter",
+      "actor": "harlan",
+      "to": [
+        23,
+        12
+      ]
+    },
+    {
+      "do": "enter",
+      "actor": "dorn",
+      "to": [
+        20,
+        9
+      ]
+    },
+    {
+      "do": "enter",
+      "actor": "pell",
+      "to": [
+        17,
+        6
+      ]
+    },
+    {
+      "do": "enter",
+      "actor": "brakk",
+      "to": [
+        27,
+        5
+      ]
+    },
+    {
+      "do": "enter",
+      "actor": "orso",
+      "to": [
+        23,
+        3
+      ]
+    },
+    {
+      "do": "enter",
+      "actor": "vinn",
+      "to": [
+        28,
+        8
+      ]
+    },
+    {
+      "do": "flash",
+      "seconds": 0.3
+    },
+    {
+      "do": "shake",
+      "seconds": 0.6,
+      "strength": 0.2
+    },
+    {
+      "do": "tint",
+      "percent": 0,
+      "over": 0.3
+    },
+    {
+      "do": "bars",
+      "on": false
+    },
+    {
+      "do": "wait",
+      "seconds": 0.5
+    }
+  ]
+}

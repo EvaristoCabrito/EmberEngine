@@ -65,8 +65,47 @@ Lio (`villagerF1`) and Vessa (`crazyLady`) are neutral NPCs of the map with the 
 board until the opening brings them in (Lio out of the hollow log by (15,14), Vessa at the giant dead oak's foot (7,10)). In the
 fight they stand as neutrals (no turn, not targeted by the enemy); the victory scene ends with Vessa's `exit`.
 
+## Film steps (Stone Bridge, 2026-11-06)
+
+The scene can be cut like a film instead of watched from the player's view (the user: "deixar similar a um filme mesmo, não
+apenas seguir os personagens por cima"). The camera is the action camera's own (MapStage `ShotKey`: pivot, turn, tilt, distance,
+lift), written by the script; the screen effects are drawn over the board, under the dialogue box. All of it is the player's
+camera again when the scene ends.
+
+- `shot`: `{"do": "shot", "on": "kael" | [x, y], "between": ["kael", "butcher"], "turn": "e" | 90, "look": "butcher", "behind": "kael",
+  "tilt": 12, "distance": 6 | "close" | "medium" | "wide", "lift": 0.38, "over": 2.0, "cut": true, "async": true}`. `on` / `between`
+  set the pivot (an actor's feet, a hex, or the middle of two actors); `turn` is the compass heading the camera looks along (`n ne e se
+  s sw w nw`, or degrees: 0 north = smaller y, 90 east); `look` turns the camera from the pivot toward that actor; `behind` puts the eye
+  on that actor's side of the pivot, 35° off the line (over its shoulder, as the action camera's two-shot); `tilt` in degrees above
+  the ground (0 level, 90 straight down, negative looks up at the sky); `distance` a number or `close` (the subject's card fills the
+  frame, `closeDistance`), `medium` (1.8 x), `wide` (3.2 x); `lift` a share of the subject's card height (the chest at 0.38; world units
+  when the pivot is a hex). A field left out keeps what the camera has, so `{"do": "shot", "distance": 3.5, "over": 8}` is a slow
+  dolly-in. `over` is the move's seconds (a straight move; 0 = the orbit's own glide), and the step waits for it unless `async`;
+  `cut` jumps there. The script's `"cameraBack": false` keeps the last view at the end. The eye never goes under the deck
+  (`kMinEyePitch`): "from below" shots are level ones.
+- `shake` `{"seconds", "strength"}` (world units, 0.15): the drawn view trembles, dying out over its seconds; the camera itself stays.
+- `fade` `{"to": "black" | "clear", "seconds"}`: the scene waits its seconds. A scene that ends black is lifted by its end.
+- `bars` `{"on": true | false}`: the cinema's letterbox (12% top and bottom), gliding in and out.
+- `tint` `{"percent", "over"}`: the picture darkened. `flash` `{"seconds"}`: a white flash.
+- `sfx` `{"file", "volume"}`: an effect from game/SoundFX. `music` `{"file", "volume"}` or `{"stop": true}`: the map's track replaced
+  or silenced until the scene ends (then the map's own track again).
+- `caption` `{"text", "translations", "style": "plain" | "red" | "blue", "seconds"}`: words over the picture ("…mais tarde" in the
+  display face at the centre; the red / blue status boxes high on the screen), the scene waiting their seconds.
+- `emote` `{"actor", "text"}`: a mark over the actor's head ("!", "!!", "?", "…"), the fight's own number popup.
+- `move` with `"near": "<actor>"` instead of `"to"`: the free reachable hex nearest that actor (its body may be dead).
+- An actor declared `{"unit": "Vora", "fallen": true}` may be dead when the scene starts (an onVictory scene): it is found among the
+  fallen, and its body never fades while the map is open (`keptBodies_`, read from this map's scenes at the start), so the scene's
+  shots have it.
+
+The first scenes cut this way: `stone-bridge-01-o-pedagio` (onOpen) and `stone-bridge-02-a-promessa` (onVictory) on `thebridge`
+(thebridge030: Vora the war dog, O Carniceiro as a neutral kept alive through the fight, Lio as a guest hero, the militia named, all but
+Ulfred off the board until the opening's end). The shot list they follow is docs/STONE_BRIDGE.md.
+
+The dialogue box (DialogScreen, 2026-11-06, the user's Paint mock-up): high on the screen, its text area keeps room for four lines
+whatever the line's length, and a small Ok / Próximo sits in the area's bottom-right corner instead of a bar across the box.
+
 Validation (`world/CutsceneScript.cpp`): wrong `format`, no `id`, no actors, an empty step list, an unknown action, an
-undeclared actor, a malformed coordinate or duration refuse the file whole, naming the step.
+undeclared actor, a malformed coordinate, duration, heading or distance refuse the file whole, naming the step.
 
 ## What a playing cutscene owns
 
