@@ -65,13 +65,14 @@
     {
       "do": "shot",
       "on": [
-        3,
-        19
+        4,
+        10
       ],
-      "turn": "n",
-      "tilt": 84,
-      "distance": 14,
-      "cut": true
+      "turn": "e",
+      "tilt": 40,
+      "distance": 18,
+      "cut": true,
+      "lift": 0.4
     },
     {
       "do": "sfx",
@@ -197,9 +198,9 @@
     {
       "do": "shot",
       "on": "lio",
-      "turn": "n",
-      "tilt": 4,
-      "distance": "close",
+      "turn": "s",
+      "tilt": 24,
+      "distance": "medium",
       "lift": 0.45,
       "cut": true
     },
@@ -1028,14 +1029,11 @@
     },
     {
       "do": "shot",
-      "on": [
-        30,
-        10
-      ],
-      "turn": "w",
-      "tilt": 18,
-      "distance": 24,
-      "cut": true
+      "turn": "e",
+      "tilt": 28,
+      "distance": 12,
+      "cut": true,
+      "on": "butcher"
     },
     {
       "do": "sfx",
@@ -1053,15 +1051,15 @@
     },
     {
       "do": "shot",
-      "on": [
-        11,
-        2
-      ],
-      "turn": "n",
-      "tilt": 10,
-      "distance": 6,
-      "lift": 0.8,
-      "cut": true
+      "turn": "e",
+      "tilt": 30,
+      "distance": 12,
+      "lift": 0.4,
+      "cut": true,
+      "between": [
+        "kael",
+        "neera"
+      ]
     },
     {
       "do": "sfx",

@@ -276,8 +276,8 @@
         16,
         14
       ],
-      "turn": "n",
-      "tilt": 6,
+      "turn": "s",
+      "tilt": 28,
       "distance": 9,
       "lift": 0.4,
       "cut": true
@@ -289,7 +289,9 @@
         18
       ],
       "over": 8.0,
-      "async": true
+      "async": true,
+      "turn": "s",
+      "tilt": 28
     },
     {
       "do": "move",
@@ -428,8 +430,8 @@
         16,
         19
       ],
-      "turn": "n",
-      "tilt": 2,
+      "turn": "s",
+      "tilt": 24,
       "distance": 4,
       "lift": 0.2,
       "cut": true
@@ -516,9 +518,13 @@
     {
       "do": "shot",
       "on": "butcher",
-      "turn": "n",
-      "tilt": 2,
-      "distance": 5,
+      "offset": [
+        0,
+        2.5
+      ],
+      "turn": "s",
+      "tilt": 25,
+      "distance": 6,
       "lift": 0.1,
       "cut": true
     },
@@ -598,14 +604,14 @@
     },
     {
       "do": "shot",
-      "on": [
-        15,
-        19
-      ],
-      "turn": "n",
-      "tilt": 84,
-      "distance": 12,
-      "cut": true
+      "turn": "s",
+      "tilt": 48,
+      "distance": 7,
+      "cut": true,
+      "between": [
+        "kael",
+        "butcher"
+      ]
     },
     {
       "do": "say",
@@ -690,15 +696,15 @@
     },
     {
       "do": "shot",
-      "on": [
-        16,
-        19
-      ],
-      "turn": "n",
-      "tilt": 60,
-      "distance": 6,
+      "turn": "s",
+      "tilt": 43,
+      "distance": 7,
       "over": 5.0,
-      "async": true
+      "async": true,
+      "between": [
+        "kael",
+        "lio"
+      ]
     },
     {
       "do": "exit",
@@ -714,8 +720,8 @@
         15,
         19
       ],
-      "turn": "n",
-      "tilt": 10,
+      "turn": "s",
+      "tilt": 26,
       "distance": 8,
       "lift": 0.4,
       "over": 6.0,
@@ -830,8 +836,8 @@
     {
       "do": "shot",
       "on": "kael",
-      "turn": "n",
-      "tilt": 4,
+      "turn": "s",
+      "tilt": 25,
       "distance": "close",
       "lift": 0.45,
       "over": 2.0
@@ -1226,15 +1232,15 @@
     },
     {
       "do": "shot",
-      "on": [
-        16,
-        19
-      ],
-      "turn": "n",
-      "tilt": 10,
-      "distance": 7,
+      "turn": "s",
+      "tilt": 32,
+      "distance": 12,
       "lift": 0.3,
-      "over": 8.0
+      "over": 8.0,
+      "between": [
+        "kael",
+        "lio"
+      ]
     },
     {
       "do": "sfx",

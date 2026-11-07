@@ -55,6 +55,8 @@ void cullInstance(uint id, bool late) {
   if (id >= f.instanceCount) return;
   const InstanceGpu inst = loadInstance(f, id);
   if (inst.mesh >= f.meshCount) return;
+  // Scenery outside current line of sight must not draw, retain occlusion history, or cast a visible shadow.
+  if ((inst.flags & kInstanceFogHidden) != 0) return;
   const MeshGpu mesh = loadMesh(f, inst.mesh);
   if (mesh.ready == 0) return;
   // Fog of war (R7): a piece standing on never-seen ground is neither drawn nor casts a shadow. Like a card, a

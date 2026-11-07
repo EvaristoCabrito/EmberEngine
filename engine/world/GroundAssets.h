@@ -80,6 +80,22 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"cemiterio-v01", "ruins", "ember-cemiterio-entulho-v01", "content/ground/cemiterio-entulho-v01.png", 4.0f},     // cemi04: rubble
     {"cemiterio-v01", "woods", "ember-cemiterio-bosque-v01", "content/ground/cemiterio-bosque-v01.png", 4.5f},       // cemi05: leaf litter, snow
     {"cemiterio-v01", "hill", "ember-cemiterio-encosta-v01", "content/ground/cemiterio-encosta-v01.png", 4.5f},      // cemi06: stones, frosted grass
+    // Cemetery overhaul 014: new winter ground materials, while earlier map versions keep cemiterio-v01.
+    {"cemiterio-makeover-v01", "plains", "ember-cemiterio-relva-neve-v02", "content/ground/cemiterio-relva-neve-v02.png", 4.5f},
+    {"cemiterio-makeover-v01", "snow", "ember-cemiterio-trilha-v01-overhaul", "content/ground/cemiterio-trilha-v01.png", 5.0f},
+    {"cemiterio-makeover-v01", "nave", "ember-cemiterio-lajes-neve-v03", "content/ground/cemiterio-lajes-neve-v03.png", 3.6f},
+    {"cemiterio-makeover-v01", "ruins", "ember-cemiterio-ruinas-alagadas-v01-outdoor", "content/ground/cemiterio-ruinas-alagadas-v01.png", 4.0f},
+    {"cemiterio-makeover-v01", "woods", "ember-cemiterio-bosque-v01-overhaul", "content/ground/cemiterio-bosque-v01.png", 4.5f},
+    {"cemiterio-makeover-v01", "hill", "ember-cemiterio-relva-neve-v02-hill", "content/ground/cemiterio-relva-neve-v02.png", 4.5f},
+    // The ossuary, crypt galleries, and whispered crypts share a worn limestone floor.
+    {"cemiterio-crypt-makeover-v01", "nave", "ember-cemiterio-ossuario-nave-v01", "content/ground/cemiterio-ossuario-piso-v01.png", 4.2f},
+    {"cemiterio-crypt-makeover-v01", "ruins", "ember-cemiterio-ossuario-ruins-v01", "content/ground/cemiterio-ossuario-piso-v01.png", 4.2f},
+    // Family mausoleums receive pale worn marble; the flooded chapel and reservoir receive cold wet stone.
+    {"cemiterio-mausoleum-makeover-v01", "nave", "ember-cemiterio-mausoleum-nave-v01", "content/ground/cemiterio-mausoleu-marmore-v01.png", 4.2f},
+    {"cemiterio-mausoleum-makeover-v01", "ruins", "ember-cemiterio-mausoleum-ruins-v01", "content/ground/cemiterio-mausoleu-marmore-v01.png", 4.2f},
+    {"cemiterio-ruins-makeover-v01", "nave", "ember-cemiterio-flooded-nave-v01", "content/ground/cemiterio-ruinas-alagadas-v01.png", 4.2f},
+    {"cemiterio-ruins-makeover-v01", "ruins", "ember-cemiterio-flooded-ruins-v01", "content/ground/cemiterio-ruinas-alagadas-v01.png", 4.2f},
+    {"cemiterio-ruins-makeover-v01", "water", "ember-cemiterio-flooded-water-v01", "content/ground/cemiterio-ruinas-alagadas-v01.png", 4.2f},
     // A Ponte de Pedra 023's deck (ponte-v01): the user's BridgeTiles photo (Attachments/BridgeTiles.jpg, 2026-10-21; ~9 setts across).
     {"ponte-v01", "ruins", "ember-ponte-calcamento-v01", "content/ground/ponte-calcamento-v01.png", 3.2f, true},
     // The watchtower's floors (the user's photos in Attachments/watchtower, 2026-10-21; about 16 setts across each): torre-v01 the

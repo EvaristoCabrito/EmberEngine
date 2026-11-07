@@ -178,6 +178,7 @@ std::optional<std::vector<Hero>> loadHeroes(const std::filesystem::path& heroesJ
     Hero o;
     o.name = str(h, "name");
     o.key = str(h, "key");
+    o.group = str(h, "group");
     o.reversed = flag(h, "reversed");
     for (const json& p : h["poses"]) {
       HeroPose q;

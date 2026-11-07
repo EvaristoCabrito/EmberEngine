@@ -183,6 +183,13 @@ std::optional<CutsceneScript> CutsceneScript::parse(const Json& j, std::string* 
         if (const auto e = number("lift", step.lift, 0.0f, 20.0f, 0.0f)) return refuse(*e);
         step.hasLift = true, any = true;
       }
+      if (const auto o = st.find("offset"); o != st.end()) {
+        if (!o->is_array() || o->size() != 2 || !(*o)[0].is_number() || !(*o)[1].is_number()) return refuse(at + ": \"offset\" must be [x, z] (world units)");
+        step.offsetX = (*o)[0].get<float>(), step.offsetZ = (*o)[1].get<float>();
+        if (!std::isfinite(step.offsetX) || !std::isfinite(step.offsetZ) || std::abs(step.offsetX) > 20.0f || std::abs(step.offsetZ) > 20.0f)
+          return refuse(at + ": \"offset\" out of range (-20..20)");
+        step.hasOffset = true, any = true;
+      }
       if (const auto e = number("over", step.seconds, 0.0f, 120.0f, 0.0f)) return refuse(*e);
       step.cut = st.value("cut", false);
       step.async = st.value("async", false);

@@ -34,7 +34,8 @@
 //     the camera looks at from the pivot, or "behind": an actor over whose shoulder it looks at the pivot; "tilt": degrees above
 //     the ground (0 level, 90 straight down, negative looks up at the sky); "distance": a number, or "close" (the subject's card
 //     fills the frame), "medium" (1.8 x close), "wide" (3.2 x close); "lift": share of the subject's card height the eye and the
-//     look point rise by (the chest at 0.38; world units when the pivot is a hex); "over": the seconds the move takes (0 = the
+//     look point rise by (the chest at 0.38; world units when the pivot is a hex); "offset": [x, z] world units added to the pivot
+//     (the camera may stand up to 4 hexes past the board's edge: over the river); "over": the seconds the move takes (0 = the
 //     orbit's own glide); "cut": true jumps there; "async": true lets the scene go on while the camera moves. A field left out keeps
 //     what the camera has. The player's view comes back at the scene's end unless the script says "cameraBack": false.
 //   "shake": { "seconds", "strength" (world units, 0.15) }: the view trembles, fading out over its seconds.
@@ -88,6 +89,8 @@ struct CutsceneStep {
   float distance = 0.0f;
   bool hasLift = false;     // "lift": share of the subject's card height (a hex: world units)
   float lift = 0.0f;
+  bool hasOffset = false;   // "offset": world units added to the pivot (x, z): a shot past the board's edge, over the river
+  float offsetX = 0.0f, offsetZ = 0.0f;
   bool cut = false;         // the view jumps there (no glide)
   bool async = false;       // the scene goes on while the camera moves
   // shake / sfx / music / fade / tint / bars / caption

@@ -34,9 +34,9 @@ struct InstanceGpu {
 };
 static_assert(sizeof(InstanceGpu) == 64);
 // InstanceGpu::flags (shaders/cull.hlsl): drawn only into the sun's shadow map (a roof that darkens a room without hiding it from
-// the camera: MapStage's window light), never dropped by the fog of war's never-seen test (it stands on no hex), and wall faces
-// faded by the visibility shader inside the camera's 5 m radius.
-inline constexpr uint32_t kInstanceShadowOnly = 1u, kInstanceAlwaysSeen = 2u, kInstanceCameraFade = 4u;
+// the camera: MapStage's window light), never dropped by the fog of war's never-seen test (it stands on no hex), wall faces faded
+// by the visibility shader inside the camera's 5 m radius, or hidden from both camera and shadow passes by current fog visibility.
+inline constexpr uint32_t kInstanceShadowOnly = 1u, kInstanceAlwaysSeen = 2u, kInstanceCameraFade = 4u, kInstanceFogHidden = 8u;
 
 inline constexpr uint32_t kNoTextureIndex = 0xFFFFFFFFu;
 

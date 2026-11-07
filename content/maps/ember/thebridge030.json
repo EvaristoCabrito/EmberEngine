@@ -3234,6 +3234,13 @@
         "x": 1,
         "y": 6,
         "level": 15
+      },
+      {
+        "name": "Lio",
+        "classId": "villagerF1",
+        "x": 3,
+        "y": 11,
+        "level": 4
       }
     ],
     "enemySpawns": [

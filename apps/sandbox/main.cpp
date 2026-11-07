@@ -125,6 +125,7 @@ struct Options {
   std::string sprites;
   uint64_t spriteBudgetMb = 512;
   std::string meshes;
+  std::string meshesExtra;
   uint32_t meshGrid = 8;
   bool battle = false;
   std::string battleContent = "all";
@@ -237,6 +238,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--verify" && hasValue) o.verify = argv[++i];
     else if (arg == "--sprites" && hasValue) o.sprites = argv[++i];
     else if (arg == "--meshes" && hasValue) o.meshes = argv[++i];
+    else if (arg == "--meshes-extra" && hasValue) o.meshesExtra = argv[++i];
     else if (arg == "--battle") o.battle = true;
     else if (arg == "--map" && hasValue) o.map = argv[++i];
     else if (arg == "--ground" && hasValue) o.ground = argv[++i];
@@ -531,6 +533,7 @@ struct Services {
   explicit Services(const Options& o) : io(jobs, o.ioDepth), assets(jobs, io, {}) {
     if (!o.sprites.empty() && !assets.mount(o.sprites)) fatal(std::format("Cannot mount {}", o.sprites));
     if (!o.meshes.empty() && !assets.mount(o.meshes)) fatal(std::format("Cannot mount {}", o.meshes));
+    if (!o.meshesExtra.empty() && !assets.mount(o.meshesExtra)) fatal(std::format("Cannot mount {}", o.meshesExtra));
     // Ember's wall, door and gate textures (Cooker architecture), beside the mesh pack.
     if (!o.meshes.empty()) {
       const std::filesystem::path architecture = std::filesystem::path(o.meshes).parent_path() / "architecture.pak";

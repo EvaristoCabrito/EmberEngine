@@ -13,6 +13,7 @@ if not exist "%EXE%" (
 )
 
 set "GROUND=%ART%\ground\ground-v77-random-encounters-v01.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v78-cemetery-makeover-v01.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v76-ashen-panorama.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v75-ashen.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v74.pak"
@@ -110,6 +111,7 @@ if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v4.pak"
 if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v3.pak"
 if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v2.pak"
 if not exist "%MESHES%" set "MESHES=%ART%\meshes\props.pak"
+set "MESHES_EXTRA=%ART%\meshes\material-overhaul-v03.pak"
 rem battle.pak = o pacote de sprites atual (cada mudanca de sprite e cozinhada nele); battle-v2.pak (19/10) so se faltar
 rem battle-new.pak = um pacote cozinhado com o jogo aberto (o battle.pak preso): entra no lugar dele aqui, o anterior guardado com a data
 if not exist "%ART%\sprites\battle-new.pak" goto :semnovo
@@ -122,7 +124,7 @@ if not exist "%SPRITES%" set "SPRITES=%ART%\sprites\battle-v2.pak"
 set "HEROES="
 if exist "%ART%\scenes\roster.json" set "HEROES=--heroes %ART%\scenes\roster.json"
 
-for %%P in ("%GROUND%" "%SPRITES%" "%MESHES%" "%ART%\scenes" "%HERE%\content\maps\ember" "%HERE%\content\assets" "%HERE%\content\data\battle-rules.json") do (
+for %%P in ("%GROUND%" "%SPRITES%" "%MESHES%" "%MESHES_EXTRA%" "%ART%\scenes" "%HERE%\content\maps\ember" "%HERE%\content\assets" "%HERE%\content\data\battle-rules.json") do (
   if not exist %%P (
     echo Falta %%~P
     echo Tire uma foto desta tela e mande para o Claude.
@@ -136,7 +138,7 @@ set "LOG=%HERE%\JOGAR-log.txt"
 (break > "%LOG%") 2>nul || set "LOG=%HERE%\JOGAR-log-2.txt"
 (break > "%LOG%") 2>nul || set "LOG=%TEMP%\JOGAR-log.txt"
 echo Abrindo o Ember...
-"%EXE%" --title --ground "%GROUND%" --sprites "%SPRITES%" --meshes "%MESHES%" --scenes "%ART%\scenes" --maps "%HERE%\content\maps\ember" --game-assets "%HERE%\content\assets" %HEROES% > "%LOG%" 2>&1
+"%EXE%" --title --ground "%GROUND%" --sprites "%SPRITES%" --meshes "%MESHES%" --meshes-extra "%MESHES_EXTRA%" --scenes "%ART%\scenes" --maps "%HERE%\content\maps\ember" --game-assets "%HERE%\content\assets" %HEROES% > "%LOG%" 2>&1
 set "RUNERR=%ERRORLEVEL%"
 if not "%RUNERR%"=="0" (
   echo.

@@ -494,22 +494,24 @@ bool Overworld::wispForestUncleared(const Json& save) const {
 
 // overworld.ts canStepOverworld.
 bool Overworld::canStep(const Json& save, OverworldHex from, OverworldHex to, bool test) const {
-  if (!isCell(to.col, to.row)) return false;
+  if (!isCell(from.col, from.row) || !isCell(to.col, to.row)) return false;
+  // Until the Bridge is finished, the opening road is a straight lane. Keep this geometric rule even in test mode:
+  // test mode may skip story gates, but it must not let the party walk onto side rows or around the bridge.
+  if (!has(child(save, "completed"), "thebridge") &&
+      (from.row != start_.row || to.row != start_.row || from.col < start_.col || from.col > inn_.col || to.col < start_.col || to.col > inn_.col))
+    return false;
   // No Ashen Forest block (the user, 2026-10-27: "não existe bloqueio de floresta cinzenta"); `ashenBlocked_` is read for nothing now.
-  if (test) return true;  // Modo teste: the whole grid open (removed cells stay excluded)
+  if (test) return true;
   const Json& completed = child(save, "completed");
   if (!has(completed, "vau")) return false;
   if (wisp_ && from.col <= wisp_->col && to.col > wisp_->col && wispForestUncleared(save)) return false;
   // Free movement, every side, only once the Bridge's 4th scenario is over (the user, 2026-11-06: "somente após o final do
   // cenário 4 da ponte é que o movimento fica livre para escolher os lados"); before it, only the early road below.
   if (has(completed, "thebridge")) return true;
-  // The early road: the start's row from the start to the Inn, and the Stone Bridge's hex (on the start's row on the 5 % grid,
-  // the row below on the half grid). Back (west) always; east up to the bridge; past it once the bridge's missions are done.
+  // The early road: only the start's row from the start to the Inn. The bridge cannot be entered from a side row.
   const MapLocation* bridge = nullptr;
   for (const MapLocation& l : locations_)
     if (l.id == "stonebridge") bridge = &l;
-  const bool onBridge = bridge && to.col == bridge->col && to.row == bridge->row;
-  if (!onBridge && (to.row != start_.row || to.col < start_.col || to.col > inn_.col)) return false;
   const OverworldCell* a = cell(from.col, from.row);
   const OverworldCell* b = cell(to.col, to.row);
   const OverworldCell* bridgeCell = bridge ? cell(bridge->col, bridge->row) : nullptr;

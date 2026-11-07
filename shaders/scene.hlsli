@@ -64,7 +64,7 @@ struct InstanceGpu {  // 64 bytes
   uint flags;  // kInstanceShadowOnly, kInstanceAlwaysSeen, kInstanceCameraFade: see render/MeshGpu.h
   uint pad;
 };
-static const uint kInstanceShadowOnly = 1u, kInstanceAlwaysSeen = 2u, kInstanceCameraFade = 4u;
+static const uint kInstanceShadowOnly = 1u, kInstanceAlwaysSeen = 2u, kInstanceCameraFade = 4u, kInstanceFogHidden = 8u;
 
 struct MaterialGpu {  // 80 bytes
   float4 baseColor;

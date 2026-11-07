@@ -701,12 +701,12 @@ class MapStage final : public Stage {
     // The action camera's lift raises the eye and the look point together (the figures' chests at the centre of a close shot).
     const float flatDistance = cam_.distance * std::tan(glm::radians(kFov * 0.5f)) / std::tan(glm::radians(kFlatFov * 0.5f));
     const OrbitView shown = shakenView();  // a scene's "shake" pushes the drawn view about; the camera itself stays put
-    const Camera camera = flat_ ? Camera::lookAt(shown.target + glm::vec3(0.0f, flatDistance, 0.0f), shown.target, glm::radians(kFlatFov), aspect,
-                                                 std::max(kNear, flatDistance - 200.0f), {0.0f, 0.0f, -1.0f})
-                                // the camera goes down with the board the room lowered, by exactly as much (the user, 2026-10-25: "sempre perto
-                                // do tabuleiro se o tabuleiro desceu ela desce exatamente na mesma proporção"): no roomDrop on the eye or the look
-                                : Camera::lookAt(eyeOf(eyeView(shown)) + glm::vec3(0.0f, shotLift_, 0.0f),
-                                                 lookTarget(shown) + glm::vec3(0.0f, shotLift_, 0.0f), glm::radians(kFov), aspect, kNear);
+    Camera camera = flat_ ? Camera::lookAt(shown.target + glm::vec3(0.0f, flatDistance, 0.0f), shown.target, glm::radians(kFlatFov), aspect,
+                                           std::max(kNear, flatDistance - 200.0f), {0.0f, 0.0f, -1.0f})
+                          // the camera goes down with the board the room lowered, by exactly as much (the user, 2026-10-25: "sempre perto
+                          // do tabuleiro se o tabuleiro desceu ela desce exatamente na mesma proporção"): no roomDrop on the eye or the look
+                          : Camera::lookAt(eyeOf(eyeView(shown)) + glm::vec3(0.0f, shotLift_, 0.0f),
+                                           lookTarget(shown) + glm::vec3(0.0f, shotLift_, 0.0f), glm::radians(kFov), aspect, kNear);
     lastCamera_ = camera;
     meshes_.setRegionView(camera.viewProjection());
     meshes_.setView(camera.position, static_cast<float>(size.height) / (2.0f * std::tan(glm::radians((flat_ ? kFlatFov : kFov) * 0.5f))));
@@ -1438,6 +1438,8 @@ class MapStage final : public Stage {
       return;
     }
     if (e.type == SDL_EVENT_MOUSE_MOTION) mouse_ = {e.motion.x, e.motion.y}, mouseWindow_ = e.motion.windowID;
+    if (cutscene_ && cutsceneDialog_ && e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && e.button.button == SDL_BUTTON_LEFT)
+      cutsceneDialog_->requestAdvanceFromAnywhere();
     if (inputHeld || cutscene_) {  // a conversation, the Inn's menus (NpcTalk.h) or an on-map cutscene: nothing reaches the board
       leftDown_.reset(), endPan();
       return;
@@ -1822,7 +1824,8 @@ class MapStage final : public Stage {
     if (!result_.empty() && !victoryScenesPlaying_ && now_ - resultAt_ > kResultDelay) return drawResultScreen();
     if (options_.editorClick) return drawCameraBar();  // the map editor's preview: its own panels around it
     drawAirParticles();
-    drawCutsceneFx();  // a scene's bars, darkening, fade, flash and caption (and their way out once it is over)
+    // Keep every on-map cutscene in the normal game view. Dialogue text is a voice placeholder; no screen-wide fade, tint,
+    // letterbox or flash is drawn over the map. The speaker's line uses the adaptive dialogue panel below.
     if (cutscene_) {  // a cutscene owns the board: no grid, no battle bar, only the camera bar and its own dialogue line
       drawMarks();  // a scene's emotes pop over heads as the fight's numbers do
       drawCameraBar();
@@ -3758,10 +3761,9 @@ class MapStage final : public Stage {
           instances.push_back(li);
         }
       }
-      // Discovery uses the object's footprint, not just a centre buried inside
-      // its own sight-blocking canopy. Once any part is explored, keep the whole
-      // object discoverable; tactical shading still reads the unchanged fog mask.
-      if (fog_) {
+      // Tall scenery uses its footprint, not just a centre buried inside its own canopy. Draw it only while some part is in
+      // current line of sight; explored ground must not leave a grey tree silhouette behind.
+      if (fog_ && m.height >= kOccluderHeight) {
         std::vector<ember::HexPoint> cells;
         const float hx = (h->boundsMax[0] - h->boundsMin[0]) * 0.5f * k;
         const float hz = (h->boundsMax[2] - h->boundsMin[2]) * 0.5f * k;
@@ -3872,16 +3874,12 @@ class MapStage final : public Stage {
     meshes_.setInstances(shown);
   }
 
-  // Smart occlusion (the user, 2026-10-30: "smart oclusion for 3D objects like trees that get into the camera like that, in particular
-  // during ATT and casting sequences"): a tall model (a tree, a big rock: kOccluderHeight and up) whose trunk stands across the line
-  // from the eye to the point the camera looks at (the action shot's too), or right at the lens, is not drawn while it does; its
-  // shadow stays. A model comes back only once it is clear by a margin, so it never flickers at the edge.
+  // A tree is hidden by camera occlusion only when the camera is physically against it. Hiding any tall model whose trunk crossed
+  // the camera-to-focus ray made distant trees disappear while the player was still trying to inspect their texture.
   void updateOccluders(const Camera& camera) {
     if (occluding_.size() != modelCount_) occluding_.assign(modelCount_, 0);
     const glm::vec3 eye = camera.position;
-    const glm::vec3 focus = lookTarget(cam_) + glm::vec3(0.0f, shotLift_, 0.0f);
-    const glm::vec2 e{eye.x, eye.z}, seg = glm::vec2(focus.x, focus.z) - e;
-    const float segLen2 = std::max(glm::dot(seg, seg), 1e-4f);
+    const glm::vec2 e{eye.x, eye.z};
     bool changed = false;
     for (size_t i = 0; i < occluding_.size() && i < pieceBoxes_.size() && i < placedInstances_.size(); ++i) {
       const PieceBox& b = pieceBoxes_[i];
@@ -3889,36 +3887,33 @@ class MapStage final : public Stage {
       bool hide = false;
       if (!flat_ && b.top - base >= kOccluderHeight) {
         const glm::vec2 c{b.x, b.z};
-        const float t = std::clamp(glm::dot(c - e, seg) / segLen2, 0.0f, 1.0f);
-        const float reach = std::max(0.45f * b.radius, 0.6f) * (occluding_[i] ? 1.3f : 1.0f);  // the trunk and the near canopy
-        const float lineY = eye.y + (focus.y - eye.y) * t;
-        const bool across = t > 0.0f && t < 0.92f && glm::distance(c, e + seg * t) < reach && lineY < b.top;
-        const bool atLens = glm::distance(c, e) < b.radius + 1.0f && eye.y < b.top;
-        hide = across || atLens;
+        hide = glm::distance(c, e) < b.radius + 0.3f && eye.y < b.top;
       }
       if (hide != (occluding_[i] != 0)) occluding_[i] = hide ? 1 : 0, changed = true;
     }
     if (changed) pushInstances();
   }
 
-  // The fog's explored cells are monotonic; GPU instances need changing only
-  // when a new object is discovered, never every frame or on a camera movement.
+  // Keep tall scenery strictly inside current line of sight. The fog may remember ground, but it must not
+  // reveal a grey silhouette of a tree whose cells are no longer visible.
   void updateModelVisibility() {
-    if (!fog_ || !modelsPlaced_ || modelSightVersion_ == fog_->version()) return;
+    if (!fog_ || !modelsPlaced_ || (modelSightVersion_ == fog_->version() && modelVisibilityNoFog_ == noFog_)) return;
     modelSightVersion_ = fog_->version();
+    modelVisibilityNoFog_ = noFog_;
     bool changed = false;
-    uint32_t discovered = 0;
+    uint32_t visible = 0;
     for (const auto& [index,cells] : modelSightCells_) {
       if (index >= placedInstances_.size()) continue;
       auto& instance = placedInstances_[index];
-      if (!(instance.flags & kInstanceAlwaysSeen)) {
-        const bool seen = std::any_of(cells.begin(),cells.end(),[&](const auto& cell) { return fog_->state(cell.c,cell.r) != ember::kFogUnseen; });
-        if (seen) { instance.flags |= kInstanceAlwaysSeen; changed = true; }
-      }
-      discovered += (instance.flags & kInstanceAlwaysSeen) ? 1u : 0u;
+      const bool inSight = noFog_ || std::any_of(cells.begin(), cells.end(), [&](const auto& cell) { return fog_->visible(cell.c, cell.r); });
+      const uint32_t before = instance.flags;
+      if (inSight) instance.flags = (instance.flags | kInstanceAlwaysSeen) & ~kInstanceFogHidden;
+      else instance.flags = (instance.flags | kInstanceFogHidden) & ~kInstanceAlwaysSeen;
+      changed = changed || instance.flags != before;
+      visible += inSight ? 1u : 0u;
     }
     if (changed) pushInstances();
-    if (std::getenv("EMBER_STREAM_CHECK")) logInfo("stream discovery: {}/{} models discovered by explored footprint", discovered, modelSightCells_.size());
+    if (std::getenv("EMBER_STREAM_CHECK")) logInfo("stream visibility: {}/{} tall models in current line of sight", visible, modelSightCells_.size());
   }
 
   void updateHearthFireFlipbook(float time) {
@@ -4292,7 +4287,7 @@ class MapStage final : public Stage {
       }
       // A unit drawn at its own size (content/unit-size.json; the user, 2026-10-22: the Cultista Ancestral ~10% smaller), every
       // pose alike, feet kept on the ground.
-      const float size = unitSize(entry ? entry->key : u.key);
+      const float size = unitSize(entry ? entry->key : u.key, entry && entry->group == "npc");
       float boxW = (p ? p->boxW : u.boxW) * size, boxH = (p ? p->boxH : u.boxH) * size;
       const float foot = (p ? p->foot : u.foot) * size;
       glm::vec3 anchor = static_cast<int>(ui) == hero_ && path_.size() > 1 ? heroAt_ : unitWorld(ui);
@@ -4892,14 +4887,13 @@ class MapStage final : public Stage {
     return std::pow(10.0f, -0.4f * (0.026f * a + 4e-9f * a * a * a * a));
   }
 
-  // How many stops darker than the meter the camera exposes (Unreal's exposure compensation curve by scene
-  // brightness): none in full daylight, up to 0.75 as the sun sinks (dawn, dusk), then 2.5 by a moonlit night and more
-  // on a darker one, so dusk reads as dusk and night as night, not as a dim day.
-  // Dusk: 2 stops under the incident reading (the user, 2026-10-19: "a claridade no céu não condiz com pôr do sol": metered on
-  // the ground the camera opened 6 stops from noon while the sky had fallen 3, and the sunset sky came out paler than the
-  // day's; a camera at sunset exposes for the sky and lets the ground go into silhouette).
+  // How many stops darker than the meter the camera exposes: none in full daylight, about 0.75 at dusk, ramping to 2.5 at
+  // night. The old first term added two full stops as soon as dusk began, then added the night curve on top; that buried
+  // characters in shadow even when the moon was up.
   static float nightDarkening(float ev100) {
-    return 2.0f * std::clamp((14.0f - ev100) / 4.0f, 0.0f, 1.0f) + kNightStops * std::clamp((10.0f - ev100) / 12.5f, 0.0f, 1.3f);
+    const float dusk = 0.75f * std::clamp((14.0f - ev100) / 4.0f, 0.0f, 1.0f);
+    const float night = std::clamp((10.0f - ev100) / 12.5f, 0.0f, 1.0f);
+    return glm::mix(dusk, kNightStops, night);
   }
   // The painted flames' glow on screen: full at night, still burning by day (from the camera's EV). A flame shines about as
   // bright as sunlit white, so it glows against anything in shade (the user, 2026-10-21: "velas e braziers devem continuar
@@ -6288,9 +6282,11 @@ class MapStage final : public Stage {
   }
   void updateTurns() {
     // Nobody acts under an on-map cutscene (the user, 2026-11-06: the enemies struck during the Vau's opening), whatever holdTurns says.
-    if (!battle_ || !scene_ || levelUpMoment_ || !result_.empty() || holdTurns || cutscene_ || battle_->roaming()) return;
+    if (!battle_ || !scene_ || levelUpMoment_ || !result_.empty() || holdTurns || cutscene_ || !openingDone_ || !openingQueue_.empty() || battle_->roaming()) return;
     const bool walking = std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
     if (exchange_ || walking || sightPause()) return;
+    // Let an enemy's action shot finish its post-impact hold before advancing the initiative.
+    if (shot_ && now_ < shot_->holdUntil) return;
     // A strike the player asked for once the walk to its hex is over.
     if (pendingStrike_ >= 0) {
       const int foe = pendingStrike_;
@@ -6301,6 +6297,16 @@ class MapStage final : public Stage {
     // An enemy's turn: its walk is over; now its strike, then its turn ends.
     if (enemyTurn_) {
       EnemyTurn t = *enemyTurn_;
+      // Give the player time to identify the enemy and read its framing before the move or projectile begins.
+      if (!t.announced) {
+        if (now_ < t.announceAt) return;
+        t.announced = true;
+        enemyTurn_ = t;
+        if (t.path.size() > 1) {
+          walkAlong(t.unit, t.path);
+          return;
+        }
+      }
       enemyTurn_.reset();
       // The Vigília da Sentinela (docs/SKILLS_LANCER.md): before its blow or its cast, every sentinel whose stance covers one of
       // its targets thrusts first; an attacker that falls never strikes.
@@ -6422,8 +6428,9 @@ class MapStage final : public Stage {
       t.unit = static_cast<size_t>(ui);
       t.steps = cast->steps;
       t.walked = cast->path.size() > 1;
+      t.path = cast->path;
+      t.announceAt = now_ + 1.75f / actionRate();
       enemyTurn_ = t;
-      if (cast->path.size() > 1) walkAlong(static_cast<size_t>(ui), cast->path);
       return;
     }
     const ember::AiPlan plan = battle_->planEnemy(static_cast<size_t>(active));
@@ -6431,8 +6438,9 @@ class MapStage final : public Stage {
     t.unit = static_cast<size_t>(ui);
     t.target = plan.target >= 0 ? sceneUnitOf(plan.target) : -1;
     t.walked = plan.path.size() > 1;
+    t.path = plan.path;
+    t.announceAt = now_ + 1.75f / actionRate();
     enemyTurn_ = t;
-    if (plan.path.size() > 1) walkAlong(static_cast<size_t>(ui), plan.path);
   }
 
   // --- Free roam (an explore mission, Ember mission.explore, and any map with fog of war: the user, 2026-10-17): no turns
@@ -6855,6 +6863,29 @@ class MapStage final : public Stage {
         if (!st.portrait.empty()) line["portrait"] = st.portrait;
         ember::Json tree = {{"id", std::format("cutscene:{}:{}", c.script.id, c.step)}, {"startId", "l"}, {"lines", ember::Json::array({line})}};
         cutsceneDialog_.emplace(tree, npcPortraits(tree, characters()), options_.artRoot);
+        if (ui && cutCam_) {
+          const SpellEffects::Spot spot = unitSpot(*ui);
+          const float h = cardHeightOf(spot);
+          const ImVec2 size = ImGui::GetIO().DisplaySize;
+          const auto head = screenOf(spot.feet + glm::vec3(0.0f, h * 0.78f, 0.0f), size.x, size.y);
+          // A scripted shot may still be looking at an empty parapet after an actor has walked away.
+          if (!head || head->x < size.x * 0.13f || head->x > size.x * 0.87f ||
+              head->y < size.y * 0.15f || head->y > size.y * 0.84f) {
+            CutsceneCam& cc = *cutCam_;
+            cc.from = cam_, cc.fromLift = shotLift_;
+            cc.to = cam_;
+            cc.to.target = spot.feet;
+            const ember::BattleUnit& speakerUnit = battle_->units()[static_cast<size_t>(unitBattle_[*ui])];
+            // View from the bridge deck, facing the near edge inward so the parapet stays behind the actor.
+            const float turn = speakerUnit.y >= battle_->rows() - 4 ? 120.0f : speakerUnit.y <= 3 ? 60.0f : 90.0f;
+            cc.to.yaw = -glm::radians(turn);
+            cc.to.pitch = glm::radians(32.0f);
+            cc.to.distance = std::max(5.0f, closeDistance(h, 0.0f) * 1.8f);
+            cc.toLift = h * 0.4f;
+            cc.t0 = now_, cc.over = 0.45f;
+            applyCutsceneCam();
+          }
+        }
         logInfo("cutscene {}: step {} say {}: \"{}\"", c.script.id, c.step, st.actor, st.text);
         return;
       }
@@ -6930,7 +6961,16 @@ class MapStage final : public Stage {
   // The cutscene's dialogue line (drawPanel): the game's own box over the visible map; the scene goes on when it closes.
   void drawCutsceneDialog() {
     if (!cutsceneDialog_) return;
-    if (cutsceneDialog_->draw(ImGui::GetIO().DisplaySize)) cutsceneDialog_.reset();
+    const ImVec2 size = ImGui::GetIO().DisplaySize;
+    std::optional<ImVec2> head;
+    if (cutscene_ && cutscene_->step < cutscene_->script.steps.size()) {
+      const auto it = cutscene_->units.find(cutscene_->script.steps[cutscene_->step].actor);
+      if (it != cutscene_->units.end() && unitBattle_[it->second] >= 0) {
+        const SpellEffects::Spot spot = unitSpot(it->second);
+        head = screenOf(spot.feet + glm::vec3(0.0f, cardHeightOf(spot) * 0.78f, 0.0f), size.x, size.y);
+      }
+    }
+    if (cutsceneDialog_->draw(size, {}, head.value_or(ImVec2{size.x * 0.5f, size.y * 0.7f}))) cutsceneDialog_.reset();
   }
 
   // The "shot" step (world/CutsceneScript.h): the camera's goal from the step's fields, a field left out keeping the camera's own.
@@ -6969,6 +7009,7 @@ class MapStage final : public Stage {
       if (!battle_->inBounds(st.x, st.y)) return why = std::format("({}, {}) is off the board", st.x, st.y), false;
       to.target = hexSpot({st.x, st.y}).feet;
     }
+    if (st.hasOffset) to.target += glm::vec3(st.offsetX, 0.0f, st.offsetZ);  // clampGoal keeps it within kPivotMarginHexes of the board
     const glm::vec3 pivot = to.target;
     // The turn: the eye stands at +sin(yaw) x, +cos(yaw) z of the pivot (eyeOf), so a heading h (0 north = -z, +east) is yaw -h.
     if (st.hasTurn) {
@@ -6992,7 +7033,8 @@ class MapStage final : public Stage {
     if (st.hasTilt) to.pitch = st.tilt;
     switch (st.distanceKind) {
       case 1: to.distance = st.distance; break;
-      case 2: to.distance = closeDistance(h, sep); break;
+      // The script's card height can be smaller than a posed sprite's visible height. Leave headroom in dialogue close-ups.
+      case 2: to.distance = closeDistance(h, sep) * 1.5f; break;
       case 3: to.distance = closeDistance(h, sep) * 1.8f; break;
       case 4: to.distance = closeDistance(h, sep) * 3.2f; break;
       default: break;
@@ -8588,7 +8630,7 @@ class MapStage final : public Stage {
   }
   // A spot's card height (a hex with nobody on it: a body's, from its body point).
   // content/unit-size.json: {"sizes": {"<catalog key>": factor}}; 1 for everyone else.
-  static float unitSize(const std::string& key) {
+  static float unitSize(const std::string& key, bool npc = false) {
     static const std::unordered_map<std::string, float> sizes = [] {
       std::unordered_map<std::string, float> out;
       std::ifstream in("content/unit-size.json", std::ios::binary);
@@ -8599,7 +8641,9 @@ class MapStage final : public Stage {
       return out;
     }();
     const auto it = sizes.find(key);
-    return it == sizes.end() ? 1.0f : it->second;
+    // NPC cards in the exported catalog use a 2.95-unit box, slightly taller than most protagonists (2.64–2.95).
+    // Keep every pose aligned at 90% of that box (~2.66 units), matching the main characters' shared scale.
+    return (it == sizes.end() ? 1.0f : it->second) * (npc ? 0.9f : 1.0f);
   }
   static float cardHeightOf(const SpellEffects::Spot& s) { return s.cardHeight > 0.0f ? s.cardHeight : std::max(1.2f, (s.body.y - s.feet.y) / 0.45f); }
   // ... and a hex: the unit standing on it, else its ground.
@@ -10043,6 +10087,10 @@ class MapStage final : public Stage {
     const size_t su = static_cast<size_t>(striker);
     ActionShot& shot = openShot();
     frameStep(shot, x, su);
+    // The enemy's full attack stays on screen after impact so the player can read the result before the next turn.
+    const int battleUnit = unitBattle_[su];
+    if (battleUnit >= 0 && battle_->units()[static_cast<size_t>(battleUnit)].side != "player")
+      shot.holdUntil = std::max(shot.holdUntil, x.end + 2.5f / actionRate());
     if (x.release > now_ + 0.05f && !shot.keys.empty()) {
       for (ShotKey& k : shot.keys) k.at = std::max(k.at, x.release);
       const SpellEffects::Spot a = unitSpot(su);
@@ -12958,6 +13006,7 @@ class MapStage final : public Stage {
   std::vector<LocalLight> lights_;
   std::vector<std::pair<uint32_t,std::vector<ember::HexPoint>>> modelSightCells_;
   uint64_t modelSightVersion_ = UINT64_MAX;
+  bool modelVisibilityNoFog_ = false;
   bool modelsPlaced_ = false;
   bool meshStreamOpen_ = false;  // MeshScene's 3D textures may grow past their base (the characters' memory is reserved)
   ember::EdgeStyle placedLook_ = ember::EdgeStyle::Smooth;
@@ -13416,6 +13465,9 @@ class MapStage final : public Stage {
     bool struck = false;
     bool interrupted = false;           // the sentinels' thrusts (Vigília) and the daggers (Nuvem de Adagas) were played before its blow
     bool walked = false;                // it walked this turn (a Nuvem de Adagas beside where it stopped throws at it)
+    bool announced = false;             // the player has had time to see the enemy before it acts
+    float announceAt = 0.0f;
+    std::vector<ember::BattleHex> path;
     std::vector<ember::BattleStep> steps;  // or the spell it casts after its walk
   };
   std::optional<EnemyTurn> enemyTurn_;

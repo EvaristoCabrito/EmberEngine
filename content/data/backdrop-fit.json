@@ -331,6 +331,12 @@
     ],
     "random-plains-ridge-war-stores": [
       "re-panorama-18-v01.png"
+    ],
+    "cemiterio-esquecidos": [
+      "cemiterio-panorama-v01-alpha.png"
+    ],
+    "cemetery-ground-part-ii": [
+      "cemiterio-panorama-v01-alpha.png"
     ]
   },
   "paintings": {
@@ -979,6 +985,16 @@
       "groundTile": 36.0,
       "groundFar": 300.0,
       "groundFromDegrees": 3.0
+    },
+    "cemiterio-panorama-v01-alpha.png": {
+      "horizon": 0.62,
+      "bottom": 1.0,
+      "skyTop": 0.05,
+      "degreesPerHeight": 30.0,
+      "bottomDegrees": 40.0,
+      "spanDegrees": 150.0,
+      "glowColumn": 0.5,
+      "horizonDegrees": -5.0
     }
   }
 }

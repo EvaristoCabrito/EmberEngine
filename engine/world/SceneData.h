@@ -105,6 +105,7 @@ struct HeroPose {
 struct Hero {
   std::string name;
   std::string key;           // the unit's catalog key: a scene unit with the same key is this unit
+  std::string group;         // hero / npc / monster / summon, from the exported catalog
   bool reversed = false;     // drawn facing left (Ember UnitActor.drawnReversed)
   std::vector<HeroPose> poses;
   const HeroPose* find(const std::string& pose) const;

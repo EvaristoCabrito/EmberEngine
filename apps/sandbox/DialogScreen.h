@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <functional>
+#include <optional>
 #include <string>
 
 #include "CampaignUi.h"
@@ -30,24 +31,23 @@ class DialogScreen {
     line_ = tree_.value("startId", "");
   }
 
+  // Cutscenes can advance with a click anywhere, without forcing the player to hit the small button.
+  void requestAdvanceFromAnywhere() { advanceRequested_ = true; }
+
   // Draws it over everything; true once it closed. `onReply` gets each chosen reply (its affinity, if any).
-  bool draw(ImVec2 size, const std::function<void(const ember::Json&)>& onReply = {}) {
+  bool draw(ImVec2 size, const std::function<void(const ember::Json&)>& onReply = {}, std::optional<ImVec2> cutsceneSpeaker = {}) {
     const ember::Json* line = find(line_);
     if (!line) return true;  // a missing line closes rather than soft-locks
-    ImDrawList* bg = ImGui::GetForegroundDrawList();
-    (void)bg;
-    // The veil (ember-veil), catching every click under the panel.
-    ImGui::SetNextWindowPos({0, 0});
-    ImGui::SetNextWindowSize(size);
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 0));
-    ImGui::Begin("##dialogveil", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing);
-    verticalGradient(ImGui::GetWindowDrawList(), {0, 0}, size, {{0.0f, IM_COL32(0, 0, 0, 89)}, {1.0f, IM_COL32(0, 0, 0, 184)}});
-    ImGui::End();
-    ImGui::PopStyleColor();
-    // The panel: max-w-xl, p-5, high on the screen (the user, 2026-11-06: "a janela de texto precisa ficar muito mais para cima ou
-    // ela esconde a ação"): its top at 9% of the height, under the round's header, the board and the actors in view below it.
-    const float w = std::min(576.0f, size.x - 32);
-    ImGui::SetNextWindowPos({size.x / 2, size.y * 0.09f}, ImGuiCond_Always, {0.5f, 0.0f});
+    // A cutscene places a compact box opposite the speaker, leaving the face and the action visible as in a tactical RPG.
+    // Regular conversations keep their existing layout.
+    const float w = cutsceneSpeaker ? std::min(680.0f, std::max(1.0f, size.x - 32.0f)) : std::max(1.0f, size.x - 24.0f);
+    if (cutsceneSpeaker) {
+      const bool bottom = cutsceneSpeaker->y < size.y * 0.5f;
+      const float x = cutsceneSpeaker->x < size.x * 0.5f ? size.x - w - 16.0f : 16.0f;
+      ImGui::SetNextWindowPos({x, bottom ? size.y - 16.0f : 16.0f}, ImGuiCond_Always, {0.0f, bottom ? 1.0f : 0.0f});
+    } else {
+      ImGui::SetNextWindowPos({size.x / 2, 0.0f}, ImGuiCond_Always, {0.5f, 0.0f});
+    }
     ImGui::SetNextWindowSize({w, 0});
     ImGui::SetNextWindowFocus();
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {20, 20});
@@ -106,6 +106,7 @@ class DialogScreen {
     bool advance = false;
     const ember::Json replies = line->value("replies", ember::Json::array());
     if (!replies.empty()) {
+      advanceRequested_ = false;  // Keep explicit reply choices deliberate.
       int i = 0;
       for (const ember::Json& reply : replies) {
         const std::string text = translated(reply.value("text", ""), reply.value("translations", ember::Json()), lang);
@@ -132,11 +133,14 @@ class DialogScreen {
       // line's length, so the box holds one size over the actors), and a small Ok / Próximo sits in its bottom-right corner instead
       // of a bar across the box.
       const bool hasNext = line->value("next", ember::Json()).is_string() && !line->value("next", "").empty();
-      const float areaBottom = std::max(ImGui::GetCursorScreenPos().y, textTop + lineH * 4.0f + 12.0f);
+      const float areaBottom = std::max(ImGui::GetCursorScreenPos().y, textTop + lineH + 4.0f);
       const ImVec2 bsize{hasNext ? 104.0f : 64.0f, 30.0f};
       const ImVec2 p{textX + textW - bsize.x, areaBottom};
       ImGui::SetCursorScreenPos(p);
-      if (emberBigButton("##next", upperUtf8(hasNext ? tr("Próximo") : tr("Ok")).c_str(), p, bsize, true, 13.0f)) {
+      const bool buttonClicked = emberBigButton("##next", upperUtf8(hasNext ? tr("Próximo") : tr("Ok")).c_str(), p, bsize, true, 13.0f);
+      const bool clickAnywhere = advanceRequested_;
+      advanceRequested_ = false;
+      if (clickAnywhere || buttonClicked) {
         next = hasNext ? line->value("next", "") : "";
         advance = true;
       }
@@ -149,6 +153,16 @@ class DialogScreen {
     const ImVec2 a = ImGui::GetWindowPos(), b{a.x + ImGui::GetWindowSize().x, a.y + ImGui::GetWindowSize().y};
     split.SetCurrentChannel(dl, 0);
     emberPanel(dl, a, b);
+    if (cutsceneSpeaker) {
+      const bool bottom = cutsceneSpeaker->y < size.y * 0.5f;
+      const float x = std::clamp(cutsceneSpeaker->x, a.x + 36.0f, b.x - 36.0f);
+      const float edge = bottom ? a.y + 2.0f : b.y - 2.0f;
+      const float tip = edge + (bottom ? -18.0f : 18.0f);
+      const ImVec2 left{x - 14.0f, edge}, right{x + 14.0f, edge}, point{x, tip};
+      dl->AddTriangleFilled(left, right, point, IM_COL32(18, 17, 17, 248));
+      dl->AddLine(left, point, IM_COL32(180, 143, 95, 220), 1.0f);
+      dl->AddLine(point, right, IM_COL32(180, 143, 95, 220), 1.0f);
+    }
     split.Merge(dl);
     ImGui::End();
     ImGui::PopStyleColor(2);
@@ -168,6 +182,7 @@ class DialogScreen {
   ember::Json tree_, portraits_;
   std::filesystem::path public_;
   std::string line_;
+  bool advanceRequested_ = false;
 };
 
 }  // namespace ember

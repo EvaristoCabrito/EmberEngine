@@ -79,7 +79,8 @@ camera again when the scene ends.
   on that actor's side of the pivot, 35° off the line (over its shoulder, as the action camera's two-shot); `tilt` in degrees above
   the ground (0 level, 90 straight down, negative looks up at the sky); `distance` a number or `close` (the subject's card fills the
   frame, `closeDistance`), `medium` (1.8 x), `wide` (3.2 x); `lift` a share of the subject's card height (the chest at 0.38; world units
-  when the pivot is a hex). A field left out keeps what the camera has, so `{"do": "shot", "distance": 3.5, "over": 8}` is a slow
+  when the pivot is a hex); `offset` `[x, z]` world units added to the pivot (up to 4 hexes past the board's edge: a shot over the
+  river). A field left out keeps what the camera has, so `{"do": "shot", "distance": 3.5, "over": 8}` is a slow
   dolly-in. `over` is the move's seconds (a straight move; 0 = the orbit's own glide), and the step waits for it unless `async`;
   `cut` jumps there. The script's `"cameraBack": false` keeps the last view at the end. The eye never goes under the deck
   (`kMinEyePitch`): "from below" shots are level ones.
