@@ -1,0 +1,456 @@
+{
+  "assets": [
+    {
+      "source": "content/assets/game/ember/ember/ember-lantern-v02.glb",
+      "output": "content/assets/game/ember/ember/ember-lantern-v02-textured-v03.glb",
+      "materials_textured": 7,
+      "uv_primitives_added": 4,
+      "textures": [
+        "lantern-smoked-amber-glass-v01.png",
+        "lantern-forged-iron-v01.png",
+        "lantern-aged-bronze-v01.png",
+        "lantern-worn-iron-v01.png",
+        "lantern-amber-flame-v01.png",
+        "lantern-gold-flame-v01.png",
+        "lantern-warm-core-v01.png"
+      ],
+      "bytes": 16254420,
+      "status": "ok"
+    },
+    {
+      "source": "content/assets/game/models/rocks/grey-outcrop.glb",
+      "output": "content/assets/game/models/rocks/grey-outcrop-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "granite-grey-v01.png"
+      ],
+      "bytes": 4310936,
+      "status": "ok"
+    },
+    {
+      "source": "content/assets/game/models/trees/broadleaf.glb",
+      "output": "content/assets/game/models/trees/broadleaf-textured-v03.glb",
+      "materials_textured": 6,
+      "uv_primitives_added": 6,
+      "textures": [
+        "broadleaf-leaves-v01.png",
+        "broadleaf-leaves-v01.png",
+        "broadleaf-leaves-v01.png",
+        "broadleaf-leaves-v01.png",
+        "broadleaf-leaves-v01.png",
+        "broadleaf-bark-v01.png"
+      ],
+      "bytes": 19045360,
+      "status": "ok"
+    },
+    {
+      "source": "content/assets/game/models/trees/dead-oak.glb",
+      "output": "content/assets/game/models/trees/dead-oak-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 1,
+      "textures": [
+        "carvalho-morto-casca-v01.png"
+      ],
+      "bytes": 19439796,
+      "status": "ok"
+    },
+    {
+      "source": "content/assets/game/models/trees/dead-snag.glb",
+      "output": "content/assets/game/models/trees/dead-snag-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 1,
+      "textures": [
+        "arvore-morta-fina-casca-v01.png"
+      ],
+      "bytes": 9129012,
+      "status": "ok"
+    },
+    {
+      "source": "content/assets/game/models/trees/snowy-pine.glb",
+      "output": "content/assets/game/models/trees/snowy-pine-textured-v03.glb",
+      "materials_textured": 6,
+      "uv_primitives_added": 6,
+      "textures": [
+        "pine-needles-v01.png",
+        "pine-needles-v01.png",
+        "pine-needles-v01.png",
+        "pine-needles-v01.png",
+        "pine-bark-v01.png",
+        "snow-powder-v01.png"
+      ],
+      "bytes": 37286032,
+      "status": "ok"
+    },
+    {
+      "source": "content/assets/game/models/trees/twisted-stump.glb",
+      "output": "content/assets/game/models/trees/twisted-stump-textured-v03.glb",
+      "materials_textured": 2,
+      "uv_primitives_added": 2,
+      "textures": [
+        "toco-retorcido-casca-v01.png",
+        "stump-heartwood-v01.png"
+      ],
+      "bytes": 14176832,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/ember/ember-lantern-v02.glb",
+      "output": "content/models/ember/ember-lantern-v02-textured-v03.glb",
+      "materials_textured": 7,
+      "uv_primitives_added": 4,
+      "textures": [
+        "lantern-smoked-amber-glass-v01.png",
+        "lantern-forged-iron-v01.png",
+        "lantern-aged-bronze-v01.png",
+        "lantern-worn-iron-v01.png",
+        "lantern-amber-flame-v01.png",
+        "lantern-gold-flame-v01.png",
+        "lantern-warm-core-v01.png"
+      ],
+      "bytes": 16254420,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/sketchfab/swamp-shack/swamp-shack-water-1k-v01.glb",
+      "output": "content/models/sketchfab/swamp-shack/swamp-shack-water-1k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "swamp-water-v01.png"
+      ],
+      "bytes": 1587832,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/sketchfab/swamp-shack/swamp-shack-water-2k-v01.glb",
+      "output": "content/models/sketchfab/swamp-shack/swamp-shack-water-2k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "swamp-water-v01.png"
+      ],
+      "bytes": 1587832,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/sketchfab/swamp-shack/swamp-shack-water-512-v01.glb",
+      "output": "content/models/sketchfab/swamp-shack/swamp-shack-water-512-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "swamp-water-v01.png"
+      ],
+      "bytes": 1587832,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/black-crested-gibbon-mandible/black-crested-gibbon-mandible-1k-v01.glb",
+      "output": "content/models/smithsonian/black-crested-gibbon-mandible/black-crested-gibbon-mandible-1k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-black-crested-gibbon-mandible-v01.png"
+      ],
+      "bytes": 9108436,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/black-crested-gibbon-mandible/black-crested-gibbon-mandible-2k-v01.glb",
+      "output": "content/models/smithsonian/black-crested-gibbon-mandible/black-crested-gibbon-mandible-2k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-black-crested-gibbon-mandible-v01.png"
+      ],
+      "bytes": 9499216,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/black-crested-gibbon-mandible/black-crested-gibbon-mandible-512-v01.glb",
+      "output": "content/models/smithsonian/black-crested-gibbon-mandible/black-crested-gibbon-mandible-512-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-black-crested-gibbon-mandible-v01.png"
+      ],
+      "bytes": 8969540,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/chimpanzee-fibula-right/chimpanzee-fibula-right-1k-v01.glb",
+      "output": "content/models/smithsonian/chimpanzee-fibula-right/chimpanzee-fibula-right-1k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-chimpanzee-fibula-v01.png"
+      ],
+      "bytes": 5245020,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/chimpanzee-fibula-right/chimpanzee-fibula-right-2k-v01.glb",
+      "output": "content/models/smithsonian/chimpanzee-fibula-right/chimpanzee-fibula-right-2k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-chimpanzee-fibula-v01.png"
+      ],
+      "bytes": 5340784,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/chimpanzee-fibula-right/chimpanzee-fibula-right-512-v01.glb",
+      "output": "content/models/smithsonian/chimpanzee-fibula-right/chimpanzee-fibula-right-512-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-chimpanzee-fibula-v01.png"
+      ],
+      "bytes": 5207972,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/chimpanzee-metatarsal5-right/chimpanzee-metatarsal5-right-1k-v01.glb",
+      "output": "content/models/smithsonian/chimpanzee-metatarsal5-right/chimpanzee-metatarsal5-right-1k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-chimpanzee-metatarsal-v01.png"
+      ],
+      "bytes": 4856272,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/chimpanzee-metatarsal5-right/chimpanzee-metatarsal5-right-2k-v01.glb",
+      "output": "content/models/smithsonian/chimpanzee-metatarsal5-right/chimpanzee-metatarsal5-right-2k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-chimpanzee-metatarsal-v01.png"
+      ],
+      "bytes": 5023864,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/chimpanzee-metatarsal5-right/chimpanzee-metatarsal5-right-512-v01.glb",
+      "output": "content/models/smithsonian/chimpanzee-metatarsal5-right/chimpanzee-metatarsal5-right-512-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-chimpanzee-metatarsal-v01.png"
+      ],
+      "bytes": 4787156,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/gorilla-cranium/gorilla-cranium-1k-v01.glb",
+      "output": "content/models/smithsonian/gorilla-cranium/gorilla-cranium-1k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-gorilla-cranium-v01.png"
+      ],
+      "bytes": 12814896,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/gorilla-cranium/gorilla-cranium-2k-v01.glb",
+      "output": "content/models/smithsonian/gorilla-cranium/gorilla-cranium-2k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-gorilla-cranium-v01.png"
+      ],
+      "bytes": 14824436,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/gorilla-cranium/gorilla-cranium-512-v01.glb",
+      "output": "content/models/smithsonian/gorilla-cranium/gorilla-cranium-512-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-gorilla-cranium-v01.png"
+      ],
+      "bytes": 12168496,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/kloss-gibbon-cranium/kloss-gibbon-cranium-1k-v01.glb",
+      "output": "content/models/smithsonian/kloss-gibbon-cranium/kloss-gibbon-cranium-1k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-kloss-gibbon-cranium-v01.png"
+      ],
+      "bytes": 9518736,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/kloss-gibbon-cranium/kloss-gibbon-cranium-2k-v01.glb",
+      "output": "content/models/smithsonian/kloss-gibbon-cranium/kloss-gibbon-cranium-2k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-kloss-gibbon-cranium-v01.png"
+      ],
+      "bytes": 10173676,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/kloss-gibbon-cranium/kloss-gibbon-cranium-512-v01.glb",
+      "output": "content/models/smithsonian/kloss-gibbon-cranium/kloss-gibbon-cranium-512-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-kloss-gibbon-cranium-v01.png"
+      ],
+      "bytes": 9290572,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/mountain-gorilla-metacarpal2-left/mountain-gorilla-metacarpal2-left-1k-v01.glb",
+      "output": "content/models/smithsonian/mountain-gorilla-metacarpal2-left/mountain-gorilla-metacarpal2-left-1k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-mountain-gorilla-metacarpal-v01.png"
+      ],
+      "bytes": 5890204,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/mountain-gorilla-metacarpal2-left/mountain-gorilla-metacarpal2-left-2k-v01.glb",
+      "output": "content/models/smithsonian/mountain-gorilla-metacarpal2-left/mountain-gorilla-metacarpal2-left-2k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-mountain-gorilla-metacarpal-v01.png"
+      ],
+      "bytes": 6027488,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/mountain-gorilla-metacarpal2-left/mountain-gorilla-metacarpal2-left-512-v01.glb",
+      "output": "content/models/smithsonian/mountain-gorilla-metacarpal2-left/mountain-gorilla-metacarpal2-left-512-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-mountain-gorilla-metacarpal-v01.png"
+      ],
+      "bytes": 5839820,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/mountain-gorilla-ulna-right/mountain-gorilla-ulna-right-1k-v01.glb",
+      "output": "content/models/smithsonian/mountain-gorilla-ulna-right/mountain-gorilla-ulna-right-1k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-mountain-gorilla-ulna-v01.png"
+      ],
+      "bytes": 10504208,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/mountain-gorilla-ulna-right/mountain-gorilla-ulna-right-2k-v01.glb",
+      "output": "content/models/smithsonian/mountain-gorilla-ulna-right/mountain-gorilla-ulna-right-2k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-mountain-gorilla-ulna-v01.png"
+      ],
+      "bytes": 11622992,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/mountain-gorilla-ulna-right/mountain-gorilla-ulna-right-512-v01.glb",
+      "output": "content/models/smithsonian/mountain-gorilla-ulna-right/mountain-gorilla-ulna-right-512-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-mountain-gorilla-ulna-v01.png"
+      ],
+      "bytes": 10116268,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/orangutan-cranium/orangutan-cranium-1k-v01.glb",
+      "output": "content/models/smithsonian/orangutan-cranium/orangutan-cranium-1k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-orangutan-cranium-v01.png"
+      ],
+      "bytes": 11315600,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/orangutan-cranium/orangutan-cranium-2k-v01.glb",
+      "output": "content/models/smithsonian/orangutan-cranium/orangutan-cranium-2k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-orangutan-cranium-v01.png"
+      ],
+      "bytes": 12936876,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/orangutan-cranium/orangutan-cranium-512-v01.glb",
+      "output": "content/models/smithsonian/orangutan-cranium/orangutan-cranium-512-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-orangutan-cranium-v01.png"
+      ],
+      "bytes": 10780520,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/ruffed-lemur-cranium/ruffed-lemur-cranium-1k-v01.glb",
+      "output": "content/models/smithsonian/ruffed-lemur-cranium/ruffed-lemur-cranium-1k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-ruffed-lemur-cranium-v01.png"
+      ],
+      "bytes": 9123156,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/ruffed-lemur-cranium/ruffed-lemur-cranium-2k-v01.glb",
+      "output": "content/models/smithsonian/ruffed-lemur-cranium/ruffed-lemur-cranium-2k-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-ruffed-lemur-cranium-v01.png"
+      ],
+      "bytes": 9746548,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/smithsonian/ruffed-lemur-cranium/ruffed-lemur-cranium-512-v01.glb",
+      "output": "content/models/smithsonian/ruffed-lemur-cranium/ruffed-lemur-cranium-512-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "bone-ruffed-lemur-cranium-v01.png"
+      ],
+      "bytes": 8907916,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/treasure/coin-pile-v01.glb",
+      "output": "content/models/treasure/coin-pile-v01-textured-v03.glb",
+      "materials_textured": 1,
+      "uv_primitives_added": 0,
+      "textures": [
+        "coin-pile-gold-v01.png"
+      ],
+      "bytes": 4118932,
+      "status": "ok"
+    }
+  ]
+}

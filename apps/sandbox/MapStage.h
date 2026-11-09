@@ -452,6 +452,13 @@ class MapStage final : public Stage {
       logInfo("scene {}: {} cards, {} models, {} units, {} architecture pieces ({} built)", scene_->map, scene_->cards.size(),
               scene_->models.size(), scene_->units.size(), scene_->architecture, arch_.size());
       arrangeScene();
+      // The map's own party (MapDraft::partyHeroes, Stone Bridge 2026-11-09: only Kael, Neera and Voss there, whoever else the save
+      // has): the party cut to those; with no party given (a direct run), exactly those.
+      if (const std::vector<std::string>& only = board_->draft().partyHeroes; !only.empty()) {
+        if (options_.partyRoster) std::erase_if(*options_.partyRoster, [&](const std::string& h) { return std::find(only.begin(), only.end(), h) == only.end(); });
+        else options_.partyRoster = std::set<std::string>(only.begin(), only.end());
+        logInfo("party: this map takes only {} of the party", only.size());
+      }
       if (options_.partyRoster)  // the map's guest heroes (MapDraft::guestHeroes) fight beside the party here, recruited or not
         for (const std::string& g : board_->draft().guestHeroes) options_.partyRoster->insert(g);
       if (options_.partyRoster)  // the campaign's party: the heroes not recruited leave, a freed hero is no longer seated as a neutral
@@ -6864,7 +6871,7 @@ class MapStage final : public Stage {
         if (!st.portrait.empty()) line["portrait"] = st.portrait;
         ember::Json tree = {{"id", std::format("cutscene:{}:{}", c.script.id, c.step)}, {"startId", "l"}, {"lines", ember::Json::array({line})}};
         cutsceneDialog_.emplace(tree, npcPortraits(tree, characters()), options_.artRoot);
-        if (ui && cutCam_) {
+        if (ui && cutCam_ && c.script.id.starts_with("stone-bridge-")) {
           const SpellEffects::Spot spot = unitSpot(*ui);
           const float h = cardHeightOf(spot);
           const ImVec2 size = ImGui::GetIO().DisplaySize;
@@ -6982,6 +6989,10 @@ class MapStage final : public Stage {
   void drawCutsceneDialog() {
     if (!cutsceneDialog_) return;
     const ImVec2 size = ImGui::GetIO().DisplaySize;
+    if (!cutscene_ || !cutscene_->script.id.starts_with("stone-bridge-")) {
+      if (cutsceneDialog_->draw(size)) cutsceneDialog_.reset();
+      return;
+    }
     std::optional<ImVec2> head;
     std::vector<ImVec2> heads;
     if (cutscene_ && cutscene_->step < cutscene_->script.steps.size()) {
@@ -7063,7 +7074,7 @@ class MapStage final : public Stage {
     switch (st.distanceKind) {
       case 1: to.distance = st.distance; break;
       // The script's card height can be smaller than a posed sprite's visible height. Leave headroom in dialogue close-ups.
-      case 2: to.distance = closeDistance(h, sep) * 1.5f; break;
+      case 2: to.distance = closeDistance(h, sep) * (c.script.id.starts_with("stone-bridge-") ? 1.5f : 1.0f); break;
       case 3: to.distance = closeDistance(h, sep) * 1.8f; break;
       case 4: to.distance = closeDistance(h, sep) * 3.2f; break;
       default: break;

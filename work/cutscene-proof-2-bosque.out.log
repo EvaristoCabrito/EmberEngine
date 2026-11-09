@@ -1,0 +1,74 @@
+[info] mounted build/sprites/battle.pak (3340 assets)
+[info] mounted build/meshes/props-v42.pak (780 assets)
+[info] mounted build/meshes\architecture.pak (32 assets)
+[info] mounted build/meshes\effects.pak (5 assets)
+[info] mounted build/ground/ground-v78-cemetery-makeover-v01.pak (374 assets)
+[info] GPU: AMD Radeon(TM) RX 6400 (Vulkan 1.4.315, driver 0x800161)
+[info] transfer queue: dedicated (family 2)
+[info] pipeline cache: 101586444 bytes restored for this GPU/driver
+[info] bindless: 65536 textures, 16384 storage images, 256 samplers, 4096 storage buffers
+[info] bindless: creating descriptor set layout
+[info] bindless: descriptor set layout ready
+[info] bindless: creating descriptor pool
+[info] bindless: descriptor pool ready
+[info] bindless: allocating descriptor set
+[info] bindless: descriptor set ready
+[info] bindless: creating pipeline layout
+[info] bindless: ready
+[info] startup: GPU timer ready
+[info] startup: renderer resources begin
+[info] startup: renderer frame buffers ready
+[info] pipeline compute: volumetrics_v1.CSInject creating
+[info] pipeline compute: volumetrics_v1.CSInject ready in 1 ms
+[info] pipeline compute: volumetrics_v1.CSIntegrate creating
+[info] pipeline compute: volumetrics_v1.CSIntegrate ready in 0 ms
+[info] pipeline compute: volumetrics_clouds006.CSMaterial creating
+[info] pipeline compute: volumetrics_clouds006.CSMaterial ready in 0 ms
+[info] pipeline compute: volumetrics_clouds006.CSInject creating
+[info] pipeline compute: volumetrics_clouds006.CSInject ready in 0 ms
+[info] pipeline compute: volumetrics_clouds006.CSIntegrate creating
+[info] pipeline compute: volumetrics_clouds006.CSIntegrate ready in 0 ms
+[info] startup: renderer volumetrics ready
+[info] startup: renderer images and buffers ready
+[info] startup: renderer targets ready
+[info] pipeline graphics: triangle.VSMain + triangle.PSMain creating
+[info] pipeline graphics: triangle.VSMain + triangle.PSMain ready in 0 ms
+[info] pipeline graphics: tonemap.VSMain + tonemap.PSMain creating
+[info] pipeline graphics: tonemap.VSMain + tonemap.PSMain ready in 0 ms
+[info] pipeline graphics: ground.VSMain + ground.PSMain creating
+[info] pipeline graphics: ground.VSMain + ground.PSMain ready in 0 ms
+[info] pipeline graphics: terrain.VSMain + terrain.PSMain creating
+[info] pipeline graphics: terrain.VSMain + terrain.PSMain ready in 1 ms
+[info] pipeline graphics: terrain.VSShadow + terrain.PSShadow creating
+[info] pipeline graphics: terrain.VSShadow + terrain.PSShadow ready in 0 ms
+[info] pipeline graphics: water.VSMain + water.PSMain creating
+[info] pipeline graphics: water.VSMain + water.PSMain ready in 3 ms
+[info] pipeline graphics: sprites.VSMain + sprites.PSMain creating
+[info] pipeline graphics: sprites.VSMain + sprites.PSMain ready in 0 ms
+[info] pipeline graphics: sprites.VSMain + sprites.PSDepth creating
+[info] pipeline graphics: sprites.VSMain + sprites.PSDepth ready in 0 ms
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSDepth creating
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSDepth ready in 0 ms
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSMain creating
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSMain ready in 0 ms
+[info] pipeline graphics: effects.VSMain + effects.PSMain creating
+[info] pipeline graphics: effects.VSMain + effects.PSMain ready in 0 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
+[info] startup: renderer graphics pipelines ready
+[info] pipeline compute: cull.CSInstancesEarly creating
+[info] pipeline compute: cull.CSInstancesEarly ready in 0 ms
+[info] pipeline compute: cull.CSInstancesLate creating
+[info] pipeline compute: cull.CSInstancesLate ready in 0 ms
+[info] pipeline compute: hiz.CSDownsample creating
+[info] pipeline compute: hiz.CSDownsample ready in 0 ms
+[info] pipeline compute: bloom.CSDown creating
+[info] pipeline compute: bloom.CSDown ready in 0 ms
+[info] pipeline compute: bloom.CSUp creating
+[info] pipeline compute: bloom.CSUp ready in 0 ms
+[info] pipeline compute: cull.CSPrepare creating
+[info] pipeline compute: cull.CSPrepare ready in 0 ms

@@ -114,7 +114,8 @@ whatever the line's length, and a small Ok / Próximo sits in the area's bottom-
 Stone Bridge framing update (2026-11-07): a cutscene line uses a compact panel in a corner opposite the projected speaker's
 head, with a short pointer toward the speaker. Normal dialogue keeps its existing layout. If a scripted shot leaves the speaker
 outside the central view, the camera glides back to that actor from the bridge deck. Scripted close shots leave extra headroom;
-shots along the south edge look inward, keeping the action in front of the parapet.
+shots along the south edge look inward, keeping the action in front of the parapet. Stone Bridge's numeric close shots now stay
+at least 9 world units from the subject so the character and surrounding action remain legible.
 
 Validation (`world/CutsceneScript.cpp`): wrong `format`, no `id`, no actors, an empty step list, an unknown action, an
 undeclared actor, a malformed coordinate, duration, heading or distance refuse the file whole, naming the step.

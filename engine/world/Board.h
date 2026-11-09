@@ -160,6 +160,10 @@ struct MapDraft {
   // Heroes who fight on this map only, whoever the save has recruited ("guestHeroes": ["Salazar"]; The Devouring Root, 2026-11-05):
   // their player spawns stay in the campaign's party for this fight, and nothing of theirs is written into the save after it.
   std::vector<std::string> guestHeroes;
+  // The only heroes of the party who come to this map ("partyHeroes": ["Kael", "Neera", "Voss"]; Stone Bridge, 2026-11-09: the story
+  // has only those three at that moment, whoever else the save has recruited): the campaign's party is cut to these (each still has to
+  // be in it), Modo teste seats exactly these; the guest heroes come as well. Absent or empty = the whole party, as before.
+  std::vector<std::string> partyHeroes;
 
   // The map's backdrop pick (Ember draft.backgroundImage: absent = the map's own, "" = none) and its lighting
   // sliders as authored (absent = the time of day's default).

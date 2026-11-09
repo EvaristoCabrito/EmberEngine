@@ -228,7 +228,7 @@
     {
       "do": "shot",
       "on": "lio",
-      "distance": 3.4,
+      "distance": 9,
       "over": 6.0,
       "async": true
     },
@@ -526,7 +526,7 @@
       ],
       "turn": "e",
       "tilt": 5,
-      "distance": 7,
+      "distance": 9,
       "lift": 0.5,
       "cut": true
     },
@@ -563,12 +563,11 @@
     {
       "do": "shot",
       "on": "butcher",
-      "turn": "e",
-      "tilt": 8,
+      "turn": "w",
+      "tilt": 20,
       "distance": "close",
       "lift": 0.38,
-      "over": 6.0,
-      "async": true
+      "over": 1.2
     },
     {
       "do": "say",
@@ -758,7 +757,7 @@
       "on": "butcher",
       "look": "kael",
       "tilt": -8,
-      "distance": 5,
+      "distance": 9,
       "lift": 0.0,
       "cut": true
     },
@@ -887,7 +886,7 @@
       ],
       "turn": "e",
       "tilt": 8,
-      "distance": 6,
+      "distance": 9,
       "lift": 0.6,
       "cut": true
     },
@@ -955,7 +954,7 @@
       "on": "voss",
       "look": "vora",
       "tilt": 10,
-      "distance": 4.5,
+      "distance": 9,
       "lift": 0.4,
       "cut": true
     },
@@ -1026,11 +1025,14 @@
     },
     {
       "do": "shot",
-      "turn": "e",
+      "turn": "w",
       "tilt": 28,
-      "distance": 12,
+      "distance": 14,
       "cut": true,
-      "on": "butcher"
+      "between": [
+        "butcher",
+        "vora"
+      ]
     },
     {
       "do": "sfx",
@@ -1106,7 +1108,7 @@
       ],
       "turn": "w",
       "tilt": 4,
-      "distance": 8,
+      "distance": 9,
       "lift": 0.4,
       "cut": true
     },
@@ -1197,7 +1199,7 @@
       ],
       "turn": "e",
       "tilt": 14,
-      "distance": 7,
+      "distance": 9,
       "lift": 0.5
     },
     {
@@ -1228,7 +1230,7 @@
       "on": "kael",
       "turn": "e",
       "tilt": 10,
-      "distance": 4,
+      "distance": 9,
       "lift": 0.5
     },
     {

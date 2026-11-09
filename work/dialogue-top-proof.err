@@ -1,0 +1,4 @@
+[ERROR] battle: cannot read content/data/battle-rules.json (export it with tools/scripts/data/export_battle.ts)
+[warn] slow stage frame: 175.2 ms = sprites 172.7, uploads 1.4, rest 0.1
+[warn] slow frame: 180.2 ms busy = assets 0.0, stage 175.7, ui 0.5, render 4.1 (record 3.8, submit 0.1, present 0.0; waits 0.1 not counted)
+[warn] slow frame: 458.9 ms busy = assets 0.0, stage 0.1, ui 0.4, render 483.9 (record 0.6, submit 0.1, present 0.0; waits 25.5 not counted)

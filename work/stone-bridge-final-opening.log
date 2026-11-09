@@ -1,0 +1,566 @@
+[info] mounted .\build\sprites\battle.pak (3340 assets)
+[info] mounted .\build\meshes\props-v42.pak (780 assets)
+[info] mounted .\build\meshes\architecture.pak (32 assets)
+[info] mounted .\build\meshes\effects.pak (5 assets)
+[info] mounted .\build\ground\ground-v77-random-encounters-v01.pak (360 assets)
+[info] GPU: AMD Radeon(TM) RX 6400 (Vulkan 1.4.315, driver 0x800161)
+[info] transfer queue: dedicated (family 2)
+[info] pipeline cache: 106695608 bytes restored for this GPU/driver
+[info] bindless: 65536 textures, 16384 storage images, 256 samplers, 4096 storage buffers
+[info] bindless: creating descriptor set layout
+[info] bindless: descriptor set layout ready
+[info] bindless: creating descriptor pool
+[info] bindless: descriptor pool ready
+[info] bindless: allocating descriptor set
+[info] bindless: descriptor set ready
+[info] bindless: creating pipeline layout
+[info] bindless: ready
+[info] startup: GPU timer ready
+[info] startup: renderer resources begin
+[info] startup: renderer frame buffers ready
+[info] pipeline compute: volumetrics_v1.CSInject creating
+[info] pipeline compute: volumetrics_v1.CSInject ready in 0 ms
+[info] pipeline compute: volumetrics_v1.CSIntegrate creating
+[info] pipeline compute: volumetrics_v1.CSIntegrate ready in 0 ms
+[info] pipeline compute: volumetrics_clouds006.CSMaterial creating
+[info] pipeline compute: volumetrics_clouds006.CSMaterial ready in 0 ms
+[info] pipeline compute: volumetrics_clouds006.CSInject creating
+[info] pipeline compute: volumetrics_clouds006.CSInject ready in 0 ms
+[info] pipeline compute: volumetrics_clouds006.CSIntegrate creating
+[info] pipeline compute: volumetrics_clouds006.CSIntegrate ready in 0 ms
+[info] startup: renderer volumetrics ready
+[info] startup: renderer images and buffers ready
+[info] startup: renderer targets ready
+[info] pipeline graphics: triangle.VSMain + triangle.PSMain creating
+[info] pipeline graphics: triangle.VSMain + triangle.PSMain ready in 0 ms
+[info] pipeline graphics: tonemap.VSMain + tonemap.PSMain creating
+[info] pipeline graphics: tonemap.VSMain + tonemap.PSMain ready in 0 ms
+[info] pipeline graphics: ground.VSMain + ground.PSMain creating
+[info] pipeline graphics: ground.VSMain + ground.PSMain ready in 0 ms
+[info] pipeline graphics: terrain.VSMain + terrain.PSMain creating
+[info] pipeline graphics: terrain.VSMain + terrain.PSMain ready in 0 ms
+[info] pipeline graphics: terrain.VSShadow + terrain.PSShadow creating
+[info] pipeline graphics: terrain.VSShadow + terrain.PSShadow ready in 0 ms
+[info] pipeline graphics: water.VSMain + water.PSMain creating
+[info] pipeline graphics: water.VSMain + water.PSMain ready in 2 ms
+[info] pipeline graphics: sprites.VSMain + sprites.PSMain creating
+[info] pipeline graphics: sprites.VSMain + sprites.PSMain ready in 0 ms
+[info] pipeline graphics: sprites.VSMain + sprites.PSDepth creating
+[info] pipeline graphics: sprites.VSMain + sprites.PSDepth ready in 0 ms
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSDepth creating
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSDepth ready in 0 ms
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSMain creating
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSMain ready in 0 ms
+[info] pipeline graphics: effects.VSMain + effects.PSMain creating
+[info] pipeline graphics: effects.VSMain + effects.PSMain ready in 0 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
+[info] startup: renderer graphics pipelines ready
+[info] pipeline compute: cull.CSInstancesEarly creating
+[info] pipeline compute: cull.CSInstancesEarly ready in 0 ms
+[info] pipeline compute: cull.CSInstancesLate creating
+[info] pipeline compute: cull.CSInstancesLate ready in 0 ms
+[info] pipeline compute: hiz.CSDownsample creating
+[info] pipeline compute: hiz.CSDownsample ready in 0 ms
+[info] pipeline compute: bloom.CSDown creating
+[info] pipeline compute: bloom.CSDown ready in 0 ms
+[info] pipeline compute: bloom.CSUp creating
+[info] pipeline compute: bloom.CSUp ready in 0 ms
+[info] pipeline compute: cull.CSPrepare creating
+[info] pipeline compute: cull.CSPrepare ready in 0 ms
+[info] pipeline compute: cull.CSTraverse creating
+[info] pipeline compute: cull.CSTraverse ready in 0 ms
+[info] pipeline compute: cull.CSPrepareDraw creating
+[info] pipeline compute: cull.CSPrepareDraw ready in 0 ms
+[info] pipeline compute: resolve.CSResolve creating
+[info] pipeline compute: resolve.CSResolve ready in 1 ms
+[info] pipeline compute: resolve.CSSky creating
+[info] pipeline compute: resolve.CSSky ready in 1 ms
+[info] pipeline compute: resolve_panorama.CSResolve creating
+[info] pipeline compute: resolve_panorama.CSResolve ready in 1 ms
+[info] pipeline compute: resolve_panorama.CSSky creating
+[info] pipeline compute: resolve_panorama.CSSky ready in 1 ms
+[info] pipeline compute: lights.CSClusters creating
+[info] pipeline compute: lights.CSClusters ready in 0 ms
+[info] pipeline compute: volume.CSInject creating
+[info] pipeline compute: volume.CSInject ready in 0 ms
+[info] pipeline compute: atmosphere.CSTransmittance creating
+[info] pipeline compute: atmosphere.CSTransmittance ready in 0 ms
+[info] pipeline compute: atmosphere.CSMultiScattering creating
+[info] pipeline compute: atmosphere.CSMultiScattering ready in 0 ms
+[info] pipeline compute: atmosphere.CSSkyView creating
+[info] pipeline compute: atmosphere.CSSkyView ready in 0 ms
+[info] pipeline compute: atmosphere.CSAerial creating
+[info] pipeline compute: atmosphere.CSAerial ready in 0 ms
+[info] pipeline compute: atmosphere.CSAmbient creating
+[info] pipeline compute: atmosphere.CSAmbient ready in 0 ms
+[info] pipeline compute: skyreflect.CSBase creating
+[info] pipeline compute: skyreflect.CSBase ready in 0 ms
+[info] pipeline compute: skyreflect.CSFilter creating
+[info] pipeline compute: skyreflect.CSFilter ready in 0 ms
+[info] pipeline compute: skyreflect.CSCloudShadow creating
+[info] pipeline compute: skyreflect.CSCloudShadow ready in 0 ms
+[info] pipeline compute: cloudsvol.CSNoiseBase creating
+[info] pipeline compute: cloudsvol.CSNoiseBase ready in 0 ms
+[info] pipeline compute: cloudsvol.CSNoiseDetail creating
+[info] pipeline compute: cloudsvol.CSNoiseDetail ready in 0 ms
+[info] pipeline compute: cloudsvol.CSMarch creating
+[info] pipeline compute: cloudsvol.CSMarch ready in 0 ms
+[info] pipeline compute: sunglare.CSGlare creating
+[info] pipeline compute: sunglare.CSGlare ready in 0 ms
+[info] pipeline compute: probes.CSRelight creating
+[info] pipeline compute: probes.CSRelight ready in 0 ms
+[info] pipeline compute: volume.CSIntegrate creating
+[info] pipeline compute: volume.CSIntegrate ready in 0 ms
+[info] pipeline compute: fog_look001.CSMarch creating
+[info] pipeline compute: fog_look001.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look001.CSComposite creating
+[info] pipeline compute: fog_look001.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look002.CSMarch creating
+[info] pipeline compute: fog_look002.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look002.CSComposite creating
+[info] pipeline compute: fog_look002.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look003.CSMarch creating
+[info] pipeline compute: fog_look003.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look003.CSComposite creating
+[info] pipeline compute: fog_look003.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look004.CSMarch creating
+[info] pipeline compute: fog_look004.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look004.CSComposite creating
+[info] pipeline compute: fog_look004.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look005.CSMarch creating
+[info] pipeline compute: fog_look005.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look005.CSComposite creating
+[info] pipeline compute: fog_look005.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look006.CSMarch creating
+[info] pipeline compute: fog_look006.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look006.CSComposite creating
+[info] pipeline compute: fog_look006.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look007.CSMarch creating
+[info] pipeline compute: fog_look007.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look007.CSComposite creating
+[info] pipeline compute: fog_look007.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look008.CSMarch creating
+[info] pipeline compute: fog_look008.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look008.CSComposite creating
+[info] pipeline compute: fog_look008.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look009.CSMarch creating
+[info] pipeline compute: fog_look009.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look009.CSComposite creating
+[info] pipeline compute: fog_look009.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look011.CSMarch creating
+[info] pipeline compute: fog_look011.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look011.CSComposite creating
+[info] pipeline compute: fog_look011.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look010.CSMarch creating
+[info] pipeline compute: fog_look010.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look010.CSComposite creating
+[info] pipeline compute: fog_look010.CSComposite ready in 0 ms
+[info] startup: renderer compute pipelines ready
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSMain creating
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSMain ready in 0 ms
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSShadow creating
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSShadow ready in 0 ms
+[info] pipeline graphics: sprites.VSShadow + sprites.PSShadow creating
+[info] pipeline graphics: sprites.VSShadow + sprites.PSShadow ready in 0 ms
+[info] startup: renderer ready
+[info] map thebridge 'A Ponte de Pedra': 40x21 hexes, smooth 277200 triangles, hard 20160 triangles, 1 baked layers, 12 textures, 16.5 MB geometry
+[info] volumetrics: 7 profiles from content/atmosphere/v1/profiles.json
+[info] world clock: this map has no campaign clock: it starts at 19:30:00 and runs from there
+[info] board heights: lowest ground 0.00, highest 0.00 (the floor image lies under the lowest)
+[info] scene ./build/campaign/scenes/thebridge030.scene.json: built by SceneBuilder (EmberEngine props); 1 kinds left out
+[info] scene thebridge: 14 cards, 3 models, 13 units, 80 architecture pieces (80 built)
+[info] poses: 13 of 13 map units in the catalog, 15 poses between them
+[info] progression: 7 heroes; enemies keep their class's own gains
+[info] enemy ranks: 10 ranks, 26 classes ranked (others F)
+[info] battle: 83 cells made solid under EmberEngine props
+[info] cutscene: Harlan waits off the board for its scene
+[info] cutscene: Dorn waits off the board for its scene
+[info] cutscene: Pell waits off the board for its scene
+[info] cutscene: Brakk waits off the board for its scene
+[info] cutscene: Orso waits off the board for its scene
+[info] cutscene: Vora waits off the board for its scene
+[info] cutscene: Vinn waits off the board for its scene
+[info] cutscene: O Carniceiro waits off the board for its scene
+[info] battle thebridge: 13 of 13 units in play
+[info] panoramas thebridge: 1 (the newest opens: bridge-panorama-v02-alpha.png)
+[info] pipeline compute: cloud_legacy004.CSMarch creating
+[info] pipeline compute: cloud_legacy004.CSMarch ready in 0 ms
+[info] pipeline compute: cloud_legacy004_sky.CSCloudShadow creating
+[info] pipeline compute: cloud_legacy004_sky.CSCloudShadow ready in 0 ms
+[info] pipeline compute: cloud_legacy004_sky.CSBase creating
+[info] pipeline compute: cloud_legacy004_sky.CSBase ready in 0 ms
+[warn] slow frame: 230.7 ms busy = assets 0.1, stage 3.8, ui 62.2, render 164.6 (record 160.1, submit 4.5, present 0.0; waits 0.0 not counted)
+[info] sprites: roster lists 1113 clips
+[info] sprites: Personagens Alta: the cast 491 MB at full resolution, the others 131 MB (GPU 2701 MB free before the fight)
+[info] sprites: full-clip pool 8 x 144 MB (largest clip 144.5 MB)
+[info] sprites: full-clip pool set up in 176.9 ms
+[warn] slow stage frame: 209.3 ms = sprites 206.5, uploads 2.0, rest 0.2
+[warn] slow frame: 215.1 ms busy = assets 1.0, stage 209.3, ui 2.2, render 2.7 (record 2.5, submit 0.1, present 0.0; waits 0.1 not counted)
+[info] sprites: the fight's 55 clips on the GPU 2.13 s after they were asked for
+[info] sprites:   voss-veo-leve-passo 131 MB (full 131 MB)
+[info] sprites:   neera/neera-v2-001 110 MB (full 110 MB)
+[info] sprites:   BasePikeman 87 MB (full 87 MB)
+[info] sprites:   militia-v2 74 MB (full 74 MB)
+[info] sprites:   BaseCrossbowman 66 MB (full 66 MB)
+[info] sprites:   theButcher 60 MB (full 60 MB)
+[info] sprites:   Kael_Final/kael-final-002 33 MB (full 33 MB)
+[info] sprites:   wardog2 30 MB (full 30 MB)
+[info] sprites:   neera-hydra 17 MB (full 17 MB)
+[info] sprites:   neera 8 MB (full 8 MB)
+[info] sprites:   lancer 2 MB (full 2 MB)
+[info] sprites:   villagerF1 1 MB (full 1 MB)
+[info] sprites:   voss-final 0 MB (full 0 MB)
+[info] sprites: GPU memory 1898 MB allocated by the game, 1981 MB used, budget 3227 MB, heap 3824 MB
+[info] cutscene stone-bridge-01-o-pedagio: start (12 actors, 189 steps)
+[info] cutscene stone-bridge-01-o-pedagio: step 0 bars on
+[info] cutscene stone-bridge-01-o-pedagio: step 1 fade to black over 0.00 s
+[info] cutscene stone-bridge-01-o-pedagio: step 2 music stop
+[info] cutscene stone-bridge-01-o-pedagio: step 3 shot: pivot (-27.3, 0.0) turn -90 deg tilt 40 deg distance 18.0 lift 0.40 over 0.0 s (cut)
+[info] cutscene stone-bridge-01-o-pedagio: step 4 sfx HeavySteps1-Balanced-Medium.mp3 x 0.60
+[info] cutscene stone-bridge-01-o-pedagio: step 5 wait 1.20 s
+[info] meshes: textures 9 of 9 at the size the camera needs, 9 at full size (3 MB on the GPU, 1246 MB free)
+[info] camera: meter 2.895 lux, EV 0.21, darkening 2.00 stops, exposure 0.17989, key 5.13 lux at elevation 21.4 deg
+[info] sky: hour 19.50, moon full (default) (disc texture 48, radius 2.70 deg, glow 5.56) at elevation 21.4 deg, azimuth -121.9 deg (the camera looks at azimuth 90.0, elevation -40.0), off screen
+[info] cutscene stone-bridge-01-o-pedagio: step 6 sfx DeadArmor.mp3 x 0.50
+[info] cutscene stone-bridge-01-o-pedagio: step 7 wait 1.00 s
+[info] cutscene stone-bridge-01-o-pedagio: step 8 sfx Blunt2.mp3 x 0.80
+[info] cutscene stone-bridge-01-o-pedagio: step 9 wait 0.80 s
+[info] cutscene stone-bridge-01-o-pedagio: step 10 fade to clear over 2.00 s
+[info] cutscene stone-bridge-01-o-pedagio: step 11 wait 2.00 s
+[info] cutscene stone-bridge-01-o-pedagio: step 12 shot: pivot (-29.0, 0.0) turn -90 deg tilt 38 deg distance 22.0 lift 0.40 over 5.0 s
+[info] cutscene stone-bridge-01-o-pedagio: step 13 shot: pivot (-8.2, 0.0) turn -90 deg tilt 20 deg distance 26.0 lift 0.40 over 4.0 s (async)
+[info] cutscene stone-bridge-01-o-pedagio: step 14 music Ember Ashes Ambient OST 0-Balanced-High.mp3
+[info] cutscene stone-bridge-01-o-pedagio: step 15 move kael: (4, 10) is taken by Selene, walks to (5, 10)
+[info] cutscene stone-bridge-01-o-pedagio: step 15 move kael (4, 9) -> (5, 10), 1 hexes
+[info] cutscene stone-bridge-01-o-pedagio: step 16 move voss (1, 6) -> (3, 8), 3 hexes
+[info] cutscene stone-bridge-01-o-pedagio: step 17 move neera (1, 15) -> (3, 12), 3 hexes
+[info] cutscene stone-bridge-01-o-pedagio: step 18 move lio (3, 11) -> (5, 11), 2 hexes
+[info] cutscene stone-bridge-01-o-pedagio: step 19 shot: pivot (-29.0, -3.0) turn 14 deg tilt 12 deg distance 17.4 lift 1.14 over 1.5 s
+[info] cutscene stone-bridge-01-o-pedagio: step 20 say voss: "Escada, túnel, mais escada… Se eu nunca mais vir um degrau na vida, tá ótimo."
+[info] captured 1600x900 -> .\work\stone-bridge-final-opening-000.png
+[info] capture GPU frame: 16.1592 ms
+[info] capture GPU light clusters: 0.0068 ms
+[info] capture GPU atmosphere: 1.0875 ms
+[info] capture GPU clouds: 0.0336 ms
+[info] capture GPU cloud shadow: 0.1206 ms
+[info] capture GPU sky reflect: 3.0503 ms
+[info] capture GPU card shadow: 0.0355 ms
+[info] capture GPU volumetrics: 0.2379 ms
+[info] capture GPU fog injection: 0.2182 ms
+[info] capture GPU fog integration: 0.0187 ms
+[info] capture GPU cull early: 0.0526 ms
+[info] capture GPU draw early: 0.1052 ms
+[info] capture GPU depth pyramid: 0.0526 ms
+[info] capture GPU cull late: 0.0360 ms
+[info] capture GPU draw late: 0.0014 ms
+[info] capture GPU depth pyramid (next frame): 0.0556 ms
+[info] capture GPU resolve: 1.2278 ms
+[info] capture GPU scene: 8.2956 ms
+[info] capture GPU terrain: 8.0885 ms
+[info] capture GPU fog bank: 1.1219 ms
+[info] capture GPU bloom: 0.3258 ms
+[info] capture GPU tonemap: 0.1447 ms
+[info] capture GPU ui: 0.1386 ms
+[warn] slow frame: 578.8 ms busy = assets 0.0, stage 0.4, ui 1.3, render 590.0 (record 0.8, submit 0.1, present 0.0; waits 12.9 not counted)
+[info] cutscene stone-bridge-01-o-pedagio: step 21 move lio (5, 11) -> (7, 19), 8 hexes
+[info] cutscene stone-bridge-01-o-pedagio: step 22 shot: pivot (-21.2, 13.5) turn 180 deg tilt 24 deg distance 16.2 lift 1.20 over 0.0 s (cut)
+[info] cutscene stone-bridge-01-o-pedagio: step 23 emote lio "!"
+[info] cutscene stone-bridge-01-o-pedagio: step 24 say lio: "O rio… está correndo. Cinza correndo como água."
+[info] cutscene stone-bridge-01-o-pedagio: step 25 say neera: "Sai da borda, Lio. Aquilo não devolve nada que cai."
+[info] captured 1600x900 -> .\work\stone-bridge-final-opening-001.png
+[info] capture GPU frame: 17.0239 ms
+[info] capture GPU light clusters: 0.0068 ms
+[info] capture GPU atmosphere: 1.0937 ms
+[info] capture GPU clouds: 0.0313 ms
+[info] capture GPU cloud shadow: 0.1202 ms
+[info] capture GPU sky reflect: 3.0335 ms
+[info] capture GPU card shadow: 0.0353 ms
+[info] capture GPU volumetrics: 0.2301 ms
+[info] capture GPU fog injection: 0.2104 ms
+[info] capture GPU fog integration: 0.0187 ms
+[info] capture GPU cull early: 0.0514 ms
+[info] capture GPU draw early: 0.1308 ms
+[info] capture GPU depth pyramid: 0.0546 ms
+[info] capture GPU cull late: 0.0351 ms
+[info] capture GPU draw late: 0.0118 ms
+[info] capture GPU depth pyramid (next frame): 0.0547 ms
+[info] capture GPU resolve: 1.6045 ms
+[info] capture GPU scene: 8.9403 ms
+[info] capture GPU terrain: 8.8955 ms
+[info] capture GPU fog bank: 0.9070 ms
+[info] capture GPU bloom: 0.3245 ms
+[info] capture GPU tonemap: 0.1657 ms
+[info] capture GPU ui: 0.1655 ms
+[warn] slow frame: 588.4 ms busy = assets 0.0, stage 0.5, ui 1.8, render 586.2 (record 1.0, submit 0.1, present 0.0; waits 0.1 not counted)
+[info] cutscene stone-bridge-01-o-pedagio: step 26 shot: pivot (-21.2, 13.5) turn 270 deg tilt 32 deg distance 3.4 lift 1.07 over 6.0 s (async)
+[info] cutscene stone-bridge-01-o-pedagio: step 27 wait 1.50 s
+[info] cutscene stone-bridge-01-o-pedagio: step 28 say lio: "Será que levaram eles por aqui? A minha mãe e o Tavi?"
+[info] cutscene stone-bridge-01-o-pedagio: step 29 shot: pivot (-21.2, 10.5) turn 270 deg tilt 18 deg distance 11.0 lift 0.40 over 2.0 s
+[info] captured 1600x900 -> .\work\stone-bridge-final-opening-002.png
+[info] capture GPU frame: 18.4188 ms
+[info] capture GPU light clusters: 0.0071 ms
+[info] capture GPU atmosphere: 1.0940 ms
+[info] capture GPU clouds: 0.0314 ms
+[info] capture GPU cloud shadow: 0.1203 ms
+[info] capture GPU sky reflect: 3.0668 ms
+[info] capture GPU card shadow: 0.0360 ms
+[info] capture GPU volumetrics: 0.2730 ms
+[info] capture GPU fog injection: 0.2510 ms
+[info] capture GPU fog integration: 0.0210 ms
+[info] capture GPU cull early: 0.0528 ms
+[info] capture GPU draw early: 0.1177 ms
+[info] capture GPU depth pyramid: 0.0530 ms
+[info] capture GPU cull late: 0.0354 ms
+[info] capture GPU draw late: 0.0015 ms
+[info] capture GPU depth pyramid (next frame): 0.0555 ms
+[info] capture GPU resolve: 1.4049 ms
+[info] capture GPU scene: 10.6718 ms
+[info] capture GPU terrain: 10.5914 ms
+[info] capture GPU fog bank: 0.8214 ms
+[info] capture GPU bloom: 0.3234 ms
+[info] capture GPU tonemap: 0.1461 ms
+[info] capture GPU ui: 0.0762 ms
+[warn] slow frame: 599.5 ms busy = assets 0.0, stage 0.4, ui 1.6, render 613.2 (record 0.9, submit 0.1, present 0.0; waits 15.7 not counted)
+[info] cutscene stone-bridge-01-o-pedagio: step 30 wait 1.20 s
+[info] cutscene stone-bridge-01-o-pedagio: step 31 move neera (3, 12) -> (7, 18), 7 hexes
+[info] captured 1600x900 -> .\work\stone-bridge-final-opening-003.png
+[info] capture GPU frame: 21.9758 ms
+[info] capture GPU light clusters: 0.0071 ms
+[info] capture GPU atmosphere: 1.0908 ms
+[info] capture GPU clouds: 0.0313 ms
+[info] capture GPU cloud shadow: 0.1203 ms
+[info] capture GPU sky reflect: 3.0911 ms
+[info] capture GPU card shadow: 0.0369 ms
+[info] capture GPU volumetrics: 0.2825 ms
+[info] capture GPU fog injection: 0.2610 ms
+[info] capture GPU fog integration: 0.0204 ms
+[info] capture GPU cull early: 0.0721 ms
+[info] capture GPU draw early: 0.1321 ms
+[info] capture GPU depth pyramid: 0.0533 ms
+[info] capture GPU cull late: 0.0354 ms
+[info] capture GPU draw late: 0.0066 ms
+[info] capture GPU depth pyramid (next frame): 0.0544 ms
+[info] capture GPU resolve: 1.2671 ms
+[info] capture GPU scene: 14.2902 ms
+[info] capture GPU terrain: 14.1149 ms
+[info] capture GPU fog bank: 0.8239 ms
+[info] capture GPU bloom: 0.3228 ms
+[info] capture GPU tonemap: 0.1659 ms
+[info] capture GPU ui: 0.0612 ms
+[warn] slow frame: 600.6 ms busy = assets 0.0, stage 0.5, ui 1.6, render 617.6 (record 1.0, submit 0.1, present 0.0; waits 19.1 not counted)
+[info] cutscene stone-bridge-01-o-pedagio: step 32 wait 1.00 s
+[info] cutscene stone-bridge-01-o-pedagio: step 33 move lio (7, 19) -> (8, 16), 3 hexes
+[info] cutscene stone-bridge-01-o-pedagio: step 34 move neera (7, 18) -> (8, 15), 3 hexes
+[info] cutscene stone-bridge-01-o-pedagio: step 35 wait 1.50 s
+[info] captured 1600x900 -> .\work\stone-bridge-final-opening-004.png
+[info] capture GPU frame: 21.7962 ms
+[info] capture GPU light clusters: 0.0073 ms
+[info] capture GPU atmosphere: 1.0857 ms
+[info] capture GPU clouds: 0.0316 ms
+[info] capture GPU cloud shadow: 0.1204 ms
+[info] capture GPU sky reflect: 3.0380 ms
+[info] capture GPU card shadow: 0.0355 ms
+[info] capture GPU volumetrics: 0.2736 ms
+[info] capture GPU fog injection: 0.2525 ms
+[info] capture GPU fog integration: 0.0201 ms
+[info] capture GPU cull early: 0.0734 ms
+[info] capture GPU draw early: 0.1347 ms
+[info] capture GPU depth pyramid: 0.0536 ms
+[info] capture GPU cull late: 0.0361 ms
+[info] capture GPU draw late: 0.0064 ms
+[info] capture GPU depth pyramid (next frame): 0.0549 ms
+[info] capture GPU resolve: 1.2664 ms
+[info] capture GPU scene: 14.1705 ms
+[info] capture GPU terrain: 14.0394 ms
+[info] capture GPU fog bank: 0.8254 ms
+[info] capture GPU bloom: 0.3244 ms
+[info] capture GPU tonemap: 0.1582 ms
+[info] capture GPU ui: 0.0680 ms
+[warn] slow frame: 614.0 ms busy = assets 0.0, stage 0.5, ui 1.6, render 630.5 (record 1.3, submit 0.1, present 0.0; waits 18.6 not counted)
+[info] cutscene stone-bridge-01-o-pedagio: step 36 shot: pivot (-15.2, 0.0) turn 90 deg tilt 6 deg distance 9.0 lift 0.30 over 0.0 s (cut)
+[info] cutscene stone-bridge-01-o-pedagio: step 37 move kael (5, 10) -> (11, 10), 6 hexes
+[info] cutscene stone-bridge-01-o-pedagio: step 38 face kael e
+[info] cutscene stone-bridge-01-o-pedagio: step 39 shot: pivot (-15.2, 0.0) turn 90 deg tilt 8 deg distance 13.5 lift 1.01 over 16.0 s (async)
+[info] cutscene stone-bridge-01-o-pedagio: step 40 move voss (3, 8) -> (9, 9), 7 hexes
+[info] cutscene stone-bridge-01-o-pedagio: step 41 move neera (8, 15) -> (9, 11), 4 hexes
+[info] cutscene stone-bridge-01-o-pedagio: step 42 move lio (8, 16) -> (10, 12), 4 hexes
+[info] cutscene stone-bridge-01-o-pedagio: step 43 say neera: "Kael… você não abriu a boca desde o poço."
+[info] cutscene stone-bridge-01-o-pedagio: step 44 say kael: "Estou contando."
+[info] cutscene stone-bridge-01-o-pedagio: step 45 say neera: "Contando o quê?"
+[info] cutscene stone-bridge-01-o-pedagio: step 46 say kael: "Os ganchos daquela praça. Trinta e dois."
+[info] cutscene stone-bridge-01-o-pedagio: step 47 wait 1.50 s
+[info] cutscene stone-bridge-01-o-pedagio: step 48 say kael: "Odrin falou em cento e quatro pessoas. Sobraram onze. E eu deixei ele descer por uma grade."
+[info] cutscene stone-bridge-01-o-pedagio: step 49 shot: pivot (-15.2, 0.0) turn 205 deg tilt 12 deg distance 13.5 lift 1.01 over 0.0 s
+[info] cutscene stone-bridge-01-o-pedagio: step 50 say voss: "Ninguém deixou nada. O teto caiu em cima dele."
+[info] cutscene stone-bridge-01-o-pedagio: step 51 shot: pivot (-15.2, 0.0) turn 90 deg tilt 8 deg distance 13.5 lift 1.01 over 0.0 s
+[info] cutscene stone-bridge-01-o-pedagio: step 52 say kael: "E ele levantou. Da próxima vez eu não confio em teto."
+[info] cutscene stone-bridge-01-o-pedagio: step 53 sfx DeadArmor.mp3 x 0.90
+[info] cutscene stone-bridge-01-o-pedagio: step 54 shot: pivot (-15.2, 0.0) turn 270 deg tilt 22 deg distance 14.0 lift 1.06 over 0.0 s (cut)
+[info] cutscene stone-bridge-01-o-pedagio: step 55 wait 1.20 s
+[info] cutscene stone-bridge-01-o-pedagio: step 56 sfx DeadArmor.mp3 x 0.90
+[info] cutscene stone-bridge-01-o-pedagio: step 57 wait 1.30 s
+[info] cutscene stone-bridge-01-o-pedagio: step 58 shot: pivot (-15.2, 0.0) turn 90 deg tilt 8 deg distance 9.0 lift 0.40 over 0.0 s (cut)
+[info] cutscene stone-bridge-01-o-pedagio: step 59 face kael e
+[info] cutscene stone-bridge-01-o-pedagio: step 60 face neera e
+[info] cutscene stone-bridge-01-o-pedagio: step 61 face voss e
+[info] cutscene stone-bridge-01-o-pedagio: step 62 face lio e
+[info] cutscene stone-bridge-01-o-pedagio: step 63 emote kael "!"
+[info] cutscene stone-bridge-01-o-pedagio: step 64 emote neera "!"
+[info] cutscene stone-bridge-01-o-pedagio: step 65 emote voss "!"
+[info] cutscene stone-bridge-01-o-pedagio: step 66 emote lio "!"
+[info] cutscene stone-bridge-01-o-pedagio: step 67 wait 1.20 s
+[info] cutscene stone-bridge-01-o-pedagio: step 68 say lio: "…Não. Não pode ser."
+[info] cutscene stone-bridge-01-o-pedagio: step 69 shot: pivot (-13.4, 0.0) turn 270 deg tilt 5 deg distance 7.0 lift 0.50 over 0.0 s (cut)
+[info] cutscene stone-bridge-01-o-pedagio: step 70 shot: pivot (-3.0, 0.0) turn 270 deg tilt 5 deg distance 7.0 lift 0.50 over 8.0 s (async)
+[info] cutscene stone-bridge-01-o-pedagio: step 71 wait 4.00 s
+[info] cutscene stone-bridge-01-o-pedagio: step 72 enter butcher at (21, 10)
+[info] cutscene stone-bridge-01-o-pedagio: step 73 face butcher w
+[info] cutscene stone-bridge-01-o-pedagio: step 74 wait 4.00 s
+[info] cutscene stone-bridge-01-o-pedagio: step 75 shot: pivot (2.2, 0.0) turn 270 deg tilt 8 deg distance 15.0 lift 1.12 over 6.0 s (async)
+[info] cutscene stone-bridge-01-o-pedagio: step 76 say butcher: "Demoraram. Achei que o poço tinha ficado com algum."
+[info] cutscene stone-bridge-01-o-pedagio: step 77 say butcher: "Ainda são quatro. Que bom. Eu odeio refazer conta."
+[info] cutscene stone-bridge-01-o-pedagio: step 78 shot: pivot (-6.5, 0.0) turn 305 deg tilt 10 deg distance 109.1 lift 1.03 over 0.0 s (cut)
+[info] cutscene stone-bridge-01-o-pedagio: step 79 move kael (11, 10) -> (13, 10), 2 hexes
+[info] cutscene stone-bridge-01-o-pedagio: step 80 say kael: "Você estava morto."
+[info] cutscene stone-bridge-01-o-pedagio: step 81 shot: pivot (-4.8, 0.0) turn 415 deg tilt 10 deg distance 72.7 lift 1.12 over 0.0 s
+[info] cutscene stone-bridge-01-o-pedagio: step 82 say butcher: "Eu estava debaixo. Não é a mesma coisa. Você vai entender isso cedo demais."
+[info] cutscene stone-bridge-01-o-pedagio: step 83 shot: pivot (-16.9, 3.0) turn 279 deg tilt 12 deg distance 16.2 lift 1.06 over 1.5 s (async)
+[info] cutscene stone-bridge-01-o-pedagio: step 84 move lio (10, 12) -> (14, 11), 5 hexes
+[info] cutscene stone-bridge-01-o-pedagio: step 85 face lio toward butcher
+[info] cutscene stone-bridge-01-o-pedagio: step 86 say lio: "Cadê a minha mãe?"
+[info] cutscene stone-bridge-01-o-pedagio: step 87 shot: pivot (2.2, 0.0) turn 458 deg tilt 8 deg distance 15.0 lift 1.18 over 0.0 s
+[info] cutscene stone-bridge-01-o-pedagio: step 88 face butcher toward lio
+[info] cutscene stone-bridge-01-o-pedagio: step 89 say butcher: "Ah. A menina que correu. Ainda segurando a flor."
+[info] cutscene stone-bridge-01-o-pedagio: step 90 wait 1.50 s
+[info] cutscene stone-bridge-01-o-pedagio: step 91 say butcher: "Ela está onde eu deixei. Esperando, como todos os escolhidos esperam."
+[info] cutscene stone-bridge-01-o-pedagio: step 92 shot: pivot (-9.1, 1.5) turn 278 deg tilt 8 deg distance 13.5 lift 1.06 over 0.0 s
+[info] cutscene stone-bridge-01-o-pedagio: step 93 say lio: "ONDE?!"
+[info] cutscene stone-bridge-01-o-pedagio: step 94 shot: pivot (-3.5, 0.8) turn 133 deg tilt 10 deg distance 59.6 lift 1.12 over 0.0 s
+[info] cutscene stone-bridge-01-o-pedagio: step 95 say butcher: "Do outro lado desta ponte. É só passar por mim."
+[info] cutscene stone-bridge-01-o-pedagio: step 96 move neera (9, 11) -> (13, 12), 4 hexes
+[info] cutscene stone-bridge-01-o-pedagio: step 97 face neera toward lio
+[info] cutscene stone-bridge-01-o-pedagio: step 98 say neera: "Ele está te provocando. Não escuta."
+[info] cutscene stone-bridge-01-o-pedagio: step 99 shot: pivot (2.2, 0.0) turn 90 deg tilt -8 deg distance 5.0 lift 0.00 over 0.0 s (cut)
+[info] cutscene stone-bridge-01-o-pedagio: step 100 sfx HeavySteps1-Balanced-Medium.mp3 x 0.90
+[info] cutscene stone-bridge-01-o-pedagio: step 101 shake 0.15 s x 0.10
+[info] cutscene stone-bridge-01-o-pedagio: step 102 say butcher: "Isto aqui é pedágio, cinzomante. Todo mundo passa. Mas ninguém passa inteiro."
+[info] cutscene stone-bridge-01-o-pedagio: step 103 shot: pivot (-17.8, -1.5) turn -94 deg tilt 12 deg distance 17.4 lift 1.14 over 0.0 s
+[info] cutscene stone-bridge-01-o-pedagio: step 104 sfx DeadArmor.mp3 x 0.80
+[info] cutscene stone-bridge-01-o-pedagio: step 105 say voss: "Somos quatro contra um. Faz essa conta aí."
+[info] cutscene stone-bridge-01-o-pedagio: step 106 shot: pivot (2.2, 0.0) turn 86 deg tilt 8 deg distance 15.0 lift 1.18 over 0.0 s
+[info] cutscene stone-bridge-01-o-pedagio: step 107 wait 2.00 s
+[info] cutscene stone-bridge-01-o-pedagio: step 108 say butcher: "…Um?"
+[info] cutscene stone-bridge-01-o-pedagio: step 109 sfx Blunt2.mp3 x 1.00
+[info] cutscene stone-bridge-01-o-pedagio: step 110 wait 0.70 s
+[info] cutscene stone-bridge-01-o-pedagio: step 111 sfx Blunt2.mp3 x 1.00
+[info] cutscene stone-bridge-01-o-pedagio: step 112 music stop
+[info] cutscene stone-bridge-01-o-pedagio: step 113 wait 1.00 s
+[info] cutscene stone-bridge-01-o-pedagio: step 114 tint 30% over 1.50 s
+[info] cutscene stone-bridge-01-o-pedagio: step 115 sfx CaveTroll2ATT001.mp3 x 0.50
+[info] cutscene stone-bridge-01-o-pedagio: step 116 wait 4.00 s
+[info] cutscene stone-bridge-01-o-pedagio: step 117 shot: pivot (-9.1, 1.5) turn -82 deg tilt 12 deg distance 16.2 lift 1.06 over 0.0 s (cut)
+[info] cutscene stone-bridge-01-o-pedagio: step 118 emote lio "…"
+[info] cutscene stone-bridge-01-o-pedagio: step 119 say lio: "K-Kael…"
+[info] cutscene stone-bridge-01-o-pedagio: step 120 shot: pivot (5.6, 0.0) turn -90 deg tilt 8 deg distance 6.0 lift 0.60 over 0.0 s (cut)
+[info] cutscene stone-bridge-01-o-pedagio: step 121 sfx WarDog2Walk001.mp3 x 1.00
+[info] cutscene stone-bridge-01-o-pedagio: step 122 enter vora at (26, 10)
+[info] cutscene stone-bridge-01-o-pedagio: step 123 face vora w
+[info] cutscene stone-bridge-01-o-pedagio: step 124 shake 0.25 s x 0.12
+[info] cutscene stone-bridge-01-o-pedagio: step 125 shot: pivot (5.6, 0.0) turn -90 deg tilt 8 deg distance 10.0 lift 0.60 over 4.0 s (async)
+[info] cutscene stone-bridge-01-o-pedagio: step 126 wait 1.20 s
+[info] cutscene stone-bridge-01-o-pedagio: step 127 move vora (26, 10) -> (24, 10), 2 hexes
+[info] cutscene stone-bridge-01-o-pedagio: step 128 shake 0.25 s x 0.12
+[info] cutscene stone-bridge-01-o-pedagio: step 129 wait 0.80 s
+[info] cutscene stone-bridge-01-o-pedagio: step 130 sfx WarDog2ATT001.mp3 x 0.90
+[info] cutscene stone-bridge-01-o-pedagio: step 131 wait 2.00 s
+[info] cutscene stone-bridge-01-o-pedagio: step 132 shot: pivot (-17.8, -1.5) turn -93 deg tilt 10 deg distance 4.5 lift 1.14 over 0.0 s (cut)
+[info] cutscene stone-bridge-01-o-pedagio: step 133 shot: pivot (-17.8, -1.5) turn -93 deg tilt 10 deg distance 10.2 lift 1.14 over 3.0 s (async)
+[info] cutscene stone-bridge-01-o-pedagio: step 134 wait 1.50 s
+[info] meshes: textures 9 of 9 at the size the camera needs, 9 at full size (3 MB on the GPU, 1246 MB free)
+[info] cutscene stone-bridge-01-o-pedagio: step 135 say voss: "…Eu retiro a conta."
+[info] cutscene stone-bridge-01-o-pedagio: step 136 shot: pivot (2.2, 0.0) turn -90 deg tilt 5 deg distance 18.0 lift 1.18 over 0.0 s
+[info] cutscene stone-bridge-01-o-pedagio: step 137 face butcher toward vora
+[info] cutscene stone-bridge-01-o-pedagio: step 138 say butcher: "Essa é a Vora. Achei ela filhote, comendo o que sobrava dos ganchos da aldeia. Achei bonito. Ela não escolhe."
+[info] cutscene stone-bridge-01-o-pedagio: step 139 sfx DeadArmor.mp3 x 0.70
+[info] cutscene stone-bridge-01-o-pedagio: step 140 say butcher: "Eu escolho por ela."
+[info] cutscene stone-bridge-01-o-pedagio: step 141 face butcher toward kael
+[info] cutscene stone-bridge-01-o-pedagio: step 142 move vora (24, 10) -> (23, 10), 1 hexes
+[info] cutscene stone-bridge-01-o-pedagio: step 143 shot: pivot (2.2, 0.0) turn -90 deg tilt 28 deg distance 12.0 lift 1.18 over 0.0 s (cut)
+[info] cutscene stone-bridge-01-o-pedagio: step 144 sfx WarDog2ATT001.mp3 x 1.20
+[info] cutscene stone-bridge-01-o-pedagio: step 145 shake 1.20 s x 0.35
+[info] cutscene stone-bridge-01-o-pedagio: step 146 wait 0.90 s
+[info] cutscene stone-bridge-01-o-pedagio: step 147 shot: pivot (-11.7, 1.5) turn -90 deg tilt 30 deg distance 12.0 lift 1.07 over 0.0 s (cut)
+[info] cutscene stone-bridge-01-o-pedagio: step 148 sfx Blunt2.mp3 x 0.60
+[info] cutscene stone-bridge-01-o-pedagio: step 149 wait 0.70 s
+[info] cutscene stone-bridge-01-o-pedagio: step 150 caption "NEEERA, VOSS, LIO estão AMEDRONTADOS" 2.5 s
+[info] cutscene stone-bridge-01-o-pedagio: step 151 shot: pivot (-11.7, 3.0) turn -81 deg tilt 8 deg distance 13.7 lift 1.07 over 0.0 s (cut)
+[info] cutscene stone-bridge-01-o-pedagio: step 152 emote neera "…"
+[info] cutscene stone-bridge-01-o-pedagio: step 153 say neera: "Eu não consigo… minhas mãos não param…"
+[info] cutscene stone-bridge-01-o-pedagio: step 154 shot: pivot (-8.2, 0.0) turn 90 deg tilt 4 deg distance 8.0 lift 0.40 over 0.0 s (cut)
+[info] cutscene stone-bridge-01-o-pedagio: step 155 move kael (13, 10) -> (15, 10), 2 hexes
+[info] cutscene stone-bridge-01-o-pedagio: step 156 face kael w
+[info] cutscene stone-bridge-01-o-pedagio: step 157 say kael: "Olhem pra mim. Não pra ele. Pra mim."
+[info] cutscene stone-bridge-01-o-pedagio: step 158 shot: pivot (-8.2, 0.0) turn 90 deg tilt 8 deg distance 13.5 lift 1.01 over 0.0 s
+[info] cutscene stone-bridge-01-o-pedagio: step 159 say kael: "Butcher."
+[info] cutscene stone-bridge-01-o-pedagio: step 160 say butcher: "Vanguarda."
+[info] cutscene stone-bridge-01-o-pedagio: step 161 face kael e
+[info] cutscene stone-bridge-01-o-pedagio: step 162 say kael: "Na aldeia eu deixei você descer. Foi erro meu."
+[info] cutscene stone-bridge-01-o-pedagio: step 163 sfx Blade3.mp3 x 0.70
+[info] cutscene stone-bridge-01-o-pedagio: step 164 say kael: "Hoje você não desce. Não sobe. Não some. Eu fico nesta ponte até ter certeza de que acabou."
+[info] cutscene stone-bridge-01-o-pedagio: step 165 say kael: "Você não sai daqui vivo."
+[info] cutscene stone-bridge-01-o-pedagio: step 166 shot: pivot (-12.6, 1.5) turn 270 deg tilt 14 deg distance 7.0 lift 0.50 over 0.0 s
+[info] cutscene stone-bridge-01-o-pedagio: step 167 caption "NEEERA e VOSS não estão mais AMEDRONTADOS" 2.0 s
+[info] cutscene stone-bridge-01-o-pedagio: step 168 say lio: "…Kael. Se ele morrer, quem vai dizer onde ela está?"
+[info] cutscene stone-bridge-01-o-pedagio: step 169 shot: pivot (-8.2, 0.0) turn 270 deg tilt 10 deg distance 4.0 lift 1.33 over 0.0 s
+[info] cutscene stone-bridge-01-o-pedagio: step 170 wait 2.00 s
+[info] cutscene stone-bridge-01-o-pedagio: step 171 shot: pivot (2.2, 0.0) turn 90 deg tilt 10 deg distance 18.0 lift 1.18 over 0.0 s
+[info] cutscene stone-bridge-01-o-pedagio: step 172 sfx DeadArmor.mp3 x 1.00
+[info] cutscene stone-bridge-01-o-pedagio: step 173 say butcher: "Ouviu, garoto? Promessa tem preço. Vora. Come."
+[info] cutscene stone-bridge-01-o-pedagio: step 174 shot: pivot (6.5, 0.0) turn 90 deg tilt 8 deg distance 16.3 lift 1.60 over 0.0 s (cut)
+[info] cutscene stone-bridge-01-o-pedagio: step 175 wait 0.80 s
+[info] cutscene stone-bridge-01-o-pedagio: step 176 sfx WarDog2ATT001.mp3 x 1.00
+[info] cutscene stone-bridge-01-o-pedagio: step 177 move vora (23, 10) -> (18, 10), 6 hexes
+[info] cutscene stone-bridge-01-o-pedagio: step 178 enter harlan at (23, 12)
+[info] cutscene stone-bridge-01-o-pedagio: step 179 enter dorn at (20, 9)
+[info] cutscene stone-bridge-01-o-pedagio: step 180 enter pell at (17, 6)
+[info] cutscene stone-bridge-01-o-pedagio: step 181 enter brakk at (27, 5)
+[info] cutscene stone-bridge-01-o-pedagio: step 182 enter orso at (23, 3)
+[info] cutscene stone-bridge-01-o-pedagio: step 183 enter vinn at (28, 8)
+[info] cutscene stone-bridge-01-o-pedagio: step 184 flash 0.30 s
+[info] cutscene stone-bridge-01-o-pedagio: step 185 shake 0.60 s x 0.20
+[info] cutscene stone-bridge-01-o-pedagio: step 186 tint 0% over 0.30 s
+[info] cutscene stone-bridge-01-o-pedagio: step 187 bars off
+[info] cutscene stone-bridge-01-o-pedagio: step 188 wait 0.50 s
+[info] cutscene stone-bridge-01-o-pedagio: over (189 steps); controls back
+[info] cutscene test stone-bridge-01-o-pedagio: PASS
+[info] cutscene test: PASS
+[info] captured 1600x900 -> .\work\stone-bridge-final-opening.png
+[info] capture GPU frame: 18.3800 ms
+[info] capture GPU light clusters: 0.0074 ms
+[info] capture GPU atmosphere: 1.0863 ms
+[info] capture GPU clouds: 0.0314 ms
+[info] capture GPU cloud shadow: 0.1206 ms
+[info] capture GPU sky reflect: 3.0493 ms
+[info] capture GPU card shadow: 0.0382 ms
+[info] capture GPU volumetrics: 0.2514 ms
+[info] capture GPU fog injection: 0.2303 ms
+[info] capture GPU fog integration: 0.0201 ms
+[info] capture GPU cull early: 0.0760 ms
+[info] capture GPU draw early: 0.1682 ms
+[info] capture GPU depth pyramid: 0.0577 ms
+[info] capture GPU cull late: 0.0492 ms
+[info] capture GPU draw late: 0.0172 ms
+[info] capture GPU depth pyramid (next frame): 0.0558 ms
+[info] capture GPU resolve: 1.6196 ms
+[info] capture GPU scene: 9.5210 ms
+[info] capture GPU terrain: 9.2843 ms
+[info] capture GPU fog bank: 1.5560 ms
+[info] capture GPU bloom: 0.3240 ms
+[info] capture GPU tonemap: 0.1533 ms
+[info] capture GPU ui: 0.1678 ms
+[info] pipeline cache: 106695608 bytes saved

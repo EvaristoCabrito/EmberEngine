@@ -3321,6 +3321,11 @@
     "emberNoSides": true,
     "guestHeroes": [
       "Lio"
+    ],
+    "partyHeroes": [
+      "Kael",
+      "Neera",
+      "Voss"
     ]
   }
 }

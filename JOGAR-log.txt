@@ -1,17 +1,18 @@
 [info] atmos2: state content/atmos2/state-v02.bin at step 144000 (day 300.0), origin lon -8.00 lat 46.00
-[info] mounted C:\EmberEngineBOSTA\build\sprites\battle.pak (3340 assets)
-[info] mounted C:\EmberEngineBOSTA\build\meshes\props-v42.pak (780 assets)
-[info] mounted C:\EmberEngineBOSTA\build\meshes\architecture.pak (32 assets)
-[info] campaign: save bank C:\Users\evari\AppData\Local\Ember\ember-save-bank.json (6 of 6 slots used)
-[info] mounted C:\EmberEngineBOSTA\build\meshes\effects.pak (5 assets)
-[info] mounted C:\EmberEngineBOSTA\build\ground\ground-v77-random-encounters-v01.pak (360 assets)
-[info] overworld: 490 cells, 16 locations, 31 missions
+[info] mounted C:\EmberEngineB\build\sprites\battle.pak (3403 assets)
+[info] mounted C:\EmberEngineB\build\meshes\props-v42.pak (780 assets)
+[info] mounted C:\EmberEngineB\build\meshes\material-overhaul-v03.pak (130 assets)
+[info] mounted C:\EmberEngineB\build\meshes\architecture.pak (32 assets)
+[info] mounted C:\EmberEngineB\build\meshes\effects.pak (5 assets)
+[info] mounted C:\EmberEngineB\build\ground\ground-v77-random-encounters-v01.pak (360 assets)
+[info] campaign: save bank C:\Users\evari\AppData\Local\Ember\ember-save-bank.json (3 of 6 slots used)
+[info] overworld: 490 cells, 17 locations, 31 missions
 [info] overworld: 13 road encounters field undead
-[info] startup: data loaded at 316 ms
-[info] startup: window at 340 ms
+[info] startup: window at 191 ms
 [info] GPU: AMD Radeon(TM) RX 6400 (Vulkan 1.4.315, driver 0x800161)
 [info] transfer queue: dedicated (family 2)
-[info] pipeline cache: 101586444 bytes restored for this GPU/driver
+[info] pipeline cache: 106695608 bytes restored for this GPU/driver
+[info] startup: data loaded at 583 ms
 [info] bindless: 65536 textures, 16384 storage images, 256 samplers, 4096 storage buffers
 [info] bindless: creating descriptor set layout
 [info] bindless: descriptor set layout ready
@@ -25,11 +26,11 @@
 [info] startup: renderer resources begin
 [info] startup: renderer frame buffers ready
 [info] pipeline compute: volumetrics_v1.CSInject creating
-[info] pipeline compute: volumetrics_v1.CSInject ready in 1 ms
+[info] pipeline compute: volumetrics_v1.CSInject ready in 0 ms
 [info] pipeline compute: volumetrics_v1.CSIntegrate creating
 [info] pipeline compute: volumetrics_v1.CSIntegrate ready in 0 ms
 [info] pipeline compute: volumetrics_clouds006.CSMaterial creating
-[info] pipeline compute: volumetrics_clouds006.CSMaterial ready in 1 ms
+[info] pipeline compute: volumetrics_clouds006.CSMaterial ready in 0 ms
 [info] pipeline compute: volumetrics_clouds006.CSInject creating
 [info] pipeline compute: volumetrics_clouds006.CSInject ready in 0 ms
 [info] pipeline compute: volumetrics_clouds006.CSIntegrate creating
@@ -44,11 +45,11 @@
 [info] pipeline graphics: ground.VSMain + ground.PSMain creating
 [info] pipeline graphics: ground.VSMain + ground.PSMain ready in 0 ms
 [info] pipeline graphics: terrain.VSMain + terrain.PSMain creating
-[info] pipeline graphics: terrain.VSMain + terrain.PSMain ready in 2 ms
+[info] pipeline graphics: terrain.VSMain + terrain.PSMain ready in 1 ms
 [info] pipeline graphics: terrain.VSShadow + terrain.PSShadow creating
 [info] pipeline graphics: terrain.VSShadow + terrain.PSShadow ready in 0 ms
 [info] pipeline graphics: water.VSMain + water.PSMain creating
-[info] pipeline graphics: water.VSMain + water.PSMain ready in 4 ms
+[info] pipeline graphics: water.VSMain + water.PSMain ready in 3 ms
 [info] pipeline graphics: sprites.VSMain + sprites.PSMain creating
 [info] pipeline graphics: sprites.VSMain + sprites.PSMain ready in 0 ms
 [info] pipeline graphics: sprites.VSMain + sprites.PSDepth creating
@@ -56,15 +57,15 @@
 [info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSDepth creating
 [info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSDepth ready in 0 ms
 [info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSMain creating
-[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSMain ready in 1 ms
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSMain ready in 0 ms
 [info] pipeline graphics: effects.VSMain + effects.PSMain creating
-[info] pipeline graphics: effects.VSMain + effects.PSMain ready in 1 ms
+[info] pipeline graphics: effects.VSMain + effects.PSMain ready in 0 ms
 [info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
-[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 2 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
 [info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
-[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 2 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
 [info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
-[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 2 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
 [info] startup: renderer graphics pipelines ready
 [info] pipeline compute: cull.CSInstancesEarly creating
 [info] pipeline compute: cull.CSInstancesEarly ready in 0 ms
@@ -83,13 +84,13 @@
 [info] pipeline compute: cull.CSPrepareDraw creating
 [info] pipeline compute: cull.CSPrepareDraw ready in 0 ms
 [info] pipeline compute: resolve.CSResolve creating
-[info] pipeline compute: resolve.CSResolve ready in 2 ms
+[info] pipeline compute: resolve.CSResolve ready in 1 ms
 [info] pipeline compute: resolve.CSSky creating
-[info] pipeline compute: resolve.CSSky ready in 2 ms
+[info] pipeline compute: resolve.CSSky ready in 1 ms
 [info] pipeline compute: resolve_panorama.CSResolve creating
-[info] pipeline compute: resolve_panorama.CSResolve ready in 2 ms
+[info] pipeline compute: resolve_panorama.CSResolve ready in 1 ms
 [info] pipeline compute: resolve_panorama.CSSky creating
-[info] pipeline compute: resolve_panorama.CSSky ready in 2 ms
+[info] pipeline compute: resolve_panorama.CSSky ready in 1 ms
 [info] pipeline compute: lights.CSClusters creating
 [info] pipeline compute: lights.CSClusters ready in 0 ms
 [info] pipeline compute: volume.CSInject creating
@@ -97,7 +98,7 @@
 [info] pipeline compute: atmosphere.CSTransmittance creating
 [info] pipeline compute: atmosphere.CSTransmittance ready in 0 ms
 [info] pipeline compute: atmosphere.CSMultiScattering creating
-[info] pipeline compute: atmosphere.CSMultiScattering ready in 1 ms
+[info] pipeline compute: atmosphere.CSMultiScattering ready in 0 ms
 [info] pipeline compute: atmosphere.CSSkyView creating
 [info] pipeline compute: atmosphere.CSSkyView ready in 0 ms
 [info] pipeline compute: atmosphere.CSAerial creating
@@ -105,13 +106,13 @@
 [info] pipeline compute: atmosphere.CSAmbient creating
 [info] pipeline compute: atmosphere.CSAmbient ready in 0 ms
 [info] pipeline compute: skyreflect.CSBase creating
-[info] pipeline compute: skyreflect.CSBase ready in 1 ms
+[info] pipeline compute: skyreflect.CSBase ready in 0 ms
 [info] pipeline compute: skyreflect.CSFilter creating
 [info] pipeline compute: skyreflect.CSFilter ready in 0 ms
 [info] pipeline compute: skyreflect.CSCloudShadow creating
 [info] pipeline compute: skyreflect.CSCloudShadow ready in 0 ms
 [info] pipeline compute: cloudsvol.CSNoiseBase creating
-[info] pipeline compute: cloudsvol.CSNoiseBase ready in 1 ms
+[info] pipeline compute: cloudsvol.CSNoiseBase ready in 0 ms
 [info] pipeline compute: cloudsvol.CSNoiseDetail creating
 [info] pipeline compute: cloudsvol.CSNoiseDetail ready in 0 ms
 [info] pipeline compute: cloudsvol.CSMarch creating
@@ -170,14 +171,470 @@
 [info] pipeline graphics: meshlet.MSMain + meshlet.PSMain creating
 [info] pipeline graphics: meshlet.MSMain + meshlet.PSMain ready in 0 ms
 [info] pipeline graphics: meshlet.MSMain + meshlet.PSShadow creating
-[info] pipeline graphics: meshlet.MSMain + meshlet.PSShadow ready in 1 ms
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSShadow ready in 0 ms
 [info] pipeline graphics: sprites.VSShadow + sprites.PSShadow creating
 [info] pipeline graphics: sprites.VSShadow + sprites.PSShadow ready in 0 ms
 [info] startup: renderer ready
-[info] startup: GPU ready at 2400 ms
-[info] startup: first screen at 2510 ms
-[info] music: LANDR-AsheraIntrol-Balanced-High.mp3 (C:/EmberEngineBOSTA/content/assets/game/MUSIC/LANDR-AsheraIntrol-Balanced-High.mp3)
-[warn] slow ui record: 140.2 ms = imgui render 0.0, refine images 0.0, textures + draw 140.1 (78 textures changed, largest 4096x4096)
-[warn] slow frame: 277.8 ms busy = assets 0.0, stage 0.0, ui 121.1, render 156.8 (record 152.0, submit 1.4, present 2.2; waits 0.2 not counted)
-[warn] slow ui record: 31.2 ms = imgui render 0.0, refine images 0.0, textures + draw 31.2 (0 textures changed, largest 0x0)
-[info] pipeline cache: 101586444 bytes saved
+[info] startup: GPU ready at 1137 ms
+[info] startup: first screen at 1256 ms
+[info] music: LANDR-AsheraIntrol-Balanced-High.mp3 (C:/EmberEngineB/content/assets/game/MUSIC/LANDR-AsheraIntrol-Balanced-High.mp3)
+[warn] slow ui record: 95.4 ms = imgui render 0.0, refine images 0.0, textures + draw 95.4 (54 textures changed, largest 2128x1152)
+[warn] slow frame: 168.1 ms busy = assets 0.0, stage 0.0, ui 67.8, render 100.5 (record 99.0, submit 0.2, present 1.0; waits 0.2 not counted)
+[info] music: Tragic Arqui TruePersonaWorldMapEmber-Balanced-High.mp3 (C:/EmberEngineB/content/assets/game/MUSIC/Tragic Arqui TruePersonaWorldMapEmber-Balanced-High.mp3)
+[info] music: WispForestTheme-BattlethemeTragigikarkPMAX01mp3.mp3 (C:/EmberEngineB/content/assets/game/MUSIC/WispForestTheme-BattlethemeTragigikarkPMAX01mp3.mp3)
+[info] wisp-forest-crossing: making its game files from content/maps/ember/wisp-forest-crossing034.json
+[info] weapons: 135 main-hand, 27 off-hand, 93 classes
+[info] ui: 59 images off the GPU (288 MB); each comes back when a screen draws it again
+[info] map wisp-forest-crossing 'Wisp Forest Crossing': 44x36 hexes, smooth 340446 triangles, hard 38472 triangles, 6 baked layers, 17 textures, 33.5 MB geometry
+[info] volumetrics: 7 profiles from content/atmosphere/v1/profiles.json
+[info] world clock: this map has no campaign clock: it starts at 19:30:00 and runs from there
+[info] board heights: lowest ground 0.00 (water beds left out), highest 1.00 (the floor image lies under the lowest)
+[info] scene build/campaign/scenes/wisp-forest-crossing034.scene.json: built by SceneBuilder (EmberEngine props); 0 kinds left out
+[info] scene wisp-forest-crossing: 15 cards, 168 models, 24 units, 0 architecture pieces (0 built)
+[info] poses: 21 of 21 map units in the catalog, 20 poses between them
+[info] progression: 7 heroes; enemies keep their class's own gains
+[info] enemy ranks: 10 ranks, 26 classes ranked (others F)
+[info] battle: 99 cells made solid under EmberEngine props
+[info] Kael (level 30, swordsman): every spell of the class: doubleStrike, provoke, bullRush, cleave, shieldBash, executionerStrike, steelWhirlwind, guardBreak, warCry, leapingStrike
+[info] Neera (level 30, neera): every spell of the class: longShot, piercing, bloodyShot, multiShot, venomArrow, arrowRain, explosiveArrow, cripplingShot, arrowStorm, deathShot
+[info] Voss (level 30, mage): every spell of the class: magicMissile, poisonBreath, frost, lightning, fireball, iceStorm, causticVenom, warp, dispelMagic, cloudOfDaggers, globeOfInvulnerability
+[info] Salazar (level 30, healer): every spell of the class: cureMinor, bless, cureWounds, burningHands, cureDisease, turnUndead, createFoodAndWater, divineBolt, circleOfHealing, resurrection, judgment
+[info] Aldric (level 30, aldric): every spell of the class: piercingThrust, sweep, trip, spearToss, hookPull, poleVault, disarm, swapPost, impaleDrag, sentinelVigil
+[info] Isolde (level 30, conjurer): every spell of the class: summonFamiliar, phantasmalForce, webOfDreams, summonFamiliar2, summonFamiliar4, placeSwap, mirrorImage, arcaneReflection, nightmare, empowerSummons, detonateSummon, sacrificeBond
+[info] battle wisp-forest-crossing: 21 of 21 units in play
+[info] formation: the map splits the party into 2 groups: every hero keeps the map's place
+[info] panoramas wisp-forest-crossing: 2 (the newest opens: wisp-forest-crossing-panorama-v14-alpha.png)
+[info] inn: 135 weapons, 292 gear, 7 potions
+[info] weapons: 135 main-hand, 27 off-hand, 93 classes
+[info] inn: 135 weapons, 292 gear, 7 potions
+[info] weather: rain x0.05 wind 0.58: 2 draws, 534 vertices (spells 0 draws)
+[warn] slow frame: 209.0 ms busy = assets 0.2, stage 10.7, ui 10.7, render 187.6 (record 184.8, submit 1.9, present 0.3; waits 0.2 not counted)
+[info] sprites: roster lists 1134 clips
+[info] sprites: Personagens Alta: the cast 451 MB at full resolution, the others 304 MB (GPU 2125 MB free before the fight)
+[info] sprites: full-clip pool 9 x 144 MB (largest clip 144.5 MB)
+[info] sprites: full-clip pool set up in 159.2 ms
+[warn] slow stage frame: 177.1 ms = ground 2.8, sprites 172.0, uploads 1.5, rest 0.2
+[warn] slow frame: 186.8 ms busy = assets 0.3, stage 177.1, ui 5.5, render 4.0 (record 3.4, submit 0.1, present 0.2; waits 0.2 not counted)
+[info] sight: Kael at (6, 30) sees 62 of the 355 hexes in range (293 hidden by ground or what stands on it)
+[info] sight: Neera at (5, 31) sees 61 of the 327 hexes in range (266 hidden by ground or what stands on it)
+[info] sight: Voss at (6, 29) sees 65 of the 383 hexes in range (318 hidden by ground or what stands on it)
+[info] sight: Salazar at (5, 29) sees 73 of the 362 hexes in range (289 hidden by ground or what stands on it)
+[info] sight: Aldric at (5, 30) sees 66 of the 335 hexes in range (269 hidden by ground or what stands on it)
+[info] sight: Isolde at (6, 31) sees 56 of the 346 hexes in range (290 hidden by ground or what stands on it)
+[info] sprites: the fight's 67 clips on the GPU 2.76 s after they were asked for
+[info] sprites:   voss-veo-leve-passo 131 MB (full 131 MB)
+[info] sprites:   neera/neera-v2-001 110 MB (full 110 MB)
+[info] sprites:   kael-v3-36-media 95 MB (full 95 MB)
+[info] sprites:   salazar-v3 79 MB (full 79 MB)
+[info] sprites:   isolde-veo-36-media 78 MB (full 78 MB)
+[info] sprites:   aldric 76 MB (full 76 MB)
+[info] sprites:   sapling-001 50 MB (full 50 MB)
+[info] sprites:   minor-horror-003 49 MB (full 49 MB)
+[info] sprites:   mordavian-wolf-final 47 MB (full 47 MB)
+[info] sprites:   neera-hydra 17 MB (full 17 MB)
+[info] sprites:   zombie 10 MB (full 10 MB)
+[info] sprites:   neera 8 MB (full 8 MB)
+[info] sprites:   voss-final 0 MB (full 0 MB)
+[info] sprites: GPU memory 2310 MB allocated by the game, 2448 MB used, budget 3227 MB, heap 3824 MB
+[info] camera: meter 2.895 lux, EV 0.21, darkening 2.00 stops, exposure 0.17989, key 5.13 lux at elevation 21.4 deg
+[info] sky: hour 19.50, moon full (default) (disc texture 53, radius 2.70 deg, glow 5.56) at elevation 21.4 deg, azimuth -121.9 deg (the camera looks at azimuth 150.0, elevation -20.0), off screen
+[info] camera trace: t 8.071 dt 0.0205 goal (-26.30, 18.49) pivot (-27.33, 0.00, 18.70) pitch 20.0 (goal 20.0) distance 25.8 eye y 8.81 drop 0.0
+[info] camera trace: t 8.112 dt 0.0205 goal (-24.81, 18.19) pivot (-26.71, 0.00, 18.58) pitch 20.0 (goal 20.0) distance 27.8 eye y 9.49 drop 0.0
+[info] camera trace: t 8.132 dt 0.0204 goal (-23.06, 17.84) pivot (-26.04, 0.00, 18.44) pitch 20.0 (goal 20.0) distance 29.8 eye y 10.19 drop 0.0
+[info] camera trace: t 8.173 dt 0.0202 goal (-21.03, 17.43) pivot (-24.67, 0.00, 18.16) pitch 20.0 (goal 20.0) distance 34.1 eye y 11.65 drop 0.0
+[info] camera trace: t 8.912 dt 0.0179 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 20.0 (goal 20.3) distance 47.9 eye y 16.41 drop 0.0
+[info] camera trace: t 8.948 dt 0.0182 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 20.2 (goal 20.6) distance 47.9 eye y 16.51 drop 0.0
+[info] camera trace: t 8.966 dt 0.0180 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 20.3 (goal 20.9) distance 47.9 eye y 16.60 drop 0.0
+[info] camera trace: t 8.984 dt 0.0182 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 20.4 (goal 21.1) distance 47.9 eye y 16.71 drop 0.0
+[info] camera trace: t 9.002 dt 0.0181 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 20.6 (goal 21.4) distance 47.9 eye y 16.84 drop 0.0
+[info] camera trace: t 9.020 dt 0.0180 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 20.8 (goal 21.7) distance 47.9 eye y 16.99 drop 0.0
+[info] camera trace: t 9.038 dt 0.0181 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 21.0 (goal 22.0) distance 47.9 eye y 17.15 drop 0.0
+[info] camera trace: t 9.056 dt 0.0180 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 21.2 (goal 22.0) distance 47.9 eye y 17.28 drop 0.0
+[info] camera trace: t 9.075 dt 0.0182 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 21.3 (goal 22.3) distance 47.9 eye y 17.43 drop 0.0
+[info] camera trace: t 9.093 dt 0.0180 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 21.5 (goal 22.3) distance 47.9 eye y 17.55 drop 0.0
+[info] camera trace: t 9.111 dt 0.0187 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 21.6 (goal 22.3) distance 47.9 eye y 17.66 drop 0.0
+[info] camera trace: t 9.129 dt 0.0181 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 21.7 (goal 22.0) distance 47.9 eye y 17.70 drop 0.0
+[info] camera trace: t 9.148 dt 0.0182 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 21.6 (goal 21.1) distance 47.9 eye y 17.63 drop 0.0
+[info] camera trace: t 9.166 dt 0.0183 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 21.5 (goal 20.9) distance 47.9 eye y 17.54 drop 0.0
+[info] camera trace: t 9.184 dt 0.0178 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 21.3 (goal 20.6) distance 47.9 eye y 17.42 drop 0.0
+[info] camera trace: t 9.201 dt 0.0173 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 21.2 (goal 20.3) distance 47.9 eye y 17.29 drop 0.0
+[info] camera trace: t 9.218 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 20.9 (goal 19.4) distance 47.9 eye y 17.08 drop 0.0
+[info] camera trace: t 9.234 dt 0.0162 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 20.6 (goal 18.6) distance 47.9 eye y 16.81 drop 0.0
+[info] camera trace: t 9.250 dt 0.0159 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 20.1 (goal 17.7) distance 47.9 eye y 16.48 drop 0.0
+[info] camera trace: t 9.265 dt 0.0156 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 19.6 (goal 16.6) distance 47.9 eye y 16.08 drop 0.0
+[info] camera trace: t 9.281 dt 0.0152 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 19.1 (goal 15.7) distance 47.9 eye y 15.64 drop 0.0
+[info] camera trace: t 9.295 dt 0.0148 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 18.5 (goal 15.1) distance 47.9 eye y 15.21 drop 0.0
+[info] camera trace: t 9.310 dt 0.0143 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 18.0 (goal 14.3) distance 47.9 eye y 14.76 drop 0.0
+[info] camera trace: t 9.326 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 17.2 (goal 13.1) distance 47.9 eye y 14.18 drop 0.0
+[info] camera trace: t 9.343 dt 0.0163 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 16.4 (goal 12.0) distance 47.9 eye y 13.54 drop 0.0
+[info] camera trace: t 9.359 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 15.6 (goal 10.8) distance 47.9 eye y 12.85 drop 0.0
+[info] camera trace: t 9.376 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 14.7 (goal 10.0) distance 47.9 eye y 12.15 drop 0.0
+[info] camera trace: t 9.393 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 13.8 (goal 8.5) distance 47.9 eye y 11.39 drop 0.0
+[info] camera trace: t 9.409 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 12.7 (goal 6.8) distance 47.9 eye y 10.52 drop 0.0
+[info] camera trace: t 9.426 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 11.6 (goal 5.4) distance 47.9 eye y 9.61 drop 0.0
+[info] camera trace: t 9.443 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 10.5 (goal 4.5) distance 47.9 eye y 8.72 drop 0.0
+[info] camera trace: t 9.459 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 9.4 (goal 3.7) distance 47.9 eye y 7.86 drop 0.0
+[info] camera trace: t 9.476 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 8.5 (goal 3.4) distance 47.9 eye y 7.09 drop 0.0
+[info] camera trace: t 9.493 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 7.6 (goal 2.5) distance 47.9 eye y 6.33 drop 0.0
+[info] camera trace: t 9.509 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 6.7 (goal 2.0) distance 47.9 eye y 5.61 drop 0.0
+[info] camera trace: t 9.526 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 6.0 (goal 2.0) distance 47.9 eye y 5.00 drop 0.0
+[info] camera trace: t 9.543 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 5.3 (goal 1.7) distance 47.9 eye y 4.45 drop 0.0
+[info] camera trace: t 9.576 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 4.3 (goal 1.7) distance 47.9 eye y 4.18 drop 0.0
+[info] camera trace: t 9.593 dt 0.0171 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 3.9 (goal 1.7) distance 47.9 eye y 4.18 drop 0.0
+[info] camera trace: t 9.611 dt 0.0179 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 3.5 (goal 1.7) distance 47.9 eye y 4.18 drop 0.0
+[info] camera trace: t 9.629 dt 0.0179 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 3.2 (goal 1.7) distance 47.9 eye y 4.18 drop 0.0
+[info] camera trace: t 9.649 dt 0.0197 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 2.9 (goal 1.7) distance 47.9 eye y 4.18 drop 0.0
+[info] camera trace: t 9.667 dt 0.0186 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 2.7 (goal 1.7) distance 47.9 eye y 4.18 drop 0.0
+[info] camera trace: t 9.707 dt 0.0201 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 2.4 (goal 2.0) distance 47.9 eye y 4.18 drop 0.0
+[info] camera trace: t 9.726 dt 0.0195 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 2.5 (goal 2.8) distance 47.9 eye y 4.18 drop 0.0
+[info] camera trace: t 9.747 dt 0.0203 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 2.7 (goal 3.7) distance 47.9 eye y 4.18 drop 0.0
+[info] camera trace: t 9.767 dt 0.0200 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 3.0 (goal 4.2) distance 47.9 eye y 4.18 drop 0.0
+[info] camera trace: t 9.787 dt 0.0200 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 3.4 (goal 5.4) distance 47.9 eye y 4.18 drop 0.0
+[info] camera trace: t 9.808 dt 0.0209 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 4.0 (goal 6.5) distance 47.9 eye y 4.18 drop 0.0
+[info] camera trace: t 9.828 dt 0.0207 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 4.8 (goal 8.3) distance 47.9 eye y 4.18 drop 0.0
+[info] camera trace: t 9.851 dt 0.0224 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 6.0 (goal 10.8) distance 47.9 eye y 5.02 drop 0.0
+[info] camera trace: t 9.872 dt 0.0214 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 7.4 (goal 13.4) distance 47.9 eye y 6.20 drop 0.0
+[info] camera trace: t 9.894 dt 0.0222 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 9.2 (goal 16.3) distance 47.9 eye y 7.65 drop 0.0
+[info] camera trace: t 9.917 dt 0.0224 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 11.0 (goal 18.3) distance 47.9 eye y 9.15 drop 0.0
+[info] camera trace: t 9.939 dt 0.0223 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 12.9 (goal 20.3) distance 47.9 eye y 10.67 drop 0.0
+[info] camera trace: t 9.961 dt 0.0223 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 14.8 (goal 22.3) distance 47.9 eye y 12.20 drop 0.0
+[info] camera trace: t 9.981 dt 0.0201 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 16.5 (goal 24.3) distance 47.9 eye y 13.59 drop 0.0
+[info] camera trace: t 9.998 dt 0.0171 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 18.1 (goal 26.6) distance 47.9 eye y 14.86 drop 0.0
+[info] camera trace: t 10.014 dt 0.0158 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 19.6 (goal 28.6) distance 47.9 eye y 16.08 drop 0.0
+[info] camera trace: t 10.029 dt 0.0144 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 21.0 (goal 30.3) distance 47.9 eye y 17.20 drop 0.0
+[info] camera trace: t 10.043 dt 0.0147 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 22.5 (goal 31.7) distance 47.9 eye y 18.34 drop 0.0
+[info] camera trace: t 10.060 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 24.1 (goal 32.9) distance 47.9 eye y 19.57 drop 0.0
+[info] camera trace: t 10.077 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 25.6 (goal 34.0) distance 47.9 eye y 20.72 drop 0.0
+[info] camera trace: t 10.093 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 27.1 (goal 35.2) distance 47.9 eye y 21.82 drop 0.0
+[info] camera trace: t 10.110 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 28.5 (goal 36.0) distance 47.9 eye y 22.83 drop 0.0
+[info] camera trace: t 10.127 dt 0.0172 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 29.8 (goal 36.9) distance 47.9 eye y 23.81 drop 0.0
+[info] camera trace: t 10.143 dt 0.0162 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 31.0 (goal 37.8) distance 47.9 eye y 24.67 drop 0.0
+[info] camera trace: t 10.160 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 32.2 (goal 38.6) distance 47.9 eye y 25.50 drop 0.0
+[info] camera trace: t 10.177 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 33.2 (goal 38.9) distance 47.9 eye y 26.23 drop 0.0
+[info] camera trace: t 10.193 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 34.1 (goal 39.2) distance 47.9 eye y 26.87 drop 0.0
+[info] camera trace: t 10.210 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 34.9 (goal 39.5) distance 47.9 eye y 27.43 drop 0.0
+[info] camera trace: t 10.227 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 35.7 (goal 40.1) distance 47.9 eye y 27.97 drop 0.0
+[info] camera trace: t 10.243 dt 0.0165 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 36.5 (goal 40.6) distance 47.9 eye y 28.47 drop 0.0
+[info] camera trace: t 10.260 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 37.2 (goal 41.2) distance 47.9 eye y 28.96 drop 0.0
+[info] camera trace: t 10.277 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 37.9 (goal 41.8) distance 47.9 eye y 29.43 drop 0.0
+[info] camera trace: t 10.294 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 38.6 (goal 42.3) distance 47.9 eye y 29.87 drop 0.0
+[info] camera trace: t 10.311 dt 0.0175 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 39.3 (goal 42.9) distance 47.9 eye y 30.32 drop 0.0
+[info] camera trace: t 10.327 dt 0.0163 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 40.0 (goal 43.8) distance 47.9 eye y 30.76 drop 0.0
+[info] camera trace: t 10.344 dt 0.0165 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 40.7 (goal 44.6) distance 47.9 eye y 31.21 drop 0.0
+[info] camera trace: t 10.361 dt 0.0169 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 41.4 (goal 45.5) distance 47.9 eye y 31.68 drop 0.0
+[info] camera trace: t 10.377 dt 0.0164 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 42.2 (goal 46.6) distance 47.9 eye y 32.18 drop 0.0
+[info] camera trace: t 10.394 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 43.0 (goal 47.5) distance 47.9 eye y 32.67 drop 0.0
+[info] camera trace: t 10.410 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 43.8 (goal 47.8) distance 47.9 eye y 33.12 drop 0.0
+[info] camera trace: t 10.427 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 44.5 (goal 48.6) distance 47.9 eye y 33.57 drop 0.0
+[info] camera trace: t 10.444 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 45.3 (goal 49.5) distance 47.9 eye y 34.02 drop 0.0
+[info] camera trace: t 10.460 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 46.0 (goal 50.1) distance 47.9 eye y 34.46 drop 0.0
+[info] camera trace: t 10.477 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 46.8 (goal 50.9) distance 47.9 eye y 34.89 drop 0.0
+[info] camera trace: t 10.494 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 47.5 (goal 51.2) distance 47.9 eye y 35.28 drop 0.0
+[info] camera trace: t 10.510 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 48.1 (goal 51.8) distance 47.9 eye y 35.66 drop 0.0
+[info] camera trace: t 10.527 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 48.8 (goal 52.7) distance 47.9 eye y 36.05 drop 0.0
+[info] camera trace: t 10.544 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 49.5 (goal 53.5) distance 47.9 eye y 36.44 drop 0.0
+[info] camera trace: t 10.561 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 50.3 (goal 54.7) distance 47.9 eye y 36.86 drop 0.0
+[info] camera trace: t 10.577 dt 0.0165 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 51.2 (goal 55.8) distance 47.9 eye y 37.31 drop 0.0
+[info] camera trace: t 10.594 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 52.0 (goal 56.7) distance 47.9 eye y 37.75 drop 0.0
+[info] camera trace: t 10.611 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 53.0 (goal 58.1) distance 47.9 eye y 38.22 drop 0.0
+[info] camera trace: t 10.627 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 53.9 (goal 59.2) distance 47.9 eye y 38.70 drop 0.0
+[info] camera trace: t 10.644 dt 0.0169 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 55.0 (goal 61.0) distance 47.9 eye y 39.24 drop 0.0
+[info] camera trace: t 10.661 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 56.2 (goal 62.7) distance 47.9 eye y 39.79 drop 0.0
+[info] camera trace: t 10.677 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 57.4 (goal 64.1) distance 47.9 eye y 40.35 drop 0.0
+[info] camera trace: t 10.694 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 58.7 (goal 66.1) distance 47.9 eye y 40.94 drop 0.0
+[info] camera trace: t 10.711 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 60.2 (goal 68.1) distance 47.9 eye y 41.55 drop 0.0
+[info] camera trace: t 10.727 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 61.7 (goal 69.8) distance 47.9 eye y 42.16 drop 0.0
+[info] camera trace: t 10.744 dt 0.0165 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 63.2 (goal 71.6) distance 47.9 eye y 42.74 drop 0.0
+[info] camera trace: t 10.761 dt 0.0171 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 64.8 (goal 73.6) distance 47.9 eye y 43.34 drop 0.0
+[info] camera trace: t 10.777 dt 0.0165 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 66.4 (goal 75.3) distance 47.9 eye y 43.89 drop 0.0
+[info] camera trace: t 10.794 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 68.1 (goal 77.3) distance 47.9 eye y 44.43 drop 0.0
+[info] camera trace: t 10.811 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 69.8 (goal 79.3) distance 47.9 eye y 44.95 drop 0.0
+[info] camera trace: t 10.828 dt 0.0169 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 71.5 (goal 80.7) distance 47.9 eye y 45.42 drop 0.0
+[info] camera trace: t 10.844 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 73.1 (goal 82.2) distance 47.9 eye y 45.83 drop 0.0
+[info] camera trace: t 10.861 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 74.6 (goal 83.0) distance 47.9 eye y 46.18 drop 0.0
+[info] camera trace: t 10.877 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 76.1 (goal 83.9) distance 47.9 eye y 46.48 drop 0.0
+[info] camera trace: t 10.894 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 77.3 (goal 84.2) distance 47.9 eye y 46.72 drop 0.0
+[info] camera trace: t 11.128 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 83.5 (goal 84.2) distance 47.9 eye y 47.58 drop 0.0
+[info] camera trace: t 11.145 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 83.4 (goal 83.0) distance 47.9 eye y 47.58 drop 0.0
+[info] camera trace: t 11.161 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 83.2 (goal 81.6) distance 47.9 eye y 47.55 drop 0.0
+[info] camera trace: t 11.178 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 82.7 (goal 80.4) distance 47.9 eye y 47.51 drop 0.0
+[info] camera trace: t 11.195 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 82.2 (goal 79.3) distance 47.9 eye y 47.45 drop 0.0
+[info] camera trace: t 11.211 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 81.5 (goal 77.9) distance 47.9 eye y 47.37 drop 0.0
+[info] camera trace: t 11.228 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 80.8 (goal 76.7) distance 47.9 eye y 47.28 drop 0.0
+[info] camera trace: t 11.245 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 80.0 (goal 75.6) distance 47.9 eye y 47.16 drop 0.0
+[info] camera trace: t 11.261 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 79.1 (goal 74.4) distance 47.9 eye y 47.03 drop 0.0
+[info] camera trace: t 11.278 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 78.2 (goal 73.0) distance 47.9 eye y 46.88 drop 0.0
+[info] camera trace: t 11.295 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 77.2 (goal 71.9) distance 47.9 eye y 46.71 drop 0.0
+[info] camera trace: t 11.311 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 76.2 (goal 70.4) distance 47.9 eye y 46.51 drop 0.0
+[info] camera trace: t 11.328 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 75.1 (goal 69.3) distance 47.9 eye y 46.29 drop 0.0
+[info] camera trace: t 11.345 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 74.0 (goal 67.8) distance 47.9 eye y 46.04 drop 0.0
+[info] camera trace: t 11.361 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 72.8 (goal 66.4) distance 47.9 eye y 45.76 drop 0.0
+[info] camera trace: t 11.378 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 71.7 (goal 65.6) distance 47.9 eye y 45.47 drop 0.0
+[info] camera trace: t 11.395 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 70.7 (goal 65.3) distance 47.9 eye y 45.21 drop 0.0
+[info] camera trace: t 11.511 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 66.9 (goal 65.0) distance 47.9 eye y 44.06 drop 0.0
+[info] camera trace: t 11.528 dt 0.0169 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 66.5 (goal 64.1) distance 47.9 eye y 43.91 drop 0.0
+[info] camera trace: t 11.545 dt 0.0165 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 66.0 (goal 63.5) distance 47.9 eye y 43.76 drop 0.0
+[info] camera trace: t 11.561 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 65.5 (goal 62.7) distance 47.9 eye y 43.59 drop 0.0
+[info] camera trace: t 11.578 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 64.9 (goal 61.5) distance 47.9 eye y 43.37 drop 0.0
+[info] camera trace: t 11.595 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 64.3 (goal 60.7) distance 47.9 eye y 43.14 drop 0.0
+[info] camera trace: t 11.611 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 63.6 (goal 60.1) distance 47.9 eye y 42.91 drop 0.0
+[info] camera trace: t 11.628 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 63.0 (goal 59.8) distance 47.9 eye y 42.69 drop 0.0
+[info] camera trace: t 11.645 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 62.5 (goal 59.5) distance 47.9 eye y 42.48 drop 0.0
+[info] camera trace: t 11.662 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 62.0 (goal 59.5) distance 47.9 eye y 42.30 drop 0.0
+[info] camera trace: t 11.678 dt 0.0165 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 61.6 (goal 59.0) distance 47.9 eye y 42.12 drop 0.0
+[info] camera trace: t 11.695 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 61.1 (goal 58.4) distance 47.9 eye y 41.92 drop 0.0
+[info] camera trace: t 11.712 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 60.6 (goal 57.8) distance 47.9 eye y 41.72 drop 0.0
+[info] camera trace: t 11.728 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 60.1 (goal 57.2) distance 47.9 eye y 41.50 drop 0.0
+[info] camera trace: t 11.745 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 59.5 (goal 56.4) distance 47.9 eye y 41.27 drop 0.0
+[info] camera trace: t 11.762 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 58.9 (goal 55.8) distance 47.9 eye y 41.02 drop 0.0
+[info] camera trace: t 11.778 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 58.4 (goal 55.2) distance 47.9 eye y 40.78 drop 0.0
+[info] camera trace: t 11.795 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 57.7 (goal 54.4) distance 47.9 eye y 40.50 drop 0.0
+[info] camera trace: t 11.812 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 57.1 (goal 53.8) distance 47.9 eye y 40.23 drop 0.0
+[info] camera trace: t 11.829 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 56.6 (goal 53.5) distance 47.9 eye y 39.98 drop 0.0
+[info] camera trace: t 11.845 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 56.0 (goal 52.9) distance 47.9 eye y 39.72 drop 0.0
+[info] camera trace: t 11.862 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 55.5 (goal 52.4) distance 47.9 eye y 39.45 drop 0.0
+[info] camera trace: t 11.879 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 54.9 (goal 51.8) distance 47.9 eye y 39.18 drop 0.0
+[info] camera trace: t 11.895 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 54.3 (goal 50.9) distance 47.9 eye y 38.89 drop 0.0
+[info] camera trace: t 11.912 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 53.6 (goal 49.8) distance 47.9 eye y 38.55 drop 0.0
+[info] camera trace: t 11.929 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 52.8 (goal 48.6) distance 47.9 eye y 38.17 drop 0.0
+[info] camera trace: t 11.945 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 52.0 (goal 47.2) distance 47.9 eye y 37.73 drop 0.0
+[info] camera trace: t 11.962 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 51.0 (goal 45.8) distance 47.9 eye y 37.23 drop 0.0
+[info] camera trace: t 11.979 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 50.0 (goal 44.1) distance 47.9 eye y 36.67 drop 0.0
+[info] camera trace: t 11.995 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 48.8 (goal 42.3) distance 47.9 eye y 36.03 drop 0.0
+[info] camera trace: t 12.012 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 47.6 (goal 40.9) distance 47.9 eye y 35.36 drop 0.0
+[info] camera trace: t 12.029 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 46.3 (goal 39.2) distance 47.9 eye y 34.61 drop 0.0
+[info] camera trace: t 12.045 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 44.9 (goal 37.2) distance 47.9 eye y 33.80 drop 0.0
+[info] camera trace: t 12.062 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 43.5 (goal 35.8) distance 47.9 eye y 32.96 drop 0.0
+[info] camera trace: t 12.079 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 42.1 (goal 34.3) distance 47.9 eye y 32.09 drop 0.0
+[info] camera trace: t 12.095 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 40.6 (goal 32.6) distance 47.9 eye y 31.18 drop 0.0
+[info] camera trace: t 12.112 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 39.2 (goal 31.2) distance 47.9 eye y 30.25 drop 0.0
+[info] camera trace: t 12.129 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 37.8 (goal 30.0) distance 47.9 eye y 29.33 drop 0.0
+[info] camera trace: t 12.145 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 36.4 (goal 28.9) distance 47.9 eye y 28.42 drop 0.0
+[info] camera trace: t 12.162 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 35.1 (goal 28.0) distance 47.9 eye y 27.55 drop 0.0
+[info] camera trace: t 12.179 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 34.0 (goal 27.7) distance 47.9 eye y 26.77 drop 0.0
+[info] camera trace: t 12.212 dt 0.0169 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 32.2 (goal 27.4) distance 47.9 eye y 25.49 drop 0.0
+[info] camera trace: t 12.396 dt 0.0170 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 28.3 (goal 28.0) distance 47.9 eye y 22.70 drop 0.0
+[info] camera trace: t 12.412 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 28.6 (goal 30.0) distance 47.9 eye y 22.89 drop 0.0
+[info] camera trace: t 12.429 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 29.1 (goal 32.0) distance 47.9 eye y 23.28 drop 0.0
+[info] camera trace: t 12.446 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 29.8 (goal 34.0) distance 47.9 eye y 23.84 drop 0.0
+[info] camera trace: t 12.462 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.9 (goal 36.6) distance 47.9 eye y 24.59 drop 0.0
+[info] camera trace: t 12.479 dt 0.0165 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 32.1 (goal 38.9) distance 47.9 eye y 25.46 drop 0.0
+[info] camera trace: t 12.496 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 33.5 (goal 40.9) distance 47.9 eye y 26.42 drop 0.0
+[info] camera trace: t 12.513 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 34.9 (goal 42.9) distance 47.9 eye y 27.42 drop 0.0
+[info] camera trace: t 12.529 dt 0.0169 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 36.6 (goal 45.5) distance 47.9 eye y 28.54 drop 0.0
+[info] camera trace: t 12.546 dt 0.0164 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 38.2 (goal 47.5) distance 47.9 eye y 29.63 drop 0.0
+[info] camera trace: t 12.563 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 40.0 (goal 49.5) distance 47.9 eye y 30.76 drop 0.0
+[info] camera trace: t 12.579 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 41.6 (goal 50.7) distance 47.9 eye y 31.80 drop 0.0
+[info] camera trace: t 12.596 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 43.2 (goal 51.8) distance 47.9 eye y 32.77 drop 0.0
+[info] camera trace: t 12.613 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 44.6 (goal 52.7) distance 47.9 eye y 33.65 drop 0.0
+[info] camera trace: t 12.629 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 45.9 (goal 52.9) distance 47.9 eye y 34.40 drop 0.0
+[info] camera trace: t 12.646 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 47.1 (goal 53.5) distance 47.9 eye y 35.08 drop 0.0
+[info] camera trace: t 12.663 dt 0.0164 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 48.1 (goal 53.5) distance 47.9 eye y 35.63 drop 0.0
+[info] camera trace: t 19.131 dt 0.0175 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 53.6 (goal 53.8) distance 47.9 eye y 38.53 drop 0.0
+[info] camera trace: t 19.148 dt 0.0169 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 53.6 (goal 53.8) distance 47.9 eye y 38.55 drop 0.0
+[info] camera trace: t 19.167 dt 0.0188 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 53.5 (goal 52.9) distance 47.9 eye y 38.49 drop 0.0
+[info] camera trace: t 19.184 dt 0.0177 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 53.2 (goal 51.8) distance 47.9 eye y 38.36 drop 0.0
+[info] camera trace: t 19.202 dt 0.0177 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 52.8 (goal 50.7) distance 47.9 eye y 38.15 drop 0.0
+[info] camera trace: t 19.220 dt 0.0179 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 52.2 (goal 49.2) distance 47.9 eye y 37.85 drop 0.0
+[info] camera trace: t 19.238 dt 0.0177 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 51.3 (goal 46.6) distance 47.9 eye y 37.38 drop 0.0
+[info] camera trace: t 19.256 dt 0.0179 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 50.1 (goal 43.8) distance 47.9 eye y 36.73 drop 0.0
+[info] camera trace: t 19.274 dt 0.0180 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 48.5 (goal 40.3) distance 47.9 eye y 35.85 drop 0.0
+[info] camera trace: t 19.292 dt 0.0182 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 46.8 (goal 38.3) distance 47.9 eye y 34.90 drop 0.0
+[info] camera trace: t 19.310 dt 0.0184 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 45.1 (goal 36.9) distance 47.9 eye y 33.94 drop 0.0
+[info] camera trace: t 19.328 dt 0.0183 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 43.7 (goal 36.3) distance 47.9 eye y 33.06 drop 0.0
+[info] camera trace: t 19.366 dt 0.0191 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 41.3 (goal 36.0) distance 47.9 eye y 31.61 drop 0.0
+[info] camera trace: t 19.385 dt 0.0189 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 40.3 (goal 35.2) distance 47.9 eye y 30.95 drop 0.0
+[info] camera trace: t 19.404 dt 0.0193 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 39.3 (goal 34.9) distance 47.9 eye y 30.34 drop 0.0
+[info] camera trace: t 19.423 dt 0.0191 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 38.5 (goal 34.9) distance 47.9 eye y 29.84 drop 0.0
+[info] camera trace: t 19.502 dt 0.0199 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 36.6 (goal 34.9) distance 47.9 eye y 28.53 drop 0.0
+[info] camera trace: t 19.522 dt 0.0198 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 36.2 (goal 34.6) distance 47.9 eye y 28.29 drop 0.0
+[info] camera trace: t 19.541 dt 0.0196 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 35.9 (goal 34.6) distance 47.9 eye y 28.10 drop 0.0
+[info] camera trace: t 19.639 dt 0.0197 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 35.0 (goal 34.0) distance 47.9 eye y 27.47 drop 0.0
+[info] camera trace: t 19.659 dt 0.0198 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 34.7 (goal 33.5) distance 47.9 eye y 27.28 drop 0.0
+[info] camera trace: t 19.679 dt 0.0199 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 34.3 (goal 32.6) distance 47.9 eye y 27.02 drop 0.0
+[info] camera trace: t 19.698 dt 0.0196 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 33.9 (goal 32.0) distance 47.9 eye y 26.73 drop 0.0
+[info] camera trace: t 19.718 dt 0.0196 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 33.5 (goal 31.5) distance 47.9 eye y 26.43 drop 0.0
+[info] camera trace: t 19.738 dt 0.0199 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 33.1 (goal 31.5) distance 47.9 eye y 26.17 drop 0.0
+[info] camera trace: t 19.757 dt 0.0195 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 32.8 (goal 31.5) distance 47.9 eye y 25.96 drop 0.0
+[info] camera trace: t 19.777 dt 0.0193 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 32.6 (goal 31.5) distance 47.9 eye y 25.80 drop 0.0
+[info] camera trace: t 19.796 dt 0.0195 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 32.3 (goal 30.9) distance 47.9 eye y 25.58 drop 0.0
+[info] camera trace: t 19.816 dt 0.0196 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 31.9 (goal 30.3) distance 47.9 eye y 25.33 drop 0.0
+[info] camera trace: t 19.836 dt 0.0198 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 31.6 (goal 30.0) distance 47.9 eye y 25.09 drop 0.0
+[info] camera trace: t 19.855 dt 0.0195 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 31.3 (goal 30.0) distance 47.9 eye y 24.89 drop 0.0
+[info] camera trace: t 19.875 dt 0.0200 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 31.1 (goal 30.0) distance 47.9 eye y 24.72 drop 0.0
+[info] camera trace: t 19.895 dt 0.0196 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.9 (goal 30.0) distance 47.9 eye y 24.59 drop 0.0
+[info] camera trace: t 19.915 dt 0.0203 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.7 (goal 30.0) distance 47.9 eye y 24.48 drop 0.0
+[info] camera trace: t 19.935 dt 0.0198 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.6 (goal 30.0) distance 47.9 eye y 24.38 drop 0.0
+[info] camera trace: t 19.955 dt 0.0204 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.5 (goal 30.0) distance 47.9 eye y 24.31 drop 0.0
+[info] camera trace: t 19.976 dt 0.0203 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.4 (goal 30.0) distance 47.9 eye y 24.24 drop 0.0
+[info] camera trace: t 19.996 dt 0.0206 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.3 (goal 30.0) distance 47.9 eye y 24.19 drop 0.0
+[info] camera trace: t 20.017 dt 0.0207 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.3 (goal 30.0) distance 47.9 eye y 24.15 drop 0.0
+[info] camera trace: t 20.038 dt 0.0210 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.2 (goal 30.0) distance 47.9 eye y 24.12 drop 0.0
+[info] camera trace: t 20.059 dt 0.0211 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.2 (goal 30.0) distance 47.9 eye y 24.09 drop 0.0
+[info] camera trace: t 20.080 dt 0.0215 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.2 (goal 30.0) distance 47.9 eye y 24.06 drop 0.0
+[info] camera trace: t 20.102 dt 0.0211 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.1 (goal 30.0) distance 47.9 eye y 24.04 drop 0.0
+[info] camera trace: t 20.124 dt 0.0220 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.2 (goal 30.3) distance 47.9 eye y 24.07 drop 0.0
+[info] camera trace: t 20.145 dt 0.0215 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.2 (goal 30.3) distance 47.9 eye y 24.09 drop 0.0
+[info] camera trace: t 20.167 dt 0.0217 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.3 (goal 30.6) distance 47.9 eye y 24.15 drop 0.0
+[info] camera trace: t 20.189 dt 0.0221 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.3 (goal 30.6) distance 47.9 eye y 24.19 drop 0.0
+[info] camera trace: t 20.211 dt 0.0223 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.4 (goal 30.6) distance 47.9 eye y 24.23 drop 0.0
+[info] camera trace: t 20.234 dt 0.0226 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.4 (goal 30.6) distance 47.9 eye y 24.26 drop 0.0
+[info] camera trace: t 20.256 dt 0.0226 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.5 (goal 30.9) distance 47.9 eye y 24.33 drop 0.0
+[info] camera trace: t 20.279 dt 0.0230 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.6 (goal 30.9) distance 47.9 eye y 24.38 drop 0.0
+[info] camera trace: t 20.302 dt 0.0228 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.7 (goal 31.2) distance 47.9 eye y 24.46 drop 0.0
+[info] camera trace: t 20.325 dt 0.0225 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.8 (goal 31.2) distance 47.9 eye y 24.53 drop 0.0
+[info] camera trace: t 20.348 dt 0.0232 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 30.9 (goal 31.5) distance 47.9 eye y 24.63 drop 0.0
+[info] camera trace: t 20.371 dt 0.0228 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 31.0 (goal 31.5) distance 47.9 eye y 24.70 drop 0.0
+[info] camera trace: t 20.393 dt 0.0227 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 31.1 (goal 31.5) distance 47.9 eye y 24.76 drop 0.0
+[info] camera trace: t 20.416 dt 0.0226 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 31.3 (goal 31.7) distance 47.9 eye y 24.85 drop 0.0
+[info] camera trace: t 20.439 dt 0.0226 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 31.4 (goal 31.7) distance 47.9 eye y 24.92 drop 0.0
+[info] camera trace: t 20.461 dt 0.0227 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 31.5 (goal 32.0) distance 47.9 eye y 25.02 drop 0.0
+[info] camera trace: t 20.484 dt 0.0223 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 31.6 (goal 32.0) distance 47.9 eye y 25.10 drop 0.0
+[info] camera trace: t 20.506 dt 0.0221 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 31.7 (goal 32.0) distance 47.9 eye y 25.16 drop 0.0
+[info] camera trace: t 20.528 dt 0.0222 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 31.8 (goal 32.3) distance 47.9 eye y 25.25 drop 0.0
+[info] camera trace: t 20.550 dt 0.0221 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 32.0 (goal 32.6) distance 47.9 eye y 25.36 drop 0.0
+[info] camera trace: t 20.573 dt 0.0225 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 32.1 (goal 32.6) distance 47.9 eye y 25.45 drop 0.0
+[info] camera trace: t 20.594 dt 0.0219 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 32.3 (goal 32.9) distance 47.9 eye y 25.56 drop 0.0
+[info] camera trace: t 20.617 dt 0.0223 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 32.4 (goal 33.2) distance 47.9 eye y 25.69 drop 0.0
+[info] camera trace: t 20.638 dt 0.0215 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 32.6 (goal 33.2) distance 47.9 eye y 25.79 drop 0.0
+[info] camera trace: t 20.660 dt 0.0216 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 32.7 (goal 33.2) distance 47.9 eye y 25.87 drop 0.0
+[info] camera trace: t 20.682 dt 0.0217 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 32.8 (goal 33.5) distance 47.9 eye y 25.98 drop 0.0
+[info] camera trace: t 20.703 dt 0.0216 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 33.0 (goal 33.8) distance 47.9 eye y 26.10 drop 0.0
+[info] camera trace: t 20.724 dt 0.0213 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 33.2 (goal 33.8) distance 47.9 eye y 26.20 drop 0.0
+[info] camera trace: t 20.746 dt 0.0212 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 33.3 (goal 34.0) distance 47.9 eye y 26.31 drop 0.0
+[info] camera trace: t 20.767 dt 0.0213 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 33.5 (goal 34.0) distance 47.9 eye y 26.41 drop 0.0
+[info] camera trace: t 20.788 dt 0.0213 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 33.6 (goal 34.0) distance 47.9 eye y 26.49 drop 0.0
+[info] camera trace: t 20.809 dt 0.0207 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 33.7 (goal 34.3) distance 47.9 eye y 26.58 drop 0.0
+[info] camera trace: t 20.830 dt 0.0209 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 33.8 (goal 34.3) distance 47.9 eye y 26.66 drop 0.0
+[info] camera trace: t 20.850 dt 0.0203 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 34.0 (goal 34.6) distance 47.9 eye y 26.76 drop 0.0
+[info] camera trace: t 20.871 dt 0.0205 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 34.1 (goal 34.9) distance 47.9 eye y 26.88 drop 0.0
+[info] camera trace: t 20.891 dt 0.0201 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 34.3 (goal 34.9) distance 47.9 eye y 26.98 drop 0.0
+[info] camera trace: t 20.911 dt 0.0199 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 34.4 (goal 34.9) distance 47.9 eye y 27.05 drop 0.0
+[info] camera trace: t 20.930 dt 0.0198 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 34.6 (goal 35.5) distance 47.9 eye y 27.19 drop 0.0
+[info] camera trace: t 20.950 dt 0.0199 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 34.8 (goal 36.0) distance 47.9 eye y 27.37 drop 0.0
+[info] camera trace: t 20.970 dt 0.0196 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 35.2 (goal 36.6) distance 47.9 eye y 27.58 drop 0.0
+[info] camera trace: t 20.990 dt 0.0197 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 35.5 (goal 37.2) distance 47.9 eye y 27.83 drop 0.0
+[info] camera trace: t 21.009 dt 0.0194 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 35.9 (goal 37.5) distance 47.9 eye y 28.06 drop 0.0
+[info] camera trace: t 21.048 dt 0.0197 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 36.4 (goal 37.8) distance 47.9 eye y 28.45 drop 0.0
+[info] camera trace: t 21.068 dt 0.0195 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 36.8 (goal 38.3) distance 47.9 eye y 28.67 drop 0.0
+[info] camera trace: t 21.088 dt 0.0198 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 37.2 (goal 39.2) distance 47.9 eye y 28.96 drop 0.0
+[info] camera trace: t 21.107 dt 0.0197 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 37.6 (goal 39.5) distance 47.9 eye y 29.23 drop 0.0
+[info] camera trace: t 21.207 dt 0.0199 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 38.8 (goal 39.8) distance 47.9 eye y 30.04 drop 0.0
+[info] camera trace: t 21.226 dt 0.0198 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 39.1 (goal 40.3) distance 47.9 eye y 30.21 drop 0.0
+[info] camera trace: t 21.246 dt 0.0198 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 39.4 (goal 40.9) distance 47.9 eye y 30.42 drop 0.0
+[info] camera trace: t 21.266 dt 0.0199 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 39.9 (goal 41.8) distance 47.9 eye y 30.69 drop 0.0
+[info] camera trace: t 21.286 dt 0.0199 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 40.3 (goal 42.1) distance 47.9 eye y 30.95 drop 0.0
+[info] camera trace: t 21.306 dt 0.0201 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 40.6 (goal 42.3) distance 47.9 eye y 31.19 drop 0.0
+[info] camera trace: t 21.326 dt 0.0201 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 41.0 (goal 42.9) distance 47.9 eye y 31.45 drop 0.0
+[info] camera trace: t 21.346 dt 0.0201 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 41.5 (goal 43.5) distance 47.9 eye y 31.73 drop 0.0
+[info] camera trace: t 21.366 dt 0.0202 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 42.0 (goal 44.4) distance 47.9 eye y 32.06 drop 0.0
+[info] camera trace: t 21.387 dt 0.0206 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 42.6 (goal 45.2) distance 47.9 eye y 32.42 drop 0.0
+[info] camera trace: t 21.407 dt 0.0203 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 43.3 (goal 46.4) distance 47.9 eye y 32.84 drop 0.0
+[info] camera trace: t 21.428 dt 0.0202 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 44.0 (goal 47.2) distance 47.9 eye y 33.28 drop 0.0
+[info] camera trace: t 21.448 dt 0.0202 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 44.8 (goal 48.4) distance 47.9 eye y 33.75 drop 0.0
+[info] camera trace: t 21.468 dt 0.0206 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 45.7 (goal 49.5) distance 47.9 eye y 34.27 drop 0.0
+[info] camera trace: t 21.488 dt 0.0199 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 46.6 (goal 50.7) distance 47.9 eye y 34.79 drop 0.0
+[info] camera trace: t 21.509 dt 0.0203 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 47.6 (goal 52.1) distance 47.9 eye y 35.36 drop 0.0
+[info] camera trace: t 21.538 dt 0.0298 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 49.3 (goal 54.4) distance 47.9 eye y 36.33 drop 0.0
+[info] camera trace: t 21.559 dt 0.0207 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 50.6 (goal 55.8) distance 47.9 eye y 36.98 drop 0.0
+[info] camera trace: t 21.579 dt 0.0200 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 51.7 (goal 57.0) distance 47.9 eye y 37.59 drop 0.0
+[info] camera trace: t 21.599 dt 0.0198 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 52.9 (goal 58.1) distance 47.9 eye y 38.18 drop 0.0
+[info] camera trace: t 21.619 dt 0.0199 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 53.9 (goal 58.7) distance 47.9 eye y 38.70 drop 0.0
+[info] camera trace: t 21.639 dt 0.0202 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 55.0 (goal 59.8) distance 47.9 eye y 39.23 drop 0.0
+[info] camera trace: t 21.658 dt 0.0195 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 56.0 (goal 61.0) distance 47.9 eye y 39.73 drop 0.0
+[info] camera trace: t 21.678 dt 0.0192 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 57.1 (goal 62.1) distance 47.9 eye y 40.21 drop 0.0
+[info] camera trace: t 21.697 dt 0.0191 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 58.1 (goal 62.7) distance 47.9 eye y 40.65 drop 0.0
+[info] camera trace: t 21.716 dt 0.0194 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 59.0 (goal 63.5) distance 47.9 eye y 41.07 drop 0.0
+[info] camera trace: t 21.736 dt 0.0194 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 60.0 (goal 64.4) distance 47.9 eye y 41.47 drop 0.0
+[info] camera trace: t 21.754 dt 0.0189 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 60.9 (goal 65.3) distance 47.9 eye y 41.85 drop 0.0
+[info] camera trace: t 21.773 dt 0.0186 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 61.8 (goal 66.4) distance 47.9 eye y 42.22 drop 0.0
+[info] camera trace: t 21.792 dt 0.0185 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 62.8 (goal 67.6) distance 47.9 eye y 42.60 drop 0.0
+[info] camera trace: t 21.810 dt 0.0184 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 63.7 (goal 68.4) distance 47.9 eye y 42.95 drop 0.0
+[info] camera trace: t 21.828 dt 0.0184 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 64.7 (goal 69.3) distance 47.9 eye y 43.29 drop 0.0
+[info] camera trace: t 21.847 dt 0.0182 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 65.6 (goal 70.1) distance 47.9 eye y 43.61 drop 0.0
+[info] camera trace: t 21.865 dt 0.0183 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 66.5 (goal 71.0) distance 47.9 eye y 43.92 drop 0.0
+[info] camera trace: t 21.883 dt 0.0183 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 67.3 (goal 71.3) distance 47.9 eye y 44.18 drop 0.0
+[info] camera trace: t 21.901 dt 0.0181 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 68.0 (goal 71.6) distance 47.9 eye y 44.40 drop 0.0
+[info] camera trace: t 21.919 dt 0.0182 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 68.7 (goal 72.1) distance 47.9 eye y 44.62 drop 0.0
+[info] camera trace: t 21.937 dt 0.0180 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 69.3 (goal 72.7) distance 47.9 eye y 44.81 drop 0.0
+[info] camera trace: t 21.956 dt 0.0181 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 70.1 (goal 73.9) distance 47.9 eye y 45.03 drop 0.0
+[info] camera trace: t 21.973 dt 0.0179 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 70.9 (goal 74.7) distance 47.9 eye y 45.24 drop 0.0
+[info] camera trace: t 21.992 dt 0.0182 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 71.5 (goal 75.0) distance 47.9 eye y 45.43 drop 0.0
+[info] camera trace: t 22.063 dt 0.0182 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 73.4 (goal 75.6) distance 47.9 eye y 45.90 drop 0.0
+[info] camera trace: t 22.081 dt 0.0178 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 73.8 (goal 75.9) distance 47.9 eye y 45.99 drop 0.0
+[info] camera trace: t 22.117 dt 0.0181 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 74.5 (goal 76.1) distance 47.9 eye y 46.15 drop 0.0
+[info] camera trace: t 22.153 dt 0.0181 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 75.1 (goal 76.7) distance 47.9 eye y 46.28 drop 0.0
+[info] camera trace: t 22.171 dt 0.0179 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 75.4 (goal 77.3) distance 47.9 eye y 46.35 drop 0.0
+[info] camera trace: t 22.189 dt 0.0179 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 75.9 (goal 78.2) distance 47.9 eye y 46.45 drop 0.0
+[info] camera trace: t 22.207 dt 0.0178 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 76.3 (goal 78.7) distance 47.9 eye y 46.54 drop 0.0
+[info] camera trace: t 22.224 dt 0.0178 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 76.8 (goal 79.3) distance 47.9 eye y 46.63 drop 0.0
+[info] camera trace: t 22.260 dt 0.0181 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 77.6 (goal 79.6) distance 47.9 eye y 46.78 drop 0.0
+[info] camera trace: t 22.278 dt 0.0180 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 78.0 (goal 80.2) distance 47.9 eye y 46.85 drop 0.0
+[info] camera trace: t 22.296 dt 0.0177 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 78.5 (goal 80.7) distance 47.9 eye y 46.93 drop 0.0
+[info] camera trace: t 22.314 dt 0.0179 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 79.0 (goal 81.6) distance 47.9 eye y 47.01 drop 0.0
+[info] camera trace: t 22.331 dt 0.0178 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 79.5 (goal 82.2) distance 47.9 eye y 47.09 drop 0.0
+[info] camera trace: t 22.349 dt 0.0176 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 80.0 (goal 82.7) distance 47.9 eye y 47.17 drop 0.0
+[info] camera trace: t 22.367 dt 0.0178 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 80.6 (goal 83.3) distance 47.9 eye y 47.24 drop 0.0
+[info] camera trace: t 22.385 dt 0.0178 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 81.1 (goal 83.9) distance 47.9 eye y 47.32 drop 0.0
+[info] camera trace: t 22.402 dt 0.0176 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 81.6 (goal 84.5) distance 47.9 eye y 47.38 drop 0.0
+[info] camera trace: t 22.420 dt 0.0179 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 82.2 (goal 85.0) distance 47.9 eye y 47.45 drop 0.0
+[info] camera trace: t 22.456 dt 0.0178 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 83.1 (goal 85.3) distance 47.9 eye y 47.54 drop 0.0
+[info] camera trace: t 22.544 dt 0.0179 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 84.4 (goal 85.6) distance 47.9 eye y 47.67 drop 0.0
+[info] camera trace: t 22.562 dt 0.0179 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 84.7 (goal 86.2) distance 47.9 eye y 47.69 drop 0.0
+[info] camera trace: t 22.590 dt 0.0273 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 85.4 (goal 87.3) distance 47.9 eye y 47.73 drop 0.0
+[info] camera trace: t 22.608 dt 0.0182 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 85.7 (goal 87.6) distance 47.9 eye y 47.76 drop 0.0
+[info] camera trace: t 22.625 dt 0.0176 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 86.0 (goal 87.6) distance 47.9 eye y 47.78 drop 0.0
+[info] camera trace: t 22.643 dt 0.0179 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 86.3 (goal 87.9) distance 47.9 eye y 47.79 drop 0.0
+[info] camera trace: t 22.661 dt 0.0176 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 86.6 (goal 87.9) distance 47.9 eye y 47.81 drop 0.0
+[info] camera trace: t 22.679 dt 0.0179 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 86.8 (goal 87.9) distance 47.9 eye y 47.82 drop 0.0
+[info] camera trace: t 22.696 dt 0.0176 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 87.0 (goal 88.2) distance 47.9 eye y 47.83 drop 0.0
+[info] camera trace: t 22.715 dt 0.0180 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 87.2 (goal 88.2) distance 47.9 eye y 47.84 drop 0.0
+[info] camera trace: t 22.732 dt 0.0177 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 87.4 (goal 88.2) distance 47.9 eye y 47.84 drop 0.0
+[info] camera trace: t 22.750 dt 0.0180 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 87.5 (goal 87.9) distance 47.9 eye y 47.85 drop 0.0
+[info] camera trace: t 22.768 dt 0.0178 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 87.4 (goal 87.3) distance 47.9 eye y 47.84 drop 0.0
+[info] camera trace: t 22.786 dt 0.0181 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 87.3 (goal 86.7) distance 47.9 eye y 47.84 drop 0.0
+[info] camera trace: t 22.804 dt 0.0179 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 87.1 (goal 86.2) distance 47.9 eye y 47.83 drop 0.0
+[info] camera trace: t 22.822 dt 0.0181 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 86.9 (goal 85.6) distance 47.9 eye y 47.82 drop 0.0
+[info] camera trace: t 22.840 dt 0.0181 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 86.5 (goal 84.7) distance 47.9 eye y 47.80 drop 0.0
+[info] camera trace: t 22.858 dt 0.0179 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 86.1 (goal 84.2) distance 47.9 eye y 47.78 drop 0.0
+[info] camera trace: t 22.878 dt 0.0201 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 85.7 (goal 83.9) distance 47.9 eye y 47.76 drop 0.0
+[info] camera trace: t 22.897 dt 0.0186 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 85.4 (goal 83.6) distance 47.9 eye y 47.74 drop 0.0
+[info] camera trace: t 22.915 dt 0.0184 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 85.0 (goal 83.3) distance 47.9 eye y 47.71 drop 0.0
+[info] camera trace: t 22.934 dt 0.0189 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 84.6 (goal 82.5) distance 47.9 eye y 47.68 drop 0.0
+[info] camera trace: t 22.953 dt 0.0189 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 84.1 (goal 81.9) distance 47.9 eye y 47.64 drop 0.0
+[info] camera trace: t 22.972 dt 0.0185 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 83.7 (goal 81.6) distance 47.9 eye y 47.60 drop 0.0
+[info] camera trace: t 22.990 dt 0.0185 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 83.3 (goal 81.6) distance 47.9 eye y 47.57 drop 0.0
+[info] camera trace: t 23.008 dt 0.0183 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 83.0 (goal 81.3) distance 47.9 eye y 47.53 drop 0.0
+[info] camera trace: t 23.027 dt 0.0186 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 82.6 (goal 80.7) distance 47.9 eye y 47.49 drop 0.0
+[info] camera trace: t 23.044 dt 0.0173 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 82.2 (goal 79.9) distance 47.9 eye y 47.45 drop 0.0
+[info] camera trace: t 23.062 dt 0.0174 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 81.8 (goal 79.6) distance 47.9 eye y 47.40 drop 0.0
+[info] camera trace: t 23.079 dt 0.0176 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 81.2 (goal 78.4) distance 47.9 eye y 47.33 drop 0.0
+[info] camera trace: t 23.097 dt 0.0177 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 80.5 (goal 77.0) distance 47.9 eye y 47.24 drop 0.0
+[info] camera trace: t 23.114 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 79.8 (goal 75.9) distance 47.9 eye y 47.14 drop 0.0
+[info] camera trace: t 23.131 dt 0.0171 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 78.9 (goal 74.1) distance 47.9 eye y 47.00 drop 0.0
+[info] camera trace: t 23.148 dt 0.0172 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 78.0 (goal 73.0) distance 47.9 eye y 46.84 drop 0.0
+[info] camera trace: t 23.165 dt 0.0172 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 77.1 (goal 72.1) distance 47.9 eye y 46.68 drop 0.0
+[info] camera trace: t 23.182 dt 0.0169 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 76.1 (goal 70.7) distance 47.9 eye y 46.49 drop 0.0
+[info] camera trace: t 23.200 dt 0.0173 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 75.0 (goal 69.0) distance 47.9 eye y 46.25 drop 0.0
+[info] camera trace: t 23.216 dt 0.0169 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 73.6 (goal 66.1) distance 47.9 eye y 45.94 drop 0.0
+[info] camera trace: t 23.234 dt 0.0172 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 72.0 (goal 63.5) distance 47.9 eye y 45.55 drop 0.0
+[info] camera trace: t 23.250 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 70.4 (goal 61.5) distance 47.9 eye y 45.11 drop 0.0
+[info] camera trace: t 23.267 dt 0.0169 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 68.8 (goal 60.1) distance 47.9 eye y 44.65 drop 0.0
+[info] camera trace: t 23.284 dt 0.0168 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 67.3 (goal 59.0) distance 47.9 eye y 44.17 drop 0.0
+[info] camera trace: t 23.301 dt 0.0169 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 65.8 (goal 58.1) distance 47.9 eye y 43.70 drop 0.0
+[info] camera trace: t 23.318 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 64.5 (goal 57.2) distance 47.9 eye y 43.23 drop 0.0
+[info] camera trace: t 23.334 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 63.1 (goal 55.2) distance 47.9 eye y 42.71 drop 0.0
+[info] camera trace: t 23.351 dt 0.0171 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 61.6 (goal 53.2) distance 47.9 eye y 42.11 drop 0.0
+[info] camera trace: t 23.368 dt 0.0162 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 60.1 (goal 52.1) distance 47.9 eye y 41.53 drop 0.0
+[info] camera trace: t 23.384 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 58.7 (goal 50.7) distance 47.9 eye y 40.91 drop 0.0
+[info] camera trace: t 23.401 dt 0.0167 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 57.3 (goal 49.8) distance 47.9 eye y 40.30 drop 0.0
+[info] camera trace: t 23.418 dt 0.0166 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 55.9 (goal 48.1) distance 47.9 eye y 39.65 drop 0.0
+[info] camera trace: t 23.435 dt 0.0169 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 54.3 (goal 45.8) distance 47.9 eye y 38.90 drop 0.0
+[info] camera trace: t 23.452 dt 0.0170 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 52.5 (goal 42.9) distance 47.9 eye y 38.01 drop 0.0
+[info] camera trace: t 23.469 dt 0.0170 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 50.7 (goal 40.9) distance 47.9 eye y 37.07 drop 0.0
+[info] camera trace: t 23.486 dt 0.0175 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 48.9 (goal 39.2) distance 47.9 eye y 36.07 drop 0.0
+[info] camera trace: t 23.504 dt 0.0175 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 47.2 (goal 38.3) distance 47.9 eye y 35.13 drop 0.0
+[info] camera trace: t 23.522 dt 0.0185 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 45.6 (goal 37.8) distance 47.9 eye y 34.21 drop 0.0
+[info] camera trace: t 23.543 dt 0.0208 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 44.1 (goal 37.5) distance 47.9 eye y 33.31 drop 0.0
+[info] camera trace: t 23.564 dt 0.0208 goal (-21.03, 17.43) pivot (-21.03, 0.00, 17.43) pitch 42.8 (goal 37.2) distance 47.9 eye y 32.53 drop 0.0
+Assertion failed: tex_ref._TexData->Status != ImTextureStatus_WantDestroy && tex_ref._TexData->Status != ImTextureStatus_Destroyed, file C:\EmberEngineB\build\release\_deps\imgui-src\imgui_draw.cpp, line 711

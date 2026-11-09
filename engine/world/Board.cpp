@@ -188,6 +188,9 @@ std::optional<MapDraft> MapDraft::fromJson(const json& d) {
   if (d.contains("guestHeroes") && d["guestHeroes"].is_array())
     for (const json& g : d["guestHeroes"])
       if (g.is_string() && !g.get<std::string>().empty()) m.guestHeroes.push_back(g.get<std::string>());
+  if (d.contains("partyHeroes") && d["partyHeroes"].is_array())
+    for (const json& g : d["partyHeroes"])
+      if (g.is_string() && !g.get<std::string>().empty()) m.partyHeroes.push_back(g.get<std::string>());
   m.mistIntensity = num("mistIntensity", m.mistType.empty() ? 0.0f : 0.2f);
   m.mistSpeed = num("mistSpeed", 1.0f);
   m.wispIntensity = num("wispIntensity", 0.0f);

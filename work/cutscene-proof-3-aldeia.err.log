@@ -1,0 +1,5 @@
+[warn] slow stage frame: 178.3 ms = sprites 176.5, uploads 1.1, rest 0.1
+[warn] slow frame: 182.9 ms busy = assets 0.5, stage 178.7, ui 0.6, render 3.2 (record 2.9, submit 0.1, present 0.0; waits 0.1 not counted)
+[warn] slow stage frame: 68.9 ms = sprites 66.7, uploads 1.2, rest 0.1
+[warn] slow frame: 71.2 ms busy = assets 0.1, stage 69.7, ui 0.7, render 0.9 (record 0.6, submit 0.1, present 0.0; waits 0.0 not counted)
+[warn] slow frame: 415.4 ms busy = assets 0.0, stage 0.2, ui 0.4, render 451.1 (record 1.0, submit 0.1, present 0.0; waits 36.4 not counted)

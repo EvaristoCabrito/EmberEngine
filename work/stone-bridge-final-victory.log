@@ -1,0 +1,324 @@
+[info] mounted .\build\sprites\battle.pak (3340 assets)
+[info] mounted .\build\meshes\props-v42.pak (780 assets)
+[info] mounted .\build\meshes\architecture.pak (32 assets)
+[info] mounted .\build\meshes\effects.pak (5 assets)
+[info] mounted .\build\ground\ground-v77-random-encounters-v01.pak (360 assets)
+[info] GPU: AMD Radeon(TM) RX 6400 (Vulkan 1.4.315, driver 0x800161)
+[info] transfer queue: dedicated (family 2)
+[info] pipeline cache: 106695608 bytes restored for this GPU/driver
+[info] bindless: 65536 textures, 16384 storage images, 256 samplers, 4096 storage buffers
+[info] bindless: creating descriptor set layout
+[info] bindless: descriptor set layout ready
+[info] bindless: creating descriptor pool
+[info] bindless: descriptor pool ready
+[info] bindless: allocating descriptor set
+[info] bindless: descriptor set ready
+[info] bindless: creating pipeline layout
+[info] bindless: ready
+[info] startup: GPU timer ready
+[info] startup: renderer resources begin
+[info] startup: renderer frame buffers ready
+[info] pipeline compute: volumetrics_v1.CSInject creating
+[info] pipeline compute: volumetrics_v1.CSInject ready in 0 ms
+[info] pipeline compute: volumetrics_v1.CSIntegrate creating
+[info] pipeline compute: volumetrics_v1.CSIntegrate ready in 0 ms
+[info] pipeline compute: volumetrics_clouds006.CSMaterial creating
+[info] pipeline compute: volumetrics_clouds006.CSMaterial ready in 0 ms
+[info] pipeline compute: volumetrics_clouds006.CSInject creating
+[info] pipeline compute: volumetrics_clouds006.CSInject ready in 0 ms
+[info] pipeline compute: volumetrics_clouds006.CSIntegrate creating
+[info] pipeline compute: volumetrics_clouds006.CSIntegrate ready in 0 ms
+[info] startup: renderer volumetrics ready
+[info] startup: renderer images and buffers ready
+[info] startup: renderer targets ready
+[info] pipeline graphics: triangle.VSMain + triangle.PSMain creating
+[info] pipeline graphics: triangle.VSMain + triangle.PSMain ready in 0 ms
+[info] pipeline graphics: tonemap.VSMain + tonemap.PSMain creating
+[info] pipeline graphics: tonemap.VSMain + tonemap.PSMain ready in 0 ms
+[info] pipeline graphics: ground.VSMain + ground.PSMain creating
+[info] pipeline graphics: ground.VSMain + ground.PSMain ready in 0 ms
+[info] pipeline graphics: terrain.VSMain + terrain.PSMain creating
+[info] pipeline graphics: terrain.VSMain + terrain.PSMain ready in 1 ms
+[info] pipeline graphics: terrain.VSShadow + terrain.PSShadow creating
+[info] pipeline graphics: terrain.VSShadow + terrain.PSShadow ready in 0 ms
+[info] pipeline graphics: water.VSMain + water.PSMain creating
+[info] pipeline graphics: water.VSMain + water.PSMain ready in 2 ms
+[info] pipeline graphics: sprites.VSMain + sprites.PSMain creating
+[info] pipeline graphics: sprites.VSMain + sprites.PSMain ready in 0 ms
+[info] pipeline graphics: sprites.VSMain + sprites.PSDepth creating
+[info] pipeline graphics: sprites.VSMain + sprites.PSDepth ready in 0 ms
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSDepth creating
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSDepth ready in 0 ms
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSMain creating
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSMain ready in 0 ms
+[info] pipeline graphics: effects.VSMain + effects.PSMain creating
+[info] pipeline graphics: effects.VSMain + effects.PSMain ready in 0 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
+[info] startup: renderer graphics pipelines ready
+[info] pipeline compute: cull.CSInstancesEarly creating
+[info] pipeline compute: cull.CSInstancesEarly ready in 0 ms
+[info] pipeline compute: cull.CSInstancesLate creating
+[info] pipeline compute: cull.CSInstancesLate ready in 0 ms
+[info] pipeline compute: hiz.CSDownsample creating
+[info] pipeline compute: hiz.CSDownsample ready in 0 ms
+[info] pipeline compute: bloom.CSDown creating
+[info] pipeline compute: bloom.CSDown ready in 0 ms
+[info] pipeline compute: bloom.CSUp creating
+[info] pipeline compute: bloom.CSUp ready in 0 ms
+[info] pipeline compute: cull.CSPrepare creating
+[info] pipeline compute: cull.CSPrepare ready in 0 ms
+[info] pipeline compute: cull.CSTraverse creating
+[info] pipeline compute: cull.CSTraverse ready in 0 ms
+[info] pipeline compute: cull.CSPrepareDraw creating
+[info] pipeline compute: cull.CSPrepareDraw ready in 0 ms
+[info] pipeline compute: resolve.CSResolve creating
+[info] pipeline compute: resolve.CSResolve ready in 1 ms
+[info] pipeline compute: resolve.CSSky creating
+[info] pipeline compute: resolve.CSSky ready in 1 ms
+[info] pipeline compute: resolve_panorama.CSResolve creating
+[info] pipeline compute: resolve_panorama.CSResolve ready in 1 ms
+[info] pipeline compute: resolve_panorama.CSSky creating
+[info] pipeline compute: resolve_panorama.CSSky ready in 1 ms
+[info] pipeline compute: lights.CSClusters creating
+[info] pipeline compute: lights.CSClusters ready in 0 ms
+[info] pipeline compute: volume.CSInject creating
+[info] pipeline compute: volume.CSInject ready in 0 ms
+[info] pipeline compute: atmosphere.CSTransmittance creating
+[info] pipeline compute: atmosphere.CSTransmittance ready in 0 ms
+[info] pipeline compute: atmosphere.CSMultiScattering creating
+[info] pipeline compute: atmosphere.CSMultiScattering ready in 0 ms
+[info] pipeline compute: atmosphere.CSSkyView creating
+[info] pipeline compute: atmosphere.CSSkyView ready in 0 ms
+[info] pipeline compute: atmosphere.CSAerial creating
+[info] pipeline compute: atmosphere.CSAerial ready in 0 ms
+[info] pipeline compute: atmosphere.CSAmbient creating
+[info] pipeline compute: atmosphere.CSAmbient ready in 0 ms
+[info] pipeline compute: skyreflect.CSBase creating
+[info] pipeline compute: skyreflect.CSBase ready in 0 ms
+[info] pipeline compute: skyreflect.CSFilter creating
+[info] pipeline compute: skyreflect.CSFilter ready in 0 ms
+[info] pipeline compute: skyreflect.CSCloudShadow creating
+[info] pipeline compute: skyreflect.CSCloudShadow ready in 0 ms
+[info] pipeline compute: cloudsvol.CSNoiseBase creating
+[info] pipeline compute: cloudsvol.CSNoiseBase ready in 0 ms
+[info] pipeline compute: cloudsvol.CSNoiseDetail creating
+[info] pipeline compute: cloudsvol.CSNoiseDetail ready in 0 ms
+[info] pipeline compute: cloudsvol.CSMarch creating
+[info] pipeline compute: cloudsvol.CSMarch ready in 0 ms
+[info] pipeline compute: sunglare.CSGlare creating
+[info] pipeline compute: sunglare.CSGlare ready in 0 ms
+[info] pipeline compute: probes.CSRelight creating
+[info] pipeline compute: probes.CSRelight ready in 0 ms
+[info] pipeline compute: volume.CSIntegrate creating
+[info] pipeline compute: volume.CSIntegrate ready in 0 ms
+[info] pipeline compute: fog_look001.CSMarch creating
+[info] pipeline compute: fog_look001.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look001.CSComposite creating
+[info] pipeline compute: fog_look001.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look002.CSMarch creating
+[info] pipeline compute: fog_look002.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look002.CSComposite creating
+[info] pipeline compute: fog_look002.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look003.CSMarch creating
+[info] pipeline compute: fog_look003.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look003.CSComposite creating
+[info] pipeline compute: fog_look003.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look004.CSMarch creating
+[info] pipeline compute: fog_look004.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look004.CSComposite creating
+[info] pipeline compute: fog_look004.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look005.CSMarch creating
+[info] pipeline compute: fog_look005.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look005.CSComposite creating
+[info] pipeline compute: fog_look005.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look006.CSMarch creating
+[info] pipeline compute: fog_look006.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look006.CSComposite creating
+[info] pipeline compute: fog_look006.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look007.CSMarch creating
+[info] pipeline compute: fog_look007.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look007.CSComposite creating
+[info] pipeline compute: fog_look007.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look008.CSMarch creating
+[info] pipeline compute: fog_look008.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look008.CSComposite creating
+[info] pipeline compute: fog_look008.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look009.CSMarch creating
+[info] pipeline compute: fog_look009.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look009.CSComposite creating
+[info] pipeline compute: fog_look009.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look011.CSMarch creating
+[info] pipeline compute: fog_look011.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look011.CSComposite creating
+[info] pipeline compute: fog_look011.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look010.CSMarch creating
+[info] pipeline compute: fog_look010.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look010.CSComposite creating
+[info] pipeline compute: fog_look010.CSComposite ready in 0 ms
+[info] startup: renderer compute pipelines ready
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSMain creating
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSMain ready in 0 ms
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSShadow creating
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSShadow ready in 0 ms
+[info] pipeline graphics: sprites.VSShadow + sprites.PSShadow creating
+[info] pipeline graphics: sprites.VSShadow + sprites.PSShadow ready in 0 ms
+[info] startup: renderer ready
+[info] map thebridge 'A Ponte de Pedra': 40x21 hexes, smooth 277200 triangles, hard 20160 triangles, 1 baked layers, 12 textures, 16.5 MB geometry
+[info] volumetrics: 7 profiles from content/atmosphere/v1/profiles.json
+[info] world clock: this map has no campaign clock: it starts at 19:30:00 and runs from there
+[info] board heights: lowest ground 0.00, highest 0.00 (the floor image lies under the lowest)
+[info] scene ./build/campaign/scenes/thebridge030.scene.json: built by SceneBuilder (EmberEngine props); 1 kinds left out
+[info] scene thebridge: 14 cards, 3 models, 13 units, 80 architecture pieces (80 built)
+[info] poses: 13 of 13 map units in the catalog, 15 poses between them
+[info] progression: 7 heroes; enemies keep their class's own gains
+[info] enemy ranks: 10 ranks, 26 classes ranked (others F)
+[info] battle: 83 cells made solid under EmberEngine props
+[info] cutscene: Harlan waits off the board for its scene
+[info] cutscene: Dorn waits off the board for its scene
+[info] cutscene: Pell waits off the board for its scene
+[info] cutscene: Brakk waits off the board for its scene
+[info] cutscene: Orso waits off the board for its scene
+[info] cutscene: Vora waits off the board for its scene
+[info] cutscene: Vinn waits off the board for its scene
+[info] cutscene: O Carniceiro waits off the board for its scene
+[info] battle thebridge: 13 of 13 units in play
+[info] panoramas thebridge: 1 (the newest opens: bridge-panorama-v02-alpha.png)
+[info] pipeline compute: cloud_legacy004.CSMarch creating
+[info] pipeline compute: cloud_legacy004.CSMarch ready in 0 ms
+[info] pipeline compute: cloud_legacy004_sky.CSCloudShadow creating
+[info] pipeline compute: cloud_legacy004_sky.CSCloudShadow ready in 0 ms
+[info] pipeline compute: cloud_legacy004_sky.CSBase creating
+[info] pipeline compute: cloud_legacy004_sky.CSBase ready in 0 ms
+[warn] slow frame: 178.8 ms busy = assets 0.1, stage 3.4, ui 12.4, render 162.9 (record 157.9, submit 4.9, present 0.0; waits 0.0 not counted)
+[info] sprites: roster lists 1113 clips
+[info] sprites: Personagens Alta: the cast 491 MB at full resolution, the others 131 MB (GPU 2701 MB free before the fight)
+[info] sprites: full-clip pool 8 x 144 MB (largest clip 144.5 MB)
+[info] sprites: full-clip pool set up in 172.3 ms
+[warn] slow stage frame: 216.8 ms = sprites 214.2, uploads 1.8, rest 0.2
+[warn] slow frame: 221.6 ms busy = assets 1.6, stage 216.8, ui 2.2, render 1.1 (record 0.8, submit 0.1, present 0.0; waits 0.1 not counted)
+[info] sprites: the fight's 55 clips on the GPU 2.07 s after they were asked for
+[info] sprites:   voss-veo-leve-passo 131 MB (full 131 MB)
+[info] sprites:   neera/neera-v2-001 110 MB (full 110 MB)
+[info] sprites:   BasePikeman 87 MB (full 87 MB)
+[info] sprites:   militia-v2 74 MB (full 74 MB)
+[info] sprites:   BaseCrossbowman 66 MB (full 66 MB)
+[info] sprites:   theButcher 60 MB (full 60 MB)
+[info] sprites:   Kael_Final/kael-final-002 33 MB (full 33 MB)
+[info] sprites:   wardog2 30 MB (full 30 MB)
+[info] sprites:   neera-hydra 17 MB (full 17 MB)
+[info] sprites:   neera 8 MB (full 8 MB)
+[info] sprites:   lancer 2 MB (full 2 MB)
+[info] sprites:   villagerF1 1 MB (full 1 MB)
+[info] sprites:   voss-final 0 MB (full 0 MB)
+[info] sprites: GPU memory 1898 MB allocated by the game, 1972 MB used, budget 3227 MB, heap 3824 MB
+[ERROR] cutscene stone-bridge-02-a-promessa: refused, actor "butcher" = "O Carniceiro" is not on the map
+[ERROR] cutscene test stone-bridge-02-a-promessa: FAIL (refused)
+[info] cutscene test: FAIL
+[info] meshes: textures 9 of 9 at the size the camera needs, 9 at full size (3 MB on the GPU, 1255 MB free)
+[info] camera: meter 2.895 lux, EV 0.21, darkening 2.00 stops, exposure 0.17989, key 5.13 lux at elevation 21.4 deg
+[info] sky: hour 19.50, moon full (default) (disc texture 48, radius 2.70 deg, glow 5.56) at elevation 21.4 deg, azimuth -121.9 deg (the camera looks at azimuth 150.0, elevation -20.0), off screen
+[info] captured 1600x900 -> .\work\stone-bridge-final-victory-000.png
+[info] capture GPU frame: 15.2432 ms
+[info] capture GPU light clusters: 0.0061 ms
+[info] capture GPU atmosphere: 1.0943 ms
+[info] capture GPU clouds: 0.0318 ms
+[info] capture GPU cloud shadow: 0.1203 ms
+[info] capture GPU sky reflect: 3.0484 ms
+[info] capture GPU card shadow: 0.0355 ms
+[info] capture GPU volumetrics: 0.1966 ms
+[info] capture GPU fog injection: 0.1755 ms
+[info] capture GPU fog integration: 0.0200 ms
+[info] capture GPU cull early: 0.0619 ms
+[info] capture GPU draw early: 0.1271 ms
+[info] capture GPU depth pyramid: 0.0527 ms
+[info] capture GPU cull late: 0.0351 ms
+[info] capture GPU draw late: 0.0015 ms
+[info] capture GPU depth pyramid (next frame): 0.0546 ms
+[info] capture GPU resolve: 1.1192 ms
+[info] capture GPU scene: 5.4764 ms
+[info] capture GPU terrain: 5.4398 ms
+[info] capture GPU fog bank: 3.1201 ms
+[info] capture GPU bloom: 0.3185 ms
+[info] capture GPU tonemap: 0.1554 ms
+[info] capture GPU ui: 0.1593 ms
+[warn] slow frame: 540.3 ms busy = assets 0.0, stage 0.5, ui 2.2, render 537.7 (record 1.1, submit 0.1, present 0.0; waits 0.0 not counted)
+[info] captured 1600x900 -> .\work\stone-bridge-final-victory-001.png
+[info] capture GPU frame: 15.1813 ms
+[info] capture GPU light clusters: 0.0056 ms
+[info] capture GPU atmosphere: 1.0866 ms
+[info] capture GPU clouds: 0.0310 ms
+[info] capture GPU cloud shadow: 0.1202 ms
+[info] capture GPU sky reflect: 3.0226 ms
+[info] capture GPU card shadow: 0.0338 ms
+[info] capture GPU volumetrics: 0.1934 ms
+[info] capture GPU fog injection: 0.1731 ms
+[info] capture GPU fog integration: 0.0192 ms
+[info] capture GPU cull early: 0.0603 ms
+[info] capture GPU draw early: 0.1264 ms
+[info] capture GPU depth pyramid: 0.0529 ms
+[info] capture GPU cull late: 0.0351 ms
+[info] capture GPU draw late: 0.0015 ms
+[info] capture GPU depth pyramid (next frame): 0.0548 ms
+[info] capture GPU resolve: 1.1152 ms
+[info] capture GPU scene: 5.4589 ms
+[info] capture GPU terrain: 5.4242 ms
+[info] capture GPU fog bank: 3.1214 ms
+[info] capture GPU bloom: 0.3176 ms
+[info] capture GPU tonemap: 0.1596 ms
+[info] capture GPU ui: 0.1559 ms
+[warn] slow frame: 523.2 ms busy = assets 0.0, stage 0.3, ui 2.1, render 520.7 (record 1.8, submit 0.1, present 0.0; waits 0.0 not counted)
+[info] captured 1600x900 -> .\work\stone-bridge-final-victory-002.png
+[info] capture GPU frame: 15.2023 ms
+[info] capture GPU light clusters: 0.0060 ms
+[info] capture GPU atmosphere: 1.0976 ms
+[info] capture GPU clouds: 0.0312 ms
+[info] capture GPU cloud shadow: 0.1205 ms
+[info] capture GPU sky reflect: 3.0326 ms
+[info] capture GPU card shadow: 0.0340 ms
+[info] capture GPU volumetrics: 0.1962 ms
+[info] capture GPU fog injection: 0.1760 ms
+[info] capture GPU fog integration: 0.0190 ms
+[info] capture GPU cull early: 0.0622 ms
+[info] capture GPU draw early: 0.1272 ms
+[info] capture GPU depth pyramid: 0.0534 ms
+[info] capture GPU cull late: 0.0361 ms
+[info] capture GPU draw late: 0.0015 ms
+[info] capture GPU depth pyramid (next frame): 0.0547 ms
+[info] capture GPU resolve: 1.1198 ms
+[warn] slow frame: 524.6 ms busy = assets 0.0, stage 0.4, ui 2.2, render 522.0 (record 0.8, submit 0.1, present 0.0; waits 0.0 not counted)
+[info] capture GPU scene: 5.4503 ms
+[info] capture GPU terrain: 5.4138 ms
+[info] capture GPU fog bank: 3.1197 ms
+[info] capture GPU bloom: 0.3184 ms
+[info] capture GPU tonemap: 0.1495 ms
+[info] capture GPU ui: 0.1610 ms
+[info] captured 1600x900 -> .\work\stone-bridge-final-victory-003.png
+[info] capture GPU frame: 15.2568 ms
+[info] capture GPU light clusters: 0.0059 ms
+[info] capture GPU atmosphere: 1.0936 ms
+[info] capture GPU clouds: 0.0319 ms
+[info] capture GPU cloud shadow: 0.1204 ms
+[info] capture GPU sky reflect: 3.0706 ms
+[info] capture GPU card shadow: 0.0337 ms
+[info] capture GPU volumetrics: 0.1888 ms
+[info] capture GPU fog injection: 0.1702 ms
+[info] capture GPU fog integration: 0.0176 ms
+[info] capture GPU cull early: 0.0611 ms
+[info] capture GPU draw early: 0.1264 ms
+[info] capture GPU depth pyramid: 0.0535 ms
+[info] capture GPU cull late: 0.0351 ms
+[info] capture GPU draw late: 0.0015 ms
+[info] capture GPU depth pyramid (next frame): 0.0546 ms
+[info] capture GPU resolve: 1.1205 ms
+[info] capture GPU scene: 5.4783 ms
+[info] capture GPU terrain: 5.4427 ms
+[info] capture GPU fog bank: 3.1191 ms
+[info] capture GPU bloom: 0.3179 ms
+[info] capture GPU tonemap: 0.1617 ms
+[info] capture GPU ui: 0.1524 ms
+[warn] slow frame: 526.5 ms busy = assets 0.0, stage 0.4, ui 2.2, render 524.0 (record 1.1, submit 0.1, present 0.0; waits 0.0 not counted)

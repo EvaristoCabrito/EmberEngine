@@ -115,6 +115,38 @@ def unmix(rgb, alpha, plate):
     return np.dstack([fg, a * 255.0]).astype(np.float32)
 
 
+def edge_key(rgb, alpha, plate, solid=0.97, reach=10, minsep=40.0):
+    """`edgeKey` (the user, 2026-11-09, Kael V3: "very large grey borders ... this cloak has the most grey"): the model's soft
+    edge is a few px too wide round a dark figure on the light studio wall, so `unmix` turned wall into a pale rim (the cloak's
+    edge and its tatters). Here each edge pixel is read against the two colours it lies between: F, the figure's own colour
+    beside it (the solid inside, 7x7 mean, else the nearest solid pixel) and B, the wall plate. Its alpha is the pixel's share
+    of the way from B to F (never more than the model's), its colour F blended toward the unmixed colour as it gets solid.
+    Only within `reach` px of the solid figure and where F and B differ by more than `minsep` (the steel blade is near the wall's
+    grey: the model's own edge kept there); the far soft bits (smoke, glows) as `unmix` has them. The solid inside untouched."""
+    from scipy import ndimage
+    a = alpha.astype(np.float32) / 255.0
+    c = rgb.astype(np.float32)
+    core = ndimage.binary_erosion(a >= solid, iterations=2)
+    if not core.any():
+        return unmix(rgb, alpha, plate)
+    w = ndimage.uniform_filter(core.astype(np.float32), 7)
+    F = np.dstack([ndimage.uniform_filter(c[..., k] * core, 7) for k in range(3)]) / np.maximum(w, 1e-6)[..., None]
+    dist, (iy, ix) = ndimage.distance_transform_edt(~core, return_indices=True)
+    F = np.where((w > 1e-3)[..., None], F, c[iy, ix])
+    d = F - plate
+    sep = np.sqrt((d * d).sum(-1))
+    est = np.clip(((c - plate) * d).sum(-1) / np.maximum(sep * sep, 1.0), 0, 1)
+    ok = (a < solid) & (a > 0) & (dist <= reach) & (sep > minsep)
+    an = a.copy()
+    an[ok] = np.minimum(a[ok], est[ok])
+    an = np.where(an < 0.04, 0.0, an)
+    un = np.clip((c - (1 - an[..., None]) * plate) / np.maximum(an[..., None], 1e-3), 0, 255)
+    fg = np.where(ok[..., None], F * (1 - an[..., None]) + un * an[..., None], un)
+    fg = np.where((a >= solid)[..., None], c, fg)
+    fg = np.where((an <= 0)[..., None], 0, fg)
+    return np.dstack([fg, an * 255.0]).astype(np.float32)
+
+
 def wall_key(rgb, alpha, plate, key):
     """A clip's `wallKey` (the cast, 2026-10-20): inside a region of the video, whatever differs from the wall is figure too.
     The model drops a bright light against the dark wall as background and the staff's head with it (the cast's flash and
@@ -276,6 +308,8 @@ def main():
             lo, hi = c["wallKey"].get("frames", [c["first"], c["last"]])
             frames = [unmix(rgb[i], *wall_key(rgb[i], alpha[i], plate, c["wallKey"])) if lo <= c["first"] + i <= hi
                       else unmix(rgb[i], alpha[i], plate) for i in range(len(rgb))]
+        elif c.get("edgeKey", spec.get("edgeKey")):
+            frames = [edge_key(rgb[i], alpha[i], plate) for i in range(len(rgb))]
         else:
             frames = [unmix(rgb[i], alpha[i], plate) for i in range(len(rgb))]
         if "mirrorFrom" in c:
