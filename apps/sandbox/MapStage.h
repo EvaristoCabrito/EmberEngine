@@ -6648,6 +6648,8 @@ class MapStage final : public Stage {
     }
     music_ = cutsceneMusic_;
     cutsceneFxOff();
+    for (const size_t ui : cutscene_->heldPoses)  // a held pose (Kael's back) never outlives its scene
+      if (ui < unitShot_.size() && unitShot_[ui].hold && (ui >= unitDiedAt_.size() || unitDiedAt_[ui] < 0.0f)) unitShot_[ui] = {};
     cutscene_.reset();
     if (back >= 0 && back < static_cast<int>(unitBattle_.size()) && unitBattle_[static_cast<size_t>(back)] >= 0 &&
         battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(back)])].alive)
@@ -6711,7 +6713,8 @@ class MapStage final : public Stage {
         case ember::CutsceneStep::Kind::Flash:
         case ember::CutsceneStep::Kind::Sfx:
         case ember::CutsceneStep::Kind::Music:
-        case ember::CutsceneStep::Kind::Emote: break;
+        case ember::CutsceneStep::Kind::Emote:
+        case ember::CutsceneStep::Kind::Pose: break;
       }
       c.waiting = false;
       ++c.step;
@@ -6935,6 +6938,25 @@ class MapStage final : public Stage {
         if (!ui) return fail("actor \"" + st.actor + "\" is not standing on the map");
         popups_.push_back({*ui, st.text, IM_COL32(255, 168, 120, 255), now_, true});
         logInfo("cutscene {}: step {} emote {} \"{}\"", c.script.id, c.step, st.actor, st.text);
+        return;
+      }
+      case ember::CutsceneStep::Kind::Pose: {
+        // One of the actor's poses played once (Kael's "turnBack", 2026-11-09), its last frame kept with "hold"; "idle" ends a held
+        // one. An actor without that pose keeps standing as it is (a warning, not a failure: the art may come in a later pack).
+        const std::optional<size_t> ui = unitOf(st.actor);
+        if (!ui) return fail("actor \"" + st.actor + "\" is not standing on the map");
+        if (st.text == "idle") {
+          unitShot_[*ui] = {};
+          logInfo("cutscene {}: step {} pose {} idle", c.script.id, c.step, st.actor);
+          return;
+        }
+        if (!hasPose(*ui, st.text)) {
+          logWarn("cutscene {}: step {} pose {}: no pose \"{}\", left as it is", c.script.id, c.step, st.actor, st.text);
+          return;
+        }
+        unitShot_[*ui] = {st.text, now_, st.flag, 1.0f};
+        if (st.flag) c.heldPoses.insert(*ui);
+        logInfo("cutscene {}: step {} pose {} {}{}", c.script.id, c.step, st.actor, st.text, st.flag ? " (held)" : "");
         return;
       }
     }
@@ -13378,6 +13400,7 @@ class MapStage final : public Stage {
     float stepStart = 0.0f, started = 0.0f;
     int selected = -1;                    // the control state taken over: the picked unit and the turns' hold
     bool heldTurns = false;
+    std::set<size_t> heldPoses;           // units a "pose" step left holding a frame: back to their idle at the end
   };
   std::optional<Cutscene> cutscene_;
   // A scene's camera (the "shot" step, Stone Bridge 2026-11-06; docs/CUTSCENES.md): the goal the step set, reached from where the

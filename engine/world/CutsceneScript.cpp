@@ -244,8 +244,16 @@ std::optional<CutsceneScript> CutsceneScript::parse(const Json& j, std::string* 
       if (const auto e = actorOf("actor", step.actor)) return refuse(*e);
       step.text = st.value("text", "!");
       if (step.text.empty()) return refuse(at + ": an empty \"text\"");
+    } else if (kind == "pose") {
+      step.kind = CutsceneStep::Kind::Pose;
+      if (const auto e = actorOf("actor", step.actor)) return refuse(*e);
+      step.text = st.value("pose", "");
+      if (step.text.empty()) return refuse(at + ": no \"pose\"");
+      const auto hold = st.find("hold");
+      if (hold != st.end() && !hold->is_boolean()) return refuse(at + ": \"hold\" must be true or false");
+      step.flag = hold != st.end() && hold->get<bool>();
     } else {
-      return refuse(at + ": unknown action \"" + kind + "\" (move, face, say, wait, enter, exit, shot, shake, fade, bars, tint, flash, sfx, music, caption, emote)");
+      return refuse(at + ": unknown action \"" + kind + "\" (move, face, say, wait, enter, exit, shot, shake, fade, bars, tint, flash, sfx, music, caption, emote, pose)");
     }
     s.steps.push_back(std::move(step));
   }

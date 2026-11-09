@@ -1218,6 +1218,12 @@
       }
     },
     {
+      "do": "pose",
+      "actor": "kael",
+      "pose": "turnBack",
+      "hold": true
+    },
+    {
       "do": "shot",
       "on": "kael",
       "turn": "e",
@@ -1228,6 +1234,11 @@
     {
       "do": "wait",
       "seconds": 2.0
+    },
+    {
+      "do": "pose",
+      "actor": "kael",
+      "pose": "idle"
     },
     {
       "do": "shot",

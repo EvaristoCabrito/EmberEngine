@@ -48,6 +48,9 @@
 //   "caption": { "text", "translations", "style": "plain" | "red" | "blue", "seconds" }: words over the picture ("…mais tarde";
 //     the red and blue boxes of a status change), the scene waiting their seconds.
 //   "emote": { "actor", "text" }: a mark popping over the actor's head ("!", "!!", "?", "…").
+//   "pose": { "actor", "pose", "hold" }: one of the actor's poses played once ("turnBack": Kael turns his back to the camera,
+//     2026-11-09); "hold": true keeps its last frame until the actor's next "pose" or the scene's end; "pose": "idle" gives the
+//     actor back its idle. The scene goes on at once (a "wait" gives the pose its time).
 // The file is refused whole when a step is unknown, an actor is not declared, a coordinate or a duration is malformed: nothing of
 // a bad script plays. Whether an actor stands on the map, and whether a destination is free and reachable, is the map's to check
 // when the scene starts / the step plays.
@@ -64,7 +67,7 @@
 namespace ember {
 
 struct CutsceneStep {
-  enum class Kind { Move, Face, Say, Wait, Enter, Exit, Shot, Shake, Fade, Bars, Tint, Flash, Sfx, Music, Caption, Emote };
+  enum class Kind { Move, Face, Say, Wait, Enter, Exit, Shot, Shake, Fade, Bars, Tint, Flash, Sfx, Music, Caption, Emote, Pose };
   Kind kind = Kind::Wait;
   std::string actor;        // the actor's stable name (move / face / say / emote)
   int x = 0, y = 0;         // move / enter: the destination hex; shot: the pivot hex (hasHex)

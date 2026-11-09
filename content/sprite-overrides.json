@@ -122,6 +122,33 @@
    "strides": {"move": 1.0}
   },
   {
+   "set": "kael-v3",
+   "version": "v01",
+   "hero": "kael",
+   "cut": "content/sprites/kael-v3/cut.json",
+   "why": "the user, 2026-11-09: Kael from their videos (Attachments/KaelV3): the 6 s idle (KaelIdleLoop) in place of the idle of Kael-IdleBackDoubleStrike, KaelATT for the attack, the few frames of his back for the special skills that turn him away from the camera and for cutscenes, the walk (Medieval_warrior_walking_8ba19cd7) mirrored for the left \"for now\"; the double strike of the same video cut with the rest, no skill plays it yet. Kael_Final stays in the pack.",
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkLeft": "move-left", "turnBack": "turn-back", "castBack": "cast-back", "doubleStrike": "double-strike"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "walkLeft": "Andar (esquerda)", "turnBack": "De costas", "castBack": "De costas (parado)", "doubleStrike": "Golpe duplo"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field"},
+   "strides": {"move": 5.0, "move-left": 5.0}
+  },
+  {
+   "set": "kael-v3-64-media",
+   "version": "media64-v01",
+   "mediumOf": {"hero": "kael", "set": "kael-v3"},
+   "cut": "content/sprites/kael-v3/cut-64-media.json",
+   "why": "Kael's Personagens Média, as Voss's and Isolde's: every clip with at most 64 frames (picked evenly, the clip's timing kept), the figure ~916 px",
+   "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field"}
+  },
+  {
+   "set": "kael-v3-36-media",
+   "version": "media36-v01",
+   "lightOf": {"hero": "kael", "set": "kael-v3"},
+   "cut": "content/sprites/kael-v3/cut-36-media.json",
+   "why": "Kael's Personagens Leve, as Voss's and Isolde's: every clip with at most 36 frames, the figure ~610 px",
+   "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field"}
+  },
+  {
    "set": "neera-hydra",
    "version": "v01",
    "hero": "neera",

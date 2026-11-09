@@ -1,0 +1,93 @@
+{
+ "about": "Kael cut from the user's videos (Attachments/KaelV3, 2026-11-09), every native frame at 24 fps, the video's own resolution. tools/scripts/sprites/video_matte.py (BiRefNet) then tools/scripts/sprites/video_sprite.py this file. The user's choices: the idle is the 6 s KaelIdleLoop (not the idle of Kael-IdleBackDoubleStrike); the attack is KaelATT; the few frames of his back (Kael-IdleBackDoubleStrike 80-95) are for the special skills that turn him away from the camera and for cutscenes; the walk is Medieval_warrior_walking_8ba19cd7, mirrored for the walk to the left for now. Kael_Final (kael-final-002) stays in the pack, not in use for the poses listed here.",
+ "set": "kael-v3",
+ "version": "v01",
+ "figureUnits": 2.58,
+ "figureNote": "each clip's median head top to boot row, about as tall as kael-final-002's idle (519 px of 528 at box h 2.656: 2.61 units with the hair)",
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/kael-v3/idle",
+   "video": "Attachments/KaelV3/KaelIdleLoop.mp4",
+   "first": 0,
+   "last": 143,
+   "mode": "pingpong",
+   "why": "the video does not come back to its first pose (frame 143 is 3x a frame's step from frame 0): played back and forth, the rule of the Voss idle (the user, 2026-10-25: \"try 1\")"
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "src": "build/video-cut/kael-v3/attack",
+   "video": "Attachments/KaelV3/KaelATT.mp4",
+   "first": 4,
+   "last": 74,
+   "impactFrame": 36,
+   "mode": "once",
+   "why": "the wind-up from 8, the sweep through 28-36 (the blade fully out at 36-37), back at rest by 72"
+  },
+  {
+   "clip": "turn-back",
+   "pose": "turnBack",
+   "kind": "stand",
+   "src": "build/video-cut/kael-v3/backstrike",
+   "video": "Attachments/KaelV3/Kael-IdleBackDoubleStrike.mp4",
+   "first": 80,
+   "last": 95,
+   "mode": "once",
+   "why": "the user, 2026-11-09: \"use the few frames of his back for special skills that make him turn against the camera or cutscenes\": he turns away (80-87) and stands with his back to us (88-95); its last frame is held"
+  },
+  {
+   "clip": "cast-back",
+   "pose": "castBack",
+   "kind": "stand",
+   "src": "build/video-cut/kael-v3/backstrike",
+   "video": "Attachments/KaelV3/Kael-IdleBackDoubleStrike.mp4",
+   "first": 91,
+   "last": 91,
+   "mode": "once",
+   "why": "the back still the game shows when a skill's effect leaves the caster's hands away from the camera (MapStage castBack, as Voss's and Salazar's)"
+  },
+  {
+   "clip": "double-strike",
+   "pose": "doubleStrike",
+   "kind": "stand",
+   "src": "build/video-cut/kael-v3/backstrike",
+   "video": "Attachments/KaelV3/Kael-IdleBackDoubleStrike.mp4",
+   "first": 104,
+   "last": 190,
+   "impactFrame": 140,
+   "mode": "once",
+   "why": "the double strike of the same video (the overhead cut, then the low sweep), cut with the rest; no skill plays it yet"
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/kael-v3/walk",
+   "video": "Attachments/KaelV3/Medieval_warrior_walking_8ba19cd7.mp4",
+   "first": 0,
+   "last": 239,
+   "loopMin": 96,
+   "loopMax": 239,
+   "mode": "loop",
+   "why": "the whole walk (he walks in place to the right), the seam at the best place between 4 and 10 s"
+  },
+  {
+   "clip": "move-left",
+   "pose": "walkLeft",
+   "kind": "walk",
+   "src": "build/video-cut/kael-v3/walk",
+   "video": "Attachments/KaelV3/Medieval_warrior_walking_8ba19cd7.mp4",
+   "first": 0,
+   "last": 239,
+   "loopMin": 96,
+   "loopMax": 239,
+   "mode": "loop",
+   "mirror": true,
+   "why": "the user, 2026-11-09: \"well just mirror for now\": the walk to the right, turned"
+  }
+ ]
+}

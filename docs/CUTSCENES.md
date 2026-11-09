@@ -93,6 +93,12 @@ camera again when the scene ends.
 - `caption` `{"text", "translations", "style": "plain" | "red" | "blue", "seconds"}`: words over the picture ("…mais tarde" in the
   display face at the centre; the red / blue status boxes high on the screen), the scene waiting their seconds.
 - `emote` `{"actor", "text"}`: a mark over the actor's head ("!", "!!", "?", "…"), the fight's own number popup.
+- `pose` `{"actor", "pose", "hold"}` (2026-11-09): one of the actor's poses played once, as a strike plays (`unitShot_`); `"hold": true`
+  keeps its last frame until the actor's next `pose` or the scene's end (held poses are given back to the idle then); `"pose":
+  "idle"` ends a held one. The scene goes on at once: a `wait` gives the pose its time. An actor without that pose stays as it is
+  (a warning in the log). A held pose is drawn over a walk, so give the actor back its idle before it moves. Kael's `turnBack`
+  (kael-v3: he turns his back to the camera and holds it) is the first: a card shows its front from every side, so a shot from
+  behind an actor needs a back pose (Stone Bridge, the shot behind Kael when he will not look back at Lio).
 - `move` with `"near": "<actor>"` instead of `"to"`: the free reachable hex nearest that actor (its body may be dead).
 - An actor declared `{"unit": "Vora", "fallen": true}` may be dead when the scene starts (an onVictory scene): it is found among the
   fallen, and its body never fades while the map is open (`keptBodies_`, read from this map's scenes at the start), so the scene's
