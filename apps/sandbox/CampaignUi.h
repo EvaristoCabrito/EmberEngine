@@ -259,8 +259,10 @@ inline void iconMapPin(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl
 // badge when the place holds more than one. It stands at the place's point moved by its pinDx / pinDy (percent of the picture),
 // beside the place's drawing instead of on it (the user, 2026-11-10); the drawing under the place's point stays clickable.
 inline constexpr float kLocationPinRadius = 9.0f;
+// (x + dx, y + dy) is the top of the place's drawing; the pin sits on it (its bottom edge there), so it stays touching the
+// drawing at every zoom instead of drifting away from it as the picture grows.
 inline ImVec2 locationPinAt(double x, double y, double dx, double dy, ImVec2 o, float imgW, float imgH) {
-  return {o.x + static_cast<float>(x + dx) / 100.0f * imgW, o.y + static_cast<float>(y + dy) / 100.0f * imgH};
+  return {o.x + static_cast<float>(x + dx) / 100.0f * imgW, o.y + static_cast<float>(y + dy) / 100.0f * imgH - kLocationPinRadius - 1.0f};
 }
 inline bool locationPinHovered(ImVec2 mouse, ImVec2 pin, ImVec2 place) {
   return std::hypot(mouse.x - pin.x, mouse.y - pin.y) <= kLocationPinRadius + 5.0f || std::hypot(mouse.x - place.x, mouse.y - place.y) <= 20.0f;
