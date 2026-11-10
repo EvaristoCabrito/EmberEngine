@@ -909,6 +909,21 @@ class OverworldStage : public Stage {
   // Map I want my character in there at the starting position", "também anda"): the leader on the party's hex (Temple Descend the
   // first time), a click on the leader opens the neighbouring cells as step hexes, a click on one walks there (as the Overworld's
   // leader walks); Temple Descend's pin on the user's mark. A step moves the party and the campaign's clock (Underworld::step).
+  // A location's marker: a small disc centred on `tip`, beside the place's drawing (MapLocation::pinDx / pinDy), so the drawing
+  // stays in view. Returns the disc's centre (the icon's place).
+  static constexpr float kPinRadius = 9.0f;
+  static ImVec2 pinCentre(ImVec2 tip, float) { return tip; }
+  static ImVec2 pinMarker(ImDrawList* dl, ImVec2 tip, float s, ImU32 fill, ImU32 border) {
+    dl->AddCircleFilled(tip, kPinRadius * s, fill, 32);
+    dl->AddCircle(tip, kPinRadius * s - 0.75f, border, 32, 1.5f);
+    return tip;
+  }
+  // Under the mouse: the marker, or the drawing it points at (the old pin's 20 px around the location's point).
+  static bool pinHovered(ImVec2 mouse, ImVec2 anchor, ImVec2 tip) {
+    const ImVec2 c = pinCentre(tip, 1.0f);
+    return std::hypot(mouse.x - c.x, mouse.y - c.y) <= kPinRadius + 5.0f || std::hypot(mouse.x - anchor.x, mouse.y - anchor.y) <= 20.0f;
+  }
+
   void drawUnderworld(ImDrawList* dl, ImVec2 o, float imgW, float imgH, bool overViewport, bool clicked) {
     if (!hasUnder_) return;
     auto at = [&](double xPct, double yPct) { return ImVec2{o.x + static_cast<float>(xPct) / 100.0f * imgW, o.y + static_cast<float>(yPct) / 100.0f * imgH}; };
@@ -922,13 +937,11 @@ class OverworldStage : public Stage {
     bool clickedLeader = false;
     // Pins (the Overworld's look: a dark disc, the accent ring, the map-pin icon), the name on hover.
     for (const ember::MapLocation& loc : under_.locations()) {
-      const ImVec2 c = at(loc.x, loc.y);
-      const float r = 20.0f;
-      const bool hover = overViewport && std::hypot(mouse.x - c.x, mouse.y - c.y) <= r;
+      const ImVec2 anchor = at(loc.x, loc.y), tip = at(loc.x + loc.pinDx, loc.y + loc.pinDy);
+      const bool hover = overViewport && pinHovered(mouse, anchor, tip);
       const float s = hover ? 1.1f : 1.0f;
-      dl->AddCircleFilled(c, r * s, IM_COL32(17, 17, 17, 204), 32);
-      dl->AddCircle(c, r * s - 1, kAccent, 32, 2.0f);
-      iconMapPin(dl, c, 16 * s, IM_COL32(216, 216, 216, 255));
+      const ImVec2 c = pinMarker(dl, tip, s, IM_COL32(17, 17, 17, 255), kAccent);
+      iconMapPin(dl, c, 10 * s, IM_COL32(216, 216, 216, 255));
       if (hover) ImGui::SetTooltip("%s", loc.name.c_str());
       if (hover && clicked) clickedPin = &loc;
     }
@@ -1193,11 +1206,14 @@ class OverworldStage : public Stage {
       pins.push_back({&loc, locationStatus(loc)});
     }
     for (const auto& [loc, st] : pins) {
-      const ImVec2 c = at(loc->x, loc->y);
+      // The marker stands beside the place's drawing, on empty ground (the user, 2026-11-10: the pin covered the drawing of
+      // the place; "mover para o lado", not on top of it); the drawing itself stays clickable.
+      const ImVec2 anchor = at(loc->x, loc->y), tip = at(loc->x + loc->pinDx, loc->y + loc->pinDy);
       const bool reachable = test() || walkable(loc->col, loc->row) || (!completed("vau") && loc->id == "stonebridge");
-      const float r = 20.0f;
-      const bool hover = std::hypot(mouse.x - c.x, mouse.y - c.y) <= r && overViewport;
+      const float r = kPinRadius;
+      const bool hover = overViewport && pinHovered(mouse, anchor, tip);
       const float s = hover ? 1.1f : 1.0f;
+      const ImVec2 c = pinCentre(tip, s);
       const int alpha = reachable ? 255 : 178;
       const auto missions = world_.visibleMissionsOf(*loc, save_, test());
       const bool hub = std::any_of(missions.begin(), missions.end(), [](const ember::MapMission* m) { return m->hub; });
@@ -1213,19 +1229,19 @@ class OverworldStage : public Stage {
         border = IM_COL32(214, 60, 60, 255);
         for (int i = 3; i >= 1; --i) dl->AddCircle(c, r + i * 3.0f, IM_COL32(214, 60, 60, static_cast<int>(70 * k)), 32, 3.0f);
       }
-      dl->AddCircleFilled(c, r * s, IM_COL32(17, 17, 17, alpha * 204 / 255), 32);
-      dl->AddCircle(c, r * s - 1, (border & ~IM_COL32_A_MASK) | (static_cast<ImU32>(((border >> IM_COL32_A_SHIFT) & 0xFF) * alpha / 255) << IM_COL32_A_SHIFT), 32, 2.0f);
+      pinMarker(dl, tip, s, IM_COL32(17, 17, 17, 255),
+                (border & ~IM_COL32_A_MASK) | (static_cast<ImU32>(((border >> IM_COL32_A_SHIFT) & 0xFF) * alpha / 255) << IM_COL32_A_SHIFT));
       const ImU32 iconInk = st == "locked" ? IM_COL32(180, 180, 180, alpha / 2) : IM_COL32(216, 216, 216, alpha);
-      if (st == "locked") iconLock(dl, c, 16 * s, iconInk);
-      else if (st == "done") iconCheck(dl, c, 16 * s, iconInk);
-      else iconMapPin(dl, c, 16 * s, iconInk);
+      if (st == "locked") iconLock(dl, c, 10 * s, iconInk);
+      else if (st == "done") iconCheck(dl, c, 10 * s, iconInk);
+      else iconMapPin(dl, c, 10 * s, iconInk);
       if (missions.size() > 1) {
-        const ImVec2 bc{c.x + r * s - 2, c.y - r * s + 2};
-        dl->AddCircleFilled(bc, 8, IM_COL32(17, 17, 17, 255));
-        dl->AddCircle(bc, 8, kBorder);
+        const ImVec2 bc{c.x + r * s, c.y - r * s};
+        dl->AddCircleFilled(bc, 6, IM_COL32(17, 17, 17, 255));
+        dl->AddCircle(bc, 6, kBorder);
         const std::string n = std::to_string(missions.size());
-        const ImVec2 ts = uiFont(UiFont::Ui)->CalcTextSizeA(10.0f, FLT_MAX, 0, n.c_str());
-        dl->AddText(uiFont(UiFont::Ui), 10.0f, {bc.x - ts.x / 2, bc.y - ts.y / 2}, IM_COL32(240, 240, 240, 230), n.c_str());
+        const ImVec2 ts = uiFont(UiFont::Ui)->CalcTextSizeA(9.0f, FLT_MAX, 0, n.c_str());
+        dl->AddText(uiFont(UiFont::Ui), 9.0f, {bc.x - ts.x / 2, bc.y - ts.y / 2}, IM_COL32(240, 240, 240, 230), n.c_str());
       }
       if (hover && clicked) clickedLocation = loc->id;
     }

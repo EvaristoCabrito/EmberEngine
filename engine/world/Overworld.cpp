@@ -200,6 +200,7 @@ bool Overworld::load(const std::filesystem::path& file) {
     MapLocation m;
     m.id = l.value("id", ""), m.name = l.value("name", "");
     m.x = l.value("x", 0.0), m.y = l.value("y", 0.0), m.col = l.value("col", 0), m.row = l.value("row", 0);
+    m.pinDx = l.value("pinDx", m.pinDx), m.pinDy = l.value("pinDy", m.pinDy);
     for (const Json& id : l.value("missionIds", Json::array())) m.missionIds.push_back(id.get<std::string>());
     m.openAccess = l.value("openAccess", false), m.encountersAllowed = l.value("encountersAllowed", false), m.warpCity = l.value("warpCity", false);
     if (l.contains("deadlineDay") && l["deadlineDay"].is_number()) m.deadlineDay = l["deadlineDay"].get<double>();

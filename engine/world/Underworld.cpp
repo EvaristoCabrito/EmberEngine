@@ -33,6 +33,7 @@ bool Underworld::load(const std::filesystem::path& file) {
     MapLocation m;
     m.id = l.value("id", ""), m.name = l.value("name", "");
     m.col = l.value("col", 0), m.row = l.value("row", 0), m.x = l.value("x", 0.0), m.y = l.value("y", 0.0);
+    m.pinDx = l.value("pinDx", m.pinDx), m.pinDy = l.value("pinDy", m.pinDy);
     locations_.push_back(std::move(m));
   }
   logInfo("underworld: {} cells, {} locations, start ({},{})", cells_.size(), locations_.size(), start_.col, start_.row);

@@ -38,6 +38,7 @@ struct OverworldCell {
 struct MapLocation {
   std::string id, name;
   double x = 0, y = 0;  // percent of the world-map image
+  double pinDx = 0, pinDy = 0;  // the pin moved by this (percent of the image) to stand beside the place's drawing, not on it
   int col = 0, row = 0;
   std::vector<std::string> missionIds;
   bool openAccess = false, encountersAllowed = false, warpCity = false;
