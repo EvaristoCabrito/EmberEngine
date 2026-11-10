@@ -141,7 +141,7 @@
   "movement": {
     "minimum": 1,
     "rounding": "round",
-    "cappedByMov": true,
+    "cappedByMov": false,
     "freeWhileRoaming": true,
     "terrainNote": "apCost null = the tile's own Ember moveCost (content/data/battle-rules.json: plains 1, woods 2, hill 2, ember 2, flame 3, nave/ruins/snow 1); modifier is added on top. The categories without a tile yet (road, uneven, mud, marsh, ice, rocky, shallowWater, magical) are configurable entries for terrains to come; nothing here is balanced.",
     "terrain": {

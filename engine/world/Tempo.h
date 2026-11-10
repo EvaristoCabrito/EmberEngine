@@ -194,6 +194,29 @@ inline Sample at(I milliseconds, const Config& c) {
   Sample a=minute(m,c); if(u==0) return a;
   Sample b=minute(m+1,c); blend(a,b,u); return a;
 }
+// One coherent sky (the user, 2026-11-10: "YOU CANT HAVE RAIN WITHOUT RAINY CLOUDS", rain fell from a blue sky with a few white
+// clouds under a full sun). Whatever made the sample (the seeded Tempo, Atmos 2's two layers, a forced state), every reader gets
+// it through this: rain closes the sky with a low, thick, grey deck in step with its strength, lightning needs heavy rain, fog
+// needs a calm, humid air. Nothing is taken from a sky that is already closed; a dry sample comes back unchanged.
+inline Sample settle(Sample s) {
+  // A trace of rain under a mostly open sky does not fall (Atmos 2 gives 0.05-0.1 mm/h under a third of cloud: it closed a sunny
+  // morning into a grey one): rain stands when it is real (over a quarter of full strength) or the sky is already cloudy.
+  const I keep = std::max(ramp(std::max(s.v[Rain], s.v[HeavyRain]) - 1500, 2000), ramp(s.v[Low] - 4000, 3000));
+  s.v[Rain] = mul(s.v[Rain], keep); s.v[HeavyRain] = mul(s.v[HeavyRain], keep);
+  const I rain = std::clamp<I>(std::max(s.v[Rain], s.v[HeavyRain]), 0, Q);
+  if (rain > 0) {
+    const I onset = ramp(rain, 1500);                    // the deck closes over the first 15 % of the rain's strength
+    const I deck = mul(onset, lerp(8500, Q, rain));     // drizzle: 85 % cover; a downpour: the whole sky
+    s.v[Low] = std::max(s.v[Low], deck);
+    s.v[Middle] = std::max(s.v[Middle], mul(deck, 7000));
+    s.v[Base] = std::min(s.v[Base], lerp(900 * Q, 350 * Q, onset));
+    s.v[Thickness] = std::max(s.v[Thickness], lerp(450 * Q, 1600 * Q, mul(onset, 5000 + rain / 2)));
+    s.v[Humidity] = std::max(s.v[Humidity], lerp(s.v[Humidity], 9000, onset));
+    s.v[Wetness] = std::max(s.v[Wetness], mul(onset, 4000));
+  }
+  s.v[Lightning] = mul(s.v[Lightning], ramp(std::clamp<I>(s.v[HeavyRain], 0, Q), 3000));
+  return s;
+}
 class Timeline {
   Config config_{};
   Sample origin_{};

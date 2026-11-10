@@ -57,7 +57,7 @@ struct ApRules {
   struct Movement {
     int minimum = 1;
     std::string rounding = "round";
-    bool cappedByMov = true, freeWhileRoaming = true;
+    bool cappedByMov = false, freeWhileRoaming = true;
     struct Terrain {
       std::optional<int> apCost;  // none = the tile's own moveCost
       int modifier = 0;

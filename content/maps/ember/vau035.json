@@ -1113,12 +1113,12 @@
         "y": 0
       },
       {
-        "id": "tree-3d-dead-oak-v02",
-        "x": 4,
-        "y": 9
+        "id": "tree-3d-dead-oak",
+        "x": 7,
+        "y": 12
       },
       {
-        "id": "tree-3d-dead-oak-v02",
+        "id": "tree-3d-dead-oak",
         "x": 19,
         "y": 13
       },
@@ -1180,9 +1180,9 @@
         "blocksPath": true
       },
       {
-        "id": "tree-3d-dead-oak-v02",
-        "x": 1,
-        "y": 8
+        "id": "tree-3d-dead-oak",
+        "x": 2,
+        "y": 12
       },
       {
         "id": "tree-3d-dead-snag-v02",
@@ -1193,11 +1193,6 @@
         "id": "tree-3d-twisted-stump-v02",
         "x": 12,
         "y": 8
-      },
-      {
-        "id": "prop-3d-vau-red-outcrop-v01",
-        "x": 9,
-        "y": 14
       }
     ],
     "elementalFx": [

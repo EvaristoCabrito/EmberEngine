@@ -34,6 +34,7 @@
 #include "render/MeshScene.h"
 #include "render/Renderer.h"
 #include "render/UiArt.h"
+#include "SharedSprites.h"
 #include "world/Campaign.h"
 #include "world/Overworld.h"
 
@@ -128,10 +129,21 @@ class TitleStage : public Stage {
   void drawPanel() override {
     const ImGuiIO& io = ImGui::GetIO();
     // The title's art load (title/main.ts loadTitleResources): the bar shows how much of it has settled.
+    // ... and the characters (SharedSprites.h: every clip's header and small version on the GPU, so no map loads them again),
+    // weighed as much as the art.
     if (preload_) {
       const auto [done, total] = preload_->update();
-      const size_t all = bootUnits_ + total;
-      loader_.set(all ? static_cast<float>(bootUnits_ + done) / static_cast<float>(all) : 1.0f, done >= total, ImGui::GetTime());
+      float spriteShare = 1.0f;
+      bool spritesReady = true;
+      if (SharedSprites* shared = SharedSprites::get()) {
+        const auto [sDone, sTotal] = shared->sprites().startupProgress();
+        spritesReady = shared->sprites().ready();
+        spriteShare = spritesReady ? 1.0f : sTotal ? static_cast<float>(sDone) / static_cast<float>(sTotal) : 0.0f;
+      }
+      const size_t spriteUnits = std::max<size_t>(total, 1);
+      const size_t all = bootUnits_ + total + spriteUnits;
+      loader_.set(static_cast<float>(static_cast<double>(bootUnits_ + done) + spriteShare * static_cast<double>(spriteUnits)) / static_cast<float>(all),
+                  done >= total && spritesReady, ImGui::GetTime());
     }
     rem_ = 16.0f;  // canvas units: the UI is zoomed to the window (DebugUi::kUiHeight), 24 px at 1080
     ImGui::SetNextWindowPos({0, 0});

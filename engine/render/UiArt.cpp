@@ -481,8 +481,14 @@ const UiImage* adopt(const std::string& key, stbi_uc* pixels, int w, int h) {
 
 const UiImage* uiImage(const std::filesystem::path& file) {
   const std::string key = keyOf(file);
-  if (const auto it = images().find(key); it != images().end() && (it->second.data || it->second.failed))
-    return it->second.failed ? nullptr : &it->second.image;
+  if (const auto it = images().find(key); it != images().end() && (it->second.data || it->second.failed)) {
+    if (it->second.failed) return nullptr;
+    // Released by releaseUiImages (the loading screen before a map) and asked for again: back on the GPU now, before the
+    // caller's AddImage (ImGui asserts on a texture that is being destroyed: the game closed on the way back to the world map,
+    // 2026-11-10). refineUiImages' own keepOnGpu runs after ImGui::Render, too late for that draw.
+    keepOnGpu(it->second.data.get());
+    return &it->second.image;
+  }
   int w = 0, h = 0, n = 0;
   stbi_uc* pixels = stbi_load(sourceOf(file).string().c_str(), &w, &h, &n, 4);
   return adopt(key, pixels, w, h);

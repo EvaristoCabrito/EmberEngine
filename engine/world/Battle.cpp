@@ -639,8 +639,8 @@ std::optional<int> Battle::stepCost(int x, int y, const BattleUnit& self, const 
     const bool flies = fliesOverWater(self, c);
     if (!c.passable && !flies && !(c.terrain == "barricade" && isTroll(self))) return std::nullopt;
     const int here = flies ? 1 : c.terrain == "barricade" && isTroll(self) ? 2 : c.moveCost;
-    cost = std::max(cost, here);
-    // Action Points: the hex's own AP (its terrain, the zones on it, the unit's modifiers); a body pays its dearest hex
+    // MOV counts hexes, not terrain weight: movement 5 reaches five passable hexes. Terrain still changes the separate AP bill.
+    // A multi-hex body pays the highest AP of its occupied cells, but spends one movement point for this step.
     if (ap) apHere = std::max(apHere, apStepCost(*this, self, p.x, p.y, here));
     const int who = occ[static_cast<size_t>(p.y * cols_ + p.x)];
     if (who < 0 || units_[static_cast<size_t>(who)].id == self.id) continue;
@@ -658,19 +658,19 @@ std::vector<ReachCell> Battle::reachable(size_t unit, bool pruneStops) const {
   const BattleUnit& u = units_[unit];
   // Free roam (Ember effectiveUnitForReach on an explore mission): any reachable hex, however far.
   // effectiveUnitForReach: a unit whose cell was webbed when its turn began (turnRestrained) walks one hex at most.
-  const int remaining = std::max(0, u.mov - u.moveUsed);
   const bool burialRooted = std::any_of(u.cond.burialRootSources.begin(), u.cond.burialRootSources.end(), [&](const std::string& source) {
     return std::any_of(units_.begin(), units_.end(), [&](const BattleUnit& owner) { return owner.alive && owner.id == source && owner.burialWeightActive; });
   });
-  const int mov = (burialRooted || (u.alive && u.burialWeightActive)) ? 0
-                  : roaming_ ? cols_ * rows_ : turnRestrained_ ? std::min(1, remaining) : remaining;
+  const bool movementImmune = burialRooted || (u.alive && u.burialWeightActive);
+  const bool oneHexOnly = turnRestrained_;
+  const int mov = movementImmune ? 0 : cols_ * rows_;
   // Action Points (world/ActionPoints.h): every hex entered costs its AP out of the unit's reserve; free roam walks for nothing
   // when the rules say so. With the rules' cappedByMov off only the AP limit a turn's walk (a webbed or rooted unit keeps its clamp).
   const ApRules& apr = apRules();
   const bool apFree = roaming_ && apr.movement.freeWhileRoaming;
   const int apBudget = apFree ? std::numeric_limits<int>::max() : std::max(0, u.ap);
-  const bool clamped = roaming_ || burialRooted || (u.alive && u.burialWeightActive) || turnRestrained_;
-  const int movBudget = apr.movement.cappedByMov || clamped ? mov : cols_ * rows_;
+  const bool clamped = roaming_ || movementImmune;
+  const int movBudget = clamped ? mov : std::numeric_limits<int>::max();
   const std::vector<int> occ = occupancy();
   // The reach in Ember's insertion order (a Map there): `at` finds a hex's entry.
   std::vector<ReachCell> result;
@@ -687,7 +687,7 @@ std::vector<ReachCell> Battle::reachable(size_t unit, bool pruneStops) const {
     std::stable_sort(queue.begin(), queue.end(), [](const ReachCell& a, const ReachCell& b) { return a.ap != b.ap ? a.ap < b.ap : a.cost < b.cost; });
     const ReachCell cur = queue.front();
     queue.erase(queue.begin());
-    if (cur.cost >= movBudget || cur.ap >= apBudget) continue;
+    if (cur.cost >= movBudget || cur.ap >= apBudget || (oneHexOnly && (u.moveUsed > 0 || cur.cost > 0))) continue;
     for (const BattleHex& n : neighbors(cur.x, cur.y)) {
       int apStep = 0;
       const std::optional<int> step = stepCost(n.x, n.y, u, occ, false, apFree ? nullptr : &apStep);
@@ -755,10 +755,9 @@ bool Battle::legalVoluntaryPath(size_t unit, const std::vector<BattleHex>& route
   if (rooted) return false;
   const ApRules& apr = apRules();
   const bool apFree = roaming_ && apr.movement.freeWhileRoaming;
-  const int budget = roaming_ ? cols_ * rows_ : apr.movement.cappedByMov ? std::max(0, u.mov - u.moveUsed) : cols_ * rows_;
   const int apBudget = apFree ? std::numeric_limits<int>::max() : std::max(0, u.ap);
+  if (turnRestrained_ && (u.moveUsed > 0 || route.size() > 2)) return false;
   const std::vector<int> occ = occupancy();
-  int cost = 0;
   long long ap = 0;
   for (size_t i = 1; i < route.size(); ++i) {
     const std::vector<BattleHex> adjacent = neighbors(route[i - 1].x, route[i - 1].y);
@@ -766,9 +765,8 @@ bool Battle::legalVoluntaryPath(size_t unit, const std::vector<BattleHex>& route
     int apStep = 0;
     const std::optional<int> step = stepCost(route[i].x, route[i].y, u, occ, i + 1 == route.size(), apFree ? nullptr : &apStep);
     if (!step) return false;
-    cost += *step;
     ap += apStep;
-    if (cost > budget || ap > apBudget) return false;  // a route it cannot pay for, in movement or in AP, is never walked
+    if (ap > apBudget) return false;  // AP is the only movement budget
   }
   return true;
 }

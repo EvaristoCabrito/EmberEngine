@@ -137,6 +137,25 @@ inline void missionTextsFromDraft(MissionEntry& e, const std::filesystem::path& 
 
 // A campaign mission's files: its newest saved map (missionMap), the scene and battle exported from it.
 // Empty with `error` saying why when the mission cannot be played here yet.
+// A mission's game files need making again: missing, older than what they are made from, or broken (cut short or left as zeros
+// by a run stopped while writing them: the map could not be read and the mission crashed, 2026-11-10). One rule for the
+// campaign's missions and the Interlude's.
+inline bool missionFilesStale(const MissionEntry& e, const std::filesystem::path& source) {
+  std::error_code ec;
+  const auto stamp = [&](const std::filesystem::path& p) { return std::filesystem::exists(p, ec) ? std::filesystem::last_write_time(p, ec) : std::filesystem::file_time_type::min(); };
+  const auto broken = [](const std::filesystem::path& p) {
+    std::ifstream in(p, std::ios::binary);
+    char c = 0;
+    while (in.get(c) && (c == ' ' || c == '
+' || c == '' || c == '	')) {}
+    return !in || c != '{';
+  };
+  const auto made = std::min({stamp(e.map), stamp(e.scene), stamp(e.battle)});
+  const auto from = std::max({stamp(source), stamp("content/ember-classes.json"), stamp("content/data/battle-rules.json"),
+                              stamp("content/data/editor-catalog.json")});
+  return made == std::filesystem::file_time_type::min() || made < from || broken(e.map) || broken(e.scene) || broken(e.battle);
+}
+
 inline std::optional<MissionEntry> campaignMission(const ember::Campaign& campaign, const CampaignPaths& paths, const std::string& id, std::string& error) {
   const ember::CampaignMission* m = campaign.data().mission(id);
   if (!m || (m->mapFile.empty() && !m->own)) {
@@ -158,12 +177,8 @@ inline std::optional<MissionEntry> campaignMission(const ember::Campaign& campai
   e.map = paths.campaign / "maps" / (map.stem + ".json");
   e.scene = paths.campaign / "scenes" / (map.stem + ".scene.json");
   e.battle = paths.campaign / "battles" / (map.stem + ".battle.json");
-  const auto stamp = [&](const std::filesystem::path& p) { return std::filesystem::exists(p, ec) ? std::filesystem::last_write_time(p, ec) : std::filesystem::file_time_type::min(); };
-  const auto made = std::min({stamp(e.map), stamp(e.scene), stamp(e.battle)});
-  // ... or older than the data they are made with: the rules (a hero added to the party, 2026-10-25: Isolde) and the catalog
-  const auto source = std::max({stamp(map.file), stamp("content/ember-classes.json"), stamp("content/data/battle-rules.json"),
-                                stamp("content/data/editor-catalog.json")});
-  e.prepare = made == std::filesystem::file_time_type::min() || made < source;
+  // ... or older than the data they are made with (the rules: a hero added to the party, 2026-10-25: Isolde; the catalog), or broken
+  e.prepare = missionFilesStale(e, map.file);
   e.campaignId = m->id;
   return e;
 }
@@ -186,11 +201,7 @@ inline std::optional<MissionEntry> interludeMission(const CampaignPaths& paths, 
   e.map = paths.campaign / "maps" / (stem + ".json");
   e.scene = paths.campaign / "scenes" / (stem + ".scene.json");
   e.battle = paths.campaign / "battles" / (stem + ".battle.json");
-  std::error_code ec;
-  const auto stamp = [&](const std::filesystem::path& p) { return std::filesystem::exists(p, ec) ? std::filesystem::last_write_time(p, ec) : std::filesystem::file_time_type::min(); };
-  const auto made = std::min({stamp(e.map), stamp(e.scene), stamp(e.battle)});
-  const auto source = std::max({stamp(file), stamp("content/ember-classes.json"), stamp("content/data/battle-rules.json"), stamp("content/data/editor-catalog.json")});
-  e.prepare = made == std::filesystem::file_time_type::min() || made < source;
+  e.prepare = missionFilesStale(e, file);
   e.campaignId = test ? std::string() : id;
   return e;
 }

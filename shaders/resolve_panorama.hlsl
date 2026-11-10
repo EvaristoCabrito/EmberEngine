@@ -43,6 +43,15 @@ static const float kBackdropDownDegrees = 30.0;
 [[vk::push_constant]] Push push;
 static const uint kBlackBackground = 0xFFFFFFFEu;
 
+// The painted backdrop and the ground image round the board follow the hour's light (the user, 2026-11-10: "o céu brilha mais que um
+// estádio e o jogo continua um breu": they were drawn at their daylight colours at any hour, beside a board exposed for the night).
+// f.litCap is how far the camera holds the picture under the meter (about 1.2 by day, 0.25-0.35 on a moonlit night): by day the
+// paintings as they are, at night darkened to the moonlit board's level and cooled. Rooms (no sky, or probes) are left alone.
+float3 backdropLight(MeshFrame f) {
+  if (f.atmosphere == 0 || probesAddress(f) != 0) return 1.0;
+  return lerp(float3(0.20, 0.23, 0.33), float3(1.0, 1.0, 1.0), smoothstep(0.4, 1.0, saturate(f.litCap / 1.19)));
+}
+
 // The real sky with the volumetric air over it only near the horizon: the air's haze fades out over the first few degrees of elevation, so it
 // never hides the sun, the clouds or the stars above (the user, 2026-10-20: "onde está o sol": the froxel haze, thick along the board, turned the whole
 // sky in the sun's direction into an orange wash and attenuated the disc to nothing).
@@ -120,7 +129,7 @@ float4 roomBackground(MeshFrame f, uint2 pixel) {
   }
   const float span = (1.0 - horizonRow) * imageHeightRad, toNadir = (1.5707963 / max(span, 1e-3));
   const float pv = saturate(horizonRow + (1.0 - horizonRow) * (1.0 - exp(elevation / max(span, 1e-3))) / max(1.0 - exp(-toNadir), 1e-3));
-  const float3 painting = gTextures[NonUniformResourceIndex(push.background)].SampleLevel(s, float2((float(pixel.x) + 0.5) / f.screenSize.x, pv), 0).rgb;
+  const float3 painting = gTextures[NonUniformResourceIndex(push.background)].SampleLevel(s, float2((float(pixel.x) + 0.5) / f.screenSize.x, pv), 0).rgb * backdropLight(f);
   if (push.planeTexture == kNoTexture) return float4(painting, 1.0);
   const float t = (push.planeY - f.cameraPosition.y) / min(dir.y, -1e-4);
   if (t <= 0.0) return float4(painting, 1.0);
@@ -134,7 +143,7 @@ float4 roomBackground(MeshFrame f, uint2 pixel) {
   m = float2(m.x <= 1.0 ? m.x : 2.0 - m.x, m.y <= 1.0 ? m.y : 2.0 - m.y);
   const float footprint = t * pixelAngle / max(-dir.y, 0.05);
   const float lod = max(log2(footprint / (size.x / float(max(tw, 1u)))), 0.0);
-  const float3 ground = tile.SampleLevel(s, m, lod).rgb;
+  const float3 ground = tile.SampleLevel(s, m, lod).rgb * backdropLight(f);
   return float4(lerp(ground, painting, smoothstep(push.planeFar * 0.55, push.planeFar, t)), 1.0);
 }
 
@@ -206,7 +215,7 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
       const float horizonRow = clamp(push.fitA.x, 0.02, 0.98);
       const float span = (1.0 - horizonRow) * imageHeightRad, toNadir = (1.5707963 / max(span, 1e-3));
       const float pv = saturate(horizonRow + (1.0 - horizonRow) * (1.0 - exp(elevation / max(span, 1e-3))) / max(1.0 - exp(-toNadir), 1e-3));
-      const float3 farPainting = gTextures[NonUniformResourceIndex(push.background)].SampleLevel(s, float2((float(pixel.x) + 0.5) / f.screenSize.x, pv), 0).rgb;
+      const float3 farPainting = gTextures[NonUniformResourceIndex(push.background)].SampleLevel(s, float2((float(pixel.x) + 0.5) / f.screenSize.x, pv), 0).rgb * backdropLight(f);
       float3 color = farPainting;
       if (push.planeTexture != kNoTexture) {
         const float t = (push.planeY - f.cameraPosition.y) / min(dir.y, -1e-4);
@@ -222,7 +231,7 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
           const float pixelAngle = length(skyDirection(f, a, float2(pixel) + float2(1.5, 0.5)) - dir);
           const float footprint = t * pixelAngle / max(-dir.y, 0.05);
           const float lod = max(log2(footprint / (size.x / float(max(tw, 1u)))), 0.0);
-          float3 ground = tile.SampleLevel(s, m, lod).rgb;
+          float3 ground = tile.SampleLevel(s, m, lod).rgb * backdropLight(f);
           const float3 horizonDir = normalize(float3(dir.x, 0.002, dir.z));
           const float3 skyHorizon = skyRadiance(a, horizonDir) * a.skyScale * f.exposure;
           ground = lerp(ground, skyHorizon, 0.45 * (1.0 - exp(-t / 900.0)));
@@ -245,7 +254,7 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
       const float span = (1.0 - horizonRow) * imageHeightRad, toNadir = (1.5707963 / max(span, 1e-3));
       const float v = saturate(horizonRow + (1.0 - horizonRow) * (1.0 - exp(elevation / max(span, 1e-3))) / max(1.0 - exp(-toNadir), 1e-3));
       const float u = (float(pixel.x) + 0.5) / f.screenSize.x;
-      const float3 painting = gTextures[NonUniformResourceIndex(push.background)].SampleLevel(gSamplers[f.materialSampler], float2(u, v), 0).rgb;
+      const float3 painting = gTextures[NonUniformResourceIndex(push.background)].SampleLevel(gSamplers[f.materialSampler], float2(u, v), 0).rgb * backdropLight(f);
       return float4(volumeOverBackground(f, painting, pixel), 1.0);
     }
     // mode 3 = mode 2 keeping the painting's own sky (aldeia's fire panorama: its smoke sky is the look), the real sky only
@@ -329,7 +338,7 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
       // 2026-10-23: "escondendo o teto do panorama"); everywhere else the panorama stays whole (skyTop 0 = as before)
       if (push.backgroundMode == 3 && push.ceilingTexture != kNoTexture && skyTop > 0.0 && ceilingHit(f, dir)) scene = smoothstep(skyTop - 0.015, skyTop + 0.015, v);
       if (push.backgroundMode == 4) scene = paintSample.a;                         // its own alpha: clear sky = the real sky
-      float3 color = lerp(sky, paint, scene);
+      float3 color = lerp(sky, paint * backdropLight(f), scene);
       // Below the kept band: the bottom row fades into the sky's own horizon colour; a thin haze on the seam.
       // (a painting kept whole ends at its last row and stays there; a cut one fades into the horizon colour)
       if (bottom < 0.999 && v > bottom - 0.08) color = lerp(color, skyHorizon, airShare * smoothstep(bottom - 0.08, bottom + 0.15, v));
@@ -353,7 +362,7 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
           // The mip that matches this pixel's footprint on the plane (one pixel's angle, stretched by the grazing view).
           const float footprint = t * pixelAngle / max(-dir.y, 0.05);
           const float lod = max(log2(footprint / (size.x / float(max(tw, 1u)))), 0.0);
-          float3 ground = tile.SampleLevel(s, m, lod).rgb;
+          float3 ground = tile.SampleLevel(s, m, lod).rgb * backdropLight(f);
           // Distance haze into the horizon colour, and the hand-over to the painting where the plane lies far.
           // (Tática, planeFar huge: the camera stands far above, the image is seen as it is, no haze)
           if (push.planeFar < 1.0e8) ground = lerp(ground, skyHorizon, airShare * 0.55 * (1.0 - exp(-t / 1200.0)));
@@ -376,7 +385,7 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
       const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);
       const float elevation = asin(clamp(dir.y, -1.0, 1.0));
       uv.y = kBackdropHorizon + saturate(-elevation / radians(kBackdropDownDegrees)) * (1.0 - kBackdropHorizon);
-      const float3 painting = gTextures[NonUniformResourceIndex(push.background)].SampleLevel(gSamplers[f.materialSampler], uv, 0).rgb;
+      const float3 painting = gTextures[NonUniformResourceIndex(push.background)].SampleLevel(gSamplers[f.materialSampler], uv, 0).rgb * backdropLight(f);
       const float sky = smoothstep(-0.004, 0.012, elevation);
       const float3 color = sky > 0.0 ? lerp(painting, skyBackground(f, pixel), sky) : painting;
       return float4(volumeOverBackground(f, color, pixel), 1.0);
@@ -516,6 +525,10 @@ void CSResolve(uint2 pixel : SV_DispatchThreadID) {
   surface.occlusion = occlusion;
   surface.emissive = emissive;
   surface.sightAt = instanceAnchor(inst);  // a piece takes the fog of war of where it stands, whole (like a card)
+  // A piece the party sees (MapStage's model sight: any of its cells in view sets kInstanceAlwaysSeen) is drawn whole, lit and
+  // textured, whatever the fog over the one point its trunk stands on: under that point's fog it showed as a flat grey cut-out of a
+  // tree (the user, 2026-11-10: "nao quero arvores cinza ... ou aparece de uma vez ou nao aparece").
+  if (inst.flags & kInstanceAlwaysSeen) surface.inSight = 1.0;
   color[pixel] = float4(shade(f, surface), 1.0);
 }
 

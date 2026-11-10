@@ -184,7 +184,7 @@ struct Options {
   ember::tempo::Config tempoConfig{};
   bool tempoModeOverride = false, tempoSeedOverride = false, tempoChaosOverride = false;
   int hour = -1;        // --hour N (-1: the default setup, MapStage): the panel's "Hora" (0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3..10 amanhecer .. madrugada)
-  int sunDisc = 1;      // --sun-disc N: the panel's "Sol" (0 real, 1 cinema, 2 look 001)
+  int sunDisc = 3;    // --sun-disc N: the panel's "Sol" (0 real, 1 cinema, 2 look 001)
   bool mist = true;    // --mist 0: the fog of war's mist bank off (its mask and the volumetric atmosphere stay)
   int lighting = 3;
   float sceneTime = -1.0f;
@@ -203,6 +203,7 @@ struct Options {
   int titlePick = -1;       // captures: that slot chosen (0-based) on the --title-screen slots
   std::string titleScreen;  // captures: "new" / "load" open the save slots ("" the title itself); "help[:tab[:scroll]]" /
                             // "options": Como jogar / Opções over the title
+  std::string thenMission;  // captures: once the --title-screen mission is up, that one closes and this one opens ("mission-test:<id>")
   std::string lang;         // captures: the interface, dialogues and subtitles in "pt" / "en" (Opções' languages, not saved)
   std::string resume;       // captures: a saved fight (BattleSnapshot JSON) resumed on the battle (MapStage::resume)
   bool curtain = false;     // captures: Ember's loading curtain over the battle / world map as it loads (LoadingScreens.h)
@@ -320,6 +321,10 @@ Options parse(int argc, char** argv) {
     else if (arg == "--weather" && hasValue) {
       o.tempoConfig.enabled = std::string_view(argv[++i]) != "off"; o.tempoModeOverride=true;
     }
+    else if (arg == "--weather-force" && hasValue) {  // the Tempo panel's "Forcar estado": 1 clear, 2 overcast, 3 warm rain, 4/5 storm, 6 fog (captures; use with --atmos2 0)
+      o.tempoConfig.forced = std::clamp(std::atoi(argv[++i]), 0, 6);
+      o.tempoConfig.enabled = true; o.tempoModeOverride = true;
+    }
     else if (arg == "--hour" && hasValue) o.hour = std::atoi(argv[++i]);
     else if (arg == "--sun-disc" && hasValue) o.sunDisc = std::atoi(argv[++i]);
     else if (arg == "--mist" && hasValue) o.mist = std::atoi(argv[++i]) != 0;
@@ -339,6 +344,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--map-ui" && hasValue) o.mapUi = argv[++i];
     else if (arg == "--title-pick" && hasValue) o.titlePick = std::atoi(argv[++i]);
     else if (arg == "--title-screen" && hasValue) o.titleScreen = argv[++i], o.title = true;
+    else if (arg == "--then-mission" && hasValue) o.thenMission = argv[++i];
     else if (arg == "--lang" && hasValue) o.lang = argv[++i];
     else if (arg == "--resume" && hasValue) o.resume = argv[++i];
     else if (arg == "--scenes" && hasValue) o.scenes = argv[++i];
@@ -567,6 +573,7 @@ struct SpriteStage final : Stage {
   SpriteStage(VulkanContext& context, Renderer& renderer, AssetManager& assets, uint64_t budgetMb)
       : uploads(context), sprites(context, renderer.bindless(), assets, uploads, {budgetMb << 20}), parade(sprites) {
     sprites.start();
+    sprites.beginFight();  // its full-clip pool (no pins)
   }
 
   void frame(Renderer& renderer, VkExtent2D size) override {
@@ -831,6 +838,9 @@ bool Services::frame(DebugUi& ui, Renderer& renderer, Stage* stage, VkExtent2D s
   // battle left for the world map) left the renderer waiting on its destroyed timeline semaphore (vkQueueSubmit2: Invalid VkSemaphore,
   // the user's log of 2026-10-23).
   renderer.waitFor(VK_NULL_HANDLE, 0);
+  // The game's one sprite system streams on every screen, the title's included (SharedSprites.h), before the screen asks for clips.
+  if (SharedSprites* shared = SharedSprites::get()) shared->frame(renderer);
+  else renderer.waitForSprites(VK_NULL_HANDLE, 0);
   if (stage) stage->frame(renderer, size);
   const double stageMs = msSince(start) - assetsMs;
   ui.newFrame(size, dt);
@@ -884,6 +894,8 @@ int runCapture(const Options& o) {
     DebugUi ui(context, nullptr, Renderer::outputFormat());
     Renderer renderer(context, nullptr, {o.width, o.height});
     if (!o.noUi) renderer.setUi(&ui);  // --no-ui: the scene alone (pixel checks)
+    std::optional<SharedSprites> sharedSprites;  // the game's one sprite system, as in the game (not for the benches)
+    if (o.title || !o.map.empty()) sharedSprites.emplace(context, renderer, services.assets, o.spriteBudgetMb);
     // --title: the title screen off-screen (--title-screen new / load: its save slots, read from the real bank, nothing
     // written), to check its layout.
     ember::Campaign campaign;
@@ -898,6 +910,8 @@ int runCapture(const Options& o) {
     campaignPaths.scenes = o.scenes;
     ember::InterludeData interludeData;  // the Interlude's gate and start on the world map (docs/INTERLUDE.md), as in the game
     const bool hasInterludeData = interludeData.load("content/interlude.json");
+    // A campaign mission's battle as the screen below opens it; --then-mission opens the next one through it once the first is up.
+    std::function<std::unique_ptr<Stage>(const std::string&)> makeMission;
     if (o.title && o.titleScreen == "map" && hasCampaign && world.load(ember::kOverworldData)) {
       world.applyLocais(ember::Locais::load("content/data/editor-catalog.json"), campaign.data());  // the game's own mission list
       // --title-screen map: the active slot's world map (--map-ui: party / quests / options / event / location opened; enter:<id>).
@@ -908,8 +922,9 @@ int runCapture(const Options& o) {
     } else if (o.title && o.titleScreen.starts_with("mission") && hasCampaign) {
       // --title-screen mission:<id> / mission-test:<id>: a campaign mission's battle, its files resolved as the campaign
       // (or Modo teste) resolves them (CampaignUi.h: the Map Editor's newer save, else Ember's newest).
-      const bool test = o.titleScreen.starts_with("mission-test:");
-      const std::string id = o.titleScreen.substr(o.titleScreen.find(':') + 1);
+      makeMission = [&](const std::string& screen) -> std::unique_ptr<Stage> {
+      const bool test = screen.starts_with("mission-test:");
+      const std::string id = screen.substr(screen.find(':') + 1);
       std::string error;
       std::optional<MissionEntry> m = hasInterludeData && interludeData.hasMission(id) ? interludeMission(campaignPaths, id, error, test)
                                       : test                                            ? testMission(campaign, campaignPaths, id, error)
@@ -956,7 +971,9 @@ int runCapture(const Options& o) {
       if (missionStage->draftId().rfind("estalagem", 0) == 0) missionStage->setMusic(music::theme("inn"));
       if (o.mapUi.starts_with("npc:")) talk->preview(o.mapUi.substr(4));
       if (o.mapUi == "menu" || o.mapUi == "options" || o.mapUi == "log" || o.mapUi == "fulllog" || o.mapUi == "quests" || o.mapUi == "hotbar" || o.mapUi.starts_with("status") || o.mapUi.starts_with("inventory:") || o.mapUi.starts_with("synced:")) missionStage->previewMenu(o.mapUi);
-      stage = std::move(missionStage);
+      return missionStage;
+      };
+      stage = makeMission(o.titleScreen);
     } else if (o.title && o.titleScreen.starts_with("test") && hasCampaign && world.load(ember::kOverworldData)) {
       world.applyLocais(ember::Locais::load("content/data/editor-catalog.json"), campaign.data());  // the game's own mission list
       // --title-screen test / test-choice / test-classic / test-scenarios / test-rpg / test-dev / test-editor: Modo teste's screens (--map-ui
@@ -1033,6 +1050,7 @@ int runCapture(const Options& o) {
     loading::Curtain curtain;
     const auto runStart = Clock::now();
     std::string curtainShown;
+    std::string thenMission = o.thenMission;
     if (o.curtain && stage) {
       if (dynamic_cast<MapStage*>(stage.get())) curtain.open(loading::Curtain::Kind::Battle, 0.0);
       else if (dynamic_cast<OverworldStage*>(stage.get())) curtain.open(loading::Curtain::Kind::Map, 0.0);
@@ -1065,6 +1083,16 @@ int runCapture(const Options& o) {
           });
         } else
         services.frame(ui, renderer, stage.get(), size, 1.0f / 60.0f, [&] { return renderer.renderFrame(o.time); });
+        // --then-mission: the first map up, the game's change of map (the old one goes with the GPU idle, the next one opens).
+        if (testDone() && !thenMission.empty() && makeMission) {
+          const double t = std::chrono::duration<double>(Clock::now() - runStart).count();
+          logInfo("then-mission {:.2f} s: {} closes, {} opens", t, o.titleScreen, thenMission);
+          vkDeviceWaitIdle(context.device);
+          stage.reset();
+          stage = makeMission(std::exchange(thenMission, std::string()));
+          if (o.curtain) curtain.open(loading::Curtain::Kind::Battle, t);
+          continue;
+        }
         if (testDone()) ++after;
         if (stage && !o.unpaced) {
           next += std::chrono::microseconds(16667);
@@ -1174,6 +1202,10 @@ int runWindow(const Options& o) {
   Renderer& renderer = *rendererOwner;
   renderer.setUi(&ui);
   logInfo("startup: GPU ready at {:.0f} ms", bootMs());
+  // The game's one sprite system (SharedSprites.h): every character's header and small version load from here, behind the title,
+  // and each map's characters stay into the next. (Not for the --battle bench and the sprite parade, which keep their own.)
+  std::optional<SharedSprites> sharedSprites;
+  if (titleMode || !o.map.empty()) sharedSprites.emplace(context, renderer, services.assets, o.spriteBudgetMb);
   AudioMixer::get().setRoot(o.gameAssets);
   // The window's first frames: the title's background and its loading bar until the data is in (BootStage); the title
   // carries the bar on.

@@ -128,7 +128,8 @@ const char* interludeStateName(InterludeState s) {
 
 std::string ruinsLockedReason(const InterludeData& data, const Overworld& world, const Json& save) {
   if (hasString(save.value("flags", Json::array()), "interlude:ruins-open")) return {};
-  if (data.requiredQuests.empty()) return "unconfigured: no required quest listed (content/interlude.json requiredQuests)";
+  // No quest listed = nothing to wait for: the place is open (the user, 2026-11-10: the Interlude at Hablock, playable now).
+  if (data.requiredQuests.empty()) return {};
   std::vector<std::string> missing;
   for (const std::string& q : data.requiredQuests)
     if (!world.conditionHolds(Json{{"questCompleted", q}}, save)) missing.push_back(q);
@@ -138,8 +139,8 @@ std::string ruinsLockedReason(const InterludeData& data, const Overworld& world,
   return "quests not done: " + list;
 }
 
-bool ruinsOpen(const InterludeData& data, const Overworld& world, const Json& save, bool test) {
-  if (test) return true;
+// One rule in every mode (the user, 2026-11-10: "só deve existir um caminho"): Modo teste is gated as the campaign is.
+bool ruinsOpen(const InterludeData& data, const Overworld& world, const Json& save, bool) {
   return ruinsLockedReason(data, world, save).empty();
 }
 
@@ -270,12 +271,12 @@ int checkInterlude(const InterludeData& data, const Overworld& world, const Json
     else logError("check-interlude: {}: FAIL", what), ++fails;
   };
   const Json fresh = emptySave;
-  // 1. The gate: an old save (no interlude object) is NOT_STARTED; unconfigured quests keep the Ruins shut; Modo teste opens them.
+  // 1. The gate: an old save (no interlude object) is NOT_STARTED; no quest listed = open; the same in Modo teste.
   check(interludeState(fresh) == InterludeState::NotStarted, "a save without the Interlude is NOT_STARTED");
   InterludeData unconfigured = data;
   unconfigured.requiredQuests.clear();
-  check(!ruinsOpen(unconfigured, world, fresh), "an unconfigured quest list keeps the Ruins shut");
-  check(ruinsOpen(unconfigured, world, fresh, true), "Modo teste opens the Ruins");
+  check(ruinsOpen(unconfigured, world, fresh), "no required quest listed: the place is open");
+  check(ruinsOpen(unconfigured, world, fresh, true) == ruinsOpen(unconfigured, world, fresh), "Modo teste follows the same gate");
   InterludeData gated = data;
   gated.requiredQuests = {"suspeito-watchtower-captive"};  // a quest the tables know
   check(!ruinsOpen(gated, world, fresh), "the Ruins shut while a required quest is not done");

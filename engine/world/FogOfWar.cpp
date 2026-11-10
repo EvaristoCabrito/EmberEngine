@@ -64,29 +64,55 @@ std::vector<HexPoint> hexLine(HexPoint a, HexPoint b) {
   return out;
 }
 
-FogOfWar::FogOfWar(const Board& board) : layout_(board.layout()), cells_(board.cells().size(), kFogUnseen), seenAt_(board.cells().size(), kNeverSeen) {
+FogOfWar::FogOfWar(const Board& board)
+    : layout_(board.layout()), cells_(board.cells().size(), kFogUnseen), seenAt_(board.cells().size(), kNeverSeen), standing_(board.cells().size(), 0.0f) {
   for (const Cell& c : board.cells()) ground_.push_back(static_cast<float>(c.groundY));
-  top_ = ground_;
+  // The fine grid covers every hex of the board (centres +- one hex radius); what stands beyond it never meets a ray.
+  solidX0_ = hexX(layout_, 0, 0) - kHexRadius;
+  solidZ0_ = hexZ(layout_, 0) - kHexRadius;
+  solidW_ = static_cast<int>(std::ceil((kSqrt3 * kHexRadius * (layout_.cols + 0.5) + 2.0 * kHexRadius) * kSolidRes));
+  solidH_ = static_cast<int>(std::ceil((1.5 * kHexRadius * std::max(0, layout_.rows - 1) + 2.0 * kHexRadius) * kSolidRes));
+  solid_.assign(static_cast<size_t>(solidW_) * static_cast<size_t>(solidH_), 0u);
 }
 
-void FogOfWar::block(double x, double z, float height) {
-  const auto [c, r] = hexAt(layout_, x, z);
-  const size_t i = static_cast<size_t>(indexOf(layout_, c, r));
-  top_[i] = std::max(top_[i], ground_[i] + height);
+void FogOfWar::block(double x, double z, float half, float bottom, float top) {
+  if (top <= bottom || top <= 0.0f) return;
+  // The cells the square overlaps (at least the one under the point).
+  const double h = std::max(0.0, static_cast<double>(half));
+  const int x0 = static_cast<int>(std::floor((x - h - solidX0_) * kSolidRes)), x1 = static_cast<int>(std::floor((x + h - solidX0_) * kSolidRes));
+  const int z0 = static_cast<int>(std::floor((z - h - solidZ0_) * kSolidRes)), z1 = static_cast<int>(std::floor((z + h - solidZ0_) * kSolidRes));
+  const int s0 = std::clamp(static_cast<int>(std::floor(std::max(0.0f, bottom) / kSolidSlice)), 0, 31);
+  const int s1 = std::clamp(static_cast<int>(std::ceil(top / kSolidSlice)) - 1, s0, 31);
+  const uint32_t bits = (s1 == 31 ? ~0u : (1u << (s1 + 1)) - 1u) & ~((1u << s0) - 1u);
+  for (int gz = std::max(0, z0); gz <= std::min(solidH_ - 1, z1); ++gz)
+    for (int gx = std::max(0, x0); gx <= std::min(solidW_ - 1, x1); ++gx) {
+      solid_[static_cast<size_t>(gz) * static_cast<size_t>(solidW_) + static_cast<size_t>(gx)] |= bits;
+      const auto [c, r] = hexAt(layout_, solidX0_ + (gx + 0.5) / kSolidRes, solidZ0_ + (gz + 0.5) / kSolidRes);
+      float& s = standing_[static_cast<size_t>(indexOf(layout_, c, r))];
+      s = std::max(s, top);
+    }
 }
 
-// One ray, sampled every fifth of a hex radius: blocked where a hex it crosses (other than the eye's and the
-// target's) stands above it.
+// One ray, sampled every tenth of a hex radius: blocked where the ground of a hex it crosses (other than the eye's and the
+// target's) rises above it, or where something stands at that very point and height.
 bool FogOfWar::rayClear(double ax, double az, double ay, double bx, double bz, double by, int fromIndex, int toIndex) const {
-  constexpr double kStep = 0.2;
+  constexpr double kStep = 0.1;
   const double length = std::hypot(bx - ax, bz - az);
   const int samples = std::max(1, static_cast<int>(std::ceil(length / kStep)));
   for (int k = 1; k < samples; k++) {
     const double t = static_cast<double>(k) / samples;
-    const auto [c, r] = hexAt(layout_, ax + (bx - ax) * t, az + (bz - az) * t);
+    const double x = ax + (bx - ax) * t, z = az + (bz - az) * t;
+    const auto [c, r] = hexAt(layout_, x, z);
     const int i = indexOf(layout_, c, r);
     if (i == fromIndex || i == toIndex) continue;
-    if (top_[static_cast<size_t>(i)] > ay + (by - ay) * t + 1e-4) return false;
+    const double above = ay + (by - ay) * t - ground_[static_cast<size_t>(i)];
+    if (above < -1e-4) return false;  // the ground itself
+    const int gx = static_cast<int>(std::floor((x - solidX0_) * kSolidRes)), gz = static_cast<int>(std::floor((z - solidZ0_) * kSolidRes));
+    if (gx < 0 || gz < 0 || gx >= solidW_ || gz >= solidH_) continue;
+    const uint32_t bits = solid_[static_cast<size_t>(gz) * static_cast<size_t>(solidW_) + static_cast<size_t>(gx)];
+    if (!bits) continue;
+    const int slice = std::min(31, static_cast<int>(std::max(0.0, above) / kSolidSlice));
+    if (bits & (1u << slice)) return false;
   }
   return true;
 }

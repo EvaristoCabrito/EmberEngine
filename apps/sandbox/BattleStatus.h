@@ -392,14 +392,13 @@ class BattleStatusSheet {
     const std::string range = u.minRange == u.maxRange ? std::to_string(u.maxRange) : std::format("{}-{}", u.minRange, u.maxRange);
     // Action Points (world/ActionPoints.h): the reserve of its maximum; its armor's bonus shown like gear (the tooltip names the category)
     const int apMaxNow = ember::apMax(battle, u), armorAp = ember::apArmorBonus(u);
-    const Cell cells[9] = {{"VIT", std::to_string(u.maxHp), u.gearHp, hungry, 0},   {"ATK", std::to_string(static_cast<int>(u.atk)), u.gearAtk, hungry, 1},
+    const Cell cells[8] = {{"VIT", std::to_string(u.maxHp), u.gearHp, hungry, 0},   {"ATK", std::to_string(static_cast<int>(u.atk)), u.gearAtk, hungry, 1},
                            {"MAG", std::to_string(static_cast<int>(u.mag)), u.gearMag, hungry, 2}, {"DEF", std::to_string(static_cast<int>(u.def)), u.gearDef, hungry, 3},
                            {"DEX", std::to_string(static_cast<int>(u.dex)), u.gearDex, hungry, 4}, {"INI", std::to_string(u.initiative), 0, false, -1},
-                           {"MOV", u.mov > 0 ? std::to_string(u.mov) : "0", u.gearMov, false, -1}, {en ? "Range" : "Alcance", range, 0, false, -1},
-                           {en ? "AP" : "PA", std::format("{}/{}", u.ap, apMaxNow), armorAp, false, -2}};
+                           {en ? "Range" : "Alcance", range, 0, false, -1}, {en ? "AP" : "PA", std::format("{}/{}", u.ap, apMaxNow), armorAp, false, -2}};
     const bool controls = u.side == "player" && hooks.adjust;
     const float gap = 6.0f, cw = (inner - 3 * gap) / 4.0f, ch = controls ? 70.0f : 46.0f;
-    for (int i = 0; i < 9; ++i) {
+    for (int i = 0; i < 8; ++i) {
       const ImVec2 a{x + (i % 4) * (cw + gap), y + (i / 4) * (ch + gap)};
       ImGui::SetCursorScreenPos(a);
       ImGui::PushID(i);
@@ -458,7 +457,7 @@ class BattleStatusSheet {
         if (plus) hooks.adjust(unit_, stat, +1);
       }
     }
-    return y + 3 * (ch + gap) + 6.0f;  // three rows now (the PA cell opens the third)
+    return y + 2 * (ch + gap) + 6.0f;  // eight displayed stats fit two rows
   }
 
   // content/data/status-rows.json: the rows per rules class and level.

@@ -30,6 +30,8 @@ struct Surface {
   float occlusion;         // baked or screen-space ambient occlusion
   float3 emissive;         // linear, before exposure
   float wrap;              // diffuse wrap-around (0 = Lambert; 2D cards: light from the side dims gently)
+  float minSunDiffuse;     // the least of the key light a surface takes whatever its facing (2D cards: painted figures have no back to the light)
+  float inSight;           // 1 = seen whatever the fog of war at sightAt (a piece the party sees: resolve_panorama.hlsl)
   float specular;          // 1 = full specular lobe, 0 = diffuse only (2D cards)
   float receivesShadow;    // 1 = the sun's shadow maps darken it, 0 = not
   float receivesCardShadow; // 1 = cards' shadows too, 0 = only the ground's and 3D pieces' (cards themselves)
@@ -48,6 +50,8 @@ Surface defaultSurface(float3 position, float3 normal, float3 albedo) {
   s.occlusion = 1.0;
   s.emissive = 0.0;
   s.wrap = 0.0;
+  s.minSunDiffuse = 0.0;
+  s.inSight = 0.0;
   s.specular = 1.0;
   s.receivesShadow = 1.0;
   s.receivesCardShadow = 1.0;
@@ -368,7 +372,7 @@ float3 shadeInSightSplit(MeshFrame f, Surface s, Sight sight, out float3 local) 
     const float3 l = f.sunDirection, h = normalize(l + view);
     const float nlRaw = dot(s.normal, l);
     const float nl = saturate(nlRaw), nh = saturate(dot(s.normal, h)), vh = saturate(dot(view, h));
-    const float nlDiffuse = saturate((nlRaw + s.wrap) / (1.0 + s.wrap));
+    const float nlDiffuse = max(saturate((nlRaw + s.wrap) / (1.0 + s.wrap)), s.minSunDiffuse);
     if (nlDiffuse > 0.0) {
       const float3 F = fresnelSchlick(f0, vh) * s.specular;
       // The shadow maps, then the clouds' (clouds.hlsli): every surface, the cards too.
@@ -487,7 +491,8 @@ float3 shade(MeshFrame f, Surface s) {
     const float4 c = mul(float4(s.position, 1.0), f.viewProjection);
     return debugVolume(f, c.xy / c.w * 0.5 + 0.5);
   }
-  const Sight sight = tacticalSight(f, s.sightAt);
+  Sight sight = tacticalSight(f, s.sightAt);
+  if (s.inSight > 0.0) sight.color = 1.0, sight.local = 1.0;
   if (f.debugView == kDebugClouds) return cloudShadow(f, s.position).xxx;
   if (f.debugView == 21u) return probesAddress(f) != 0 ? float3(probeRoom(f, s.position), 0.0, 0.0) : float3(0.0, 0.0, 1.0);  // the room's gate: red = inside, black = outside, blue = no probes
   if (f.debugView == kDebugFog) return float3(1.0 - sight.color, sight.local, 1.0);

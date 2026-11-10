@@ -1087,7 +1087,7 @@ bool Renderer::renderFrame(float time) {
 
   VkCommandBufferSubmitInfo cmdInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO};
   cmdInfo.commandBuffer = frame.cmd;
-  std::array<VkSemaphoreSubmitInfo, 2> waits{};
+  std::array<VkSemaphoreSubmitInfo, 3> waits{};
   VkSemaphoreSubmitInfo signal{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO};
   VkSubmitInfo2 submit{VK_STRUCTURE_TYPE_SUBMIT_INFO_2};
   submit.commandBufferInfoCount = 1;
@@ -1131,7 +1131,7 @@ void Renderer::captureFrame(float time, const std::string& path) {
 
   VkCommandBufferSubmitInfo cmdInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO};
   cmdInfo.commandBuffer = frame.cmd;
-  std::array<VkSemaphoreSubmitInfo, 2> waits{};
+  std::array<VkSemaphoreSubmitInfo, 3> waits{};
   VkSubmitInfo2 submit{VK_STRUCTURE_TYPE_SUBMIT_INFO_2};
   submit.commandBufferInfoCount = 1;
   submit.pCommandBufferInfos = &cmdInfo;
@@ -1766,7 +1766,7 @@ void Renderer::recordBloom(VkCommandBuffer cmd) {
   }
 }
 
-uint32_t Renderer::gatherWaits(Frame& frame, bool swapImage, std::array<VkSemaphoreSubmitInfo, 2>& waits) const {
+uint32_t Renderer::gatherWaits(Frame& frame, bool swapImage, std::array<VkSemaphoreSubmitInfo, 3>& waits) const {
   uint32_t count = 0;
   if (swapImage) {
     waits[count] = {VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO};
@@ -1780,6 +1780,13 @@ uint32_t Renderer::gatherWaits(Frame& frame, bool swapImage, std::array<VkSemaph
     waits[count].semaphore = waitTimeline_;
     waits[count].value = waitValue_;
     waits[count].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;  // textures and geometry, read by every stage
+    ++count;
+  }
+  if (spriteTimeline_ && spriteValue_) {  // the shared sprite system's uploads (already signalled too)
+    waits[count] = {VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO};
+    waits[count].semaphore = spriteTimeline_;
+    waits[count].value = spriteValue_;
+    waits[count].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
     ++count;
   }
   return count;

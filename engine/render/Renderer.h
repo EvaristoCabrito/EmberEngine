@@ -171,6 +171,11 @@ class Renderer {
     waitTimeline_ = timeline;
     waitValue_ = value;
   }
+  // ... and for `value` on the game's one sprite system's upload timeline (SharedSprites.h), set every frame beside the screen's own.
+  void waitForSprites(VkSemaphore timeline, uint64_t value) {
+    spriteTimeline_ = timeline;
+    spriteValue_ = value;
+  }
 
   // The board's ground (BoardGround::view); replaces the placeholder ground plane. Empty = none.
   void setTerrain(const TerrainView& terrain) { terrain_ = terrain; }
@@ -483,8 +488,8 @@ class Renderer {
   void destroyTargets();
   Frame& beginFrame();
   void record(Frame& frame, float time, VkImage swapImage, const Buffer* readback);
-  // Waits for the frame: the swapchain image (if any) and the texture-upload timeline (if set).
-  uint32_t gatherWaits(Frame& frame, bool swapImage, std::array<VkSemaphoreSubmitInfo, 2>& waits) const;
+  // Waits for the frame: the swapchain image (if any) and the texture-upload timelines (if set).
+  uint32_t gatherWaits(Frame& frame, bool swapImage, std::array<VkSemaphoreSubmitInfo, 3>& waits) const;
 
   VulkanContext& context_;
   Swapchain* swapchain_;
@@ -715,6 +720,8 @@ class Renderer {
   std::vector<SpriteInstance> frontCards_;  // stored after sprites_ in the frame's sprite buffer
   VkSemaphore waitTimeline_ = VK_NULL_HANDLE;
   uint64_t waitValue_ = 0;
+  VkSemaphore spriteTimeline_ = VK_NULL_HANDLE;
+  uint64_t spriteValue_ = 0;
   // Atmosfera volumétrica v1 (last: it releases its bindless slots before the tables go).
   std::unique_ptr<Volumetrics> volumetrics_;
   std::unique_ptr<Clouds006> clouds006_;

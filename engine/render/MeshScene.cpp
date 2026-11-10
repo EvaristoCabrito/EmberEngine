@@ -128,6 +128,64 @@ const MeshHeader* MeshScene::header(MeshId id) const {
   return id < meshes_.size() && meshes_[id]->parsed ? &meshes_[id]->header : nullptr;
 }
 
+const MeshScene::Columns* MeshScene::columns(MeshId id) const {
+  return id < meshes_.size() && meshes_[id]->parsed ? &meshes_[id]->columns : nullptr;
+}
+
+namespace {
+
+// MeshScene::Columns from the cooked bytes: every full-detail triangle sampled finely enough (under half a column across, under
+// half a height slice up) that no column or slice it passes through is missed.
+MeshScene::Columns standingColumns(std::span<const std::byte> bytes, const MeshHeader& h, const MeshSections& s) {
+  MeshScene::Columns out;
+  const float ex = h.boundsMax[0] - h.boundsMin[0], ey = h.boundsMax[1] - h.boundsMin[1], ez = h.boundsMax[2] - h.boundsMin[2];
+  if (!(ex > 0.0f) || !(ey > 0.0f) || !(ez > 0.0f)) return out;
+  constexpr int kColumns = 64;  // along the wider side
+  out.cell = std::max(ex, ez) / kColumns;
+  out.nx = std::clamp(static_cast<int>(std::ceil(ex / out.cell)), 1, kColumns);
+  out.nz = std::clamp(static_cast<int>(std::ceil(ez / out.cell)), 1, kColumns);
+  out.x0 = h.boundsMin[0], out.z0 = h.boundsMin[2];
+  out.bits.assign(static_cast<size_t>(out.nx) * static_cast<size_t>(out.nz), 0u);
+  const float slice = ey / 32.0f;
+  const auto mark = [&](const glm::vec3& p) {
+    const int ix = std::clamp(static_cast<int>((p.x - out.x0) / out.cell), 0, out.nx - 1);
+    const int iz = std::clamp(static_cast<int>((p.z - out.z0) / out.cell), 0, out.nz - 1);
+    const int iy = std::clamp(static_cast<int>((p.y - h.boundsMin[1]) / slice), 0, 31);
+    out.bits[static_cast<size_t>(iz) * static_cast<size_t>(out.nx) + static_cast<size_t>(ix)] |= 1u << iy;
+  };
+  const auto* vertices = reinterpret_cast<const MeshVertex*>(bytes.data() + s.vertices);
+  const auto* clusterVertices = reinterpret_cast<const uint32_t*>(bytes.data() + s.clusterVertices);
+  const auto* triangles = reinterpret_cast<const uint8_t*>(bytes.data() + s.clusterTriangles);
+  const auto* clusters = reinterpret_cast<const MeshCluster*>(bytes.data() + s.clusters);
+  const auto at = [&](const MeshCluster& cl, uint32_t k) {
+    const MeshVertex& v = vertices[clusterVertices[cl.vertexOffset + triangles[cl.triangleOffset + k]]];
+    return glm::vec3(v.position[0], v.position[1], v.position[2]);
+  };
+  const float stepXZ = out.cell * 0.5f, stepY = slice * 0.5f;
+  const auto steps = [&](const glm::vec3& d) {
+    return std::max(std::hypot(d.x, d.z) / stepXZ, std::abs(d.y) / stepY);
+  };
+  // Every vertex once (the simplified levels reuse the full-detail vertices), then only the triangles too big for their corners
+  // alone (a wall's few large faces); a dense scanned tree is all small triangles and costs one pass over its vertices.
+  for (uint32_t v = 0; v < h.vertexCount; ++v) mark(glm::vec3(vertices[v].position[0], vertices[v].position[1], vertices[v].position[2]));
+  for (uint32_t c = 0; c < h.clusterCount; ++c) {
+    const MeshCluster& cl = clusters[c];
+    if (cl.refinedGroup >= 0) continue;
+    for (uint32_t t = 0; t < cl.triangleCount; ++t) {
+      const glm::vec3 a = at(cl, t * 3), b = at(cl, t * 3 + 1), e = at(cl, t * 3 + 2);
+      const float span = std::max({steps(b - a), steps(e - b), steps(a - e)});
+      if (span <= 1.0f) continue;  // its corners already cover it
+      const int n = std::clamp(static_cast<int>(std::ceil(span)), 2, 96);
+      for (int i = 0; i <= n; ++i)
+        for (int j = 0; j <= n - i; ++j)
+          mark(a + (b - a) * (static_cast<float>(i) / n) + (e - a) * (static_cast<float>(j) / n));
+    }
+  }
+  return out;
+}
+
+}  // namespace
+
 bool MeshScene::placeable() const {
   // Placement needs bounds and material slots, never texture or GPU residency.
   // Otherwise one texture awaiting GPU memory hides every object, even on a
@@ -190,6 +248,8 @@ void MeshScene::parse(Mesh& mesh, MeshId id) {
     mesh.failed = true;
     return;
   }
+
+  mesh.columns = standingColumns(bytes, h, s);
 
   // Materials: factors now, texture indices as each texture becomes resident.
   const uint32_t materialBase = materialCount_;
@@ -383,6 +443,7 @@ void MeshScene::updateTexture(Texture& texture) {
   textureBytes_ += texture.residentBytes;
   texture.image = texture.next;
   texture.next = {};
+  if (texture.index == kNoTextureIndex) instancesDirty_ = true;  // its meshes may be drawn now (update(): the textured list)
   texture.index = index;
   if (streamTrace()) logInfo("stream texture {}: {} -> {} px, {} KB resident", assets_.name(texture.asset),
       texture.skip == UINT32_MAX ? 0u : std::max(texture.header.width >> texture.skip, texture.header.height >> texture.skip),
@@ -746,8 +807,15 @@ void MeshScene::update() {
     instancesDirty_ = false;
     InstanceGpu* out = tableData<InstanceGpu>(instanceTable_);
     uint32_t n = 0;
+    // ... and whose textures are resident too (the user, 2026-11-10: "não quero árvores cinza ... objetos sem textura: ou aparece de uma
+    // vez ou não aparece"): a mesh whose geometry arrived before its textures was drawn in its material's plain grey until they came.
+    const auto textured = [](const Mesh& mesh) {
+      for (const Texture* t : mesh.textures)
+        if (t->index == kNoTextureIndex) return false;  // (a texture that failed to load too: never the plain grey)
+      return true;
+    };
     for (const InstanceGpu& inst : allInstances_)
-      if (inst.mesh < meshes_.size() && meshes_[inst.mesh]->uploaded) out[n++] = inst;
+      if (inst.mesh < meshes_.size() && meshes_[inst.mesh]->uploaded && textured(*meshes_[inst.mesh])) out[n++] = inst;
     gpuInstanceCount_ = n;
     instanceTable_.dirty = true;
     if (streamTrace()) {

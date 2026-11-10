@@ -120,10 +120,12 @@ class OverworldStage : public Stage {
   }
   // The location's mission list opened as a click on its pin would (main.cpp: back from the Interlude, the present-day Ruins).
   void openLocationPanel(const std::string& id) { open_ = id; }
-  // A location's status as the pins show it: the world's rules, and the Ruins shut by the Interlude's quest gate (never in Modo teste).
+  // A location's status as the pins show it: the world's rules; the Interlude's place (interlude.json ruinsLocation: Hablock)
+  // is open or shut by the chapter's quest gate alone, the same in every mode (it holds no campaign mission of its own).
   std::string locationStatus(const ember::MapLocation& loc) const {
     std::string st = world_.locationStatus(loc, save_, test());
-    if (interlude_ && !test() && loc.id == interlude_->ruinsLocation && st != "locked" && !ember::ruinsOpen(*interlude_, world_, save_)) st = "locked";
+    if (interlude_ && loc.id == interlude_->ruinsLocation)
+      st = !ember::ruinsOpen(*interlude_, world_, save_) ? "locked" : st == "locked" ? "available" : st;
     return st;
   }
 
@@ -1179,15 +1181,10 @@ class OverworldStage : public Stage {
     const ImVec2 mouse = io.MousePos;
     // Pins.
     std::vector<std::pair<const ember::MapLocation*, std::string>> pins;
-    for (const ember::MapLocation& loc : world_.locations()) {
-      if (!test() && !world_.locationVisible(loc, save_)) continue;  // GameApp mapVisibleLocations: test mode shows all
-      // isExplored: Stone Bridge before O Vau, the Inn, where the party stands, or a hex it has stood on (test: all).
-      bool explored = test() || (!completed("vau") && loc.id == "stonebridge") || loc.id == "estalagem" || (standing && standing->id == loc.id);
-      for (const ember::Json& h : save_.value("exploredHexes", ember::Json::array()))
-        if (h.is_string() && h.get<std::string>() == std::format("{},{}", loc.col, loc.row)) explored = true;
-      if (!explored) continue;
-      pins.push_back({&loc, locationStatus(loc)});
-    }
+    // Every location's pin, always: one map in every mode (the user, 2026-11-10: "só deve existir um caminho ... no jogo, no
+    // mapa, no save"; Modo teste draws the same places through the same drawLocationPin). Whether a place can be entered is
+    // its status (locked / open / done), never whether its pin is shown.
+    for (const ember::MapLocation& loc : world_.locations()) pins.push_back({&loc, locationStatus(loc)});
     for (const auto& [loc, st] : pins) {
       const ImVec2 c = locationPinAt(loc->x, loc->y, loc->pinDx, loc->pinDy, o, imgW, imgH);  // CampaignUi.h: the one pin
       const bool reachable = test() || walkable(loc->col, loc->row) || (!completed("vau") && loc->id == "stonebridge");
@@ -1350,7 +1347,7 @@ class OverworldStage : public Stage {
     // chapter is completed the Ruins open as any present-day location. Modo teste: the gate open (everything unlocked), the chapter
     // the same, on the session's own save.
     if (interlude_ && loc.id == interlude_->ruinsLocation) {
-      if (!ember::ruinsOpen(*interlude_, world_, save_, test())) {
+      if (!ember::ruinsOpen(*interlude_, world_, save_)) {
         flashId_ = loc.id, flashAt_ = now_;
         logInfo("ruins: shut ({})", ember::ruinsLockedReason(*interlude_, world_, save_));
         return showHint(tr("As Ruínas estão fechadas: termine antes as missões de Salazar.", "The Ruins are shut: finish Salazar's quests first."));
@@ -1476,11 +1473,11 @@ class OverworldStage : public Stage {
       const ember::Json& pos = save_["overworldPos"];
       atmos.setOverworldHex(pos.value("col", 0), pos.value("row", 0));
       atmos.setGameTime(ms);
-      return ember::atmos2::Service::toTempo(atmos.sample(ms));
+      return ember::tempo::settle(ember::atmos2::Service::toTempo(atmos.sample(ms)));  // rain only under rain clouds
     }
     ember::tempo::Config always = worldTempoConfig_;
     always.enabled = true;
-    return ember::tempo::at(ms, always);
+    return ember::tempo::settle(ember::tempo::at(ms, always));
   }
 
   // What one explored hex clears: a soft circle (radius 9 % of the image, solid to 65 %) around it; a hex within two hex steps

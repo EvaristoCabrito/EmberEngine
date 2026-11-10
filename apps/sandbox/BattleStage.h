@@ -57,6 +57,7 @@ class BattleStage final : public Stage {
     for (const AssetId id : assets.mountedAssets())
       if (assets.name(id).ends_with(".mesh")) meshIds_.push_back({meshes_.add(id), std::string(assets.name(id))});
     sprites_.start();
+    sprites_.beginFight();  // its full-clip pool (no pins)
     renderer.setGroundExtent(std::max(width(), depth()) * 0.6f);
     renderer.setCostSplit(costSplit);
     logInfo("battle: {} meshes, sprite budget {} MB", meshIds_.size(), spriteBudgetMb);

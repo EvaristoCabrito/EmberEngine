@@ -5,9 +5,12 @@
 //           never seen. Every living party unit is an eye with its own vision range (kSightRadius; Ember's 7).
 //   sight   EmberEngine's own line of sight in the 3D board (Ember's was never finished; the user,
 //           2026-10-14: occlusion-based). A ray from the eye (kEyeHeight above its hex) to a point
-//           kTargetHeight above the target hex's ground; a hex the ray passes whose top (ground + whatever
-//           stands on it: buildings, trees, tall cards) rises above the ray blocks it. The blocker itself is
-//           seen (you see the wall, not past it). Three rays (centre and either side of the hexes) so a
+//           kTargetHeight above the target hex's ground; it is blocked where a hex's ground rises above it, or
+//           where something really stands at that point and height (block(): a fine grid, 4 cells a unit,
+//           0.25 high slices; a 3D model by its own triangles, MeshScene::Columns: a tree's trunk low down,
+//           its crown only up in the air). Until 2026-11-10 whatever stood on a hex made the whole hex a wall
+//           up to its top, and a model stood as the box around it: one tree hid 50-60 hexes (the user: "nunca
+//           revela o mapa"). The blocker itself is seen (you see the wall, not past it). Three rays (centre and either side of the hexes) so a
 //           line grazing a corner is not decided by rounding; any clear ray sees. Gameplay heights (cell
 //           ground), so all board looks see the same (R8). Only wide things block (kBlockWidth: walls,
 //           houses, big trees; not lamp posts or signposts), and a hex every one of whose neighbours is in
@@ -72,8 +75,11 @@ class FogOfWar {
   // Ground heights from the board's cells; nothing stands on them until block() says so.
   explicit FogOfWar(const Board& board);
 
-  // Something `height` tall stands at a world point: its hex's top rises to at least ground + height.
-  void block(double x, double z, float height);
+  // Something stands over the square of half-side `half` around a world point, from `bottom` to `top` above its hex's
+  // ground. Sight is blocked only where it really stands (a grid of kSolidRes cells a unit, kSolidSlice high), never over
+  // the whole hex: a trunk blocks the trunk's width, a crown high in the air blocks no eye on the ground under it.
+  void block(double x, double z, float half, float bottom, float top);
+  void block(double x, double z, float height) { block(x, z, 0.0f, 0.0f, height); }
   // Whether `to` is in sight from an eye at `from` (the line-of-sight rule above; range not checked).
   bool sightReaches(HexPoint from, HexPoint to) const;
 
@@ -91,6 +97,8 @@ class FogOfWar {
   // Whether some remembered hex's linger ran out in (since, clock]: the mask must be painted again.
   bool lingerEnded(double since) const;
   bool visible(int c, int r) const { return state(c, r) == kFogVisible; }
+  // How far what stands on a hex rises above its ground (0: nothing blocks there).
+  float standing(int c, int r) const { return standing_[static_cast<size_t>(indexOf(layout_, c, r))]; }
   // Bumped by every relight: the mask (and the shadows that read it) must be redrawn.
   uint64_t version() const { return version_; }
 
@@ -111,7 +119,14 @@ class FogOfWar {
   std::vector<uint8_t> cells_;
   std::vector<double> seenAt_;  // per hex: the clock when it was last in sight (kNeverSeen: no linger)
   double clock_ = 0.0;
-  std::vector<float> ground_, top_;  // per hex: ground height, and the highest thing standing on it
+  std::vector<float> ground_, standing_;  // per hex: ground height, and the highest thing standing on it (reports)
+  // What stands, finely: per cell of 1 / kSolidRes units over the board, one bit per kSolidSlice of height above that point's
+  // hex ground (bit 31 holds everything higher).
+  static constexpr int kSolidRes = 4;
+  static constexpr float kSolidSlice = 0.25f;
+  double solidX0_ = 0.0, solidZ0_ = 0.0;
+  int solidW_ = 0, solidH_ = 0;
+  std::vector<uint32_t> solid_;
   uint64_t version_ = 0;
 };
 

@@ -84,6 +84,7 @@
 #include "media/AudioMixer.h"
 #include "render/SpellEffects.h"
 #include "render/SpriteSystem.h"
+#include "SharedSprites.h"
 #include "world/Battle.h"
 #include "world/BattleExport.h"
 #include "world/Combat.h"
@@ -190,7 +191,7 @@ struct MapStageOptions {
   std::int64_t campaignSubMinuteMs = 0;
   ember::tempo::Config tempoConfig{};
   bool tempoModeOverride = false, tempoSeedOverride = false, tempoChaosOverride = false;
-  int sunDisc = 1;    // the panel's "Sol": 0 real, 1 cinema (the disc the user had; default), 2 look 001 (--sun-disc N)
+  int sunDisc = 3;    // the panel's "Sol": 0 real, 1 cinema, 2 look 001, 3 Sol 002 (the default, 2026-11-10) (--sun-disc N)
   int glare = 0;      // "Clarão": 0 OFF (default: the user never asked for it), 1 look 001 (--glare N)
   int shafts = 0;     // "Raios de luz": 0 OFF (default), 1 look 001 (--shafts N)
   // The fog of war's mist bank (the numbered looks) on at the start; --mist 0 leaves only the fog of war's mask (check_fog.py
@@ -294,7 +295,7 @@ class MapStage final : public Stage {
       : renderer_(renderer),
         uploads_(context),
         ground_(context, renderer.bindless(), assets, uploads_),
-        sprites_(context, renderer.bindless(), assets, uploads_, {options.spriteBudgetMb << 20}),
+        sprites_(gameSprites()),
         meshes_(context, renderer.bindless(), assets, uploads_, {.geometryBytes = 256ull << 20}),
         assets_(assets),
         look_(options.look),
@@ -341,7 +342,7 @@ class MapStage final : public Stage {
     tempoTimeline_.configure(tempoConfig_, options.campaignMinute * 60000, true);
     gameHour_ = options.gameHour;  // < 0: the map's own hour (cycleHour)
     moonLight_ = std::clamp(options.moonLight, 0, 1);
-    sunSize_ = std::clamp(options.sunDisc, 0, 2);
+    sunSize_ = std::clamp(options.sunDisc, 0, 3);
     glare_ = std::clamp(options.glare, 0, 1);
     shafts_ = std::clamp(options.shafts, 0, 1);
     spellsMenu_.load("content/fx/spell-looks.json", "content/fx.sprites.json");
@@ -441,7 +442,7 @@ class MapStage final : public Stage {
         scene_ = ember::buildScene(*board_, architectureCatalog(), &skipped);
         logInfo("scene {}: built by SceneBuilder (EmberEngine props); {} kinds left out", options.scene.generic_string(), skipped.size());
       }
-      sprites_.start();
+      sprites_.beginFight();  // the last map's characters stay on the GPU until this one's pins say who is needed
       // 3D models: Ember's GLBs, cooked by Cooker meshes ("/game/models/x.glb" -> "meshes/models/x.mesh").
       for (const ember::SceneModel& m : scene_->models) {
         const std::string asset = modelAsset(m);
@@ -561,9 +562,7 @@ class MapStage final : public Stage {
       const auto [pinsDone, pins] = sprites_.pinProgress();
       if (!scene_ || (sprites_.ready() && pinsDone >= pins)) meshes_.openStreaming(), meshStreamOpen_ = true;
     }
-    if (scene_) {
-      sprites_.update();
-      laps.lap("sprites");
+    if (scene_) {  // (the sprites stream in Services::frame, before this: SharedSprites)
       meshes_.update();
       laps.lap("meshes");
       if (!modelsPlaced_ && meshes_.placeable()) placeModels();
@@ -894,6 +893,38 @@ class MapStage final : public Stage {
       renderer.setProbeOpenness(openness);
     }
     Renderer::Lighting lighting = mapLighting(time);
+    // The weather's light (the user, 2026-11-10: "a tiny speck of cloud make it look like darkness. Nighttime", measured the same
+    // day on vau at 08:00: the board at a third of its clear-day brightness under a broken sky). Before, the weather never reached
+    // the light: the camera metered a clear sunny day (71,000 lux) whatever the sky, while the cloud shadow took three quarters of
+    // the sun off the whole board, so any cloud read as night. Now the sky's state sets all three together, by day:
+    //   broken clouds: a cloud's shadow takes half the sun (a passing shade, not dusk) and the clouds' own light adds to the sky's;
+    //   a closed deck: the beam is nearly gone, the light is the deck's (about a quarter of a clear day, a tenth under a downpour);
+    //   the camera meters what the board really gets, then held back a little under a deck and more in rain, so an overcast or
+    //   rainy day is a grey day, dimmer than a sunny one, never a night.
+    float cloudShadowStrength = 0.75f;  // Renderer::Clouds::shadow's own default: maps without the weather keep it
+    float sunDiscShown = 1.0f;
+    float clearMeterLux = -1.0f;  // the meter before the weather (the night's darkening reads the hour, never the clouds)
+    const bool weatherLight = tempoActive && lightingMode_ == 3 && lighting.physicalSky && lighting.sunDisc && !moonNight_ && !interiorMap();
+    if (weatherLight) {
+      const float cover = std::clamp(cloudCoverage_ >= 0.0f ? cloudCoverage_ : tempoEffects.coverage, 0.0f, 1.0f);
+      const float rain = std::clamp(std::max(tempoEffects.rain, tempoEffects.heavyRain), 0.0f, 1.0f);
+      const float closed = glm::smoothstep(0.55f, 0.95f, cover);
+      const float rainDim = 1.0f - 0.6f * rain;
+      const float sunScale = glm::mix(1.0f, 0.08f, closed) * rainDim;
+      const float skyScale = glm::mix(1.0f + 0.6f * cover, 0.8f, closed) * rainDim;
+      cloudShadowStrength = glm::mix(0.5f, 0.3f, closed);
+      sunDiscShown = 1.0f - closed;  // no disc through a closed deck (it showed as a pale ball in the rain, capture of 2026-11-10)
+      const float sinElevation = std::max(lighting.sunDirection.y, 0.05f);
+      const float shaded = 1.0f - cloudShadowStrength * cover;  // the board's mean share of the beam under this sky's shadows
+      // (the sky's share measured on vau's board under a deck, 2026-11-10: a tenth of the key, not the clear meter's fifth)
+      const float got = (sunScale * shaded * sinElevation + 0.1f * skyScale) / (sinElevation + 0.1f);
+      lighting.sunIntensity *= sunScale;
+      lighting.ambientMul *= skyScale;
+      clearMeterLux = meterLux_;
+      // Held back so the days keep their order on screen (set against captures of vau at 08:00, grass in the open, display green:
+      // clear 64, overcast 58, rain 52, storm 46; without it the camera gave a storm the brightness of a clear noon).
+      meterLux_ *= got * std::exp2(0.8f * closed + 0.85f * rain * rain);
+    }
     if (windowLight() && lightingMode_ == 3) {
       // Luz das janelas: the key light (the hour's sun, the moon at night, through the air) comes in only through the openings
       // (the shadow-only roof, buildRoof); the sky's light and the bounced light reach the room through its probes, which carry the
@@ -929,11 +960,18 @@ class MapStage final : public Stage {
       const float ev = std::log2(std::max(meterLux_, 1e-4f) / 2.5f);
       // "Luar: cinema": the night stops are capped at one, or the camera would take back what the brighter moon gave
       // (measured 2026-10-19: with the full darkening the moonlit ground stayed black beside the lanterns).
-      float darkening = nightDarkening(ev);
+      // (a cloudy or rainy day is not a night: the night's stops come from the clear sky's meter, 2026-11-10)
+      float darkening = nightDarkening(clearMeterLux > 0.0f ? std::log2(std::max(clearMeterLux, 1e-4f) / 2.5f) : ev);
       // "Luar: cinema": capped at 2 stops (at 1, measured 2026-10-19 on cemiterio: meter 4.4 lux, exposure 0.24, the night came out
       // as an overcast day with a pale blue sky; at 2 the sky is navy and the moonlit ground still reads). Every map, the rooms too.
-      if (moonNight_ && moonLight_ == 1) darkening = std::min(darkening, 2.0f);
-      const float target = ev + darkening;
+      // (1.5 since 2026-11-10: at 2 the board and the figures were "um breu" under a full moon; the sky and the backdrop are held down
+      // on their own now: atmosphere.hlsli kNightSkyMask, resolve_panorama.hlsl backdropLight)
+      if (moonNight_ && moonLight_ == 1) darkening = std::min(darkening, 1.5f);
+      // A day reads as a day (the user, 2026-11-10: "não vejo nenhum sol ou luminosidade"): by daylight the camera opens 0.6 stop
+      // more than the meter asks (sunlit grass sat at a quarter of the display's range); nothing changes at night.
+      const float clearEv = clearMeterLux > 0.0f ? std::log2(std::max(clearMeterLux, 1e-4f) / 2.5f) : ev;
+      // (0.6 the same day washed the clouds and the board out: "essa luz tá muito forte ... chega de lavagem". 0.25.)
+      const float target = ev + darkening - 0.25f * glm::smoothstep(8.0f, 12.0f, clearEv);
       if (std::isnan(adaptedEv_) || measuring_) adaptedEv_ = target;
       adaptedEv_ += (target - adaptedEv_) * (1.0f - std::exp(-dt * kAdaptPerSecond));
       lighting.exposure = 1.0f / (1.2f * std::exp2(adaptedEv_));
@@ -1028,8 +1066,15 @@ class MapStage final : public Stage {
     // Look 001 (2026-10-19, "um sol digno de um triple A", "eu quero uma versão com tudo"): the cinema disc the user already had
     // (the moon's small size), now with limb darkening, a corona and the air's aureole (atmosphere.hlsli sunLook001); at night
     // the look adds a halo round the moon.
-    if (lighting.sunDisc) lighting.sunRadius = sunSize_ >= 1 ? glm::radians(kMoonSizes[0]) : 0.0f;
-    lighting.sunLook = sunSize_ == 2 ? 1u : 0u;
+    // (2026-11-10, the user: "this non existing light orb was meant to be sun": the cinema disc was the moon's 2.7 deg radius, ten
+    // times the sun's, a white ball a tenth of the screen wide once the bloom took it. 0.7 deg read as too small; now 1.5 deg.)
+    // Sol 001 is the game's sun again (the user, 2026-11-10: "ele estava convincente na versão 001"), at the radius it was made with.
+    // (later the same day: "você não vai voltar ... eu quero novo": one new sun for the whole game, Sol 002, atmosphere.hlsli.)
+    // The panel's "Sol": 0 real, 1 cinema, 2 look 001 (each as it was), 3 = Sol 002, the default.
+    const float sunDegrees = sunSize_ == 3 ? 1.1f : sunSize_ >= 1 ? kMoonSizes[0] : 0.26f;
+    if (lighting.sunDisc) lighting.sunRadius = sunSize_ >= 1 ? glm::radians(sunDegrees) : 0.0f;
+    if (lighting.sunDisc && sunDiscShown < 1.0f) lighting.sunRadius = glm::radians(std::max(0.01f, sunDegrees * sunDiscShown));
+    lighting.sunLook = sunSize_ == 3 ? 2u : sunSize_ == 2 ? 1u : 0u;
     // Tática looks from far above: no air between the eye and the board (Ember drops its distance fog there).
     if (flat_) lighting.kmPerUnit = 0.0f;
     if(tempoActive) lighting.weatherMieScale=tempoEffects.mieScale;
@@ -1169,6 +1214,10 @@ class MapStage final : public Stage {
         clouds.enabled=clouds_>0 && std::max({clouds.coverage,clouds.middleCoverage,clouds.cirrusCoverage})>.0005f;
         clouds.cirrusHeight=std::max(2600.f,clouds.anvilTop+1200.f);
       }
+      clouds.shadow = cloudShadowStrength;  // the weather's light, above
+      // A storm's 7 km tower outran the march: the deck stopped short of the horizon, a white rim under clear blue sky with the
+      // rain falling in front of it (capture of 2026-11-10). The layer stays within what the march covers.
+      if (clouds.volumetric && !clouds.look006) clouds.top = std::min(clouds.top, clouds.base + 1400.0f);
       clouds.altitude += meanGround_;  // the heights above the board's mean ground
       clouds.base += meanGround_;
       clouds.top += meanGround_;
@@ -1374,7 +1423,7 @@ class MapStage final : public Stage {
     renderer.setBloom(bloomOn_ ? (board_->draft().bloomIntensity > 0.0f ? board_->draft().bloomIntensity : 0.16f) : 0.0f);
     renderer.setCardLean(cardStance_ == 1);
     renderer.waitFor(uploads_.timeline(),
-                     std::max({ground_.uploadWaitValue(), sprites_.uploadWaitValue(), meshes_.uploadWaitValue()}));
+                     std::max(ground_.uploadWaitValue(), meshes_.uploadWaitValue()));  // (the sprites' own queue: SharedSprites::frame)
     if (ground_.ready() && sceneReady() && (!fog_ || fogReady_)) ++readyFrames_;
     if (options_.measureSeconds > 0.0f && !measuring_ && !measured_ && readyFrames_ >= 30) {
       measuring_ = true;
@@ -1892,7 +1941,7 @@ class MapStage final : public Stage {
     ImGui::Separator();
     ImGui::Spacing();
 
-    const std::array<std::string, 6> statLabels{tr("VIT", "HP"), "ATK", "MAG", "DEF", "DEX", "MOV"};
+    const std::array<std::string, 5> statLabels{tr("VIT", "HP"), "ATK", "MAG", "DEF", "DEX"};
     for (size_t i = 0; i < info.statsBefore.size(); ++i)
       if (info.statsAfter[i] != info.statsBefore[i])
         ImGui::TextColored(ImColor(232, 215, 187, 255), "%s     %d → %d   (%+d)", statLabels[i].c_str(), info.statsBefore[i], info.statsAfter[i],
@@ -2020,6 +2069,8 @@ class MapStage final : public Stage {
       // shown as information only (§5).
       // The Map Editor's looks (the user, 2026-11-04): OFF, básica, 001 (the live layer), 002-005 (the saved looks), RDR2, 008; look
       // 006 is never offered ("REMOVE CLOUD 006"). Choice 2 + n = the volumetric layer with saved look n (0 = the live 001).
+      // (Taken out and put back on 2026-11-10; the user: "eu não quero que você retire nenhum seletor de lugar nenhum. Eu quero que o
+      // padrão seja o 4".)
       static const char* kClouds[9] = {"OFF", "básica", "001", "002", "003", "004", "005", "RDR2", "008 — nova"};
       int cloudChoice = clouds_ == 5 ? 8 : clouds_ == 4 ? 7 : clouds_ >= 2 ? 2 + (savedCloudLook_ >= 2 ? savedCloudLook_ - 1 : 0) : clouds_;
       if (dropdown("Nuvens", cloudChoice, 9, [](int i) { return std::string(kClouds[i]); })) {
@@ -2115,8 +2166,8 @@ class MapStage final : public Stage {
       }
     }
     if (scene_ && (!ember::timeOfDay(scene_->timeOfDay).moon || clockOn()) && scene_->environment != "indoor") {
-      static const char* kSun[3] = {"real", "cinema", "001"};
-      dropdown("Sol", sunSize_, 3, [](int i) { return std::string(kSun[i]); });
+      static const char* kSun[4] = {"real", "cinema", "001", "002"};
+      dropdown("Sol", sunSize_, 4, [](int i) { return std::string(kSun[i]); });
     }
     if (scene_ && (ember::timeOfDay(scene_->timeOfDay).moon || clockOn())) {
       static const char* kPaths[3] = {"Ember", "atrás", "na frente"};
@@ -2171,7 +2222,7 @@ class MapStage final : public Stage {
     if(look==6)savedCloudLook_=4;  // look 006 removed from the game (2026-11-04): such a map draws the default, 004
   }
   void setEditorWeather(const ember::MapDraft& draft) {
-    if(draft.cloudLook>=0)selectCloudLook(draft.cloudLook);
+    if(draft.cloudLook>=0)selectCloudLook(draft.cloudLook);  // (taken out and put back on 2026-11-10: every selector stays; the default is 004)
     weatherKind_ = draft.weather;
     weatherIntensity_ = draft.weatherIntensity;
     weatherWind_ = draft.weatherWind;
@@ -2376,7 +2427,7 @@ class MapStage final : public Stage {
       for (ember::Json& su : snap["units"])
         if (su.value("id", std::string()) == u.id) {
           su["acted"] = true;
-          if (u.side == "enemy" || u.mov - u.moveUsed <= 0) su["moved"] = true;
+          if (u.side == "enemy" || battle_->reachable(static_cast<size_t>(active)).size() <= 1) su["moved"] = true;
         }
     }
     snap["campaignMinute"] = campaignMinuteNow();
@@ -2605,7 +2656,8 @@ class MapStage final : public Stage {
   bool canStillWalk(const ember::BattleUnit& u) const {
     if (!battle_ || !u.alive) return false;
     if (battle_->roaming()) return true;
-    return u.mov - u.moveUsed > 0 && u.ap >= ember::apCheapestStep(*battle_, u);
+    const size_t b = static_cast<size_t>(&u - battle_->units().data());
+    return battle_->reachable(b).size() > 1;
   }
   // The AP label the bar shows after a cost ("6 PA").
   static std::string apLabel(int cost) { return std::format("{} {}", cost, tr("PA", "AP")); }
@@ -2641,8 +2693,17 @@ class MapStage final : public Stage {
   // The weather now: Atmos 2 (the living atmosphere, docs/ATMOS2.md) when it runs and is on, else the seeded Tempo of world/Tempo.h.
   const ember::tempo::Sample tempoNow() const {
     const auto& atmos = ember::atmos2::Service::instance();
-    if (atmos.running() && atmos.enabled()) return ember::atmos2::Service::toTempo(atmos.sample(tempoMillisecondsNow()));
-    return tempoTimeline_.at(tempoMillisecondsNow());
+    ember::tempo::Sample s = atmos.running() && atmos.enabled() ? ember::atmos2::Service::toTempo(atmos.sample(tempoMillisecondsNow()))
+                                                                : tempoTimeline_.at(tempoMillisecondsNow());
+    // The map's own Clima (Map Editor: chuva, tempestade, neve) is this sky's rain too: its clouds and its light follow it.
+    if (weatherIntensity_ > 0.0f && (weatherKind_ == "rain" || weatherKind_ == "storm" || weatherKind_ == "snow")) {
+      const float strength = std::clamp(weatherIntensity_, 0.0f, 1.0f) * (weatherKind_ == "rain" ? 0.45f : 1.0f);
+      const auto fixed = static_cast<ember::tempo::I>(strength * static_cast<float>(ember::tempo::Q));
+      s.v[ember::tempo::Rain] = std::max(s.v[ember::tempo::Rain], fixed);
+      if (weatherKind_ == "storm") s.v[ember::tempo::HeavyRain] = std::max(s.v[ember::tempo::HeavyRain], fixed);
+    }
+    // One coherent sky: rain only under rain clouds (tempo::settle).
+    return ember::tempo::settle(s);
   }
   ember::tempo::Config tempoConfig() const { return tempoConfig_; }
   std::int64_t campaignMillisecondsNow() const {
@@ -4045,7 +4106,7 @@ class MapStage final : public Stage {
     const ImU32 tone = e.categoryId == "easy" ? IM_COL32(150, 200, 130, 255) : e.categoryId == "moderate" ? IM_COL32(224, 189, 128, 255)
                        : e.categoryId == "difficult" ? IM_COL32(226, 150, 70, 255) : IM_COL32(181, 74, 50, 255);
     r.lines.push_back({label, tone});
-    r.lines.push_back({std::format("{} {}/{} · ATK {} · MAG {} · DEF {} · DEX {} · MOV {}", tr("Vida", "HP"), f.hp, f.maxHp, f.atk, f.mag, f.def, f.dex, f.mov), fg});
+    r.lines.push_back({std::format("{} {}/{} · ATK {} · MAG {} · DEF {} · DEX {} · PA {}/{}", tr("Vida", "HP"), f.hp, f.maxHp, f.atk, f.mag, f.def, f.dex, f.ap, ember::apMax(*battle_, f)), fg});
     r.lines.push_back({std::format("{}: {} ({}%)  ·  {}: {} ({}%)", tr("Seu golpe", "Your blow"), e.dmgOut, static_cast<int>(std::round(e.hitOut)),
                                    tr("O dele", "Its blow"), e.dmgIn, static_cast<int>(std::round(e.hitIn))), muted});
     r.lines.push_back({std::format("{}: {} · {} {} · {} {} · {} {}", tr("Arma", "Weapon"), e.weaponCategory, tr("ataque", "attack"), apLabel(e.attackCost),
@@ -4781,7 +4842,7 @@ class MapStage final : public Stage {
     const float pi = std::numbers::pi_v<float>;
     const float hour = cycleHour(time);
     const float elevation = glm::radians(62.0f) * std::sin(2.0f * pi * (hour - 6.0f) / 24.0f);
-    const float azimuth = -0.95f + pi * (hour - 12.0f) / 12.0f;
+    const float azimuth = kSunPathAzimuth + pi * (hour - 12.0f) / 12.0f;
     float d[3];
     ember::lightDirection(azimuth, elevation, d);
     const glm::vec3 sun = glm::normalize(glm::vec3(d[0], d[1], d[2]));
@@ -4792,7 +4853,7 @@ class MapStage final : public Stage {
     // daylight sky. The full moon stays exactly where it was (opposite the sun, its path 0.9 of the sun's height).
     const float moonHour = hour - moonElongation(phase) / 15.0f;
     const float moonElevation = 0.9f * glm::radians(62.0f) * std::sin(2.0f * pi * (moonHour - 6.0f) / 24.0f);
-    const float moonAzimuth = -0.95f + pi * (moonHour - 12.0f) / 12.0f;
+    const float moonAzimuth = kSunPathAzimuth + pi * (moonHour - 12.0f) / 12.0f;
     ember::lightDirection(moonAzimuth, moonElevation, d);
     const glm::vec3 moonDir = glm::normalize(glm::vec3(d[0], d[1], d[2]));
     const glm::vec3 moonColor = Renderer::srgb(moon.color ? moon.color : 0x9fb4ffu);
@@ -5364,7 +5425,7 @@ class MapStage final : public Stage {
   struct LevelUpInfo {
     int battleUnit = -1, sceneUnit = -1, from = 1, to = 1, attributePoints = 0;
     std::string name, className;
-    std::array<int, 6> statsBefore{}, statsAfter{};  // HP, ATK, MAG, DEF, DEX, MOV
+    std::array<int, 5> statsBefore{}, statsAfter{};  // HP, ATK, MAG, DEF, DEX
     std::array<int, 10> uses{};
     std::vector<std::string> learnedSpells;
   };
@@ -5386,8 +5447,8 @@ class MapStage final : public Stage {
     info.battleUnit = static_cast<int>(battleUnit), info.sceneUnit = sceneUnitOf(static_cast<int>(battleUnit));
     info.from = from, info.to = to, info.attributePoints = (to - from) * 3;
     info.name = u.name, info.className = u.className.empty() ? u.classId : u.className;
-    const std::array<int, 6> current{u.maxHp, u.atk, u.mag, u.def, u.dex, u.mov};
-    const std::array<size_t, 6> statRows{0, 1, 2, 3, 4, 15};
+    const std::array<int, 5> current{u.maxHp, u.atk, u.mag, u.def, u.dex};
+    const std::array<size_t, 5> statRows{0, 1, 2, 3, 4};
     const bool hasGrowth = from > 0 && static_cast<size_t>(to) <= u.growth.size();
     for (size_t i = 0; i < current.size(); ++i) {
       int delta = 0;
@@ -10824,9 +10885,9 @@ class MapStage final : public Stage {
     return battle_->activeUnit();
   }
 
-  static std::string sheetLine(const ember::BattleUnit& u) {
+  std::string sheetLine(const ember::BattleUnit& u) const {
     const std::string range = u.minRange == u.maxRange ? std::to_string(u.maxRange) : std::format("{}-{}", u.minRange, u.maxRange);
-    return std::format("AT {} · MAG {} · DF {} · DEX {} · Mov {} · Alc {}", u.atk, u.mag, u.def, u.dex, u.mov, range);
+    return std::format("AT {} · MAG {} · DF {} · DEX {} · PA {}/{} · Alc {}", u.atk, u.mag, u.def, u.dex, u.ap, ember::apMax(*battle_, u), range);
   }
 
   // The combat log inside the HUD bar: the newest line at the bottom, following new lines while the reader is at the bottom.
@@ -11400,7 +11461,9 @@ class MapStage final : public Stage {
       } else if (selected_ >= 0 && hover_ && myTurn() && !battle_->roaming() && !(hover_->x == u.x && hover_->y == u.y)) {
         // the route under the cursor: what the walk there costs (ReachCell::ap of the hex, summed hex by hex)
         for (const ember::ReachCell& c : reach_)
-          if (c.x == hover_->x && c.y == hover_->y) line = tr("Caminho", "Path") + " " + apLabel(c.ap) + " · " + sheetLine(u);
+          if (c.x == hover_->x && c.y == hover_->y)
+            line = std::format("{} −{} {} · {} {}/{}", tr("Mover", "Move"), c.ap, tr("PA", "AP"), tr("Restam", "Left"),
+                               std::max(0, u.ap - c.ap), ember::apMax(*battle_, u));
       }
       dl->AddText(text, 13.0f, {x, barY + 12.0f}, IM_COL32(180, 180, 180, 255), line.c_str());
       if (!tip_.empty() && now_ - tipAt_ < 3.0f) dl->AddText(text, 12.0f, {x, barY + 30.0f}, IM_COL32(224, 189, 128, 255), tip_.c_str());
@@ -12544,19 +12607,39 @@ class MapStage final : public Stage {
   void addOccluders() {
     for (const ArchPiece& a : arch_)
       if (a.blocks)
-        for (const auto& [x, z] : a.footprint) fog_->block(x, z, a.top);
+        for (const auto& [x, z] : a.footprint) fog_->block(x, z, 0.125f, 0.0f, a.top);  // samples 0.25 apart: each fills its own quarter
     for (const ember::SceneModel& m : scene_->models) {
       const std::string asset = modelAsset(m);
       const MeshHeader* h = meshes_.header(modelMeshes_.at(asset));
-      if (!h) continue;
+      const MeshScene::Columns* cols = meshes_.columns(modelMeshes_.at(asset));
+      if (!h || !cols || cols->bits.empty()) continue;
       const float k = m.height / std::max(h->boundsMax[1] - h->boundsMin[1], 1e-4f);
       const float hx = (h->boundsMax[0] - h->boundsMin[0]) * 0.5f * k, hz = (h->boundsMax[2] - h->boundsMin[2]) * 0.5f * k;
       if (2.0f * std::max(hx, hz) < ember::kBlockWidth) continue;  // a thin model (a post) does not block
       const float c = std::cos(m.rotY), sn = std::sin(m.rotY);
-      // The footprint (rotated box, centred on the anchor as placeModels centres it), sampled every 0.25.
-      for (float a = -hx; a <= hx; a += 0.25f)
-        for (float b = -hz; b <= hz; b += 0.25f) fog_->block(m.x + c * a + sn * b, m.z - sn * a + c * b, m.height);
-      fog_->block(m.x, m.z, m.height);
+      // What the model really is at each height (MeshScene::Columns), placed as placeModels places it (centred on the anchor, its
+      // foot on the ground): a tree blocks with its trunk low down and its crown only up in the air, never as one box the size of
+      // its crown (that box hid 50-60 hexes behind a single tree; the user, 2026-11-10: the map never revealed).
+      const float cx = (h->boundsMin[0] + h->boundsMax[0]) * 0.5f, cz = (h->boundsMin[2] + h->boundsMax[2]) * 0.5f;
+      const float slice = m.height / 32.0f, half = cols->cell * k * 0.5f;
+      for (int iz = 0; iz < cols->nz; ++iz)
+        for (int ix = 0; ix < cols->nx; ++ix) {
+          uint32_t bits = cols->bits[static_cast<size_t>(iz) * static_cast<size_t>(cols->nx) + static_cast<size_t>(ix)];
+          if (!bits) continue;
+          const float a = (cols->x0 + (ix + 0.5f) * cols->cell - cx) * k, b = (cols->z0 + (iz + 0.5f) * cols->cell - cz) * k;
+          const float wx = m.x + c * a + sn * b, wz = m.z - sn * a + c * b;
+          // Each run of filled slices: one solid stretch of height.
+          for (int s = 0; s < 32;) {
+            if (!(bits & (1u << s))) {
+              ++s;
+              continue;
+            }
+            int e = s;
+            while (e + 1 < 32 && (bits & (1u << (e + 1)))) ++e;
+            fog_->block(wx, wz, half, slice * static_cast<float>(s), slice * static_cast<float>(e + 1));
+            s = e + 1;
+          }
+        }
     }
     for (const ember::SceneCard& d : scene_->cards) {
       const float drawn = d.w * cardArtShare(d.image);
@@ -12564,7 +12647,7 @@ class MapStage final : public Stage {
       const float yaw = d.lockedYaw.value_or(0.0f);
       const glm::vec2 right{std::cos(yaw), -std::sin(yaw)};
       const float half = drawn * 0.5f;
-      for (float a = -half; a <= half; a += 0.25f) fog_->block(d.x + right.x * a, d.z + right.y * a, d.h);
+      for (float a = -half; a <= half; a += 0.25f) fog_->block(d.x + right.x * a, d.z + right.y * a, 0.125f, 0.0f, d.h);
     }
   }
 
@@ -12674,16 +12757,45 @@ class MapStage final : public Stage {
       sightLogged_ = true;
       // How much the line of sight hides from each party unit where it starts.
       const ember::HexLayout& L = board_->layout();
+      // The same sight with nothing standing on the board: what the ground alone hides.
+      const ember::FogOfWar bare(*board_);
+      std::FILE* dump = std::fopen("captures/fog/sight.txt", "w");
       for (const ember::SceneUnit& u : scene_->units) {
         if (u.side != "player") continue;
         const auto [c, r] = ember::hexAt(L, u.x, u.z);
-        int inRange = 0, seen = 0;
+        int inRange = 0, seen = 0, byGround = 0, byStanding = 0, standingHexes = 0;
         for (int y = 0; y < L.rows; ++y)
-          for (int x = 0; x < L.cols; ++x)
-            if (ember::hexDistance({c, r}, {x, y}) <= sightRadius()) ++inRange, seen += fog_->sightReaches({c, r}, {x, y}) ? 1 : 0;
-        logInfo("sight: {} at ({}, {}) sees {} of the {} hexes in range ({} hidden by ground or what stands on it)", u.name, c, r, seen,
-                inRange, inRange - seen);
+          for (int x = 0; x < L.cols; ++x) {
+            if (ember::hexDistance({c, r}, {x, y}) > sightRadius()) continue;
+            ++inRange;
+            standingHexes += fog_->standing(x, y) > 0.0f ? 1 : 0;
+            if (fog_->sightReaches({c, r}, {x, y})) ++seen;
+            else if (!bare.sightReaches({c, r}, {x, y})) ++byGround;
+            else ++byStanding;
+          }
+        logInfo("sight: {} at ({}, {}) sees {} of the {} hexes in range ({} hidden by the ground, {} by what stands on it; {} hexes in range "
+                "have something standing)", u.name, c, r, seen, inRange, byGround, byStanding, standingHexes);
+        // The map around the eye: @ the eye, . seen, g hidden by the ground, o hidden by what stands, # / + something standing
+        // (seen / hidden), space out of range.
+        if (dump) {
+          std::fprintf(dump, "%s at (%d, %d), radius %d\n", u.name.c_str(), c, r, sightRadius());
+          for (int y = std::max(0, r - sightRadius()); y <= std::min(L.rows - 1, r + sightRadius()); ++y) {
+            if (y & 1) std::fputc(' ', dump);  // odd-r: odd rows sit half a hex right
+            for (int x = std::max(0, c - sightRadius()); x <= std::min(L.cols - 1, c + sightRadius()); ++x) {
+              char ch = ' ';
+              if (x == c && y == r) ch = '@';
+              else if (ember::hexDistance({c, r}, {x, y}) <= sightRadius()) {
+                const bool sees = fog_->sightReaches({c, r}, {x, y}), stands = fog_->standing(x, y) > 0.0f;
+                ch = sees ? (stands ? '#' : '.') : stands ? '+' : bare.sightReaches({c, r}, {x, y}) ? 'o' : 'g';
+              }
+              std::fputc(ch, dump), std::fputc(' ', dump);
+            }
+            std::fputc('\n', dump);
+          }
+          std::fputc('\n', dump);
+        }
       }
+      if (dump) std::fclose(dump);
     }
     for (const std::vector<ember::HexPoint>& eyes : fogJobEyes_) relight(eyes);
     fogNext_ = fog_->paint(*board_, fogJobEyes_.back());
@@ -12810,7 +12922,13 @@ class MapStage final : public Stage {
   Renderer& renderer_;
   UploadQueue uploads_;
   BoardGround ground_;
-  SpriteSystem sprites_;
+  // The game's one sprite system (SharedSprites.h): made with the GPU, its characters kept from map to map.
+  static SpriteSystem& gameSprites() {
+    SharedSprites* shared = SharedSprites::get();
+    EMBER_CHECK(shared, "MapStage: the game's sprite system is not made yet");
+    return shared->sprites();
+  }
+  SpriteSystem& sprites_;
   SpellEffects spellFx_{sprites_};  // spell and strike visuals (the fx clips)
   static constexpr const char* kDaggerModel = "meshes/polyhaven/ornate_medieval_dagger-v02.mesh";
   std::optional<MeshId> daggerModel_;  // the Nuvem de Adagas' dagger (MeshScene::addEffect), when the effects pack is mounted
@@ -13025,7 +13143,8 @@ class MapStage final : public Stage {
   // original, 2..4 looks 001..003 (shaders/water_lookNNN.hlsli).
   int waterLook_ = 0;
   int skyReflect_ = 1;   // the panel's "Reflexo do céu": 0 OFF (the SH sky), 1 the sky's reflection map (skyreflect.hlsl)
-  int savedCloudLook_ = 4;  // Nuvens 004 = every map's default unless the map saves its own choice (the user, 2026-11-04)
+  int savedCloudLook_ = 4;  // (2026-11-10: three tries at a new cloud in the live layer were no better than 004 and heavier; reverted the same day)
+  //  // Nuvens 004 = every map's default unless the map saves its own choice (the user, 2026-11-04)
   int clouds_ = 2;       // the panel's "Nuvens": 0 OFF, 1 básica, 2 volumétricas (savedCloudLook_ 0 = 001, 1-5 the saved looks; the
                          // default is 004), 4 RDR2; 3 (006) never
   // Nuvens RDR2: the quality preset and the weather's choices (the panel), their smoothed values and the last GPU times.
@@ -13782,9 +13901,14 @@ class MapStage final : public Stage {
   // The disc's angular radius (degrees), chosen in the panel. 2.7 = Ember's disc as seen from its normal view; the
   // user found it "millions of km away" (2026-10-15), so the panel starts at the large one.
   static constexpr float kMoonSizes[4] = {2.7f, 6.0f, 10.0f, 15.0f};
+  // The sun's path over the sky (the user, 2026-11-10: "nunca vejo o sol em algum ponto normal, é sempre nos cantos bizarros": at
+  // -0.95 it rose 66 deg off the camera's side and spent the whole day behind it). Now it rises ahead of the map's normal view,
+  // 50 deg to one side, crosses in front through the morning and noon, and sets behind; the moon runs the same path.
+  static constexpr float kSunPathAzimuth = -2.968f;
+  static constexpr float kSunCinemaDegrees = 1.5f;  // (0.7 the same day: "como pode existir um sol tão pequeno")  // panel "Sol: cinema": the sun's disc radius (the real one: 0.26)
   int moonSize_ = 0;  // panel "Tamanho da lua": pequena (2.7 deg radius, 10 x the real) by default: média and grande read as a
                       // "super moon" with the cinema glow (the user, 2026-10-19)
-  int sunSize_ = 1;   // panel "Sol": 0 real (0.26 deg), 1 cinema (the moon's small disc + corona; default), 2 look 001; --sun-disc N
+  int sunSize_ = 3;   // panel "Sol": 0 real (0.26 deg), 1 cinema (the moon's small disc + corona; default), 2 look 001; --sun-disc N
   std::array<int, 3> fogCounts_{};
   int holes_ = 0, holeHexes_ = 0, worstHoles_ = 0;
   std::vector<std::pair<int, int>> lastHoles_;

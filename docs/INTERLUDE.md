@@ -1,21 +1,21 @@
 # The Interlude (step 2: the campaign side)
 
-The historical chapter 25 years before the campaign, in the city the party later explores as the Ruins, played by a party of
+The historical chapter 25 years before the campaign, in the city the party later explores as the Ruins, entered at **Hablock** (the chapel beside the Cemetery on the world map), played by a party of
 its own: **Isolde** (Conjurer, persistent: her levels carry into the campaign when she joins later), **Salazar Jovem** (Cruzado,
 a separate character from the present-day Salazar), **Selene** (Conjurer, Interlude only). The user's design (2026-10-25); the
 maps, the party's final builds, the scenes and Salazar's quests come from the user. This document is the mechanism.
 
 Files: `engine/world/Interlude.h/.cpp` (the rules), `content/interlude.json` (the data), `apps/sandbox/OverworldStage.h` (the
-Ruins' pin and entry), `apps/sandbox/main.cpp` (the party of a fight, the chapter's bookkeeping after a mission),
+Hablock pin and entry), `apps/sandbox/main.cpp` (the party of a fight, the chapter's bookkeeping after a mission),
 `apps/sandbox/CampaignUi.h interludeMission` (a chapter map as a mission), `Cooker check-interlude`.
 
 ## The data: `content/interlude.json`
 
-- `ruinsLocation`: the world-map location (overworld.json `locations`) whose first entry starts the chapter: `ruins`.
-- `requiredQuests`: Salazar's quest ids (overworld.json `quests`) that must all be done (`questCompleted`) before the Ruins open.
-  **Empty = shut**: an unconfigured gate never opens by accident. The quests are not written yet, so the Ruins are shut in
-  every campaign today. Modo teste opens every location (as always); the developer flag `"interlude:ruins-open"` in
-  `save.flags` opens them in a campaign for testing.
+- `ruinsLocation`: the world-map location (overworld.json `locations`) whose first entry starts the chapter: `hablock` (2026-11-10;
+  it was `ruins`).
+- `requiredQuests`: Salazar's quest ids (overworld.json `quests`) that must all be done (`questCompleted`) before Hablock opens.
+  **Empty = open** (2026-11-10: the chapter playable now). The same rule in every mode: Modo teste is gated exactly as a
+  campaign (one path); the developer flag `"interlude:ruins-open"` in `save.flags` still opens it.
 - `party`: exactly three heroes: name, classId, starting level, starter weapon, `persistent` (Isolde) / `temporary` (Selene).
 - `leader`: who walks on free-roam maps (Isolde).
 - `missions`: the chapter's maps in order; each id is a map id in `content/maps/ember` (the newest serial plays; the game
@@ -49,15 +49,15 @@ Ember and statuses do not transfer (the recruitment design decides those).
 
 ## In the game
 
-- World map: the Ruins' pin shows locked while the gate is shut (`OverworldStage::locationStatus`); a click says why
+- World map: Hablock's pin shows in every mode; locked while the gate is shut (`OverworldStage::locationStatus`); a click says why
   ("As Ruínas estão fechadas: termine antes as missões de Salazar."). Open + NOT_STARTED: `interludeBegin`, the save written,
   the first chapter map's briefing opens. ACTIVE: the chapter's pending map opens (a chapter left half-way, or a save loaded
-  mid-chapter, resumes at its map: the pending mission is the checkpoint). COMPLETED: the Ruins open as any present-day
-  location (their four missions).
+  mid-chapter, resumes at its map: the pending mission is the checkpoint). COMPLETED: the Ruins are an
+  ordinary location (their four missions) whatever the chapter's state.
 - A fight: `setUpParty` makes the party exactly the chapter's three while ACTIVE (every present hero on the map leaves);
   `setUpExplore` makes Isolde the leader. Levels, XP, bags, gear come from the save's (historical) fields as for any fight.
 - After a chapter mission is won (`finishCampaignFight`) or its free-roam map left by the waypoint (`markVisited`):
-  `interludeAdvance`: the next map pending, or the chapter complete; then the world map opens with the Ruins' mission list and the
+  `interludeAdvance`: the next map pending, or the chapter complete; then the world map opens on Hablock and the
   note "Interlúdio concluído: o grupo voltou ao presente."
 
 ## Step 3: the vertical slice (placeholders, 2026-10-25: "cria qualquer placeholder depois crio em cima")
@@ -77,7 +77,7 @@ vai criar"); the panorama / ground photos of the city are theirs, later.
 2. `interlude-placeholder` (`interlude-placeholder003.json`, the same generator): the same city as a rout mission, the party inside
    the north gate, seven foes on the avenue, the plaza and the temple; opens with `interlude-placeholder-opening` (young Salazar turns,
    two lines); the turn loop holds until the scene ends; winning completes the chapter (finishCampaignFight -> interludeAdvance ->
-   interludeComplete) and the world map opens on the present-day Ruins' list.
+   interludeComplete) and the world map opens on Hablock.
 Blocking on these maps follows the rule of 2026-10-25: only barricades and architecture walls block; houses and props never.
 A defeat keeps the fight pending ("Tentar de novo" / the briefing again); a save loaded mid-chapter resumes at its pending map.
 
@@ -86,11 +86,11 @@ A defeat keeps the fight pending ("Tentar de novo" / the briefing again); a save
 ```
 Cooker check-interlude content/interlude.json content/data/overworld.json content/data/campaign.json
 ```
-runs the cycle on synthetic saves: an old save is NOT_STARTED; an unconfigured gate is shut, Modo teste and the flag open it,
+runs the cycle on synthetic saves: an old save is NOT_STARTED; no quest listed = open, Modo teste follows the same gate, the flag opens it,
 a required quest not done keeps it shut and done opens it; begin puts exactly the three in (the present's numbers gone, `completed`
 untouched, the flags set); a second begin is refused; a fight's gains; advance through the missions; complete restores every
 party field byte for byte, keeps Isolde's level 4 / 120 XP / skill / points, leaves Salazar untouched and Selene out; begin is
 refused for ever after; recruitment once, at her kept level; a save left ACTIVE resumes at its pending mission.
 
-Captures: `--title --title-screen map --save-bank <copy> --map-ui enter:ruins` (the gate and the start on a copy of a bank),
+Captures: `--title --title-screen map --save-bank <copy> --map-ui enter:hablock` (the gate and the start on a copy of a bank),
 `--title --title-screen mission:interlude-placeholder --save-bank <that copy>` (the chapter's fight with the three).

@@ -35,6 +35,10 @@ Cube cubeRound(double q, double r, double s) {
 
 // pathfinding.ts hexLine: the hexes a straight line from a to b crosses, a first.
 std::vector<BattleHex> hexLine(BattleHex a, BattleHex b) {
+  // Choose the tie-breaking direction canonically so the same ray is used from either end. Without this,
+  // cube-rounding ties could make a shot clear one way and blocked in the reverse direction.
+  const bool reverse = b.y < a.y || (b.y == a.y && b.x < a.x);
+  if (reverse) std::swap(a, b);
   const int n = Battle::distance(a, b);
   if (n == 0) return {a};
   const Cube A = oddrToCube(a.x, a.y), B = oddrToCube(b.x, b.y);
@@ -46,6 +50,7 @@ std::vector<BattleHex> hexLine(BattleHex a, BattleHex b) {
     if (!out.empty() && out.back() == p) continue;
     out.push_back(p);
   }
+  if (reverse) std::reverse(out.begin(), out.end());
   return out;
 }
 

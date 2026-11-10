@@ -48,8 +48,13 @@ class SpriteSystem {
   SpriteSystem(const SpriteSystem&) = delete;
   SpriteSystem& operator=(const SpriteSystem&) = delete;
 
-  // Reads the roster (sprites/roster) of the mounted archives and starts loading every tail.
+  // Reads the roster (sprites/roster) of the mounted archives and starts loading every tail (once; later calls do nothing).
   void start();
+  // A new fight (a map opening; the game's one system lives from the title to the end, SharedSprites.h): the last fight's
+  // pins let go, but nothing of theirs leaves the GPU until this fight's pins are known (at the next update()), so a clip
+  // pinned again (the party, from map to map) is not loaded again. Alta / Leve and the full-clip pool are decided there
+  // again, for this fight's pins; the pool is kept when it still fits them.
+  void beginFight();
   // True once every clip's header and tail are on the GPU.
   bool ready() const { return rosterRead_ && tailsPending_ == 0 && headersPending_ == 0; }
   // How far start() has got: headers and tails on the GPU, out of two per clip (0 / 0 until the roster is read).
@@ -131,6 +136,7 @@ class SpriteSystem {
 
     // Pinned clips: held whole (full resolution) or, Leve, as a base (mips from kBaseFirstMip, cut from the full asset).
     bool pinned = false;
+    bool kept = false;         // pinned by the last fight: let go at this fight's decision unless pinned again
     bool twoVersions = false;  // in the cast list: Alta / Leve
     bool light = false;        // held as its base (decided when the pool is made; a summon's when it is pinned)
     State baseState = State::Idle;
@@ -149,7 +155,10 @@ class SpriteSystem {
   };
 
   ImageDesc clipImageDesc(const SpriteClipHeader& header, uint32_t firstMip) const;
-  void createFullPool();
+  void measureClips();
+  void decideFight();
+  void destroyFullPool();
+  void dropBase(Clip& clip);
   void evict(Clip& clip);
   void retire(Image& image, uint32_t& index);
   void updateStartup();
@@ -177,6 +186,12 @@ class SpriteSystem {
   VmaPool fullPool_ = VK_NULL_HANDLE;
   VkDeviceSize fullPoolBlock_ = 0;
   uint64_t fullPoolBytes_ = 0;
+  // measureClips (once, when every header is in): the largest full clip's real footprint and the memory type the pool takes.
+  bool measured_ = false;
+  VkDeviceSize largestClip_ = 0;
+  uint32_t fullMemoryType_ = 0;
+  uint64_t streamingBytes_ = 0;  // the streaming budget asked for (budget_.gpuBytes adds each fight's pinned clips to it)
+  bool fightPending_ = false;    // beginFight: decided at the next update() once every header is in
 
   uint64_t frame_ = 0;
   uint64_t residentBytes_ = 0;

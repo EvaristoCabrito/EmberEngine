@@ -476,6 +476,29 @@ int checkTwinResonanceCommand(const std::vector<std::string_view>& args) {
     if (!ok) ember::logError("twin resonance check: {}", why);
     return ok;
   };
+  // MOV is no longer a battle movement budget: AP alone pays for each entered hex.
+  ember::Battle movement = b;
+  movement.units() = {caster};
+  movement.units()[0].mov = 0, movement.units()[0].moveUsed = 0, movement.units()[0].ap = 6;
+  for (int y = 0; y < movement.rows(); ++y)
+    for (int x = 0; x < movement.cols(); ++x) movement.setCell(y * movement.cols() + x, ember::BattleCell{.terrain = "woods", .moveCost = 2});
+  const auto moveReach = movement.reachable(0);
+  if (!require(std::any_of(moveReach.begin(), moveReach.end(), [](const ember::ReachCell& c) { return c.x == 5 && c.y == 2 && c.ap == 6; }),
+               "three woods hexes should be reachable when their 6 AP are available, regardless of MOV")) return 1;
+  if (!require(std::none_of(moveReach.begin(), moveReach.end(), [](const ember::ReachCell& c) { return c.x == 6 && c.y == 2; }),
+               "movement must stop at the AP budget")) return 1;
+  const ember::BattleHex rayFrom{2, 2}, rayTo{6, 3};
+  const auto ray = ember::hexLine(rayFrom, rayTo);
+  auto reverseRay = ember::hexLine(rayTo, rayFrom);
+  std::reverse(reverseRay.begin(), reverseRay.end());
+  if (!require(ray == reverseRay, "line of sight must use the same hex ray from either direction")) return 1;
+  if (ray.size() > 2) {
+    const ember::BattleHex blocker = ray[1];
+    b.setCell(blocker.y * b.cols() + blocker.x, ember::BattleCell{.terrain = "plains", .shot = {.blocksShot = true}});
+    if (!require(!ember::clearShot(b, rayFrom, rayTo, false) && !ember::clearShot(b, rayTo, rayFrom, false),
+                 "a blocker must interrupt line of sight in either direction")) return 1;
+    b.setCell(blocker.y * b.cols() + blocker.x, ember::BattleCell{.terrain = "plains"});
+  }
   if (!require(ember::apCost(b, b.units()[0], ember::ApAction::cast("twinResonance")) == 8, "each cast must cost exactly 8 AP")) return 1;
   if (!require(ember::spellTargetCount(b, 0, "twinResonance") == 2, "spell must keep two targets at every rank")) return 1;
   if (!require(ember::spellAimValid(b, 0, "twinResonance", {4, 2}) && ember::spellAimValid(b, 0, "twinResonance", {4, 3}),

@@ -79,6 +79,15 @@ class MeshScene {
   bool placeable() const;
   std::pair<uint32_t, uint32_t> progress() const;  // meshes and textures settled (on the GPU or failed), out of all added
   const MeshHeader* header(MeshId id) const;  // null until its asset arrived
+  // Where a mesh really stands, for line of sight (world/FogOfWar.h): its xz bounds cut into square columns (mesh space), each
+  // with one bit per 1/32 of the mesh's height that some full-detail triangle passes through. A tree's trunk fills its low bits,
+  // its crown only the high ones. Null until parsed.
+  struct Columns {
+    float x0 = 0.0f, z0 = 0.0f, cell = 0.0f;  // mesh space: column (ix, iz) spans x0 + ix * cell .. + cell, the same in z
+    int nx = 0, nz = 0;
+    std::vector<uint32_t> bits;  // nx * nz, iz major
+  };
+  const Columns* columns(MeshId id) const;
 
   // Replaces every instance. The list becomes visible a few frames later (one upload).
   void setInstances(std::span<const InstanceGpu> instances);
@@ -150,6 +159,7 @@ class MeshScene {
     AssetHandle handle;
     std::vector<uint8_t> built;  // addBuilt's bytes (no asset)
     MeshHeader header{};
+    Columns columns;  // columns(): made when parsed
     bool parsed = false, failed = false;
     Buffer geometry;
     uint64_t bytes = 0, lastWanted = 0;

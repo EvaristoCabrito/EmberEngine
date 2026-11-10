@@ -43,6 +43,7 @@ struct Push {
 static const float kTilt = 0.55;      // Ember TILT
 static const float kWrap = 0.85;      // Ember WRAP
 static const float kMaxLit = 2.0;     // Ember MAX_LIT
+static const float kCardSun = 0.8, kUnitFloor = 0.6, kDecorFloor = 0.3;  // see PSMain
 static const float kUnitFront = 1.2;  // Ember UNIT_FRONT
 #ifdef CARD_STANDING_DEPTH
 static const float kUnitFrontNear = 0.25;  // a unit away from walls: just off the ground under its feet
@@ -137,6 +138,12 @@ float4 PSMain(VSOut i) : SV_Target0 {
     Surface surface = defaultSurface(i.world, i.normal, c.rgb);
     surface.wrap = kWrap;
     surface.specular = 0.0;
+    // A card is a painting, not a body: the sun or the moon behind it (they cross the sky ahead of the camera) left every figure a
+    // black cut-out, at noon as at night (the user, 2026-11-10: "breu total em pleno sol do meio dia", "eu não quero sombra total em
+    // tudo"). Under the open sky a card takes at least kCardSun of the key light whatever its facing, and never falls under
+    // kUnitFloor / kDecorFloor of its own painted colour (tinted a little by the light). Rooms and the underground keep their dark.
+    const bool openSky = f.atmosphere != 0 && probesAddress(f) == 0;
+    if (openSky) surface.minSunDiffuse = kCardSun;
     // Shadows from the ground and 3D pieces, not from the cards' own map (a flat card would shadow itself).
     surface.receivesCardShadow = 0.0;
     if (s.flags & 4u) surface.twoSidedLocal = 1.0;  // units (Ember: pointLightsOnBothSides)
@@ -153,6 +160,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
     const float3 kLuma = float3(0.2126, 0.7152, 0.0722);
     const float localCap = dot(c.rgb, kLuma) * kMaxLit * f.litCap, localLuma = dot(local, kLuma);
     color = min(base, c.rgb * kMaxLit * f.litCap) + local * (localLuma > localCap ? localCap / max(localLuma, 1e-6) : 1.0);
+    if (openSky) color = max(color, c.rgb * ((s.flags & 4u) ? kUnitFloor : kDecorFloor) * lerp(float3(1.0, 1.0, 1.0), f.sunColor, 0.3));
     if (s.emitLevel > 0.0) {
       // Ember's flame mask: bright, saturated pixels close to the light's colour glow, and so does the lit
       // glass just around where the light sits on the card.

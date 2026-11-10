@@ -575,6 +575,65 @@ float3 moonThroughCloud(MeshFrame f, AtmosphereFrame a, float3 dir, float cloudT
   return e * (single * hg + diffuse / kPi);
 }
 
+// Sol 002 (2026-11-10; the user: "ou esse sol fica convincente ou eu paro", "eu quero novo", then of the first try, a physical
+// white disc with a CIE veil: "isso não tem cara de sol, é só uma luz branca estourada ... não uma lua branca brilhante").
+// A sun that reads as a sun on the display: its brightness is set against the display's white (1 / exposure), so its colour
+// survives the tonemap instead of burning to white.
+//   disc    compact, a hot yellow-white heart going to gold at the limb, reddening as it nears the horizon
+//   aureole the air's forward scattering round it (physical, narrow Mie lobe), kept low
+// Both lie behind the clouds (sunDisc002); the warm glow (sunGlare002; no rays: "cada vez mais cartoon") lie over everything, as glare does, and
+// follow how much of the disc the clouds let through.
+float3 sunTint002(AtmosphereFrame a) {
+  const float3 air = transmittanceToTop(a, a.viewHeight, max(a.sunDirection.y, 0.0));
+  return air / max(max(air.r, air.g), max(air.b, 1e-4));  // white overhead, orange to red at the horizon
+}
+float3 sunDisc002(MeshFrame f, AtmosphereFrame a, float3 dir, float pixelAngle) {
+  if (a.sunDisc == 0 || a.sunDirection.y < -0.03) return 0.0;
+  const float c = dot(dir, a.sunDirection);
+  const float angle = acos(clamp(c, -1.0, 1.0));
+  const float r = a.sunTanRadius > 0.0 ? atan(a.sunTanRadius) : 0.00465;
+  const float white = 1.0 / max(f.exposure, 1e-9);
+  const float edge = max(pixelAngle, r * 0.06);
+  const float disc = 1.0 - smoothstep(r - edge, r + edge, angle);
+  const float u = saturate(angle / r);
+  const float mu = sqrt(max(1.0 - u * u, 0.0));
+  const float3 heart = float3(1.0, 0.90, 0.58), limb = float3(1.0, 0.60, 0.18);
+  float3 radiance = lerp(limb * 2.2, heart * 4.5, mu) * sunTint002(a) * white * disc;
+  const float mieDepth = dot(a.mieScattering, 1.0 / 3.0) * a.mieScaleHeight / max(dir.y, 0.08);
+  radiance += a.sunIlluminance * transmittanceToTop(a, a.viewHeight, dir.y) * mieDepth * phaseMie(c, 0.96) * 0.2 * (1.0 - disc);
+  return radiance;
+}
+float3 sunGlare002(MeshFrame f, AtmosphereFrame a, float3 dir) {
+  if (a.sunDisc == 0 || a.sunDirection.y < -0.03) return 0.0;
+  const float3 sunDir = a.sunDirection;
+  const float r = a.sunTanRadius > 0.0 ? atan(a.sunTanRadius) : 0.00465;
+  const float3 side = normalize(cross(sunDir, float3(0.0, 1.0, 0.0))), up = cross(side, sunDir);
+  float through = 1.0;
+  if (f.cloudFlags & kCloudVolumetric) {
+    const float3 taps[5] = {sunDir, sunDir + side * (0.6 * r), sunDir - side * (0.6 * r), sunDir + up * (0.6 * r), sunDir - up * (0.6 * r)};
+    float sum = 0.0, count = 0.0;
+    [unroll] for (uint k = 0; k < 5; ++k) {
+      const float4 clip = mul(float4(f.cameraPosition + normalize(taps[k]) * 1000.0, 1.0), f.viewProjection);
+      const float2 uv = clip.xy / max(clip.w, 1e-6) * 0.5 + 0.5;
+      if (clip.w > 0.0 && all(uv >= 0.0) && all(uv <= 1.0)) sum += saturate(cloudVolAt(f, uv).a), count += 1.0;
+    }
+    if (count > 0.0) through = sum / count;
+  }
+  const float angle = acos(clamp(dot(dir, sunDir), -1.0, 1.0));
+  const float beyond = max(angle - r, 0.0) / r;                      // radii beyond the rim
+  const float glow = 0.70 * exp(-beyond / 1.0) + 0.09 * exp(-beyond / 4.0);
+  const float3 gold = float3(1.0, 0.68, 0.28) * sunTint002(a);
+  const float low = smoothstep(-0.03, 0.03, sunDir.y);
+  // Rays: twelve fine and six broad, fading within a few radii (the user, 2026-11-10, of the capture with them: "foi esse que eu pedi").
+  const float phi = atan2(dot(dir, up), dot(dir, side));
+  const float rays = (pow(abs(cos(phi * 6.0)), 40.0) * 0.6 + pow(abs(cos(phi * 3.0 + 0.5)), 14.0) * 0.4) * 0.16 * exp(-beyond / 3.5) * step(r, angle);
+  return gold * (glow + rays) * through * low * a.skyScale / max(f.exposure, 1e-9);
+}
+
+// The night sky held under the board (the user, 2026-11-10: "coloca alguma máscara nesse céu, não existe esse brilho", "o céu brilha
+// mais que um estádio e o jogo continua um breu"): the galaxy painting and the clouds over it darkened, the moon's veil and its glow
+// through the clouds a fraction of the measured ones (they washed a third of the sky white).
+static const float kNightSkyMask = 0.5, kNightCloudMask = 0.5, kMoonCloudGlow = 0.3, kMoonGlare = 0.15;
 float3 skyBackground(MeshFrame f, uint2 pixel) {
   const AtmosphereFrame a = loadAtmosphere(f);
   const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);
@@ -586,7 +645,9 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
     // The sun's disc, seen through the air: the real 0.53 degrees across, or the panel's "Sol: cinema" size (sunTanRadius,
     // the moon's small disc: the real one is a dot the player never finds) with a soft corona around it; or look 001.
     const float c = dot(dir, a.sunDirection);
-    if (sunLook == 1u) {
+    if (sunLook == 2u) {
+      radiance += sunDisc002(f, a, dir, pixelAngle) * a.skyScale;
+    } else if (sunLook == 1u) {
       radiance += sunLook001(a, dir, pixelAngle, a.sunDisc, a.sunTanRadius, atmoMoonDirection(f.atmosphere), atmoMoonLight(f.atmosphere)) * a.skyScale;
     } else if (a.sunDisc != 0 && a.sunDirection.y > -0.02) {
       const float angle = acos(clamp(c, -1.0, 1.0));
@@ -624,7 +685,7 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
           float lensScale;
           const float3 paintDir = paintingDirection(f, a, dir, lensScale);
           // The painting in place of the sky, the moon's glow (its aureole: physics, its own light in the air) kept over it.
-          radiance = lerp(radiance, acesFilmicInverse(andromedaSky(f.atmosphere, paintDir, pixelAngle * lensScale)) / max(f.exposure, 1e-6), night) + aureole * night;
+          radiance = lerp(radiance, acesFilmicInverse(andromedaSky(f.atmosphere, paintDir, pixelAngle * lensScale) * kNightSkyMask) / max(f.exposure, 1e-6), night) + aureole * night;
         }
         else
           radiance += realStars(f.atmosphere, dir, pixelAngle) * night * boost * air * a.skyScale;
@@ -652,12 +713,13 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
       // No dark clouds (the user, 2026-11-04: "HOW MANY TIME MUST I SAY NO DARK CLOUDS"): against the Andromeda painting at night the
       // moonlit cloud is near black, so it takes on part of the painted sky's light behind it (a veil, never a black blot).
       const float3 veil = a.starLook == 5u ? behindNoDisc * (1.0 - cloud.a) * 0.6 * night : 0.0;
-      radiance = radiance * cloud.a + max(cloud.rgb, veil) + moonThroughCloud(f, a, dir, saturate(cloud.a));
+      radiance = radiance * cloud.a + (max(cloud.rgb, veil) + moonThroughCloud(f, a, dir, saturate(cloud.a)) * kMoonCloudGlow) * lerp(1.0, kNightCloudMask, night);
       cloudHidden = 1.0 - saturate(cloud.a);
     } else {
       radiance = cloudsOverSky(f, a, f.cameraPosition, dir, clear * a.skyScale, radiance);
     }
-    radiance += moonGlare(f, a, dir, cloudHidden);
+    radiance += moonGlare(f, a, dir, cloudHidden) * kMoonGlare;
+    if (vk::RawBufferLoad<uint>(f.atmosphere + kSunLookOffset) == 2u) radiance += sunGlare002(f, a, dir);
   } else if (a.starLook == 5u) {
     // Below the horizon at night: the ground out to the horizon lit by the galaxy's sky (Lambert on its irradiance, which
     // CSAmbient leaves in the w's of the ambient records 4..6), as the real ground under a bright night sky.
