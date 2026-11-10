@@ -13,21 +13,21 @@
    "frames": 144,
    "frameMs": 41.666666666666664,
    "nat": [
-    494,
-    710
+    493,
+    709
    ],
    "crop": [
+    4,
     5,
-    6,
     484,
     704
    ],
    "box": {
-    "w": 1.86061,
-    "h": 2.67416,
+    "w": 1.85685,
+    "h": 2.67039,
     "foot": 0.04143
    },
-   "pattern": "content/sprites/kael-v3/base-v01/base-{}.png"
+   "pattern": "content/sprites/kael-v3/base-v02/base-{}.png"
   },
   "atk": {
    "video": "Attachments/KaelV3/KaelATT.mp4",
@@ -39,10 +39,11 @@
     719
    ],
    "figurePx": 668.0,
+   "bodyAt": -0.1893,
    "frames": 71,
    "frameMs": 41.666666666666664,
    "nat": [
-    916,
+    1025,
     707
    ],
    "crop": [
@@ -52,11 +53,11 @@
     703
    ],
    "box": {
-    "w": 3.53784,
+    "w": 3.95883,
     "h": 2.73063,
     "foot": 0.0
    },
-   "pattern": "content/sprites/kael-v3/atk-v01/atk-{}.png",
+   "pattern": "content/sprites/kael-v3/atk-v02/atk-{}.png",
    "impact": 0.4507
   },
   "turn-back": {
@@ -69,24 +70,25 @@
     707
    ],
    "figurePx": 674.0,
+   "bodyAt": -0.1895,
    "frames": 16,
    "frameMs": 41.666666666666664,
    "nat": [
-    436,
-    692
+    535,
+    691
    ],
    "crop": [
     7,
-    5,
+    4,
     423,
     683
    ],
    "box": {
-    "w": 1.66896,
-    "h": 2.6489,
+    "w": 2.04792,
+    "h": 2.64507,
     "foot": 0.02297
    },
-   "pattern": "content/sprites/kael-v3/turn-back-v01/turn-back-{}.png"
+   "pattern": "content/sprites/kael-v3/turn-back-v02/turn-back-{}.png"
   },
   "cast-back": {
    "video": "Attachments/KaelV3/Kael-IdleBackDoubleStrike.mp4",
@@ -98,24 +100,25 @@
     706
    ],
    "figurePx": 673.0,
+   "bodyAt": -0.1898,
    "frames": 1,
    "frameMs": 41.666666666666664,
    "nat": [
-    370,
+    486,
     690
    ],
    "crop": [
-    6,
+    5,
     5,
     359,
     681
    ],
    "box": {
-    "w": 1.41842,
+    "w": 1.86312,
     "h": 2.64517,
     "foot": 0.023
    },
-   "pattern": "content/sprites/kael-v3/cast-back-v01/cast-back-{}.png"
+   "pattern": "content/sprites/kael-v3/cast-back-v02/cast-back-{}.png"
   },
   "double-strike": {
    "video": "Attachments/KaelV3/Kael-IdleBackDoubleStrike.mp4",
@@ -127,10 +130,11 @@
     719
    ],
    "figurePx": 676.0,
+   "bodyAt": -0.1908,
    "frames": 87,
    "frameMs": 41.666666666666664,
    "nat": [
-    1100,
+    1416,
     720
    ],
    "crop": [
@@ -140,11 +144,11 @@
     720
    ],
    "box": {
-    "w": 4.19822,
+    "w": 5.40426,
     "h": 2.74793,
     "foot": 0.0
    },
-   "pattern": "content/sprites/kael-v3/double-strike-v01/double-strike-{}.png",
+   "pattern": "content/sprites/kael-v3/double-strike-v02/double-strike-{}.png",
    "impact": 0.4138
   },
   "move": {
@@ -153,13 +157,13 @@
    "last": 239,
    "loopFirst": 40,
    "loopLast": 149,
-   "seamSteps": 0.97,
+   "seamSteps": 0.99,
    "bootRow": 700,
    "bodyDrift": [
     -14,
-    9
+    10
    ],
-   "figurePx": 662.5,
+   "figurePx": 662.0,
    "frames": 110,
    "frameMs": 41.666666666666664,
    "nat": [
@@ -168,48 +172,139 @@
    ],
    "crop": [
     4,
-    6,
+    5,
     494,
-    688
+    690
    ],
    "box": {
-    "w": 1.96275,
-    "h": 2.72214,
-    "foot": 0.04673
+    "w": 1.96423,
+    "h": 2.7242,
+    "foot": 0.05066
    },
-   "pattern": "content/sprites/kael-v3/move-v01/move-{}.png"
+   "pattern": "content/sprites/kael-v3/move-v02/move-{}.png"
   },
   "move-left": {
-   "video": "Attachments/KaelV3/Medieval_warrior_walking_8ba19cd7.mp4",
+   "video": "Attachments/KaelV3/Medieval_warrior_walking_left_ed9bb1df.mp4",
    "first": 0,
-   "last": 239,
-   "loopFirst": 40,
-   "loopLast": 149,
-   "seamSteps": 0.97,
-   "bootRow": 700,
+   "last": 143,
+   "loopFirst": 72,
+   "loopLast": 121,
+   "seamSteps": 0.81,
+   "bootRow": 701,
    "bodyDrift": [
-    -14,
-    9
+    14,
+    25
    ],
-   "figurePx": 662.5,
-   "frames": 110,
+   "figurePx": 663.5,
+   "frames": 50,
    "frameMs": 41.666666666666664,
    "nat": [
-    504,
-    699
+    682,
+    704
    ],
    "crop": [
+    5,
     6,
-    6,
-    494,
-    688
+    671,
+    693
    ],
    "box": {
-    "w": 1.96275,
-    "h": 2.72214,
-    "foot": 0.04673
+    "w": 2.65194,
+    "h": 2.73748,
+    "foot": 0.06222
    },
-   "pattern": "content/sprites/kael-v3/move-left-v01/move-left-{}.png"
+   "pattern": "content/sprites/kael-v3/move-left-v02/move-left-{}.png"
+  },
+  "special": {
+   "video": "Attachments/KaelV3/Warrior_executing_sword_attack_565e73e0.mp4",
+   "first": 28,
+   "last": 126,
+   "bootRow": 708,
+   "bootRows": [
+    704,
+    713
+   ],
+   "figurePx": 647.0,
+   "bodyAt": -0.1894,
+   "frames": 99,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1077,
+    720
+   ],
+   "crop": [
+    5,
+    0,
+    981,
+    715
+   ],
+   "box": {
+    "w": 4.29468,
+    "h": 2.8711,
+    "foot": 0.04386
+   },
+   "pattern": "content/sprites/kael-v3/special-v02/special-{}.png",
+   "impact": 0.6263
+  },
+  "hit": {
+   "video": "Attachments/KaelV3/KaelHitReactpast130secondsFall.mp4",
+   "first": 31,
+   "last": 115,
+   "bootRow": 700,
+   "bootRows": [
+    695,
+    710
+   ],
+   "figurePx": 660.0,
+   "bodyAt": -0.1896,
+   "frames": 85,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    549,
+    713
+   ],
+   "crop": [
+    4,
+    4,
+    526,
+    704
+   ],
+   "box": {
+    "w": 2.14609,
+    "h": 2.78718,
+    "foot": 0.04691
+   },
+   "pattern": "content/sprites/kael-v3/hit-v02/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/KaelV3/KaelHitReactpast130secondsFall.mp4",
+   "first": 116,
+   "last": 215,
+   "bootRow": 699,
+   "bootRows": [
+    699,
+    699
+   ],
+   "figurePx": 652.5,
+   "bodyAt": -0.1898,
+   "frames": 100,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    789,
+    694
+   ],
+   "crop": [
+    4,
+    5,
+    732,
+    689
+   ],
+   "box": {
+    "w": 3.11972,
+    "h": 2.74409,
+    "foot": 0.07908
+   },
+   "pattern": "content/sprites/kael-v3/death-v02/death-{}.png"
   }
  }
 }

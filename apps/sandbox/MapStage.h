@@ -7914,6 +7914,11 @@ class MapStage final : public Stage {
         if (hasPose(su, "attack2")) pose = "attack2";
         else if (hasPose(su, "cast")) pose = "cast";
       }
+      // A unit with a special attack of its own (Kael v3's, the purple sword, 2026-11-09) plays it on every skill but the Golpe
+      // Duplo, which keeps its blows (the user: "give special att to all skills but double strike that already has its own").
+      else if (s.kind != "doubleStrike" && !support && hasPose(su, "specialAttack")) {  // a cure or food: no sword swing
+        pose = "specialAttack";
+      }
     }
     // A counter on a foe beside it: the unit's staff blow when it has one (Voss; the user, 2026-10-17: "he will counter with
     // his staff when the enemy is close ranged, and ... the regular mage ATT when in distance"). No bolt flies from it.

@@ -43,7 +43,7 @@
    "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "cast": "cast", "attack": "atk", "counter": "counter-staff", "counterStaff": "counter-staff", "hit": "hit", "death": "death"},
    "labels": {"counterStaff": "Contra-ataque (cajado)", "hit": "Dano", "death": "Morte"},
    "packs": {"base": "field", "move": "field", "move-left": "field"},
-   "strides": {"move": 1.0, "move-left": 1.0}
+   "strides": {"move": 1.5, "move-left": 1.0}
   },
   {
    "set": "voss-veo-media",
@@ -91,7 +91,7 @@
    "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "cast": "cast", "counterStaff": "counter-staff", "hit": "hit", "death": "fall"},
    "labels": {"idle": "Parado", "walk": "Andar", "walkLeft": "Andar (esquerda)", "cast": "Conjurar", "counterStaff": "Contra-ataque (cajado)", "hit": "Dano", "death": "Queda"},
    "packs": {"base": "field", "move": "field", "move-left": "field"},
-   "strides": {"move": 3.0, "move-left": 1.0}
+   "strides": {"move": 3.0, "move-left": 1.5}
   },
   {
    "set": "isolde-veo-64-media",
@@ -123,18 +123,18 @@
   },
   {
    "set": "kael-v3",
-   "version": "v01",
+   "version": "v02",
    "hero": "kael",
    "cut": "content/sprites/kael-v3/cut.json",
-   "why": "the user, 2026-11-09: Kael from their videos (Attachments/KaelV3): the 6 s idle (KaelIdleLoop) in place of the idle of Kael-IdleBackDoubleStrike, KaelATT for the attack, the few frames of his back for the special skills that turn him away from the camera and for cutscenes, the walk (Medieval_warrior_walking_8ba19cd7) mirrored for the left \"for now\"; the double strike of the same video cut with the rest, no skill plays it yet. Kael_Final stays in the pack.",
-   "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkLeft": "move-left", "turnBack": "turn-back", "castBack": "cast-back", "doubleStrike": "double-strike"},
-   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "walkLeft": "Andar (esquerda)", "turnBack": "De costas", "castBack": "De costas (parado)", "doubleStrike": "Golpe duplo"},
+   "why": "the user, 2026-11-09: Kael from their videos (Attachments/KaelV3): the 6 s idle (KaelIdleLoop) in place of the idle of Kael-IdleBackDoubleStrike, KaelATT for the attack, the few frames of his back for the special skills that turn him away from the camera and for cutscenes, the walk (Medieval_warrior_walking_8ba19cd7) mirrored for the left \"for now\"; the double strike of the same video cut with the rest, no skill plays it yet. Kael_Final stays in the pack. v02 (the user, 2026-11-09: \"very large grey borders\", the cloak most): every clip cut again with the edge key; their second batch: the walk to the left (in place of the mirror), the special attack (\"its for special att\", no skill plays it yet), the hit and the fall.",
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkLeft": "move-left", "turnBack": "turn-back", "castBack": "cast-back", "doubleStrike": "double-strike", "specialAttack": "special", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "walkLeft": "Andar (esquerda)", "turnBack": "De costas", "castBack": "De costas (parado)", "doubleStrike": "Golpe duplo", "specialAttack": "Ataque especial", "hit": "Dano", "death": "Queda"},
    "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field"},
-   "strides": {"move": 5.0, "move-left": 5.0}
+   "strides": {"move": 2.5, "move-left": 1.0}
   },
   {
    "set": "kael-v3-64-media",
-   "version": "media64-v01",
+   "version": "media64-v02",
    "mediumOf": {"hero": "kael", "set": "kael-v3"},
    "cut": "content/sprites/kael-v3/cut-64-media.json",
    "why": "Kael's Personagens Média, as Voss's and Isolde's: every clip with at most 64 frames (picked evenly, the clip's timing kept), the figure ~916 px",
@@ -142,7 +142,7 @@
   },
   {
    "set": "kael-v3-36-media",
-   "version": "media36-v01",
+   "version": "media36-v02",
    "lightOf": {"hero": "kael", "set": "kael-v3"},
    "cut": "content/sprites/kael-v3/cut-36-media.json",
    "why": "Kael's Personagens Leve, as Voss's and Isolde's: every clip with at most 36 frames, the figure ~610 px",

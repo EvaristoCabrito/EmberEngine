@@ -26,7 +26,8 @@
    "last": 74,
    "impactFrame": 36,
    "mode": "once",
-   "why": "the wind-up from 8, the sweep through 28-36 (the blade fully out at 36-37), back at rest by 72"
+   "why": "the wind-up from 8, the sweep through 28-36 (the blade fully out at 36-37), back at rest by 72",
+   "bodyAt": -0.1902
   },
   {
    "clip": "turn-back",
@@ -37,7 +38,8 @@
    "first": 80,
    "last": 95,
    "mode": "once",
-   "why": "the user, 2026-11-09: \"use the few frames of his back for special skills that make him turn against the camera or cutscenes\": he turns away (80-87) and stands with his back to us (88-95); its last frame is held"
+   "why": "the user, 2026-11-09: \"use the few frames of his back for special skills that make him turn against the camera or cutscenes\": he turns away (80-87) and stands with his back to us (88-95); its last frame is held",
+   "bodyAt": -0.1902
   },
   {
    "clip": "cast-back",
@@ -48,7 +50,8 @@
    "first": 91,
    "last": 91,
    "mode": "once",
-   "why": "the back still the game shows when a skill's effect leaves the caster's hands away from the camera (MapStage castBack, as Voss's and Salazar's)"
+   "why": "the back still the game shows when a skill's effect leaves the caster's hands away from the camera (MapStage castBack, as Voss's and Salazar's)",
+   "bodyAt": -0.1902
   },
   {
    "clip": "double-strike",
@@ -60,7 +63,8 @@
    "last": 190,
    "impactFrame": 140,
    "mode": "once",
-   "why": "the double strike of the same video (the overhead cut, then the low sweep), cut with the rest; no skill plays it yet"
+   "why": "the double strike of the same video (the overhead cut, then the low sweep), cut with the rest; no skill plays it yet",
+   "bodyAt": -0.1902
   },
   {
    "clip": "move",
@@ -83,10 +87,10 @@
    "video": "Attachments/KaelV3/Medieval_warrior_walking_left_ed9bb1df.mp4",
    "first": 0,
    "last": 143,
-   "loopMin": 72,
+   "loopMin": 40,
    "loopMax": 143,
    "mode": "loop",
-   "why": "the user, 2026-11-09: their own walk to the left, in place of the mirrored walk to the right"
+   "why": "the user, 2026-11-09: their own walk to the left, in place of the mirrored walk to the right; the whole video for the loop (frames 108 and 120, written half when the PC restarted, matted again 2026-11-10)"
   },
   {
    "clip": "special",
@@ -94,10 +98,12 @@
    "kind": "stand",
    "src": "build/video-cut/kael-v3b/attack",
    "video": "Attachments/KaelV3/Warrior_executing_sword_attack_565e73e0.mp4",
-   "first": 0,
-   "last": 143,
+   "first": 28,
+   "last": 126,
    "mode": "once",
-   "why": "the user, 2026-11-09: \"its for special att\": the sword lit purple, the sweep with its dark smoke and the ring of smoke on the floor; no skill plays it yet"
+   "why": "the user, 2026-11-09: \"its for special att\": the sword lit purple, the sweep with its dark smoke and the ring of smoke on the floor; no skill plays it yet; from the first move (28) to the ring of smoke settling (126), the blow lands on the last great sweep (90)",
+   "impactFrame": 90,
+   "bodyAt": -0.1902
   },
   {
    "clip": "hit",
@@ -106,9 +112,10 @@
    "src": "build/video-cut/kael-v3b/hit",
    "video": "Attachments/KaelV3/KaelHitReactpast130secondsFall.mp4",
    "first": 31,
-   "last": 110,
+   "last": 115,
    "mode": "once",
-   "why": "the video's name: the hit reaction from 1.30 s (frame 31), as the slime's SlimeHitat1.07anddeath"
+   "why": "the video's name: the hit reaction from 1.30 s (frame 31), as the slime's SlimeHitat1.07anddeath; he flinches at 61-73 and stands again by 115",
+   "bodyAt": -0.1902
   },
   {
    "clip": "death",
@@ -116,13 +123,15 @@
    "kind": "stand",
    "src": "build/video-cut/kael-v3b/hit",
    "video": "Attachments/KaelV3/KaelHitReactpast130secondsFall.mp4",
-   "first": 112,
-   "last": 239,
+   "first": 116,
+   "last": 215,
    "standUntil": 125,
    "mode": "once",
-   "why": "the same video's fall: he lets the sword go (~5 s), falls and lies still; the last frame is held"
+   "why": "the same video's fall: the sword slips from his hand (116-121), he staggers (127-163), falls (169-199) and lies still (205-215); the last frame is held",
+   "bodyAt": -0.1902
   }
  ],
  "edgeKey": true,
- "edgeKeyWhy": "the user, 2026-11-09: \"the last batch didn't turn out too good because of very large grey borders\", \"this cloak has the most grey\": v02 cuts every clip with video_sprite.py's edge_key (the soft edge read between the figure's colour and the wall's); v01 stays on disk"
+ "edgeKeyWhy": "the user, 2026-11-09: \"the last batch didn't turn out too good because of very large grey borders\", \"this cloak has the most grey\": v02 cuts every clip with video_sprite.py's edge_key (the soft edge read between the figure's colour and the wall's); v01 stays on disk",
+ "bodyAtWhy": "the user, 2026-11-10: \"the transition from att back to idle of Kael is the worst I've ever seen\": every standing pose has his head where the idle (base) has it, -0.19 units from the card's centre, or he jumps sideways as a pose starts and ends"
 }

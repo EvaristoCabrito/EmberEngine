@@ -1,7 +1,7 @@
 {
  "about": "kael-v3's Personagens Média (tools/scripts/sprites/quality_copies.py, the rule of 2026-10-25): every clip of cut.json from the same matted frames, at most 64 frames picked evenly (no blend, the clip's timing kept), the figure ~916 px tall (a clip already shorter keeps its own size).",
  "set": "kael-v3-64-media",
- "version": "media64-v01",
+ "version": "media64-v02",
  "figureUnits": 2.58,
  "figureNote": "each clip's median head top to boot row, about as tall as kael-final-002's idle (519 px of 528 at box h 2.656: 2.61 units with the hair)",
  "clips": [
@@ -26,7 +26,8 @@
    "last": 74,
    "impactFrame": 36,
    "mode": "once",
-   "scaleTo": 916
+   "scaleTo": 916,
+   "bodyAt": -0.1902
   },
   {
    "clip": "turn-back",
@@ -37,7 +38,8 @@
    "first": 80,
    "last": 95,
    "mode": "once",
-   "scaleTo": 916
+   "scaleTo": 916,
+   "bodyAt": -0.1902
   },
   {
    "clip": "cast-back",
@@ -48,7 +50,8 @@
    "first": 91,
    "last": 91,
    "mode": "once",
-   "scaleTo": 916
+   "scaleTo": 916,
+   "bodyAt": -0.1902
   },
   {
    "clip": "double-strike",
@@ -60,7 +63,8 @@
    "last": 190,
    "impactFrame": 140,
    "mode": "once",
-   "scaleTo": 916
+   "scaleTo": 916,
+   "bodyAt": -0.1902
   },
   {
    "clip": "move",
@@ -79,17 +83,57 @@
    "clip": "move-left",
    "pose": "walkLeft",
    "kind": "walk",
-   "src": "build/video-cut/kael-v3/walk",
-   "video": "Attachments/KaelV3/Medieval_warrior_walking_8ba19cd7.mp4",
+   "src": "build/video-cut/kael-v3b/walk-left",
+   "video": "Attachments/KaelV3/Medieval_warrior_walking_left_ed9bb1df.mp4",
    "first": 0,
-   "last": 239,
-   "loopMin": 96,
-   "loopMax": 239,
+   "last": 143,
+   "loopMin": 40,
+   "loopMax": 143,
    "mode": "loop",
-   "mirror": true,
    "scaleTo": 916
+  },
+  {
+   "clip": "special",
+   "pose": "specialAttack",
+   "kind": "stand",
+   "src": "build/video-cut/kael-v3b/attack",
+   "video": "Attachments/KaelV3/Warrior_executing_sword_attack_565e73e0.mp4",
+   "first": 28,
+   "last": 126,
+   "mode": "once",
+   "impactFrame": 90,
+   "scaleTo": 916,
+   "bodyAt": -0.1902
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "kind": "stand",
+   "src": "build/video-cut/kael-v3b/hit",
+   "video": "Attachments/KaelV3/KaelHitReactpast130secondsFall.mp4",
+   "first": 31,
+   "last": 115,
+   "mode": "once",
+   "scaleTo": 916,
+   "bodyAt": -0.1902
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "kind": "stand",
+   "src": "build/video-cut/kael-v3b/hit",
+   "video": "Attachments/KaelV3/KaelHitReactpast130secondsFall.mp4",
+   "first": 116,
+   "last": 215,
+   "standUntil": 125,
+   "mode": "once",
+   "scaleTo": 916,
+   "bodyAt": -0.1902
   }
  ],
+ "edgeKey": true,
+ "edgeKeyWhy": "the user, 2026-11-09: \"the last batch didn't turn out too good because of very large grey borders\", \"this cloak has the most grey\": v02 cuts every clip with video_sprite.py's edge_key (the soft edge read between the figure's colour and the wall's); v01 stays on disk",
  "result": "cut-result-64-media.json",
- "frameCount": 64
+ "frameCount": 64,
+ "bodyAtWhy": "the user, 2026-11-10: \"the transition from att back to idle of Kael is the worst I've ever seen\": every standing pose has his head where the idle (base) has it, -0.19 units from the card's centre, or he jumps sideways as a pose starts and ends"
 }
