@@ -254,6 +254,31 @@ inline void iconX(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "x"
 inline void iconCheck(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "check", c, s, ink); }
 inline void iconLock(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "lock", c, s, ink); }
 inline void iconMapPin(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "map-pin", c, s, ink); }
+// A location's pin: the one look and the one place on every map that shows places (OverworldStage: the world map and the
+// Underworld; TestModeStage: Modo teste). A small dark disc, its ring, its icon ("map-pin", "lock", "check") and a mission count
+// badge when the place holds more than one. It stands at the place's point moved by its pinDx / pinDy (percent of the picture),
+// beside the place's drawing instead of on it (the user, 2026-11-10); the drawing under the place's point stays clickable.
+inline constexpr float kLocationPinRadius = 9.0f;
+inline ImVec2 locationPinAt(double x, double y, double dx, double dy, ImVec2 o, float imgW, float imgH) {
+  return {o.x + static_cast<float>(x + dx) / 100.0f * imgW, o.y + static_cast<float>(y + dy) / 100.0f * imgH};
+}
+inline bool locationPinHovered(ImVec2 mouse, ImVec2 pin, ImVec2 place) {
+  return std::hypot(mouse.x - pin.x, mouse.y - pin.y) <= kLocationPinRadius + 5.0f || std::hypot(mouse.x - place.x, mouse.y - place.y) <= 20.0f;
+}
+inline void drawLocationPin(ImDrawList* dl, ImVec2 c, float s, ImU32 border, const char* icon, ImU32 ink, int count, ImFont* font) {
+  const float r = kLocationPinRadius * s;
+  dl->AddCircleFilled(c, r, IM_COL32(17, 17, 17, 255), 32);
+  dl->AddCircle(c, r - 0.75f, border, 32, 1.5f);
+  uiIcon(dl, icon, c, 10.0f * s, ink);
+  if (count > 1) {
+    const ImVec2 bc{c.x + r, c.y - r};
+    dl->AddCircleFilled(bc, 6, IM_COL32(17, 17, 17, 255));
+    dl->AddCircle(bc, 6, IM_COL32(74, 74, 74, 255));
+    const std::string n = std::to_string(count);
+    const ImVec2 ts = font->CalcTextSizeA(9.0f, 1e9f, 0, n.c_str());
+    dl->AddText(font, 9.0f, {bc.x - ts.x / 2, bc.y - ts.y / 2}, IM_COL32(240, 240, 240, 230), n.c_str());
+  }
+}
 inline void iconBook(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "book-open", c, s, ink); }
 inline void iconClock(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "clock", c, s, ink); }
 inline void iconGear(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "settings", c, s, ink); }

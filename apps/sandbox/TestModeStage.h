@@ -466,20 +466,18 @@ class TestModeStage : public Stage {
     std::string clickedId;
     if (underworld_)  // the Underworld's places: their pins and names (no missions there yet)
       for (const ember::MapLocation& loc : underworld().locations()) {
-        const ImVec2 c{o.x + static_cast<float>(loc.x) / 100.0f * imgW, o.y + static_cast<float>(loc.y) / 100.0f * imgH};
-        const float r = 20.0f;
-        const bool hover = over && std::hypot(io.MousePos.x - c.x, io.MousePos.y - c.y) <= r;
-        drawPin(dl, c, r * (hover ? 1.1f : 1.0f), "open", false, 0, -1.0f);
+        const ImVec2 c = locationPinAt(loc.x, loc.y, loc.pinDx, loc.pinDy, o, imgW, imgH);  // CampaignUi.h: the one pin
+        const bool hover = over && locationPinHovered(io.MousePos, c, locationPinAt(loc.x, loc.y, 0, 0, o, imgW, imgH));
+        drawPin(dl, c, hover ? 1.1f : 1.0f, "open", false, 0, -1.0f);
         if (hover) ImGui::SetTooltip("%s", loc.name.c_str());
       }
     for (const ember::MapLocation& loc : world_.locations()) {
       if (underworld_) break;  // the Overworld's places only on the Overworld
       const std::string st = world_.locationStatus(loc, realSave(), true);
       const auto missions = world_.visibleMissionsOf(loc, realSave(), true);
-      const ImVec2 c{o.x + static_cast<float>(loc.x) / 100.0f * imgW, o.y + static_cast<float>(loc.y) / 100.0f * imgH};
-      const float r = 20.0f;
-      const bool hover = over && std::hypot(io.MousePos.x - c.x, io.MousePos.y - c.y) <= r;
-      drawPin(dl, c, r * (hover ? 1.1f : 1.0f), st, std::any_of(missions.begin(), missions.end(), [](const ember::MapMission* m) { return m->hub; }),
+      const ImVec2 c = locationPinAt(loc.x, loc.y, loc.pinDx, loc.pinDy, o, imgW, imgH);  // CampaignUi.h: the one pin
+      const bool hover = over && locationPinHovered(io.MousePos, c, locationPinAt(loc.x, loc.y, 0, 0, o, imgW, imgH));
+      drawPin(dl, c, hover ? 1.1f : 1.0f, st, std::any_of(missions.begin(), missions.end(), [](const ember::MapMission* m) { return m->hub; }),
               static_cast<int>(missions.size()), flashId_ == loc.id ? now_ - flashAt_ : -1.0f);
       if (hover && clicked) clickedId = loc.id;
     }
@@ -497,7 +495,8 @@ class TestModeStage : public Stage {
 
   // A location pin: size-10 rounded-full border-2 bg-bg/80 (locked: border-border, half opacity; done: Check; the Inn
   // open: inn-glow), a mission count badge when it holds more than one; locked-flash on a locked click.
-  void drawPin(ImDrawList* dl, ImVec2 c, float r, const std::string& st, bool hub, int count, float flashAge) {
+  void drawPin(ImDrawList* dl, ImVec2 c, float s, const std::string& st, bool hub, int count, float flashAge) {
+    const float r = kLocationPinRadius * s;
     const int alpha = st == "locked" ? 128 : 255;
     ImU32 border = st == "locked" ? kBorder : kAccent;
     if (st != "locked" && st != "done" && hub) {
@@ -510,20 +509,8 @@ class TestModeStage : public Stage {
       border = IM_COL32(214, 60, 60, 255);
       for (int i = 3; i >= 1; --i) dl->AddCircle(c, r + i * 3.0f, IM_COL32(214, 60, 60, static_cast<int>(70 * k)), 32, 3.0f);
     }
-    dl->AddCircleFilled(c, r, IM_COL32(17, 17, 17, 204 * alpha / 255), 32);
-    dl->AddCircle(c, r - 1, (border & ~IM_COL32_A_MASK) | (static_cast<ImU32>(((border >> IM_COL32_A_SHIFT) & 0xFF) * alpha / 255) << IM_COL32_A_SHIFT), 32, 2.0f);
-    const float s = 16.0f * r / 20.0f;
-    if (st == "locked") iconLock(dl, c, s, IM_COL32(180, 180, 180, alpha));
-    else if (st == "done") iconCheck(dl, c, s, kAccent);
-    else iconMapPin(dl, c, s, kAccent);
-    if (count > 1) {
-      const ImVec2 bc{c.x + r - 2, c.y - r + 2};
-      dl->AddCircleFilled(bc, 8, kBg);
-      dl->AddCircle(bc, 8, kBorder);
-      const std::string n = std::to_string(count);
-      const ImVec2 ts = sans()->CalcTextSizeA(10.0f, FLT_MAX, 0, n.c_str());
-      dl->AddText(sans(), 10.0f, {bc.x - ts.x / 2, bc.y - ts.y / 2}, IM_COL32(240, 240, 240, 230), n.c_str());
-    }
+    drawLocationPin(dl, c, s, (border & ~IM_COL32_A_MASK) | (static_cast<ImU32>(((border >> IM_COL32_A_SHIFT) & 0xFF) * alpha / 255) << IM_COL32_A_SHIFT),
+                    st == "locked" ? "lock" : st == "done" ? "check" : "map-pin", st == "locked" ? IM_COL32(180, 180, 180, alpha) : kAccent, count, sans());
   }
 
   // Bottom right: ember-plate p-1 with Aproximar, "n/4" (counted from the wide end) and Afastar.
