@@ -496,11 +496,19 @@ bool Overworld::wispForestUncleared(const Json& save) const {
 // overworld.ts canStepOverworld.
 bool Overworld::canStep(const Json& save, OverworldHex from, OverworldHex to, bool test) const {
   if (!isCell(from.col, from.row) || !isCell(to.col, to.row)) return false;
-  // Until the Bridge is finished, the opening road is a straight lane. Keep this geometric rule even in test mode:
-  // test mode may skip story gates, but it must not let the party walk onto side rows or around the bridge.
-  if (!has(child(save, "completed"), "thebridge") &&
-      (from.row != start_.row || to.row != start_.row || from.col < start_.col || from.col > inn_.col || to.col < start_.col || to.col > inn_.col))
-    return false;
+  // Until the Bridge is finished, the opening road: the same stretch of the painting as on the 5 % grid (the start's row of
+  // big hexes, from the start to the Inn), whatever the hex size (the user, 2026-11-10: the hexes got smaller, the area one can
+  // walk did not change). The band is the big row's height (5 % x 1.5 = 7.5 %, so 3.75 % each side of the start's centre):
+  // on the half grid that is three rows of small hexes, not one. Kept in test mode: the party never walks around the bridge.
+  if (!has(child(save, "completed"), "thebridge")) {
+    const OverworldCell* s = cell(start_.col, start_.row);
+    const OverworldCell* in = cell(inn_.col, inn_.row);
+    const auto onRoad = [&](OverworldHex h) {
+      const OverworldCell* c = cell(h.col, h.row);
+      return s && in && c && std::abs(c->y - s->y) <= 3.75 + 1e-6 && c->x >= s->x - 1e-6 && c->x <= in->x + 1e-6;
+    };
+    if (!onRoad(from) || !onRoad(to)) return false;
+  }
   // No Ashen Forest block (the user, 2026-10-27: "não existe bloqueio de floresta cinzenta"); `ashenBlocked_` is read for nothing now.
   if (test) return true;
   const Json& completed = child(save, "completed");

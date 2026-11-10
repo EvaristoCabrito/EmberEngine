@@ -165,11 +165,10 @@ class TestModeStage : public Stage {
   void previewLocation(const std::string& id) { open_ = id; }
 
   // GameApp goToMap in test mode: the travel style chosen once per session, else the chooser.
-  // One world map (the user, 2026-11-10: "só deve existir um caminho"): Modo teste opens the campaign's own map (OverworldStage,
-  // with the Interlude at Hablock, the party and the same pins), never a map of its own.
   void goToMap() {
-    session_.mapMode = "rpg";
-    if (callbacks_.rpgMap) callbacks_.rpgMap();
+    if (session_.mapMode.empty()) screen_ = Screen::MapChoice;
+    else if (session_.mapMode == "classic") screen_ = Screen::WorldMap;
+    else if (callbacks_.rpgMap) callbacks_.rpgMap();
   }
 
  private:

@@ -7,6 +7,7 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <filesystem>
 #include <format>
@@ -146,8 +147,7 @@ inline bool missionFilesStale(const MissionEntry& e, const std::filesystem::path
   const auto broken = [](const std::filesystem::path& p) {
     std::ifstream in(p, std::ios::binary);
     char c = 0;
-    while (in.get(c) && (c == ' ' || c == '
-' || c == '' || c == '	')) {}
+    while (in.get(c) && std::isspace(static_cast<unsigned char>(c))) {}
     return !in || c != '{';
   };
   const auto made = std::min({stamp(e.map), stamp(e.scene), stamp(e.battle)});
