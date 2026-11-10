@@ -4032,6 +4032,19 @@
       "blocks": true,
       "triangles": 3889672,
       "source": "Sketchfab old-tree-stump"
+    },
+    {
+      "id": "ember-defenses-stake-barricade",
+      "name": "Barricada de estacas 3D",
+      "kit": "defenses",
+      "model": "ember-stake-barricade",
+      "file": "/game/ember/defenses/stake-barricade-v01.glb",
+      "height": 2.227,
+      "width": 1.8,
+      "footprint": "one",
+      "section": "Barricada",
+      "blocks": true,
+      "triangles": 8940
     }
   ]
 }
