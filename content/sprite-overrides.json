@@ -404,7 +404,7 @@
   },
   {
    "set": "hypostasis",
-   "version": "v02",
+   "version": "v03",
    "hero": "hypostasis",
    "newHero": {"name": "Hipóstase", "group": "monster", "sprite": "hypostasis", "reversed": false},
    "cut": "content/sprites/hypostasis/cut.json",
@@ -416,7 +416,7 @@
   },
   {
    "set": "hypostasis-64-media",
-   "version": "media64-v02",
+   "version": "media64-v03",
    "cut": "content/sprites/hypostasis/cut-64-media.json",
    "why": "the Hipóstase's Personagens Média (the user, 2026-11-06): 64 frames from the same mattes",
    "mediumOf": {"hero": "hypostasis", "set": "hypostasis"},
@@ -424,7 +424,7 @@
   },
   {
    "set": "hypostasis-36-media",
-   "version": "media36-v02",
+   "version": "media36-v03",
    "cut": "content/sprites/hypostasis/cut-36-media.json",
    "why": "the Hipóstase's Personagens Leve (the same order): 36 frames from the same mattes",
    "lightOf": {"hero": "hypostasis", "set": "hypostasis"},
@@ -485,6 +485,34 @@
    "why": "the StagWolf walks' Personagens Leve: 36 frames from the same mattes",
    "lightOf": {"hero": "stagWolf", "set": "stagwolf-v2"},
    "packs": {"move": "field", "move-left": "field", "movefront": "field"}
+  },
+  {
+   "set": "telesm",
+   "version": "v01",
+   "hero": "telesm",
+   "newHero": {"name": "Telesm", "group": "summon", "sprite": "telesm", "reversed": false},
+   "cut": "content/sprites/telesm/cut.json",
+   "why": "the user, 2026-11-10: the shell defence summon, a giant shell monster that sits on the ground (Attachments/Telesm): idle, attack, the shell defence, walk, cast, hit and fall (\"always hit and fall, never death\"), Alta + 64 + 36. No summon spell places it yet",
+   "poses": {"idle": "base", "attack": "atk", "defend": "defend", "walk": "move", "cast": "cast", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "defend": "Defesa (concha)", "walk": "Andar", "cast": "Conjurar", "hit": "Dano", "death": "Queda"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "telesm-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/telesm/cut-64-media.json",
+   "why": "Telesm's Personagens Média: 64 frames from the same mattes",
+   "mediumOf": {"hero": "telesm", "set": "telesm"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "telesm-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/telesm/cut-36-media.json",
+   "why": "Telesm's Personagens Leve: 36 frames from the same mattes",
+   "lightOf": {"hero": "telesm", "set": "telesm"},
+   "packs": {"base": "field", "move": "field"}
   }
  ],
  "clips": [

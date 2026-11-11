@@ -190,64 +190,66 @@
    "pattern": "content/sprites/hypostasis/movefront-v02/movefront-{}.png"
   },
   "hit": {
-   "video": "Attachments/Hitanddeath.mp4",
-   "first": 40,
-   "last": 100,
-   "bootRow": 665,
+   "video": "Attachments/Hypostasys/HypoHitReactCreature_recoils_and_falls_ffd2cbe5.mp4",
+   "first": 16,
+   "last": 60,
+   "colorMatch": "build/video-cut/hypostasis/idleatk 40:96",
+   "bootRow": 624,
    "bootRows": [
-    633,
-    666
+    585,
+    625
    ],
-   "figurePx": 550.0,
-   "bodyAt": 0.0139,
-   "frames": 61,
+   "figurePx": 525.0,
+   "bodyAt": 0.0146,
+   "frames": 45,
    "frameMs": 41.666666666666664,
    "nat": [
-    966,
-    685
+    803,
+    629
    ],
    "crop": [
-    130,
+    4,
     5,
-    832,
-    674
+    732,
+    619
    ],
    "box": {
-    "w": 5.38747,
-    "h": 3.82031,
-    "foot": 0.29001
+    "w": 4.69166,
+    "h": 3.67504,
+    "foot": 0.36809
    },
-   "pattern": "content/sprites/hypostasis/hit-v02/hit-{}.png"
+   "pattern": "content/sprites/hypostasis/hit-v03/hit-{}.png"
   },
   "death": {
-   "video": "Attachments/Hitanddeath.mp4",
-   "first": 172,
+   "video": "Attachments/Hypostasys/HypoHitReactCreature_recoils_and_falls_ffd2cbe5.mp4",
+   "first": 144,
    "last": 239,
-   "bootRow": 665,
+   "colorMatch": "build/video-cut/hypostasis/idleatk 40:96",
+   "bootRow": 629,
    "bootRows": [
-    665,
-    665
+    629,
+    629
    ],
-   "figurePx": 509.0,
-   "bodyAt": 0.0151,
-   "frames": 68,
+   "figurePx": 499.0,
+   "bodyAt": 0.0154,
+   "frames": 96,
    "frameMs": 41.666666666666664,
    "nat": [
-    1397,
-    575
+    1078,
+    566
    ],
    "crop": [
-    6,
+    70,
     5,
-    1117,
-    565
+    1004,
+    556
    ],
    "box": {
-    "w": 8.41878,
-    "h": 3.46514,
-    "foot": 0.25311
+    "w": 6.62657,
+    "h": 3.47926,
+    "foot": 0.2213
    },
-   "pattern": "content/sprites/hypostasis/death-v02/death-{}.png"
+   "pattern": "content/sprites/hypostasis/death-v03/death-{}.png"
   }
  }
 }
