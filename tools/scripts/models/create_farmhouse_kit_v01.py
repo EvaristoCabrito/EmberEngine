@@ -1,7 +1,7 @@
 """The Farmlands houses' kit v01 (2026-11-11; the user: "crie janelas e coloque objetos e iluminação, aumente o tamanho de todas as
 casas", "crie novos objetos 3D, passe as texturas para outro agente criar").
 
-  blender -b -t 2 -P tools/scripts/models/create_farmhouse_kit_v01.py [-- name ...] [-- --replace-unreleased]
+  blender -b -t 2 -P tools/scripts/models/create_farmhouse_kit_v01.py -- [name ...] [--version v02]
 
 Thirteen pieces for the smithy, the apothecary, the store, the inn and the villagers' house, each
 content/models/farmhouse/<name>-v01.glb, all of them in farmhouse-kit-v01.blend, their measures in
@@ -27,7 +27,9 @@ if _cut < 0:
     raise SystemExit("create_lighthouse_kit_v01.py: the builder's end marker ('# --- 1 ·') is gone")
 exec(compile(_source[:_cut], str(HERE.parent / "create_lighthouse_kit_v01.py"), "exec"))  # ROOT, T, Rx.., image, material, Build, arc, rivets
 
-KIT, VERSION = "farmhouse", "v01"
+KIT = "farmhouse"
+_CLI_ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+VERSION = next((_CLI_ARGS[i + 1] for i, a in enumerate(_CLI_ARGS[:-1]) if a == "--version"), "v01")
 OUT = ROOT / "content" / "models" / KIT
 TMP = ROOT / "build" / "models-tmp" / KIT
 TMP.mkdir(parents=True, exist_ok=True)
@@ -86,9 +88,9 @@ MATERIALS = {
 }
 STOOD_IN = sorted(k for k in STAND_INS if not farm(k, 'color'))
 _made.clear()
-# The farmhouse sets' own scale (the texture session's note): wood, dark-wood and herbs repeat every 1.2 units, which is the
-# builder's default (0.8 repeats a unit); iron, linen and clay every 0.6, twice as fine.
-UV_SCALE = {k: 2.0 for k in ('iron', 'linen', 'blanket', 'clay') if farm('linen' if k == 'blanket' else k, 'color')}
+# The farmhouse sets' own scale: wood, dark-wood and herbs repeat every 1.2 units; iron, linen, clay and straw every 0.6.
+UV_SCALE = {k: 2.0 for k in ('iron', 'linen', 'blanket', 'clay', 'straw')
+            if farm('linen' if k == 'blanket' else k, 'color')}
 
 
 class Farm(Build):
@@ -373,9 +375,9 @@ def herb_rack():
             b.lathe([(0.034 * s, -0.10), (0.085 * s, -0.24 * s), (0.115 * s, -0.36 * s), (0.10 * s, -0.44 * s), (0.05 * s, -0.50 * s), (0, -0.52 * s)],
                     'herbs', 9, m, smooth=False)
     # a basket of cut herbs at its foot, a sickle hung on a post
-    b.lathe([(0, 0), (0.22, 0), (0.29, 0.12), (0.31, 0.27), (0.285, 0.27), (0.265, 0.13), (0.20, 0.03), (0, 0.03)], 'straw', 16, T(0.14, -0.42, 0), us=1.6, vs=1.6)
+    b.lathe([(0, 0), (0.22, 0), (0.29, 0.12), (0.31, 0.27), (0.285, 0.27), (0.265, 0.13), (0.20, 0.03), (0, 0.03)], 'straw', 16, T(0.14, -0.42, 0), us=0.8, vs=0.8)
     b.tube([Vector((0.14, -0.42, 0.27)) + Vector((0.297 * cos(a), 0.297 * sin(a), 0)) for a in [math.radians(360 * i / 20) for i in range(20)]],
-           0.02, 'straw', sides=6, closed=True, vs=3.0)
+           0.02, 'straw', sides=6, closed=True, us=0.5, vs=1.5)
     b.sphere(0.25, 'herbs', T(0.14, -0.42, 0.22), segs=12, rings=6, squash=0.42)
     b.tube([Vector((-W - 0.05, -0.02, 1.14)) + Vector((0, 0.16 * cos(a), 0.16 * sin(a))) for a in [math.radians(-100 + 22 * i) for i in range(11)]],
            [0.004 + 0.0012 * i for i in range(11)], 'iron', sides=4)
@@ -459,7 +461,7 @@ def spinning_wheel():
     b.tube([(-0.52, 0.09, 0.56), (-0.60, 0.12, 1.62)], [0.02, 0.012], 'dark-wood', sides=8)
     b.sphere(0.13, 'wool', T(-0.595, 0.118, 1.46), segs=12, rings=8, squash=1.55, us=2.5)
     b.tube([(-0.58, 0.07, 1.36), (-0.50, 0.03, 1.10), (fx, 0.02, fz + 0.04)], 0.004, 'wool', sides=4, caps=False)
-    b.lathe([(0, 0), (0.17, 0), (0.22, 0.10), (0.235, 0.20), (0.215, 0.20), (0.20, 0.10), (0.15, 0.025), (0, 0.025)], 'straw', 14, T(-0.10, -0.42, 0), us=1.6, vs=1.6)
+    b.lathe([(0, 0), (0.17, 0), (0.22, 0.10), (0.235, 0.20), (0.215, 0.20), (0.20, 0.10), (0.15, 0.025), (0, 0.025)], 'straw', 14, T(-0.10, -0.42, 0), us=0.8, vs=0.8)
     b.sphere(0.19, 'wool', T(-0.10, -0.42, 0.17), segs=12, rings=6, squash=0.5, us=2.5)
     return b.finish(), dict(name='Roda de fiar 3D', footprint='one', blocks=True)
 
@@ -482,7 +484,7 @@ def cradle():
         for sy in (-1, 1):
             b.tube([(sx * 0.49, sy * 0.27, 0.16), (sx * 0.49, sy * 0.29, h)], 0.026, 'dark-wood', sides=8)
             b.sphere(0.036, 'dark-wood', T(sx * 0.49, sy * 0.29, h + 0.02), segs=8, rings=6)
-    b.box((0.90, 0.42, 0.09), 'straw', T(0, 0, 0.25), bevel=0.03, us=1.6)                 # the straw tick
+    b.box((0.90, 0.42, 0.09), 'straw', T(0, 0, 0.25), bevel=0.03, us=0.8)                 # the straw tick
     b.box((0.88, 0.41, 0.03), 'linen', T(0, 0, 0.305), bevel=0.012)
     b.sphere(0.14, 'linen', T(-0.30, 0, 0.34), segs=12, rings=8, squash=0.42)     # the pillow
     b.box((0.56, 0.50, 0.05), 'blanket', T(0.16, 0, 0.345), bevel=0.02)                   # the blanket, folded back
@@ -593,7 +595,7 @@ ASSETS = {'anvil': anvil, 'quench-tub': quench_tub, 'tool-rack': tool_rack, 'gri
 def main():
     argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
     force = '--replace-unreleased' in argv  # only while v01 has never been in a map or a pack
-    wanted = [a for a in argv if not a.startswith('--')] or list(ASSETS)
+    wanted = [a for i, a in enumerate(argv) if not a.startswith('--') and (i == 0 or argv[i - 1] != '--version')] or list(ASSETS)
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.object.delete(use_global=False)
     manifest_path = TMP / "manifest.json"

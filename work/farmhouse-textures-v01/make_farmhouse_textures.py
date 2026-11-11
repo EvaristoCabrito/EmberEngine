@@ -411,7 +411,7 @@ def herbs():
 
 
 # ---------------------------------------------------------------- sheets and publishing
-def sheet():
+def sheet(version='v02'):
     t, pad, lab = 256, 12, 34
     w = len(MATERIALS) * (2 * t + pad) + pad
     im = Image.new('RGB', (w, 2 * t + 2 * pad + lab), (18, 18, 18))
@@ -430,8 +430,11 @@ def sheet():
             dr.rectangle((x, pad, x + 2 * t - 1, pad + 2 * t - 1), outline=(120, 120, 120))
             dr.text((x + 16, pad + t - 8), f'{m}: FALTANDO (ver o prompt na nota)', fill=(235, 190, 120), font=font)
             dr.text((x + 2, 2 * t + pad + 8), f'farmhouse-{m}-v01-color.jpg (falta)', fill=(235, 190, 120), font=font)
-    im.save(HERE / 'contact-sheet.png')
-    print('contact sheet', im.size)
+    target = HERE / f'contact-sheet-{version}.png'
+    if target.exists():
+        raise FileExistsError(f'Refusing to overwrite existing contact sheet: {target}')
+    im.save(target)
+    print('contact sheet', target.name, im.size)
 
 
 def lit(name):
@@ -479,7 +482,7 @@ if __name__ == '__main__':
         straw(*sys.argv[2:4])
         lit(sys.argv[3] if len(sys.argv) > 3 else 'straw')
     elif what == 'sheet':
-        sheet()
+        sheet(sys.argv[2] if len(sys.argv) > 2 else 'v02')
     elif what == 'publish':
         publish()
     else:

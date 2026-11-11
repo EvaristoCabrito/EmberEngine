@@ -52,3 +52,6 @@ Compostas a partir de fotografias que já estavam nos arquivos do projeto. ambie
 (https://polyhaven.com/a/forest_leaves_03, `herbs`) e mud_cracked_dry_03 (https://polyhaven.com/a/mud_cracked_dry_03, a rede
 do craquelado de `clay`). Do projeto: a fotografia do usuário `wt-burlap.jpg` (`linen`) e `terracotta-photo-v01.png` (o corpo
 do barro de `clay`). Receita em `work/farmhouse-textures-v01/make_farmhouse_textures.py`.
+
+`straw`: imagem-base fotográfica gerada por IA para este projeto em 2026-11-11; mapas de normal e rugosidade derivados
+pela receita local em `work/farmhouse-textures-v01/make_farmhouse_textures.py`.
