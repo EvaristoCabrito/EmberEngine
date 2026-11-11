@@ -131,8 +131,8 @@ const SceneArt* EditorCatalog::measure(const std::string& image) const {
   const auto it = measures_.find(image);
   return it == measures_.end() ? nullptr : &it->second;
 }
-const CatalogUnit* EditorCatalog::unit(const std::string& name, const std::string& classId, const std::string& side) const {
-  if (side == "player" && !name.empty())
+const CatalogUnit* EditorCatalog::unit(const std::string& name, const std::string& classId, const std::string& side, bool classArt) const {
+  if (side == "player" && !name.empty() && !classArt)
     if (const auto it = heroes_.find(name); it != heroes_.end()) return &it->second;
   const auto it = classes_.find(classId);
   return it == classes_.end() ? nullptr : &it->second;
@@ -313,7 +313,7 @@ SceneData buildScene(const Board& board, const EditorCatalog& catalog, std::map<
   for (const auto& [list, side] : sides)
     for (const MapSpawn& sp : *list) {
       if (sp.x < 0 || sp.y < 0 || sp.x >= draft.cols || sp.y >= draft.rows) continue;
-      const CatalogUnit* def = catalog.unit(sp.name, sp.classId, side);
+      const CatalogUnit* def = catalog.unit(sp.name, sp.classId, side, sp.useClassSprite);
       if (!def) {
         skip("no unit: " + sp.classId);
         continue;

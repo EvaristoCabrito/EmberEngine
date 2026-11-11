@@ -86,6 +86,9 @@ struct MapSpawn {
   std::string name, classId;
   int x = 0, y = 0;
   nlohmann::json dialog;  // an NPC's conversation (Ember Spawn.dialog: a DialogTree), null when it has none
+  // Ember Spawn.useClassSprite: drawn as its class, whatever its name (the map editor sets it when a spawn is given a class: a
+  // spawn named after a hero is then that class's unit, not the hero)
+  bool useClassSprite = false;
 };
 
 // An Ember map file ({serial, savedAt, draft}); only the fields EmberEngine reads so far.

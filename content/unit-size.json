@@ -1,7 +1,10 @@
 {
  "about": "A unit drawn at its own size, every pose alike (MapStage unitSize; catalog keys of build/scenes/roster.json). The card's box and feet line are multiplied; rules (hexes, reach) are untouched. Missing = 1.",
- "sizes": {},
+ "sizes": {
+  "kael": 1.07
+ },
  "why": {
-  "cultistV2": "the user, 2026-10-22, asked for the Cultista Ancestral ~10% smaller, then: \"nevermind the cultist request, I will wait on that decision\": no size set"
+  "cultistV2": "the user, 2026-10-22, asked for the Cultista Ancestral ~10% smaller, then: \"nevermind the cultist request, I will wait on that decision\": no size set",
+  "kael": "the user, 2026-11-11, Kael V3 beside Isolde on the board: \"he is smaller than the other units\". His cut stands 2.58 units (head to boots) against Isolde's 2.66 and Voss's 2.69; x 1.07 = 2.76, a little over them. The user judges: one number"
  }
 }

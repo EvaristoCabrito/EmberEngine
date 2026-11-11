@@ -57,7 +57,10 @@ class EditorCatalog {
   const CatalogFacing* facing(const std::string& artId, int step) const;
   const SceneArt* measure(const std::string& image) const;
   // unitForSpawn: a hero by name on the party's side, else the class.
-  const CatalogUnit* unit(const std::string& name, const std::string& classId, const std::string& side) const;
+  // A party spawn named after a hero is that hero, unless it is drawn as its class (`classArt`, MapSpawn::useClassSprite): the
+  // rule the battle follows (BattleExport: the unit's sprite) and the map editor's list. Read by name alone, a spawn named
+  // "Aldric" with the Boi Morto-vivo's class stood as Aldric's card over the ox's four hexes, off its hex (the user, 2026-11-11).
+  const CatalogUnit* unit(const std::string& name, const std::string& classId, const std::string& side, bool classArt = false) const;
   const std::map<std::string, CatalogDecoration>& decorations() const { return decorations_; }
   const std::map<std::string, CatalogUnit>& classes() const { return classes_; }
   // mapBackgrounds.ts resolvedMapBackground: the backdrop file for a draft ("" = none).

@@ -37,6 +37,7 @@ std::vector<MapSpawn> spawns(const json& d, const char* key) {
   for (const json& s : d[key]) {
     out.push_back({str(s, "name"), str(s, "classId"), static_cast<int>(num(s, "x")), static_cast<int>(num(s, "y"))});
     if (s.is_object() && s.contains("dialog") && s["dialog"].is_object()) out.back().dialog = s["dialog"];
+    out.back().useClassSprite = s.is_object() && s.contains("useClassSprite") && s["useClassSprite"].is_boolean() && s["useClassSprite"].get<bool>();
   }
   return out;
 }
