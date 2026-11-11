@@ -119,7 +119,8 @@
    "poses": {"idle": "base", "attack": "atk", "cast": "cast", "walk": "move"},
    "labels": {"idle": "Parado", "attack": "Atacar", "cast": "Conjurar", "walk": "Andar"},
    "packs": {"base": "field", "move": "field"},
-   "strides": {"move": 1.0}
+   "strides": {"move": 1.5},
+   "stridesNote": "the user, 2026-11-10, \"fixing the pace of selene walk V2\": move v03 (WalkV2) lands a foot every 12 frames (8, 21, 33), three steps in its 36-frame loop: 1.5 full strides (move v02 held 2 steps in 22 frames: 1.0)"
   },
   {
    "set": "kael-v3",
@@ -333,11 +334,23 @@
    "hero": "chainBoundPenitent",
    "newHero": {"name": "Penitente Acorrentado", "group": "monster", "sprite": "chain-bound-penitent", "reversed": false},
    "cut": "content/sprites/chain-bound-penitent/cut.json",
-   "why": "the user, 2026-10-27: the Chain-Bound Penitent from their sheets (Attachments/ChainBoundPenitent), \"mirror ATT and walk\", one resolution (no Média / Leve copies), the hit react later",
-   "poses": {"idle": "base", "attack": "atk", "walk": "move"},
-   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar"},
-   "packs": {"base": "field", "move": "field"},
-   "strides": {"move": 1.0}
+   "why": "the user, 2026-10-27: the Chain-Bound Penitent from their sheets (Attachments/ChainBoundPenitent), \"mirror ATT and walk\", one resolution (no Média / Leve copies), the hit react later; 2026-11-10: their Walkright sheet (Ludo) is his walk right (move v02), the WalkLeft sheet as drawn his walk left (move-left)",
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkLeft": "move-left"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "walkLeft": "Andar (esquerda)"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
+  },
+  {
+   "set": "black-cultist",
+   "version": "v01",
+   "hero": "blackCultist",
+   "newHero": {"name": "Cultista Negro", "group": "monster", "sprite": "black-cultist", "reversed": false},
+   "cut": "content/sprites/black-cultist/cut.json",
+   "why": "the user, 2026-11-10: the Black Cultist from their sheets (Attachments/BlackCultist: Ilde, Cast, WalkLeft), \"you will need to mirror the walk animation for this one\"; no attack sheet, so the cast is his attack too; one resolution",
+   "poses": {"idle": "base", "attack": "cast", "cast": "cast", "walk": "move", "walkLeft": "move-left"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "cast": "Conjurar", "walk": "Andar", "walkLeft": "Andar (esquerda)"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
   },
   {
    "set": "corrosive-slime-36",

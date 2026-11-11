@@ -62,6 +62,39 @@
    "impact": 0.5278
   },
   "move": {
+   "video": "Attachments/ChainBoundPenitent/Walkright/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "loopFirst": 0,
+   "loopLast": 35,
+   "seamSteps": NaN,
+   "bootRow": 683,
+   "bodyDrift": [
+    -13,
+    2
+   ],
+   "figurePx": 659.5,
+   "bodyAt": 0.0,
+   "frames": 36,
+   "frameMs": 79.0,
+   "nat": [
+    496,
+    694
+   ],
+   "crop": [
+    53,
+    0,
+    438,
+    688
+   ],
+   "box": {
+    "w": 2.25625,
+    "h": 3.15694,
+    "foot": 0.04549
+   },
+   "pattern": "content/sprites/chain-bound-penitent/move-v02/move-{}.png"
+  },
+  "move-left": {
    "video": "Attachments/ChainBoundPenitent/WalkLeft/sprite-max-px-frames-36-rows-6-cols-6.png",
    "first": 0,
    "last": 35,
@@ -82,7 +115,7 @@
     496
    ],
    "crop": [
-    103,
+    5,
     4,
     397,
     487
@@ -92,7 +125,7 @@
     "h": 3.22427,
     "foot": 0.11051
    },
-   "pattern": "content/sprites/chain-bound-penitent/move-v01/move-{}.png"
+   "pattern": "content/sprites/chain-bound-penitent/move-left-v01/move-left-{}.png"
   }
  }
 }

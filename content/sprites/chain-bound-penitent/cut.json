@@ -7,6 +7,7 @@
  "clips": [
   {"clip": "base", "pose": "idle", "kind": "stand", "sheet": "Attachments/ChainBoundPenitent/Idle/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "pingpong", "bodyAt": 0.0},
   {"clip": "atk", "pose": "attack", "kind": "stand", "sheet": "Attachments/ChainBoundPenitent/ATT/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "impactFrame": 19, "mode": "once", "mirror": true, "bodyAt": 0.0, "why": "the user: mirrored; raised over the head 8-18, the cleaver comes down at 19"},
-  {"clip": "move", "pose": "walk", "kind": "walk", "sheet": "Attachments/ChainBoundPenitent/WalkLeft/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "loop", "mirror": true, "bodyAt": 0.0, "why": "the user: mirrored (the sheet walks left); the whole sheet is the loop"}
+  {"clip": "move", "version": "v02", "pose": "walk", "kind": "walk", "sheet": "Attachments/ChainBoundPenitent/Walkright/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "loop", "bodyAt": 0.0, "why": "the user, 2026-11-10: their Walkright sheet (Ludo) as his walk right, in place of the mirrored WalkLeft (move v01, kept on disk, not in use); the whole sheet is the loop"},
+  {"clip": "move-left", "pose": "walkLeft", "kind": "walk", "sheet": "Attachments/ChainBoundPenitent/WalkLeft/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "loop", "bodyAt": 0.0, "why": "the user, 2026-11-10: the walk left stays as it was: the WalkLeft sheet as drawn (it walks left), no longer the mirror of the walk right; the whole sheet is the loop"}
  ]
 }

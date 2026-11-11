@@ -279,14 +279,14 @@
     ],
     "enemySpawns": [
       {
-        "name": "Cultista Ancestral",
+        "name": "Cultista Branco",
         "classId": "cultistV2",
         "x": 10,
         "y": 3,
         "level": 9
       },
       {
-        "name": "Cultista Ancestral",
+        "name": "Cultista Branco",
         "classId": "cultistV2",
         "x": 10,
         "y": 6,

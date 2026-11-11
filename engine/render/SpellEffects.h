@@ -38,6 +38,7 @@
 #include "render/vfx/Sweeps.h"
 #include "render/vfx/TurnUndead.h"
 #include "render/vfx/ConjurerFx.h"
+#include "render/vfx/HandBoltFx.h"
 #include "render/vfx/HealerFx.h"
 #include "render/vfx/CrusaderFx.h"
 #include "render/vfx/SeleneFx.h"
@@ -157,7 +158,7 @@ class SpellEffects {
   void build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out, std::vector<Light>& lights);
   const VfxFrame& vfx() const { return vfx_; }
   bool active(float now) const;
-  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), dreamWebs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), frosts_.clear(), warrior_.clear(), arms_.clear(), ranger_.clear(), lancer_.clear(), turnUndead_.clear(), healer_.clear(), conjurer_.clear(), status_.clear(), daggers_.clear(), mage_.clear(), crusader_.clear(), selene_.clear(), witchStitch_.clear(), burialWeight_.clear(); }
+  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), dreamWebs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), frosts_.clear(), warrior_.clear(), arms_.clear(), ranger_.clear(), lancer_.clear(), turnUndead_.clear(), healer_.clear(), conjurer_.clear(), status_.clear(), daggers_.clear(), mage_.clear(), crusader_.clear(), selene_.clear(), handBolts_.clear(), witchStitch_.clear(), burialWeight_.clear(); }
   // The Mago Negro's Nuvem de Adagas standing round its caster (vfx/DaggerFx, ours, 3D): the stage keeps one cloud per unit (MapStage
   // syncDaggers); cast() plays the conjuring, the thrown dagger ("daggerStrike") and, through intercept(), the shot knocked down.
   DaggerFx& daggers() { return daggers_; }
@@ -175,6 +176,9 @@ class SpellEffects {
   // Selene's Lâmina Arcana (vfx/SeleneFx, ours, 3D): cast() plays the blade's glow and the mark's burst; the stage times the mark laid on
   // a landed blow and keeps the standing mark (MapStage syncArcaneMarks).
   SeleneFx& selene() { return selene_; }
+  // Bolts finishing what a unit's art begins (vfx/HandBoltFx: the Aparição's attack, Telesm's cast): the stage starts them with the
+  // pose and passes the striker's card every frame (MapStage handBoltFor / follow).
+  HandBoltFx& handBolts() { return handBolts_; }
   WitchStitchFx& witchStitch() { return witchStitch_; }
   BurialWeightFx& burialWeight() { return burialWeight_; }
   // A version that keeps Ember's own timeline decides when the hit lands: seconds from the cast (Míssil Mágico 02:
@@ -310,6 +314,7 @@ class SpellEffects {
   CrusaderFx crusader_;    // the Cruzado's Golpe Consagrado / Toque Sagrado / Juramento / Manto do Cruzado (ours, 3D)
   static bool isCrusader(const std::string& kind) { return kind == "holyStrike" || kind == "holyTouch" || kind == "crusaderMantle"; }
   SeleneFx selene_;        // Selene's Lâmina Arcana and its mark (ours, 3D)
+  HandBoltFx handBolts_;   // the Aparição's attack bolt, Telesm's cast (ours, 3D)
   WitchStitchFx witchStitch_;
   BurialWeightFx burialWeight_;
   static bool isSelene(const std::string& kind) { return kind == "arcaneBlade" || kind == "arcaneMarkBurst"; }

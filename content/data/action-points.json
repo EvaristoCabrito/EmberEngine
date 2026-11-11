@@ -115,7 +115,7 @@
       "swordsman": "sword", "soldier": "sword", "punisher": "sword", "paladin": "sword", "heavyKnight": "sword",
       "basePikeman": "polearm", "pikeman": "polearm", "lancer": "polearm", "sentinel": "polearm", "templar": "polearm", "sandoval": "polearm",
       "baseCrossbowman": "bow", "brigandCrossbowman": "bow", "archer": "bow", "ranger": "bow",
-      "cultist": "staff", "cultistV2": "staff", "sorcerer": "staff", "necromancer": "staff", "warlock": "staff", "elementalist": "staff",
+      "cultist": "staff", "cultistV2": "staff", "blackCultist": "staff", "sorcerer": "staff", "necromancer": "staff", "warlock": "staff", "elementalist": "staff",
       "mage": "staff", "conjurer": "staff", "cleric": "blunt", "bishop": "blunt", "healer": "blunt"
     },
     "default": "blunt"
@@ -126,11 +126,16 @@
     "lockpickNote": "provisional (Arrombar has no established cost)"
   },
   "spells": {
+    "fromAttack": true,
+    "fromAttackNote": "the design's (the user, 2026-11-10): a spell or skill costs the caster's own normal attack in its first two tiers, then 1 AP more every two tiers (T1-2 +0, T3-4 +1, T5-6 +2, T7-8 +3, T9-10 +4); byKind / byTier override one",
+    "baseTiers": 2,
+    "tiersPerStep": 2,
+    "stepCost": 1,
     "default": 8,
-    "defaultNote": "the design's (the user, 2026-11-06): every spell and every special skill (weapon skills included) costs 8 AP; byKind / byTier override one",
+    "defaultNote": "used only when fromAttack is false (the rule of 2026-11-06: every spell and skill 8 AP)",
     "weaponSkillsUseWeaponCost": false,
     "byTier": {},
-    "byKind": { "twinResonance": 8 }
+    "byKind": {}
   },
   "counters": {
     "staff": 6,
@@ -143,26 +148,26 @@
     "rounding": "round",
     "cappedByMov": false,
     "freeWhileRoaming": true,
-    "terrainNote": "apCost null = the tile's own Ember moveCost (content/data/battle-rules.json: plains 1, woods 2, hill 2, ember 2, flame 3, nave/ruins/snow 1); modifier is added on top. The categories without a tile yet (road, uneven, mud, marsh, ice, rocky, shallowWater, magical) are configurable entries for terrains to come; nothing here is balanced.",
+    "terrainNote": "apCost null = the tile's own Ember moveCost (content/data/battle-rules.json: plains 1, woods 2, hill 2, ember 2, flame 3, nave/ruins/snow 1); modifier is added on top. The design's (the user, 2026-11-10): movement starts at 2 AP on plains and climbs from there, +1 on every terrain (plains/road/ruins/snow 2, woods/hill/ember 3, flame 4). The categories without a tile yet (road, uneven, mud, marsh, ice, rocky, shallowWater, magical) are configurable entries for terrains to come; nothing here is balanced.",
     "terrain": {
-      "plains": {"apCost": null, "modifier": 0, "category": "flat"},
-      "nave": {"apCost": null, "modifier": 0, "category": "road"},
-      "ruins": {"apCost": null, "modifier": 0, "category": "uneven"},
-      "snow": {"apCost": null, "modifier": 0, "category": "snow"},
-      "woods": {"apCost": null, "modifier": 0, "category": "obstructed"},
-      "hill": {"apCost": null, "modifier": 0, "category": "hill"},
-      "ember": {"apCost": null, "modifier": 0, "category": "magical"},
-      "flame": {"apCost": null, "modifier": 0, "category": "magical"},
-      "water": {"apCost": null, "modifier": 0, "category": "water"},
-      "road": {"apCost": null, "modifier": 0, "category": "road"},
-      "floor": {"apCost": null, "modifier": 0, "category": "road"},
-      "uneven": {"apCost": null, "modifier": 0, "category": "uneven"},
-      "mud": {"apCost": null, "modifier": 0, "category": "mud"},
-      "marsh": {"apCost": null, "modifier": 0, "category": "mud"},
-      "ice": {"apCost": null, "modifier": 0, "category": "ice"},
-      "rocky": {"apCost": null, "modifier": 0, "category": "rocky"},
-      "shallowWater": {"apCost": null, "modifier": 0, "category": "shallowWater"},
-      "magical": {"apCost": null, "modifier": 0, "category": "magical"}
+      "plains": {"apCost": null, "modifier": 1, "category": "flat"},
+      "nave": {"apCost": null, "modifier": 1, "category": "road"},
+      "ruins": {"apCost": null, "modifier": 1, "category": "uneven"},
+      "snow": {"apCost": null, "modifier": 1, "category": "snow"},
+      "woods": {"apCost": null, "modifier": 1, "category": "obstructed"},
+      "hill": {"apCost": null, "modifier": 1, "category": "hill"},
+      "ember": {"apCost": null, "modifier": 1, "category": "magical"},
+      "flame": {"apCost": null, "modifier": 1, "category": "magical"},
+      "water": {"apCost": null, "modifier": 1, "category": "water"},
+      "road": {"apCost": null, "modifier": 1, "category": "road"},
+      "floor": {"apCost": null, "modifier": 1, "category": "road"},
+      "uneven": {"apCost": null, "modifier": 1, "category": "uneven"},
+      "mud": {"apCost": null, "modifier": 1, "category": "mud"},
+      "marsh": {"apCost": null, "modifier": 1, "category": "mud"},
+      "ice": {"apCost": null, "modifier": 1, "category": "ice"},
+      "rocky": {"apCost": null, "modifier": 1, "category": "rocky"},
+      "shallowWater": {"apCost": null, "modifier": 1, "category": "shallowWater"},
+      "magical": {"apCost": null, "modifier": 1, "category": "magical"}
     },
     "zonesNote": "terrain altered by spells (Teia dos Sonhos, Tempestade de Gelo, auras, our zones): AP added to every hex they cover; provisional 0",
     "zones": {

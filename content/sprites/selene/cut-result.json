@@ -91,37 +91,37 @@
    "pattern": "content/sprites/selene/cast-v02/cast-{}.png"
   },
   "move": {
-   "video": "Attachments/Selene/WalkRightV1/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "video": "Attachments/Selene/WalkV2/sprite-max-px-frames-36-rows-6-cols-6.png",
    "first": 0,
    "last": 35,
-   "loopFirst": 11,
-   "loopLast": 32,
-   "seamSteps": 0.81,
-   "bootRow": 700,
+   "loopFirst": 0,
+   "loopLast": 35,
+   "seamSteps": NaN,
+   "bootRow": 480,
    "bodyDrift": [
-    -19,
+    -15,
     3
    ],
-   "figurePx": 687.0,
+   "figurePx": 467.0,
    "bodyAt": 0.0,
-   "frames": 22,
+   "frames": 36,
    "frameMs": 79.0,
    "nat": [
-    670,
-    708
+    363,
+    491
    ],
    "crop": [
-    6,
-    3,
-    565,
-    700
+    5,
+    4,
+    341,
+    482
    ],
    "box": {
-    "w": 2.59418,
-    "h": 2.74131,
-    "foot": 0.0271
+    "w": 2.06762,
+    "h": 2.7967,
+    "foot": 0.05696
    },
-   "pattern": "content/sprites/selene/move-v02/move-{}.png"
+   "pattern": "content/sprites/selene/move-v03/move-{}.png"
   }
  }
 }

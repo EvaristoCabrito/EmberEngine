@@ -1,0 +1,803 @@
+[info] meshes/ember/ambientcg/apple-002-v01
+[info]   from cache
+[info] meshes/ember/ambientcg/bread-006-v01
+[info]   from cache
+[info] meshes/ember/ambientcg/stick-001-v01
+[info]   from cache
+[info] meshes/ember/bosque-morto-v02/broken-snag-v01
+[info]   texture meshes/textures/226f2dd6e4d7a8ac.tex (color): 1024x1024 -> 1.3 MB in 8.0s
+[info]   texture meshes/textures/0238bdd784035eb7.tex (normal): 1024x1024 -> 1.3 MB in 3.3s
+[info]   7282 triangles -> 265 clusters in 20 groups, 8 levels, 14138 triangles across all levels, 0.3 MB
+[info] meshes/ember/bosque-morto-v02/forked-elm-v01
+[info]   texture meshes/textures/226f2dd6e4d7a8ac.tex (color): shared, already cooked
+[info]   texture meshes/textures/0238bdd784035eb7.tex (normal): shared, already cooked
+[info]   20411 triangles -> 857 clusters in 61 groups, 9 levels, 39505 triangles across all levels, 0.8 MB
+[info] meshes/ember/bosque-morto-v02/old-oak-v01
+[info]   texture meshes/textures/226f2dd6e4d7a8ac.tex (color): shared, already cooked
+[info]   texture meshes/textures/0238bdd784035eb7.tex (normal): shared, already cooked
+[info]   20273 triangles -> 832 clusters in 61 groups, 11 levels, 39205 triangles across all levels, 0.8 MB
+[info] meshes/ember/bosque-morto-v02/tall-ash-v01
+[info]   texture meshes/textures/226f2dd6e4d7a8ac.tex (color): shared, already cooked
+[info]   texture meshes/textures/0238bdd784035eb7.tex (normal): shared, already cooked
+[info]   20846 triangles -> 875 clusters in 63 groups, 11 levels, 40300 triangles across all levels, 0.8 MB
+[info] meshes/ember/bosque-morto-v02/wide-beech-v01
+[info]   texture meshes/textures/226f2dd6e4d7a8ac.tex (color): shared, already cooked
+[info]   texture meshes/textures/0238bdd784035eb7.tex (normal): shared, already cooked
+[info]   17639 triangles -> 710 clusters in 52 groups, 10 levels, 34191 triangles across all levels, 0.7 MB
+[info] meshes/ember/city/bench-v01
+[info]   from cache
+[info] meshes/ember/city/market-stall-v01
+[info]   from cache
+[info] meshes/ember/city/rubble-v01
+[info]   from cache
+[info] meshes/ember/city/street-lamp-v01-photo
+[info]   from cache
+[info] meshes/ember/city/street-lamp-v02
+[info]   from cache
+[info] meshes/ember/crypt/collapsed-ceiling-v01
+[info]   from cache
+[info] meshes/ember/crypt/cracked-pillar-v01
+[info]   from cache
+[info] meshes/ember/crypt/funeral-urns-v01
+[info]   from cache
+[info] meshes/ember/defenses/stake-barricade-v01
+[info]   from cache
+[info] meshes/ember/dungeon/altar-v01
+[info]   from cache
+[info] meshes/ember/dungeon/bone-pile-v01-photo
+[info]   from cache
+[info] meshes/ember/dungeon/bone-pile-v01
+[info]   from cache
+[info] meshes/ember/dungeon/chains-v01-photo
+[info]   from cache
+[info] meshes/ember/dungeon/iron-cage-v01-photo
+[info]   from cache
+[info] meshes/ember/dungeon/iron-cage-v01
+[info]   from cache
+[info] meshes/ember/dungeon/pillar-v01
+[info]   from cache
+[info] meshes/ember/dungeon/pillar-v02
+[info]   from cache
+[info] meshes/ember/ember/ancient-reliquary-v02-photo
+[info]   from cache
+[info] meshes/ember/ember/ember-lantern-v03
+[info]   from cache
+[info] meshes/ember/extra/broken-cart-wheel-v01
+[info]   from cache
+[info] meshes/ember/forest/dead-tree-v01
+[info]   from cache
+[info] meshes/ember/interior/barrel-rack-v02
+[info]   from cache
+[info] meshes/ember/interior/beer-jug-v01
+[info]   from cache
+[info] meshes/ember/interior/bookshelf-v01
+[info]   from cache
+[info] meshes/ember/interior/bookshelf-v02
+[info]   from cache
+[info] meshes/ember/interior/cauldron-v01-photo
+[info]   from cache
+[info] meshes/ember/interior/cauldron-v02
+[info]   from cache
+[info] meshes/ember/interior/cloth-curtain-v01-photo
+[info]   from cache
+[info] meshes/ember/interior/drink-shelf-v01
+[info]   from cache
+[info] meshes/ember/interior/drink-shelf-v02
+[info]   from cache
+[info] meshes/ember/interior/fireplace-grate-v01-photo
+[info]   from cache
+[info] meshes/ember/interior/folding-screen-v01
+[info]   from cache
+[info] meshes/ember/interior/folding-screen-v02
+[info]   from cache
+[info] meshes/ember/interior/iron-pot-v01-photo
+[info]   from cache
+[info] meshes/ember/interior/kitchen-cabinet-v01
+[info]   from cache
+[info] meshes/ember/interior/long-bench-v02
+[info]   from cache
+[info] meshes/ember/interior/pantry-shelf-v01
+[info]   from cache
+[info] meshes/ember/interior/pantry-shelf-v02
+[info]   from cache
+[info] meshes/ember/interior/simple-bed-v02
+[info]   from cache
+[info] meshes/ember/interior/simple-bed-v03
+[info]   from cache
+[info] meshes/ember/interior/stool-v01
+[info]   from cache
+[info] meshes/ember/interior/table-candelabra-v01-photo
+[info]   from cache
+[info] meshes/ember/interior/wooden-mug-v01
+[info]   from cache
+[info] meshes/ember/interior/wooden-mug-v02
+[info]   from cache
+[info] meshes/ember/interior/worn-rug-v01-photo
+[info]   from cache
+[info] meshes/ember/interior/worn-rug-v01
+[info]   from cache
+[info] meshes/ember/meshy/stone-hearth-v01
+[info]   from cache
+[info] meshes/ember/mosteiro/pew-v02
+[info]   from cache
+[info] meshes/ember/mosteiro/saint-statue-v02
+[info]   from cache
+[info] meshes/ember/nature/cracked-boulder-v01
+[info]   from cache
+[info] meshes/ember/nature/dry-branch-pile-v01
+[info]   from cache
+[info] meshes/ember/nature/dry-bush-v01-photo
+[info]   from cache
+[info] meshes/ember/polyhaven/gothicbed_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/gothiccabinet_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/lantern_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/woodenchair_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/woodentable_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/boulder_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/brass_candleholder_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/brass_candleholder_02-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/brass_candleholder_03-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/brass_diya_lantern-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/brass_goblet_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/brass_goblet_02-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/brass_goblet_03-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/brass_vase_03-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/cannon_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/carved_wooden_plate-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/celandine_01_a-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/celandine_01_b-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/celandine_01_c-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/celandine_01_d-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/celandine_01_e-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/coast_rocks_05-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/dandelion_01_a-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/dandelion_01_b-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/dandelion_01_c-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/dandelion_01_d-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/dandelion_01_e-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/dead_tree_trunk_02-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/didelta_spinosa_large-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/didelta_spinosa_medium-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/didelta_spinosa_small-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/fern_02_a-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/fern_02_b-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/fern_02_c-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/fern_02_d-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/fir_tree_01_a-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/fir_tree_01_b-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/fir_tree_01_c-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/flower_stinkkruid_a-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/flower_stinkkruid_b-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/flower_stinkkruid_c-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/flower_stinkkruid_d-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/gallinera_chair-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/gallinera_table-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_large_a-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_large_a-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_large_b-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_large_b-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_large_c-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_large_c-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_mid_a-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_mid_a-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_mid_b-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_mid_b-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_mid_c-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_mid_c-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_small_a-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_small_a-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_small_b-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_small_b-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_tall_a-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_tall_a-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_tall_b-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_tall_b-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_tall_c-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_tall_c-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_tiny_a-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_tiny_a-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_tiny_b-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_tiny_b-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_tiny_c-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_tiny_c-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_tiny_d-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_tiny_d-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_tiny_e-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_tiny_e-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_tiny_f-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/grass_medium_01_tiny_f-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/kite_shield-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/large_castle_door-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/large_iron_gate-frame-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/large_iron_gate-leaf-left-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/large_iron_gate-leaf-right-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/large_iron_gate-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_tower_round-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_stairs_straight_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_thick_corner_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_thick_corner_02-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_thick_end_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_thick_end_02-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_thick_straight_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_thick_straight_02-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_thick_thin_transition_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_thin_corner_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_thin_corner_02-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_thin_corner_03-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_thin_gate_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_thin_straight_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_thin_straight_02-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_thin_straight_03-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_thin_straight_04-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_walkway_corner_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_walkway_corner_02-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_walkway_end_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_walkway_straight_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_fort_01_wall_walkway_straight_02-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_wooden_pier_section_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_wooden_pier_section_02-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_wooden_pier_section_03-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_wooden_pier_section_04-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/modular_wooden_pier_section_05-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_a-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_a-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_b-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_b-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_c-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_c-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_d-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_d-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_e-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_e-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_f-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_f-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_g-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_g-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_h-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_h-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_i-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_i-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_j-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_j-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_tall_a-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_tall_a-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_tall_b-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/moss_01_tall_b-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/namaqualand_boulder_02-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/nettle_plant_medium_a-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/nettle_plant_medium_b-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/nettle_plant_small_a-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/nettle_plant_small_b-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/nettle_plant_tall_a-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/nettle_plant_tall_b-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/ornate_medieval_dagger-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/ornate_medieval_dagger-v02
+[info]   from cache
+[info] meshes/ember/polyhaven/ornate_medieval_mace-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/ornate_war_hammer-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/painted_wooden_bench-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/periwinkle_plant_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/periwinkle_plant_02-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/periwinkle_plant_03-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/periwinkle_plant_04-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/periwinkle_plant_05-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/periwinkle_plant_06-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/picke_dirty_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/rock_moss_set_01_rock01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/rock_moss_set_01_rock02-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/rock_moss_set_01_rock03-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/rock_moss_set_01_rock04-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/rock_moss_set_01_rock05-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/rock_moss_set_01_rock06-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/rock_moss_set_02_rock07-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/rock_moss_set_02_rock08-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/rock_moss_set_02_rock09-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/rock_moss_set_02_rock10-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/rock_moss_set_02_rock11-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/rock_moss_set_02_rock12-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/rock_moss_set_02_rock13-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/rusted_spade_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/shrub_sorrel_01_a-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/shrub_sorrel_01_b-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/shrub_sorrel_01_c-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/shrub_sorrel_01_d-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/shrub_sorrel_01_e-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/shrub_sorrel_01_f-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/shrub_sorrel_01_g-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/shrub_sorrel_01_h-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/shrub_sorrel_01_i-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/shrub_sorrel_01_j-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/shrub_sorrel_01_k-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/treasure_chest-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/tree_small_02-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/wine_barrel_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/wooden_axe-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/wooden_axe_03-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/wooden_barrels_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/wooden_barrels_01_barrel01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/wooden_bookshelf_worn-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/wooden_bucket_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/wooden_bucket_02-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/wooden_crate_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/wooden_handle_saber-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/wooden_ladder_02-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/wooden_lantern_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/wooden_picnic_table-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/wooden_spoon-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/wooden_stool_01-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/wooden_stool_02-v01
+[info]   from cache
+[info] meshes/ember/polyhaven/wooden_table_02-v01
+[info]   from cache
+[info] meshes/ember/polyhaven-wisp-v02/fir_tree_01_bare_v01
+[info]   from cache
+[info] meshes/ember/polyhaven-wisp-v02/fir_tree_01_bare_v05
+[info]   from cache
+[info] meshes/ember/polyhaven-wisp-v02/tree_small_02_bare_v01
+[info]   from cache
+[info] meshes/ember/props/barrel-v02
+[info]   from cache
+[info] meshes/ember/props/crate-v02
+[info]   from cache
+[info] meshes/ember/props/sacks-v02
+[info]   from cache
+[info] meshes/ember/props/sacks-v03
+[info]   from cache
+[info] meshes/ember/sketchfab/old-tree-stump/old-tree-stump-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-florasynthtree-001-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-florasynthtree-002-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-florasynthtree-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-log-001-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-log-002-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-log-003-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-log-004-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-log-005-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-log-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-ponderosa-pine-seedling-006-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-ponderosa-pine-seedling-012-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-ponderosa-pine-seedling-031-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-ponderosa-pine-seedling-036-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-ponderosa-pine-seedling-045-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-ponderosa-pine-seedling-046-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-rock-001-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-rock-002-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-rock-003-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-rock-004-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-rock-005-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-rock-006-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-tree-copy-001-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-tree-copy-002-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-tree-copy-003-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-tree-copy-004-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-tree-copy-005-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/pine-forest-at-sunset/pine-forest-at-sunset-tree-copy-014-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/swamp-shack/swamp-shack-dead-tree-001-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/swamp-shack/swamp-shack-dead-tree-002-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/swamp-shack/swamp-shack-dead-tree-003-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/tree-trunk-scan/tree-trunk-scan-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/white-oak-trees/white-oak-trees-florasynthtree-001-1-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/white-oak-trees/white-oak-trees-florasynthtree-001-3-2k-v01
+[info]   from cache
+[info] meshes/ember/sketchfab/white-oak-trees/white-oak-trees-florasynthtree-4-2k-v01
+[info]   from cache
+[info] meshes/ember/smithsonian/black-crested-gibbon-mandible-v02
+[info]   from cache
+[info] meshes/ember/smithsonian/bridge-ward-lock-key-v01
+[info]   from cache
+[info] meshes/ember/smithsonian/cast-iron-cauldron-v01
+[info]   from cache
+[info] meshes/ember/smithsonian/chimpanzee-fibula-right-v02
+[info]   from cache
+[info] meshes/ember/smithsonian/chimpanzee-metatarsal5-right-v02
+[info]   from cache
+[info] meshes/ember/smithsonian/cuatro-v01
+[info]   from cache
+[info] meshes/ember/smithsonian/garden-fork-v01
+[info]   from cache
+[info] meshes/ember/smithsonian/gorilla-cranium-v02
+[info]   from cache
+[info] meshes/ember/smithsonian/homo-floresiensis-cranium-v01
+[info]   from cache
+[info] meshes/ember/smithsonian/kloss-gibbon-cranium-v02
+[info]   from cache
+[info] meshes/ember/smithsonian/mountain-gorilla-metacarpal2-left-v02
+[info]   from cache
+[info] meshes/ember/smithsonian/mountain-gorilla-ulna-right-v02
+[info]   from cache
+[info] meshes/ember/smithsonian/orangutan-cranium-v02
+[info]   from cache
+[info] meshes/ember/smithsonian/ruffed-lemur-cranium-v02
+[info]   from cache
+[info] meshes/ember/tavern/bottles-jugs-v01-photo
+[info]   from cache
+[info] meshes/ember/tavern/chair-v01
+[info]   from cache
+[info] meshes/ember/tavern/chair-v02
+[info]   from cache
+[info] meshes/ember/tavern/chair-v04
+[info]   from cache
+[info] meshes/ember/tavern/counter-v01
+[info]   from cache
+[info] meshes/ember/tavern/table-messhall-v01
+[info]   from cache
+[info] meshes/ember/tavern/table-small-v01
+[info]   from cache
+[info] meshes/ember/tavern/table-v01
+[info]   from cache
+[info] meshes/ember/tavern/table-v02
+[info]   from cache
+[info] meshes/ember/treasure/ceramic-jars-v01-photo
+[info]   from cache
+[info] meshes/ember/treasure/iron-banded-chest-v01
+[info]   from cache
+[info] meshes/ember/treasure/open-barrel-v01
+[info]   from cache
+[info] meshes/ember/treasure/open-barrel-v02
+[info]   from cache
+[info] meshes/ember/treasure/plain-chest-v01
+[info]   from cache
+[info] meshes/ember/treasure/plain-chest-v02
+[info]   from cache
+[info] meshes/ember/treasure/shield-stand-v02
+[info]   from cache
+[info] meshes/ember/treasure/weapon-rack-v02
+[info]   from cache
+[info] meshes/ember/treasure/weapon-rack-v03
+[info]   from cache
+[info] meshes/ember/treasure/workbench-v02
+[info]   from cache
+[info] meshes/ember/watchtower-leafy-trees-v01/watchtower-leafy-birch-v01
+[info]   from cache
+[info] meshes/ember/watchtower-leafy-trees-v01/watchtower-leafy-oak-v01
+[info]   from cache
+[info] meshes/ember/watchtower-leafy-trees-v01/watchtower-leafy-willow-v01
+[info]   from cache
+[info] meshes/ember/watchtower-v01/watchtower-arms-rack-v01
+[info]   from cache
+[info] meshes/ember/watchtower-v01/watchtower-command-table-v01
+[info]   from cache
+[info] meshes/ember/watchtower-v01/watchtower-signal-brazier-v01
+[info]   from cache
+[info] meshes/ember/watchtower-v02/watchtower-arms-rack-v02
+[info]   from cache
+[info] meshes/ember/watchtower-v02/watchtower-command-table-v02
+[info]   from cache
+[info] meshes/ember/watchtower-v02/watchtower-signal-brazier-v02
+[info]   from cache
+[info] meshes/ember/wisp-crossing-trees/ancient-dead-oak-v02
+[info]   from cache
+[info] meshes/ember/wisp-crossing-trees/lightning-split-v02
+[info]   from cache
+[info] meshes/ember/wisp-crossing-trees/weeping-willow-v02
+[info]   from cache
+[info] meshes/ember/wisp-forest-revisited/ash-leaf-tile-v01
+[info]   from cache
+[info] meshes/ember/wisp-forest-revisited/broken-crown-v01
+[info]   from cache
+[info] meshes/ember/wisp-forest-revisited/broken-crown-v02
+[info]   from cache
+[info] meshes/ember/wisp-forest-revisited/broken-stump-v01
+[info]   from cache
+[info] meshes/ember/wisp-forest-revisited/giant-dead-oak-v01
+[info]   from cache
+[info] meshes/ember/wisp-forest-revisited/giant-dead-oak-v02
+[info]   from cache
+[info] meshes/ember/wisp-forest-revisited/leaf-litter-tile-v01
+[info]   from cache
+[info] meshes/ember/wisp-forest-revisited/lightning-split-v01
+[info]   from cache
+[info] meshes/ember/wisp-forest-revisited/lightning-split-v02
+[info]   from cache
+[info] meshes/ember/wisp-forest-revisited/root-arch-v01
+[info]   from cache
+[info] meshes/ember/wisp-forest-revisited/root-arch-v02
+[info]   from cache
+[info] meshes/ember/wisp-forest-revisited/rooted-soil-tile-v01
+[info]   from cache
+[info] meshes/ember/wisp-forest-revisited/spiral-twisted-v01
+[info]   from cache
+[info] meshes/ember/wisp-forest-revisited/spiral-twisted-v02
+[info]   from cache
+[info] meshes/ember/wisp-forest-revisited/uprooted-leaning-v01
+[info]   from cache
+[info] meshes/ember/wisp-forest-revisited/uprooted-leaning-v02
+[info]   from cache
+[info] meshes/ember/wisp-forest-revisited/uprooted-leaning-v03
+[info]   from cache
+[info] meshes/ember/wisp-forest-revisited/weeping-willow-v01
+[info]   from cache
+[info] meshes/ember/wisp-forest-revisited/weeping-willow-v02
+[info]   from cache
+[info] meshes/ember/wisp-novas/arvore-01
+[info]   from cache
+[info] meshes/ember/wisp-novas/arvore-02
+[info]   from cache
+[info] meshes/ember/wisp-novas/arvore-03
+[info]   from cache
+[info] meshes/ember/wisp-novas/arvore-04
+[info]   from cache
+[info] meshes/ember/wisp-novas/arvore-05
+[info]   from cache
+[info] meshes/models/props/tavern-barrel
+[info]   from cache
+[info] meshes/models/props/tavern-candlestick
+[info]   from cache
+[info] meshes/models/props/tavern-chair
+[info]   from cache
+[info] meshes/models/props/tavern-mug
+[info]   from cache
+[info] meshes/models/props/tavern-table
+[info]   from cache
+[info] meshes/models/rocks/grey-outcrop-photo
+[info]   from cache
+[info] meshes/models/rocks/grey-outcrop
+[info]   from cache
+[info] meshes/models/rocks/vau-red-outcrop-v01
+[info]   from cache
+[info] meshes/models/trees/broadleaf-photo-v02
+[info]   from cache
+[info] meshes/models/trees/broadleaf-photo
+[info]   from cache
+[info] meshes/models/trees/dead-oak-photo-v02
+[info]   from cache
+[info] meshes/models/trees/dead-oak-photo
+[info]   from cache
+[info] meshes/models/trees/dead-oak-v02
+[info]   from cache
+[info] meshes/models/trees/dead-oak-v03-leafy
+[info]   from cache
+[info] meshes/models/trees/dead-oak-v04-leafy
+[info]   from cache
+[info] meshes/models/trees/dead-oak-v05
+[info]   from cache
+[info] meshes/models/trees/dead-snag-photo-v02
+[info]   from cache
+[info] meshes/models/trees/dead-snag-photo
+[info]   from cache
+[info] meshes/models/trees/dead-snag-v02
+[info]   from cache
+[info] meshes/models/trees/dead-snag-v03
+[info]   from cache
+[info] meshes/models/trees/snowy-pine-photo-v03
+[info]   from cache
+[info] meshes/models/trees/snowy-pine-photo
+[info]   from cache
+[info] meshes/models/trees/twisted-stump-photo-v02
+[info]   from cache
+[info] meshes/models/trees/twisted-stump-photo
+[info]   from cache
+[info] meshes/models/trees/twisted-stump-v02
+[info]   from cache
+[info] meshes/models/trees/twisted-stump-v03
+[info]   from cache
+[info] meshes: 395 (5 cooked, 390 from cache, 0 failed) in 23.8s
+[info]   86451 source triangles, 3539 clusters, 167339 triangles across all LOD levels; geometry 1158.2 MB, 398 textures 1794.8 MB (+769 uses of a shared one)
+[info] packed 793 assets: 2953.0 MB -> 1815.4 MB on disk in 204.8s

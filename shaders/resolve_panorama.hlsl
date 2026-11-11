@@ -520,10 +520,7 @@ void CSResolve(uint2 pixel : SV_DispatchThreadID) {
   }
   Surface surface = defaultSurface(position, normal, baseColor.rgb);
   surface.normal = n;
-  surface.roughness = roughness;
-  surface.metallic = metallic;
-  surface.occlusion = occlusion;
-  surface.emissive = emissive;
+  applyMaterial(surface, m.flags, roughness, metallic, occlusion, emissive);
   surface.sightAt = instanceAnchor(inst);  // a piece takes the fog of war of where it stands, whole (like a card)
   // A piece the party sees (MapStage's model sight: any of its cells in view sets kInstanceAlwaysSeen) is drawn whole, lit and
   // textured, whatever the fog over the one point its trunk stands on: under that point's fog it showed as a flat grey cut-out of a

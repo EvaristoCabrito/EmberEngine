@@ -82,6 +82,9 @@
     "cultistV2": {
       "mov": 3
     },
+    "blackCultist": {
+      "mov": 3
+    },
     "elementalist": {
       "mov": 5
     },

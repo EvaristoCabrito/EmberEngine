@@ -1021,7 +1021,7 @@ void SpellEffects::disarmed(const Spot& foe, const Spot& from, float at) { lance
 
 bool SpellEffects::active(float now) const {
   if (combat_.active(now) || warrior_.active(now) || arms_.active(now) || ranger_.active(now) || lancer_.active(now) || turnUndead_.active(now) || healer_.active(now) ||
-      conjurer_.active(now) || daggers_.active(now) || mage_.active(now) || crusader_.active(now) || selene_.active(now) || witchStitch_.active(now) || burialWeight_.active(now))
+      conjurer_.active(now) || daggers_.active(now) || mage_.active(now) || crusader_.active(now) || selene_.active(now) || handBolts_.active(now) || witchStitch_.active(now) || burialWeight_.active(now))
     return true;
   if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
   if (std::any_of(fireballs_.begin(), fireballs_.end(), [&](const Fireball& f) { return !f.done(now); })) return true;
@@ -1106,6 +1106,7 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   healer_.build(now, camera, vfx_, vfxLights);
   crusader_.build(now, camera, vfx_, vfxLights);
   selene_.build(now, camera, vfx_, vfxLights);
+  handBolts_.build(now, camera, vfx_, vfxLights);
   witchStitch_.build(now, vfx_, vfxLights);
   burialWeight_.build(now, vfx_, vfxLights);
   conjurer_.build(now, camera, vfx_, vfxLights);

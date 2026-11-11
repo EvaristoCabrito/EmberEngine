@@ -1,0 +1,131 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/BlackCultist/Ilde/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "bootRow": 684,
+   "bootRows": [
+    684,
+    684
+   ],
+   "figurePx": 673.0,
+   "bodyAt": 0.0,
+   "frames": 36,
+   "frameMs": 102.0,
+   "nat": [
+    425,
+    694
+   ],
+   "crop": [
+    2,
+    4,
+    358,
+    688
+   ],
+   "box": {
+    "w": 1.73663,
+    "h": 2.83581,
+    "foot": 0.03678
+   },
+   "pattern": "content/sprites/black-cultist/base-v01/base-{}.png"
+  },
+  "cast": {
+   "video": "Attachments/BlackCultist/Cast/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "bootRow": 573,
+   "bootRows": [
+    573,
+    573
+   ],
+   "figurePx": 522.5,
+   "bodyAt": 0.0,
+   "frames": 36,
+   "frameMs": 83.0,
+   "nat": [
+    479,
+    585
+   ],
+   "crop": [
+    2,
+    3,
+    367,
+    576
+   ],
+   "box": {
+    "w": 2.52105,
+    "h": 3.07895,
+    "foot": 0.05789
+   },
+   "pattern": "content/sprites/black-cultist/cast-v01/cast-{}.png",
+   "impact": 0.3611
+  },
+  "move": {
+   "video": "Attachments/BlackCultist/WalkLeft/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "loopFirst": 0,
+   "loopLast": 35,
+   "seamSteps": NaN,
+   "bootRow": 593,
+   "bodyDrift": [
+    -2,
+    50
+   ],
+   "figurePx": 569.0,
+   "bodyAt": 0.0,
+   "frames": 36,
+   "frameMs": 105.0,
+   "nat": [
+    350,
+    594
+   ],
+   "crop": [
+    16,
+    5,
+    328,
+    585
+   ],
+   "box": {
+    "w": 1.69156,
+    "h": 2.87083,
+    "foot": 0.04833
+   },
+   "pattern": "content/sprites/black-cultist/move-v01/move-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/BlackCultist/WalkLeft/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "loopFirst": 0,
+   "loopLast": 35,
+   "seamSteps": NaN,
+   "bootRow": 593,
+   "bodyDrift": [
+    -2,
+    50
+   ],
+   "figurePx": 569.0,
+   "bodyAt": 0.0,
+   "frames": 36,
+   "frameMs": 105.0,
+   "nat": [
+    350,
+    594
+   ],
+   "crop": [
+    6,
+    5,
+    328,
+    585
+   ],
+   "box": {
+    "w": 1.69156,
+    "h": 2.87083,
+    "foot": 0.04833
+   },
+   "pattern": "content/sprites/black-cultist/move-left-v01/move-left-{}.png"
+  }
+ }
+}

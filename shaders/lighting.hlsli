@@ -60,6 +60,21 @@ Surface defaultSurface(float3 position, float3 normal, float3 albedo) {
   return s;
 }
 
+// A 3D piece's material onto its surface (resolve.hlsl and resolve_panorama.hlsl: one place for both). Cut-out materials (leaves,
+// kMaterialAlphaMask) are many tiny faces each turned its own way, smaller than a pixel from the game's camera: a glossy lobe on them
+// lit single pixels white (the user, 2026-11-10: the moonlight on the leaves "muito estranho", a dust of white dots over the crowns).
+// They take a wide, soft lobe at a third of its strength: a sheen over the whole crown, no glints.
+void applyMaterial(inout Surface s, uint materialFlags, float roughness, float metallic, float occlusion, float3 emissive) {
+  s.roughness = roughness;
+  s.metallic = metallic;
+  s.occlusion = occlusion;
+  s.emissive = emissive;
+  if (materialFlags & kMaterialAlphaMask) {
+    s.roughness = max(roughness, 0.8);
+    s.specular = 0.35;
+  }
+}
+
 float3 fresnelSchlick(float3 f0, float vh) { return f0 + (1.0 - f0) * pow(1.0 - vh, 5.0); }
 float ggx(float nh, float a) {
   const float a2 = a * a, d = nh * nh * (a2 - 1.0) + 1.0;

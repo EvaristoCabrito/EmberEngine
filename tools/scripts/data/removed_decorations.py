@@ -19,6 +19,10 @@
                lantern; kept for the locked Inn: its 8 pieces): out of the catalog and models.json, GLB / .blend / thumbnail deleted.
                Map files were not edited: the scene builder leaves out an id the catalog no longer has.
 
+  ember-bosque-morto-* (kit bosque-morto-v01, the user, 2026-11-10: "refazer e apagar esse lixo"): out of the catalog and
+               models.json, thumbnails deleted; the Bosque Morto map (bosque015) stands on the new trees of
+               make_dead_trees_v02.py (kit bosque-morto-v02)
+
 Maps too: python -I tools/scripts/data/removed_decorations.py content/maps/ember/<map>.json ... drops every decoration naming a
 removed id (the map's other entries untouched).
 
@@ -56,6 +60,10 @@ REMOVED = {
     'ember-wisp-revisited-hollow-snag-v02',
     'ember-wisp-revisited-tall-burnt-pine-v02',
     'ember-bosque-morto-hollow-snag',
+    'ember-bosque-morto-giant-dead-oak',
+    'ember-bosque-morto-lightning-split',
+    'ember-bosque-morto-weeping-willow',
+    'ember-bosque-morto-uprooted-leaning',
     'ember-wisp-crossing-hollow-sentinel-v02',
     'ember-wisp-revisited-rotted-hollow-log-v02',
     'ember-mosteiro-bell-cote',

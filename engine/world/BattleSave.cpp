@@ -69,6 +69,7 @@ nlohmann::json Battle::snapshot() const {
     s["burialWeightAnchorX"] = u.burialWeightAnchorX, s["burialWeightAnchorY"] = u.burialWeightAnchorY;
     s["spellCharges"] = u.spellCharges;
     if (u.lifeDrainCharges) s["lifeDrainCharges"] = *u.lifeDrainCharges;
+    if (u.acidArrowCharges) s["acidArrowCharges"] = *u.acidArrowCharges;
     if (u.faceDx) s["faceDx"] = *u.faceDx;
     if (u.faceDy) s["faceDy"] = *u.faceDy;
     s["shock"] = u.shock ? nlohmann::json{{"dice", u.shock->dice}, {"faces", u.shock->faces}, {"bonus", u.shock->bonus}, {"mag", u.shock->mag}}
@@ -252,6 +253,7 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
     u.spellCharges = s.value("spellCharges", 0);
     u.lifeDrainCharges.reset();
     if (s.contains("lifeDrainCharges") && s["lifeDrainCharges"].is_number()) u.lifeDrainCharges = s["lifeDrainCharges"].get<int>();
+    if (s.contains("acidArrowCharges") && s["acidArrowCharges"].is_number()) u.acidArrowCharges = s["acidArrowCharges"].get<int>();
     if (s.contains("faceDx") && s["faceDx"].is_number()) u.faceDx = s["faceDx"].get<double>();
     if (s.contains("faceDy") && s["faceDy"].is_number()) u.faceDy = s["faceDy"].get<double>();
     u.shock.reset();

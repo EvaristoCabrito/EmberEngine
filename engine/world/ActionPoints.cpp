@@ -100,6 +100,10 @@ ApRules readRules() {
   if (const Json& a = j.value("actions", Json::object()); a.is_object()) r.potion = a.value("potion", r.potion), r.lockpick = a.value("lockpick", r.lockpick);
   if (const Json& s = j.value("spells", Json::object()); s.is_object()) {
     r.spells.defaultCost = s.value("default", r.spells.defaultCost);
+    r.spells.fromAttack = s.value("fromAttack", r.spells.fromAttack);
+    r.spells.baseTiers = s.value("baseTiers", r.spells.baseTiers);
+    r.spells.tiersPerStep = std::max(1, s.value("tiersPerStep", r.spells.tiersPerStep));
+    r.spells.stepCost = s.value("stepCost", r.spells.stepCost);
     r.spells.weaponSkillsUseWeaponCost = s.value("weaponSkillsUseWeaponCost", r.spells.weaponSkillsUseWeaponCost);
     if (s.contains("byTier") && s["byTier"].is_object())
       for (const auto& [k, v] : s["byTier"].items())
@@ -320,7 +324,12 @@ int apCost(const Battle& b, const BattleUnit& u, const ApAction& a) {
       if (const auto it = r.spells.byKind.find(a.spell); it != r.spells.byKind.end()) v = it->second;
       else if (r.spells.weaponSkillsUseWeaponCost && spellWeaponAbility(a.spell)) v = r.attackCost(category);
       else if (const auto t = r.spells.byTier.find(spellTierNumber(a.spell)); t != r.spells.byTier.end()) v = t->second;
-      else v = r.spells.defaultCost;
+      else if (r.spells.fromAttack) {
+        // the caster's normal attack, then +stepCost every tiersPerStep tiers past the first baseTiers (a tierless skill: tier 1)
+        const int tier = std::max(1, spellTierNumber(a.spell));
+        const int past = std::max(0, tier - r.spells.baseTiers);
+        v = r.attackCost(category) + ((past + r.spells.tiersPerStep - 1) / r.spells.tiersPerStep) * r.spells.stepCost;
+      } else v = r.spells.defaultCost;
       break;
     }
     case ApAction::Kind::Potion: v = r.potion; break;

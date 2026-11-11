@@ -18,12 +18,12 @@ spells, potions, Arrombar, Examinar, every hex walked and every counter-attack c
 | Polearm (spear, lance, pike, halberd) / bow / crossbow attack | 7 | design |
 | Staff ordinary blow | 6 | provisional |
 | Unarmed / no weapon data | 6 | provisional |
-| Spells and special skills (weapon skills included) | 8 | design (the user, 2026-11-06) |
+| Spells and special skills (weapon skills included) | the caster's own attack cost in tiers 1-2, then +1 every two tiers (T3-4 +1, T5-6 +2, T7-8 +3, T9-10 +4); `spells.fromAttack` | design (the user, 2026-11-10) |
 | Potion | 5 | design |
 | Staff Counter / Spell Counter | 6 / 7 | design |
 | Any other counter | the defender's own weapon attack cost | provisional |
-| Flat hex | 1 | design |
-| Other terrain | the tile's own Ember `moveCost` (woods 2, hill 2, ember 2, flame 3 ...) | provisional, configurable per terrain id |
+| Flat hex (plains) | 2 | design (the user, 2026-11-10) |
+| Other terrain | the tile's own Ember `moveCost` +1 (road/ruins/snow 2, woods 3, hill 3, ember 3, flame 4 ...) | design (the user, 2026-11-10: +1 on every terrain), configurable per terrain id |
 | Examinar | 3 | provisional (value not established) |
 | Arrombar | 5 | provisional |
 | Enemy weapon category by class | milícia, captains, brigands, rogues, the Butcher = sword; pikemen, lancers = polearm; crossbowmen = bow; cultists, sorcerers = staff; the rest blunt | provisional (Ember exports no weapons for enemies; the same split `MapStage::weaponStyle` draws) |
@@ -62,7 +62,7 @@ HexCost        = max(minimum, terrain apCost ?? tile moveCost + terrain modifier
   leaves in reserve (times `ai.counterReserveWeight`, 1), so the enemy prefers the blow that keeps it more AP for counters. `planEnemyCast` refunds and drops a cast the enemy cannot pay. Enemies then walk,
   strike and cast through the same `walkAlong` / `attack` / `play` as the party.
 - UI (`MapStage.h`): "PA x/y" on the HUD line, each bar command shows its cost and is dead when unaffordable, the hovered route shows
-  "Caminho N PA", the forecast shows the blow's cost, the target's AP and the counter's cost (or "sem PA"), hotbar sockets need the AP,
+  "Caminho N PA", the forecast shows the blow's cost, the target's AP and the counter's cost (or "sem PA"), hotbar sockets need the AP and show it (top right, and "Custo: N PA" in the tooltip), the Skills sheet shows each one's PA,
   the status sheet has a PA cell (tooltip: the formula and the armor category). "Examinar · N PA" opens a click on a visible foe.
 - Examinar (`apExamine`): the category from the real forecasts both ways (turns the hero needs to down it over turns it needs to down
   the hero: ≤0.5 Alvo fácil, ≤1 Desafio moderado, ≤2 Oponente difícil, else Ameaça mortal; thresholds in `examine.categories`),

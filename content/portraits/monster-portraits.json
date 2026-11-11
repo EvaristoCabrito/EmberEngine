@@ -5,6 +5,7 @@
   "giant-spider": {"src": "content/sprites/giant-spider/base-media36-v01/base-1.png", "box": [0.33, 0.20, 0.67, 0.95], "ours": true},
   "swamp-blue-deer": {"src": "content/sprites/swamp-blue-deer/base-media36-v01/base-1.png", "box": [0.58, 0.0, 1.0, 0.42], "ours": true},
   "chain-bound-penitent": {"src": "content/sprites/chain-bound-penitent/base-v01/base-1.png", "ours": true},
+  "black-cultist": {"src": "content/sprites/black-cultist/base-v01/base-1.png", "ours": true},
   "corrosive-slime": {"src": "content/sprites/corrosive-slime/base-v01/base-1.png", "box": [0.20, 0.02, 0.80, 0.70], "ours": true},
   "corrosive-slime-36": {"src": "content/sprites/corrosive-slime-36/base-v01/base-1.png", "box": [0.20, 0.02, 0.80, 0.70], "ours": true},
   "corrosive-slime-64": {"src": "content/sprites/corrosive-slime-64/base-v01/base-1.png", "box": [0.20, 0.02, 0.80, 0.70], "ours": true},

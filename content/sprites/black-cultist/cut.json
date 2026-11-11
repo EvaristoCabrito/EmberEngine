@@ -1,0 +1,13 @@
+{
+ "about": "Black Cultist (blackCultist, Cultista Negro) from the user's sheets (Attachments/BlackCultist: Ilde, Cast, WalkLeft; 36 frames 6 x 6 each, Ludo), 2026-11-10: \"new unit\", \"you will need to mirror the walk animation for this one\"; his stats are the Cultista Branco's (the old Cultista Ancestral). Every frame and its timing as drawn, alpha as drawn, no resampling; one resolution (no Média / Leve copies). Each clip's figure is measured on its own and stands figureUnits tall.",
+ "set": "black-cultist",
+ "version": "v01",
+ "figureUnits": 2.75,
+ "figureNote": "first value: the Cultista Branco's height (cultist-v2's idle box 2.89 units, staff top to feet); the user judges his size in play",
+ "clips": [
+  {"clip": "base", "pose": "idle", "kind": "stand", "sheet": "Attachments/BlackCultist/Ilde/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "pingpong", "bodyAt": 0.0},
+  {"clip": "cast", "pose": "cast", "kind": "stand", "sheet": "Attachments/BlackCultist/Cast/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "impactFrame": 13, "mode": "once", "bodyAt": 0.0, "why": "no attack sheet: the cast is his attack too; the open hand thrust out at 12-14, the spell leaves at 13"},
+  {"clip": "move", "pose": "walk", "kind": "walk", "sheet": "Attachments/BlackCultist/WalkLeft/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "loop", "mirror": true, "bodyAt": 0.0, "why": "the user: mirrored (the sheet walks left; the WalkRight folder is empty); the whole sheet is the loop"},
+  {"clip": "move-left", "pose": "walkLeft", "kind": "walk", "sheet": "Attachments/BlackCultist/WalkLeft/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "loop", "bodyAt": 0.0, "why": "the sheet as drawn: it walks left; the whole sheet is the loop"}
+ ]
+}

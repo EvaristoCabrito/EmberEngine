@@ -493,7 +493,7 @@ struct Spawner {
     return oneOf(u.classId, {"archer", "ranger", "assassin"});
   }
   static bool isArcaneCaster(const std::string& c) {
-    return oneOf(c, {"mage", "voss", "elementalist", "warlock", "cultist", "cultistV2"}) || isBirolho(c);
+    return oneOf(c, {"mage", "voss", "elementalist", "warlock", "cultist", "cultistV2", "blackCultist"}) || isBirolho(c);
   }
   // Isolde (ours, the user 2026-10-24): a conjurer whose plain attack and counter work like a mage's ("its counter and ATT like a
   // mage"): the bolt at range, the staff beside her (MapStage); her class, reach and spells stay the conjurer's.
@@ -572,14 +572,16 @@ struct Spawner {
     u.bag = side == "player" ? (u.classId == "healer" ? r.all()["emptyBag"] : r.all()["startingBag"]) : r.all()["emptyBag"];
     // spell uses per tier (engine.ts spawnUnit `spells`: the enemy-only pools, else the class's own for the party)
     const std::string& c = u.classId;
+    // the Black Cultist (the user, 2026-11-10) is the Cultista Ancestral's twin: the same pools and Frost
+    const bool cultistPools = c == "cultist" || c == "cultistV2" || c == "blackCultist";
     const auto own = [&](int tier) { return side == "player" ? tierUses(c, tier, u.level) : 0; };
     const json& cultist = r.row(pools["cultist"], u.level);
     const json& brigand = r.row(pools["brigand"], u.level);
     const json& birolho = r.row(pools["birolho"], u.level);
     u.spells[0] = c == "carnivorousPlant" ? 2 : c == "sapling" ? 1 : c == "swampBlueCalf" ? tierUses(c, 1, u.level) : c == "bigBlueCalf" ? 3 : c == "roccoTheBird" ? 2
-                : c == "emberedWraith" ? 0 : (c == "cultist" || c == "cultistV2") ? cultist[0].get<int>() : c == "baseCrossbowman" ? 2 : c == "brigand" ? brigand[0].get<int>()
+                : c == "emberedWraith" ? 0 : cultistPools ? cultist[0].get<int>() : c == "baseCrossbowman" ? 2 : c == "brigand" ? brigand[0].get<int>()
                 : isBirolho(c) ? birolho[0].get<int>() : own(1);
-    u.spells[1] = c == "roccoTheBird" ? 3 : c == "emberedWraith" ? 1 : c == "stagWolf" ? 2 : (c == "cultist" || c == "cultistV2") ? cultist[1].get<int>()
+    u.spells[1] = c == "roccoTheBird" ? 3 : c == "emberedWraith" ? 1 : c == "stagWolf" ? 2 : cultistPools ? cultist[1].get<int>()
                 : c == "baseCrossbowman" ? 1 : c == "brigandCrossbowman" ? 2 : c == "brigand" ? brigand[1].get<int>() : isBirolho(c) ? birolho[2].get<int>() : own(2);
     u.spells[2] = c == "carnivorousPlant" ? 2 : c == "brigandCrossbowman" ? 1 : own(3);
     u.spells[3] = c == "carnivorousPlant" ? 3 : isBirolho(c) ? birolho[1].get<int>() : (c == "undeadOx" || c == "plagueBearingCattle") ? 2 : own(4);
@@ -587,7 +589,7 @@ struct Spawner {
     u.size = integer(*cls, "size", 1);
     u.footprintW = (*cls)["footprintW"], u.footprintH = (*cls)["footprintH"], u.footprintOffsets = (*cls)["footprintOffsets"];
     u.shockCharges = side == "enemy" ? integer(*cls, "shockCharges") : 0;
-    u.frostCharges = side == "enemy" && c == "cultistV2" ? r.row(pools["frost"], u.level).get<int>() : 0;
+    u.frostCharges = side == "enemy" && (c == "cultistV2" || c == "blackCultist") ? r.row(pools["frost"], u.level).get<int>() : 0;
     u.fantomForceCharges = side == "enemy" ? integer(*cls, "fantomForceCharges") : 0;
     u.summoned = flag(*cls, "summon");
     u.guaranteedDrop = side == "enemy" && flag(s, "guaranteedDrop");
@@ -774,6 +776,7 @@ struct Cues {
     for (const json& k : sp.spellList(u.classId, u.level, u.name)) kinds.push_back(k.get<std::string>());
     for (const char* k : {"shock", "frost", "fantomForce"})
       if (std::find(kinds.begin(), kinds.end(), k) == kinds.end()) kinds.push_back(k);
+    if (u.classId == "cultistV2") kinds.push_back("acidArrow");  // the White Cultist's two Flechas Ácidas (Battle.cpp): his cast's sound
     for (const std::string& k : kinds) spells[k] = spell(u, k);
     const bool plant = u.sprite == "carnivorous-plant-001" || u.sprite == "sapling-001";
     json hit = json::array(), death = json::array();

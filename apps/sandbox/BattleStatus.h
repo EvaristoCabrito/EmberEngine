@@ -649,10 +649,14 @@ class BattleStatusSheet {
         const float tx = ib.x + 14.0f;
         float ty = a.y + 12.0f;
         bd->AddText(title, kTitle, {tx, ty}, dim ? kMuted : IM_COL32(224, 189, 128, 255), r.title.c_str());
-        if (r.tier > 0) {
-          const std::string uses = std::format("Tier {} · ×{}", r.tier, r.uses);
+        // its Action Points (the user, 2026-11-10: the AP cost on the actions); a passive costs none
+        const std::string ap = ember::spellPassive(r.kind) ? std::string()
+                                                           : std::format("{} {}", ember::apCost(battle, u, ember::ApAction::cast(r.kind)), en ? "AP" : "PA");
+        if (r.tier > 0 || !ap.empty()) {
+          std::string uses = r.tier > 0 ? std::format("Tier {} · ×{}", r.tier, r.uses) : std::string();
+          if (!ap.empty()) uses += (uses.empty() ? "" : " · ") + ap;
           const ImVec2 us = ui->CalcTextSizeA(kNote, FLT_MAX, 0.0f, uses.c_str());
-          bd->AddText(ui, kNote, {b.x - 14.0f - us.x, ty + 3.0f}, r.uses > 0 ? kAccent : kDanger, uses.c_str());
+          bd->AddText(ui, kNote, {b.x - 14.0f - us.x, ty + 3.0f}, r.tier == 0 || r.uses > 0 ? kAccent : kDanger, uses.c_str());
         }
         ty += kTitle + 8.0f;
         if (!r.about.empty()) bd->AddText(ui, kBody, {tx, ty}, dim ? kMuted : kFg, r.about.c_str(), nullptr, textW), ty += aboutH;

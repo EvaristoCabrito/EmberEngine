@@ -368,6 +368,8 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     // Raio Espectral: the Espectro em Brasa casts it twice a fight, the Aparição and the Boi Zumbi once (the user, 2026-10-20)
     if (progressionEnabled() && o.side == "enemy")
       o.spectralCharges = o.classId == "emberedWraith" ? 2 : o.classId == "apparition" || o.classId == "undeadOx" ? 1 : 0;
+    // The White Cultist (the user, 2026-11-10: "2X Milf Acid Arrow on top of regular spells"): two Flechas Ácidas a fight of its own
+    if (progressionEnabled() && o.side == "enemy" && o.classId == "cultistV2") o.acidArrowCharges = 2;
     if (u.contains("fantomForceDice") && u["fantomForceDice"].is_object())
       o.fantomDice = integer(u["fantomForceDice"], "dice"), o.fantomFaces = integer(u["fantomForceDice"], "faces");
     o.xp = integer(u, "xp");
@@ -423,7 +425,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     applyProgression(o);  // EmberEngine's own growth over Ember's (gear kept; off in the Cooker's checks)
     // Ours (the user, 2026-10-18: "cultista de level 15 pode usar 1X"): a cultist of level 15 or more brings one Tempestade de
     // Gelo (its tier-4 use; Ember's cultists have none). Off in the Cooker's checks, like the progression.
-    if (progressionEnabled() && o.side == "enemy" && (o.classId == "cultist" || o.classId == "cultistV2") && o.level >= 15) o.spells[3] = 1;
+    if (progressionEnabled() && o.side == "enemy" && (o.classId == "cultist" || o.classId == "cultistV2" || o.classId == "blackCultist") && o.level >= 15) o.spells[3] = 1;
     if (progressionEnabled() && o.side == "enemy" &&
         (o.classId == "birolho" || o.classId == "birolho2" || o.classId == "birolho3" || o.classId == "birolhoLegs" ||
          o.classId == "birolhoLegs2"))

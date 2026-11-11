@@ -8,6 +8,7 @@
 #include <cmath>
 #include <format>
 #include <fstream>
+#include <limits>
 #include <map>
 #include <set>
 
@@ -1083,6 +1084,7 @@ std::vector<BattleHex> frostTiles(const Battle& b, BattleHex origin, BattleHex t
 
 int tierRemaining(const BattleUnit& u, const std::string& kind) {
   if (kind == "frost" && u.side == "enemy") return u.frostCharges;
+  if (kind == "acidArrow" && u.acidArrowCharges) return *u.acidArrowCharges;  // its own casts, never its tier-2 uses
   if (kind == "poisonBreath" && u.level < 3) return 0;  // POISON_BREATH.unlockLevel
   if (kind == "burningHands" && u.level < 5) return 0;
   const int tier = unitTierOf(u, kind);
@@ -1091,6 +1093,10 @@ int tierRemaining(const BattleUnit& u, const std::string& kind) {
 void spendTier(BattleUnit& u, const std::string& kind) {
   if (kind == "frost" && u.side == "enemy") {
     u.frostCharges = std::max(0, u.frostCharges - 1);
+    return;
+  }
+  if (kind == "acidArrow" && u.acidArrowCharges) {
+    u.acidArrowCharges = std::max(0, *u.acidArrowCharges - 1);
     return;
   }
   const int tier = unitTierOf(u, kind);
@@ -6066,6 +6072,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
         else if (s.kind == "shock") w.shockCharges += 1;
         else if (s.kind == "fantomForce") w.fantomForceCharges += 1;
         else if (s.kind == "spectralBolt") w.spectralCharges += 1;
+        else if (s.kind == "acidArrow" && w.acidArrowCharges) *w.acidArrowCharges += 1;
         else if (const int tier = unitTierOf(w, s.kind); tier > 0) w.spells[tier - 1] += 1;
       }
       return std::nullopt;
@@ -6092,6 +6099,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
     else if (s.kind == "shock") w.shockCharges += 1;
     else if (s.kind == "fantomForce") w.fantomForceCharges += 1;
     else if (s.kind == "spectralBolt") w.spectralCharges += 1;
+    else if (s.kind == "acidArrow" && w.acidArrowCharges) *w.acidArrowCharges += 1;
     else if (const int tier = unitTierOf(w, s.kind); tier > 0) w.spells[tier - 1] += 1;
   }
   return std::nullopt;
@@ -6106,10 +6114,9 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
   std::vector<ReachCell> reach = b.reachable(unit, true);
   const std::vector<ReachCell> walk = b.reachable(unit, false);
   if (!b.roaming()) {
-    const ApRules& apr = apRules();
-    int cheapest = apr.spells.defaultCost;
-    for (const auto& [kind, cost] : apr.spells.byKind) cheapest = std::min(cheapest, cost);
-    for (const auto& [tier, cost] : apr.spells.byTier) cheapest = std::min(cheapest, cost);
+    // the cheapest of its own casts (apCost: its attack cost and its tiers)
+    int cheapest = u.spellList.empty() ? apCost(b, u, ApAction::cast(std::string())) : std::numeric_limits<int>::max();
+    for (const std::string& kind : u.spellList) cheapest = std::min(cheapest, apCost(b, u, ApAction::cast(kind)));
     std::erase_if(reach, [&](const ReachCell& c) { return u.ap - c.ap < cheapest; });
   }
   // Every hero standing, the enmity target first; enmity weighs the choice (enmityBonus), it never hides a foe in range.
@@ -6184,10 +6191,13 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
         break;
       }
   }
-  const bool cultist = c == "cultist" || c == "cultistV2" || c == "emberedWraith" || c == "swampBlueCalf";
+  // The Black Cultist (the user, 2026-11-10) is the Cultista Ancestral's twin: its spells, its Frost, its choices.
+  const bool ancestralCultist = c == "cultistV2" || c == "blackCultist";
+  const bool cultist = c == "cultist" || ancestralCultist || c == "emberedWraith" || c == "swampBlueCalf";
+  const bool acidLeft = u.acidArrowCharges && *u.acidArrowCharges > 0;
   // Ours: a level-15 cultist's one Tempestade de Gelo (Battle.cpp gives it the use). Laid where it covers the most heroes and
   // none of its own side (the field hurts whoever starts a turn in it), from a hex it can reach with a clear shot.
-  if ((c == "cultist" || c == "cultistV2") && u.spells[3] > 0 && u.level >= 8) {
+  if ((c == "cultist" || ancestralCultist) && u.spells[3] > 0 && u.level >= 8) {
     struct StormPick {
       BattleHex at, from;
       int score = 0;
@@ -6224,11 +6234,22 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
       }
     }
   }
-  if (cultist && (u.spells[0] > 0 || u.spells[1] > 0 || u.shockCharges > 0 || u.fantomForceCharges > 0)) {
+  if (cultist && (u.spells[0] > 0 || u.spells[1] > 0 || u.shockCharges > 0 || u.fantomForceCharges > 0 || acidLeft)) {
     if (u.spells[1] > 0)
       if (const std::optional<Pick> p = best(grownReach("lightning", kLightningRange, u.level), false)) {
         spendTier(u, "lightning");
         return single(*p, "lightning", lightningDice(u.level), kLightningFaces, kLightningBonus, lightningMul(u.level), kLightningEcho);
+      }
+    // the White Cultist's own Flechas Ácidas (Battle.cpp gives it the two): after the Relâmpago, before the rest
+    if (acidLeft)
+      if (const std::optional<Pick> p = best(grownReach("acidArrow", kAcidArrowRange, u.level), true)) {
+        AiCast cast;
+        cast.path = walkTo(p->from);
+        const BattleUnit& f = b.units()[p->foe];
+        if (std::optional<std::vector<BattleStep>> steps = castE2(b, unit, "acidArrow", {BattleHex{f.x, f.y}}, nullptr, false)) {
+          cast.steps = std::move(*steps);
+          return cast;
+        }
       }
     if (u.fantomForceCharges > 0)
       if (const std::optional<Pick> p = best(grownReach("phantasmalForce", kFantomForceRange, u.level), true)) {
@@ -6243,7 +6264,7 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
       }
   }
   // Frost: the close-range fallback, from where it stands, along the line through each hero.
-  if (c == "cultistV2" && u.frostCharges > 0) {
+  if (ancestralCultist && u.frostCharges > 0) {
     std::optional<std::pair<BattleHex, int>> bestFrost;  // target, score
     for (size_t h : heroes) {
       const BattleUnit& f = b.units()[h];
@@ -6554,7 +6575,7 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
       }
   }
   // Any other enemy mage still gets Choque.
-  if (!cultist && !birolho && c != "cultistV2" && u.shockCharges > 0)
+  if (!cultist && !birolho && !ancestralCultist && u.shockCharges > 0)
     if (std::optional<AiCast> s = shock()) return s;
   // The Brigand Crossbowman: Tiro Multiplo (tier 3) from the spot that reaches the most foes, else Tiro Sangrento (tier 2).
   if (c == "brigandCrossbowman" && (u.spells[1] > 0 || u.spells[2] > 0)) {

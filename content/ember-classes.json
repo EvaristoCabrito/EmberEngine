@@ -62,7 +62,7 @@
    "sounds": {
     "attack": [{"file": "HeavyCleave-Balanced-Medium.mp3", "volume": 0.55, "offset": 0, "delay": 0, "exclusive": true}],
     "counter": [{"file": "HeavyCleave-Balanced-Medium.mp3", "volume": 0.55, "offset": 0, "delay": 0, "exclusive": true}],
-    "walk": [{"file": "HeavySteps1-Balanced-Medium.mp3", "volume": 0.45, "offset": 0, "delay": 0, "exclusive": true}],
+    "walk": [{"file": "ChainBoundPenitentWalkRight.mp3", "volume": 0.45, "offset": 0, "delay": 0, "exclusive": true}],
     "walkLeft": [{"file": "HeavySteps1-Balanced-Medium.mp3", "volume": 0.45, "offset": 0, "delay": 0, "exclusive": true}],
     "walkFade": true
    }

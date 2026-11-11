@@ -197,6 +197,8 @@ struct BattleUnit {
   std::vector<std::string> spellList;  // what it may cast (classSpells for its class, level and name)
   int shockCharges = 0, frostCharges = 0, fantomForceCharges = 0;
   int spectralCharges = 0;  // Raio Espectral (the Aparição's and the Espectro em Brasa's, ours): its casts this fight
+  // Milf's Acid Arrow on casts of its own, on top of its tier uses (the White Cultist's two, ours); unset = its tier-2 uses
+  std::optional<int> acidArrowCharges;
   int fantomDice = 0, fantomFaces = 0;
   int xp = 0;
   bool guaranteedDrop = false;

@@ -31,7 +31,7 @@ inline void applyEmberInitiative(BattleUnit& u) {
       // slow brutes
       {"zombie", 4}, {"zombie2", 4}, {"sapling", 4}, {"ancientGolem", 4},
       // mages
-      {"sorcerer", 4}, {"cultist", 3}, {"cultistV2", 3},
+      {"sorcerer", 4}, {"cultist", 3}, {"cultistV2", 3}, {"blackCultist", 3},
   };
   if (u.side == "player" && !u.summoned) {
     for (const Entry& e : kHeroes)

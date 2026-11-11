@@ -38,8 +38,8 @@
       { "name": "Salazar", "classId": "salazar", "x": 0, "y": 5, "level": 10 }
     ],
     "enemySpawns": [
-      { "name": "Cultista Ancestral", "classId": "cultistV2", "x": 10, "y": 3, "level": 9 },
-      { "name": "Cultista Ancestral", "classId": "cultistV2", "x": 10, "y": 6, "level": 9 }
+      { "name": "Cultista Branco", "classId": "cultistV2", "x": 10, "y": 3, "level": 9 },
+      { "name": "Cultista Branco", "classId": "cultistV2", "x": 10, "y": 6, "level": 9 }
     ],
     "neutralSpawns": [
       {

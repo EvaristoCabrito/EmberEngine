@@ -46,6 +46,10 @@ struct ApRules {
   } weapons;
   int potion = 5, lockpick = 5;
   struct Spells {
+    // the design's (the user, 2026-11-10): the caster's own attack cost in the first `baseTiers` tiers, then `stepCost` more every
+    // `tiersPerStep` tiers (T1-2 +0, T3-4 +1, T5-6 +2...); defaultCost only when fromAttack is off
+    bool fromAttack = true;
+    int baseTiers = 2, tiersPerStep = 2, stepCost = 1;
     int defaultCost = 8;
     bool weaponSkillsUseWeaponCost = false;
     std::map<int, int> byTier;
