@@ -391,7 +391,7 @@
   },
   {
    "set": "hypostasis",
-   "version": "v01",
+   "version": "v02",
    "hero": "hypostasis",
    "newHero": {"name": "Hipóstase", "group": "monster", "sprite": "hypostasis", "reversed": false},
    "cut": "content/sprites/hypostasis/cut.json",
@@ -403,7 +403,7 @@
   },
   {
    "set": "hypostasis-64-media",
-   "version": "media64-v01",
+   "version": "media64-v02",
    "cut": "content/sprites/hypostasis/cut-64-media.json",
    "why": "the Hipóstase's Personagens Média (the user, 2026-11-06): 64 frames from the same mattes",
    "mediumOf": {"hero": "hypostasis", "set": "hypostasis"},
@@ -411,7 +411,7 @@
   },
   {
    "set": "hypostasis-36-media",
-   "version": "media36-v01",
+   "version": "media36-v02",
    "cut": "content/sprites/hypostasis/cut-36-media.json",
    "why": "the Hipóstase's Personagens Leve (the same order): 36 frames from the same mattes",
    "lightOf": {"hero": "hypostasis", "set": "hypostasis"},

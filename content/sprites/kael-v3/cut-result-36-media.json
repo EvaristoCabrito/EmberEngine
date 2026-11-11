@@ -1,68 +1,70 @@
 {
  "clips": {
   "base": {
-   "video": "Attachments/KaelV3/KaelIdleLoop.mp4",
+   "video": "Attachments/KaelV3/V3IdleLoop2.mp4",
    "first": 0,
    "last": 143,
-   "bootRow": 708,
+   "colorMatch": "build/video-cut/kael-att-v2/attack 104:143",
+   "bootRow": 702,
    "bootRows": [
-    703,
-    708
+    697,
+    702
    ],
    "frameCountFrom": 144,
-   "figurePx": 685.0,
-   "scaledTo": 609.6,
+   "figurePx": 673.0,
+   "bodyAt": -0.1898,
+   "scaledTo": 610.4,
    "frames": 36,
    "frameMs": 166.66666666666666,
    "nat": [
-    437,
-    631
+    452,
+    634
    ],
    "crop": [
     4,
     4,
-    428,
-    627
+    386,
+    626
    ],
    "box": {
-    "w": 1.84931,
-    "h": 2.67029,
-    "foot": 0.0412
+    "w": 1.91296,
+    "h": 2.68322,
+    "foot": 0.04971
    },
-   "pattern": "content/sprites/kael-v3/base-media36-v02/base-{}.png"
+   "pattern": "content/sprites/kael-v3/base-media36-v03/base-{}.png"
   },
   "atk": {
-   "video": "Attachments/KaelV3/KaelATT.mp4",
-   "first": 4,
-   "last": 74,
+   "video": "Attachments/KaelV3/KaelATT-v2-cropped.mp4",
+   "first": 28,
+   "last": 110,
    "bootRow": 719,
    "bootRows": [
-    694,
+    698,
     719
    ],
-   "frameCountFrom": 71,
-   "figurePx": 668.0,
-   "bodyAt": -0.1893,
-   "scaledTo": 610.4,
+   "frameCountFrom": 83,
+   "figurePx": 681.0,
+   "bodyAt": -0.1894,
+   "scaledTo": 610.2,
    "frames": 36,
-   "frameMs": 82.17592592592592,
+   "frameMs": 96.06481481481481,
    "nat": [
-    737,
-    646
+    780,
+    638
    ],
    "crop": [
-    67,
-    3,
-    665,
-    643
+    100,
+    5,
+    676,
+    633
    ],
    "box": {
-    "w": 3.11686,
-    "h": 2.73201,
-    "foot": -0.00018
+    "w": 3.29982,
+    "h": 2.69909,
+    "foot": -0.00022
    },
-   "pattern": "content/sprites/kael-v3/atk-media36-v02/atk-{}.png",
-   "impact": 0.4507
+   "pattern": "content/sprites/kael-v3/atk-media36-v03/atk-{}.png",
+   "impact": 0.2892
   },
   "turn-back": {
    "video": "Attachments/KaelV3/Kael-IdleBackDoubleStrike.mp4",

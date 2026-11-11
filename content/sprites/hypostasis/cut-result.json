@@ -11,26 +11,26 @@
    ],
    "loopFirst": 6,
    "loopLast": 58,
-   "seamSteps": 2.28,
+   "seamSteps": 2.4,
    "figurePx": 553.0,
    "frames": 53,
    "frameMs": 41.666666666666664,
    "nat": [
-    641,
+    640,
     606
    ],
    "crop": [
-    5,
+    4,
     5,
     631,
     596
    ],
    "box": {
-    "w": 3.55552,
+    "w": 3.54997,
     "h": 3.36138,
     "foot": 0.1775
    },
-   "pattern": "content/sprites/hypostasis/base-v01/base-{}.png"
+   "pattern": "content/sprites/hypostasis/base-v02/base-{}.png"
   },
   "atk": {
    "video": "Attachments/WalkAttCuttheEnd.mp4",
@@ -42,11 +42,12 @@
     682
    ],
    "figurePx": 611.0,
+   "bodyAt": 0.0151,
    "frames": 67,
    "frameMs": 41.666666666666664,
    "nat": [
-    850,
-    671
+    944,
+    670
    ],
    "crop": [
     5,
@@ -55,11 +56,11 @@
     661
    ],
    "box": {
-    "w": 4.26725,
-    "h": 3.36862,
-    "foot": 0.16065
+    "w": 4.73916,
+    "h": 3.3636,
+    "foot": 0.15563
    },
-   "pattern": "content/sprites/hypostasis/atk-v01/atk-{}.png",
+   "pattern": "content/sprites/hypostasis/atk-v02/atk-{}.png",
    "impact": 0.4179
   },
   "atk2": {
@@ -72,24 +73,25 @@
     652
    ],
    "figurePx": 567.0,
+   "bodyAt": 0.0135,
    "frames": 40,
    "frameMs": 41.666666666666664,
    "nat": [
-    637,
+    640,
     611
    ],
    "crop": [
     4,
     5,
     628,
-    602
+    601
    ],
    "box": {
-    "w": 3.44609,
+    "w": 3.46232,
     "h": 3.30543,
     "foot": 0.1623
    },
-   "pattern": "content/sprites/hypostasis/atk2-v01/atk2-{}.png",
+   "pattern": "content/sprites/hypostasis/atk2-v02/atk2-{}.png",
    "impact": 0.4
   },
   "cast": {
@@ -102,24 +104,25 @@
     678
    ],
    "figurePx": 591.0,
+   "bodyAt": 0.013,
    "frames": 77,
    "frameMs": 41.666666666666664,
    "nat": [
-    965,
+    979,
     656
    ],
    "crop": [
-    5,
+    19,
     1,
     955,
     650
    ],
    "box": {
-    "w": 5.00853,
+    "w": 5.08119,
     "h": 3.40476,
     "foot": 0.18166
    },
-   "pattern": "content/sprites/hypostasis/cast-v01/cast-{}.png",
+   "pattern": "content/sprites/hypostasis/cast-v02/cast-{}.png",
    "impact": 0.5714
   },
   "move": {
@@ -128,63 +131,63 @@
    "last": 143,
    "loopFirst": 24,
    "loopLast": 68,
-   "seamSteps": 0.87,
-   "bootRow": 670,
+   "seamSteps": 0.88,
+   "bootRow": 669,
    "bodyDrift": [
-    -11,
+    -12,
     6
    ],
-   "figurePx": 525.0,
+   "figurePx": 523.0,
    "frames": 45,
    "frameMs": 41.666666666666664,
    "nat": [
     876,
-    597
+    598
    ],
    "crop": [
     5,
     5,
-    867,
-    587
+    866,
+    588
    ],
    "box": {
-    "w": 5.11818,
-    "h": 3.48807,
-    "foot": 0.22202
+    "w": 5.13775,
+    "h": 3.50728,
+    "foot": 0.22874
    },
-   "pattern": "content/sprites/hypostasis/move-v01/move-{}.png"
+   "pattern": "content/sprites/hypostasis/move-v02/move-{}.png"
   },
   "movefront": {
    "video": "Attachments/Walkleftandright.mp4",
    "first": 56,
    "last": 135,
-   "loopFirst": 64,
-   "loopLast": 106,
-   "seamSteps": 2.07,
+   "loopFirst": 65,
+   "loopLast": 107,
+   "seamSteps": 2.19,
    "bootRow": 634,
    "bodyDrift": [
-    -2,
-    13
+    1,
+    15
    ],
-   "figurePx": 527.0,
+   "figurePx": 524.0,
    "frames": 43,
    "frameMs": 41.666666666666664,
    "nat": [
-    643,
+    641,
     589
    ],
    "crop": [
-    4,
+    5,
     6,
-    634,
+    631,
     578
    ],
    "box": {
-    "w": 3.74258,
-    "h": 3.42827,
-    "foot": 0.22118
+    "w": 3.7523,
+    "h": 3.4479,
+    "foot": 0.22245
    },
-   "pattern": "content/sprites/hypostasis/movefront-v01/movefront-{}.png"
+   "pattern": "content/sprites/hypostasis/movefront-v02/movefront-{}.png"
   },
   "hit": {
    "video": "Attachments/Hitanddeath.mp4",
@@ -196,24 +199,25 @@
     666
    ],
    "figurePx": 550.0,
+   "bodyAt": 0.0139,
    "frames": 61,
    "frameMs": 41.666666666666664,
    "nat": [
-    843,
+    966,
     685
    ],
    "crop": [
-    6,
+    130,
     5,
     832,
     674
    ],
    "box": {
-    "w": 4.70149,
+    "w": 5.38747,
     "h": 3.82031,
     "foot": 0.29001
    },
-   "pattern": "content/sprites/hypostasis/hit-v01/hit-{}.png"
+   "pattern": "content/sprites/hypostasis/hit-v02/hit-{}.png"
   },
   "death": {
    "video": "Attachments/Hitanddeath.mp4",
@@ -225,24 +229,25 @@
     665
    ],
    "figurePx": 509.0,
+   "bodyAt": 0.0151,
    "frames": 68,
    "frameMs": 41.666666666666664,
    "nat": [
-    1128,
+    1397,
     575
    ],
    "crop": [
+    6,
     5,
-    4,
-    1118,
-    566
+    1117,
+    565
    ],
    "box": {
-    "w": 6.7977,
+    "w": 8.41878,
     "h": 3.46514,
     "foot": 0.25311
    },
-   "pattern": "content/sprites/hypostasis/death-v01/death-{}.png"
+   "pattern": "content/sprites/hypostasis/death-v02/death-{}.png"
   }
  }
 }

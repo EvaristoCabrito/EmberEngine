@@ -1,7 +1,7 @@
 {
  "about": "hypostasis's Personagens Média (tools/scripts/sprites/quality_copies.py, the rule of 2026-10-25): every clip of cut.json from the same matted frames, at most 64 frames picked evenly (no blend, the clip's timing kept), the figure ~916 px tall (a clip already shorter keeps its own size).",
  "set": "hypostasis-64-media",
- "version": "media64-v01",
+ "version": "media64-v02",
  "figureUnits": 3.0674,
  "clips": [
   {
@@ -27,6 +27,7 @@
    "last": 114,
    "impactFrame": 76,
    "mode": "once",
+   "bodyAt": 0.014,
    "scaleTo": 916
   },
   {
@@ -39,6 +40,7 @@
    "last": 135,
    "impactFrame": 112,
    "mode": "once",
+   "bodyAt": 0.014,
    "scaleTo": 916
   },
   {
@@ -51,6 +53,7 @@
    "last": 220,
    "impactFrame": 188,
    "mode": "once",
+   "bodyAt": 0.014,
    "scaleTo": 916
   },
   {
@@ -89,6 +92,7 @@
    "last": 100,
    "mode": "once",
    "mirror": true,
+   "bodyAt": 0.014,
    "scaleTo": 916
   },
   {
@@ -102,10 +106,14 @@
    "standUntil": 180,
    "mode": "once",
    "mirror": true,
+   "bodyAt": 0.014,
    "scaleTo": 916
   }
  ],
  "figureNote": "set so the idle body (its opaque box) is 3.5 units wide",
+ "edgeKey": true,
+ "edgeKeyWhy": "the user, 2026-11-10: \"Yes, fix Hypostasis\": v02 cuts every clip with video_sprite.py's edge_key (the grey rim of v01) and the standing poses with bodyAt; v01 stays on disk",
+ "bodyAtWhy": "every standing pose has its head where the idle (base) has it, 0.014 units from the card's centre, or it jumps sideways as a pose starts and ends (v01: the attack 0.24 off, the hit 0.38, the death 0.78)",
  "result": "cut-result-64-media.json",
  "frameCount": 64
 }
