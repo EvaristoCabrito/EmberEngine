@@ -15,7 +15,7 @@ SRC = ROOT / "content" / "models" / "farmhouse"
 OUT = ROOT / "work" / "farmhouse-kit-v01-preview"
 OUT.mkdir(parents=True, exist_ok=True)
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
-names = argv or sorted(p.stem for p in SRC.glob("*-v01.glb"))
+names = argv or sorted(p.stem for p in SRC.glob("*-v02.glb"))
 
 
 def point(obj, target):

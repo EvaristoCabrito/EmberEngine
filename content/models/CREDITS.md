@@ -55,3 +55,8 @@ do barro de `clay`). Receita em `work/farmhouse-textures-v01/make_farmhouse_text
 
 `straw`: imagem-base fotográfica gerada por IA para este projeto em 2026-11-11; mapas de normal e rugosidade derivados
 pela receita local em `work/farmhouse-textures-v01/make_farmhouse_textures.py`.
+
+## Atualização fotográfica final do kit Farmlands (`farmhouse-*-v02-*`, 2026-11-11)
+
+Imagens-base de madeira, madeira escura, ferro, linho, barro e ervas geradas por IA para o kit; mapas de normal e rugosidade
+derivados localmente por `work/farmhouse-textures-v02/make_farmhouse_textures_v02.py`. Fontes em `Attachments/Farmhouse/`.

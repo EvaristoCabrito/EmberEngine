@@ -1,17 +1,16 @@
-"""The Farmlands houses' kit v01 (2026-11-11; the user: "crie janelas e coloque objetos e iluminação, aumente o tamanho de todas as
+"""The final Farmlands houses' kit v02 (2026-11-11; the user: "crie janelas e coloque objetos e iluminação, aumente o tamanho de todas as
 casas", "crie novos objetos 3D, passe as texturas para outro agente criar").
 
-  blender -b -t 2 -P tools/scripts/models/create_farmhouse_kit_v01.py -- [name ...] [--version v02]
+  blender -b -t 2 -P tools/scripts/models/create_farmhouse_kit_v01.py -- [name ...] [--version v02] [--replace-final]
 
-Thirteen pieces for the smithy, the apothecary, the store, the inn and the villagers' house, each
-content/models/farmhouse/<name>-v01.glb, all of them in farmhouse-kit-v01.blend, their measures in
-build/models-tmp/farmhouse/manifest.json (register_farmhouse_kit_v01.py reads it). Never an overwrite.
+Thirteen final pieces for the smithy, the apothecary, the store, the inn and the villagers' house, each
+content/models/farmhouse/<name>-v02.glb, their measures in build/models-tmp/farmhouse/manifest.json
+(register_farmhouse_kit_v01.py reads it). Existing final files are replaced only with --replace-final.
 1 unit = one hex radius (a human is 2.65 units).
 
 The mesh builder is the Light House kit's (create_lighthouse_kit_v01.py: Build, the photograph materials): one builder, not a
-copy. Every part carries a photograph: the farmhouse sets the texture session makes (content/models/textures/
-farmhouse-<material>-v01-{color,normal,roughness}.jpg: wood, dark-wood, iron, linen, straw, clay, herbs) and, for a set that
-has not arrived, the archive photograph that stood in for it (STAND_INS below); brass, glass, rope, stone and leather come
+copy. Every part carries a photograph: the final v02 farmhouse texture sets in content/models/textures/ for wood, dark-wood,
+iron, linen, straw, clay and herbs; brass, glass, rope, stone and leather come
 from the archives as in the Light House kit.
 """
 from pathlib import Path
@@ -29,7 +28,7 @@ exec(compile(_source[:_cut], str(HERE.parent / "create_lighthouse_kit_v01.py"), 
 
 KIT = "farmhouse"
 _CLI_ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-VERSION = next((_CLI_ARGS[i + 1] for i, a in enumerate(_CLI_ARGS[:-1]) if a == "--version"), "v01")
+VERSION = next((_CLI_ARGS[i + 1] for i, a in enumerate(_CLI_ARGS[:-1]) if a == "--version"), "v02")
 OUT = ROOT / "content" / "models" / KIT
 TMP = ROOT / "build" / "models-tmp" / KIT
 TMP.mkdir(parents=True, exist_ok=True)
@@ -37,7 +36,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 
 def farm(name, kind):
-    p = MT / f"farmhouse-{name}-v01-{kind}.jpg"
+    p = MT / f"farmhouse-{name}-v02-{kind}.jpg"
     return p if p.exists() else None
 
 
@@ -594,7 +593,7 @@ ASSETS = {'anvil': anvil, 'quench-tub': quench_tub, 'tool-rack': tool_rack, 'gri
 
 def main():
     argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
-    force = '--replace-unreleased' in argv  # only while v01 has never been in a map or a pack
+    force = '--replace-final' in argv or '--replace-unreleased' in argv
     wanted = [a for i, a in enumerate(argv) if not a.startswith('--') and (i == 0 or argv[i - 1] != '--version')] or list(ASSETS)
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.object.delete(use_global=False)
