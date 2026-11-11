@@ -1,7 +1,7 @@
 """The Overworld's board at half the hex size (a test the user asked for, 2026-10-29: "scale down ... the movement grid by half").
 
-Reads content/data/overworld.json (left untouched) and writes content/data/overworld-half.json: the same painting, locations,
-missions and tables, the cells on a grid of hexes half as wide (hexSize 2.5, about four cells for every old one), every step 6
+Reads content/data/overworld.json (left untouched) and writes content/data/overworld-half.json: the same painting,
+missions and tables (the places' hexes go into content/data/locations.json, the one place list), the cells on a grid of hexes half as wide (hexSize 2.5, about four cells for every old one), every step 6
 hours (`stepHours`; independent of grid size). An old hex (col, row) has its centre on the new hex (2 col + (row & 1), 2 row), so the
 start, the Inn, the Wisp Forest, every location and the early road keep their places; a new hex exists when its centre lies in
 an old cell and takes that cell's region and encounters. Overworld.h `kOverworldData` picks which file the game loads.
@@ -15,6 +15,7 @@ import pathlib
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 SRC = ROOT / "content" / "data" / "overworld.json"
 OUT = ROOT / "content" / "data" / "overworld-half.json"
+PLACES = ROOT / "content" / "data" / "locations.json"  # the one place list: its col / row are this grid's
 OLD_SIZE, NEW_SIZE = 5.0, 2.5
 SQ3 = math.sqrt(3.0)
 
@@ -74,12 +75,18 @@ def main():
         cells.insert(cells.index(base), {**base, "col": west[0], "row": west[1], "x": x, "y": y})
     board["startHex"] = {"col": west[0], "row": west[1]}
     keys = {(c["col"], c["row"]) for c in cells}
-    for loc in data["locations"]:
+    # The places live in the one list, content/data/locations.json (the user, 2026-11-11: "they should never differ"); only
+    # their hex on this grid is written there.
+    places = json.loads(PLACES.read_text(encoding="utf-8"))
+    for loc in places["locations"]:
+        if "x" not in loc:
+            continue  # no pin: the editor's only
         # The hex under the pin (an old hex's centre can be a whole small hex away from its pin): clicking the pin is clicking the
         # location's hex. The early road (Overworld::canStep) reaches the Stone Bridge's hex wherever it lies.
         near = min(cells, key=lambda c: (c["x"] - loc["x"]) ** 2 + (c["y"] - loc["y"]) ** 2)
         loc["col"], loc["row"] = near["col"], near["row"]
         assert (loc["col"], loc["row"]) in keys, loc["id"]
+    PLACES.write_text(json.dumps(places, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     for key in ("startHex", "innHex"):
         assert (board[key]["col"], board[key]["row"]) in keys, key
     OUT.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")

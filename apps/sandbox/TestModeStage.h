@@ -44,6 +44,7 @@
 #include "render/UiArt.h"
 #include "render/vfx/ElementSprites.h"
 #include "world/Campaign.h"
+#include "world/Locais.h"
 #include "world/Overworld.h"
 #include "world/Underworld.h"
 
@@ -321,6 +322,15 @@ class TestModeStage : public Stage {
     return realSave_;
   }
   const ember::CampaignMission* missionData(const std::string& id) const { return campaign_.data().mission(id); }
+  // Every map of a place, from the one place list (content/data/locations.json, world/Locais.h; the user, 2026-11-11: "todos só
+  // devem ter um único caminho"): its maps, then its floors (Modo teste opens each one straight from here).
+  std::vector<const ember::MapMission*> placeMaps(const ember::MapLocation& loc) const {
+    std::vector<const ember::MapMission*> out = world_.visibleMissionsOf(loc, realSave_, true);
+    if (const auto it = locais_.submaps.find(loc.id); it != locais_.submaps.end())
+      for (const ember::LocaisFloor& f : it->second)
+        if (const ember::MapMission* m = world_.mission(f.missionId); m && std::find(out.begin(), out.end(), m) == out.end()) out.push_back(m);
+    return out;
+  }
 
   void openMission(const std::string& id) {
     // GameApp openMission / beginMission in test mode: nothing gated, finished missions open again; the Inn's briefing says
@@ -478,7 +488,7 @@ class TestModeStage : public Stage {
     for (const ember::MapLocation& loc : world_.locations()) {
       if (underworld_) break;  // the Overworld's places only on the Overworld
       const std::string st = world_.locationStatus(loc, realSave(), true);
-      const auto missions = world_.visibleMissionsOf(loc, realSave(), true);
+      const auto missions = placeMaps(loc);
       const ImVec2 c = locationPinAt(loc.x, loc.y, loc.pinDx, loc.pinDy, o, imgW, imgH);  // CampaignUi.h: the one pin
       const bool hover = over && locationPinHovered(io.MousePos, c, locationPinAt(loc.x, loc.y, 0, 0, o, imgW, imgH));
       drawPin(dl, c, hover ? 1.1f : 1.0f, st, std::any_of(missions.begin(), missions.end(), [](const ember::MapMission* m) { return m->hub; }),
@@ -490,7 +500,7 @@ class TestModeStage : public Stage {
       for (const ember::MapLocation& loc : world_.locations())
         if (loc.id == clickedId) {
           const std::string st = world_.locationStatus(loc, realSave(), true);
-          const auto missions = world_.visibleMissionsOf(loc, realSave(), true);
+          const auto missions = placeMaps(loc);
           if (st == "locked") flashId_ = loc.id, flashAt_ = now_;
           else if (missions.size() > 1) open_ = loc.id;
           else if (!missions.empty()) openMission(missions[0]->id);
@@ -550,9 +560,9 @@ class TestModeStage : public Stage {
       open_.reset();
       return;
     }
-    const auto missions = world_.visibleMissionsOf(*loc, realSave(), true);
+    const auto missions = placeMaps(*loc);
     std::vector<std::string> order;
-    for (const ember::MapMission* m : world_.missionsOf(*loc)) order.push_back(m->id);
+    for (const ember::MapMission* m : missions) order.push_back(m->id);
     const float w = std::min(448.0f, size.x - 32.0f), inner = w - 40.0f;
     ImGui::SetNextWindowPos({size.x * 0.5f, size.y * 0.5f}, ImGuiCond_Always, {0.5f, 0.5f});
     ImGui::SetNextWindowSizeConstraints({w, 0}, {w, size.y * 0.8f});
@@ -817,6 +827,7 @@ class TestModeStage : public Stage {
   std::optional<MissionEntry> briefing_;
   ember::Json realSave_;
   bool realSaveRead_ = false;
+  const ember::Locais locais_ = ember::Locais::load("content/data/editor-catalog.json");  // the one place list (its floors)
   std::optional<std::string> open_;
   bool options_ = false;
   menu::OptionsDialog optionsDialog_;  // Opções (EmberMenus.h), shown while options_

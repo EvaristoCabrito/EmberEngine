@@ -1,11 +1,12 @@
 #pragma once
 
 // The Map Editor's Locais and R-Encounter tables (Ember src/campaign/mapstore.ts: map-order.json, map-slots.json,
-// location-order.json, location-submaps.json, random-encounters.json and the browser's "ember-locais-local" copy that
-// wins over them). Ember's shipped tables come through content/data/editor-catalog.json; EmberEngine's own edits
-// are written to content/maps/locais.json and content/maps/random-encounters.json (Ember's folder is never
-// written). When the editor has saved Locais, the campaign and the world map play that order (locationsForOrder), as
-// Ember's game does once its Locais were saved.
+// location-order.json, location-submaps.json, random-encounters.json).
+// The places are ONE list (the user, 2026-11-11: "they should never differ thats what im saying from start of this game"):
+// content/data/locations.json, each place with its maps (missionIds), its floors (submaps), its planned slots, in campaign
+// order. The world map, the campaign, Modo teste's classic map and this editor all read it, and the editor's Salvar writes
+// it; there is no other copy (overworld*.json, campaign.json and editor-catalog.json no longer hold places). The
+// R-Encounter regions: Ember's from content/data/editor-catalog.json, EmberEngine's edits in content/maps/random-encounters.json.
 
 #include <filesystem>
 #include <map>
@@ -42,17 +43,18 @@ struct Locais {
   std::vector<std::string> locationOrder;
   std::map<std::string, std::vector<LocaisFloor>> submaps;
   std::optional<std::vector<std::string>> knownMissionIds;
-  bool own = false;  // content/maps/locais.json exists (the editor saved Locais)
+  bool own = false;  // the place list was read (content/data/locations.json)
 
   std::vector<EncounterRegion> regions;  // R-Encounter
   bool ownRegions = false;
 
-  static std::filesystem::path file() { return "content/maps/locais.json"; }
+  static std::filesystem::path file() { return "content/data/locations.json"; }  // the one place list
   static std::filesystem::path regionsFile() { return "content/maps/random-encounters.json"; }
 
-  // Ember's tables from the editor catalog, then EmberEngine's own files over them.
+  // The places from file() (the one list); the R-Encounter regions from the editor catalog, EmberEngine's own file over them.
   static Locais load(const std::filesystem::path& catalogFile);
-  // saveLocaisLocal (stamps knownMissionIds with every mission Ember's base names). False when the write failed.
+  // Writes the editor's state into file() itself: each place's maps, floors and slots, the places in locationOrder; every
+  // other field of a place (its pin, its hex, its flags) is kept. False when the write failed.
   bool save();
   bool saveRegions();
 
@@ -63,9 +65,8 @@ struct Locais {
   int slotsFor(const std::string& location) const;
 };
 
-// The world map and the campaign follow the saved Locais (no-op when the editor never saved them): each location's
-// missions replaced and the locations put in the saved order. New missions (ids the campaign does not know: maps made
-// in the editor) are added from their newest saved file in `savedMaps`.
+// The campaign follows the place list: each location's missions and the locations' order. New missions (ids the campaign
+// does not know: maps made in the editor) are added from their newest saved file in `savedMaps`.
 void applyLocais(CampaignData& data, const Locais& locais, const std::filesystem::path& savedMaps);
 
 }  // namespace ember

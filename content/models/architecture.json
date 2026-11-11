@@ -520,6 +520,83 @@
       "textureRepeat": 3.6,
       "footprint": "one",
       "round": true
+    },
+    {
+      "id": "ember-arch-fazenda-wall",
+      "name": "Parede da Fazenda 3D",
+      "model3d": "wall",
+      "emberStyle": "wall",
+      "wallTexture": "/game/textures/walls/farmland-aged-plaster-014.png",
+      "wallThicknessScale": 1.3,
+      "textureRepeat": 3.2,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-fazenda-window",
+      "name": "Janela da Fazenda 3D",
+      "model3d": "wall",
+      "emberStyle": "window",
+      "wallTexture": "/game/textures/walls/farmland-aged-plaster-014.png",
+      "wallThicknessScale": 1.3,
+      "textureRepeat": 3.2,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-fazenda-slit",
+      "name": "Seteira da Fazenda 3D",
+      "model3d": "wall",
+      "emberStyle": "slit",
+      "wallTexture": "/game/textures/walls/farmland-aged-plaster-014.png",
+      "wallThicknessScale": 1.3,
+      "textureRepeat": 3.2,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-fazenda-wall-torch",
+      "name": "Parede com tocha da Fazenda 3D",
+      "model3d": "wall",
+      "emberStyle": "wall-torch",
+      "wallTexture": "/game/textures/walls/farmland-aged-plaster-014.png",
+      "wallThicknessScale": 1.3,
+      "textureRepeat": 3.2,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-fazenda-portal",
+      "name": "Portal da Fazenda 3D · 2 hexes",
+      "model3d": "doorway",
+      "emberStyle": "portal",
+      "doorStyle": "watchtower",
+      "wallTexture": "/game/textures/walls/farmland-aged-plaster-014.png",
+      "wallThicknessScale": 1.3,
+      "textureRepeat": 3.2,
+      "architectureSpan": 2,
+      "footprint": "pair"
+    },
+    {
+      "id": "ember-arch-fazenda-door",
+      "name": "Porta da Fazenda 3D · 2 hexes",
+      "model3d": "door",
+      "emberStyle": "door",
+      "doorStyle": "watchtower",
+      "wallTexture": "/game/textures/walls/farmland-aged-plaster-014.png",
+      "wallThicknessScale": 1.3,
+      "textureRepeat": 3.2,
+      "architectureSpan": 2,
+      "footprint": "pair"
+    },
+    {
+      "id": "ember-arch-fazenda-door-locked",
+      "name": "Porta trancada da Fazenda 3D · 2 hexes",
+      "model3d": "door",
+      "emberStyle": "door",
+      "doorStyle": "mosteiro-locked",
+      "locked": true,
+      "wallTexture": "/game/textures/walls/farmland-aged-plaster-014.png",
+      "wallThicknessScale": 1.3,
+      "textureRepeat": 3.2,
+      "architectureSpan": 2,
+      "footprint": "pair"
     }
   ],
   "doorVariants": {

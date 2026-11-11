@@ -15,10 +15,8 @@
    "video": "Attachments/BigZombie_dog_animation_reference_ba9abcc5_720p.mp4",
    "first": 0,
    "last": 96,
-   "loopMin": 40,
-   "loopMax": 96,
-   "mode": "loop",
-   "why": "standing and breathing, until the mouth starts to open for the roar at ~98"
+   "mode": "pingpong",
+   "why": "standing and breathing, until the mouth starts to open for the roar at ~98; played back and forth: the best hard-cut loop in this stretch jumps 4.2 x a frame's step at its seam"
   },
   {
    "clip": "cast",

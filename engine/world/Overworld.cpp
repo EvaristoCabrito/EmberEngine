@@ -196,7 +196,13 @@ bool Overworld::load(const std::filesystem::path& file) {
     for (const Json& e : c.value("encounters", Json::array())) cell.encounters.push_back(e.get<std::string>());
     cells_.push_back(std::move(cell));
   }
-  for (const Json& l : j["locations"]) {
+  // The places: the one list (content/data/locations.json beside this file; the user, 2026-11-11: "they should never differ"),
+  // the same the campaign and the Map Editor read; a place with no pin (no x) is the editor's only, not drawn on the map.
+  Json places;
+  if (std::ifstream pin{file.parent_path() / "locations.json", std::ios::binary}; pin) places = Json::parse(pin, nullptr, false);
+  if (!places.is_object()) logError("places not found or unreadable: {}", (file.parent_path() / "locations.json").string());
+  for (const Json& l : places.is_object() ? places.value("locations", Json::array()) : Json::array()) {
+    if (!l.contains("x")) continue;
     MapLocation m;
     m.id = l.value("id", ""), m.name = l.value("name", "");
     m.x = l.value("x", 0.0), m.y = l.value("y", 0.0), m.col = l.value("col", 0), m.row = l.value("row", 0);
@@ -244,7 +250,7 @@ void Overworld::applyLocais(const Locais& locais, const CampaignData& campaign) 
       MapLocation m;
       for (const MapLocation& s : shippedLocations_)
         if (s.id == b.id) m = s;
-      if (m.id.empty()) m.id = b.id, m.name = b.name;
+      if (m.id.empty()) continue;  // no pin on the map (the editor's only)
       m.missionIds = b.missionIds;
       next.push_back(std::move(m));
     }

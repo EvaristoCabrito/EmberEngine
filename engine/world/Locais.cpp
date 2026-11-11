@@ -17,13 +17,13 @@ Json readFile(const std::filesystem::path& file) {
   return j.is_discarded() ? Json() : j;
 }
 
-bool writeFile(const std::filesystem::path& file, const Json& j) {
+bool writeFile(const std::filesystem::path& file, const Json& j, int indent = 2) {
   std::error_code ec;
   std::filesystem::create_directories(file.parent_path(), ec);
   const std::filesystem::path tmp = file.string() + ".tmp";
   {
     std::ofstream out(tmp, std::ios::binary | std::ios::trunc);
-    out << j.dump(2) << "\n";
+    out << j.dump(indent) << "\n";
     if (!out) return false;
   }
   std::filesystem::rename(tmp, file, ec);
@@ -35,28 +35,6 @@ std::vector<std::string> strings(const Json& j) {
   if (j.is_array())
     for (const Json& s : j)
       if (s.is_string()) out.push_back(s.get<std::string>());
-  return out;
-}
-
-std::map<std::string, std::vector<LocaisFloor>> floorsOf(const Json& j) {
-  std::map<std::string, std::vector<LocaisFloor>> out;
-  if (!j.is_object()) return out;
-  for (const auto& [loc, list] : j.items()) {
-    std::vector<LocaisFloor>& v = out[loc];
-    if (list.is_array())
-      for (const Json& f : list)
-        if (f.is_object() && f.contains("missionId")) v.push_back({f["missionId"].get<std::string>(), f.value("floor", 0)});
-  }
-  return out;
-}
-
-Json floorsJson(const std::map<std::string, std::vector<LocaisFloor>>& m) {
-  Json out = Json::object();
-  for (const auto& [loc, list] : m) {
-    Json a = Json::array();
-    for (const LocaisFloor& f : list) a.push_back(Json{{"missionId", f.missionId}, {"floor", f.floor}});
-    out[loc] = a;
-  }
   return out;
 }
 
@@ -75,52 +53,66 @@ Locais Locais::load(const std::filesystem::path& catalogFile) {
   Locais l;
   const Json cat = readFile(catalogFile);
   const Json e = cat.is_object() && cat.contains("editor") ? cat["editor"] : Json::object();
-  for (const Json& loc : e.value("locations", Json::array())) l.base.push_back({loc.value("id", ""), loc.value("name", ""), strings(loc.value("missionIds", Json::array()))});
-  const Json shipped = e.value("locais", Json::object());
-  l.defaultSubmaps = floorsOf(shipped.value("submaps", Json::object()));
-  // the shipped state (no saved copy: ALL_LOCATIONS, LOCATION_SLOTS, DEFAULT_LOCATION_SUBMAPS)
-  for (const Base& b : l.base) l.order[b.id] = b.missionIds, l.locationOrder.push_back(b.id);
-  const Json slotsTable = shipped.value("slots", Json::object());  // a copy: items() of a temporary dangles
-  for (const auto& [loc, n] : slotsTable.items())
-    if (n.is_number()) l.slots[loc] = n.get<int>();
-  l.submaps = l.defaultSubmaps;
-  l.regions = regionsOf(e.value("encounterRegions", Json::array()));
-  // EmberEngine's own saved copy (loadLocaisLocal: order, slots and locationOrder required)
-  const Json own = readFile(file());
-  if (own.is_object() && own.contains("order") && own["order"].is_object() && own.contains("slots") && own["slots"].is_object() &&
-      own.contains("locationOrder") && own["locationOrder"].is_array()) {
-    l.own = true;
-    l.order.clear(), l.slots.clear();
-    for (const auto& [loc, ids] : own["order"].items()) l.order[loc] = strings(ids);
-    for (const auto& [loc, n] : own["slots"].items())
-      if (n.is_number()) l.slots[loc] = n.get<int>();
-    l.locationOrder = strings(own["locationOrder"]);
-    std::map<std::string, std::vector<LocaisFloor>> groups = l.defaultSubmaps;
-    for (auto& [loc, list] : floorsOf(own.value("submaps", Json::object()))) groups[loc] = list;
-    l.submaps = groups;
-    if (own.contains("knownMissionIds") && own["knownMissionIds"].is_array()) l.knownMissionIds = strings(own["knownMissionIds"]);
+  // the one place list: each place's maps, floors and slots, in campaign order
+  const Json places = readFile(file());
+  for (const Json& loc : places.is_object() ? places.value("locations", Json::array()) : Json::array()) {
+    if (!loc.is_object() || !loc.contains("id")) continue;
+    const std::string id = loc.value("id", "");
+    l.base.push_back({id, loc.value("name", id), strings(loc.value("missionIds", Json::array()))});
+    l.order[id] = l.base.back().missionIds, l.locationOrder.push_back(id);
+    if (loc.contains("slots") && loc["slots"].is_number()) l.slots[id] = loc["slots"].get<int>();
+    std::vector<LocaisFloor>& floors = l.defaultSubmaps[id];
+    for (const Json& f : loc.value("submaps", Json::array()))
+      if (f.is_object() && f.contains("missionId")) floors.push_back({f["missionId"].get<std::string>(), f.value("floor", 0)});
   }
+  l.submaps = l.defaultSubmaps;
+  l.own = !l.base.empty();
+  if (!l.own) logError("Locais: no places in {}", file().generic_string());
+  l.regions = regionsOf(e.value("encounterRegions", Json::array()));
   const Json regions = readFile(regionsFile());
   if (regions.is_object() && regions.contains("regions")) l.regions = regionsOf(regions), l.ownRegions = true;
   return l;
 }
 
 bool Locais::save() {
-  Json j = Json::object();
-  Json o = Json::object();
-  for (const auto& [loc, ids] : order) o[loc] = ids;
-  j["order"] = o;
-  Json s = Json::object();
-  for (const auto& [loc, n] : slots) s[loc] = n;
-  j["slots"] = s;
-  j["locationOrder"] = locationOrder;
-  j["submaps"] = floorsJson(submaps);
-  j["floorLayoutVersion"] = 1;
-  std::vector<std::string> known;
-  for (const Base& b : base) known.insert(known.end(), b.missionIds.begin(), b.missionIds.end());
-  j["knownMissionIds"] = known;
-  if (!writeFile(file(), j)) return false;
-  own = true, knownMissionIds = known;
+  Json places = readFile(file());
+  if (!places.is_object()) places = Json::object();
+  const Json old = places.value("locations", Json::array());
+  // the places in the editor's order, then any it does not name
+  std::vector<std::string> ids = locationOrder;
+  for (const Base& b : base)
+    if (std::find(ids.begin(), ids.end(), b.id) == ids.end()) ids.push_back(b.id);
+  std::set<std::string> floorIds;
+  for (const auto& [loc, list] : submaps)
+    for (const LocaisFloor& f : list) floorIds.insert(f.missionId);
+  Json next = Json::array();
+  std::vector<Base> saved;
+  for (const std::string& id : ids) {
+    Json p = Json{{"id", id}};
+    for (const Json& o : old)
+      if (o.is_object() && o.value("id", "") == id) p = o;
+    if (!p.contains("name"))
+      for (const Base& b : base)
+        if (b.id == id) p["name"] = b.name;
+    std::vector<std::string> maps;
+    if (const auto it = order.find(id); it != order.end())
+      for (const std::string& m : it->second)
+        if (!floorIds.contains(m) && std::find(maps.begin(), maps.end(), m) == maps.end()) maps.push_back(m);
+    p["missionIds"] = maps;
+    Json floors = Json::array();
+    if (const auto it = submaps.find(id); it != submaps.end())
+      for (const LocaisFloor& f : it->second) floors.push_back(Json{{"missionId", f.missionId}, {"floor", f.floor}});
+    if (floors.empty()) p.erase("submaps");
+    else p["submaps"] = floors;
+    if (const int n = slotsFor(id); n > 0) p["slots"] = n;
+    else p.erase("slots");
+    saved.push_back({id, p.value("name", id), maps});
+    next.push_back(std::move(p));
+  }
+  places["locations"] = next;
+  if (!writeFile(file(), places, 1)) return false;
+  base = std::move(saved), defaultSubmaps = submaps, knownMissionIds.reset(), own = true;
+  for (const Base& b : base) order[b.id] = b.missionIds;
   return true;
 }
 
@@ -186,7 +178,7 @@ void applyLocais(CampaignData& data, const Locais& locais, const std::filesystem
     WorldLocation w;
     for (const WorldLocation& s : data.shippedLocations)
       if (s.id == b.id) w = s;
-    if (w.id.empty()) w.id = b.id, w.name = b.name;
+    if (w.id.empty()) continue;  // no hex on the map (the editor's only)
     w.missionIds = b.missionIds;
     next.push_back(std::move(w));
   }

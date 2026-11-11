@@ -21,7 +21,7 @@
 //   Desfazer / Refazer (10 steps), Substituir base, the saved files (Carregar / Ativar / apagar), Testar, Salvar.
 //
 // Saves go to content/maps/ember/<id><serial>.json (Ember's format and serials; Ember's folder untouched); Locais /
-// R-Encounter to content/maps/locais.json and random-encounters.json (world/Locais.h); Ativar to content/maps/active.json.
+// R-Encounter to content/data/locations.json (the one place list) and content/maps/random-encounters.json (world/Locais.h); Ativar to content/maps/active.json.
 // Not here (Ember's own left them out or they have no meaning here): the elemental 2D FX, Exportar, the browser-local
 // versions.
 

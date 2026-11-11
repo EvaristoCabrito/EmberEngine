@@ -3361,7 +3361,7 @@ class MapStage final : public Stage {
           low.heightScale = def->heightScale * kCutHeight / std::max(maxY, 0.1f);
           piece.cutMesh = meshOf(ember::pieceGeometry(low, rot, connections, {x, -z}), false);
         }
-      } else if ((p.id.starts_with("ember-arch-mosteiro-") || p.id.starts_with("ember-arch-farol-")) && !stairs) {  // the Light House kit too (2026-11-11)
+      } else if ((p.id.starts_with("ember-arch-mosteiro-") || p.id.starts_with("ember-arch-farol-") || p.id.starts_with("ember-arch-fazenda-")) && !stairs) {  // the Light House kit too (2026-11-11), and the Farmlands houses' (same day: the near wall hid the way out)
         // The Monastery's smart walls (the user, 2026-10-30: "eu vou precisar daquelas paredes espertas"): the Inn's cut on the
         // monastery kit, the precinct's muralha included: a piece between the camera and what it looks at stands as a plain wall
         // kCutHeight tall (windows, slits and torches too). Doors, portals and gates are never cut (the user, same day: "it can't

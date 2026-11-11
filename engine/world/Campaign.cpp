@@ -62,7 +62,12 @@ bool CampaignData::load(const std::filesystem::path& file) {
     c.index = m.value("index", 0);
     missions.push_back(std::move(c));
   }
-  for (const Json& l : j.value("locations", Json::array())) {
+  // The places: the one list (content/data/locations.json beside this file; the user, 2026-11-11: "they should never differ"),
+  // the same the world map and the Map Editor read; a place with no hex of its own (no pin on the map) is the editor's only.
+  Json places;
+  if (!readJson(file.parent_path() / "locations.json", places)) logError("places not found or unreadable: {}", (file.parent_path() / "locations.json").string());
+  for (const Json& l : places.value("locations", Json::array())) {
+    if (!l.contains("col")) continue;
     WorldLocation w;
     w.id = str(l, "id"), w.name = str(l, "name");
     w.col = l.value("col", 0), w.row = l.value("row", 0);
