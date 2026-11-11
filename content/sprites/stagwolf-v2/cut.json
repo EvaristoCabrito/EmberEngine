@@ -1,0 +1,51 @@
+{
+ "about": "StagWolf (Cão Zumbi / T8 summon art): new walks from the user's video (Attachments/ZombieBOgWolfCharacter_walking_in_place_1ed8f6c1.mp4, 2026-11-10; 24 fps, 1280 x 720): the three-quarter walk to the right (frames 0..117), the same walk mirrored for the left, and the walk toward the camera (118..239, the camera cuts at 117/118). The user: \"at least a walk down animation, maybe a mirrored improved version of walk left and walk right\". Its idle, attack, cast, hit and death keep the StagWolf sheets.",
+ "set": "stagwolf-v2",
+ "version": "v01",
+ "figureUnits": 2.614,
+ "figurePx": 665,
+ "figureNote": "the StagWolf sheet's walk (sprites-clean/StagWolf/move) stands 2.614 units, antler tips to feet (median of its 36 frames, 520.5 of 800 px in a 4.018-unit box); the video's side walk is 665 px antler tips to feet (median): one pixel scale for both clips (one camera), so the front walk is as big as the side one",
+ "edgeKey": true,
+ "clips": [
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/stagwolf-v2/walk",
+   "video": "Attachments/ZombieBOgWolfCharacter_walking_in_place_1ed8f6c1.mp4",
+   "first": 0,
+   "last": 117,
+   "loopMin": 40,
+   "loopMax": 117,
+   "mode": "loop",
+   "why": "three-quarter view walking in place, facing right"
+  },
+  {
+   "clip": "move-left",
+   "pose": "walkLeft",
+   "kind": "walk",
+   "src": "build/video-cut/stagwolf-v2/walk",
+   "video": "Attachments/ZombieBOgWolfCharacter_walking_in_place_1ed8f6c1.mp4",
+   "first": 0,
+   "last": 117,
+   "loopMin": 40,
+   "loopMax": 117,
+   "mode": "loop",
+   "mirror": true,
+   "why": "the walk to the right, mirrored (the user asked for a mirrored walk left)"
+  },
+  {
+   "clip": "movefront",
+   "pose": "walkDown",
+   "kind": "walk",
+   "src": "build/video-cut/stagwolf-v2/walk",
+   "video": "Attachments/ZombieBOgWolfCharacter_walking_in_place_1ed8f6c1.mp4",
+   "first": 118,
+   "last": 239,
+   "loopMin": 40,
+   "loopMax": 121,
+   "mode": "loop",
+   "why": "facing the camera, stepping in place (the walk toward the viewer)"
+  }
+ ]
+}

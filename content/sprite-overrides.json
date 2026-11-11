@@ -457,6 +457,33 @@
    "why": "the Ashes Crawler's Personagens Leve (the same order): 36 frames from the same mattes",
    "lightOf": {"hero": "ashesCrawler", "set": "ashes-crawler"},
    "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "stagwolf-v2",
+   "version": "v01",
+   "hero": "stagWolf",
+   "cut": "content/sprites/stagwolf-v2/cut.json",
+   "why": "the user, 2026-11-10: \"ZombieBOgWolfCharacter_walking_in_place_1ed8f6c1 see what you can do with this at least a walk down animation, maybe a mirrorerd improved version of walk left and walk right?\": the walk right (three-quarter view), the same walk mirrored for the left, and the walk toward the camera, at the StagWolf sheet walk's height; its idle, attack, cast, hit and death keep the StagWolf sheets",
+   "poses": {"walk": "move", "walkLeft": "move-left", "walkDown": "movefront"},
+   "labels": {"walk": "Andar", "walkLeft": "Andar (esquerda)", "walkDown": "Andar (frente)"},
+   "packs": {"move": "field", "move-left": "field", "movefront": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0, "movefront": 1.0}
+  },
+  {
+   "set": "stagwolf-v2-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/stagwolf-v2/cut-64-media.json",
+   "why": "the StagWolf walks' Personagens Média: 64 frames from the same mattes",
+   "mediumOf": {"hero": "stagWolf", "set": "stagwolf-v2"},
+   "packs": {"move": "field", "move-left": "field", "movefront": "field"}
+  },
+  {
+   "set": "stagwolf-v2-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/stagwolf-v2/cut-36-media.json",
+   "why": "the StagWolf walks' Personagens Leve: 36 frames from the same mattes",
+   "lightOf": {"hero": "stagWolf", "set": "stagwolf-v2"},
+   "packs": {"move": "field", "move-left": "field", "movefront": "field"}
   }
  ],
  "clips": [

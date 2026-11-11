@@ -1,0 +1,100 @@
+{
+ "clips": {
+  "move": {
+   "video": "Attachments/ZombieBOgWolfCharacter_walking_in_place_1ed8f6c1.mp4",
+   "first": 0,
+   "last": 117,
+   "loopFirst": 0,
+   "loopLast": 39,
+   "seamSteps": 1.67,
+   "bootRow": 689,
+   "bodyDrift": [
+    -2,
+    11
+   ],
+   "figurePx": 665.0,
+   "frames": 40,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    892,
+    720
+   ],
+   "crop": [
+    4,
+    5,
+    883,
+    713
+   ],
+   "box": {
+    "w": 3.5063,
+    "h": 2.8302,
+    "foot": 0.11792
+   },
+   "pattern": "content/sprites/stagwolf-v2/move-media64-v01/move-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/ZombieBOgWolfCharacter_walking_in_place_1ed8f6c1.mp4",
+   "first": 0,
+   "last": 117,
+   "loopFirst": 0,
+   "loopLast": 39,
+   "seamSteps": 1.67,
+   "bootRow": 689,
+   "bodyDrift": [
+    -2,
+    11
+   ],
+   "figurePx": 665.0,
+   "frames": 40,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    892,
+    720
+   ],
+   "crop": [
+    5,
+    5,
+    883,
+    713
+   ],
+   "box": {
+    "w": 3.5063,
+    "h": 2.8302,
+    "foot": 0.11792
+   },
+   "pattern": "content/sprites/stagwolf-v2/move-left-media64-v01/move-left-{}.png"
+  },
+  "movefront": {
+   "video": "Attachments/ZombieBOgWolfCharacter_walking_in_place_1ed8f6c1.mp4",
+   "first": 118,
+   "last": 239,
+   "loopFirst": 184,
+   "loopLast": 225,
+   "seamSteps": 2.42,
+   "bootRow": 689,
+   "bodyDrift": [
+    -27,
+    -14
+   ],
+   "figurePx": 665.0,
+   "frames": 42,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    461,
+    720
+   ],
+   "crop": [
+    4,
+    0,
+    451,
+    716
+   ],
+   "box": {
+    "w": 1.81211,
+    "h": 2.8302,
+    "foot": 0.11792
+   },
+   "pattern": "content/sprites/stagwolf-v2/movefront-media64-v01/movefront-{}.png"
+  }
+ }
+}
