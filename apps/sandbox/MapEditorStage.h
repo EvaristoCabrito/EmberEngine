@@ -4213,8 +4213,32 @@ class MapEditorStage : public Stage {
     if (remove) beginEdit(), decos.erase(*remove), selected_.reset();
   }
 
-  // The spawn lists in Ember's groups (heroes, allied summons, enemies, neutral beasts, neutral summons): name, class,
-  // level; Sortear classe for enemies, a neutral's dialogue, remove.
+  // A group's units as their pictures (the user, 2026-11-11: "eu preciso conseguir deletar as unidades do mapa clicando nas fotos, os
+  // nomes não são possíveis de acompanhar"): a click on a picture takes that unit off the map (Ctrl+Z puts it back). The picture is
+  // the one the Personagens palette shows for it (a named hero's own, else its class's).
+  std::optional<size_t> unitPictures(const char* key, const ember::Json& list, const std::vector<size_t>& rowsOf) {
+    std::optional<size_t> hit;
+    const float cell = 64, per = std::max(1.0f, std::floor((ImGui::GetContentRegionAvail().x + 6) / (cell + 8)));
+    int n = 0;
+    for (size_t k : rowsOf) {
+      const ember::Json& s = list[k];
+      const std::string name = s.value("name", ""), classId = s.value("classId", "");
+      const bool hero = !s.value("useClassSprite", false) && std::ranges::any_of(editor_.heroes, [&](const auto& h) { return h.first == name; });
+      const auto cls = editor_.classes.find(classId);
+      const std::string portrait = "/" + unitPortraitFile(hero ? name : std::string(), cls == editor_.classes.end() ? classId : cls->second.sprite);
+      if (n++ % static_cast<int>(per)) ImGui::SameLine();
+      ImGui::BeginGroup();
+      if (thumbButton(std::format("##pic{}{}", key, k).c_str(), portrait, "#333333", cell, false,
+                      std::format("{} ({},{}): clique para tirar do mapa · Ctrl+Z desfaz", name, s.value("x", 0), s.value("y", 0))))
+        hit = k;
+      nameUnder(name, ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+      ImGui::EndGroup();
+    }
+    return hit;
+  }
+
+  // The spawn lists in Ember's groups (heroes, allied summons, enemies, neutral beasts, neutral summons): their pictures (a click
+  // removes one), then name, class, level; Sortear classe for enemies, a neutral's dialogue, remove.
   void drawUnits() {
     static const std::tuple<const char*, bool, const char*> kGroups[] = {{"playerSpawns", false, "Heróis"},           {"playerSpawns", true, "Invocações aliadas"},
                                                                          {"enemySpawns", false, "Inimigos"},          {"neutralSpawns", false, "Feras neutras"},
@@ -4226,6 +4250,12 @@ class MapEditorStage : public Stage {
         if (isSummon(list[k].value("classId", "")) == summons) rowsOf.push_back(k);
       if (rowsOf.empty()) continue;
       fieldLabel("%s (%d)", label, static_cast<int>(rowsOf.size()));
+      if (const std::optional<size_t> gone = unitPictures(key, list, rowsOf)) {
+        beginEdit();
+        list.erase(*gone);
+        heldUnit_.reset();
+        continue;
+      }
       const bool enemy = std::string(key) == "enemySpawns", neutral = std::string(key) == "neutralSpawns";
       for (size_t k : rowsOf) {
         ember::Json& s = list[k];
