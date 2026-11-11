@@ -84,6 +84,15 @@
    "spells": {},
    "spellList": [],
    "about": "The user, 2026-11-06: Attachments/SandCrawler, \"its called Ashes Crawler\", \"they live in ashen forest primarily\". Working numbers, the user's to set: 2 hexes, mov 4, a 2D6 claw blow, stats the mean of the Giant Beetle's and the Giant Spider's rows, rank D, half damage from fire and ember (it lives in the ash), no spells."
+  },
+  "hypostasis": {
+   "name": "Hipóstase", "nameEn": "Hypostasis", "role": "Invocação",
+   "sprite": "hypostasis", "size": 3, "mov": 4, "strikesWith": "atk",
+   "weapon": {"dice": 2, "faces": 6, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "The T10 summon (the user, 2026-11-06 / 2026-11-10). It had no class, so no battle could place it (the map Todas as Unidades, 2026-11-11). Working numbers, the user's to set: the Giant Spider's (3 hexes, mov 4, a 2D6 blow, its stats rows), no resistances, no spells."
   }
  },
  "aboutHeroClasses": "EmberEngine's own hero classes (read by engine/world/BattleExport.cpp Rules, merged into content/data/battle-rules.json's classes with the same fields; their melee weapons of weaponTypes become usable by them). The Cruzado (the user, 2026-10-25; young Salazar's interlude class, docs/SKILLS_CRUSADER.md): level 10 at most (Spells.cpp classLevelCap), a hybrid a little under the Guerreiro and a little over the Curandeiro (each stat the two classes' mean at the level), the Arqueiro's tier table (T1 at 1, T2 at 4, T3 at 7, nothing above T3), Bênção from 1 and Cleave from 4 (his own spells come from Spells.cpp kEmberSpells); never a shield. Placeholder sprite: kaelEarly (an old warrior, on no map).",
