@@ -44,3 +44,11 @@ Tiles093, Tiles089, Tiles116, Tiles083, Tiles130, Grass005, Metal053C, Planks037
 https://polyhaven.com. Os modelos de `content/models/polyhaven/` e a textura brown_mud_leaves_01.
 
 Wisp vertical 01: adaptado de Poly Haven, tree_small_02, CC0. Wisp vertical 02–04: adaptados de Jagobo, Pine Forest at Sunset, CC BY 4.0. Wisp vertical 05: adaptado de Jagobo, White Oak Trees, CC BY 4.0; fontes e links acima.
+
+## Texturas dos objetos das casas do Farmlands (`content/models/textures/farmhouse-*-v01-*.jpg`, 2026-11-11)
+
+Compostas a partir de fotografias que já estavam nos arquivos do projeto. ambientCG (CC0, https://ambientcg.com): Planks037A
+(`wood`), Wood060 (`dark-wood`), Metal024 (`iron`). Poly Haven (CC0): forest_leaves_03
+(https://polyhaven.com/a/forest_leaves_03, `herbs`) e mud_cracked_dry_03 (https://polyhaven.com/a/mud_cracked_dry_03, a rede
+do craquelado de `clay`). Do projeto: a fotografia do usuário `wt-burlap.jpg` (`linen`) e `terracotta-photo-v01.png` (o corpo
+do barro de `clay`). Receita em `work/farmhouse-textures-v01/make_farmhouse_textures.py`.
