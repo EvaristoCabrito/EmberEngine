@@ -1240,6 +1240,24 @@ Geometry emberGeometry(const ArchitectureDef& def, double tile, double height, i
     g.rotateZ(axis);
     return finish(std::move(g));
   }
+  if (def.round && connections.size() == 2) {
+    // The round wall: the curve from the midpoint towards one neighbour to the midpoint towards the other, bent at the hex's centre
+    // (a quadratic Bezier, its control point the centre: tangent to both runs where they meet the neighbours' own curves), laid as
+    // short overlapping slabs with their courses.
+    const auto [ax, ay] = connections[0];
+    const auto [bx, by] = connections[1];
+    constexpr int kSteps = 8;
+    auto at = [&](double t) { return std::pair{(1 - t) * (1 - t) * ax / 2 + t * t * bx / 2, (1 - t) * (1 - t) * ay / 2 + t * t * by / 2}; };
+    for (int i = 0; i < kSteps; ++i) {
+      const auto [x0, y0] = at(static_cast<double>(i) / kSteps);
+      const auto [x1, y1] = at(static_cast<double>(i + 1) / kSteps);
+      const double angle = std::atan2(y1 - y0, x1 - x0), length = std::hypot(x1 - x0, y1 - y0) + T * 0.18;
+      boxAt(length, T, height, (x0 + x1) / 2, (y0 + y1) / 2, height / 2, angle);
+      courses(length, (x0 + x1) / 2, (y0 + y1) / 2, angle);
+    }
+    if (def.emberStyle == "wall-torch") torch(axis);
+    return finish(three::merge(parts));
+  }
   boxAt(T, T, height, 0, 0, height / 2);
   boxAt(T + 2 * plinthOut, T + 2 * plinthOut, plinthH, 0, 0, plinthH / 2);
   boxAt(T + 2 * capOut, T + 2 * capOut, capH, 0, 0, height - capH / 2);
@@ -1511,6 +1529,7 @@ bool ArchitectureDefs::load(const std::filesystem::path& catalogFile) {
     a.wallTexture = s(d, "wallTexture");
     a.thickWall = d.value("thickWall", false), a.dungeonReference = d.value("dungeonReference", false), a.connects = d.value("connects", true);
     a.openAir = d.value("openAir", false);
+    a.round = d.value("round", false);
     a.locked = d.value("locked", false);
     a.emberStyle = s(d, "emberStyle"), a.textureRepeat = n(d, "textureRepeat", 3.6);
     defs.emplace(id, std::move(a));

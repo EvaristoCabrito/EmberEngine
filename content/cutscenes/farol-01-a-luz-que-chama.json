@@ -1,0 +1,271 @@
+{
+  "format": "ember-cutscene-1",
+  "id": "farol-01-a-luz-que-chama",
+  "_note": "O Farol, cena 01 'A Luz que Chama' (2026-11-11; the user: 'a boss talk scene at the top of the lighthouse', a film cutscene and then the fight). Plays when the lantern room (farol-topo) opens. The room is an octagon: the great lamp at (11, 8), O Faroleiro (the Embered Wraith) before it at (11, 10) with his back to the stairs, the party by the stairs (Kael at (11, 14)). Only Kael and O Faroleiro are actors: whoever else is in the party stays where the map put them. Headings: 'n' looks from the stairs at the lamp.",
+  "actors": {
+    "kael": {
+      "unit": "Kael"
+    },
+    "faroleiro": {
+      "unit": "O Faroleiro"
+    }
+  },
+  "steps": [
+    {
+      "do": "bars",
+      "on": true
+    },
+    {
+      "do": "fade",
+      "to": "black",
+      "seconds": 0
+    },
+    {
+      "do": "music",
+      "stop": true
+    },
+    {
+      "do": "face",
+      "actor": "faroleiro",
+      "direction": "ne"
+    },
+    {
+      "do": "shot",
+      "on": [
+        11,
+        8
+      ],
+      "turn": "n",
+      "tilt": 24,
+      "distance": 9,
+      "lift": 2.6,
+      "cut": true
+    },
+    {
+      "do": "sfx",
+      "file": "EmberedWraithWalk001.mp3",
+      "volume": 0.5
+    },
+    {
+      "do": "wait",
+      "seconds": 1.2
+    },
+    {
+      "do": "fade",
+      "to": "clear",
+      "seconds": 2.5
+    },
+    {
+      "do": "shot",
+      "on": [
+        11,
+        10
+      ],
+      "turn": "n",
+      "tilt": 34,
+      "distance": 17,
+      "lift": 1.0,
+      "over": 5.0
+    },
+    {
+      "do": "caption",
+      "text": "O Farol · A Lanterna",
+      "translations": {
+        "en": "The Light House · The Lantern"
+      },
+      "style": "plain",
+      "seconds": 2.5
+    },
+    {
+      "do": "move",
+      "actor": "kael",
+      "to": [
+        11,
+        12
+      ]
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "toward": "faroleiro"
+    },
+    {
+      "do": "shot",
+      "between": [
+        "kael",
+        "faroleiro"
+      ],
+      "behind": "kael",
+      "tilt": 18,
+      "distance": "medium",
+      "lift": 0.38,
+      "over": 1.6
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Faroleiro. A sua luz está levando os barcos para as pedras.",
+      "translations": {
+        "en": "Keeper. Your light is leading the ships onto the rocks."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "faroleiro",
+      "text": "Quarenta anos. Nenhuma noite sem luz. Nem uma.",
+      "translations": {
+        "en": "Forty years. Not one night without the light. Not one."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Enterraram o senhor no inverno passado.",
+      "translations": {
+        "en": "They buried you last winter."
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 0.6
+    },
+    {
+      "do": "face",
+      "actor": "faroleiro",
+      "toward": "kael"
+    },
+    {
+      "do": "sfx",
+      "file": "EmberedWraithCast001.mp3",
+      "volume": 0.8
+    },
+    {
+      "do": "shake",
+      "seconds": 0.6,
+      "strength": 0.12
+    },
+    {
+      "do": "emote",
+      "actor": "kael",
+      "text": "!"
+    },
+    {
+      "do": "shot",
+      "on": "faroleiro",
+      "look": "faroleiro",
+      "behind": "kael",
+      "tilt": 10,
+      "distance": 9,
+      "lift": 0.5,
+      "over": 1.2
+    },
+    {
+      "do": "say",
+      "actor": "faroleiro",
+      "text": "Enterraram um homem. A luz não era o homem. A luz fica.",
+      "translations": {
+        "en": "They buried a man. The light was never the man. The light stays."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "faroleiro",
+      "text": "E eles vêm, está vendo? Todo barco vem. Eu acendo, e eles voltam para casa.",
+      "translations": {
+        "en": "And they come, you see? Every ship comes. I light it, and they come home."
+      }
+    },
+    {
+      "do": "shot",
+      "between": [
+        "kael",
+        "faroleiro"
+      ],
+      "behind": "faroleiro",
+      "tilt": 16,
+      "distance": "medium",
+      "lift": 0.38,
+      "over": 1.4
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Eles vêm para morrer. E depois sobem a praia andando, com a boca cheia de mar.",
+      "translations": {
+        "en": "They come to die. And then they walk up the beach with their mouths full of sea."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "faroleiro",
+      "text": "Sobem para VIGIAR. A cinza acordou o que dormia lá embaixo, e um farol precisa de olhos. Eu dou a eles uma luz. Eles me dão a noite inteira.",
+      "translations": {
+        "en": "They come up to KEEP WATCH. The ash woke what slept below, and a lighthouse needs eyes. I give them a light. They give me the whole night."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Então olhe para mim, Anselmo. Eu vou apagar essa lanterna.",
+      "translations": {
+        "en": "Then look at me, Anselmo. I'm putting that lantern out."
+      }
+    },
+    {
+      "do": "shot",
+      "on": "faroleiro",
+      "behind": "kael",
+      "tilt": 6,
+      "distance": 9,
+      "lift": 0.55,
+      "over": 0.8
+    },
+    {
+      "do": "tint",
+      "percent": 30,
+      "over": 0.8
+    },
+    {
+      "do": "say",
+      "actor": "faroleiro",
+      "text": "Ninguém apaga a minha luz.",
+      "translations": {
+        "en": "No one puts out my light."
+      }
+    },
+    {
+      "do": "flash",
+      "seconds": 0.5
+    },
+    {
+      "do": "sfx",
+      "file": "EmberedWraithATT001.mp3",
+      "volume": 1.0
+    },
+    {
+      "do": "shake",
+      "seconds": 1.0,
+      "strength": 0.22
+    },
+    {
+      "do": "tint",
+      "percent": 0,
+      "over": 0.6
+    },
+    {
+      "do": "shot",
+      "on": [
+        11,
+        11
+      ],
+      "turn": "n",
+      "tilt": 42,
+      "distance": 18,
+      "over": 1.4
+    },
+    {
+      "do": "bars",
+      "on": false
+    }
+  ]
+}

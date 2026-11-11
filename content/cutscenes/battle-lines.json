@@ -37,6 +37,25 @@
           "en": "That's it! Keep the flames on it!"
         }
       }
+    ],
+    "farol-topo": [
+      {
+        "when": "battleStart",
+        "speaker": "O Faroleiro",
+        "text": "Vigias! À luz! Ninguém toca na lanterna!",
+        "translations": {
+          "en": "Watchmen! To the light! No one touches the lantern!"
+        }
+      },
+      {
+        "when": "allyBadlyWounded",
+        "speaker": "Kael",
+        "below": 0.3,
+        "text": "Fiquem longe da lente! É dela que ele tira a força!",
+        "translations": {
+          "en": "Stay clear of the lens! That's where he draws his strength!"
+        }
+      }
     ]
   }
 }

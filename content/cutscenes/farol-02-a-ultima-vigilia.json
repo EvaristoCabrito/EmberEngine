@@ -1,0 +1,129 @@
+{
+  "format": "ember-cutscene-1",
+  "id": "farol-02-a-ultima-vigilia",
+  "_note": "O Farol, cena 02 'A Última Vigília' (2026-11-11), played once the fight in the lantern room (farol-topo) is won. O Faroleiro is a 'fallen' actor: his body stays where he fell. Only Kael speaks; the lens' last turn is a caption. No walks: wherever the fight left Kael is where he stands.",
+  "actors": {
+    "kael": {
+      "unit": "Kael"
+    },
+    "faroleiro": {
+      "unit": "O Faroleiro",
+      "fallen": true
+    }
+  },
+  "steps": [
+    {
+      "do": "bars",
+      "on": true
+    },
+    {
+      "do": "music",
+      "stop": true
+    },
+    {
+      "do": "shot",
+      "on": "faroleiro",
+      "turn": "n",
+      "tilt": 70,
+      "distance": 9,
+      "cut": true
+    },
+    {
+      "do": "sfx",
+      "file": "EmberedWraithCast001.mp3",
+      "volume": 0.6
+    },
+    {
+      "do": "shake",
+      "seconds": 0.8,
+      "strength": 0.15
+    },
+    {
+      "do": "wait",
+      "seconds": 1.6
+    },
+    {
+      "do": "face",
+      "actor": "kael",
+      "toward": "faroleiro"
+    },
+    {
+      "do": "shot",
+      "on": [
+        11,
+        8
+      ],
+      "turn": "n",
+      "tilt": 20,
+      "distance": 11,
+      "lift": 2.6,
+      "over": 3.0
+    },
+    {
+      "do": "caption",
+      "text": "…a lente gira mais uma vez, devagar, e para.",
+      "translations": {
+        "en": "…the lens turns once more, slowly, and stops."
+      },
+      "style": "plain",
+      "seconds": 3.5
+    },
+    {
+      "do": "shot",
+      "on": "kael",
+      "tilt": 14,
+      "distance": "medium",
+      "lift": 0.38,
+      "over": 1.6
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Acabou a vigília, Anselmo. Pode descansar.",
+      "translations": {
+        "en": "The watch is over, Anselmo. You can rest."
+      }
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "Sem a luz falsa, os barcos voltam a ver as pedras. E os que subiram da gruta não têm mais quem os chame.",
+      "translations": {
+        "en": "Without the false light, the ships can see the rocks again. And the ones who climbed out of the cave have no one left to call them."
+      }
+    },
+    {
+      "do": "wait",
+      "seconds": 0.6
+    },
+    {
+      "do": "shot",
+      "on": [
+        11,
+        8
+      ],
+      "turn": "n",
+      "tilt": 30,
+      "distance": 15,
+      "lift": 1.6,
+      "over": 2.5
+    },
+    {
+      "do": "say",
+      "actor": "kael",
+      "text": "A pedra que ele pôs na lanterna veio lá de baixo. Se ainda há Ember sob este penhasco, alguém vai vir buscar.",
+      "translations": {
+        "en": "The stone he set in the lantern came from below. If there is still Ember under this cliff, someone will come for it."
+      }
+    },
+    {
+      "do": "fade",
+      "to": "black",
+      "seconds": 1.5
+    },
+    {
+      "do": "bars",
+      "on": false
+    }
+  ]
+}

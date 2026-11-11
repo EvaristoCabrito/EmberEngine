@@ -21,6 +21,9 @@
     ],
     "wisp-forest-revisited-v03": [
       "wisp-forest-01-as-vozes-vermelhas"
+    ],
+    "farol-topo": [
+      "farol-01-a-luz-que-chama"
     ]
   },
   "onVictory": {
@@ -35,6 +38,9 @@
     ],
     "thebridge": [
       "stone-bridge-02-a-promessa"
+    ],
+    "farol-topo": [
+      "farol-02-a-ultima-vigilia"
     ]
   }
 }

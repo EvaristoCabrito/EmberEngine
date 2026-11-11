@@ -36,6 +36,11 @@ struct ArchitectureDef {
   // a lock: BattleExport lists it among the battle's locks ("Arrombar" beside it), MapStage keeps its leaves shut and its cells solid
   // until the lock is picked; from then on it opens for whoever comes, like any animated door.
   bool locked = false;
+  // round (2026-11-11, the Light House's tower; the user: "you need to make round walls for this one, only square walls go
+  // underground"): a wall piece between two neighbours is one smooth curve from the midpoint towards the one to the midpoint towards
+  // the other, bending at the hex's centre (no square post, no straight arms), so a ring of them reads as a round tower. With one
+  // neighbour, three or none it is the plain wall.
+  bool round = false;
   // EmberEngine's own pieces (content/models/architecture.json, ids ember-arch-*): "wall" (a joined run with a base and a string
   // course), "window" (a lancet window with a splayed inner embrasure, light through it), "slit" (an arrow loop), "portal" (an
   // arched doorway two hexes wide); the gothic parapet kit: "gothic-wall" (a panelled run: tracery windows on the deck side, tally

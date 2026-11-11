@@ -349,10 +349,187 @@
       "wallThicknessScale": 1.3,
       "textureRepeat": 2.4,
       "footprint": "one"
+    },
+    {
+      "id": "ember-arch-farol-wall",
+      "name": "Parede do Farol 3D",
+      "model3d": "wall",
+      "emberStyle": "wall",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "footprint": "one",
+      "pendingTexture": "/ember/textures/walls/farol-v01.jpg (docs/LIGHTHOUSE.md: the user's photo; until it arrives, the Watchtower's stone)"
+    },
+    {
+      "id": "ember-arch-farol-window",
+      "name": "Janela do Farol 3D",
+      "model3d": "wall",
+      "emberStyle": "window",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-farol-slit",
+      "name": "Seteira do Farol 3D",
+      "model3d": "wall",
+      "emberStyle": "slit",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-farol-wall-torch",
+      "name": "Parede com tocha do Farol 3D",
+      "model3d": "wall",
+      "emberStyle": "wall-torch",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-farol-portal",
+      "name": "Portal do Farol 3D · 2 hexes",
+      "model3d": "doorway",
+      "emberStyle": "portal",
+      "doorStyle": "watchtower",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "architectureSpan": 2,
+      "footprint": "pair"
+    },
+    {
+      "id": "ember-arch-farol-door",
+      "name": "Porta do Farol 3D · 2 hexes",
+      "model3d": "door",
+      "emberStyle": "door",
+      "doorStyle": "watchtower",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "architectureSpan": 2,
+      "footprint": "pair"
+    },
+    {
+      "id": "ember-arch-farol-door-locked",
+      "name": "Porta trancada do Farol 3D · 2 hexes",
+      "model3d": "door",
+      "emberStyle": "door",
+      "doorStyle": "mosteiro-locked",
+      "locked": true,
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "architectureSpan": 2,
+      "footprint": "pair"
+    },
+    {
+      "id": "ember-arch-farol-stairs-up",
+      "name": "Escada que sobe do Farol 3D · 2 hexes",
+      "model3d": "doorway",
+      "emberStyle": "stairs-up",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "architectureSpan": 2,
+      "footprint": "pair",
+      "connects": false
+    },
+    {
+      "id": "ember-arch-farol-stairs-down",
+      "name": "Escada que desce do Farol 3D · 2 hexes",
+      "model3d": "doorway",
+      "emberStyle": "stairs-down",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "architectureSpan": 2,
+      "footprint": "pair",
+      "connects": false
+    },
+    {
+      "id": "ember-arch-farol-rampart",
+      "name": "Muralha do Farol 3D",
+      "model3d": "wall",
+      "emberStyle": "wall",
+      "openAir": true,
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-farol-rampart-torch",
+      "name": "Muralha com tocha do Farol 3D",
+      "model3d": "wall",
+      "emberStyle": "wall-torch",
+      "openAir": true,
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-farol-rampart-gate",
+      "name": "Portão da muralha do Farol 3D · 4 hexes",
+      "model3d": "doorway",
+      "emberStyle": "gate",
+      "openAir": true,
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "heightScale": 1.2,
+      "textureRepeat": 3.6,
+      "architectureSpan": 4,
+      "footprint": "quad"
+    },
+    {
+      "id": "ember-arch-farol-gate",
+      "name": "Portão do Farol 3D · 4 hexes",
+      "model3d": "doorway",
+      "emberStyle": "gate",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "heightScale": 1.2,
+      "textureRepeat": 3.6,
+      "architectureSpan": 4,
+      "footprint": "quad"
+    },
+    {
+      "id": "ember-arch-farol-round-wall",
+      "name": "Parede redonda do Farol 3D",
+      "model3d": "wall",
+      "emberStyle": "wall",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "footprint": "one",
+      "round": true
+    },
+    {
+      "id": "ember-arch-farol-round-wall-torch",
+      "name": "Parede redonda do Farol com tocha 3D",
+      "model3d": "wall",
+      "emberStyle": "wall-torch",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "footprint": "one",
+      "round": true
     }
   ],
   "doorVariants": {
-    "watchtower": {"open": "ember-arch-watchtower-portal", "closed": "ember-arch-watchtower-door"},
-    "inn": {"open": "ember-arch-inn-doorway", "closed": "ember-arch-inn-door"}
+    "watchtower": {
+      "open": "ember-arch-watchtower-portal",
+      "closed": "ember-arch-watchtower-door"
+    },
+    "inn": {
+      "open": "ember-arch-inn-doorway",
+      "closed": "ember-arch-inn-door"
+    }
   }
 }

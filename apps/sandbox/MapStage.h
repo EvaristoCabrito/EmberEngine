@@ -3266,7 +3266,7 @@ class MapStage final : public Stage {
           low.heightScale = def->heightScale * kCutHeight / std::max(maxY, 0.1f);
           piece.cutMesh = meshOf(ember::pieceGeometry(low, rot, connections, {x, -z}), false);
         }
-      } else if (p.id.starts_with("ember-arch-mosteiro-") && !stairs) {
+      } else if ((p.id.starts_with("ember-arch-mosteiro-") || p.id.starts_with("ember-arch-farol-")) && !stairs) {  // the Light House kit too (2026-11-11)
         // The Monastery's smart walls (the user, 2026-10-30: "eu vou precisar daquelas paredes espertas"): the Inn's cut on the
         // monastery kit, the precinct's muralha included: a piece between the camera and what it looks at stands as a plain wall
         // kCutHeight tall (windows, slits and torches too). Doors, portals and gates are never cut (the user, same day: "it can't
@@ -4423,6 +4423,10 @@ class MapStage final : public Stage {
         cr.bodyTop = cr.bodyBottom + boxH * ch.contentHeight / sh;
         cr.bodyHalf = 0.3f * boxW * ch.contentWidth / sw;
       }
+      // The card as drawn, for a bolt leaving its hands (HandBoltFx: the Aparição's attack): it follows the card as the camera turns.
+      if (unitBoltCard_.size() <= ui) unitBoltCard_.resize(ui + 1);
+      unitBoltCard_[ui] = {anchor, right, cardUp(unitCard_[ui]), boxW, boxH, foot, drift, mirror};
+      spellFx_.handBolts().follow(static_cast<int>(ui), unitBoltCard_[ui]);
     }
     const glm::vec3 eye = camera.position, fwd = camera.forward;
     std::vector<std::pair<float, uint32_t>> order(drawList_.size());
@@ -8001,6 +8005,20 @@ class MapStage final : public Stage {
     x.end = now_ + length + kExchangeGap / actionRate();
     x.landed = false;
     x.release = 0.0f;
+    // A pose whose art throws a bolt from the hands (content/fx/hand-bolts.json; the Aparição's attack, the user 2026-11-10: the old 2D
+    // ApparitionLightningV1 in 3D, only to the foe she strikes): arcs while her glow gathers, the bolt as her hands let go, and the blow
+    // (the roll, the numbers, the hit react) lands when it reaches the body, no longer at the pose's default share.
+    if (s.type == StepType::Combat && striker >= 0 && target >= 0 && !staffCounter && !pose.empty()) {
+      if (const HandBoltFx::Track* hb = handBoltFor(strikerKey, pose)) {
+        const size_t su = static_cast<size_t>(striker);
+        x.impact = now_ + length * HandBoltFx::releaseShare(*hb) + HandBoltFx::kFlight / actionRate();
+        x.end = std::max(x.end, x.impact + 0.5f / actionRate() + kExchangeGap / actionRate());
+        const SpellEffects::Spot to = unitSpot(static_cast<size_t>(target));
+        const HandBoltFx::Card card = su < unitBoltCard_.size() ? unitBoltCard_[su] : HandBoltFx::Card{unitWorld(su)};
+        spellFx_.handBolts().start(striker, *hb, card, to.feet, cardHeightOf(to), now_, length, x.impact,
+                                   static_cast<uint32_t>(now_ * 1000.0f) ^ (static_cast<uint32_t>(striker) * 0x9e37u));
+      }
+    }
     if (s.type == StepType::Move && (s.kind == "leapingStrike" || s.kind == "poleVault") && striker >= 0 && s.path.size() >= 2) {
       // Salto Devastador: the rules stand the unit on the landing at once; the card flies there on an arc (leapOffset) while
       // the trail of steel light follows it and the crater opens as it lands (SpellEffects::leapFlight). Salto de Vara (the
@@ -8733,6 +8751,30 @@ class MapStage final : public Stage {
     const CardRect& c = unitCard_[ui];
     const float body = c.drawn && !c.flat ? std::clamp(c.height * 0.45f, 0.5f, 1.4f) : 0.9f;
     return {feet, feet + glm::vec3(0.0f, body, 0.0f), c.drawn && !c.flat ? c.height : 0.0f};
+  }
+  // content/fx/hand-bolts.json: the pose of a unit (catalog key) whose art throws a bolt from its hands, and where its glow is on each
+  // frame (HandBoltFx). Null for every other unit and pose.
+  static const HandBoltFx::Track* handBoltFor(const std::string& key, const std::string& pose) {
+    static const std::unordered_map<std::string, std::pair<std::string, HandBoltFx::Track>> tracks = [] {
+      std::unordered_map<std::string, std::pair<std::string, HandBoltFx::Track>> out;
+      std::ifstream in("content/fx/hand-bolts.json", std::ios::binary);
+      const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+      if (!j.is_object() || !j.contains("units") || !j["units"].is_object()) return out;
+      for (const auto& [k, v] : j["units"].items()) {
+        if (!v.is_object() || !v.contains("hands") || !v["hands"].is_array() || !v.contains("pose")) continue;
+        HandBoltFx::Track t;
+        t.look = v.value("look", std::string()) == "telesm" ? HandBoltFx::Look::Telesm : HandBoltFx::Look::Apparition;
+        for (const auto& h : v["hands"])
+          if (h.is_array() && h.size() == 2) t.hands.push_back({h[0].get<float>(), h[1].get<float>()});
+        if (t.hands.empty()) continue;
+        t.chargeFrame = v.value("chargeFrame", 1);
+        t.releaseFrame = std::clamp(v.value("releaseFrame", static_cast<int>(t.hands.size()) / 2), 1, static_cast<int>(t.hands.size()));
+        out[k] = {v["pose"].get<std::string>(), std::move(t)};
+      }
+      return out;
+    }();
+    const auto it = tracks.find(key);
+    return it != tracks.end() && it->second.first == pose ? &it->second.second : nullptr;
   }
   // A spot's card height (a hex with nobody on it: a body's, from its body point).
   // content/unit-size.json: {"sizes": {"<catalog key>": factor}}; 1 for everyone else.
@@ -10793,7 +10835,7 @@ class MapStage final : public Stage {
 
   // .ember-socket: a spell's icon with its uses left in the corner (lit while it is being aimed). `key` >= 0: the battle
   // bar's socket F<key + 1>, its key in the top-left corner; an empty `kind` is an empty socket.
-  bool spellSocket(const char* id, const std::string& kind, int uses, bool enabled, bool active, float side = 36.0f, int key = -1) {
+  bool spellSocket(const char* id, const std::string& kind, int uses, bool enabled, bool active, float side = 36.0f, int key = -1, int cost = -1) {
     ImGui::BeginDisabled(!enabled);
     const bool clicked = ImGui::InvisibleButton(id, {side, side});
     const bool hover = enabled && ImGui::IsItemHovered();
@@ -10862,12 +10904,21 @@ class MapStage final : public Stage {
     dl->AddRectFilled({c.x - 2, c.y - 1}, {b.x + 3, b.y + 3}, IM_COL32(28, 28, 28, 255), 2.0f);
     dl->AddRect({c.x - 2, c.y - 1}, {b.x + 3, b.y + 3}, IM_COL32(74, 74, 74, 255), 2.0f);
     dl->AddText(font, 12.0f, c, IM_COL32(240, 240, 240, fade), count.c_str());
+    if (cost >= 0) {  // its Action Points, top right (the user, 2026-11-10: the AP cost on the actions)
+      const std::string ap = std::to_string(cost);
+      const ImVec2 at = font->CalcTextSizeA(11.0f, FLT_MAX, 0.0f, ap.c_str());
+      const ImVec2 p{b.x - at.x - 1.0f, a.y - 3.0f};
+      dl->AddRectFilled({p.x - 2, p.y}, {b.x + 3, p.y + at.y + 1}, IM_COL32(52, 30, 8, 255), 2.0f);
+      dl->AddRect({p.x - 2, p.y}, {b.x + 3, p.y + at.y + 1}, IM_COL32(176, 128, 72, 255), 2.0f);
+      dl->AddText(font, 11.0f, {p.x, p.y + 0.5f}, IM_COL32(255, 214, 140, fade), ap.c_str());
+    }
     if (hover) {
       ImGui::BeginTooltip();
       ImGui::PushFont(uiFont(UiFont::Ui), 15.0f);
       // the name only (the user, 2026-10-20): what it does is in the sheet's Skills
       if (const std::optional<std::string> potion = potionOf(kind)) ImGui::TextUnformatted(ember::potionName(*potion).c_str());
       else ImGui::TextUnformatted(tr(ember::spellName(kind)).c_str());
+      if (cost >= 0) ImGui::TextColored(ImColor(255, 214, 140), "%s", (tr("Custo: ", "Cost: ") + apLabel(cost)).c_str());
       ImGui::PopFont();
       ImGui::EndTooltip();
     }
@@ -11231,20 +11282,23 @@ class MapStage final : public Stage {
   struct SocketState {
     int uses = 0;
     bool usable = false;
+    int cost = -1;  // its Action Points (apCost), shown on the socket
   };
   std::optional<SocketState> socketState(size_t b, const std::string& kind, bool canAct) const {
     if (kind.empty()) return std::nullopt;
     const ember::BattleUnit& u = battle_->units()[b];
     if (const std::optional<std::string> potion = potionOf(kind)) {
-      const bool paid = ember::apCanAfford(u, ember::apCost(*battle_, u, ember::ApAction::potion()));  // Action Points
+      const int cost = ember::apCost(*battle_, u, ember::ApAction::potion());
+      const bool paid = ember::apCanAfford(u, cost);  // Action Points
       for (int k = 0; k < 7; ++k)
-        if (*potion == ember::kPotionIds[k]) return SocketState{u.bag[k], canAct && u.bag[k] > 0 && paid};
+        if (*potion == ember::kPotionIds[k]) return SocketState{u.bag[k], canAct && u.bag[k] > 0 && paid, cost};
       return std::nullopt;
     }
     if (std::find(u.spellList.begin(), u.spellList.end(), kind) == u.spellList.end() || ember::spellPassive(kind)) return std::nullopt;
     const int uses = ember::spellUsesLeft(*battle_, b, kind);
-    const bool paid = ember::apCanAfford(u, ember::apCost(*battle_, u, ember::ApAction::cast(kind)));  // Action Points
-    return SocketState{uses, canAct && ember::spellPorted(kind) && uses > 0 && paid};
+    const int cost = ember::apCost(*battle_, u, ember::ApAction::cast(kind));
+    const bool paid = ember::apCanAfford(u, cost);  // Action Points
+    return SocketState{uses, canAct && ember::spellPorted(kind) && uses > 0 && paid, cost};
   }
   // F1..F12: the socket's spell / potion, as a click on it.
   void pressHotbar(int slot) {
@@ -11290,7 +11344,7 @@ class MapStage final : public Stage {
     for (int i = 0; i < kHotbarSlots; ++i) {
       if (i > 0) ImGui::SameLine();
       const std::optional<SocketState> s = socketState(b, bar[static_cast<size_t>(i)], true);
-      spellSocket(std::format("##edit{}", i).c_str(), s ? bar[static_cast<size_t>(i)] : std::string(), s ? s->uses : 0, true, false, side, i);
+      spellSocket(std::format("##edit{}", i).c_str(), s ? bar[static_cast<size_t>(i)] : std::string(), s ? s->uses : 0, true, false, side, i, s ? s->cost : -1);
       if (s && ImGui::BeginDragDropSource()) {
         ImGui::SetDragDropPayload("hotbar-slot", &i, sizeof i);
         ImGui::TextUnformatted(socketName(bar[static_cast<size_t>(i)]).c_str());
@@ -11317,7 +11371,7 @@ class MapStage final : public Stage {
     for (const std::string& kind : choices) {
       if (n % kHotbarSlots != 0) ImGui::SameLine();
       const std::optional<SocketState> s = socketState(b, kind, true);
-      spellSocket(std::format("##choice{}", n).c_str(), kind, s ? s->uses : 0, true, false, side);
+      spellSocket(std::format("##choice{}", n).c_str(), kind, s ? s->uses : 0, true, false, side, -1, s ? s->cost : -1);
       if (ImGui::BeginDragDropSource()) {
         ImGui::SetDragDropPayload("hotbar-choice", kind.data(), kind.size());
         ImGui::TextUnformatted(socketName(kind).c_str());
@@ -11561,7 +11615,7 @@ class MapStage final : public Stage {
         if (i > 0) ImGui::SameLine();
         const std::string& kind = bar[static_cast<size_t>(i)];
         const std::optional<SocketState> s = socketState(me, kind, canAct);
-        if (spellSocket(std::format("##slot{}", i).c_str(), s ? kind : std::string(), s ? s->uses : 0, s && s->usable, s && spellMode_ == kind, side, i))
+        if (spellSocket(std::format("##slot{}", i).c_str(), s ? kind : std::string(), s ? s->uses : 0, s && s->usable, s && spellMode_ == kind, side, i, s ? s->cost : -1))
           startSpell(kind);
       }
       ImGui::SameLine();
@@ -13588,6 +13642,7 @@ class MapStage final : public Stage {
     float bodyX = 0.0f, bodyBottom = 0.0f, bodyTop = 0.0f, bodyHalf = 0.0f;
   };
   std::vector<CardRect> unitCard_;
+  std::vector<HandBoltFx::Card> unitBoltCard_;  // each unit's card as drawn last frame, for a bolt leaving its hands (HandBoltFx)
   bool offHandMode_ = false;         // "Mão Secundária" armed: the off-hand weapon is the one that strikes
   std::map<size_t, ember::Json> npcDialog_;      // battle unit -> its conversation (findConversations)
   int talkAfterWalk_ = -1;                     // the NPC the leader is walking up to, to talk once there
