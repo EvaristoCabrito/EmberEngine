@@ -183,9 +183,8 @@ def stem(mesh, rng, start, direction, length, r0, tip, spec, first, limbs, roots
     def shape(i, ang):
         h = pts[i].z
         s = 1 + 0.07 * noise.noise(Vector((math.cos(ang) * 1.2, math.sin(ang) * 1.2, h * 0.55)) + off)
-        if roots:
-            lobe = sum(math.exp(-(((ang - a + math.pi) % (2 * math.pi) - math.pi) / 0.30) ** 2) for a in roots)
-            s *= 1 + 0.55 * math.exp(-h / 0.28) + 0.75 * math.exp(-h / 0.42) * lobe
+        if roots:  # only a gentle widening where the trunk meets the ground, no root lobes
+            s *= 1 + 0.30 * math.exp(-h / 0.28)
         return s
 
     mesh.tube(pts, radii, SIDES[0], shape=shape, cap=cap, rng=rng)
@@ -212,7 +211,7 @@ def build(name, spec, material):
     nroots = rng.randint(5, 6)
     roots = [2 * math.pi * (k + rng.uniform(-0.25, 0.25)) / nroots for k in range(nroots)]
     up = Vector((0, 0, 1))
-    base = Vector((0, 0, -0.15))
+    base = Vector((0, 0, 0.0))
     if spec.get('fork'):
         fh = h * spec['fork']
         pts, radii = stem(mesh, rng, base, up, fh + 0.15, r, 0.80, spec, 0.75, 1, roots)
@@ -227,17 +226,7 @@ def build(name, spec, material):
         stem(mesh, rng, base, up, h + 0.15, r, 0.52, spec, spec['first'], spec['limbs'], roots, cap=True)
     else:
         stem(mesh, rng, base, up, h + 0.15, r, 0.0, spec, spec['first'], spec['limbs'], roots)
-    for a in roots:  # roots run out from the flare and sink into the ground
-        out = Vector((math.cos(a), math.sin(a), 0))
-        length = r * rng.uniform(3.0, 4.6)
-        segs = 7
-        pts = [out * r * 0.55 + Vector((0, 0, 0.24))]
-        d = (out + Vector((0, 0, -0.22))).normalized()
-        for i in range(segs):
-            turn = Quaternion(up, rng.gauss(0, 0.22))
-            d = (turn @ d + Vector((0, 0, -0.07))).normalized()
-            pts.append(pts[-1] + d * length / segs)
-        mesh.tube(pts, taper(r * 0.40, segs, 0.10, power=0.8), 7)
+    # no roots (the user, 2026-11-11: "remove the root"): the trunk stands straight on the ground
     return mesh.to_object(name, material)
 
 

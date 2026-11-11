@@ -18,7 +18,8 @@ any later exclusive). T3 therefore holds Familiar Radiante and Reflexo Arcano.
 **Lâmina Arcana (`arcaneBlade`), Selene's own T1 (the user, 2026-10-26: "magia T1 exclusiva da Selene. Ela acerta o alvo com a adaga
 e deixa uma marca arcana nele, que explode causando 1D8 se o alvo se mover"; "criar uma escala até o nivel 10, fazer ela durar mais de
 um turno conforme evoluir").** `EmberSpell::hero` "Selene": no other Conjurador learns it. A blow of her weapon (its own roll, hit
-chance and mastery, like the Golpe Consagrado) on a foe beside her (range 1, a dagger); a miss is a miss. Landed, it leaves the
+chance and mastery, like the Golpe Consagrado) on a foe in the blade's reach: 2 hexes, +1 at levels 2, 5 and 8 (5 at her cap), on its
+track in `kSpellTracks` (the user, 2026-11-11: "scalable range"; it was range 1, a foe beside her); a miss is a miss. Landed, it leaves the
 **Marca Arcana** (`Conditions::arcaneMark*`): when the marked foe walks (its own walk on its turn), the mark goes off before it acts
 (`arcaneMarkInterrupts`, played with the Vigília and the Nuvem de Adagas), 1D8 arcane against its arcane resistance with Selene's MAG
 of penetration (`arcaneMarkBurst`, never learned), and is spent. Unburst, it holds through N of the foe's own turns, counted like the

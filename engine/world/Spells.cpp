@@ -449,6 +449,7 @@ constexpr SpellTrack kSpellTracks[] = {
     {"summonSwampDeer", 20, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
     {"empowerSummons", 15, "p1 p1 p1 R1 p1 p1 p1 p1 p1 p1 R1 p1 p1 p1"},
     {"boneLance", 15, "m0.1 l1 d1 f2 Z1 m0.1 t1 p10 m0.1 l1 d1 f2 p10 m0.1"},
+    {"arcaneBlade", 1, "r1 - - r1 - - r1 - - r1 - r1 - -"},
     {"markOfRuin", 15, "r1 p5 m0.05 r1 t1 d1 r1 p5 m0.05 f2 r1 p5 m0.05 r1"},
     {"creepingPlague", 15, "r1 m0.05 d1 r1 m0.05 v1 r1 s1 f2 m0.05 r1 d1 m0.05 r1"},
     {"lifeDrain", 16, "m0.05 r1 m0.05 f2 p25 m0.05 m0.05 d1 m0.05 r1 f2 m0.05 p25 m0.05"},
@@ -835,7 +836,8 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
   // Selene's (the user's numbers, 2026-10-26): a blow beside her; the mark bursts for 1D8 arcane when the foe walks, and holds
   // through 1 of its turns, 2 from level 4, 3 from 7, 4 at 10 (her cap)
   else if (kind == "arcaneBlade" || kind == "arcaneMarkBurst") {
-    n.range = 1;
+    // the blade's reach: 2 hexes, growing on its track (the user, 2026-11-11: "scalable range"; it was a foe beside her)
+    n.range = kind == "arcaneBlade" ? 2 : 1;
     n.dice = 1, n.faces = 8;
     n.turns = 1 + (lv >= 4) + (lv >= 7) + (lv >= 10);
   }
@@ -2265,10 +2267,10 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     s.holyDice = n.dice, s.holyFaces = n.faces, s.holyUndeadMul = n.tickMul;
     steps.push_back(s);
   } else if (kind == "arcaneBlade") {
-    // Selene's: a blow of her weapon on a foe beside her; landed, it leaves the arcane mark (it bursts if the foe walks).
+    // Selene's: a blow of her weapon on a foe in the blade's reach; landed, it leaves the arcane mark (it bursts if the foe walks).
     const int foe = occAt(b, cell);
     if (foe < 0 || !targetable(b, foe)) return fail("Escolha um inimigo visível.");
-    if (!besideUnit(b, from, static_cast<size_t>(foe), n.range)) return fail("O inimigo precisa estar ao lado.");
+    if (!besideUnit(b, from, static_cast<size_t>(foe), n.range)) return fail(std::format("Alvo fora de alcance (máximo {} hexes).", n.range));
     spend();
     s.type = BattleStep::Type::Combat, s.def = static_cast<size_t>(foe);
     s.dice = 0, s.spellMul = 1;
@@ -3114,8 +3116,8 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind) {
   if (kind == "holyStrike") return s + std::format("\ngolpe de arma + {}D{} sagrado · mortos-vivos: o sagrado ×{:g}", n.dice, n.faces, n.tickMul);
   // Selene's
   if (kind == "arcaneBlade")
-    return s + std::format("\ngolpe de arma num inimigo ao lado · acertou: Marca Arcana por {} {} · se ele andar, explode: {}D{} arcano", n.turns,
-                           n.turns == 1 ? "turno" : "turnos", n.dice, n.faces);
+    return s + std::format("\ngolpe de arma num inimigo a até {} hexes · acertou: Marca Arcana por {} {} · se ele andar, explode: {}D{} arcano", n.range,
+                           n.turns, n.turns == 1 ? "turno" : "turnos", n.dice, n.faces);
   if (kind == "holyTouch") return s + std::format("\num aliado ao lado cura {} HP", dmg(n.mul, n.dice, n.faces));
   if (kind == "crusaderOath") return std::format("T{} · passiva\nabaixo de {}% do HP: +{}% ATK até voltar a passar de {}% · não gasta uso", e->data.tier, n.spread, n.pct, n.spread);
   if (kind == "crusaderMantle")
@@ -3547,7 +3549,7 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   else if (kind == "globeOfInvulnerability") maxRange = 0;
   else if (kind == "guardBreak" || kind == "holyStrike") minRange = u.minRange, maxRange = u.maxRange, shot = u.maxRange > 1, arrow = true;  // the weapon's reach
   else if (kind == "holyTouch") minRange = 1, maxRange = 1;  // an ally beside him
-  else if (kind == "arcaneBlade") minRange = 1, maxRange = 1;  // Selene's: a foe beside her
+  else if (kind == "arcaneBlade") minRange = 1, maxRange = emberNumbers(kind, u.level).range;  // Selene's: a foe in the blade's reach
   else if (kind == "crusaderMantle") maxRange = 0;
   else if (kind == "crusaderOath") return zone;  // a passive: nothing to aim
   else if (kind == "steelWhirlwind") maxRange = 1;
@@ -3673,7 +3675,9 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
     // Selene's
     if (kind == "arcaneBlade") {
       if (!targetable(b, here)) return fail(here < 0 ? "Não há unidade na casa selecionada." : "Escolha um inimigo visível.");
-      return besideUnit(b, from, static_cast<size_t>(here), n.range) ? true : fail("O inimigo precisa estar ao lado.");
+      if (besideUnit(b, from, static_cast<size_t>(here), n.range)) return true;
+      if (error) *error = std::format("Alvo fora de alcance (máximo {} hexes).", n.range);
+      return false;
     }
     // The Cruzado's
     if (kind == "holyTouch") {

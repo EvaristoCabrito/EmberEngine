@@ -18,7 +18,7 @@ constexpr glm::vec3 kUp{0.0f, 1.0f, 0.0f};
 constexpr float kPull = 1.3f, kGroundPull = 0.7f;  // as CrusaderFx: in front of the card, which is drawn 1.2 units nearer
 constexpr float kRingUnderFeet = 0.6f;  // a ring this near its unit's feet height lies on the ground
 constexpr float kModeStreak = 0.0f, kModeEnergy = 2.0f, kModeRing = 3.0f;  // Combat material
-constexpr float kHolyPool = 1.0f, kHolyMote = 2.0f, kHolyLine = 4.0f;       // Holy material, in violet
+constexpr float kHolyMote = 2.0f;  // Holy material, in violet
 constexpr float kBurstLead = 0.3f;  // the rune flares this long before the burst's hit
 constexpr float kStandFade = 0.5f;  // the standing mark fades in / out over this
 
@@ -47,7 +47,21 @@ glm::vec3 pulled(glm::vec3 p, glm::vec3 eye, float by) {
   const float len = glm::length(d);
   return len > by + 0.5f ? p + d * (by / len) : p;
 }
+// A point round the body: on the eye's side it is pulled over the card, on the far side it stays behind it, so the light wraps the
+// figure instead of lying on it (StatusFx's own, the poison's).
+glm::vec3 wrapped(glm::vec3 p, glm::vec3 feet, glm::vec3 eye) {
+  glm::vec3 off = p - feet, toEye = eye - feet;
+  off.y = 0.0f, toEye.y = 0.0f;
+  const float r = glm::length(off), te = glm::length(toEye);
+  const float facing = r > 1e-4f && te > 1e-4f ? glm::dot(off, toEye) / (r * te) : 1.0f;
+  return pulled(p, eye, kPull * ease(-0.3f, 0.3f, facing));
+}
 float bodyHeight(float h) { return std::clamp(h > 0.0f ? h : 1.8f, 1.0f, 4.0f); }
+// A ring on the ground round the feet, under every card (the poison's stain, StatusFx): a rotating violet ring of radius `r`.
+glm::mat4 groundRing(glm::vec3 feet, glm::vec3 eye, float r, float spin, float lift = 0.04f) {
+  return glm::translate(glm::mat4(1.0f), pulled(feet + kUp * lift, eye, kGroundPull)) * glm::rotate(glm::mat4(1.0f), spin, kUp) *
+         glm::scale(glm::mat4(1.0f), {r, 1.0f, r});
+}
 
 const std::vector<VfxVertex>& quadGeometry() {
   static const std::vector<VfxVertex> g = {
@@ -71,19 +85,6 @@ const std::vector<VfxVertex>& discGeometry() {
     for (int i = 0; i < around; ++i)
       for (int j = 0; j < out; ++j) tris.insert(tris.end(), {v(i, j), v(i, j + 1), v(i + 1, j), v(i + 1, j), v(i, j + 1), v(i + 1, j + 1)});
     return tris;
-  }();
-  return g;
-}
-// A flat torus of radius 1 lying flat (u around): the rune's band.
-const std::vector<VfxVertex>& haloGeometry() {
-  static const std::vector<VfxVertex> g = [] {
-    std::vector<VfxVertex> ring = vfxgeo::torus(1.0f, 0.05f, 8, 64, kTau);
-    const glm::mat4 flat = glm::rotate(glm::mat4(1.0f), -kPi * 0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
-    for (VfxVertex& v : ring) {
-      v.position = glm::vec3(flat * glm::vec4(v.position, 1.0f));
-      v.normal = glm::vec3(flat * glm::vec4(v.normal, 0.0f));
-    }
-    return ring;
   }();
   return g;
 }
@@ -219,7 +220,6 @@ void SeleneFx::build(float now, const Camera& camera, VfxFrame& frame, std::vect
   quadFirst_ = frame.addVertices(quadGeometry()), quadCount_ = static_cast<uint32_t>(quadGeometry().size());
   sphereFirst_ = frame.addVertices(sphereGeometry()), sphereCount_ = static_cast<uint32_t>(sphereGeometry().size());
   discFirst_ = frame.addVertices(discGeometry()), discCount_ = static_cast<uint32_t>(discGeometry().size());
-  haloFirst_ = frame.addVertices(haloGeometry()), haloCount_ = static_cast<uint32_t>(haloGeometry().size());
   streaks_.clear(), motes_.clear();
   for (const Effect& e : effects_) {
     if (now < e.start) continue;
@@ -276,7 +276,6 @@ void SeleneFx::buildBlade(const Effect& e, float now, const Camera& camera, std:
 
 void SeleneFx::buildMark(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) {
   const CombatDraw combat{frame};
-  const HolyDraw holy{frame};
   const glm::vec3 eye = camera.position;
   const float h = e.height, k = std::clamp(h / 2.0f, 0.7f, 1.4f);
   const float age = now - e.impact;
@@ -303,15 +302,15 @@ void SeleneFx::buildMark(const Effect& e, float now, const Camera& camera, VfxFr
     const glm::vec3 p = chest + dir * (speed * age) - kUp * (2.0f * age * age);
     streaks_.push_back(streak(pulled(p, eye, kPull), dir * speed * 0.05f, 0.045f * k, 1.0f - s, (i % 3) ? kViolet : kCore, 2.4f));
   }
-  // the rune drawn on the ground: a ring closing in on the feet, the pool lighting under it
+  // the rune drawn on the ground round the feet, under the card: a ring closing in, a fainter one settling inside it
   if (age < 0.9f) {
     const float close = easeOut(0.0f, 0.5f, age);
     const float r = glm::mix(1.4f, 0.75f, close) * k;
     const float fade = 1.0f - ease(0.5f, 0.9f, age);
-    combat(discFirst_, discCount_, scaled(pulled(e.at + kUp * 0.045f, eye, kGroundPull), {r, 1.0f, r}), kModeRing, age, 0.55f, 0.75f * fade, kViolet, 0.0f,
-           glm::vec4(kCore, 0.9f), e.at, VfxBlend::Additive);
-    holy(discFirst_, discCount_, scaled(pulled(e.at + kUp * 0.035f, eye, kGroundPull), {0.8f * k, 1.0f, 0.8f * k}), kHolyPool, age, 0.35f, 0.7f * close * fade,
-         kViolet, kCore, 0.8f, e.at);
+    combat(discFirst_, discCount_, groundRing(e.at, eye, r, age * 0.6f, 0.045f), kModeRing, age, 0.55f, 0.75f * fade, kViolet, 0.0f, glm::vec4(kCore, 0.9f), e.at,
+           VfxBlend::Additive);
+    combat(discFirst_, discCount_, groundRing(e.at, eye, 0.55f * k, -age * 0.4f, 0.035f), kModeRing, age, 0.4f, 0.5f * close * fade, kDeep, 0.0f,
+           glm::vec4(kViolet, 0.7f), e.at, VfxBlend::Additive);
   }
   const float light = 9.0f * (1.0f - ease(0.0f, 0.5f, age));
   if (light > 0.01f) lights.push_back({chest, kLight, light, 3.0f * k});
@@ -321,7 +320,6 @@ void SeleneFx::buildMark(const Effect& e, float now, const Camera& camera, VfxFr
 
 void SeleneFx::buildBurst(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) {
   const CombatDraw combat{frame};
-  const HolyDraw holy{frame};
   const glm::vec3 eye = camera.position;
   const float h = e.height, k = std::clamp(h / 2.0f, 0.7f, 1.4f);
   const float age = now - e.impact, t = now - e.start;
@@ -329,10 +327,11 @@ void SeleneFx::buildBurst(const Effect& e, float now, const Camera& camera, VfxF
   // the rune flares under the feet as the burst gathers, then fades
   {
     const float flare = ease(e.start, e.impact, now) * (1.0f - ease(e.impact + 0.1f, e.impact + 0.6f, now));
-    if (flare > 0.002f) {
-      const float r = 0.8f * k * (0.9f + 0.2f * flare);
-      holy(discFirst_, discCount_, scaled(pulled(e.at + kUp * 0.035f, eye, kGroundPull), {r, 1.0f, r}), kHolyPool, t, 0.6f, flare, kViolet, kCore, 0.8f, e.at);
-      holy(haloFirst_, haloCount_, scaled(pulled(e.at + kUp * 0.06f, eye, kPull), glm::vec3(r * 0.95f)), kHolyLine, t, 1.0f, flare, kViolet, kCore, 0.0f, e.at);
+    if (flare > 0.002f) {  // on the ground round the feet, under the card
+      const float r = 0.75f * k * (0.9f + 0.2f * flare);
+      combat(discFirst_, discCount_, groundRing(e.at, eye, r, t * 1.2f), kModeRing, t, 0.7f, flare, kViolet, 0.0f, glm::vec4(kCore, 0.9f), e.at, VfxBlend::Additive);
+      combat(discFirst_, discCount_, groundRing(e.at, eye, 0.5f * k, -t * 0.8f, 0.03f), kModeRing, t, 0.5f, 0.6f * flare, kDeep, 0.0f, glm::vec4(kViolet, 0.7f), e.at,
+             VfxBlend::Additive);
     }
   }
   const float light = age < 0.0f ? 3.0f + 6.0f * ease(e.start, e.impact, now) : 18.0f * (1.0f - ease(0.0f, 0.5f, age)) + 3.0f * (1.0f - ease(0.5f, 1.0f, age));
@@ -364,37 +363,39 @@ void SeleneFx::buildBurst(const Effect& e, float now, const Camera& camera, VfxF
   // a ring running out over the ground
   if (age < 0.8f) {
     const float r = (0.5f + 2.2f * easeOut(0.0f, 0.6f, age)) * k;
-    combat(discFirst_, discCount_, scaled(pulled(e.at + kUp * 0.045f, eye, kGroundPull), {r, 1.0f, r}), kModeRing, age, 0.6f, 0.8f * (1.0f - ease(0.2f, 0.8f, age)),
-           kViolet, 0.0f, glm::vec4(kCore, 0.9f), e.at, VfxBlend::Additive);
+    combat(discFirst_, discCount_, groundRing(e.at, eye, r, 0.0f, 0.045f), kModeRing, age, 0.6f, 0.8f * (1.0f - ease(0.2f, 0.8f, age)), kViolet, 0.0f,
+           glm::vec4(kCore, 0.9f), e.at, VfxBlend::Additive);
   }
 }
 
 // --- the mark standing on the foe ---------------------------------------------------------------------------------------------
 
 void SeleneFx::buildStanding(const Standing& s, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) {
-  const HolyDraw holy{frame};
+  const CombatDraw combat{frame};
   const glm::vec3 eye = camera.position;
   const float h = s.height, k = std::clamp(h / 2.0f, 0.7f, 1.4f);
   const float t = now - s.start;
   const float env = ease(s.start, s.start + kStandFade, now) * (s.finish >= 0.0f ? 1.0f - ease(s.finish, s.finish + kStandFade, now) : 1.0f);
   if (env <= 0.002f) return;
   const float pulse = 0.5f + 0.5f * std::sin(t * 2.4f + static_cast<float>(s.seed & 7u));
-  const float r = 0.75f * k;
-  // the rune circle at the feet: a soft pool with its ring, a fine band round it
-  holy(discFirst_, discCount_, scaled(pulled(s.feet + kUp * 0.035f, eye, kGroundPull), {r, 1.0f, r}), kHolyPool, t, 0.3f, (0.4f + 0.25f * pulse) * env, kDeep, kViolet,
-       0.82f, s.feet);
-  holy(haloFirst_, haloCount_, scaled(pulled(s.feet + kUp * 0.05f, eye, kPull), glm::vec3(r)), kHolyLine, t, 0.6f, 0.55f * env, kViolet, kCore, 0.0f, s.feet);
-  // six points of light running round the ring
+  const float r = 0.72f * k;
+  // the rune on the ground round the feet, under the card (as the poison's stain): a turning violet ring, a fainter one inside
+  combat(discFirst_, discCount_, groundRing(s.feet, eye, r * (1.0f + 0.04f * pulse), t * 0.35f), kModeRing, t, 0.55f, (0.42f + 0.2f * pulse) * env, kViolet, 0.0f,
+         glm::vec4(kCore, 0.88f), s.feet, VfxBlend::Additive);
+  combat(discFirst_, discCount_, groundRing(s.feet, eye, 0.5f * k, -t * 0.25f, 0.03f), kModeRing, t, 0.35f, 0.2f * env, kDeep, 0.0f, glm::vec4(kViolet, 0.75f), s.feet,
+         VfxBlend::Additive);
+  // six points of light running round the body on the ring: in front of the card on the near side, behind it on the far side
   for (int i = 0; i < 6; ++i) {
     const float angle = static_cast<float>(i) / 6.0f * kTau + t * 0.9f;
-    const glm::vec3 p = s.feet + glm::vec3(std::cos(angle) * r, 0.08f, std::sin(angle) * r);
-    motes_.push_back(mote(pulled(p, eye, kPull), 0.1f * k, (0.6f + 0.4f * pulse) * env, (i & 1) ? kCore : kViolet));
+    const glm::vec3 p = s.feet + glm::vec3(std::cos(angle) * r, 0.1f, std::sin(angle) * r);
+    motes_.push_back(mote(wrapped(p, s.feet, eye), 0.1f * k, (0.6f + 0.4f * pulse) * env, (i & 1) ? kCore : kViolet));
   }
-  // a faint violet band about the chest, breathing
-  {
+  // a few motes circling the chest the same way, breathing
+  for (int i = 0; i < 8; ++i) {
+    const float angle = static_cast<float>(i) / 8.0f * kTau - t * 0.7f;
     const float br = 0.42f * k * (0.95f + 0.1f * pulse);
-    holy(haloFirst_, haloCount_, scaled(pulled(s.feet + kUp * (h * 0.55f), eye, kPull), glm::vec3(br)), kHolyLine, t, 0.45f, (0.25f + 0.25f * pulse) * env, kViolet,
-         kCore, 0.0f, s.feet);
+    const glm::vec3 p = s.feet + glm::vec3(std::cos(angle) * br, h * 0.55f + 0.06f * std::sin(t * 1.6f + static_cast<float>(i)), std::sin(angle) * br);
+    motes_.push_back(mote(wrapped(p, s.feet, eye), 0.06f * k, (0.25f + 0.3f * pulse) * env, (i & 1) ? kViolet : kCore));
   }
   lights.push_back({s.feet + kUp * 0.4f, kLight, (1.2f + 1.0f * pulse) * env, 2.0f * k});
 }

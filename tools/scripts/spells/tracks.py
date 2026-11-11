@@ -68,6 +68,9 @@ S = {
     "empowerSummons": (15, dict(p=25, R=3), [("p", 1, 12), ("R", 1, 2)]),
     # the Necromante's T6 (the user, 2026-10-20: "deixar a magia Lança de Ossos como T6 para necromancer, e adaptar para algo mais forte e mais único")
     "boneLance": (None, dict(l=4, d=2, f=8, m=1.8, t=1, p=50), [("m", 0.1, 4), ("l", 1, 2), ("d", 1, 2), ("f", 2, 2), ("t", 1, 1), ("Z", 1, 1), ("p", 10, 2)]),
+    # Selene's Lâmina Arcana (the user, 2026-11-11: "scalable range"): 2 hexes, +1 at 2, 5 and 8 (5 at her cap, 10), on into Ember Ashes II;
+    # the levels between are the mark's turns (4, 7, 10: emberNumbers), so never two on one level (FIXED below)
+    "arcaneBlade": (1, dict(r=2, d=1, f=8), [("r", 1, 5)]),
     # --- Bruxo -----------------------------------------------------------------------------------------------------------
     "markOfRuin": (None, dict(r=6, d=1, f=6, m=1.15, p=20, t=3), [("r", 1, 5), ("p", 5, 3), ("m", 0.05, 3), ("t", 1, 1), ("d", 1, 1), ("f", 2, 1)]),
     "creepingPlague": (None, dict(r=6, d=1, f=8, m=1.3, v="greater", s=1), [("r", 1, 5), ("m", 0.05, 4), ("d", 1, 2), ("v", 1, 1), ("s", 1, 1), ("f", 2, 1)]),
@@ -185,7 +188,7 @@ def lay(grow):
 # letters that only mean something once the talent is open: their steps come after it on the track
 AFTER_TALENT = {"arcaneReflection": "x", "boneLance": "p"}
 # tracks the user wrote level by level (not spread by lay()): the Mago Negro's Nuvem de Adagas, 3 daggers, 4 from 12, 5 from 15 (2026-10-21)
-FIXED = {"cloudOfDaggers": "- - - c1 - - c1 - - - - - - -"}
+FIXED = {"cloudOfDaggers": "- - - c1 - - c1 - - - - - - -", "arcaneBlade": "r1 - - r1 - - r1 - - r1 - r1 - -"}
 tracks = {}
 for kind, (learn, base, grow) in S.items():
     L = learn if learn is not None else ours_learn[kind]
@@ -489,6 +492,7 @@ NAMES = {
     "poleVault": "Salto de Vara", "disarm": "Desarmar", "swapPost": "Troca de Posto", "impaleDrag": "Empalar e Arrastar",
     "sentinelVigil": "Vigília da Sentinela",
     "cloudOfDaggers": "Nuvem de Adagas",
+    "arcaneBlade": "Lâmina Arcana (Selene)",
 }
 rows = []
 for kind in S:

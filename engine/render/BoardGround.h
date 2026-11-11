@@ -84,6 +84,9 @@ struct TerrainView {
   // wallFrom's bit 30: the added side walls wear the cliff texture (the map's tile set has a "side" rock wall) instead of the top's.
   static constexpr uint32_t kWallsRock = 0x40000000u;
   static constexpr uint32_t kAshNeutral = 0x20000000u;  // Ashen terrain: keep the shaded ground neutral under colored light.
+  // A locked ground mask (a tile set drawn from a "ground-mask" image): the ground keeps the mask's own colours at every hour, the
+  // light only makes it brighter or darker, never another colour (the user, 2026-11-11: "no pink ground ever", "ela nunca mais pode aparecer").
+  static constexpr uint32_t kMaskColours = 0x10000000u;
   explicit operator bool() const { return record != 0 && count != 0; }
 };
 

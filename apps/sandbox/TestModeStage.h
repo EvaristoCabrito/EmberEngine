@@ -69,6 +69,10 @@ inline TestSession freshTestSession(const ember::Campaign& campaign) {
   levels["Selene"] = std::min(kDefaultTestLevel, ember::heroLevelCap("Selene", "conjurer"));  // her cap: 10 (the user, 2026-10-25)
   s.save["levels"] = levels;
   s.save["ember"] = kTestEmber;
+  // The two Conjuradores start on a prestige class each (the user, 2026-11-11: "in test maps can we have Isolde default Sorcerer e
+  // Malrec default Necromancer"): the class path the Party screen writes (save.promotions), read by every test fight (applyTestHeroes).
+  s.save["promotions"]["Isolde"] = "sorcerer";
+  s.save["promotions"]["Malrec"] = "necromancer";
   // The whole party, eight heroes (the user, 2026-10-30: "during test we'll have all 8 members back with Malrec and Selene on the
   // reserve", "teste continua com 6 no grupo e 2 na reserva"): every hero recruited, the active party every one but kTestReserve.
   for (const char* h : ember::Overworld::kPartyHeroes) {

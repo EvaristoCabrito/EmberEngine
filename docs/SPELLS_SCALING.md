@@ -238,6 +238,12 @@ Escala do nível 15 ao 29, uma melhoria pequena por nível: dano 2D8 → 4D12; c
 
 Nível a nível: 16: +0,1 peso do MAG, 17: +1 comprimento, 18: +1 dado, 19: dado maior, 20: talento Estilhaços, 21: +0,1 peso do MAG, 22: +1 turnos empalado, 23: +10 estilhaços %, 24: +0,1 peso do MAG, 25: +1 comprimento, 26: +1 dado, 27: dado maior, 28: +10 estilhaços %, 29: +0,1 peso do MAG.
 
+### Lâmina Arcana (Selene)
+
+Escala do nível 1 ao 15, uma melhoria pequena por nível: alcance 2 → 7.
+
+Nível a nível: 2: +1 hex de alcance, 5: +1 hex de alcance, 8: +1 hex de alcance, 11: +1 hex de alcance, 13: +1 hex de alcance.
+
 ### Marca da Ruína
 
 Escala do nível 15 ao 29, uma melhoria pequena por nível: dano 1D6 → 2D8; alcance 6 → 11; peso do MAG 1,15 → 1,3; dano extra % 20 → 35; turnos 3 → 4.

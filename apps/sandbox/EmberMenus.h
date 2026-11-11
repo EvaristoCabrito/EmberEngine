@@ -1040,5 +1040,60 @@ class BattleMenu {
   bool audioOpen_ = false;
 };
 
+// --- Esc in a fight: "leave the battle?" before the party walks out (the user, 2026-11-11) --------------------------------
+
+class LeaveConfirm {
+ public:
+  enum class Action { None, Stay, Leave };
+
+  Action draw(ImVec2 screen, const std::filesystem::path& artRoot, bool playtest) {
+    Action act = Action::None;
+    ImGui::SetNextWindowPos({0, 0});
+    ImGui::SetNextWindowSize(screen);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(17, 17, 17, 204));
+    ImGui::Begin("##leaveconfirm", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse);
+    ImGui::SetWindowFocus();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+
+    const float pad = 24.0f, w = std::min(400.0f, screen.x - 32.0f), inner = w - 2 * pad;
+    const float h = pad + 32.0f + 12.0f + 14.0f * 2.6f + 20.0f + 44.0f + pad;
+    const ImVec2 a{std::round((screen.x - w) * 0.5f), std::round((screen.y - h) * 0.5f)}, b{a.x + w, a.y + h};
+    // a click outside the panel keeps the fight going (never leaves)
+    ImGui::SetCursorScreenPos({0, 0});
+    ImGui::SetNextItemAllowOverlap();
+    if (ImGui::InvisibleButton("##leaveveil", screen) && !ImGui::IsMouseHoveringRect(a, b)) act = Action::Stay;
+    for (int i = 8; i >= 1; --i) dl->AddRectFilled({a.x - i * 1.5f, a.y + i * 2.0f}, {b.x + i * 1.5f, b.y + i * 2.6f}, IM_COL32(0, 0, 0, 16), 12.0f + i);
+    dl->AddRectFilled(a, b, IM_COL32(28, 28, 28, 235), 12.0f);
+    if (const UiImage* art = uiImage(artRoot / "game/ui/status-background.jpg")) {
+      dl->PushClipRect(a, b, true);
+      imageCover(dl, *art, a, b);
+      dl->PopClipRect();
+    }
+    dl->AddRectFilled(a, b, IM_COL32(28, 28, 28, 64), 12.0f);
+    dl->AddRect({a.x + 1, a.y + 1}, {b.x - 1, b.y - 1}, IM_COL32(255, 255, 255, 10), 12.0f);
+    dl->AddRect(a, b, kBorder, 12.0f);
+
+    float y = a.y + pad;
+    emberTitle(dl, {a.x + pad, y + 4.0f}, 24.0f, (playtest ? tr("Encerrar teste?", "End the test?") : tr("Sair da batalha?", "Leave the battle?")).c_str());
+    y += 32.0f + 12.0f;
+    const std::string line = playtest ? tr("O teste da batalha termina aqui.", "The battle test ends here.")
+                                      : tr("A luta fica sem vitória e nada é concluído.", "The fight ends with no victory and nothing is completed.");
+    dl->AddText(ui(), 14.0f, {a.x + pad, y}, kMuted, line.c_str(), nullptr, inner);
+    y += 14.0f * 2.6f + 20.0f;
+
+    const float bw = (inner - 8.0f) * 0.5f;
+    ImGui::SetCursorScreenPos({a.x + pad, y});
+    if (emberButton("##leavestay", tr("Continuar"), {bw, 44.0f}, Btn::Primary, false, 14.0f)) act = Action::Stay;
+    ImGui::SetCursorScreenPos({a.x + pad + bw + 8.0f, y});
+    if (emberButton("##leaveyes", playtest ? tr("Encerrar teste", "End test") : tr("Sair", "Leave"), {bw, 44.0f}, Btn::Ghost, false, 14.0f)) act = Action::Leave;
+    ImGui::End();
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar(2);
+    return act;
+  }
+};
+
 }  // namespace menu
 }  // namespace ember

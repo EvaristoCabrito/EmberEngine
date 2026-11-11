@@ -75,6 +75,17 @@ const std::vector<VfxVertex>& sphereGeometry() {
   static const std::vector<VfxVertex> g = vfxgeo::sphere(1.0f, 40, 24);
   return g;
 }
+// The sphere's top half: the Globo's dome, standing on the ground with nothing under it.
+const std::vector<VfxVertex>& domeGeometry() {
+  static const std::vector<VfxVertex> g = [] {
+    const std::vector<VfxVertex>& s = sphereGeometry();
+    std::vector<VfxVertex> top;
+    for (size_t i = 0; i + 2 < s.size(); i += 3)
+      if (s[i].position.y >= -1e-4f && s[i + 1].position.y >= -1e-4f && s[i + 2].position.y >= -1e-4f) top.insert(top.end(), {s[i], s[i + 1], s[i + 2]});
+    return top;
+  }();
+  return g;
+}
 
 struct Draw {
   VfxFrame& frame;
@@ -110,12 +121,16 @@ void MageFx::dispel(glm::vec3 centre, float radius, std::vector<Target> bodies, 
   d.seed = 0x3a9eu + 7919u * ++seedSerial_;
   dispels_.push_back(std::move(d));
 }
-int MageFx::globeStart(glm::vec3 centre, float radius, float now) {
+int MageFx::globeStart(glm::vec3 centre, float radius, float height, float now) {
   Globe g;
-  g.id = ++serial_, g.centre = centre, g.radius = std::max(radius, 1.0f), g.start = now;
+  g.id = ++serial_, g.centre = centre, g.radius = std::max(radius, 1.0f), g.height = std::max(height, g.radius), g.start = now;
   g.seed = 0x3a9fu + 7919u * ++seedSerial_;
   globes_.push_back(g);
   return g.id;
+}
+void MageFx::globeHeight(int id, float height) {
+  for (Globe& g : globes_)
+    if (g.id == id) g.height = std::max(height, g.radius);
 }
 void MageFx::globeEnd(int id, float now) {
   for (Globe& g : globes_)
@@ -144,6 +159,7 @@ void MageFx::build(float now, const Camera& camera, VfxFrame& frame, std::vector
   quadFirst_ = frame.addVertices(quadGeometry()), quadCount_ = static_cast<uint32_t>(quadGeometry().size());
   discFirst_ = frame.addVertices(discGeometry()), discCount_ = static_cast<uint32_t>(discGeometry().size());
   sphereFirst_ = frame.addVertices(sphereGeometry()), sphereCount_ = static_cast<uint32_t>(sphereGeometry().size());
+  domeFirst_ = frame.addVertices(domeGeometry()), domeCount_ = static_cast<uint32_t>(domeGeometry().size());
   streaks_.clear();
   for (const Dispel& d : dispels_)
     if (now >= d.impact - kDispelLead) buildDispel(d, now, camera, frame, lights);
@@ -244,20 +260,23 @@ void MageFx::buildGlobe(const Globe& g, float now, const Camera& camera, VfxFram
   const float rise = easeOut(0.0f, 0.55f, age);
   const float env = g.finish < 0.0f ? 1.0f : 1.0f - ease(g.finish, g.finish + 0.7f, now);
   if (env <= 0.0f) return;
-  const float R = g.radius * (0.2f + 0.8f * rise) * (0.85f + 0.15f * env);
+  const float grow = (0.2f + 0.8f * rise) * (0.85f + 0.15f * env);
+  const float R = g.radius * grow;
+  const float H = g.height * grow;  // the dome's top: over the head of the tallest body in it
   const float breathe = 0.5f + 0.5f * std::sin(age * 1.3f + hash01(g.seed, 0, 1) * kTau);
   const glm::vec3 ground = g.centre + glm::vec3(0.0f, 0.04f, 0.0f);
-  // The dome: a faint glassy shell with a bright rim, breathing; its bottom is under the ground (the depth test hides it).
+  // The dome: a faint glassy shell with a bright rim, breathing; it stands on the ground (the sphere's top half: nothing under the
+  // board) and closes over the whole body (the user, 2026-11-11: "um globo que não fecha no corpo inteiro e fica embaixo da terra").
   {
-    const glm::mat4 m = glm::translate(glm::mat4(1.0f), g.centre - kUp * (R * 0.12f)) * glm::scale(glm::mat4(1.0f), glm::vec3(R));
-    draw(sphereFirst_, sphereCount_, m, kModeEnergy, now * 0.25f, 0.55f + 0.12f * breathe, (0.5f + 0.1f * breathe) * env, kViolet, 0.012f,
+    const glm::mat4 m = glm::translate(glm::mat4(1.0f), g.centre) * glm::scale(glm::mat4(1.0f), glm::vec3(R, H, R));
+    draw(domeFirst_, domeCount_, m, kModeEnergy, now * 0.25f, 0.55f + 0.12f * breathe, (0.5f + 0.1f * breathe) * env, kViolet, 0.012f,
          glm::vec4(kVioletCore, 0.1f), g.centre, VfxBlend::Additive);
   }
   // The rising flash: a brighter shell leaving the ground, and a burst at the centre.
   if (age < 0.8f) {
     const float f = 1.0f - ease(0.2f, 0.8f, age);
-    const glm::mat4 m = glm::translate(glm::mat4(1.0f), g.centre - kUp * (R * 0.12f)) * glm::scale(glm::mat4(1.0f), glm::vec3(R * 1.02f));
-    draw(sphereFirst_, sphereCount_, m, kModeEnergy, now, 1.2f, 0.7f * f, kVioletCore, 0.03f, glm::vec4(kWhite, 0.0f), g.centre, VfxBlend::Additive);
+    const glm::mat4 m = glm::translate(glm::mat4(1.0f), g.centre) * glm::scale(glm::mat4(1.0f), glm::vec3(R * 1.02f, H * 1.02f, R * 1.02f));
+    draw(domeFirst_, domeCount_, m, kModeEnergy, now, 1.2f, 0.7f * f, kVioletCore, 0.03f, glm::vec4(kWhite, 0.0f), g.centre, VfxBlend::Additive);
     streaks_.push_back(streak(pulled(g.centre + kUp * 0.9f, eye, kPull), glm::vec3(0.0f), 1.2f * f, 0.9f * f, kVioletCore, 2.6f));
   }
   // The ring at the base, turning; a thinner one the other way.
@@ -276,12 +295,12 @@ void MageFx::buildGlobe(const Globe& g, float now, const Camera& camera, VfxFram
     const uint32_t n = static_cast<uint32_t>(j) + 20u;
     const float a = hash01(g.seed, n, 1) * kTau + age * (0.08f + 0.1f * hash01(g.seed, n, 2)) * (j & 1 ? 1.0f : -1.0f);
     const float el = (0.12f + 0.8f * hash01(g.seed, n, 3)) * (kPi * 0.5f) + 0.08f * std::sin(age * 0.7f + static_cast<float>(j));
-    const glm::vec3 p = g.centre - kUp * (R * 0.12f) + glm::vec3(std::cos(a) * std::cos(el), std::sin(el), std::sin(a) * std::cos(el)) * R;
+    const glm::vec3 p = g.centre + glm::vec3(std::cos(a) * std::cos(el) * R, std::sin(el) * H, std::sin(a) * std::cos(el) * R);
     if (p.y < g.centre.y + 0.08f) continue;
     const float tw = 0.5f + 0.5f * std::sin(age * 2.1f + hash01(g.seed, n, 4) * kTau);
     streaks_.push_back(streak(p, glm::vec3(0.0f), 0.05f + 0.03f * tw, (0.35f + 0.4f * tw) * env * rise, j % 4 ? kViolet : kVioletCore, 2.2f));
   }
-  lights.push_back({g.centre + kUp * (R * 0.5f), kViolet, (1.6f + 0.5f * breathe) * env * rise, R + 1.0f});
+  lights.push_back({g.centre + kUp * (H * 0.5f), kViolet, (1.6f + 0.5f * breathe) * env * rise, std::max(R, H) + 1.0f});
 }
 
 void MageFx::buildRipple(const Ripple& r, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) {

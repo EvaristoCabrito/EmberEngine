@@ -34,8 +34,10 @@ class MageFx {
 
   // Dissipar Magia over the area (its centre on the ground, `radius` world units) bursting at `impact`, the magic torn off `bodies`.
   void dispel(glm::vec3 centre, float radius, std::vector<Target> bodies, float impact);
-  // The Globo: its bubble (centre on the ground, `radius` world units) rising from `now`; returns its id. globeEnd fades it from `now`.
-  int globeStart(glm::vec3 centre, float radius, float now);
+  // The Globo: its dome (centre on the ground, `radius` world units across, `height` tall: over the tallest body in it) rising from
+  // `now`; returns its id. globeHeight follows the bodies inside it; globeEnd fades it from `now`.
+  int globeStart(glm::vec3 centre, float radius, float height, float now);
+  void globeHeight(int id, float height);
   void globeEnd(int id, float now);
   // A spell the bubble stopped: a flash on its surface toward `at` (the struck one's chest), at `now`.
   void globeRipple(glm::vec3 at, float now);
@@ -58,6 +60,7 @@ class MageFx {
     int id = 0;
     glm::vec3 centre{0.0f};
     float radius = 2.0f;
+    float height = 2.0f;
     float start = 0.0f, finish = -1.0f;
     uint32_t seed = 0;
   };
@@ -76,8 +79,8 @@ class MageFx {
   std::vector<Ripple> ripples_;
   int serial_ = 0;
   uint32_t seedSerial_ = 0;
-  uint32_t quadFirst_ = 0, discFirst_ = 0, sphereFirst_ = 0;
-  uint32_t quadCount_ = 0, discCount_ = 0, sphereCount_ = 0;
+  uint32_t quadFirst_ = 0, discFirst_ = 0, sphereFirst_ = 0, domeFirst_ = 0;
+  uint32_t quadCount_ = 0, discCount_ = 0, sphereCount_ = 0, domeCount_ = 0;
   std::vector<VfxInstance> streaks_;
 };
 

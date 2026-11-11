@@ -7635,14 +7635,6 @@
         "useClassSprite": true
       },
       {
-        "name": "BossVoss",
-        "classId": "bossVoss",
-        "x": 38,
-        "y": 24,
-        "level": 15,
-        "useClassSprite": true
-      },
-      {
         "name": "Conjurador",
         "classId": "conjurer",
         "x": 43,

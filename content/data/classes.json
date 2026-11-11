@@ -43,9 +43,6 @@
     "bishop": {
       "mov": 5
     },
-    "bossVoss": {
-      "mov": 5
-    },
     "breadLady": {
       "mov": 4
     },

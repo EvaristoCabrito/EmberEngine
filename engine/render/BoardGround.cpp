@@ -204,6 +204,12 @@ bool BoardGround::buildInto(Geometry& geo, const ember::Board& board) {
   if (board.draft().id == "ashen-forest-crossing" || board.draft().id == "deep-ashen-forest" ||
       board.draft().emberTiles.rfind("ashen", 0) == 0)
     for (Mesh& m : geo.meshes) m.wallFrom |= TerrainView::kAshNeutral;
+  // A locked ground mask: the mask's own colours at every hour (kMaskColours; no pink ground ever, 2026-11-11).
+  for (const EmberGroundTile& t : kEmberGroundTiles)
+    if (t.map == board.draft().emberTiles && t.file.find("ground-mask") != std::string_view::npos) {
+      for (Mesh& m : geo.meshes) m.wallFrom |= TerrainView::kMaskColours;
+      break;
+    }
   if (board.draft().id.rfind("estalagem", 0) == 0)
     for (Mesh& m : geo.meshes) m.wallFrom |= TerrainView::kWallsLit;
   for (int i = 0; i < 3; ++i) {

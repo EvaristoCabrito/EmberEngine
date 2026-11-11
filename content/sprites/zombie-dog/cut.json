@@ -1,0 +1,86 @@
+{
+ "about": "Cão Zumbi (zombieDog) remade from the user's 720p videos (2026-11-11, \"Creatures Remade, lets start with the zombie dog\"; 24 fps, 1280 x 720): BigZombie_dog_animation_reference_ba9abcc5 (idle, cast), BigZombie_dog_walk_and_attack_6e721e64 (walk, attack), BigZombie_dog_animation_reference_efc4c366 (hit, death). Only the clips the dog already has in the game are cut (the user: \"dont waste time making animations we dont use\"). Alta + 64 + 36 (the 64 / 36 copies by tools/scripts/sprites/quality_copies.py). The user: \"make him 25% smaller than he used to be\". The frames are first values read off the videos: the user judges.",
+ "set": "zombie-dog",
+ "version": "v01",
+ "figureUnits": 2.2387,
+ "figurePx": 512.5,
+ "figureNote": "Ember's zombieDog idle stands 255 px ear tips to paws in a 321 px frame whose box is 3.75728 units tall: 2.985 units. 75% of that is 2.2387 units. In the 720p idle the dog is 512.5 px ear tips to paws (median of 60 frames); the three videos share one camera, so every clip keeps that one pixel scale.",
+ "edgeKey": true,
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/zombie-dog/big-reference",
+   "video": "Attachments/BigZombie_dog_animation_reference_ba9abcc5_720p.mp4",
+   "first": 0,
+   "last": 96,
+   "loopMin": 40,
+   "loopMax": 96,
+   "mode": "loop",
+   "why": "standing and breathing, until the mouth starts to open for the roar at ~98"
+  },
+  {
+   "clip": "cast",
+   "pose": "cast",
+   "kind": "stand",
+   "src": "build/video-cut/zombie-dog/big-reference",
+   "video": "Attachments/BigZombie_dog_animation_reference_ba9abcc5_720p.mp4",
+   "first": 98,
+   "last": 220,
+   "mode": "once",
+   "why": "the head lifts and roars from ~100, the green glow runs ~136..204, standing again by ~220"
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "inPlace": true,
+   "src": "build/video-cut/zombie-dog/big-walkattack",
+   "video": "Attachments/BigZombie_dog_walk_and_attack_6e721e64_720p.mp4",
+   "first": 0,
+   "last": 120,
+   "loopMin": 20,
+   "loopMax": 120,
+   "mode": "loop",
+   "why": "walking in place, facing right, until he crouches for the leap at ~124"
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "src": "build/video-cut/zombie-dog/big-walkattack",
+   "video": "Attachments/BigZombie_dog_walk_and_attack_6e721e64_720p.mp4",
+   "first": 124,
+   "last": 204,
+   "standUntil": 150,
+   "impactFrame": 168,
+   "mode": "once",
+   "why": "crouches 124..152, leaps at ~156 with the jaws open (the bite at ~168), lands ~180, standing by ~204; he leaves his feet, so the feet line comes from the crouch"
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "kind": "stand",
+   "src": "build/video-cut/zombie-dog/big-hitdeath",
+   "video": "Attachments/BigZombie_dog_animation_reference_efc4c366_720p.mp4",
+   "first": 16,
+   "last": 62,
+   "standUntil": 20,
+   "mode": "once",
+   "why": "recoils from ~20, rears with a front paw up at ~36..40, standing again by ~60"
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "kind": "stand",
+   "src": "build/video-cut/zombie-dog/big-hitdeath",
+   "video": "Attachments/BigZombie_dog_animation_reference_efc4c366_720p.mp4",
+   "first": 144,
+   "last": 205,
+   "standUntil": 150,
+   "mode": "once",
+   "why": "stumbles at ~152, down by ~168, lying still from ~176"
+  }
+ ]
+}

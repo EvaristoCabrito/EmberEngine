@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "world/Atmos2.h"
+#include "world/Sky.h"
 #include "world/Tempo.h"
 
 namespace ember::atmos2 {
@@ -65,6 +66,9 @@ class Service {
   void setLonLat(double lon, double lat) { lon_ = lon; lat_ = lat; }
   double lon() const { return lon_; }
   double lat() const { return lat_; }
+  // Where the party stands on the planet, for the sky (world/Sky.h: the sun's and the moon's height follow the latitude); the
+  // realm's own place while the service is not running. The maps and the world map read the sky from this one place.
+  ember::sky::Place place() const { return running_ ? ember::sky::Place{lat_, lon_} : ember::sky::Place{}; }
 
   // The weather at the party's position at the game time (blended between the two newest snapshots).
   WeatherSample sample(std::int64_t worldMs) const;

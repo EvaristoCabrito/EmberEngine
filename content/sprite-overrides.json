@@ -437,6 +437,7 @@
    "newHero": {"name": "Rastreador de Cinzas", "group": "monster", "sprite": "ashes-crawler", "reversed": false},
    "cut": "content/sprites/ashes-crawler/cut.json",
    "why": "the user, 2026-11-06: the Ashes Crawler from their videos (Attachments/SandCrawler), Alta + 64 + 36 like the Hipóstase, 2 hexes; no hit / death yet",
+   "whySteady": "the user, 2026-11-11: \"a weird off set motion going up and down as he idles\": the idle video's camera sank ~30 px for a second; base-v02 (and its 64 / 36 copies) are base-v01 held still on the shell and rear legs (tools/scripts/sprites/steady_clip.py), v01 kept on disk",
    "poses": {"idle": "base", "walk": "move", "attack": "atk"},
    "labels": {"idle": "Parado", "walk": "Andar", "attack": "Atacar"},
    "packs": {"base": "field", "move": "field"},

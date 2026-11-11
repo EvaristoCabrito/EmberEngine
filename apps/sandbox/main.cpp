@@ -946,10 +946,8 @@ int runCapture(const Options& o) {
       if (test) applyTestHeroes(options, testSession->save);
       else applySaveHeroes(options, campaign.activeSave());  // the campaign's heroes as the save has them (levels, promotions, condition)
       // The sky: a campaign mission at the save's hour; Modo teste at the map's own (gameHour -1).
-      if (!test) {
-        options.gameHour = static_cast<float>(ember::campaignMinute(campaign.activeSave()) % 1440) / 60.0f;
-        if (options.moonPhase.empty()) options.moonPhase = ember::campaignMoonPhase(campaign.activeSave().value("gameClock", 0));
-      }
+      // (the moon is no longer handed over: the map reads it off the same clock, world/Sky.h; --moon-phase still asks for one)
+      if (!test) options.gameHour = static_cast<float>(ember::campaignMinute(campaign.activeSave()) % 1440) / 60.0f;
       if (options.world) setUpExplore(options, test ? testSession->save : campaign.activeSave(), world, test, hasInterludeData ? &interludeData : nullptr);
       if (options.world) {  // the party and its formation (--formation "Kael,,Neera,...": the board's cells instead of the save's)
         ember::Json save = test ? testSession->save : campaign.activeSave();
@@ -1779,8 +1777,8 @@ int runWindow(const Options& o) {
         if (!playing.empty() && !testSession) {
           const ember::Json save = campaign.activeSave();
           options.gameHour = static_cast<float>(ember::campaignMinute(save) % 1440) / 60.0f;
-          // ... and its moon: the phase of the save's day (the world map's moon plate); Modo teste: the map's own Lua.
-          if (options.moonPhase.empty()) options.moonPhase = ember::campaignMoonPhase(save.value("gameClock", 0));
+          // ... and its moon is the one that clock's day and hour have in the sky (world/Sky.h; the world map's moon plate reads the
+          // same); Modo teste: the map's own Lua.
         }
         // A free-roam map: who sits there and who walks (the campaign's save, or Modo teste's); where the party comes in.
         if (hasWorld) setUpExplore(options, testSession ? testSession->save : campaign.activeSave(), world, testSession.has_value() || playing.empty(), hasInterlude ? &interlude : nullptr);

@@ -2,7 +2,9 @@
 #include "TempoPanel.h"
 #include "world/TempoConsumers.h"
 #include "world/Atmos2Service.h"
+#include "world/Sky.h"
 #include "world/TempoSave.h"
+#include "world/TimeOfDay.h"
 
 // The campaign's world map, copied from Ember (src/game/OverworldMapScreen.tsx, GameApp's overworld handlers and
 // src/ember-ui/styles.css; user, 2026-10-15: "importar todos os menus corretamente"). Its rules are the C++ port in
@@ -818,15 +820,12 @@ class OverworldStage : public Stage {
       place(w);
       emberPlate("##rations", {w, h}, [&](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32) { d->AddText(ui, 14.0f, {a.x + 8, (a.y + b.y) * 0.5f - 8}, kMuted, text.c_str()); });
     }
-    // The moon (moonPhase.ts: an 8-day cycle, every third full moon a blood moon)
+    // The moon: the one in the sky at the clock's instant (world/Sky.h, the same the maps are lit by: its phase is the angle
+    // between the sun and the moon, 29.5 days from one new moon to the next; every third full moon a blood moon)
     {
       place(h);
-      const int day = static_cast<int>(num(save_, "gameClock", 0));
-      static const char* kPhases[8] = {"new", "waxingCrescent", "firstQuarter", "waxingGibbous", "full", "waningGibbous", "lastQuarter", "waningCrescent"};
-      const int d = std::max(0, day - 1);
-      std::string phase = kPhases[d % 8];
-      if (phase == "full" && (d / 8) % 3 == 2) phase = "blood";
-      const std::string icon = phase == "full" ? "game/ui/moon/moon-full-v2.png" : "game/ui/moon/moon-" + phase + ".png";
+      const ember::sky::State sky = skyNow();
+      const std::string icon = ember::moonPhaseIcon(ember::sky::bloodMoon(sky) ? "blood" : ember::kMoonPhases[ember::sky::phaseIndex(sky)]);
       emberPlate("##moon", {h, h}, [&](ImDrawList* dd, ImVec2 a, ImVec2 b, ImU32) {
         if (const UiImage* img = uiImage(paths_.artRoot / icon)) dd->AddImage(img->texture, {a.x + 4, a.y + 4}, {b.x - 4, b.y - 4});
       });
@@ -1160,8 +1159,8 @@ class OverworldStage : public Stage {
     }
     if (!fxOn) {
       drawFog(dl, o, imgW, imgH);
-      // Sky tint by the hour.
-      const std::string t = ember::Overworld::timeOfDay(ember::Overworld::campaignHour(save_));
+      // Sky tint by the hour (the painted hour: the real sun's, paintedHourNow).
+      const std::string t = ember::Overworld::timeOfDay(static_cast<int>(paintedHourNow()));
       const ImU32 tint = t == "darkNight" ? IM_COL32(5, 12, 43, 173) : t == "brightNight" ? IM_COL32(34, 62, 132, 122) : t == "dusk" ? IM_COL32(166, 67, 39, 82)
                          : t == "dawn" ? IM_COL32(230, 137, 112, 64) : t == "noon" ? IM_COL32(255, 197, 108, 31) : 0;
       if (tint) dl->AddRectFilled(o, {o.x + imgW, o.y + imgH}, tint, 8.0f);
@@ -1409,7 +1408,8 @@ class OverworldStage : public Stage {
       d.params = WorldMapFx::underworldParams(c, d.glow);
     } else {
       // Sem saltos: a luz anda até a hora do relógio em hourEaseSeconds (o relógio anda em horas inteiras a cada passo).
-      const float target = static_cast<float>(hour);
+      // A hora da pintura é a do sol de verdade (paintedHourNow): a manhã pintada começa quando o sol nasce nesse dia do ano.
+      const float target = paintedHourNow();
       if (shownHour_ < 0) shownHour_ = target;
       const float dt = std::clamp(now_ - lastHourAt_, 0.0f, 0.1f);
       lastHourAt_ = now_;
@@ -1423,6 +1423,12 @@ class OverworldStage : public Stage {
       for (int i = 0; i < WorldMapFx::Draw::kTextures; ++i) d.tex[i] = fxTex_[0][i];
       d.partyLight = gamePrefs().partyLight;
       d.params = WorldMapFx::overworldParams(c, shownHour_, {partyX_ / 100.0f, partyY_ / 100.0f});
+      // O brilho da lua na água é o da lua desta noite: cheia e alta brilha inteiro, um quarto de lua 8 %, sem lua no céu nada.
+      {
+        const ember::sky::State sky = skyNow();
+        const float moonShare = ember::sky::bloodMoon(sky) ? 0.0f : static_cast<float>(std::clamp(ember::sky::moonDirectLux(sky) / 0.2, 0.0, 1.0));
+        d.params.water.y *= glm::mix(1.0f, moonShare, d.params.hourMix.y);
+      }
       // O clima natural sobre a pintura, sempre (o usuário, 2026-11-05: "não tem opção off ... o mesmo clima girando, girando, e
       // não desliga. É eterno, 24 horas por dia, o ano inteiro").
       WorldMapFx::overworldWeather(d.params, worldWeatherNow(dt, c.hourEase));
@@ -2983,6 +2989,22 @@ class OverworldStage : public Stage {
                                                        WorldMapFx::kNoTexture, WorldMapFx::kNoTexture, WorldMapFx::kNoTexture, WorldMapFx::kNoTexture}};
   const char* fxOn(int world, int i) const { return fxTex_[world][i] != WorldMapFx::kNoTexture ? "on" : "off"; }
   size_t revealKey_ = 0;  // o que o revelado subido representa (um hash dos hexágonos explorados)
+  // O céu de verdade (world/Sky.h) no instante do relógio da campanha, visto de onde o grupo está: o mesmo que ilumina os mapas.
+  ember::sky::State skyNow() const { return ember::sky::at(ember::campaignMilliseconds(save_), ember::atmos2::Service::instance().place()); }
+  // A hora que a pintura do mapa-múndi mostra (os looks pintados valem para um dia com o sol nascendo às 6, no alto às 12 e se
+  // pondo às 18): o nascer, o meio-dia e o pôr do sol de verdade deste dia do ano postos sobre essas três horas
+  // (sky::paintedHour). No inverno a pintura amanhece tarde e anoitece cedo; no verão o dia pintado é longo. Refeita uma vez por
+  // minuto do relógio.
+  float paintedHourNow() const {
+    const std::int64_t ms = ember::campaignMilliseconds(save_);
+    if (ms / 60000 != paintedMinute_) {
+      paintedMinute_ = ms / 60000;
+      paintedHour_ = static_cast<float>(ember::sky::paintedHour(ms, ember::atmos2::Service::instance().place()));
+    }
+    return paintedHour_;
+  }
+  mutable std::int64_t paintedMinute_ = -1;
+  mutable float paintedHour_ = 12.0f;
   float shownHour_ = -1;  // a hora da luz na tela (segue o relógio em hourEaseSeconds)
   float lastHourAt_ = 0;
   float shownRain_ = -1, shownCover_ = 0;  // o clima na tela (segue a previsão em hourEaseSeconds; -1 = ainda não lido)

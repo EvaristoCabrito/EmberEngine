@@ -1113,6 +1113,29 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   status_.build(now, camera, vfx_, vfxLights);
   daggers_.build(now, camera, vfx_, vfxLights);
   mage_.build(now, camera, vfx_, vfxLights);
+  // Every ring and glow on the ground round a unit's feet or an area's centre lies on the ground itself, centred where it belongs,
+  // under the cards (the user, 2026-11-11: "esses efeitos de anéis ou qualquer coisa circulando ao redor do card não podem ficar
+  // assim"): the effects pulled them toward the camera, which moved them off the feet and, seen from high up, over the cards.
+  // Back along the eye's line to the ground's height (pulling slid them along it), so where the ring looks to be stays put.
+  for (VfxDraw& d : vfx_.draws) {
+    const float mode = d.gpu.params0.y;
+    const bool combatRing = d.gpu.material == static_cast<uint32_t>(VfxMaterial::Combat) && mode == 3.0f;
+    const bool holyPool = d.gpu.material == static_cast<uint32_t>(VfxMaterial::Holy) && mode == 1.0f;
+    if ((!combatRing && !holyPool) || d.gpu.firstInstance != 0xFFFFFFFFu || d.solid || d.behindCard) continue;
+    const glm::vec3 up = glm::vec3(d.gpu.model[1]);
+    if (glm::dot(up, up) < 1e-10f || glm::normalize(up).y < 0.99f) continue;  // a ring standing up (round a blow) is not on the ground
+    const glm::vec3 p = glm::vec3(d.gpu.model[3]);
+    const glm::vec3 from = camera.position;
+    const glm::vec3 ray = p - from;
+    const float groundY = d.gpu.sightAt.y + 0.04f;
+    if (std::abs(ray.y) < 1e-4f) continue;
+    const float t = (groundY - from.y) / ray.y;
+    if (t < 1.0f) continue;  // already at or below the ground
+    const glm::vec3 q = from + ray * t;
+    if (glm::length(q - p) > 0.9f) continue;  // farther than the pull: a ring up on a body, left as it is
+    d.gpu.model[3] = glm::vec4(q, 1.0f);
+    d.underCards = true;
+  }
   for (const VfxLight& l : vfxLights)
     if (l.intensity > 0.0f) lights.push_back({l.at, {l.color.r, l.color.g, l.color.b}, l.intensity, l.distance, std::max(l.at.y, 1.0f)});
   const size_t first = out.size();

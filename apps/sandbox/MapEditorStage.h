@@ -1579,7 +1579,13 @@ class MapEditorStage : public Stage {
         }
       }
     }
-    for (auto& [id, s] : out) std::sort(s.files.begin(), s.files.end(), [](const SavedFile& a, const SavedFile& b) { return a.serial < b.serial || (a.serial == b.serial && !a.own); });
+    for (auto& [id, s] : out) {
+      std::sort(s.files.begin(), s.files.end(), [](const SavedFile& a, const SavedFile& b) { return a.serial < b.serial || (a.serial == b.serial && !a.own); });
+      // Ember's folder holds the game's prepared copy of our save (prepare / exportMap): one version, listed once (ours).
+      std::erase_if(s.files, [&](const SavedFile& f) {
+        return !f.own && std::any_of(s.files.begin(), s.files.end(), [&](const SavedFile& o) { return o.own && o.serial == f.serial; });
+      });
+    }
     return out;
   }
   void rescan() {
@@ -3427,15 +3433,19 @@ class MapEditorStage : public Stage {
     }
     bool moon = false;
     {
+      // The field shows the hour the map really opens at (the user, 2026-11-11: "toda vez o Vau está de noite mesmo se no editor
+      // está como dia"): an hour never chosen by hand is the default night (MapStage: 19:30), and says so, whatever the file carries.
+      const bool manual = draft_.contains("timeOfDayManual") && draft_["timeOfDayManual"].is_boolean() && draft_["timeOfDayManual"].get<bool>();
       const std::string tod = draft_.value("timeOfDay", "day");
       std::string shown = tod;
       for (const auto& t : editor_.timeOfDay)
         if (t.id == tod) shown = t.label, moon = t.moon;
+      if (!manual) shown = "Noite (padrão, 19:30)", moon = true;
       fieldLabel("Hora do dia");
       ImGui::SetNextItemWidth(-1);
       if (ImGui::BeginCombo("##Hora do dia", shown.c_str())) {
         for (const auto& t : editor_.timeOfDay)
-          if (ImGui::Selectable(t.label.c_str(), t.id == tod))
+          if (ImGui::Selectable(t.label.c_str(), manual && t.id == tod))
             beginEdit(), draft_["timeOfDay"] = t.id, draft_["sunIntensity"] = t.key, draft_["ambientIntensity"] = t.ambient,
                 draft_["timeOfDayManual"] = true;  // chosen by hand: it wins over the default night (MapStage, MapDraft::timeOfDayManual)
         ImGui::EndCombo();

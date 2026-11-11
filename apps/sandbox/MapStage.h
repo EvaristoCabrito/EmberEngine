@@ -96,6 +96,7 @@
 #include "render/UiArt.h"
 #include "world/Board.h"
 #include "world/FogOfWar.h"
+#include "world/Sky.h"
 #include "world/TimeOfDay.h"
 #include "world/GroundAssets.h"
 #include "world/GroundMesh.h"
@@ -401,9 +402,10 @@ class MapStage final : public Stage {
     // in combat (campaignMillisecondsNow). gameHour_ follows it every frame, so the sun, the moon, the stars and the shadows slide.
     // The panel's Hora (ciclo rápido / lento / a fixed hour) still overrides it, as a test.
     if (gameHour_ < 0.0f && options.hour < 0) {
-      const float start = board_->draft().timeOfDayManual ? ember::mapHour(board_->draft().timeOfDay) : 19.5f;
       const std::int64_t day = options_.campaignMinute / 1440;
-      const double startMs = static_cast<double>(start) * 3600000.0;
+      // (on the real sky a Hora do dia chosen by hand is the instant of that day the sun does what the name says: mapHourMs)
+      const double startMs = board_->draft().timeOfDayManual ? static_cast<double>(mapHourMs(day, board_->draft().timeOfDay) - day * 86400000) : 19.5 * 3600000.0;
+      const float start = static_cast<float>(startMs / 3600000.0);
       options_.campaignMinute = day * 1440 + static_cast<std::int64_t>(startMs / 60000.0);
       options_.campaignSubMinuteMs = static_cast<std::int64_t>(startMs) % 60000;
       tempoTimeline_.configure(tempoConfig_, options_.campaignMinute * 60000, true);
@@ -904,7 +906,12 @@ class MapStage final : public Stage {
     float cloudShadowStrength = 0.75f;  // Renderer::Clouds::shadow's own default: maps without the weather keep it
     float sunDiscShown = 1.0f;
     float clearMeterLux = -1.0f;  // the meter before the weather (the night's darkening reads the hour, never the clouds)
-    const bool weatherLight = tempoActive && lightingMode_ == 3 && lighting.physicalSky && lighting.sunDisc && !moonNight_ && !interiorMap();
+    // A map with a locked ground mask keeps the light its ground was approved under (the user, 2026-11-11: "NO MAP WITH A MASK WILL
+    // EVER BE CHANGED", "no pink ground ever"): the weather's light, the daylight lift and the 1.5-stop moon cap of 2026-11-10 skip it.
+    const bool groundLocked = lockedGround();
+    // (under the real sky the weather takes its share of the moon's and the stars' light too, as of the sun's: an overcast night
+    // with no moon is the darkest the surface gets)
+    const bool weatherLight = tempoActive && lightingMode_ == 3 && lighting.physicalSky && lighting.sunDisc && (!moonNight_ || skyLit_) && !interiorMap() && !groundLocked;
     if (weatherLight) {
       const float cover = std::clamp(cloudCoverage_ >= 0.0f ? cloudCoverage_ : tempoEffects.coverage, 0.0f, 1.0f);
       const float rain = std::clamp(std::max(tempoEffects.rain, tempoEffects.heavyRain), 0.0f, 1.0f);
@@ -966,18 +973,37 @@ class MapStage final : public Stage {
       // as an overcast day with a pale blue sky; at 2 the sky is navy and the moonlit ground still reads). Every map, the rooms too.
       // (1.5 since 2026-11-10: at 2 the board and the figures were "um breu" under a full moon; the sky and the backdrop are held down
       // on their own now: atmosphere.hlsli kNightSkyMask, resolve_panorama.hlsl backdropLight)
-      if (moonNight_ && moonLight_ == 1) darkening = std::min(darkening, 1.5f);
+      if (moonNight_ && moonLight_ == 1) darkening = std::min(darkening, groundLocked ? 2.0f : 1.5f);
       // A day reads as a day (the user, 2026-11-10: "não vejo nenhum sol ou luminosidade"): by daylight the camera opens 0.6 stop
       // more than the meter asks (sunlit grass sat at a quarter of the display's range); nothing changes at night.
       const float clearEv = clearMeterLux > 0.0f ? std::log2(std::max(clearMeterLux, 1e-4f) / 2.5f) : ev;
       // (0.6 the same day washed the clouds and the board out: "essa luz tá muito forte ... chega de lavagem". 0.25.)
-      const float target = ev + darkening - 0.25f * glm::smoothstep(8.0f, 12.0f, clearEv);
+      float target = ev + darkening - (groundLocked ? 0.0f : 0.25f * glm::smoothstep(8.0f, 12.0f, clearEv));
+      float adaptRate = kAdaptPerSecond;
+      if (skyLit_) {
+        // The real sky: the eye follows the light, never all the way (sky::eyeDeficitStops, by the clear sky's REAL lux: the hour
+        // and the moon, never the clouds; the weather's own stops are already in the meter above). A full day is shown whole, a
+        // sunset a stop under, a high full moon 1.5 stops, a quarter moon 2.4, a night with no moon 3.5: every night its own.
+        const float realEv = static_cast<float>(ember::sky::evOf(skyClearLux_));
+        darkening = static_cast<float>(ember::sky::eyeDeficitStops(realEv));
+        target = ev + darkening - 0.25f * glm::smoothstep(8.0f, 12.0f, realEv);
+        // The eye takes a second to settle into more light and eight into less; a jump of the clock (a test hour) lands at once.
+        adaptRate = target > adaptedEv_ ? 1.0f : 0.125f;
+        if (!std::isnan(adaptedEv_) && std::abs(target - adaptedEv_) > 4.0f) adaptedEv_ = target;
+      }
       if (std::isnan(adaptedEv_) || measuring_) adaptedEv_ = target;
-      adaptedEv_ += (target - adaptedEv_) * (1.0f - std::exp(-dt * kAdaptPerSecond));
+      adaptedEv_ += (target - adaptedEv_) * (1.0f - std::exp(-dt * adaptRate));
       lighting.exposure = 1.0f / (1.2f * std::exp2(adaptedEv_));
       if (readyFrames_ == 30)  // once, for the record of a capture
         logInfo("camera: meter {:.3f} lux, EV {:.2f}, darkening {:.2f} stops, exposure {:.5f}, key {:.2f} lux at elevation {:.1f} deg",
                 meterLux_, ev, darkening, lighting.exposure, lighting.sunIntensity, glm::degrees(std::asin(std::clamp(lighting.sunDirection.y, -1.0f, 1.0f))));
+      if (readyFrames_ == 30 && skyLit_) {  // the real sky's record: the date, where the sun and the moon stand, the light in real lux
+        const ember::sky::Place place = skyPlace();
+        logInfo("real sky: {} at {:.1f} N {:.1f} E: sun {:.1f} deg up at azimuth {:.0f}, moon {} ({:.0f}% lit, phase angle {:.0f}) {:.1f} deg up at azimuth {:.0f}, "
+                "{:.1f} Earth radii away; a clear sky gives {:.4f} lux, shown {:.2f} stops under (the weather aside)",
+                skyClockText(), place.latitude, place.longitude, skyState_.sunAltitude, skyState_.sunAzimuth, skyPhaseName_, skyState_.illuminated * 100.0,
+                skyState_.phaseAngle, skyState_.moonAltitude, skyState_.moonAzimuth, skyState_.moonDistance, skyClearLux_, darkening);
+      }
       if (readyFrames_ == 30) {  // the sky's record of a capture: the hour, tonight's moon and where its disc falls on the screen
         const glm::vec3 m = lighting.moonDirection;
         const glm::vec4 clip = lastCamera_.viewProjection() * glm::vec4(lastCamera_.position + m * 50.0f, 1.0f);
@@ -985,7 +1011,7 @@ class MapStage final : public Stage {
         const int phase = moonPhaseIndex();
         logInfo("sky: hour {:.2f}, moon {} (disc texture {}, radius {:.2f} deg, glow {:.2f}) at elevation {:.1f} deg, azimuth {:.1f} deg (the camera looks at "
                 "azimuth {:.1f}, elevation {:.1f}), {}",
-                cycleHour(now_), phase < 0 ? "full (default)" : ember::kMoonPhases[phase], lighting.moonTexture, glm::degrees(lighting.moonRadius),
+                starHour(), skyLit_ ? skyPhaseName_ : phase < 0 ? "full (default)" : ember::kMoonPhases[phase], lighting.moonTexture, glm::degrees(lighting.moonRadius),
                 lighting.moonGlow, glm::degrees(std::asin(std::clamp(m.y, -1.0f, 1.0f))),
                 glm::degrees(std::atan2(m.x, m.z)), glm::degrees(std::atan2(lastCamera_.forward.x, lastCamera_.forward.z)),
                 glm::degrees(std::asin(std::clamp(lastCamera_.forward.y, -1.0f, 1.0f))),
@@ -1229,9 +1255,7 @@ class MapStage final : public Stage {
       // The real night sky (render/StarSky.h): the catalogue turned to this hour's sidereal time (the cycle's hour, or 22 h on a
       // map whose own time is night, 12 h by day: the stars then hide behind the daylight anyway).
       if (starSky_.loaded() && starLook_ == 4 && !starsOff_) {
-        const bool mapNight = scene_ && ember::timeOfDay(scene_->timeOfDay).moon;
-        const float hour = clockOn() ? cycleHour(now_) : mapNight ? 22.0f + std::fmod(now_ / 600.0f, 2.0f) : 12.0f;
-        const float lst = starSky_.siderealHours(hour);
+        const float lst = starSky_.siderealHours(starHour());
         const std::vector<GpuStar> stars = starSky_.gpuStars(lst);
         glm::vec4 clouds4[2]{};
         const auto& mc = starSky_.clouds();
@@ -1241,9 +1265,7 @@ class MapStage final : public Stage {
       } else if (andromedaSky_.loaded() && starLook_ == 5 && !starsOff_) {
         // Céu de Andrômeda (look 005): the user's painting as the whole sky, turned to the hour as look 4's galaxy frame (no
         // catalogue stars: the painting has its own); asked from the ground pack only once the look is chosen.
-        const bool mapNight = scene_ && ember::timeOfDay(scene_->timeOfDay).moon;
-        const float hour = clockOn() ? cycleHour(now_) : mapNight ? 22.0f + std::fmod(now_ / 600.0f, 2.0f) : 12.0f;
-        const float lst = andromedaSky_.siderealHours(hour);
+        const float lst = andromedaSky_.siderealHours(starHour());
         const glm::vec4 none[2]{};
         renderer.setStars(andromedaSky_.gpuStars(lst), andromedaSky_.galacticPole(lst), andromedaSky_.galacticCentre(lst), 0.0f, none);  // its own bright stars over the painting (the user, 2026-11-04: both sets)
         requestAndromedaSky();
@@ -1472,7 +1494,8 @@ class MapStage final : public Stage {
   // camera bar never reach here (ImGui takes them).
   void event(const SDL_Event& e) override {
     if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.key == SDLK_ESCAPE) {
-      if (menuOptions_.isOpen()) menuOptions_.close();
+      if (leaveConfirmOpen_) leaveConfirmOpen_ = false;  // Esc again on "Sair da batalha?": back to the fight
+      else if (menuOptions_.isOpen()) menuOptions_.close();
       else if (battleSlots_) battleSlots_.reset();
       else if (levelUpMoment_) continueLevelUp();
       else if (cutscene_) stopCutscene("");
@@ -1490,10 +1513,15 @@ class MapStage final : public Stage {
       else if (attackMode_) attackMode_ = false;
       else if (selected_ >= 0 && result_.empty() && !myTurn()) select(-1);
       else if (pauseOpen_) pauseOpen_ = false;
+      else if (!explores_ && result_.empty()) leaveConfirmOpen_ = true;  // a fight still going: ask before leaving
       else titleRequested_ = true;
       return;
     }
     if (e.type == SDL_EVENT_MOUSE_MOTION) mouse_ = {e.motion.x, e.motion.y}, mouseWindow_ = e.motion.windowID;
+    if (leaveConfirmOpen_ && (e.type == SDL_EVENT_KEY_DOWN || e.type == SDL_EVENT_MOUSE_BUTTON_DOWN)) {  // only the panel's buttons
+      leftDown_.reset(), endPan();
+      return;
+    }
     if (cutscene_ && cutsceneDialog_ && e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && e.button.button == SDL_BUTTON_LEFT)
       cutsceneDialog_->requestAdvanceFromAnywhere();
     if (inputHeld || cutscene_) {  // a conversation, the Inn's menus (NpcTalk.h) or an on-map cutscene: nothing reaches the board
@@ -2181,11 +2209,12 @@ class MapStage final : public Stage {
                                        "gibosa ming.", "quarto ming.", "minguante", "sangue"};
       int phase = moonPhase_ + 1;
       if (dropdown("Fase da lua", phase, 10,
-                   [](int i) { return i == 0 ? std::string("do mapa") : std::string(kPhases[i - 1]); }))
+                   [](int i) { return i == 0 ? std::string("do céu") : std::string(kPhases[i - 1]); }))
         moonPhase_ = phase - 1;
       static const char* kSizes[4] = {"pequena", "média", "grande", "enorme"};
       dropdown("Tamanho da lua", moonSize_, 4, [](int i) { return std::string(kSizes[i]); });
-      if (lightingMode_ == 3) {
+      // (only where the old light still runs, a locked ground: under the real sky the moon's light is the real one)
+      if (lightingMode_ == 3 && lockedGround()) {
         static const char* kMoonLight[2] = {"físico", "cinema"};
         dropdown("Luar", moonLight_, 2, [](int i) { return std::string(kMoonLight[i]); });
       }
@@ -2686,9 +2715,75 @@ class MapStage final : public Stage {
     const auto day=campaignMinuteNow()/1440;
     if(dayCycle_==1) return day*86400000+21600000+static_cast<std::int64_t>(now_*720000.0f);
     if(dayCycle_==2) return day*86400000+21600000+static_cast<std::int64_t>(now_*60000.0f);
-    if(dayCycle_>=3) return day*86400000+static_cast<std::int64_t>(cycleHour(now_)*3600000.0f);
-    if(gameHour_<0 && scene_) return day*86400000+static_cast<std::int64_t>(ember::mapHour(scene_->timeOfDay)*3600000.0f);
+    if(dayCycle_>=3) return fixedHourMs(day);
+    if(gameHour_<0 && scene_) return mapHourMs(day, scene_->timeOfDay);
     return campaignMillisecondsNow();
+  }
+  // Where the map lies on the planet (the party's place on the world map, Atmos 2's; else the realm's own latitude).
+  ember::sky::Place skyPlace() const { return ember::atmos2::Service::instance().place(); }
+  // A map's own Hora do dia (the Map Editor's) as an instant of `day` on the real sky: the name says what the sun does, the day and
+  // the latitude say when it does it (in winter the sun rises late and never climbs high). A locked ground keeps its fixed hours.
+  std::int64_t mapHourMs(std::int64_t day, std::string_view name) const {
+    const std::int64_t start = day * 86400000;
+    if (lockedGround()) return start + static_cast<std::int64_t>(ember::mapHour(name) * 3600000.0f);
+    const ember::sky::Place p = skyPlace();
+    if (name == "noon") return ember::sky::solarNoon(start, p);
+    if (name == "dawn") return ember::sky::sunCrossing(start, p, 6.0, true);    // the low sun of the morning
+    if (name == "dusk") return ember::sky::sunCrossing(start, p, 4.0, false);   // ... and of the evening
+    if (name == "brightNight") return start + 22 * 3600000;
+    if (name == "darkNight") return start + 3 * 3600000;
+    return (ember::sky::sunCrossing(start, p, ember::sky::kHorizon, true) + ember::sky::solarNoon(start, p)) / 2;  // "day": the middle of the morning
+  }
+  // The panel's fixed hours ("Hora": amanhecer .. lua nascendo) on the real sky, the same way: found on that day's own sun.
+  std::int64_t fixedHourMs(std::int64_t day) const {
+    const std::int64_t start = day * 86400000;
+    if (lockedGround()) return start + static_cast<std::int64_t>(cycleHour(now_) * 3600000.0f);
+    const std::int64_t key = day * 16 + dayCycle_;
+    if (key == fixedHourKey_) return fixedHourMs_;
+    const ember::sky::Place p = skyPlace();
+    const auto rise = [&](double altitude, bool morning) { return ember::sky::sunCrossing(start, p, altitude, morning); };
+    std::int64_t at = start;
+    switch (dayCycle_) {
+      case 3: at = rise(6.0, true); break;                                                         // amanhecer: the disc 6 deg up
+      case 4: at = (rise(ember::sky::kHorizon, true) + ember::sky::solarNoon(start, p)) / 2; break;   // manhã
+      case 5: at = ember::sky::solarNoon(start, p); break;                                          // meio-dia: the sun at its highest
+      case 6: at = (ember::sky::solarNoon(start, p) + rise(ember::sky::kHorizon, false)) / 2; break;  // tarde
+      case 7: at = rise(6.0, false); break;                                                        // pôr do sol
+      case 8: at = rise(-6.0, false); break;                                                       // crepúsculo: the sun 6 deg down
+      case 9: at = start + 22 * 3600000; break;                                                    // noite
+      case 10: at = start + 3 * 3600000; break;                                                    // madrugada
+      default: at = start + 19 * 3600000 + 1800000; break;                                         // lua nascendo
+    }
+    fixedHourKey_ = key, fixedHourMs_ = at;
+    return at;
+  }
+  // The moon a map or a test asks for (index in ember::kMoonPhases, 8 = blood), -1 = the one the calendar has. A campaign map
+  // never asks: its moon is the clock's. A map with no campaign clock (Modo teste, the Map Editor) takes its own Lua, else the full
+  // moon (the user, 2026-11-03: "EU QUERO A LUA"). The panel's Fase da lua and --moon-phase ask on any map.
+  int forcedMoonPhase() const {
+    if (moonPhase_ >= 0) return moonPhase_;
+    if (options_.gameHour >= 0.0f) return -1;
+    for (int i = 0; scene_ && i < 9; ++i)
+      if (scene_->moonPhase == ember::kMoonPhases[i]) return i;
+    return 4;
+  }
+  // The sky's instant: the world's clock (the weather's), and for an asked moon the calendar moved, whole days, to the nearest
+  // day whose sky has that moon at this hour. The moon is never placed by hand: asking for one picks a real night that has it.
+  std::int64_t skyMillisecondsNow() const {
+    const std::int64_t now = tempoMillisecondsNow();
+    const int forced = forcedMoonPhase();
+    if (forced < 0) return now;
+    if (forced != skyPhaseKey_) {
+      skyPhaseKey_ = forced;
+      skyPhaseShiftMs_ = ember::sky::instantWithPhase(now, skyPlace(), forced == 8 ? 4 : forced, forced == 8) - now;
+    }
+    return now + skyPhaseShiftMs_;
+  }
+  // The hour the star field is turned to (StarSky::siderealHours): the sky's own clock; a locked ground keeps the hour it had.
+  float starHour() const {
+    if (lightingMode_ == 3 && !lockedGround()) return static_cast<float>(tempoMillisecondsNow() % 86400000) / 3600000.0f;
+    const bool mapNight = scene_ && ember::timeOfDay(scene_->timeOfDay).moon;
+    return clockOn() ? cycleHour(now_) : mapNight ? 22.0f + std::fmod(now_ / 600.0f, 2.0f) : 12.0f;
   }
   // The weather now: Atmos 2 (the living atmosphere, docs/ATMOS2.md) when it runs and is on, else the seeded Tempo of world/Tempo.h.
   const ember::tempo::Sample tempoNow() const {
@@ -4664,7 +4759,11 @@ class MapStage final : public Stage {
   Renderer::Lighting mapLighting(float time) const {
     using ember::TimeOfDayLight;
     Renderer::Lighting l;
+    skyLit_ = false;
     if (lightingMode_ == 0) return l;  // the old prototype day
+    // The real sky lights every map that sees the sky (world/Sky.h). A locked ground mask keeps the light it was approved under
+    // (the user, 2026-11-11: "NO MAP WITH A MASK WILL EVER BE CHANGED"): the paths below, untouched.
+    if (lightingMode_ == 3 && !darkIndoor() && !lockedGround()) return skyLighting();
     const TimeOfDayLight& t = ember::timeOfDay(scene_ ? scene_->timeOfDay : std::string());
     // (the one line not of 2026-10-19: tonight's moon by the panel / the campaign's day, else the map's own Lua, moonPhaseIndex();
     // the user, 2026-10-23: "espero que tenha todas as luas", "cadê a lua vermelha?")
@@ -4818,6 +4917,13 @@ class MapStage final : public Stage {
   // else the map's own Lua (the Map Editor, Modo teste).
   int moonPhaseIndex() const {
     int phase = moonPhase_;
+    // (a campaign map on these old paths, a locked ground: the save's day in Ember's 8-day cycle, as main.cpp handed it over
+    // until 2026-11-11)
+    if (phase < 0 && options_.gameHour >= 0.0f) {
+      const std::string_view name = ember::campaignMoonPhase(static_cast<int>(options_.campaignMinute / 1440));
+      for (int i = 0; i < 9; ++i)
+        if (name == ember::kMoonPhases[i]) phase = i;
+    }
     for (int i = 0; phase < 0 && scene_ && i < 9; ++i)
       if (scene_->moonPhase == ember::kMoonPhases[i]) phase = i;
     // A map that chose no Lua: Noite escura takes the new moon (no moon, the whole starry sky), Noite clara the full moon (-1, as
@@ -4841,12 +4947,125 @@ class MapStage final : public Stage {
     if (dayCycle_ == 2) return std::fmod(6.0f + time * 24.0f / 1440.0f, 24.0f);   // ciclo lento: a day in 24 minutes
     return kFixed[std::clamp(dayCycle_ - 3, 0, 8)];
   }
+  // The real sky (world/Sky.h; the user, 2026-11-11: "um ciclo de dia e noite vivo verdadeiro ... mesma intensidade e luminosidade
+  // real de sol e lua ... nada de emulação"). No curve by the hour anywhere: the world's clock and the map's latitude give where
+  // the sun and the moon stand, and from there everything is the light itself, in real lux:
+  //   the sun      128,000 lux above the air (x its distance), through the engine's own air: its colour and what reaches the ground
+  //                come from its height alone, so a morning and an afternoon at the same height are the same light;
+  //   the moon     0.26 lux above the air when full and at its mean distance, by its real phase angle (a quarter moon gives 8 %),
+  //                its distance and its height; down, or eclipsed (the blood moon), the night has the stars' 0.001 lux alone;
+  //   the sky      lit by the same sun (twilight is the sun under the horizon lighting the air) and by the moon.
+  // The camera meters what a clear sky gives level ground and follows it like the eye (sky::eyeDeficitStops): the darker the
+  // night, the darker the picture. The weather then takes its share of that light, by day and by night (frame()).
+  // The night's light reaches the renderer 32 x the real (kNightGain: the sun-lit sky, the moon and the stars together, so
+  // nothing between them changes and the picture is the same): a high full moon then exposes the frame as the "cinema" moon did,
+  // which is what the lamps, the spells and the sky's painting were balanced against.
+  static constexpr float kNightGain = 32.0f;
+  static float nightGain(float clearEv) { return std::pow(kNightGain, 1.0f - glm::smoothstep(0.0f, 6.0f, clearEv)); }
+  // A sky position (degrees; azimuth from north through east) as a world direction: the meridian the sun culminates on lies
+  // along the map's kSunPathAzimuth (ahead of the normal view), as the path the user approved on 2026-11-10.
+  static glm::vec3 skyToWorld(double altitude, double azimuth) {
+    float d[3];
+    ember::lightDirection(kSunPathAzimuth + glm::radians(static_cast<float>(azimuth - 180.0)), glm::radians(static_cast<float>(altitude)), d);
+    return glm::normalize(glm::vec3(d[0], d[1], d[2]));
+  }
+  Renderer::Lighting skyLighting() const {
+    Renderer::Lighting l;
+    const float pi = std::numbers::pi_v<float>;
+    const int forced = forcedMoonPhase();
+    const ember::sky::State k = ember::sky::at(skyMillisecondsNow(), skyPlace());
+    const bool blood = forced == 8 || (forced < 0 && ember::sky::bloodMoon(k));
+    const int phaseIndex = ember::sky::phaseIndex(k);
+    const char* phase = blood ? "blood" : ember::kMoonPhases[phaseIndex];
+    const ember::Moonlight tint = ember::moonlightFor(phase);  // (the blood moon's red cast; every other moon the night's blue)
+    const auto luminance = [](glm::vec3 c) { return 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b; };
+    glm::vec3 moonColor = Renderer::srgb(tint.color ? tint.color : 0x9fb4ffu);
+    moonColor /= std::max(luminance(moonColor), 1e-6f);
+    const glm::vec3 sun = skyToWorld(k.sunAltitude, k.sunAzimuth), moonDir = skyToWorld(k.moonAltitude, k.moonAzimuth);
+    // Through the air towards `dir`: the share that arrives (`share`), and the light's colour after it (luminance 1).
+    const auto through = [&luminance](glm::vec3 dir, glm::vec3 colour, float& share) {
+      const glm::vec3 air = atmosphereTransmittance(AtmosphereFrame{}, dir);
+      share = luminance(air);
+      const glm::vec3 c = air * colour;
+      const float lum = luminance(c);
+      return lum > 1e-6f ? c / lum : colour;
+    };
+    const bool day = k.sunAltitude > 0.0, moonUp = k.moonAltitude > 0.0;
+    float sunShare = 0.0f, moonShare = 0.0f;
+    const glm::vec3 sunColor = through(day ? sun : glm::normalize(glm::vec3(sun.x, 0.001f, sun.z)), glm::vec3(1.0f), sunShare);
+    const glm::vec3 moonLit = through(moonUp ? moonDir : glm::normalize(glm::vec3(moonDir.x, 0.001f, moonDir.z)), moonColor, moonShare);
+    // Real lux, facing each light: the sun above the air by its distance; the moon by its phase angle and distance (a total
+    // eclipse leaves 0.02 % of it).
+    const float sunAbove = kSunLux / static_cast<float>(k.sunDistance * k.sunDistance);
+    const float moonAbove = static_cast<float>(ember::sky::moonAboveAirLux(k.phaseAngle, k.moonDistance)) * (blood ? 2e-4f : 1.0f);
+    const float sunKey = day ? sunAbove * sunShare : 0.0f;
+    const float moonKey = moonUp ? moonAbove * moonShare : 0.0f;
+    const float starlight = static_cast<float>(ember::sky::kStarlightLux);
+    // What a clear sky gives level ground now: the two beams by their height, the sky's own light (the blue sky, the twilights),
+    // the stars.
+    const float clear = sunKey * std::max(sun.y, 0.0f) + static_cast<float>(ember::sky::skyDiffuseLux(k.sunAltitude)) +
+                        moonKey * std::max(moonDir.y, 0.0f) + starlight;
+    const float gain = nightGain(static_cast<float>(ember::sky::evOf(clear)));
+    l.atmosphere = true;
+    l.physicalSky = true;
+    l.ambientMul = 1.0f;
+    l.ambientIntensity = 0.0f;
+    l.skyScale = 1.0f;
+    l.skySunDirection = sun;
+    l.skyIlluminance = glm::vec3(sunAbove * gain);
+    // (the moon lights the sky at a tenth of its key: at its full share the exposure that shows the moonlit board turned the
+    // night sky into a blue day, measured 2026-10-19)
+    l.moonIlluminance = moonColor * moonAbove * 0.1f * gain;
+    l.sunDisc = true;  // the stars come out as the sun goes down (atmosphere.hlsli)
+    l.stars = 0.0f;
+    l.starLook = static_cast<uint32_t>(starLook_);
+    moonNight_ = !day;
+    if (day) {
+      l.sunDirection = sun;
+      l.sunColor = sunColor;
+      l.sunIntensity = sunKey * gain;
+    } else {
+      if (moonKey >= starlight) {
+        l.sunDirection = moonDir.y > 0.05f ? moonDir : glm::normalize(glm::vec3(moonDir.x, 0.05f, moonDir.z));
+        l.sunColor = moonLit;
+        l.sunIntensity = moonKey * gain;
+      } else {
+        // No moon in the sky, or too thin a one: the night sky itself, from above (the user, 2026-11-05: "não existe breu no
+        // mundo ... só no subterrâneo").
+        l.sunDirection = glm::vec3(0.0f, 1.0f, 0.0f);
+        l.sunColor = moonColor;
+        l.sunIntensity = starlight * gain;
+      }
+      l.ambientMul = kNightFill;  // the night's shadow side never pure black (the user, 2026-11-04)
+    }
+    if (k.moonAltitude > -3.0) {
+      l.moonDirection = moonDir;
+      l.moonTexture = ground_.textureIndex(ember::skyMoonAsset(phase));
+      l.moonWhole = blood || phaseIndex == 4 ? 1.0f : k.waxing ? 2.0f : 3.0f;  // its lit side faces the sun (atmosphere.hlsli moonDisc)
+      l.moonRadius = moonOff_ ? 0.0f : glm::radians(kMoonSizes[moonSize_]);
+      // At night the disc's display white; by day the sunlit rock's own radiance (pale over the blue sky).
+      l.moonGlow = std::min(moonDiscGlow(), kSunLux * kMoonAlbedo / pi * gain);
+    }
+    meterLux_ = clear * gain;
+    skyState_ = k, skyClearLux_ = clear, skyPhaseName_ = phase, skyLit_ = true;
+    return l;
+  }
+  // "Dia 15, 21:40": the sky's own date and hour (its calendar moves when a moon is asked for: skyMillisecondsNow).
+  std::string skyClockText() const {
+    const std::int64_t ms = skyMillisecondsNow();
+    return std::format("dia {}, {:02}:{:02}", ms / 86400000, (ms / 3600000) % 24, (ms / 60000) % 60);
+  }
+
+  // The 24 h curve of 2026-10-19, kept ONLY for a locked ground mask (lockedGround(): the light its ground was approved under);
+  // every other map is lit by skyLighting above.
   Renderer::Lighting cycleLighting(float time, const ember::Moonlight& moon, const char* phase) const {
     Renderer::Lighting l;
     const float pi = std::numbers::pi_v<float>;
     const float hour = cycleHour(time);
     const float elevation = glm::radians(62.0f) * std::sin(2.0f * pi * (hour - 6.0f) / 24.0f);
-    const float azimuth = kSunPathAzimuth + pi * (hour - 12.0f) / 12.0f;
+    // a locked ground mask keeps the sun's and moon's path it was approved under (-0.95, before 2026-11-10)
+    const float sunPath = lockedGround() ? -0.95f : kSunPathAzimuth;
+    const float azimuth = sunPath + pi * (hour - 12.0f) / 12.0f;
     float d[3];
     ember::lightDirection(azimuth, elevation, d);
     const glm::vec3 sun = glm::normalize(glm::vec3(d[0], d[1], d[2]));
@@ -4857,7 +5076,7 @@ class MapStage final : public Stage {
     // daylight sky. The full moon stays exactly where it was (opposite the sun, its path 0.9 of the sun's height).
     const float moonHour = hour - moonElongation(phase) / 15.0f;
     const float moonElevation = 0.9f * glm::radians(62.0f) * std::sin(2.0f * pi * (moonHour - 6.0f) / 24.0f);
-    const float moonAzimuth = kSunPathAzimuth + pi * (moonHour - 12.0f) / 12.0f;
+    const float moonAzimuth = sunPath + pi * (moonHour - 12.0f) / 12.0f;
     ember::lightDirection(moonAzimuth, moonElevation, d);
     const glm::vec3 moonDir = glm::normalize(glm::vec3(d[0], d[1], d[2]));
     const glm::vec3 moonColor = Renderer::srgb(moon.color ? moon.color : 0x9fb4ffu);
@@ -8598,6 +8817,18 @@ class MapStage final : public Stage {
     }
   }
   // The Globos de Invulnerabilidade the rules keep (MageFx): each bubble rises when the rules lay it and fades when they drop it.
+  // The dome closes over every body standing in it (the user, 2026-11-11: "um globo que não fecha no corpo inteiro"): as tall as the
+  // tallest card in its cells, with room over the head, and never narrower than a card.
+  float globeHeight(const ember::Battle::Globe& g) {
+    float tallest = 0.0f;
+    for (size_t i = 0; i < battle_->units().size(); ++i) {
+      const ember::BattleUnit& u = battle_->units()[i];
+      const int ui = sceneUnitOf(static_cast<int>(i));
+      if (!u.alive || ui < 0 || !g.covers({u.x, u.y})) continue;
+      tallest = std::max(tallest, unitSpot(static_cast<size_t>(ui)).cardHeight);
+    }
+    return tallest > 0.0f ? tallest * 1.12f + 0.3f : 0.0f;
+  }
   void syncGlobes() {
     if (!battle_) return;
     for (const ember::Battle::Globe& g : battle_->globes())
@@ -8608,7 +8839,9 @@ class MapStage final : public Stage {
           const SpellEffects::Spot s = hexSpot(h);
           radius = std::max(radius, glm::length(glm::vec2(s.feet.x - centre.feet.x, s.feet.z - centre.feet.z)));
         }
-        globeFx_[g.id] = spellFx_.mage().globeStart(centre.feet, radius + 1.0f, now_);
+        globeFx_[g.id] = spellFx_.mage().globeStart(centre.feet, std::max(radius + 1.0f, 1.5f), globeHeight(g), now_);
+      } else if (const auto at = globeFx_.find(g.id); at != globeFx_.end()) {
+        spellFx_.mage().globeHeight(at->second, globeHeight(g));  // who stands in it changes
       }
     for (auto it = globeFx_.begin(); it != globeFx_.end();) {
       const int id = it->first;
@@ -11302,7 +11535,7 @@ class MapStage final : public Stage {
   }
   // F1..F12: the socket's spell / potion, as a click on it.
   void pressHotbar(int slot) {
-    if (hotbarEdit_ || pauseOpen_ || battleInventory_ || statusSheet_.isOpen() || !battle_ || battle_->roaming() || !myTurn() || busy()) return;
+    if (hotbarEdit_ || pauseOpen_ || leaveConfirmOpen_ || battleInventory_ || statusSheet_.isOpen() || !battle_ || battle_->roaming() || !myTurn() || busy()) return;
     const size_t me = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
     const ember::BattleUnit& u = battle_->units()[me];
     const std::string kind = hotbarOf(me)[static_cast<size_t>(slot)];
@@ -11982,6 +12215,14 @@ class MapStage final : public Stage {
         case menu::BattleMenu::Action::Quit: titleRequested_ = true; break;
         case menu::BattleMenu::Action::Title: homeRequested_ = true; break;
         case menu::BattleMenu::Action::None: break;
+      }
+    }
+    if (leaveConfirmOpen_) {
+      if (!result_.empty()) leaveConfirmOpen_ = false;  // the fight ended meanwhile
+      else switch (leaveConfirm_.draw(screen, options_.artRoot, playtest_)) {
+        case menu::LeaveConfirm::Action::Stay: leaveConfirmOpen_ = false; break;
+        case menu::LeaveConfirm::Action::Leave: leaveConfirmOpen_ = false, titleRequested_ = true; break;
+        case menu::LeaveConfirm::Action::None: break;
       }
     }
     menu::OptionsDialog::Actions actions;
@@ -13331,6 +13572,14 @@ class MapStage final : public Stage {
   bool windowLight() const { return windowLight_ == 1 && scene_ && scene_->environment == "indoor" && !underground(); }
   bool darkIndoor() const { return scene_ && (scene_->environment == "indoor" || underground()) && !windowLight(); }
   bool interiorMap() const { return scene_ && (scene_->environment == "indoor" || underground()); }
+  // The map's ground is a locked mask (a tile set drawn from a "ground-mask" image, e.g. Bosque Morto's bosque-morto-v04).
+  bool lockedGround() const {
+    if (!board_) return false;
+    const std::string& set = board_->draft().emberTiles;
+    for (const ember::EmberGroundTile& t : ember::kEmberGroundTiles)
+      if (t.map == set && t.file.find("ground-mask") != std::string_view::npos) return true;
+    return false;
+  }
   // Subterrâneo (MapDraft::underground, the Map Editor's Ambiente; the user, 2026-10-21): the only maps free of the sun, the moon and
   // the sky: the indoor light path with no light from outside, whatever the map's lists say.
   bool underground() const { return board_ && board_->draft().underground; }
@@ -13713,6 +13962,8 @@ class MapStage final : public Stage {
   float combatIntroMinEnd_ = -100.0f, combatIntroMaxEnd_ = -100.0f;
   std::string result_;                    // "victory" / "defeat" once the battle is over
   bool pauseOpen_ = false, titleRequested_ = false, retryRequested_ = false;
+  bool leaveConfirmOpen_ = false;          // Esc in a fight: "Sair da batalha?" waiting for Sair / Continuar
+  menu::LeaveConfirm leaveConfirm_;
   // Ember's menus over the battle (EmberMenus.h) and what they act on.
   bool homeRequested_ = false, playtest_ = false;
   // Save / Load in battle: the campaign, this fight's mission and map key, the slot screen and the save it writes.
@@ -13952,7 +14203,15 @@ class MapStage final : public Stage {
     ground_.requestTexture(ember::skyAndromedaAsset(ember::kAndromedaSkyPainting));  // skylayer_b_panorama_q92 (the user, 2026-11-04)
     andromedaRequested_ = true;
   }
-  int moonPhase_ = -1;  // index in ember::kMoonPhases; -1 = Ember's default (the full moon's art, the night's strength)
+  int moonPhase_ = -1;  // index in ember::kMoonPhases; -1 = not asked (the real sky: the calendar's moon; forcedMoonPhase())
+  // The real sky (skyLighting): this frame's state, what a clear sky gives level ground (real lux), whether this frame was lit by it.
+  mutable ember::sky::State skyState_{};
+  mutable float skyClearLux_ = 0.0f;
+  mutable bool skyLit_ = false;
+  mutable const char* skyPhaseName_ = "full";
+  mutable int skyPhaseKey_ = -2;
+  mutable std::int64_t skyPhaseShiftMs_ = 0;
+  mutable std::int64_t fixedHourKey_ = -1, fixedHourMs_ = 0;
   // The disc's angular radius (degrees), chosen in the panel. 2.7 = Ember's disc as seen from its normal view; the
   // user found it "millions of km away" (2026-10-15), so the panel starts at the large one.
   static constexpr float kMoonSizes[4] = {2.7f, 6.0f, 10.0f, 15.0f};

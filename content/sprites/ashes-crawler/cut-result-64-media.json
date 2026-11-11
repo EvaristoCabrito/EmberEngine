@@ -23,7 +23,7 @@
    "crop": [
     0,
     0,
-    1275,
+    1276,
     720
    ],
    "box": {
@@ -31,7 +31,15 @@
     "h": 1.69414,
     "foot": 0.04
    },
-   "pattern": "content/sprites/ashes-crawler/base-media64-v01/base-{}.png"
+   "pattern": "content/sprites/ashes-crawler/base-media64-v02/base-{}.png",
+   "steadied": {
+    "from": "content/sprites/ashes-crawler/base-media64-v01",
+    "columns": [
+     0.0,
+     0.5
+    ],
+    "why": "the video's camera drifted (the user, 2026-11-11): each frame moved onto frame 1's still part"
+   }
   },
   "move": {
    "video": "Attachments/SandCrawler/aSHCRAWLERWALKatt.mp4",
