@@ -6,7 +6,7 @@
     "index": 0,
     "title": "Todas as Unidades",
     "place": "",
-    "briefing": "Todos os monstros do jogo num campo vazio, e as invocações do seu lado, para ver cada um andar, atacar, levar dano e cair.",
+    "briefing": "Todos os monstros do jogo num campo vazio, para ver cada um andar, atacar, levar dano e cair.",
     "objective": "Derrote todos os inimigos",
     "win": "rout",
     "hub": false,
@@ -7214,62 +7214,6 @@
     "decorations": [],
     "elementalFx": [],
     "playerSpawns": [
-      {
-        "name": "Familiar",
-        "classId": "familiar",
-        "x": 3,
-        "y": 40,
-        "level": 15,
-        "useClassSprite": true
-      },
-      {
-        "name": "Familiar Maior",
-        "classId": "familiar2",
-        "x": 8,
-        "y": 40,
-        "level": 15,
-        "useClassSprite": true
-      },
-      {
-        "name": "Familiar Titã",
-        "classId": "familiar3",
-        "x": 13,
-        "y": 40,
-        "level": 15,
-        "useClassSprite": true
-      },
-      {
-        "name": "Familiar Radiante",
-        "classId": "familiar4",
-        "x": 18,
-        "y": 40,
-        "level": 15,
-        "useClassSprite": true
-      },
-      {
-        "name": "Cão Zumbi",
-        "classId": "zombieDog",
-        "x": 23,
-        "y": 40,
-        "level": 15,
-        "useClassSprite": true
-      },
-      {
-        "name": "Cervo Azul do Pântano",
-        "classId": "swampBlueDeer",
-        "x": 28,
-        "y": 40,
-        "level": 15,
-        "useClassSprite": true
-      },
-      {
-        "name": "Hipóstase",
-        "classId": "hypostasis",
-        "x": 33,
-        "y": 40,
-        "level": 15,
-        "useClassSprite": true
-      },
       {
         "name": "Aldric",
         "classId": "aldric",
