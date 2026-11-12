@@ -76,6 +76,7 @@ inline const std::vector<SpellEntry>& allSpells() {
       {"summonFamiliar4", "Familiar Radiante", false},
       {"summonZombieDog", "Cão Zumbi", false},
       {"summonSwampDeer", "Cervo Azul do Pântano", false},
+      {"summonTelesm", "Invocar Telesm", false},
       {"lifeDrain", "Dreno de Vida", false},  // [ours]
       {"webOfDreams", "Teia dos Sonhos", false},
       {"warp", "Portal", false},

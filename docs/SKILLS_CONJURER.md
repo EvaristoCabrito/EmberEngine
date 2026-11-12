@@ -123,5 +123,8 @@ and the bond over many blows (the code path, not a statistic).
 - **Cão Zumbi** (`summonZombieDog`): the Necromante's T8, learned at 20 (T8 opens at 18; the user: "espaçar mais o ganho de familiares"); stats x1.25 of the caster (a first value, `kT8SummonScale`).
 - **Cervo Azul do Pântano** (`summonSwampDeer`, class `swampBlueDeer`, content/data/summons.json): the Arcanista's T8, learned at 20,
   x1.25 of the caster, no spell of its own; comes in the Familiar Radiante's blue summon light (ArmsFx Radiant).
-- Coming (the user): **Telesm**, a new defender familiar (T2 for Selene, T3 for the others; art to be scanned), and **Hipóstase**
-  (Summon Hypostasis), the ultimate summon of Ember I. Neither is built.
+- **Telesm** (`summonTelesm`, class `telesm`, content/data/summons.json, 2026-11-11): the shell defender, every Conjurador's T3 at 6 and
+  Selene's T2 at 3 (`grantClassSpells`, `unitTierOf`); 2 hexes (the Cão Zumbi's footprint), MOV 3, x0.75 of the caster (the Familiar
+  Maior's, first values the user sets), no spell of its own; the Radiante's blue summon light. Its art has a shell-defence pose the game
+  does not play yet.
+- Coming (the user): **Hipóstase** (Summon Hypostasis), the ultimate summon of Ember I: its art and Ressonância Geminada exist, no spell summons it.

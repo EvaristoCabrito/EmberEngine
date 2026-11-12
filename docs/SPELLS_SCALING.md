@@ -226,6 +226,12 @@ Escala do nível 20 ao 34, uma melhoria pequena por nível: alcance 2 → 8.
 
 Nível a nível: 22: +1 hex de alcance, 24: +1 hex de alcance, 26: +1 hex de alcance, 29: +1 hex de alcance, 31: +1 hex de alcance, 33: +1 hex de alcance.
 
+### Invocar Telesm (Conjurador, T3; Selene, T2)
+
+Escala do nível 6 ao 20, uma melhoria pequena por nível: alcance 2 → 8.
+
+Nível a nível: 8: +1 hex de alcance, 10: +1 hex de alcance, 12: +1 hex de alcance, 15: +1 hex de alcance, 17: +1 hex de alcance, 19: +1 hex de alcance.
+
 ### Fortalecer Invocações
 
 Escala do nível 15 ao 29, uma melhoria pequena por nível: atributos % 25 → 37; rodadas 3 → 5.

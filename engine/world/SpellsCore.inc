@@ -668,7 +668,9 @@ constexpr SummonSpec kSummons[] = {{"summonFamiliar", "familiar", 0.5, 4, "Famil
                                    {"summonFamiliar4", "familiar4", 0.75, 4, "Familiar Radiante de"},
                                    {"summonZombieDog", "zombieDog", 1.0, 4, "Cão Zumbi de"},
                                    // the Arcanista's T8 (the user, 2026-10-27): kT8SummonScale
-                                   {"summonSwampDeer", "swampBlueDeer", 1.25, 4, "Cervo Azul do Pântano de"}};
+                                   {"summonSwampDeer", "swampBlueDeer", 1.25, 4, "Cervo Azul do Pântano de"},
+                                   // the Conjuradores' T3 (Selene's T2) shell defender: the Familiar Maior's 0.75, a first value the user sets
+                                   {"summonTelesm", "telesm", 0.75, 4, "Telesm de"}};
 // The T8 summons (the user, 2026-10-27: the Arcanista's Cervo, the Necromante's Cão Zumbi): a quarter over the T6 Numen's 1.0, a first
 // value the user sets; the Cão Zumbi keeps its old 1.0 in the Cooker's checks (progression off).
 constexpr double kT8SummonScale = 1.25;
@@ -693,7 +695,7 @@ bool hasFamiliarOut(const Battle& b, const BattleUnit& caster, const std::string
 bool summonCellsFree(const Battle& b, const SummonClass& cls, BattleHex cell) {
   BattleUnit probe;
   probe.size = cls.size, probe.footprintOffsets = cls.offsets, probe.footprintW = cls.footprintW, probe.footprintH = cls.footprintH;
-  const bool body = cls.id == "familiar3" || cls.id == "zombieDog";
+  const bool body = cls.id == "familiar3" || cls.id == "zombieDog" || cls.id == "telesm";
   const std::vector<BattleHex> cells = body ? Battle::footprint(probe, cell.x, cell.y) : std::vector<BattleHex>{cell};
   const OccMap occ = occupancyMap(b);
   for (const BattleHex& p : cells)
@@ -720,7 +722,7 @@ BattleUnit makeSummon(const Battle& b, const BattleUnit& caster, const SummonSpe
   f.fullness = 100;
   const std::string k = sp.kind;
   f.spellCharges = k == "summonFamiliar4" ? 3 : k == "summonZombieDog" ? d.dogVenom : k == "summonFamiliar3" ? chargesAt(d.spellCharges, caster.level)
-                 : k == "summonSwampDeer" ? 0  // no spell of its own: it fights with its antlers
+                 : k == "summonSwampDeer" || k == "summonTelesm" ? 0  // no spell of its own: the Cervo fights with its antlers, Telesm with its tentacles
                                           : chargesAt(d.missileCharges, caster.level);
   if (k == "summonFamiliar2" || k == "summonFamiliar4") f.lifeDrainCharges = chargesAt(d.drainCharges, caster.level);
   grantClassSpells(f);

@@ -124,6 +124,30 @@
    "footprintH": null,
    "resistances": {},
    "initiativeBonus": 5
+  },
+  "telesm": {
+   "id": "telesm",
+   "name": "Telesm",
+   "role": "Invocação",
+   "sprite": "telesm",
+   "mov": 3,
+   "minRange": 1,
+   "maxRange": 1,
+   "size": 2,
+   "footprintOffsets": [
+    {
+     "dx": 0,
+     "dy": 0
+    },
+    {
+     "dx": 1,
+     "dy": 0
+    }
+   ],
+   "footprintW": null,
+   "footprintH": null,
+   "resistances": {},
+   "initiativeBonus": 4
   }
  },
  "tables": {

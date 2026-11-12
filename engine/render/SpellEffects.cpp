@@ -114,7 +114,7 @@ int SpellEffects::looks(const std::string& kind) {
                                  // the ones that had none (vfx/ArmsFx, the two new arrows of vfx/RangerFx; ours, 3D, 2026-10-20)
                                  "provoke", "shieldBash", "bullRush", "executionerStrike", "trip", "shoulderSmash", "stampede", "divineWrath",
                                  "auraOfProtection", "intimidatingPresence", "bloodyShot", "multiShot", "summonFamiliar", "summonFamiliar2",
-                                 "summonFamiliar3", "summonFamiliar4", "summonZombieDog", "summonSwampDeer", "arcaneReflection", "fantomForce", "spectralBolt",
+                                 "summonFamiliar3", "summonFamiliar4", "summonZombieDog", "summonSwampDeer", "summonTelesm", "arcaneReflection", "fantomForce", "spectralBolt",
                                  // the Mago Negro's (vfx/DaggerFx, ours, 3D)
                                  "cloudOfDaggers", "daggerStrike", "dispelMagic", "globeOfInvulnerability"};
   for (const char* k : kEmber)
@@ -395,7 +395,7 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
   }
   if (kind.rfind("summon", 0) == 0) {
     // the Cervo Azul do Pântano (2026-10-27) comes in the Radiante's blue light, like its antlers
-    const ArmsFx::Summon style = kind == "summonFamiliar2" ? ArmsFx::Summon::Greater : kind == "summonFamiliar4" || kind == "summonSwampDeer" ? ArmsFx::Summon::Radiant
+    const ArmsFx::Summon style = kind == "summonFamiliar2" ? ArmsFx::Summon::Greater : kind == "summonFamiliar4" || kind == "summonSwampDeer" || kind == "summonTelesm" ? ArmsFx::Summon::Radiant
                                  : kind == "summonFamiliar3" ? ArmsFx::Summon::Titan : kind == "summonZombieDog" ? ArmsFx::Summon::ZombieDog
                                                              : ArmsFx::Summon::Familiar;
     arms_.summon(style, targets.front().feet, impact);
