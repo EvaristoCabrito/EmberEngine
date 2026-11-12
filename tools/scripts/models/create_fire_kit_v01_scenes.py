@@ -1,4 +1,4 @@
-"""Fire kit v01, second batch: the lanterns, the shrines and the forges that take the place of the 2D fire props (the burning
+"""Fire kit v02, second batch: the lanterns, the shrines and the forges that take the place of the 2D fire props (the burning
 houses stay 2D cards: the user, 2026-11-12, "these houses are not going to work").
 
 Headless: blender.exe -b -t 2 -P tools/scripts/models/create_fire_kit_v01_scenes.py
@@ -61,13 +61,13 @@ def materials():
     m.update({
         "masonry": mat("Grey masonry", TEX / "masonry-grey.jpg", 0.0, 0.9),
         "mossy": mat("Mossy masonry", TEX / "masonry-mossy.jpg", 0.0, 0.92),
-        "grave": mat("Weathered grave stone", TEX / "wt-gravestone.jpg", 0.0, 0.9),
+        "grave": mat("Weathered grave stone", TEX / "fire-grave-stone-v01.jpg", 0.0, 0.9),
         "plaster": mat("Smoke-stained plaster", TEX / "wt-limestone.jpg", 0.0, 0.9, tint=(0.86, 0.8, 0.7)),
         "timber": mat("Dark timber", TEX / "farmhouse-dark-wood-v02-color.jpg", 0.0, 0.85),
         "charred": mat("Charred timber", TEX / "farmhouse-dark-wood-v02-color.jpg", 0.0, 0.95, tint=(0.2, 0.18, 0.17)),
         "shingle": mat("Old shingles", TEX / "planks-dark.jpg", 0.0, 0.9, tint=(0.62, 0.6, 0.6)),
         "planks": mat("Pale planks", TEX / "planks-pale.jpg", 0.0, 0.85),
-        "brass": mat("Tarnished brass", TEX / "brass-detail-v01.jpg", 0.7, 0.5),
+        "brass": mat("Tarnished brass", TEX / "fire-bronze-v01.jpg", 0.7, 0.5),
         "ice": mat("Rime ice", TEX / "snow.jpg", 0.0, 0.35),
         "rubble": mat("Stone rubble", TEX / "stone-rubble.jpg", 0.0, 0.92),
     })

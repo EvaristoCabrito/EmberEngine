@@ -1,4 +1,4 @@
-"""Fire kit v01: the 3D props that carry the game's real 3D fire (shaders/vfx.hlsl FireVolume) in place of the 2D fire cards.
+"""Fire kit v02: the 3D props that carry the game's real 3D fire (shaders/vfx.hlsl FireVolume) in place of the 2D fire cards.
 
 Headless: blender.exe -b -t 2 -P tools/scripts/models/create_fire_kit_v01.py
 1 unit = one hex radius (a human is 2.65 units). Four props, none with a flame of its own (the engine draws the fire as a
@@ -8,7 +8,7 @@ volume at the points listed under FIRE below, written to the manifest for regist
   brazier-tripod   a forged tripod holding a bowl of coals
   campfire         a ring of stones, charred logs leaning together over a bed of embers
 Textures: the stash already in content/ (wt-iron, wt-dark-oak, wt-limestone, the Wisp dead bark, ambientCG rock-030 and lava-001).
-Outputs content/models/fire/<name>-v01.glb and build/models-tmp/fire/manifest.json. Never an overwrite.
+Outputs content/models/fire/<name>-v02.glb and build/models-tmp/fire/manifest.json. Never an overwrite; v01 stays intact.
 """
 import json
 import math
@@ -19,7 +19,7 @@ import bpy
 from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parents[3]
-VERSION = "v01"
+VERSION = "v02"
 OUT = ROOT / "content" / "models" / "fire"
 TMP = ROOT / "build" / "models-tmp" / "fire"
 TEX = ROOT / "content" / "models" / "textures"
@@ -205,14 +205,14 @@ def finish(key):
 
 def materials():
     return {
-        "iron": mat("Smoke-darkened forged iron", TEX / "wt-iron.jpg", 0.78, 0.5),
+        "iron": mat("Smoke-darkened forged iron", TEX / "fire-iron-v01.jpg", 0.78, 0.5),
         "oak": mat("Oiled dark oak", TEX / "wt-dark-oak.jpg", 0.0, 0.82),
-        "wax": mat("Tallow wax", TEX / "wt-limestone.jpg", 0.0, 0.55, tint=(1.0, 0.93, 0.74)),
-        "pitch": mat("Pitch-soaked wrapping", TEX / "wt-burlap.jpg", 0.0, 0.9, tint=(0.16, 0.13, 0.11)),
-        "stone": mat("Hearth stone", ACG / "rock-030" / "rock-030_color_1k.jpg", 0.0, 0.9),
-        "bark": mat("Charred log", TEX / "wisp-dead-bark-v01.jpg", 0.0, 0.92, tint=(0.5, 0.46, 0.43)),
-        "coal": mat("Glowing embers", ACG / "lava-001" / "lava-001_color_1k.jpg", 0.0, 0.85,
-                    emission=ACG / "lava-001" / "lava-001_emission_1k.jpg", emission_strength=3.0),
+        "wax": mat("Tallow wax", TEX / "fire-wax-v01.jpg", 0.0, 0.55),
+        "pitch": mat("Pitch-soaked wrapping", TEX / "fire-pitch-v01.jpg", 0.0, 0.9),
+        "stone": mat("Hearth stone", TEX / "fire-hearth-stone-v01.jpg", 0.0, 0.9),
+        "bark": mat("Charred log", TEX / "fire-charred-log-v01.jpg", 0.0, 0.92),
+        "coal": mat("Glowing embers", TEX / "fire-embers-v01.jpg", 0.0, 0.85,
+                    emission=TEX / "fire-embers-glow-v01.jpg", emission_strength=3.0),
     }
 
 
