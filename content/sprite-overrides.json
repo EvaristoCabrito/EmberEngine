@@ -493,7 +493,7 @@
    "newHero": {"name": "Telesm", "group": "summon", "sprite": "telesm", "reversed": false},
    "cut": "content/sprites/telesm/cut.json",
    "why": "the user, 2026-11-10: the shell defence summon, a giant shell monster that sits on the ground (Attachments/Telesm): idle, attack, the shell defence, walk, cast, hit and fall (\"always hit and fall, never death\"), Alta + 64 + 36. No summon spell places it yet",
-   "poses": {"idle": "base", "attack": "atk", "defend": "defend", "walk": "move", "cast": "cast", "hit": "hit", "death": "death"},
+   "poses": {"idle": "base", "attack": "atk", "defend": "defend", "walk": "move", "cast": "cast", "hit": "defend", "death": "death"},
    "labels": {"idle": "Parado", "attack": "Atacar", "defend": "Defesa (concha)", "walk": "Andar", "cast": "Conjurar", "hit": "Dano", "death": "Queda"},
    "packs": {"base": "field", "move": "field"},
    "strides": {"move": 1.0}
