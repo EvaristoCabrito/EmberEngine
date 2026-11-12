@@ -33,6 +33,8 @@ inline Stage::Music theme(const std::string& name) {
   if (name == "cemetery") return {"Ember Ashes Ambient OST 0-Balanced-High.mp3", 0.4f};  // EmberEngine's own (content/music)
   if (name == "ashenForest") return {"New Claude Melisma Free 04 - AshenForest-Balanced-High.mp3", 0.4f};  // EmberEngine's own (content/music)
   if (name == "watchtower") return {"OldTowwerDrone  trax 4 Persona 884-Balanced-High.mp3", 0.4f};  // EmberEngine's own (content/music)
+  if (name == "lighthouse") return {"LightHouseThe Fall Up G - usesuno.com-Balanced-Medium.mp3", 0.4f};  // EmberEngine's own (content/music)
+  if (name == "randomEncounter") return {"RandomEncounter-The Fall 13 Concrete - usesuno.com-Balanced-Medium (1).mp3", 0.4f};  // EmberEngine's own (content/music)
   return {"LANDR-Absolute Mental Descruction umn3 10 (3)-Balanced-High.mp3", 0.4f};  // "early"
 }
 
@@ -42,12 +44,24 @@ inline bool isCemetery(const std::string& id) { return id.starts_with("cemiterio
 // region (deep-ashen-forest, -ravine, -root-sanctuary, ...).
 inline bool isAshenForest(const std::string& id) { return id.starts_with("ashen-forest") || id.starts_with("deep-ashen"); }
 inline bool isWatchtower(const std::string& id) { return id.starts_with("watchtower-"); }
+// The Lighthouse and its floors (farol, farol-andar-2, farol-topo, farol-poroes, farol-gruta) and every random encounter (the user,
+// 2026-11-12: Attachments/OST, each track named for its maps). A track a map names in the editor (farol-topo's boss piece) is kept.
+inline bool isLighthouse(const std::string& id) { return id == "farol" || id.starts_with("farol-"); }
+inline bool isRandomEncounter(const std::string& id) { return id.starts_with("random-"); }
+
+// The theme a map's id picks for itself, or "" when it has none of its own.
+inline std::string themeForMap(const std::string& id) {
+  if (isCemetery(id)) return "cemetery";
+  if (isAshenForest(id)) return "ashenForest";
+  if (isWatchtower(id)) return "watchtower";
+  if (isLighthouse(id)) return "lighthouse";
+  if (isRandomEncounter(id)) return "randomEncounter";
+  return "";
+}
 
 // GameApp's chain for a mission id when its battle file carries no `music` (older exports).
 inline Stage::Music forMissionId(const std::string& id) {
-  if (isCemetery(id)) return theme("cemetery");
-  if (isAshenForest(id)) return theme("ashenForest");
-  if (isWatchtower(id)) return theme("watchtower");
+  if (const std::string own = themeForMap(id); !own.empty()) return theme(own);
   if (id == "templo") return theme("temple");
   if (id == "aldeia") return theme("aldeia");
   if (id == "estalagem") return theme("inn");
@@ -63,8 +77,10 @@ inline Stage::Music fromBattle(const nlohmann::json& j, Stage::Music fallback) {
   if (!j.is_object()) return fallback;
   const auto music = j.find("music");
   if (music == j.end() || !music->is_object() || music->value("file", std::string()).empty()) return fallback;
-  if (music->contains("theme") && isCemetery(j.value("map", std::string()))) return theme("cemetery");
-  if (music->contains("theme") && isAshenForest(j.value("map", std::string()))) return theme("ashenForest");
+  // Every watchtower floor (the user, 2026-11-12: "keep playing in all of the watchtower submaps") and every lighthouse floor: one
+  // track per place, so it carries on floor to floor.
+  if (music->contains("theme"))
+    if (const std::string own = themeForMap(j.value("map", std::string())); !own.empty()) return theme(own);
   return {music->value("file", std::string()), music->value("base", 0.4f)};
 }
 
