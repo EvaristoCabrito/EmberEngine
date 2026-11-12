@@ -1,0 +1,87 @@
+{
+ "about": "Mush (mushroomMan), a new unit from the user's Veo videos (2026-11-11, \"try making this new unit C:\\EmberEngineB\\Attachments\\Mush\"; 24 fps, 1280 x 720): MushroomManIdleCasting (idle, cast), MusrromMenwalking (walk). The user: \"Idle , movement to mirror and ATT / CAST on the same\", \"simpole creature same pipeline\". Alta + 64 + 36 (the 64 / 36 copies by tools/scripts/sprites/quality_copies.py). Frames and size are first values read off the videos: the user judges.",
+ "set": "mush",
+ "version": "v01",
+ "figureUnits": 2.9,
+ "figurePx": 699,
+ "figureNote": "first value: 2.9 units cap top to root tips, a little taller than Kael's idle (2.68); 699 px in the idle video (frames 88..91)",
+ "edgeKey": true,
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/mush/idlecast",
+   "video": "Attachments/Mush/MushroomManIdleCasting.mp4",
+   "first": 0,
+   "last": 88,
+   "mode": "pingpong",
+   "why": "standing, arms swaying, until the arms start to rise for the cast at ~92"
+  },
+  {
+   "clip": "cast",
+   "pose": "cast",
+   "kind": "stand",
+   "src": "build/video-cut/mush/idlecast",
+   "video": "Attachments/Mush/MushroomManIdleCasting.mp4",
+   "first": 92,
+   "last": 200,
+   "impactFrame": 160,
+   "mode": "once",
+   "why": "arms up and the cap opens ~104..152, the flash at ~160, standing again by ~200; the attack too (the user: \"ATT / CAST on the same\")"
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "inPlace": true,
+   "mirror": true,
+   "src": "build/video-cut/mush/walk",
+   "video": "Attachments/Mush/MusrromMenwalking.mp4",
+   "first": 0,
+   "last": 142,
+   "loopMin": 20,
+   "loopMax": 142,
+   "mode": "loop",
+   "why": "the video walks left in place: mirrored to walk right (the user: \"movement to mirror\")"
+  },
+  {
+   "clip": "move-left",
+   "pose": "walkLeft",
+   "kind": "walk",
+   "inPlace": true,
+   "src": "build/video-cut/mush/walk",
+   "video": "Attachments/Mush/MusrromMenwalking.mp4",
+   "first": 0,
+   "last": 142,
+   "loopMin": 20,
+   "loopMax": 142,
+   "mode": "loop",
+   "why": "the video as made: walking left in place"
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "kind": "stand",
+   "src": "build/video-cut/mush/hitfall",
+   "video": "Attachments/Mush/MushroomManHitandFall.mp4",
+   "first": 8,
+   "last": 60,
+   "standUntil": 12,
+   "mode": "once",
+   "why": "the user, 2026-11-12: \"MushroomManHitandFall new sequence for the mushroom man\": recoils from ~14 (the cap tips back, ~24..32), standing again by ~48..60"
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "kind": "stand",
+   "src": "build/video-cut/mush/hitfall",
+   "video": "Attachments/Mush/MushroomManHitandFall.mp4",
+   "first": 150,
+   "last": 238,
+   "standUntil": 156,
+   "mode": "once",
+   "why": "standing to ~156, topples ~164..184, lying still to the end"
+  }
+ ]
+}

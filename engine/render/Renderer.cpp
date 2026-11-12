@@ -1,4 +1,5 @@
 #include "render/Renderer.h"
+#include "core/StallWatch.h"
 #include "render/Clouds006.h"
 
 #include <cstring>
@@ -996,7 +997,9 @@ void Renderer::resize(VkExtent2D size) {
 Renderer::Frame& Renderer::beginFrame() {
   Frame& frame = frames_[frameIndex_];
   const auto start = std::chrono::steady_clock::now();
+  stallStep("waiting for the GPU to finish an earlier frame");
   VK_CHECK(vkWaitForFences(context_.device, 1, &frame.done, VK_TRUE, UINT64_MAX));
+  stallStep("drawing the frame");
   lastWaitMs_ = millisecondsSince(start);
   gpuTimer_.beginFrame(frameIndex_);
   for (const GpuTimer::Result& r : gpuTimer_.results())
@@ -1071,9 +1074,11 @@ bool Renderer::renderFrame(float time) {
   VkImage swapImage = VK_NULL_HANDLE;
   if (swapchain_) {
     const auto acquireStart = std::chrono::steady_clock::now();
+    stallStep("waiting for the window's next image");
     const VkResult acquired = vkAcquireNextImageKHR(context_.device, swapchain_->handle(), UINT64_MAX,
                                                     frame.imageAcquired, VK_NULL_HANDLE, &imageIndex);
     lastWaitMs_ += millisecondsSince(acquireStart);
+    stallStep("drawing the frame");
     if (acquired == VK_ERROR_OUT_OF_DATE_KHR) return false;
     if (acquired != VK_SUBOPTIMAL_KHR) VK_CHECK(acquired);
     swapImage = swapchain_->image(imageIndex);
@@ -1115,6 +1120,7 @@ bool Renderer::renderFrame(float time) {
   present.pSwapchains = &handle;
   present.pImageIndices = &imageIndex;
   const auto presentStart = std::chrono::steady_clock::now();
+  stallStep("showing the frame");
   const VkResult presented = vkQueuePresentKHR(context_.queue, &present);
   lastSplit_.present = millisecondsSince(presentStart);
   if (presented == VK_ERROR_OUT_OF_DATE_KHR || presented == VK_SUBOPTIMAL_KHR) return false;
@@ -2531,7 +2537,8 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     VkPipeline bound = VK_NULL_HANDLE;
     for (uint32_t i = 0; i < vfxDraws_.size(); ++i) {
       const VfxDraw& d = vfxDraws_[i];
-      if (d.underCards || d.behindCard || (d.solid && solidDrawn)) continue;  // drawn with the ground / among the cards
+      // drawn with the ground / among the cards (with no card on the map there is no cards' pass: what stands among them is drawn here)
+      if (d.underCards || (d.behindCard && !sprites_.empty()) || (d.solid && solidDrawn)) continue;
       const VkPipeline pipeline = vfxPipelines_[d.depthTest ? 1 : 0];
       if (pipeline != bound) vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, bound = pipeline);
       const VfxPush push{bufferAddress(context_, frame.vfxVertices), bufferAddress(context_, frame.vfxInstances), bufferAddress(context_, frame.vfxDraws),

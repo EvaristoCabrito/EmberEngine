@@ -754,6 +754,16 @@ class OptionsDialog {
                               [&](int v) {
                                 prefs.characters = v == 0 ? "alta" : v == 2 ? "leve" : v == 3 ? "extra" : "media", prefsChanged = true;
                               }));
+      // Invocações (the user, 2026-11-12: "Summon Resolution should have its own toggle"): the summons' own Alta / Média / Leve.
+      s.rows.push_back(select("##gfxsummons", tr("Invocações", "Summons"),
+                              prefs.summons == "alta" ? 0 : prefs.summons == "leve" ? 2 : 1,
+                              {{tr("Alta", "High"), true}, {tr("Média", "Medium"), true}, {tr("Leve", "Light"), true}},
+                              [&](int v) { prefs.summons = v == 0 ? "alta" : v == 2 ? "leve" : "media", prefsChanged = true; }));
+      // Inimigos (the user, 2026-11-12: "we should also split the Enemy Units graphical quailty"): the enemy side's own choice.
+      s.rows.push_back(select("##gfxenemies", tr("Inimigos", "Enemies"),
+                              prefs.enemies == "alta" ? 0 : prefs.enemies == "leve" ? 2 : 1,
+                              {{tr("Alta", "High"), true}, {tr("Média", "Medium"), true}, {tr("Leve", "Light"), true}},
+                              [&](int v) { prefs.enemies = v == 0 ? "alta" : v == 2 ? "leve" : "media", prefsChanged = true; }));
       // Texturas 3D (the user, 2026-10-29): Alta 2K, Média 1K, Leve 512; taken when a map opens.
       s.rows.push_back(select("##gfxtex3d", tr("Texturas 3D", "3D textures"),
                               prefs.textures3d == "media" ? 1 : prefs.textures3d == "leve" ? 2 : 0,

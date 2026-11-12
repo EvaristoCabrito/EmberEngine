@@ -1,6 +1,10 @@
 add_executable(Sandbox main.cpp)
 target_link_libraries(Sandbox PRIVATE EmberEngine nlohmann_json)
 if(MSVC)
+  # The link map (bin/Sandbox.map): the names behind the addresses the stall watch writes to the log (core/StallWatch.h).
+  target_link_options(Sandbox PRIVATE /MAP)
+endif()
+if(MSVC)
   target_compile_options(Sandbox PRIVATE /W4 /permissive- /utf-8 /bigobj)  # main.cpp holds every stage (header-only): too many sections in debug
 endif()
 

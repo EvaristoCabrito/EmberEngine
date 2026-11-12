@@ -1,0 +1,245 @@
+{
+ "clips": {
+  "move": {
+   "video": "Attachments/Sahagin/SahaginRightCharacter_walking_and_thrusting_\u2026_4884a850.mp4",
+   "first": 0,
+   "last": 84,
+   "loopFirst": 24,
+   "loopLast": 73,
+   "seamSteps": 3.27,
+   "bootRow": 669,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 634.0,
+   "frames": 50,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1088,
+    678
+   ],
+   "crop": [
+    0,
+    1,
+    1084,
+    672
+   ],
+   "box": {
+    "w": 4.80505,
+    "h": 2.99432,
+    "foot": 0.03533
+   },
+   "pattern": "content/sprites/sahagin/move-v01/move-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Sahagin/SahaginRightCharacter_walking_and_thrusting_\u2026_4884a850.mp4",
+   "first": 88,
+   "last": 200,
+   "bootRow": 664,
+   "bootRows": [
+    664,
+    664
+   ],
+   "figurePx": 634.0,
+   "frames": 113,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1280,
+    660
+   ],
+   "crop": [
+    0,
+    4,
+    1280,
+    651
+   ],
+   "box": {
+    "w": 5.653,
+    "h": 2.91483,
+    "foot": 0.05741
+   },
+   "pattern": "content/sprites/sahagin/atk-v01/atk-{}.png",
+   "impact": 0.6726
+  },
+  "move-left": {
+   "video": "Attachments/Sahagin/SahaginwalkfetandFall.mp4",
+   "first": 0,
+   "last": 112,
+   "loopFirst": 33,
+   "loopLast": 80,
+   "seamSteps": 1.72,
+   "bootRow": 669,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 634.0,
+   "frames": 48,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    840,
+    642
+   ],
+   "crop": [
+    4,
+    4,
+    831,
+    633
+   ],
+   "box": {
+    "w": 3.70978,
+    "h": 2.83533,
+    "foot": 0.10599
+   },
+   "pattern": "content/sprites/sahagin/move-left-v01/move-left-{}.png"
+  },
+  "cast": {
+   "video": "Attachments/Sahagin/SahaginCasting.mp4",
+   "first": 24,
+   "last": 140,
+   "bootRow": 672,
+   "bootRows": [
+    672,
+    672
+   ],
+   "figurePx": 634.0,
+   "frames": 117,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1086,
+    654
+   ],
+   "crop": [
+    0,
+    4,
+    1081,
+    645
+   ],
+   "box": {
+    "w": 4.79621,
+    "h": 2.88833,
+    "foot": 0.08391
+   },
+   "pattern": "content/sprites/sahagin/cast-v01/cast-{}.png",
+   "impact": 0.4103
+  },
+  "hit": {
+   "video": "Attachments/Sahagin/HitReactFigure_recoiling_with_spear_d360d14d.mp4",
+   "first": 17,
+   "last": 100,
+   "bootRow": 681,
+   "bootRows": [
+    681,
+    681
+   ],
+   "figurePx": 634.0,
+   "frames": 84,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1063,
+    720
+   ],
+   "crop": [
+    0,
+    0,
+    1059,
+    720
+   ],
+   "box": {
+    "w": 4.69464,
+    "h": 3.17981,
+    "foot": 0.16782
+   },
+   "pattern": "content/sprites/sahagin/hit-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Sahagin/SahaginwalkfetandFall.mp4",
+   "first": 112,
+   "last": 200,
+   "bootRow": 670,
+   "bootRows": [
+    670,
+    670
+   ],
+   "figurePx": 634.0,
+   "frames": 89,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1075,
+    635
+   ],
+   "crop": [
+    5,
+    5,
+    1065,
+    626
+   ],
+   "box": {
+    "w": 4.74763,
+    "h": 2.80442,
+    "foot": 0.09274
+   },
+   "pattern": "content/sprites/sahagin/death-v01/death-{}.png"
+  },
+  "atk-left": {
+   "video": "Attachments/Sahagin/SahaginIdleandLeftATT.mp4",
+   "first": 124,
+   "last": 180,
+   "bootRow": 680,
+   "bootRows": [
+    680,
+    680
+   ],
+   "figurePx": 634.0,
+   "frames": 57,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1270,
+    696
+   ],
+   "crop": [
+    6,
+    0,
+    1264,
+    691
+   ],
+   "box": {
+    "w": 5.60883,
+    "h": 3.07382,
+    "foot": 0.06625
+   },
+   "pattern": "content/sprites/sahagin/atk-left-v01/atk-left-{}.png",
+   "impact": 0.5614
+  },
+  "base": {
+   "video": "Attachments/Sahagin/SahaginIdleandLeftATT.mp4",
+   "first": 0,
+   "last": 120,
+   "bootRow": 681,
+   "bootRows": [
+    667,
+    684
+   ],
+   "figurePx": 634.0,
+   "frames": 121,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    898,
+    662
+   ],
+   "crop": [
+    4,
+    4,
+    889,
+    653
+   ],
+   "box": {
+    "w": 3.96593,
+    "h": 2.92366,
+    "foot": 0.053
+   },
+   "pattern": "content/sprites/sahagin/base-v01/base-{}.png"
+  }
+ }
+}

@@ -86,12 +86,28 @@ bool EditorCatalog::load(const std::filesystem::path& file) {
       m.model = str(d["model"], "model");
       m.file = str(d["model"], "file");
       m.height = num(d["model"], "height", 1);
+      if (d.contains("fire") && d["fire"].is_array())
+        for (const json& f : d["fire"]) {
+          if (!f.is_object() || !f.contains("at") || !f["at"].is_array() || f["at"].size() != 3) continue;
+          SceneFire fire;
+          fire.x = f["at"][0].get<float>(), fire.y = f["at"][1].get<float>(), fire.z = f["at"][2].get<float>();
+          fire.height = num(f, "height", 0.7), fire.radius = num(f, "radius", 0.17), fire.turbulence = num(f, "turbulence", 1);
+          m.fires.push_back(fire);
+        }
       c.model = m;
     }
     c.w = num(d["size"], "w", 1);
     c.h = num(d["size"], "h", 1);
     c.nudge = num(d, "nudge");
     if (d.contains("light")) c.light = lightOf(d["light"]);
+    if (d.contains("fire") && d["fire"].is_array())
+      for (const json& f : d["fire"]) {
+        if (!f.is_object() || !f.contains("uv") || !f["uv"].is_array() || f["uv"].size() != 2) continue;
+        SceneCardFire fire;
+        fire.u = f["uv"][0].get<float>(), fire.v = f["uv"][1].get<float>();
+        fire.height = num(f, "height", 1), fire.radius = num(f, "radius", 0.3), fire.turbulence = num(f, "turbulence", 1);
+        c.cardFires.push_back(fire);
+      }
     decorations_.emplace(id, std::move(c));
   }
   for (const auto& [art, faces] : j["facings"].items()) {
@@ -304,6 +320,7 @@ SceneData buildScene(const Board& board, const EditorCatalog& catalog, std::map<
       c.light->seed = static_cast<float>(jsMod(p.x * 7.31 + p.y * 3.17, 6.28));
     }
     if (const SceneArt* a = catalog.measure(c.image)) c.art = *a;
+    c.fires = def->cardFires;
     s.cards.push_back(std::move(c));
   }
 

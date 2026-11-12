@@ -364,6 +364,18 @@
    "src": "/game/portraits/sprites/giant-beetle.png",
    "framed": true
   },
+  "mush": {
+   "src": "/game/portraits/sprites/mush.png",
+   "framed": true
+  },
+  "sahagin": {
+   "src": "/game/portraits/sprites/sahagin.png",
+   "framed": true
+  },
+  "nekomata": {
+   "src": "/game/portraits/sprites/nekomata.png",
+   "framed": true
+  },
   "giant-spider": {
    "src": "/game/portraits/sprites/giant-spider.png",
    "framed": true

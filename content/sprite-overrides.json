@@ -277,25 +277,33 @@
    }
   },
   {
-   "set": "swamp-blue-deer-64-media",
-   "version": "media64-v01",
+   "set": "swamp-blue-deer",
+   "version": "v01",
    "hero": "swampBlueDeer",
    "newHero": {"name": "Cervo Azul do Pântano", "group": "monster", "sprite": "swamp-blue-deer", "reversed": false},
-   "cut": "content/sprites/swamp-blue-deer/cut-64-media.json",
-   "why": "the user, 2026-10-27: the Swamp Blue Deer from their videos (Attachments/SwampBlueDeer), \"use the Tek for 64 and 36 frames, no need to max out this one\": no all-frames Alta; the 64-frame copy is the unit's own art (Alta and Média draw it), the 36-frame copy its Leve",
+   "cut": "content/sprites/swamp-blue-deer/cut.json",
+   "why": "the user, 2026-10-27: the Swamp Blue Deer from their videos (Attachments/SwampBlueDeer); first cut 64 / 36 only (\"no need to max out this one\"); the user, 2026-11-12: \"why would you leave high out ? its the games selling point\": the all-frames Alta is the unit's own art now, the 64 and 36 copies (v02, the idle the first 3 seconds played back and forth) its Média and Leve",
    "poses": {"idle": "base", "walk": "move", "attack": "atk", "cast": "cast", "hit": "hit", "death": "death"},
    "labels": {"idle": "Parado", "walk": "Andar", "attack": "Atacar", "cast": "Conjurar", "hit": "Dano", "death": "Morte"},
    "packs": {"base": "field", "move": "field"},
    "strides": {"move": 1.0}
   },
   {
+   "set": "swamp-blue-deer-64-media",
+   "version": "media64-v02",
+   "cut": "content/sprites/swamp-blue-deer/cut-64-media.json",
+   "why": "the Deer's Personagens Média: 64 frames from the same mattes",
+   "mediumOf": {"hero": "swampBlueDeer", "set": "swamp-blue-deer"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
    "set": "swamp-blue-deer-36-media",
-   "version": "media36-v01",
+   "version": "media36-v02",
    "cut": "content/sprites/swamp-blue-deer/cut-36-media.json",
    "why": "the Deer's Personagens Leve (the same order): 36 frames from the same mattes",
    "lightOf": {
     "hero": "swampBlueDeer",
-    "set": "swamp-blue-deer-64-media"
+    "set": "swamp-blue-deer"
    },
    "packs": {
     "base": "field",
@@ -303,25 +311,33 @@
    }
   },
   {
-   "set": "giant-beetle-64-media",
-   "version": "media64-v01",
+   "set": "giant-beetle",
+   "version": "v01",
    "hero": "giantBeetle",
    "newHero": {"name": "Besouro Gigante", "group": "monster", "sprite": "giant-beetle", "reversed": false},
-   "cut": "content/sprites/giant-beetle/cut-64-media.json",
-   "why": "the user, 2026-10-28: the Giant Beetle from their videos (Attachments/GiantBeetle), body type 1, \"formatos 64 frames e 36 como os últimos\": no all-frames Alta; the 64-frame copy is the unit's own art (Alta and Média draw it), the 36-frame copy its Leve",
+   "cut": "content/sprites/giant-beetle/cut.json",
+   "why": "the user, 2026-10-28: the Giant Beetle from their videos (Attachments/GiantBeetle), body type 1, first cut 64 / 36 only (\"formatos 64 frames e 36 como os últimos\"); the user, 2026-11-12: \"why would you leave high out ? its the games selling point\", \"as all veo generated units should be\": the all-frames Alta is the unit's own art now, the 64 and 36 copies (v02) its Média and Leve",
    "poses": {"idle": "base", "walk": "move", "attack": "atk", "death": "death"},
    "labels": {"idle": "Parado", "walk": "Andar", "attack": "Atacar", "death": "Morte"},
    "packs": {"base": "field", "move": "field"},
    "strides": {"move": 1.0}
   },
   {
+   "set": "giant-beetle-64-media",
+   "version": "media64-v02",
+   "cut": "content/sprites/giant-beetle/cut-64-media.json",
+   "why": "the Beetle's Personagens Média: 64 frames from the same mattes",
+   "mediumOf": {"hero": "giantBeetle", "set": "giant-beetle"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
    "set": "giant-beetle-36-media",
-   "version": "media36-v01",
+   "version": "media36-v02",
    "cut": "content/sprites/giant-beetle/cut-36-media.json",
    "why": "the Beetle's Personagens Leve (the same order): 36 frames from the same mattes",
    "lightOf": {
     "hero": "giantBeetle",
-    "set": "giant-beetle-64-media"
+    "set": "giant-beetle"
    },
    "packs": {
     "base": "field",
@@ -485,6 +501,116 @@
    "why": "the StagWolf walks' Personagens Leve: 36 frames from the same mattes",
    "lightOf": {"hero": "stagWolf", "set": "stagwolf-v2"},
    "packs": {"move": "field", "move-left": "field", "movefront": "field"}
+  },
+  {
+   "set": "zombie-dog",
+   "version": "v01",
+   "hero": "zombieDog",
+   "cut": "content/sprites/zombie-dog/cut.json",
+   "why": "the user, 2026-11-11: \"Creatures Remade, lets start with the zombie dog, the crop on his jaws is ridiculous\"; every pose he has, cut again from the 720p videos, \"25% smaller than he used to be\" (the walk's stride 2.0 -> 1.5 with him); one death (\"just give him a single death animation\"): death2 draws the same clip",
+   "poses": {"idle": "base", "walk": "move", "attack": "atk", "cast": "cast", "hit": "hit", "death": "death", "death2": "death"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.5}
+  },
+  {
+   "set": "zombie-dog-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/zombie-dog/cut-64-media.json",
+   "why": "the Cão Zumbi's Personagens Média: 64 frames from the same mattes",
+   "mediumOf": {"hero": "zombieDog", "set": "zombie-dog"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "zombie-dog-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/zombie-dog/cut-36-media.json",
+   "why": "the Cão Zumbi's Personagens Leve: 36 frames from the same mattes",
+   "lightOf": {"hero": "zombieDog", "set": "zombie-dog"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "mush",
+   "version": "v01",
+   "hero": "mushroomMan",
+   "newHero": {"name": "MushroomMan","group": "monster", "sprite": "mush", "reversed": false},
+   "cut": "content/sprites/mush/cut.json",
+   "why": "the user, 2026-11-11: \"try making this new unit C:\\EmberEngineB\\Attachments\\Mush\", \"Idle , movement to mirror and ATT / CAST on the same\", \"simpole creature same pipeline\": Veo videos, Alta + 64 + 36",
+   "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "attack": "cast", "cast": "cast", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "walkLeft": "Andar (esquerda)", "attack": "Atacar", "cast": "Conjurar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
+  },
+  {
+   "set": "mush-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/mush/cut-64-media.json",
+   "why": "Mush's Personagens Média: 64 frames from the same mattes",
+   "mediumOf": {"hero": "mushroomMan", "set": "mush"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "mush-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/mush/cut-36-media.json",
+   "why": "Mush's Personagens Leve: 36 frames from the same mattes",
+   "lightOf": {"hero": "mushroomMan", "set": "mush"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "sahagin",
+   "version": "v01",
+   "hero": "sahagin",
+   "newHero": {"name": "Sahagin", "group": "monster", "sprite": "sahagin", "reversed": false},
+   "cut": "content/sprites/sahagin/cut.json",
+   "why": "the user, 2026-11-12: \"C:\\EmberEngineB\\Attachments\\Sahagin new unit for you to add\": Veo videos, Alta + 64 + 36; the idle turned to face right like his walk and thrust to the right, the thrust and walk to the left as filmed, the fall turned to face right",
+   "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "attack": "atk", "attackLeft": "atk-left", "cast": "cast", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "walkLeft": "Andar (esquerda)", "attack": "Atacar", "attackLeft": "Atacar (esquerda)", "cast": "Conjurar (água)", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
+  },
+  {
+   "set": "sahagin-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/sahagin/cut-64-media.json",
+   "why": "Sahagin's Personagens Média: 64 frames from the same mattes",
+   "mediumOf": {"hero": "sahagin", "set": "sahagin"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "sahagin-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/sahagin/cut-36-media.json",
+   "why": "Sahagin's Personagens Leve: 36 frames from the same mattes",
+   "lightOf": {"hero": "sahagin", "set": "sahagin"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "nekomata",
+   "version": "v01",
+   "hero": "nekomata",
+   "newHero": {"name": "Nekomata", "group": "monster", "sprite": "nekomata", "reversed": false},
+   "cut": "content/sprites/nekomata/cut.json",
+   "why": "the user, 2026-11-12: a new unit, \"C:\\EmberEngineB\\Attachments\\Nekomata\": Veo videos, Alta + 64 + 36; filmed facing left, turned to face right, the walk to the left as filmed",
+   "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "attack": "atk", "cast": "cast", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "walkLeft": "Andar (esquerda)", "attack": "Atacar", "cast": "Conjurar (raio)", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
+  },
+  {
+   "set": "nekomata-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/nekomata/cut-64-media.json",
+   "why": "Nekomata's Personagens Média: 64 frames from the same mattes",
+   "mediumOf": {"hero": "nekomata", "set": "nekomata"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "nekomata-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/nekomata/cut-36-media.json",
+   "why": "Nekomata's Personagens Leve: 36 frames from the same mattes",
+   "lightOf": {"hero": "nekomata", "set": "nekomata"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
   },
   {
    "set": "telesm",

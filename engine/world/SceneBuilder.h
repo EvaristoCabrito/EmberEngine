@@ -33,6 +33,7 @@ struct CatalogDecoration {
   std::optional<SceneModel> model;  // model, file, height
   float w = 1, h = 1, nudge = 0;
   std::optional<SceneLight> light;  // seed set per placement
+  std::vector<SceneCardFire> cardFires;  // a 2D card's flames ("fire" entries with "uv")
 };
 
 struct CatalogFacing {

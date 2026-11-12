@@ -1,0 +1,86 @@
+{
+ "about": "zombie-dog's Personagens Leve (tools/scripts/sprites/quality_copies.py, the rule of 2026-10-25): every clip of cut.json from the same matted frames, at most 36 frames picked evenly (no blend, the clip's timing kept), the figure ~610 px tall (a clip already shorter keeps its own size).",
+ "set": "zombie-dog-36-media",
+ "version": "media36-v01",
+ "figureUnits": 2.2387,
+ "figurePx": 512.5,
+ "figureNote": "Ember's zombieDog idle stands 255 px ear tips to paws in a 321 px frame whose box is 3.75728 units tall: 2.985 units. 75% of that is 2.2387 units. In the 720p idle the dog is 512.5 px ear tips to paws (median of 60 frames); the three videos share one camera, so every clip keeps that one pixel scale.",
+ "edgeKey": true,
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/zombie-dog/big-reference",
+   "video": "Attachments/BigZombie_dog_animation_reference_ba9abcc5_720p.mp4",
+   "first": 0,
+   "last": 96,
+   "mode": "pingpong",
+   "scaleTo": 610
+  },
+  {
+   "clip": "cast",
+   "pose": "cast",
+   "kind": "stand",
+   "src": "build/video-cut/zombie-dog/big-reference",
+   "video": "Attachments/BigZombie_dog_animation_reference_ba9abcc5_720p.mp4",
+   "first": 98,
+   "last": 220,
+   "mode": "once",
+   "scaleTo": 610
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "inPlace": true,
+   "src": "build/video-cut/zombie-dog/big-walkattack",
+   "video": "Attachments/BigZombie_dog_walk_and_attack_6e721e64_720p.mp4",
+   "first": 0,
+   "last": 120,
+   "loopMin": 20,
+   "loopMax": 120,
+   "mode": "loop",
+   "scaleTo": 610
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "src": "build/video-cut/zombie-dog/big-walkattack",
+   "video": "Attachments/BigZombie_dog_walk_and_attack_6e721e64_720p.mp4",
+   "first": 124,
+   "last": 204,
+   "standUntil": 150,
+   "impactFrame": 168,
+   "mode": "once",
+   "scaleTo": 610
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "kind": "stand",
+   "src": "build/video-cut/zombie-dog/big-hitdeath",
+   "video": "Attachments/BigZombie_dog_animation_reference_efc4c366_720p.mp4",
+   "first": 16,
+   "last": 62,
+   "standUntil": 20,
+   "mode": "once",
+   "scaleTo": 610
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "kind": "stand",
+   "src": "build/video-cut/zombie-dog/big-hitdeath",
+   "video": "Attachments/BigZombie_dog_animation_reference_efc4c366_720p.mp4",
+   "first": 144,
+   "last": 205,
+   "standUntil": 150,
+   "mode": "once",
+   "scaleTo": 610
+  }
+ ],
+ "result": "cut-result-36-media.json",
+ "frameCount": 36
+}

@@ -57,6 +57,126 @@
     "foot": 0.03495
    },
    "pattern": "content/sprites/zombie-dog/cast-v01/cast-{}.png"
+  },
+  "move": {
+   "video": "Attachments/BigZombie_dog_walk_and_attack_6e721e64_720p.mp4",
+   "first": 0,
+   "last": 120,
+   "loopFirst": 48,
+   "loopLast": 83,
+   "seamSteps": 3.51,
+   "bootRow": 655,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 512.5,
+   "frames": 36,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    739,
+    543
+   ],
+   "crop": [
+    5,
+    8,
+    728,
+    529
+   ],
+   "box": {
+    "w": 3.2281,
+    "h": 2.37193,
+    "foot": 0.07863
+   },
+   "pattern": "content/sprites/zombie-dog/move-v01/move-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/BigZombie_dog_walk_and_attack_6e721e64_720p.mp4",
+   "first": 124,
+   "last": 204,
+   "bootRow": 657,
+   "bootRows": [
+    657,
+    657
+   ],
+   "figurePx": 512.5,
+   "frames": 81,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    823,
+    540
+   ],
+   "crop": [
+    5,
+    6,
+    812,
+    530
+   ],
+   "box": {
+    "w": 3.59502,
+    "h": 2.35883,
+    "foot": 0.02621
+   },
+   "pattern": "content/sprites/zombie-dog/atk-v01/atk-{}.png",
+   "impact": 0.5432
+  },
+  "hit": {
+   "video": "Attachments/BigZombie_dog_animation_reference_efc4c366_720p.mp4",
+   "first": 16,
+   "last": 62,
+   "bootRow": 648,
+   "bootRows": [
+    648,
+    648
+   ],
+   "figurePx": 512.5,
+   "frames": 47,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    951,
+    630
+   ],
+   "crop": [
+    4,
+    5,
+    943,
+    620
+   ],
+   "box": {
+    "w": 4.15415,
+    "h": 2.75196,
+    "foot": 0.03058
+   },
+   "pattern": "content/sprites/zombie-dog/hit-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/BigZombie_dog_animation_reference_efc4c366_720p.mp4",
+   "first": 144,
+   "last": 205,
+   "bootRow": 648,
+   "bootRows": [
+    648,
+    648
+   ],
+   "figurePx": 512.5,
+   "frames": 62,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    917,
+    488
+   ],
+   "crop": [
+    6,
+    6,
+    906,
+    478
+   ],
+   "box": {
+    "w": 4.00563,
+    "h": 2.13168,
+    "foot": 0.083
+   },
+   "pattern": "content/sprites/zombie-dog/death-v01/death-{}.png"
   }
  }
 }

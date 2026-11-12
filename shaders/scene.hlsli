@@ -94,6 +94,9 @@ float2 flipbookUv(float2 uv, uint flags, uint frame) {
   return (uv + tile) * 0.25;
 }
 
+// A flipbook material's frame 16 and up: not drawn at all (the hearth's painted fire card, its fire now a volume: vfx.hlsl).
+bool flipbookHidden(uint flags, uint frame) { return (flags & kMaterialFlipbook) != 0u && frame > 15u; }
+
 float2 flipbookGradient(float2 gradient, uint flags) {
   return (flags & kMaterialFlipbook) != 0u ? gradient * 0.25 : gradient;
 }

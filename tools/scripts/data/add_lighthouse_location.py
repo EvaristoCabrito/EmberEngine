@@ -1,11 +1,12 @@
-"""The Light House on the world map (2026-11-11): the pin `lighthouse` already stands at hex (1, 3) with no mission; this gives it
-the five maps of tools/scripts/maps/make_lighthouse.py.
+"""Keep the Lighthouse's location and campaign missions aligned with its newest maps.
 
   python -I tools/scripts/data/add_lighthouse_location.py
 
-Writes content/data/overworld.json (the location: its pin kept as it is, the mission `farol`, the floors as submaps, open access like
-the Mosteiro), content/data/campaign.json (the location + the five missions, texts from the newest map drafts, one index, `mapFile`
-= the highest serial now) and content/data/editor-catalog.json (editor.locations + editor.locais.submaps). Idempotent.
+The current project stores world-map pins in content/data/locations.json, mission
+records in content/data/campaign.json, and editor mission groups in
+content/data/editor-catalog.json. This updater preserves the pin's established
+position and only refreshes the Lighthouse's mission links, mission text, and
+mapFile values. It is safe to run after creating a new serial of any Farol map.
 """
 import json
 import os
@@ -13,72 +14,80 @@ import re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 MAPS = os.path.join(ROOT, 'content', 'maps', 'ember')
+LOCATION_FILE = os.path.join(ROOT, 'content', 'data', 'locations.json')
+CAMPAIGN_FILE = os.path.join(ROOT, 'content', 'data', 'campaign.json')
+CATALOG_FILE = os.path.join(ROOT, 'content', 'data', 'editor-catalog.json')
 LOC_ID = 'lighthouse'
 ENTRY = 'farol'
 FLOORS = [('farol-andar-2', 2), ('farol-topo', 3), ('farol-poroes', -1), ('farol-gruta', -2)]
-MISSIONS = [ENTRY] + [m for m, _ in FLOORS]
+MISSIONS = [ENTRY] + [mission_id for mission_id, _ in FLOORS]
 
 
 def newest(map_id):
-    best, file = -1, None
-    for f in os.listdir(MAPS):
-        if f.startswith(map_id) and len(f) == len(map_id) + 8 and f[len(map_id):-5].isdigit() and int(f[len(map_id):-5]) > best:
-            best, file = int(f[len(map_id):-5]), f
-    if not file:
+    best, filename = -1, None
+    for name in os.listdir(MAPS):
+        stem, ext = os.path.splitext(name)
+        if ext == '.json' and stem.startswith(map_id):
+            serial = stem[len(map_id):]
+            if serial.isdigit() and int(serial) > best:
+                best, filename = int(serial), name
+    if not filename:
         raise SystemExit(f'no map file for {map_id}')
-    return file, json.load(open(os.path.join(MAPS, file), encoding='utf-8'))['draft']
+    with open(os.path.join(MAPS, filename), encoding='utf-8') as source:
+        draft = json.load(source)['draft']
+    return filename, draft
 
 
-def load(path):
-    text = open(path, encoding='utf-8').read()
-    m = re.search(r'\n( +)"', text)
-    return json.loads(text), (len(m.group(1)) if m else None), text.endswith('\n')
+def read(path):
+    with open(path, encoding='utf-8') as source:
+        text = source.read()
+    match = re.search(r'\n( +)"', text)
+    return json.loads(text), (len(match.group(1)) if match else None), text.endswith('\n')
 
 
-def save(path, data, indent, newline):
-    with open(path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=indent, separators=(',', ': ') if indent else (',', ':'))
+def write(path, data, indent, newline):
+    with open(path, 'w', encoding='utf-8') as target:
+        json.dump(data, target, ensure_ascii=False, indent=indent,
+                  separators=(',', ': ') if indent else (',', ':'))
         if newline:
-            f.write('\n')
+            target.write('\n')
 
 
-def put(lst, entry, key='id'):
-    for i, e in enumerate(lst):
-        if e.get(key) == entry[key]:
-            lst[i] = entry
-            return 'replaced'
-    lst.append(entry)
-    return 'added'
-
-
-submaps = [{'missionId': m, 'floor': f} for m, f in FLOORS]
-
-p = os.path.join(ROOT, 'content', 'data', 'overworld.json')
-o, ind, nl = load(p)
-pin = next((l for l in o['locations'] if l['id'] == LOC_ID), None)
+locations, indent, newline = read(LOCATION_FILE)
+pin = next((item for item in locations['locations'] if item.get('id') == LOC_ID), None)
 if pin is None:
-    raise SystemExit('overworld.json has no lighthouse pin')
-pin.update({'missionIds': [ENTRY], 'openAccess': True, 'submaps': submaps})
-save(p, o, ind, nl)
-print('overworld.json: lighthouse at hex', (pin['col'], pin['row']), '->', ENTRY)
+    raise SystemExit('locations.json has no Lighthouse pin')
+pin.update({
+    'missionIds': [ENTRY],
+    'openAccess': True,
+    'submaps': [{'missionId': mission_id, 'floor': floor} for mission_id, floor in FLOORS],
+})
+write(LOCATION_FILE, locations, indent, newline)
+print('locations.json: refreshed Lighthouse mission links; kept its position at', (pin['col'], pin['row']))
 
-p = os.path.join(ROOT, 'content', 'data', 'campaign.json')
-c, ind, nl = load(p)
-print('campaign.json location', put(c['locations'], {k: pin[k] for k in ('id', 'name', 'x', 'y', 'missionIds', 'openAccess', 'submaps', 'col', 'row')}))
-index = max(m.get('index', 0) for m in c['missions']) + 1
-existing = [m.get('index') for m in c['missions'] if m['id'] in MISSIONS]
-if existing:
-    index = min(existing)
-for mid in MISSIONS:
-    file, d = newest(mid)
-    entry = {'id': mid, 'index': index, 'title': d.get('title', mid), 'place': d.get('place', ''), 'briefing': d.get('briefing', ''),
-             'objective': d.get('objective', ''), 'win': d.get('win', 'rout'), 'mapFile': file}
-    print('campaign.json mission', mid, put(c['missions'], entry), 'index', index, 'map', file)
-save(p, c, ind, nl)
+campaign, indent, newline = read(CAMPAIGN_FILE)
+by_id = {mission.get('id'): mission for mission in campaign['missions']}
+next_index = max((mission.get('index', 0) for mission in campaign['missions']), default=0) + 1
+for mission_id in MISSIONS:
+    filename, draft = newest(mission_id)
+    mission = by_id.get(mission_id)
+    if mission is None:
+        mission = {'id': mission_id, 'index': next_index}
+        next_index += 1
+        campaign['missions'].append(mission)
+    for key in ('title', 'place', 'briefing', 'objective', 'win'):
+        mission[key] = draft.get(key, mission.get(key, ''))
+    mission['mapFile'] = filename
+    print('campaign.json:', mission_id, '->', filename)
+write(CAMPAIGN_FILE, campaign, indent, newline)
 
-p = os.path.join(ROOT, 'content', 'data', 'editor-catalog.json')
-cat, ind, nl = load(p)
-e = cat['editor']
-print('editor locations', put(e.setdefault('locations', []), {'id': LOC_ID, 'name': pin['name'], 'missionIds': [ENTRY]}))
-e.setdefault('locais', {}).setdefault('submaps', {})[LOC_ID] = submaps
-save(p, cat, ind, nl)
+catalog, indent, newline = read(CATALOG_FILE)
+editor_locations = catalog.get('editor', {}).get('locais', {})
+order = editor_locations.get('order')
+location_order = editor_locations.get('locationOrder')
+if isinstance(order, dict) and isinstance(location_order, list):
+    order.setdefault(LOC_ID, [ENTRY])
+    if LOC_ID not in location_order:
+        location_order.append(LOC_ID)
+    write(CATALOG_FILE, catalog, indent, newline)
+    print('editor-catalog.json: included the Lighthouse mission group')

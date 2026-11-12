@@ -15,8 +15,7 @@ ROOT = Path(__file__).resolve().parents[3]
 ARCH = ROOT / 'content/models/architecture.json'
 CATALOG = ROOT / 'content/data/editor-catalog.json'
 SRC, DST = 'ember-arch-mosteiro-', 'ember-arch-farol-'
-TEXTURE, REPEAT = '/ember/textures/walls/watchtower-v01.jpg', 3.6
-PENDING = "/ember/textures/walls/farol-v01.jpg (docs/LIGHTHOUSE.md: the user's photo; until it arrives, the Watchtower's stone)"
+TEXTURE, REPEAT = '/ember/textures/walls/farol-v01.jpg', 3.2
 
 
 def rename(text):
@@ -35,8 +34,6 @@ def main():
         q['name'] = rename(p.get('name', q['id']))
         q['wallTexture'], q['textureRepeat'] = TEXTURE, REPEAT
         q.pop('pendingTexture', None)
-        if q['id'] == DST + 'wall':
-            q['pendingTexture'] = PENDING
         made.append(q)
     # the tower's round wall and its torch (ArchitectureDef::round: one smooth curve between its two neighbours)
     for style, name in (('wall', 'Parede redonda do Farol 3D'), ('wall-torch', 'Parede redonda do Farol com tocha 3D')):

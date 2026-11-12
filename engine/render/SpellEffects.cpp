@@ -82,7 +82,8 @@ int SpellEffects::looks(const std::string& kind) {
   if (kind == "webOfDreams") return 2;
   // 01 of a spell with no flipbook-card version: Ember's own effect, ported.
   if (kind == "causticVenom") return 2;  // 01 Ember's CausticVenomVFX, 02 its impact in 3D (vfx/CausticVenom: smoke, light)
-  if (kind == "fireball" || kind == "bless" || kind == "phantasmalForce" ||
+  if (kind == "fireball") return 2;  // 01 Ember's FireballVFX (the enemies'), 02 ours: a real volume of fire (vfx/Fireball, volume)
+  if (kind == "bless" || kind == "phantasmalForce" ||
       kind == "webOfDreams" || kind == "burningHands" || kind == "poisonBreath" || kind == "cleave" || kind == "sweep")
     return 1;
   if (kind == "longShot" || kind == "piercing") return 2;  // 01 the arrow card, 02 RangerFx's 3D arrow (the enemies')
@@ -129,7 +130,7 @@ int SpellEffects::classicLook(const std::string& kind) {
   if (kind == "divineBolt") return 1;                                // ours in 3D (SpellBolts)
   if (kind == "turnUndead") return 1;                                // ours in 3D (vfx/TurnUndead)
   if (isLightning(kind, 2)) return 2;                                // Raio, ours in 3D (vfx/Lightning; 01 = the cards, the enemies')
-  if (kind == "fireball") return 1;                                  // FireballVFX
+  if (kind == "fireball") return 2;                                  // ours, a volume of fire (01 = FireballVFX, the enemies')
   if (kind == "bless") return 1;                                     // BlessVFX
   if (kind == "causticVenom") return 1;                              // CausticVenomVFX
   if (kind == "phantasmalForce") return 1;                           // PhantasmalForceVFX
@@ -178,7 +179,7 @@ std::vector<Bless::Ally> SpellEffects::blessAllies(const Spot& caster, const std
 float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const {
   if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2 && !targets.empty())
     return MagicMissileV2::impactDelay(classicOrigin(caster), targets.front().body);
-  if (kind == "fireball" && look == 1 && !targets.empty()) return Fireball::travelSeconds(classicOrigin(caster), fireballTarget(targets));
+  if (kind == "fireball" && look >= 1 && !targets.empty()) return Fireball::travelSeconds(classicOrigin(caster), fireballTarget(targets));
   if (kind == "phantasmalForce" && look == 1) return PhantasmalForce::kImpactAt;
   if (kind == "spectralBolt" && !targets.empty()) return ArmsFx::spectralFlight(caster.feet, areaCentre(targets).feet);
   if (kind == "webOfDreams" && look >= 1) return look == 2 ? DreamWeb::kShotTravel : WebOfDreams::kShotTravel;
@@ -596,7 +597,7 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
                           start, impact, 0xa11ce5u, look == 4 ? kTinyFx : 1.0f);
     }
   } else if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2) missiles_.emplace_back(classicOrigin(caster), targets.front().body, start);
-  else if (kind == "fireball") fireballs_.emplace_back(classicOrigin(caster), fireballTarget(targets), fireballArea(targets), start);
+  else if (kind == "fireball") fireballs_.emplace_back(classicOrigin(caster), fireballTarget(targets), fireballArea(targets), start, look == 2);
   else if (kind == "phantasmalForce") phantasms_.emplace_back(targets.front().body, start);
   else if (kind == "cleave" || kind == "sweep") {
     // BattleSpells3D: Cleave's blade swings at weapon height (0.7) through its targets, Varredura's wave runs on the

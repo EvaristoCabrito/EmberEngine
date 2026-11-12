@@ -337,6 +337,9 @@
     ],
     "cemetery-ground-part-ii": [
       "cemiterio-panorama-v01-alpha.png"
+    ],
+    "farol": [
+      "farol-panorama-v02-alpha.png"
     ]
   },
   "paintings": {
@@ -995,6 +998,18 @@
       "spanDegrees": 150.0,
       "glowColumn": 0.5,
       "horizonDegrees": -5.0
+    },
+    "farol-panorama-v02-alpha.png": {
+      "horizon": 0.5,
+      "bottom": 1.0,
+      "skyTop": 0.0,
+      "degreesPerHeight": 40.0,
+      "bottomDegrees": 23.6,
+      "spanDegrees": 150.0,
+      "glowColumn": 0.5,
+      "horizonDegrees": 0.0,
+      "alphaSky": true,
+      "_note": "Céu em alfa verdadeiro para o clima dinâmico do jogo; o panorama fornece mar, naufrágios, falésias e rocha."
     }
   }
 }

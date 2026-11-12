@@ -30,6 +30,12 @@ struct SceneArt {
   int width = 0, height = 0;
 };
 
+// A flame painted on a 2D card (a burning house), drawn over it as a volume of fire: its foot on the picture (u across, v up from
+// the bottom, 0..1 of the image, as SceneArt), its height and radius in world units. The editor catalogue's "fire" with "uv".
+struct SceneCardFire {
+  float u = 0.5f, v = 0.5f, height = 1, radius = 0.3f, turbulence = 1;
+};
+
 struct SceneCard {
   std::string id, image;  // image: Ember URL, "/game/decorations/<name>.png"
   float x = 0, z = 0, groundSmooth = 0, groundHard = 0;
@@ -39,6 +45,13 @@ struct SceneCard {
   float nudge = 0;                 // along the card's facing, Ember's layer step
   std::optional<SceneLight> light;
   SceneArt art;
+  std::vector<SceneCardFire> fires;  // the flames drawn over its painted ones
+};
+
+// A flame a 3D piece burns with, in the model's own space (x, y up, z; the model's units): its foot, its height and radius, how
+// wild it is (1 a torch, less a candle). Drawn as a volume of fire (shaders/vfx.hlsl FireVolume); the editor catalogue's "fire".
+struct SceneFire {
+  float x = 0, y = 0, z = 0, height = 0.7f, radius = 0.17f, turbulence = 1;
 };
 
 struct SceneModel {
@@ -46,6 +59,7 @@ struct SceneModel {
   float height = 1;             // uniform scale to this height, base centred on the anchor
   float x = 0, z = 0, groundSmooth = 0, groundHard = 0, rotY = 0;
   std::optional<SceneLight> light;  // a 3D piece that gives light (the Meshy hearth's fire: models.json "light"; SceneBuilder)
+  std::vector<SceneFire> fires;     // ... and the flames it burns with
 };
 
 struct SceneUnit {

@@ -27,7 +27,7 @@ from monastery_lib import Floor, L, R, base_draft, hwall, ring, tree, vwall  # n
 KIT = 'farol'
 LOC = 'lighthouse'
 NIGHT = dict(timeOfDay='brightNight', sunIntensity=0.6, ambientIntensity=0.95)
-INDOOR = dict(fog=True, environment='indoor', aboveGround=True, baseTile='nave', emberTiles='torre-v01', locationId=LOC, **NIGHT)
+INDOOR = dict(fog=True, environment='indoor', aboveGround=True, baseTile='nave', emberTiles='farol-v01', locationId=LOC, **NIGHT)
 UNDER = dict(fog=True, timeOfDay='night', environment='indoor', underground=True, locationId=LOC)
 LAMP, CLOCK, TANK, BELL = 'ember-lighthouse-lamp', 'ember-lighthouse-clockwork', 'ember-lighthouse-oil-tank', 'ember-lighthouse-fog-bell'
 BOAT, ANCHOR, POST, NET, POTS = ('ember-lighthouse-rowboat', 'ember-lighthouse-anchor', 'ember-lighthouse-mooring-post',
@@ -91,9 +91,9 @@ def ground():
                 f.put(x, y, 'water')
             elif y < north + 2 or x < west + 2.4 or (x + y) < 14:
                 f.put(x, y, 'ruins')
-    f.rect(25, 26, 26, 41, 'nave')
-    f.rect(8, 27, 26, 28, 'nave')
-    f.rect(27, 30, 40, 31, 'nave')
+    f.rect(25, 26, 26, 41, 'hill')
+    f.rect(8, 27, 26, 28, 'hill')
+    f.rect(27, 30, 40, 31, 'hill')
     f.rect(6, 14, 11, 31, 'ruins')
     for x, y in ((33, 5), (34, 5), (38, 9), (39, 9), (40, 10), (14, 34), (15, 34), (15, 35), (42, 20), (43, 20), (43, 21), (12, 10), (13, 10)):
         f.put(x, y, 'hill')
@@ -169,7 +169,7 @@ def ground():
                             'barcos que a seguem dão nas pedras, e as tripulações voltam à praia andando. A torre está aberta; o porão, trancado '
                             'por dentro.',
                    objective='Atravesse o promontório, entre na torre e encontre a escada para o topo',
-                   fog=False, environment='indoor', aboveGround=True, baseTile='plains', locationId=LOC, **NIGHT)
+                   fog=False, environment='indoor', aboveGround=True, baseTile='plains', emberTiles='farol-v01', locationId=LOC, **NIGHT)
 
 
 # ============================================================================================================ Floor II
@@ -311,7 +311,7 @@ def poroes():
                    briefing='O porão do farol é mais velho que a torre. Tanques de óleo vazios, uma cisterna de água parada, e uma porta que '
                             'alguém trancou por dentro: o depósito do que o mar trouxe. No fundo, outra porta trancada e o som da maré '
                             'subindo por uma escada.',
-                   objective='Atravesse os porões e encontre a descida para a gruta', baseTile='nave', emberTiles='watchtower-foundations-v01', **UNDER)
+                   objective='Atravesse os porões e encontre a descida para a gruta', baseTile='nave', emberTiles='farol-porao-v01', **UNDER)
 
 
 # ============================================================================================================ the sea cave (-2)
@@ -379,7 +379,7 @@ def gruta():
                    briefing='A escada do porão acaba em pedra molhada. A gruta abre para o mar por uma boca que só a maré cheia cobre: botes na '
                             'areia, redes, a carga de vinte naufrágios. É daqui que as tripulações sobem quando a luz passa. E foi daqui que o '
                             'faroleiro trouxe a pedra que queima na lanterna.',
-                   objective='Limpe a gruta e encontre o tesouro dos saqueadores', baseTile='void', emberTiles='cave-v01', **UNDER)
+                   objective='Limpe a gruta e encontre o tesouro dos saqueadores', baseTile='void', emberTiles='farol-gruta-v01', **UNDER)
 
 
 FLOORS = {'ground': ground, '2': andar2, 'top': topo, 'cellars': poroes, 'cave': gruta}

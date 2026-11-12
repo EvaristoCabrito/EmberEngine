@@ -403,7 +403,15 @@ def main():
             raw = [r if r is not None else int(np.median(known)) for r in raw]
             boots = [int(np.median(raw[max(0, i - 2):i + 3])) for i in range(n)]
             tops = [hood_top(alpha[i]) for i in range(n)]
-            if "standUntil" in c:
+            floor = c.get("floorRow", spec.get("floorRow"))
+            if floor is not None:
+                # `floorRow` (the Radiant Familiar, 2026-11-12): a creature that hovers has no feet on the ground to read, so
+                # the video's floor row is the feet line of every clip and no frame is moved (one locked camera): it floats
+                # over its hex in the idle and lands on it in the fall
+                sole = int(floor)
+                height = float(np.median([sole - tops[i] for i in range(n)]))
+                boots = [sole] * n
+            elif "standUntil" in c:
                 # a fall (death): he leaves his feet, so the feet line and the height come only from the frames up to video
                 # frame `standUntil`, where he still stands, and no frame is moved (the camera is locked)
                 k = c["standUntil"] - c["first"] + 1
@@ -442,6 +450,11 @@ def main():
             # video's own; it starts and ends on the last frame
             frames = frames[::-1] + frames[1:]
             info["pingPongFromLast"] = True
+        if c.get("thereAndBack"):
+            # `thereAndBack` (the Radiant Familiar's hit, 2026-11-12): the clip played from its first frame to its last and back to
+            # its first, every frame the video's own; it starts and ends on the idle pose it was cut beside
+            frames = frames + frames[-2::-1]
+            info["thereAndBack"] = True
         # `frameCount` (a clip's or the spec's; the user, 2026-10-22, "Slime36 with 36 frames per animation"): that many of the
         # clip's frames, picked evenly from its first to its last, each kept as it is (no blend); the clip keeps its duration
         n_full = len(frames)

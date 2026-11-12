@@ -1,6 +1,7 @@
 add_library(EmberEngine STATIC
   core/Jobs.cpp
   core/Log.cpp
+  core/StallWatch.cpp
   core/Memory.cpp
   core/StbImpl.cpp
   platform/IoQueue.cpp

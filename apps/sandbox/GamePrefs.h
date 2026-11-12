@@ -36,6 +36,15 @@ struct GamePrefs {
   // "extra" = Extra baixa (the user, 2026-11-06: "resolução extra baixa com a metade da resolução da baixa e frames de 36
   // normais"): Leve's copies (the 36-frame cuts where a pose has one), every clip held at half its resolution.
   std::string characters = "media";
+  // Opções > Gráficos > Invocações (the user, 2026-11-12: "Summon Resolution should have its own toggle in the graphics options"):
+  // the summons' art (content/data/summons.json classes and EmberEngine's own of role Invocação) by its own Alta / Média / Leve,
+  // as Personagens is for everyone else; Extra baixa's halving stays Personagens' only. Saved as "summonArt"; a file without it
+  // takes Personagens' choice (Leve for Extra baixa).
+  std::string summons = "media";
+  // Opções > Gráficos > Inimigos (the user, 2026-11-12: "we should also split the Enemy Units graphical quailty"): the enemy side's
+  // art by its own Alta / Média / Leve; Personagens keeps the party and the neutrals. Saved as "enemyArt"; a file without it takes
+  // Personagens' choice (Leve for Extra baixa).
+  std::string enemies = "media";
   // Opções > Gráficos > Luz do grupo (the user, 2026-10-28: "o efeito pode existir guardado para depois"): on the world map at
   // night, a soft circle of light around the party and the rest of the map darker. OFF by default.
   bool partyLight = false;
@@ -70,6 +79,12 @@ struct GamePrefs {
     const std::string art = j.value("characterArt", std::string());
     if (art == "alta" || art == "media" || art == "leve" || art == "extra") p.characters = art;
     else if (j.value("characters", std::string()) == "leve") p.characters = "leve";
+    const std::string summonArt = j.value("summonArt", std::string());
+    if (summonArt == "alta" || summonArt == "media" || summonArt == "leve") p.summons = summonArt;
+    else p.summons = p.characters == "extra" ? "leve" : p.characters;
+    const std::string enemyArt = j.value("enemyArt", std::string());
+    if (enemyArt == "alta" || enemyArt == "media" || enemyArt == "leve") p.enemies = enemyArt;
+    else p.enemies = p.characters == "extra" ? "leve" : p.characters;
     p.partyLight = j.value("partyLight", p.partyLight);
     const std::string tex = j.value("meshTextures", std::string());
     if (tex == "alta" || tex == "media" || tex == "leve") p.textures3d = tex;
@@ -81,7 +96,7 @@ struct GamePrefs {
                               {"sfx", sfx},               {"cutscene", cutscene},               {"uiLanguage", uiLanguage},
                               {"dialogueLanguage", dialogueLanguage}, {"subtitleLanguage", subtitleLanguage},
                               {"subtitles", subtitles},   {"dialogueScale", dialogueScale},     {"characterArt", characters},
-                              {"partyLight", partyLight}, {"meshTextures", textures3d}};
+                              {"summonArt", summons},     {"enemyArt", enemies},                {"partyLight", partyLight}, {"meshTextures", textures3d}};
     std::error_code ec;
     std::filesystem::create_directories(path().parent_path(), ec);
     const std::filesystem::path tmp = path().string() + ".tmp";

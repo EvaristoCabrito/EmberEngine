@@ -1,5 +1,5 @@
 {
- "about": "Swamp Blue Deer from the user's videos (Attachments/SwampBlueDeer, 2026-10-26): idle + attack, walking, casting, fall; 24 fps, 1280 x 720. The user, 2026-10-27: \"use the Tek for 64 and 36 frames, no need to max out this one\": only the 64- and 36-frame copies are cut (tools/scripts/sprites/quality_copies.py), never this spec itself, so there is no all-frames Alta.",
+ "about": "Swamp Blue Deer from the user's videos (Attachments/SwampBlueDeer, 2026-10-26): idle + attack, walking, casting, fall; 24 fps, 1280 x 720. The user, 2026-10-27: \"use the Tek for 64 and 36 frames, no need to max out this one\": only the 64- and 36-frame copies were cut. The user, 2026-11-12: \"why would you leave high out ? its the games selling point\": this spec is now cut too (the all-frames Alta), the 64 and 36 copies from it (tools/scripts/sprites/quality_copies.py v02).",
  "set": "swamp-blue-deer",
  "version": "v01",
  "figureUnits": 2.95,
@@ -12,10 +12,9 @@
    "src": "build/video-cut/swamp-blue-deer/idleatk",
    "video": "Attachments/SwampBlueDeer/SwampBlueDeerIdleATT.mp4",
    "first": 0,
-   "last": 96,
-   "loopMin": 40,
-   "loopMax": 96,
-   "mode": "loop"
+   "last": 72,
+   "mode": "pingpong",
+   "why": "the user, 2026-11-12: \"Idle animation is too short\", \"its the first 3 seconds before he does a light att move\", \"he is looking around\", \"pingpong his ass\", \"all versions\": video frames 0..72 played back and forth (was a 40-frame loop, 44..83, that jumped 4.8 x a step at its seam)"
   },
   {
    "clip": "atk",

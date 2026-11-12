@@ -304,6 +304,15 @@
     "giantBeetle": {
       "mov": 4
     },
+    "mushroomMan": {
+      "mov": 3
+    },
+    "sahagin": {
+      "mov": 4
+    },
+    "nekomata": {
+      "mov": 5
+    },
     "ashesCrawler": {
       "mov": 4
     }

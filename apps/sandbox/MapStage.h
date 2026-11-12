@@ -648,7 +648,6 @@ class MapStage final : public Stage {
     if (levelUpMoment_ && cameraMoved_) levelUpCameraMoved_ = true;
     updatePanHold();
     now_ = time;
-    updateHearthFireFlipbook(time);
     laps.lap("camera");
     updateUnits(dt);
     laps.lap("units");
@@ -848,8 +847,51 @@ class MapStage final : public Stage {
     const std::string_view activeWeather = mapWeather ? std::string_view(weatherKind_) : tempoKind;
     const float activeIntensity = mapWeather ? weatherIntensity_ : tempoIntensity;
     const float activeWind = mapWeather ? weatherWind_ : tempoWind;
+    // What is drawn with the spells' effects this frame (the torches' fire, the weather) is appended to a copy of their frame.
+    bool ownVfx = false;
+    auto ownFrame = [&]() -> VfxFrame& {
+      if (!ownVfx) weatherFrame_ = spellFx_.vfx(), ownVfx = true;
+      return weatherFrame_;
+    };
+    // The map's own fires, each a volume of flame (vfx.hlsl FireVolume) rising and brightening with the very flicker of its light
+    // (buildLights), each with its own seed; among the cards by depth, so a body in front of a fire covers it. The torches (the
+    // wall's and the stairs' brackets, on the pitch head) and the Inn's candle lanterns, not on a wall cut down by the cutaway
+    // (its bracket is not drawn); the 3D pieces' own flames (a hearth, a brazier, a candle, a campfire).
+    {
+      uint32_t quad = 0;
+      bool hasQuad = false;
+      auto appendFire = [&](glm::vec3 foot, float height, float radius, float turbulence, float pull, float seed, float flick) {
+        VfxFrame& f = ownFrame();
+        if (!hasQuad) {
+          const glm::vec3 n{0.0f, 0.0f, 1.0f};
+          quad = f.addVertices({{{-0.5f, -0.5f, 0}, 0, n, 0}, {{0.5f, -0.5f, 0}, 1, n, 0}, {{0.5f, 0.5f, 0}, 1, n, 1},
+                                {{-0.5f, -0.5f, 0}, 0, n, 0}, {{0.5f, 0.5f, 0}, 1, n, 1}, {{-0.5f, 0.5f, 0}, 0, n, 1}});
+          hasQuad = true;
+        }
+        height *= 1.0f + (flick - 1.0f) * 1.8f;
+        VfxDraw d;
+        d.gpu.model = glm::mat4(1.0f);
+        d.gpu.params0 = {time, 2.2f * flick, height, radius};
+        d.gpu.params1 = {foot, seed};
+        d.gpu.color = {turbulence, pull, 0.0f, 0.0f};
+        d.gpu.firstVertex = quad, d.gpu.vertexCount = 6, d.gpu.firstInstance = 0xFFFFFFFFu;
+        d.gpu.material = static_cast<uint32_t>(VfxMaterial::FireVolume);
+        d.gpu.sightAt = foot + glm::vec3(0.0f, height * 0.5f, 0.0f);
+        d.blend = VfxBlend::Alpha;
+        d.behindCard = true, d.cardAt = foot;
+        f.draws.push_back(d);
+      };
+      for (const ArchPiece& a : arch_) {
+        if (!a.light || a.torchFlame <= 0.0f || a.cut) continue;
+        appendFire(glm::vec3(a.x, groundOf(a.groundSmooth, a.groundHard), a.z) + a.lightAt - glm::vec3(0.0f, a.torchFlame, 0.0f), a.flameHeight, a.flameRadius,
+                   a.flameTurbulence, a.flamePull, a.light->seed, flicker(time, a.light->seed, a.light->flicker));
+      }
+      for (const ModelFire& h : modelFires_) appendFire(h.foot, h.height, h.radius, h.turbulence, 0.0f, h.seed, flicker(time, h.seed, h.flicker));
+      // (a card's flames stand in the card's own plane: pulled a little to the eye, so the card never cuts them)
+      for (const ModelFire& h : cardFires_) appendFire(h.foot, h.height, h.radius, h.turbulence, 0.4f, h.seed, flicker(time, h.seed, h.flicker));
+    }
     if (board_ && !interiorMap() && !activeWeather.empty() && activeWeather != "none" && activeIntensity>0) {
-      weatherFrame_ = spellFx_.vfx();
+      ownFrame();
       const float flash = WeatherFx::append(weatherFrame_, activeWeather, activeIntensity, activeWind,
           time, camera, cam_.target, [this](float x, float z) { return static_cast<float>(ember::groundHeightAt(*board_, look_, x, z)); }, tempoActive && !mapWeather ? &tempoMotion : nullptr);
       if (flash > 0) lights_.push_back(classicLight(cam_.target + glm::vec3(0,18,0), {.78f,.86f,1.0f}, flash*12.0f, 65.0f, 1.25f));
@@ -858,15 +900,13 @@ class MapStage final : public Stage {
         logInfo("weather: {} x{:.2f} wind {:.2f}: {} draws, {} vertices (spells {} draws)", activeWeather, activeIntensity, activeWind,
                 weatherFrame_.draws.size(), weatherFrame_.vertices.size(), spellFx_.vfx().draws.size());
       }
-      renderer.setVfx(weatherFrame_);
-    } else renderer.setVfx(spellFx_.vfx());
+    }
     // Crossing 004's local ashfall is additional to automatic campaign precipitation.
     if (tempoActive && board_ && !interiorMap() && (board_->draft().emberTiles == "ashen-crossing004-pale-v02" || board_->draft().emberTiles == "ashen-white-v03") && weatherKind_ == "ash") {
-      if (activeWeather.empty() || activeWeather == "none" || activeIntensity <= 0) weatherFrame_ = spellFx_.vfx();
-      WeatherFx::append(weatherFrame_, "ash", weatherIntensity_, weatherWind_, time, camera, cam_.target,
+      WeatherFx::append(ownFrame(), "ash", weatherIntensity_, weatherWind_, time, camera, cam_.target,
           [this](float x, float z) { return static_cast<float>(ember::groundHeightAt(*board_, look_, x, z)); });
-      renderer.setVfx(weatherFrame_);
     }
+    renderer.setVfx(ownVfx ? weatherFrame_ : spellFx_.vfx());
     renderer.setLights(lights_);
     laps.lap("hand-over");
     // The renderer outlives the stage: a room's probes (and its gate request) stayed bound after leaving it, so the next map was shaded
@@ -2992,6 +3032,10 @@ class MapStage final : public Stage {
     std::optional<ember::SceneLight> light;             // a torch bracket's fire (EmberEngine's wall-torch piece)
     glm::vec3 lightAt{0.0f};                         // ... relative to the piece's anchor on its ground
     float lightBehind = 0.0f;                        // a wall's torch: how far its light sits in front of the wall (it lights that side only)
+    // A piece's own fire (a torch, a candle lantern), a volume of flame (appendFire): how far under its light the flame's foot is
+    // (0 = none to draw), its height and radius, how wild (1 a torch, less a candle) and how far it is pulled to the eye (a
+    // lantern's glass stands in front of its candle).
+    float torchFlame = 0.0f, flameHeight = 0.7f, flameRadius = 0.17f, flameTurbulence = 1.0f, flamePull = 0.0f;
     // An opening (window, slit, door, portal, gate): the daylight it lets in as a light of its own on the room's side (buildLights,
     // the window lights; the user, 2026-10-23: "essa luz das janelas está quase inexistente", "no lado interno, no externo não").
     std::optional<glm::vec3> openingAt;
@@ -3002,6 +3046,7 @@ class MapStage final : public Stage {
     // The Inn's cutaway (the user, 2026-10-25: the near wall hid the whole hall): an Inn kit piece between the camera and what it looks
     // at is drawn cut down to its footing (cutMesh; doors and doorways: not drawn, the gap reads as the opening); updateCutaway.
     bool cuttable = false, cut = false;
+    bool ring = false;  // a round-wall piece (the Light House's tower): cut by the ring's own centre while the view is inside it
     std::optional<MeshId> cutMesh;
   };
   // The animated door (ember-arch-watchtower-door): its leaves (own meshes, swung about their hinges) and each door's state.
@@ -3294,21 +3339,26 @@ class MapStage final : public Stage {
         piece.light = ember::SceneLight{{1.0f, 0.58f, 0.26f}, 11.0f, 4.68f, 1.0f, 1.0f, static_cast<float>(std::fmod(p.x * 7.31 + p.y * 3.17, 6.28))};
         piece.lightAt = {static_cast<float>(std::sin(a)) * out, 4.2f * 0.62f + 1.3f, static_cast<float>(std::cos(a)) * out};
         piece.lightBehind = out - static_cast<float>(0.32 * def->wallThicknessScale * 0.5);  // back to the wall's face
+        piece.torchFlame = 0.4f;  // the pitch head's top
       }
       if (def->emberStyle == "inn-sconce") {
-        // The Inn's candle lantern (2026-10-22): a candle's light at its flame (the wall torch's colour, a little over half its
-        // strength and reach), on the room's side of the wall.
+        // The Inn's candle lantern (2026-10-22): a candle's light at its flame (the wall torch's colour, about three quarters of
+        // its strength and nearly its reach), on the room's side of the wall.
         const double a = ember::emberAxisAngle(rot, connections);
         const std::array<double, 2> at = ember::innSconceLight(*def);
         const float out = static_cast<float>(at[0]);
-        piece.light = ember::SceneLight{{1.0f, 0.58f, 0.26f}, 6.5f, 3.6f, 1.0f, 1.0f, static_cast<float>(std::fmod(p.x * 7.31 + p.y * 3.17, 6.28))};
+        piece.light = ember::SceneLight{{1.0f, 0.58f, 0.26f}, 8.1f, 4.5f, 1.0f, 1.0f, static_cast<float>(std::fmod(p.x * 7.31 + p.y * 3.17, 6.28))};
         piece.lightAt = {static_cast<float>(std::sin(a)) * out, static_cast<float>(at[1]), static_cast<float>(std::cos(a)) * out};
+        // the candle's flame, standing on the candle inside the open cage (its light is at the flame's middle): small and calm.
+        // A quarter more light and reach than before (the user, 2026-11-12: "around 25% larger emission").
+        piece.torchFlame = 0.09f, piece.flameHeight = 0.17f, piece.flameRadius = 0.035f, piece.flameTurbulence = 0.3f;
         piece.lightBehind = out - static_cast<float>(0.32 * def->wallThicknessScale * 0.5);
       }
       if (const auto flame = ember::emberStairFlame(*def, rot)) {
         // The stairs' torch: Ember's wall torch numbers, at its flame.
         piece.light = ember::SceneLight{{1.0f, 0.58f, 0.26f}, 11.0f, 4.68f, 1.0f, 1.0f, static_cast<float>(std::fmod(p.x * 5.17 + p.y * 2.31, 6.28))};
         piece.lightAt = {static_cast<float>((*flame)[0]), static_cast<float>((*flame)[1]) + 0.15f, static_cast<float>((*flame)[2])};
+        piece.torchFlame = 0.37f;
       }
       if (stairs) stairPieces_.push_back({static_cast<float>(x), static_cast<float>(z)});
       // Luz das janelas, 100% interior (the user, 2026-10-21: "a única coisa que vem de fora é a luz em si ... nas superfícies
@@ -3368,6 +3418,7 @@ class MapStage final : public Stage {
         // hide the door I'm trying to open").
         if (def->emberStyle == "wall" || def->emberStyle == "window" || def->emberStyle == "slit" || def->emberStyle == "wall-torch") {
           piece.cuttable = true;
+          piece.ring = def->round;
           ember::ArchitectureDef low = *def;
           low.emberStyle = "wall";
           low.heightScale = def->heightScale * kCutHeight / std::max(maxY, 0.1f);
@@ -3443,13 +3494,34 @@ class MapStage final : public Stage {
   void updateCutaway(const Camera& camera) {
     glm::vec2 forward{camera.forward.x, camera.forward.z};
     const float len = glm::length(forward);
+    // A round wall (the Light House's tower, round pieces; the user, 2026-11-11: the circular wall's occlusion glitched the picture
+    // behind): measured from the pivot, the ring came down piece by piece, a full-height piece left standing beside a cut one on the
+    // near side. While the view looks inside the ring, its whole near half comes down instead, by the ring's own centre: one
+    // straight line across the tower, the same wherever the pivot is in the room.
+    glm::vec2 ringCentre{0.0f};
+    float ringRadius = 0.0f;
+    int ringCount = 0;
+    for (const ArchPiece& a : arch_)
+      if (a.cuttable && a.ring) ringCentre += glm::vec2(a.x, a.z), ++ringCount;
+    if (ringCount >= 6) {
+      ringCentre /= static_cast<float>(ringCount);
+      for (const ArchPiece& a : arch_)
+        if (a.cuttable && a.ring) ringRadius += glm::length(glm::vec2(a.x, a.z) - ringCentre);
+      ringRadius /= static_cast<float>(ringCount);
+    }
+    const bool insideRing = ringRadius > 1.0f && glm::length(glm::vec2(cam_.target.x, cam_.target.z) - ringCentre) < ringRadius;
     bool changed = false;
     for (ArchPiece& a : arch_) {
       if (!a.cuttable) continue;
       bool cut = false;
       if (!flat_ && len > 0.2f) {
-        const float d = glm::dot(glm::vec2(a.x - cam_.target.x, a.z - cam_.target.z), forward / len);
-        cut = a.cut ? d < -0.8f : d < -1.2f;
+        if (a.ring && insideRing) {
+          const float d = glm::dot(glm::vec2(a.x, a.z) - ringCentre, forward / len);
+          cut = a.cut ? d < 0.05f * ringRadius : d < -0.05f * ringRadius;  // a little hysteresis at the sides while the camera turns
+        } else {
+          const float d = glm::dot(glm::vec2(a.x - cam_.target.x, a.z - cam_.target.z), forward / len);
+          cut = a.cut ? d < -0.8f : d < -1.2f;
+        }
       }
       if (cut != a.cut) a.cut = cut, changed = true;
     }
@@ -3859,7 +3931,7 @@ class MapStage final : public Stage {
   void placeModels() {
     modelsPlaced_ = true;
     std::vector<InstanceGpu> instances;
-    hearthFireInstances_.clear();
+    modelFires_.clear();
     modelSightCells_.clear();
     modelSightVersion_ = UINT64_MAX;
     pieceBoxes_.clear();
@@ -3926,7 +3998,9 @@ class MapStage final : public Stage {
       }
       // Tall scenery uses its footprint, not just a centre buried inside its own canopy. Draw it only while some part is in
       // current line of sight; explored ground must not leave a grey tree silhouette behind.
-      if (fog_ && m.height >= kOccluderHeight) {
+      // (Not a piece that burns: a brazier or a lantern out of sight stays where it was last seen, as its 2D card did, with its fire;
+      // hidden, only its flame was left standing: the user, 2026-11-12, "only the fire appears".)
+      if (fog_ && m.height >= kOccluderHeight && m.fires.empty()) {
         std::vector<ember::HexPoint> cells;
         const float hx = (h->boundsMax[0] - h->boundsMin[0]) * 0.5f * k;
         const float hz = (h->boundsMax[2] - h->boundsMin[2]) * 0.5f * k;
@@ -3942,7 +4016,17 @@ class MapStage final : public Stage {
         for (uint32_t leaf : leafInstances) modelSightCells_.push_back({leaf, cells});  // a gate's leaves: the gate's hexes
         modelSightCells_.push_back({instanceIndex,std::move(cells)});
       }
-      if (m.id == "ember-tavern-stone-hearth") hearthFireInstances_.push_back(instanceIndex);
+      // The hearth's painted fire card is not drawn (frame 16: scene.hlsli flipbookHidden): its fire is the flames below.
+      if (m.model == "ember-stone-hearth") instances[instanceIndex].pad = 16u;  // (by its model: the 2D fireplaces are this hearth too)
+      // The piece's own flames (the editor catalogue's "fire": the hearth's tongues, a brazier's bowl, a candle, a campfire), from
+      // the model's space to the world as the instance above places it; volumes of fire (appendFire).
+      for (size_t n = 0; n < m.fires.size(); ++n) {
+        const ember::SceneFire& g = m.fires[n];
+        const glm::vec3 p = glm::vec3(g.x, g.y, g.z) * k + offset;
+        modelFires_.push_back({{c * p.x + sn * p.z + m.x, p.y + groundOf(m.groundSmooth, m.groundHard), -sn * p.x + c * p.z + m.z}, g.height * k, g.radius * k,
+                               g.turbulence, (m.light ? m.light->seed : std::fmod(m.x * 7.31f + m.z * 3.17f, 6.28f)) + 2.1f * static_cast<float>(n),
+                               m.light ? m.light->flicker : 0.8f});
+      }
       const float half = 0.5f * k * std::max(h->boundsMax[0] - h->boundsMin[0], h->boundsMax[2] - h->boundsMin[2]);
       pieceBoxes_.push_back({m.x, m.z, half, t.y + m.height});
     }
@@ -4021,7 +4105,6 @@ class MapStage final : public Stage {
     placedInstances_ = std::move(instances);
     occluding_.assign(modelCount_, 0);
     pushInstances();
-    lastHearthFireFrame_ = -1;
     placedLook_ = look_;
   }
 
@@ -4077,17 +4160,6 @@ class MapStage final : public Stage {
     }
     if (changed) pushInstances();
     if (std::getenv("EMBER_STREAM_CHECK")) logInfo("stream visibility: {}/{} tall models in current line of sight", visible, modelSightCells_.size());
-  }
-
-  void updateHearthFireFlipbook(float time) {
-    if (hearthFireInstances_.empty()) return;
-    int frame = static_cast<int>(std::floor(time * 14.0f)) % 16;
-    if (frame < 0) frame += 16;
-    if (frame == lastHearthFireFrame_) return;
-    for (const uint32_t index : hearthFireInstances_)
-      if (index < placedInstances_.size()) placedInstances_[index].pad = static_cast<uint32_t>(frame);
-    pushInstances();
-    lastHearthFireFrame_ = frame;
   }
 
   // One card: the whole art spans w x h world units with its bottom centre at `local` (card-local x along
@@ -4412,7 +4484,7 @@ class MapStage final : public Stage {
         if (p && p->pace.empty()) p = nullptr;
         if (p) shown = chosen;
       }
-      const SpriteClipId clip = p ? sprites_.find(artSet(*p), p->clip) : sprites_.find(sceneArtSet(u, entry), u.clip);
+      const SpriteClipId clip = p ? sprites_.find(artSet(*p, artTier(u, entry)), p->clip) : sprites_.find(sceneArtSet(u, entry), u.clip);
       if (clip == kNoSpriteClip) {
         ++missing_;
         if (ui < shownLast_.size() && shownLast_[ui] != 2) logWarn("unit {} not drawn: no sprite clip for pose '{}'", u.name, shown), shownLast_[ui] = 2;
@@ -4445,7 +4517,7 @@ class MapStage final : public Stage {
       // full clip's frame mapped to the copy's, so the pose keeps its length and its blow lands at the same moment. A copy cut
       // with an integer step (every Nth frame: Voss's Leve, the user 2026-10-27) shows frame f / N: one fixed time a frame.
       if (const uint32_t n = sprites_.header(clip).frames, full = static_cast<uint32_t>(p ? p->frames : u.frames); n > 0 && full > n) {
-        const uint32_t step = lightStepOf(p ? p : scenePose(u, entry));
+        const uint32_t step = lightStepOf(p ? p : scenePose(u, entry), artTier(u, entry));
         frame = std::min(n - 1, step > 0 ? frame / step : static_cast<uint32_t>(static_cast<uint64_t>(frame) * n / full));
       }
       // A unit drawn at its own size (content/unit-size.json; the user, 2026-10-22: the Cultista Ancestral ~10% smaller), every
@@ -4608,6 +4680,7 @@ class MapStage final : public Stage {
     fireLightsFrom_ = fireLightsTo_ = lights_.size();
     fireFlicker_.clear();
     fireUpright_.clear();
+    cardFires_.clear();
     // A map light sits on its flame as the card draws it (the user, 2026-10-18: the lights were "completely off set"):
     // the card's axis and layer step (addCard), its picture's bottom edge, then up the card along the same lean as
     // sprites.hlsl VSMain when the cards lean to the camera; Ember's floor of minHeight over the ground kept.
@@ -4644,6 +4717,24 @@ class MapStage final : public Stage {
       fireFlicker_.push_back(flicker(time, d.light->seed, d.light->flicker));
       lights_.push_back(carried(at, flameLight(d.id) ? kFlameLightColor : d.light->color, d.light->intensity * power, d.light->radius * fireRadiusMul(), height,
                                 fireFlicker_.back()));
+      // The flames drawn over the card's painted ones (a burning house): each foot where the picture has it, on the card as it
+      // is drawn (the same way up the card as the light above).
+      if (!d.fires.empty()) {
+        float bottom = d.art.baseV, nudge = 0.0f;
+        glm::vec3 upCard{0.0f, 1.0f, 0.0f};
+        const glm::vec3 facing{-right.z, 0.0f, right.x};
+        if (clip != kNoSpriteClip) {
+          const SpriteClipHeader& c = sprites_.header(clip);
+          bottom = 1.0f - (static_cast<float>(c.cropY) + c.contentHeight) / static_cast<float>(c.sourceHeight);
+          nudge = d.nudge, upCard = lean;
+        }
+        for (size_t n = 0; n < d.fires.size(); ++n) {
+          const ember::SceneCardFire& g = d.fires[n];
+          const glm::vec3 foot = base + right * ((g.u - d.art.baseU) * d.w * (d.mirror ? -1.0f : 1.0f)) + facing * nudge +
+                                 glm::vec3(0.0f, (bottom - d.art.baseV) * d.h, 0.0f) + upCard * ((g.v - bottom) * d.h);
+          cardFires_.push_back({foot, g.height, g.radius, g.turbulence, d.light->seed + 2.1f * static_cast<float>(n), d.light->flicker});
+        }
+      }
     }
     // A 3D piece with its own fire (the Meshy hearth; models.json "light"): lit as every other light-giving decoration.
     for (const ember::SceneModel& m : scene_->models) {
@@ -5255,39 +5346,81 @@ class MapStage final : public Stage {
   // lists no longer decide anything): Alta = the full clip; Média = the pose's 64-frame copy where it has one; Leve = its 36-frame
   // copy, else the Média one; a pose without a copy plays its full clip in every setting. Leve never halves anything (halved frames
   // pixelate: "anything less is just nasty looking"); only Alta's fallback when the GPU is short halves full clips, for everyone.
+  // Each choice taken when the fight loads (pinUnitArt): Média or Leve draws a pose's 64-frame copy, Leve its 36-frame one (which
+  // wins over the Média one), halve = Extra baixa (Leve's copies, every clip held at half resolution).
+  struct ArtTier {
+    bool medium = false, light = false, halve = false;
+  };
+  static constexpr size_t kArtParty = 0, kArtSummon = 1, kArtEnemy = 2;
   void pinUnitArt() {
     // Extra baixa (the user, 2026-11-06: "resolução extra baixa com a metade da resolução da baixa e frames de 36 normais"):
     // Leve's copies, every clip pinned as two versions with the light one asked, so each is held from kBaseFirstMip: half of
     // Leve's resolution, the same frames.
     extraLowArt_ = gamePrefs().characters == "extra";
     sprites_.setLight(extraLowArt_);
-    mediumArt_ = gamePrefs().characters == "media" || gamePrefs().characters == "leve" || extraLowArt_;
     // A pose with a Leve copy of its own (HeroPose::light: Voss's 36-frame cut, the user 2026-10-22: "36 is on with LEVE, 64 is
     // on with Medium, High plays the full version") draws it in Leve.
-    lightArt_ = gamePrefs().characters == "leve" || extraLowArt_;
+    // Three choices (the user, 2026-11-12: "Summon Resolution should have its own toggle in the graphics options", "we should also
+    // split the Enemy Units graphical quailty"): Personagens for the party and the neutrals, Invocações for the summons, Inimigos
+    // for the enemy side; only Personagens has Extra baixa's halving.
+    const auto tier = [](const std::string& v, bool extra) {
+      return ArtTier{v == "media" || v == "leve" || extra, v == "leve" || extra, extra};
+    };
+    artTiers_[kArtParty] = tier(gamePrefs().characters, extraLowArt_);
+    artTiers_[kArtSummon] = tier(gamePrefs().summons, false);
+    artTiers_[kArtEnemy] = tier(gamePrefs().enemies, false);
     for (size_t i = 0; i < scene_->units.size(); ++i) pinArt(scene_->units[i], i < unitCatalog_.size() ? unitCatalog_[i] : nullptr);
+  }
+  // A summon's class: content/data/summons.json's classes and EmberEngine's own classes of role Invocação (content/ember-classes.json:
+  // the Hipóstase).
+  static bool summonClass(const std::string& key) {
+    static const std::set<std::string> keys = [] {
+      std::set<std::string> out;
+      const auto read = [](const char* path) {
+        std::ifstream in(path, std::ios::binary);
+        return in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+      };
+      const nlohmann::json s = read("content/data/summons.json");
+      if (s.is_object() && s.contains("classes") && s["classes"].is_object())
+        for (const auto& [k, v] : s["classes"].items()) out.insert(k);
+      const nlohmann::json e = read("content/ember-classes.json");
+      if (e.is_object() && e.contains("classes") && e["classes"].is_object())
+        for (const auto& [k, v] : e["classes"].items())
+          if (v.is_object() && v.value("role", std::string()) == "Invocação") out.insert(k);
+      return out;
+    }();
+    return keys.contains(key);
+  }
+  // Which choice draws a unit: the enemy side by Inimigos (a summon's class fighting for the enemy too), else a summon's class by
+  // Invocações, else Personagens.
+  const ArtTier& artTier(const ember::SceneUnit& u, const ember::Hero* entry) const {
+    if (u.side == "enemy") return artTiers_[kArtEnemy];
+    if (entry && summonClass(entry->key)) return artTiers_[kArtSummon];
+    return artTiers_[kArtParty];
   }
   // A pose drawn from its own Média / Leve copy is never halved on top of it, not even by Alta's fallback when the GPU is short
   // (the user, 2026-10-25: "tem como fazer a leve 36 quadros sem pixelar as imagens? fica bem feio mesmo": 36 frames halved came
   // out ~305 px of figure).
   void pinArt(const ember::SceneUnit& u, const ember::Hero* entry) {
+    const ArtTier& t = artTier(u, entry);
     const std::string& own = sceneArtSet(u, entry);
-    sprites_.pin(own, u.clip, extraLowArt_ || own == u.set);
+    sprites_.pin(own, u.clip, t.halve || own == u.set);
     if (entry)
       for (const ember::HeroPose& p : entry->poses) {
-        const std::string& set = artSet(p);
-        sprites_.pin(set, p.clip, extraLowArt_ || set == p.set);
+        const std::string& set = artSet(p, t);
+        sprites_.pin(set, p.clip, t.halve || set == p.set);
       }
   }
-  const std::string& artSet(const ember::HeroPose& p) const {
-    if (lightArt_ && !p.light.empty()) return p.light;
-    return mediumArt_ && !p.medium.empty() ? p.medium : p.set;
+  static const std::string& artSet(const ember::HeroPose& p, const ArtTier& t) {
+    if (t.light && !p.light.empty()) return p.light;
+    return t.medium && !p.medium.empty() ? p.medium : p.set;
   }
   // A scene unit's own clip (its idle) is one of its catalog poses: the same copy as that pose.
   const std::string& sceneArtSet(const ember::SceneUnit& u, const ember::Hero* entry) const {
-    if (mediumArt_ && entry)
+    const ArtTier& t = artTier(u, entry);
+    if (t.medium && entry)
       for (const ember::HeroPose& p : entry->poses)
-        if (p.set == u.set && p.clip == u.clip && (!p.medium.empty() || (lightArt_ && !p.light.empty()))) return artSet(p);
+        if (p.set == u.set && p.clip == u.clip && (!p.medium.empty() || (t.light && !p.light.empty()))) return artSet(p, t);
     return u.set;
   }
   // The catalog pose a scene unit's own clip (its idle) is, if any.
@@ -5298,12 +5431,11 @@ class MapStage final : public Stage {
     return nullptr;
   }
   // The step of the pose's Leve copy (every Nth frame) when that copy is the one drawn; 0 = none.
-  uint32_t lightStepOf(const ember::HeroPose* p) const {
-    return p && lightArt_ && !p->light.empty() && p->lightStep > 0 ? static_cast<uint32_t>(p->lightStep) : 0;
+  static uint32_t lightStepOf(const ember::HeroPose* p, const ArtTier& t) {
+    return p && t.light && !p->light.empty() && p->lightStep > 0 ? static_cast<uint32_t>(p->lightStep) : 0;
   }
-  bool mediumArt_ = false;  // Personagens: Média or Leve, taken when the fight loads (pinUnitArt)
-  bool lightArt_ = false;   // Personagens: Leve (a pose's own Leve copy wins over its Média one)
-  bool extraLowArt_ = false;  // Personagens: Extra baixa (Leve's copies, every clip held at half resolution)
+  ArtTier artTiers_[3];
+  bool extraLowArt_ = false;  // Personagens: Extra baixa
   // The battle HUD's pictures (every unit's portrait, each hero's 12 sockets: spell art up to 784 x 1168) decoded on a
   // worker during the loading screen (the hunt for the battle hitch, 2026-10-19: read on the main thread the first time the
   // bar showed them, 45-90 ms).
@@ -5409,7 +5541,13 @@ class MapStage final : public Stage {
     const auto ours = [&](const std::vector<ember::MapSpawn>& list) {
       return std::any_of(list.begin(), list.end(), [&](const ember::MapSpawn& s) { return emberClasses.contains(s.classId); });
     };
-    return std::any_of(d.decorations.begin(), d.decorations.end(), [](const ember::MapDecoration& m) { return m.id.starts_with("ember-"); }) ||
+    // ... or a decoration the catalogue now gives a 3D model (the barricades, the fire props): its exported scene still has the card
+    const auto ourModel = [](const ember::MapDecoration& m) {
+      if (m.id.starts_with("ember-")) return true;
+      const ember::CatalogDecoration* def = architectureCatalog().decoration(m.id);
+      return def && (def->model.has_value() || !def->cardFires.empty());  // (or flames to draw over its card)
+    };
+    return std::any_of(d.decorations.begin(), d.decorations.end(), ourModel) ||
            ours(d.enemySpawns) || ours(d.neutralSpawns);
   }
   // EmberEngine's own props set to "Bloquear caminho": export_battle.ts (Ember's data.ts) has no footprint for them, so
@@ -13457,8 +13595,12 @@ class MapStage final : public Stage {
   std::vector<Volumetrics::Profile> atmosProfiles_;
   std::unordered_map<std::string, MeshId> modelMeshes_;
   std::vector<InstanceGpu> placedInstances_;
-  std::vector<uint32_t> hearthFireInstances_;
-  int lastHearthFireFrame_ = -1;
+  struct ModelFire {
+    glm::vec3 foot;
+    float height, radius, turbulence, seed, flicker;
+  };
+  std::vector<ModelFire> modelFires_;  // the 3D pieces' flames (placeModels), drawn as volumes of fire
+  std::vector<ModelFire> cardFires_;   // the flames over the 2D cards' painted ones (buildLights, each frame: the cards lean to the camera)
   std::unordered_map<const std::vector<int>*, PaceLoop> loops_;
   std::vector<SpriteInstance> drawList_;
   std::vector<SpriteInstance> frontCards_;  // casters drawn again over their own spell (Renderer::setFrontCards)

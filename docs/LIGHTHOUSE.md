@@ -73,18 +73,25 @@ where the ring runs straight (the top and bottom rows); the lantern room's glazi
 (the bottom row). The partitions inside the tower, the cottage and the cellars are the square kit. Maps: `farol002`,
 `farol-andar-2002`, `farol-topo002` (the 001s are the octagon drafts, never tested).
 
-## What is a stand-in today
+## Texturas finais aplicadas (2026-11-11)
 
-| where | today | wanted (prompt below) |
+The ten photographs below were generated as the final v01 textures, cut into seamless tiles where applicable, and registered for the
+Farol maps. The exterior path now uses the existing `hill` terrain (movement cost 2) so its cobble texture is active.
+
+| where | final asset | map registration |
 |---|---|---|
-| every `ember-arch-farol-*` wall | `walls/watchtower-v01.jpg` | 1 · `farol-wall-v01.jpg` |
-| tower floors (`farol-andar-2`, `farol-topo`, the rooms of `farol`) | tile set `torre-v01` | 2 · `farol-piso-v01` |
-| `farol-poroes` | tile set `watchtower-foundations-v01` | 3 · `farol-porao-v01` |
-| `farol` outside: grass / shore rock / path | the stock plains / ruins / nave tiles | 4, 5, 6 · `farol-relva`, `farol-costa`, `farol-caminho` |
-| `farol-gruta`: floor / wet margin / rock face | tile set `cave-v01` (the Misty Cave's) | 7, 8, 9 · `farol-gruta-chao`, `-margem`, `-parede` |
-| `farol` backdrop | none | 10 · `farol-panorama-v01.jpg` |
+| every `ember-arch-farol-*` wall | `content/textures/walls/farol-v01.jpg` | `architecture.json`, `architecture.pak` |
+| tower floors (`farol`, `farol-andar-2`, `farol-topo`) | `content/ground/farol-piso-v01.png` | set `farol-v01`, terrain `nave` |
+| headland grass | `content/ground/farol-relva-v01.png` | set `farol-v01`, terrain `plains` |
+| shore rock and dock | `content/ground/farol-costa-v01.png` | set `farol-v01`, terrain `ruins` |
+| exterior cobbled path | `content/ground/farol-caminho-v01.png` | set `farol-v01`, terrain `hill` |
+| cellars | `content/ground/farol-porao-v01.png` | set `farol-porao-v01`, terrain `nave` |
+| sea-cave floor | `content/ground/farol-gruta-chao-v01.png` | set `farol-gruta-v01`, terrain `plains` |
+| sea-cave wet margin | `content/ground/farol-gruta-margem-v01.png` | set `farol-gruta-v01`, terrain `snow` |
+| sea-cave rock face | `content/ground/farol-gruta-parede-v01.png` | set `farol-gruta-v01`, terrain `side` |
+| exterior map backdrop | `content/backdrops/farol-panorama-v02-alpha.png` | `emberBackdrop("farol")`, editor backgrounds, `backdrop-fit.json` |
 
-## Prompts (deliver in `Attachments/Lighthouse/` under these names, JPG or PNG at full quality)
+## Prompts used for the final v01 textures
 
 ### 1 · Pedra da torre: `farol-wall-v01.jpg` (todas as paredes do kit; 2048 x 2048, emenda nos 4 lados)
 
@@ -140,10 +147,10 @@ A photograph of a square of wet tidal sand at the water's edge inside a sea cave
 A photograph of a square of the rock wall of a sea cave, photographed square-on with the lens axis perpendicular to the wall, the frame filled edge to edge by the rock alone. Dark columnar basalt in broken vertical ribs, wet from top to bottom, the lower third below the tide line. Photographed with a 100mm macro lens on a full-frame sensor at f/11, focus stacked so the whole square stays sharp, lit by a large diffused softbox from the upper left standing in for weak daylight from the cave mouth, with a faint orange fill from the lower right as if from an ember lantern on the floor. Construction and history: a dense band of barnacles and black mussels along the lower third; above it a band of green-black weed hanging straight down; above that bare rock streaked with white salt runs and rust-orange mineral seep from the joints; fine grey ash caught on every small ledge; water beading and running in thin lines. Surface truth at close range: the basalt's fine vesicles, the barnacles' ribbed plates, the weed's wet sheen, salt as a crystalline crust, droplets catching the key. Natural sensor grain, true-to-life colour response, gentle highlight rolloff, raw file neutral grade, the frame reading as a photograph of a real cave wall. The image tiles sideways: its left edge continues into its right edge, every rib and band meeting at the same height on both sides, the tide line level across the whole width.
 ```
 
-### 10 · Panorama do mar: `farol-panorama-v01.jpg` (fundo do mapa externo; 8192 x 2048, a linha do horizonte a meia altura)
+### 10 · Panorama do mar: `farol-panorama-v02-alpha.png` (fundo do mapa externo; 8192 x 2048, a linha do horizonte a meia altura)
 
 ```
-A photograph, very wide panoramic format 4:1, of the open sea at night seen from the top of a low headland in the world of Ember Ashes, a burnt-out land under permanent ashfall, the horizon exactly at the vertical centre of the frame, the lighthouse itself outside the frame. A heavy slow swell of black water running toward the camera, white foam breaking on a scatter of low black rocks in the middle distance, the masts and ribs of two wrecked ships standing among those rocks; far along the coast on the right a line of burnt cliffs fading into haze. The sky is low unbroken cloud, slate blue-grey, lit from below by a dull orange glow coming from behind the camera, with a paler band of cold light along the horizon where the cloud thins; fine ash falling through the whole depth and catching that orange light as slow bright specks. Photographed with a 35mm lens on a full-frame sensor at f/8 from a tripod, a long exposure of several seconds that smooths the far water into mist and leaves the near foam streaked, the exposure set for the sky so the sea sits a stop dark. Natural sensor grain, true-to-life colour response, gentle highlight rolloff, raw file neutral grade, the frame reading as a photograph of a real place. The foreground at the bottom of the frame is flat dark rock with ash on it, so it can sit under a game board; the left and right edges of the image continue into each other seamlessly.
+A photograph, very wide panoramic format 4:1, of the open sea at night seen from the top of a low headland in the world of Ember Ashes, the horizon exactly at the vertical centre of the frame, the lighthouse itself outside the frame. This is a foreground and horizon cutout for a game: the entire sky area above the horizon and around all masts and cliff silhouettes must be fully transparent real alpha, with no sky, clouds, stars, haze colour, or painted background. The dynamic in-game weather supplies the sky. Below the horizon show a heavy swell of black water running toward the camera, white foam breaking on low black rocks, the masts and ribs of two wrecked ships among those rocks, and burnt cliffs fading into haze on the right. Keep the foreground at the bottom as flat dark rock with ash so it can sit under a game board; the left and right edges continue into each other seamlessly. Photorealistic material detail and restrained natural colour, clean anti-aliased alpha edges with no halo. Export a full-quality RGBA PNG, 8192 x 2048.
 ```
 
 ## Instructions for the artist agent (apply each texture as it arrives)
@@ -190,7 +197,7 @@ for those floors (new serials), then `add_lighthouse_location.py`. If the user h
 (a serial higher than the generator's last), do not regenerate: change `emberTiles` in a copy of their newest serial instead and
 save it as the next one.
 
-**D. The panorama (10).** Copy to `content/backdrops/farol-panorama-v01.jpg`, register it as a background in the editor catalogue
+**D. The panorama (10).** Copy to `content/backdrops/farol-panorama-v02-alpha.png`, register it as a background in the editor catalogue
 the way the other `scene-*` entries are (`editor.backgrounds`), and add the map's entry to `content/data/backdrop-fit.json`.
 The panorama rule: an entry is locked once the user approves it; change it only when asked.
 

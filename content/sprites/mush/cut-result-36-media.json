@@ -1,0 +1,197 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Mush/MushroomManIdleCasting.mp4",
+   "first": 0,
+   "last": 88,
+   "bootRow": 677,
+   "bootRows": [
+    676,
+    678
+   ],
+   "frameCountFrom": 89,
+   "figurePx": 699.0,
+   "scaledTo": 609.5,
+   "frames": 36,
+   "frameMs": 103.00925925925925,
+   "nat": [
+    551,
+    620
+   ],
+   "crop": [
+    4,
+    4,
+    544,
+    612
+   ],
+   "box": {
+    "w": 2.61788,
+    "h": 2.94571,
+    "foot": 0.1737
+   },
+   "pattern": "content/sprites/mush/base-media36-v01/base-{}.png"
+  },
+  "cast": {
+   "video": "Attachments/Mush/MushroomManIdleCasting.mp4",
+   "first": 92,
+   "last": 200,
+   "bootRow": 677,
+   "bootRows": [
+    677,
+    677
+   ],
+   "frameCountFrom": 109,
+   "figurePx": 699.0,
+   "scaledTo": 609.8,
+   "frames": 36,
+   "frameMs": 126.15740740740739,
+   "nat": [
+    533,
+    622
+   ],
+   "crop": [
+    4,
+    4,
+    525,
+    614
+   ],
+   "box": {
+    "w": 2.53491,
+    "h": 2.95818,
+    "foot": 0.17395
+   },
+   "pattern": "content/sprites/mush/cast-media36-v01/cast-{}.png",
+   "impact": 0.6239
+  },
+  "move": {
+   "video": "Attachments/Mush/MusrromMenwalking.mp4",
+   "first": 0,
+   "last": 142,
+   "loopFirst": 60,
+   "loopLast": 139,
+   "seamSteps": 1.82,
+   "bootRow": 697,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "frameCountFrom": 80,
+   "figurePx": 699.0,
+   "scaledTo": 609.7,
+   "frames": 36,
+   "frameMs": 92.59259259259258,
+   "nat": [
+    600,
+    628
+   ],
+   "crop": [
+    6,
+    0,
+    589,
+    628
+   ],
+   "box": {
+    "w": 2.85021,
+    "h": 2.98322,
+    "foot": 0.09085
+   },
+   "pattern": "content/sprites/mush/move-media36-v01/move-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/Mush/MusrromMenwalking.mp4",
+   "first": 0,
+   "last": 142,
+   "loopFirst": 60,
+   "loopLast": 139,
+   "seamSteps": 1.82,
+   "bootRow": 697,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "frameCountFrom": 80,
+   "figurePx": 699.0,
+   "scaledTo": 609.7,
+   "frames": 36,
+   "frameMs": 92.59259259259258,
+   "nat": [
+    600,
+    628
+   ],
+   "crop": [
+    5,
+    0,
+    589,
+    628
+   ],
+   "box": {
+    "w": 2.85021,
+    "h": 2.98322,
+    "foot": 0.09085
+   },
+   "pattern": "content/sprites/mush/move-left-media36-v01/move-left-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/Mush/MushroomManHitandFall.mp4",
+   "first": 8,
+   "last": 60,
+   "bootRow": 679,
+   "bootRows": [
+    679,
+    679
+   ],
+   "frameCountFrom": 53,
+   "figurePx": 699.0,
+   "scaledTo": 609.9,
+   "frames": 36,
+   "frameMs": 61.34259259259258,
+   "nat": [
+    593,
+    609
+   ],
+   "crop": [
+    5,
+    3,
+    581,
+    606
+   ],
+   "box": {
+    "w": 2.81702,
+    "h": 2.89303,
+    "foot": 0.16549
+   },
+   "pattern": "content/sprites/mush/hit-media36-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Mush/MushroomManHitandFall.mp4",
+   "first": 150,
+   "last": 238,
+   "bootRow": 690,
+   "bootRows": [
+    690,
+    690
+   ],
+   "frameCountFrom": 89,
+   "figurePx": 699.0,
+   "scaledTo": 610.0,
+   "frames": 36,
+   "frameMs": 103.00925925925925,
+   "nat": [
+    654,
+    507
+   ],
+   "crop": [
+    4,
+    4,
+    645,
+    503
+   ],
+   "box": {
+    "w": 3.10744,
+    "h": 2.40898,
+    "foot": 0.11994
+   },
+   "pattern": "content/sprites/mush/death-media36-v01/death-{}.png"
+  }
+ }
+}

@@ -39,7 +39,7 @@ static const uint kMaterialBasic = 0, kMaterialMissileCore = 1, kMaterialMissile
                   kMaterialStandard = 4, kMaterialFlame = 5, kMaterialImpactParticle = 6, kMaterialImpactFlash = 7,
                   kMaterialBlessWave = 8, kMaterialSpriteSheet = 9, kMaterialVenomSmoke = 10, kMaterialPfTendril = 11, kMaterialPfCore = 12,
                   kMaterialPfShell = 13, kMaterialWebThread = 14, kMaterialFlipbookParticle = 15, kMaterialHoly = 16,
-                  kMaterialCombat = 17, kMaterialIceStorm = 18, kMaterialTextured = 19;
+                  kMaterialCombat = 17, kMaterialIceStorm = 18, kMaterialTextured = 19, kMaterialFireVolume = 21;
 
 struct Push {
   uint64_t vertices;   // VfxVertex[]
@@ -153,6 +153,54 @@ float smokeField(float3 p, float t) {
   return n;
 }
 
+// A fire's volume (kMaterialFireVolume): how much fire there is at a point (0..1) and how hot, q = the point from the fire's own
+// origin (world, y up). Three bodies of fire (d.color.z):
+//   0 a flame (a torch, a candle, a hearth's tongue): a teardrop standing on its foot, narrowing to a tip, leaning as it rises,
+//     eaten by noise that climbs with the fire: whole at the foot, torn into tongues at the top. `turb` 1 = a torch, less = calmer;
+//   1 a ball of fire in flight: a round head at the origin and a tail of flame streaming back along `tail`;
+//   2 a burst: a dome of fire of radius R on the ground at the origin, hollowing out and tearing apart as it ages (age 0..1).
+static const float kFireBound = 1.5;  // the flame's bound, in flame radii (the teardrop's widest + its sway)
+float fireNoise(float3 a, float3 b) { return noise3(a) * 0.55 + noise3(b) * 0.45; }
+float fireDensity(float3 q, float H, float R, float t, float seed, float turb, out float heat) {
+  const float h = q.y / H;
+  const float3 np = q / R;
+  const float n = fireNoise(np * float3(1.1, 0.55, 1.1) + float3(seed, -t * 2.6, seed * 1.7), np * float3(2.6, 1.3, 2.6) + float3(-seed, -t * 4.4, seed));
+  const float2 sway = float2(sin(t * 3.1 + seed + h * 4.0), cos(t * 2.3 + seed * 1.3 + h * 3.0)) * R * 0.28 * h * h * turb;
+  const float profile = R * 1.25 * smoothstep(-0.02, 0.16, h) * pow(saturate(1.0 - h), 0.65);
+  const float d = length(q.xz - sway) / max(profile, 1e-4);
+  const float dens = saturate((1.0 - d - n * (0.25 + 1.1 * h) * turb) * 1.6);
+  heat = saturate(dens * (1.15 - 0.55 * h));
+  return dens;
+}
+float fireBallDensity(float3 q, float R, float3 tail, float t, float seed, out float heat) {
+  const float L = max(length(tail), 1e-4);
+  const float3 T = tail / L;
+  const float s = dot(q, T), along = saturate(s / L);
+  const float3 np = q / R - T * (t * 5.0);  // the fire streams back from the head
+  const float n = fireNoise(np * 1.2 + seed, np * 2.7 - seed);
+  const float d = s <= 0.0 ? length(q) / R : length(q - T * s) / max(R * pow(1.0 - along, 0.7), 1e-4);
+  const float dens = saturate((1.0 - d - n * (0.22 + 1.0 * along)) * 1.6);
+  heat = saturate(dens * (1.2 - 0.6 * along));
+  return dens;
+}
+float fireBurstDensity(float3 q, float R, float age, float t, float seed, out float heat) {
+  heat = 0.0;
+  if (q.y < 0.0) return 0.0;  // nothing under the ground
+  const float3 np = q / R * 3.0;
+  const float n = fireNoise(np + float3(seed, -t * 1.8, 0.0), np * 2.4 + float3(0.0, -t * 3.0, seed));
+  const float d = length(q * float3(1.0, 1.25, 1.0)) / R;
+  const float hollow = smoothstep(age * 1.1 - 0.5, age * 1.1, d + 0.15);
+  const float dens = saturate((1.0 - d - n * (0.3 + 1.4 * age)) * 1.6) * hollow;
+  heat = saturate(dens * (1.25 - age));
+  return dens;
+}
+// The sphere a fire's volume lies in (xyz centre, w radius).
+float4 fireBound(VfxDraw d) {
+  if (d.color.z < 0.5) return float4(d.params1.xyz + float3(0.0, d.params0.z * 0.575, 0.0), length(float2(d.params0.w * kFireBound, d.params0.z * 0.575)));
+  const float3 tail = d.model[0].xyz;
+  return float4(d.params1.xyz + tail * 0.5, d.params0.w * 1.35 + length(tail) * 0.5);
+}
+
 struct VSOut {
   float4 position : SV_Position;
   float3 local : TEXCOORD0;  // GLSL vP (the displaced, scaled object-space position)
@@ -192,6 +240,21 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
     o.world = w;
     o.normal = float3(0, 1, 0);
     o.particleB = inst.b;
+    if (sight.local <= 0.0) o.position = float4(0, 0, -1, 1);
+    return o;
+  }
+  if (d.material == kMaterialFireVolume) {
+    // A camera-facing quad (corners at +-0.5) over the fire's bounding sphere; the fragment walks the eye's ray through the fire.
+    // d.color.y pulls the quad towards the eye (world units) without moving it on screen: a candle behind its lantern's glass.
+    const float4 bound = fireBound(d);
+    const float3 right = float3(f.view[0].x, f.view[1].x, f.view[2].x), up = float3(f.view[0].y, f.view[1].y, f.view[2].y);
+    float3 w = bound.xyz + (right * v.position.x + up * v.position.y) * (bound.w * 2.2);
+    const float3 toEye = f.cameraPosition - w;
+    w += toEye * min(d.color.y / max(length(toEye), 1e-3), 0.9);
+    o.position = mul(float4(w, 1.0), f.viewProjection);
+    o.local = v.position;
+    o.world = w;
+    o.normal = float3(0, 1, 0);
     if (sight.local <= 0.0) o.position = float4(0, 0, -1, 1);
     return o;
   }
@@ -807,6 +870,65 @@ float4 PSMain(VSOut i) : SV_Target0 {
       c += gTextures[NonUniformResourceIndex(emissiveMap)].Sample(smp, i.uv).rgb * tint * d.params1.w * push.brightness;
     const float opacity = saturate(d.color.a);
     return float4(applyVolume(f, c, i.world) * i.sight * opacity, opacity);
+  } else if (d.material == kMaterialFireVolume) {
+    // A real fire in 3D: the eye's ray is walked through the fire's volume, adding up the light of what burns along it, so it is
+    // a body of fire from every side. params0 = time, strength, height (the flame's), radius; params1 = origin (world), seed;
+    // color = turbulence, pull to the eye, body (0 flame, 1 ball, 2 burst), age (the burst's); model[0].xyz = the ball's tail.
+    const MeshFrame f = loadFrame(push.frame);
+    const float t = d.params0.x, H = d.params0.z, R = d.params0.w, seed = d.params1.w, body = d.color.z;
+    const float3 tail = d.model[0].xyz;
+    const float3 rd = normalize(i.world - f.cameraPosition), oc = f.cameraPosition - d.params1.xyz;
+    float t0 = 0.0, t1 = 1e9;
+    if (body < 0.5) {
+      // the flame's bound: an upright cylinder from the foot to a little over the tip
+      const float A = dot(rd.xz, rd.xz), B = dot(oc.xz, rd.xz), C = dot(oc.xz, oc.xz) - R * R * kFireBound * kFireBound;
+      if (A > 1e-6) {
+        const float disc = B * B - A * C;
+        if (disc <= 0.0) discard;
+        const float s = sqrt(max(disc, 0.0));
+        t0 = (-B - s) / A, t1 = (-B + s) / A;
+      } else if (C > 0.0) discard;
+      if (abs(rd.y) > 1e-6) {
+        const float ya = -oc.y / rd.y, yb = (H * 1.15 - oc.y) / rd.y;
+        t0 = max(t0, min(ya, yb)), t1 = min(t1, max(ya, yb));
+      } else if (oc.y < 0.0 || oc.y > H * 1.15) discard;
+    } else {
+      const float4 bound = fireBound(d);
+      const float3 sc = f.cameraPosition - bound.xyz;
+      const float B = dot(sc, rd), disc = B * B - (dot(sc, sc) - bound.w * bound.w);
+      if (disc <= 0.0) discard;
+      const float s = sqrt(max(disc, 0.0));
+      t0 = -B - s, t1 = -B + s;
+    }
+    t0 = max(t0, 0.0);
+    if (t1 <= t0) discard;
+    static const int kSteps = 16;
+    const float dt = (t1 - t0) / kSteps;
+    // each pixel starts its walk a little differently: the steps never show as bands
+    float at = t0 + dt * frac(52.9829189 * frac(dot(i.position.xy, float2(0.06711056, 0.00583715))));
+    static const float3 red = float3(0.55, 0.06, 0.01), orange = float3(1.0, 0.42, 0.05), yellow = float3(1.0, 0.82, 0.35), white = float3(1.0, 0.97, 0.88);
+    const float thick = 2.2 / (body > 1.5 ? R * 0.35 : R);
+    float3 light = 0.0;
+    float through = 1.0;  // how much of what is behind still shows
+    for (int k = 0; k < kSteps; ++k, at += dt) {
+      const float3 q = oc + rd * at;
+      float heat;
+      float dens;
+      if (body < 0.5) dens = fireDensity(q, H, R, t, seed, d.color.x, heat);
+      else if (body < 1.5) dens = fireBallDensity(q, R, tail, t, seed, heat);
+      else dens = fireBurstDensity(q, R, d.color.w, t, seed, heat);
+      if (dens <= 0.0) continue;
+      float3 col = lerp(red, orange, smoothstep(0.0, 0.4, heat));
+      col = lerp(col, yellow, smoothstep(0.4, 0.72, heat));
+      col = lerp(col, white, smoothstep(0.78, 1.0, heat));
+      // a flame's foot burns blue where it is thin
+      if (body < 0.5) col = lerp(col, float3(0.1, 0.28, 0.95), smoothstep(0.2, 0.0, q.y / H) * (1.0 - heat) * 0.8);
+      const float cover = 1.0 - exp(-dens * thick * dt);
+      light += through * cover * col * (0.6 + 1.4 * heat);
+      through *= 1.0 - cover;
+    }
+    const float seen = i.sight * volumeTransmittance(f, i.world);
+    return float4(light * d.params0.y * push.brightness * seen, (1.0 - through) * 0.55 * i.sight);
   } else if (d.material == 20u) {
     // Analytic optical footprints: clean subpixel edges, no textures or noisy screen overlay.
     const float2 q = i.uv * 2.0 - 1.0;

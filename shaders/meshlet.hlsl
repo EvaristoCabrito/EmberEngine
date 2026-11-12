@@ -154,6 +154,7 @@ uint PSMain(VertexOut v, PrimitiveIn p) : SV_Target0 {
     if (m.baseColorTexture != kNoTexture)
       alpha *= gTextures[NonUniformResourceIndex(m.baseColorTexture)].Sample(gSamplers[f.materialSampler],
                                                                               flipbookUv(v.uv, m.flags, inst.pad)).a;
+    if (flipbookHidden(m.flags, inst.pad)) alpha = -1.0;
     clip(alpha - m.alphaCutoff);
   }
   if (inst.flags & kInstanceCameraFade) {
@@ -178,6 +179,7 @@ void PSShadow(VertexOut v, PrimitiveIn p) {
     if (m.baseColorTexture != kNoTexture)
       alpha *= gTextures[NonUniformResourceIndex(m.baseColorTexture)].Sample(gSamplers[f.materialSampler],
                                                                               flipbookUv(v.uv, m.flags, inst.pad)).a;
+    if (flipbookHidden(m.flags, inst.pad)) alpha = -1.0;
     clip(alpha - m.alphaCutoff);
   }
 }

@@ -24,7 +24,9 @@ class Fireball {
  public:
   // origin: Ember's caster point (anchor + 0.9 up); target: the target hex's ground + 0.04; aoeRadius: the area's
   // radius (the farthest struck cell's distance + 1, BattleSpells3D). World space / world units.
-  Fireball(glm::vec3 origin, glm::vec3 target, float aoeRadius, float start);
+  // volume: Bola de Fogo 02 (ours): the same flight and timing, the ball a real volume of fire with a tail (VfxMaterial::
+  // FireVolume), the impact a dome of fire that bursts and tears apart, with 01's sparks, embers and smoke.
+  Fireball(glm::vec3 origin, glm::vec3 target, float aoeRadius, float start, bool volume = false);
 
   static float travelSeconds(glm::vec3 origin, glm::vec3 target);  // the flight: 1.25-2.5 s
   float impactTime() const { return start_ + travel_; }
@@ -66,6 +68,7 @@ class Fireball {
   glm::vec3 start3_, target_, origin_;  // Ember frame: flight start, target, impact origin
   float aoe_ = 1, impactScale_ = 1;
   float start_ = 0, travel_ = 0, duration_ = 1.45f;
+  bool volume_ = false;
   std::vector<Particle> particles_;
 };
 

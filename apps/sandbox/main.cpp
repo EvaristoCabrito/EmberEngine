@@ -79,6 +79,12 @@
 #include "assets/AssetManager.h"
 #include "core/Jobs.h"
 #include "core/Log.h"
+#include "core/StallWatch.h"
+
+// user32 (declared here: this file does not take windows.h)
+extern "C" __declspec(dllimport) void __stdcall DisableProcessWindowsGhosting(void);
+#pragma comment(lib, "user32.lib")
+
 #include "debug/PerfOverlay.h"
 #include "platform/IoQueue.h"
 #include "platform/Window.h"
@@ -838,11 +844,13 @@ bool Services::frame(DebugUi& ui, Renderer& renderer, Stage* stage, VkExtent2D s
   // battle left for the world map) left the renderer waiting on its destroyed timeline semaphore (vkQueueSubmit2: Invalid VkSemaphore,
   // the user's log of 2026-10-23).
   renderer.waitFor(VK_NULL_HANDLE, 0);
+  ember::stallStep("the screen's frame");
   // The game's one sprite system streams on every screen, the title's included (SharedSprites.h), before the screen asks for clips.
   if (SharedSprites* shared = SharedSprites::get()) shared->frame(renderer);
   else renderer.waitForSprites(VK_NULL_HANDLE, 0);
   if (stage) stage->frame(renderer, size);
   const double stageMs = msSince(start) - assetsMs;
+  ember::stallStep("the menus");
   ui.newFrame(size, dt);
   perf.draw({&jobs, &io, &assets, &renderer});
   if (streamTest) streamTest->drawPanel();
@@ -850,7 +858,9 @@ bool Services::frame(DebugUi& ui, Renderer& renderer, Stage* stage, VkExtent2D s
   if (stage && stage->overlay) stage->overlay();
   if (curtain) curtain();
   const double uiMs = msSince(start) - assetsMs - stageMs;
+  ember::stallStep("drawing the frame");
   const bool ok = render();
+  ember::stallStep("after the frame");
   const double frameMs = msSince(start);
   const double busyMs = std::max(0.0, frameMs - renderer.lastWaitMilliseconds());
   // A frame the main thread spent over 50 ms on: where the time went (the hunt for the rare 140-220 ms hitch, 2026-10-19).
@@ -1541,7 +1551,12 @@ int runWindow(const Options& o) {
 
   const auto start = Clock::now();
   auto last = start;
+  ember::startStallWatch();
+  // A map is built on this thread, with no window message read meanwhile: past 5 s Windows called the game "not responding" and
+  // closed it on the next click (the user's hangs of 2026-11-12, every one inside MapStage's constructor). The window stays the game's.
+  DisableProcessWindowsGhosting();
   while (window.pumpEvents()) {
+    ember::stallBeat();
     window.pixelSize(width, height);
     if (width == 0 || height == 0) { last = Clock::now(); continue; }  // minimised
     const auto now = Clock::now();
@@ -1572,6 +1587,7 @@ int runWindow(const Options& o) {
     if (!presented && swapchain->recreate(width, height)) renderer.resize(swapchain->extent());
     // --measure is a bounded live test as well as an off-screen measurement.
     if (o.measureSeconds > 0.0f && stage && stage->done()) break;
+    ember::stallStep("between frames: the sound and a change of screen");
     // Screen changes happen between frames, with the GPU idle: the old screen's resources go before the new one loads.
     std::optional<MapStageOptions> retry;
     if (auto* map = dynamic_cast<MapStage*>(stage.get())) {

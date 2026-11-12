@@ -51,6 +51,9 @@ enum class VfxMaterial : uint32_t {
                           // 1 snow, 6 ice dust (billboards), 2 wind bands, 3 crystals, 7 frost rings (instanced meshes, c = alpha,
                           // seed). Ember's Blizzard2D (01): 4 its floor, 5 its sprites (billboards, b.w = kind), over a sheet
   Weather = 20,          // world-space precipitation: analytic streaks, flakes and ground splashes
+  FireVolume = 21,       // ours: a real 3D fire, the eye's ray walked through its volume. A camera-facing quad (corners at +-0.5);
+                         // params0 = time, strength, height (a flame's), radius; params1 = origin (world), seed; color =
+                         // turbulence, pull to the eye, body (0 flame, 1 ball, 2 burst), the burst's age; model[0] = the ball's tail
   Textured = 19,          // ours: a cooked mesh's own material (MeshScene::addEffect), lit by the scene like resolve.hlsl: texture =
                           // base colour, params1.xyz = normal, ORM, emissive (bindless indices as floats' bits, kNoTextureIndex =
                           // none), params1.w = emissive strength (display-relative, as Standard's); color = base factor + opacity;

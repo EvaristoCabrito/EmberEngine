@@ -7255,6 +7255,14 @@
         "x": 22,
         "y": 44,
         "level": 15
+      },
+      {
+        "name": "Cão Zumbi",
+        "classId": "zombieDog",
+        "x": 26,
+        "y": 44,
+        "level": 15,
+        "useClassSprite": true
       }
     ],
     "enemySpawns": [
@@ -7375,6 +7383,30 @@
         "classId": "birolhoLegs",
         "x": 28,
         "y": 14,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Sahagin",
+        "classId": "sahagin",
+        "x": 13,
+        "y": 24,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Nekomata",
+        "classId": "nekomata",
+        "x": 18,
+        "y": 24,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "MushroomMan",
+        "classId": "mushroomMan",
+        "x": 48,
+        "y": 34,
         "level": 15,
         "useClassSprite": true
       },

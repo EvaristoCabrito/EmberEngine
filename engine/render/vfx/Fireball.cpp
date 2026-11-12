@@ -15,6 +15,7 @@ namespace {
 constexpr float kPi = std::numbers::pi_v<float>;
 // BattleSpells3D: fx.pixel = 1 / ZOOM_RADII[1] (one hex is Ember's 34 px); Fireball's pixel-sized constants scale by it.
 constexpr float kPixel = 1.0f / 34.0f;
+constexpr float kBurstSeconds = 0.7f;  // Bola de Fogo 02: how long its dome of fire lasts
 
 const std::vector<VfxVertex>& ballGeometry() { static const auto g = vfxgeo::icosahedron(1.0f, 24); return g; }
 
@@ -39,8 +40,8 @@ float Fireball::travelSeconds(glm::vec3 origin, glm::vec3 target) {
   return three::clamp(glm::length(target - origin) / (260.0f * kPixel), 1.25f, 2.5f);
 }
 
-Fireball::Fireball(glm::vec3 origin, glm::vec3 target, float aoeRadius, float start)
-    : start3_(vfxToEmber(origin)), target_(vfxToEmber(target)), aoe_(std::max(0.0f, aoeRadius)), start_(start) {
+Fireball::Fireball(glm::vec3 origin, glm::vec3 target, float aoeRadius, float start, bool volume)
+    : start3_(vfxToEmber(origin)), target_(vfxToEmber(target)), aoe_(std::max(0.0f, aoeRadius)), start_(start), volume_(volume) {
   travel_ = travelSeconds(origin, target);
   // cast(): Etapa 02 was authored for a one-hex preview; scaled to the combat footprint, the footprint its hard limit.
   impactScale_ = std::max(1.0f, aoe_ * 0.72f);
@@ -125,10 +126,25 @@ void Fireball::build(float now, const Camera& camera, const VfxFlipbook& fire, V
   if (t < travel_) {
     // --- The flight (updateProjectile): smoothstep along the line, arched up by sin(pi p) ---
     const float progress = travel_ > 0.0f ? t / travel_ : 1.0f;
-    const float eased = progress * progress * (3.0f - 2.0f * progress);
     const float dist = glm::length(target_ - start3_);
-    const glm::vec3 pos = glm::mix(start3_, target_, eased) + glm::vec3(0, 0, 1) * (std::sin(kPi * progress) * std::max(15.0f * kPixel, dist * 0.12f));
+    auto along = [&](float p) {
+      const float eased = p * p * (3.0f - 2.0f * p);
+      return glm::mix(start3_, target_, eased) + glm::vec3(0, 0, 1) * (std::sin(kPi * p) * std::max(15.0f * kPixel, dist * 0.12f));
+    };
+    const glm::vec3 pos = along(progress);
     const glm::vec3 worldPos = vfxFromEmber(pos);
+    if (volume_) {
+      // 02: a head of fire and its tail streaming back along the way it came (shorter while it is still slow).
+      const glm::vec3 before = vfxFromEmber(along(std::max(0.0f, progress - 0.04f)));
+      const glm::vec3 back = before - worldPos;
+      const float moved = glm::length(back);
+      glm::mat4 tail(1.0f);
+      tail[0] = glm::vec4(moved > 1e-5f ? back / moved * std::min(1.7f, 0.5f + moved * 9.0f) : glm::vec3(0.0f, -0.5f, 0.0f), 0.0f);
+      draw(VfxMaterial::FireVolume, frame.addVertices(quadGeometry()), quadGeometry().size(), tail, {t, 3.0f, 0.0f, 0.36f}, {worldPos, 1.7f},
+           {1.0f, 0.0f, 1.0f, 0.0f}, worldPos, VfxBlend::Alpha);
+      lights.push_back({worldPos, three::hex(0xff8a38), 8.0f * 4.9f * (0.94f + std::sin(t * 7.2f) * 0.06f), 5.0f});
+      return;
+    }
     const glm::mat4 group = toWorld * glm::translate(glm::mat4(1.0f), pos) * glm::scale(glm::mat4(1.0f), glm::vec3(0.47f));
     const uint32_t ball = frame.addVertices(ballGeometry());
     // OldFireBall.update: core spins one way, the shell (1.45x) the other, the shell's noise running ahead.
@@ -145,8 +161,18 @@ void Fireball::build(float now, const Camera& camera, const VfxFlipbook& fire, V
   const float ti = t - travel_;
   const float ws = impactScale_;
   const glm::vec3 worldOrigin = vfxFromEmber(origin_);
+  if (volume_ && ti < kBurstSeconds) {
+    // 02: the dome of fire, out to the area's edge in a blink, then hollowing and tearing apart as it cools.
+    const float age = ti / kBurstSeconds;
+    const float grown = 1.0f - std::pow(1.0f - age, 3.0f);
+    draw(VfxMaterial::FireVolume, frame.addVertices(quadGeometry()), quadGeometry().size(), glm::mat4(0.0f),
+         {ti, 3.4f * std::pow(1.0f - age, 1.3f), 0.0f, std::max(0.3f, aoe_ * (0.3f + 0.7f * grown))}, {worldOrigin, 4.1f}, {1.0f, 0.0f, 2.0f, age},
+         worldOrigin, VfxBlend::Alpha);
+  }
   std::vector<VfxInstance> live;
   for (const Particle& p : particles_) {
+    // (02: its fire is the dome; the sparks, the embers and the smoke are 01's)
+    if (volume_ && (p.kind == Kind::Primary || p.kind == Kind::Secondary || p.kind == Kind::Radial)) continue;
     const float age = ti - p.delay;
     const bool active = age >= 0.0f && age < p.life;
     if (!active) continue;  // alpha 0: nothing drawn

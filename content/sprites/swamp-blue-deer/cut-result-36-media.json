@@ -3,35 +3,32 @@
   "base": {
    "video": "Attachments/SwampBlueDeer/SwampBlueDeerIdleATT.mp4",
    "first": 0,
-   "last": 96,
-   "bootRow": 673,
+   "last": 72,
+   "bootRow": 672,
    "bootRows": [
     672,
     674
    ],
-   "loopFirst": 44,
-   "loopLast": 83,
-   "seamSteps": 4.76,
-   "frameCountFrom": 40,
+   "frameCountFrom": 73,
    "figurePx": 587.0,
    "frames": 36,
-   "frameMs": 46.29629629629629,
+   "frameMs": 84.49074074074073,
    "nat": [
-    614,
-    657
+    643,
+    665
    ],
    "crop": [
-    7,
+    10,
     5,
-    601,
-    647
+    627,
+    655
    ],
    "box": {
-    "w": 3.08569,
-    "h": 3.30179,
-    "foot": 0.0402
+    "w": 3.23143,
+    "h": 3.34199,
+    "foot": 0.04523
    },
-   "pattern": "content/sprites/swamp-blue-deer/base-media36-v01/base-{}.png"
+   "pattern": "content/sprites/swamp-blue-deer/base-media36-v02/base-{}.png"
   },
   "atk": {
    "video": "Attachments/SwampBlueDeer/SwampBlueDeerIdleATT.mp4",
@@ -61,7 +58,7 @@
     "h": 3.49342,
     "foot": 0.15526
    },
-   "pattern": "content/sprites/swamp-blue-deer/atk-media36-v01/atk-{}.png",
+   "pattern": "content/sprites/swamp-blue-deer/atk-media36-v02/atk-{}.png",
    "impact": 0.6479
   },
   "move": {
@@ -95,7 +92,7 @@
     "h": 3.51938,
     "foot": 0.20616
    },
-   "pattern": "content/sprites/swamp-blue-deer/move-media36-v01/move-{}.png"
+   "pattern": "content/sprites/swamp-blue-deer/move-media36-v02/move-{}.png"
   },
   "cast": {
    "video": "Attachments/SwampBlueDeer/SwampBlueDeerCasting.mp4",
@@ -125,7 +122,7 @@
     "h": 3.56791,
     "foot": 0.17939
    },
-   "pattern": "content/sprites/swamp-blue-deer/cast-media36-v01/cast-{}.png",
+   "pattern": "content/sprites/swamp-blue-deer/cast-media36-v02/cast-{}.png",
    "impact": 0.5361
   },
   "hit": {
@@ -157,7 +154,7 @@
     "h": 3.48343,
     "foot": 0.17368
    },
-   "pattern": "content/sprites/swamp-blue-deer/hit-media36-v01/hit-{}.png"
+   "pattern": "content/sprites/swamp-blue-deer/hit-media36-v02/hit-{}.png"
   },
   "death": {
    "video": "Attachments/SwampBlueDeer/SwampBlueDearFall.mp4",
@@ -188,7 +185,7 @@
     "h": 3.32527,
     "foot": 0.04775
    },
-   "pattern": "content/sprites/swamp-blue-deer/death-media36-v01/death-{}.png"
+   "pattern": "content/sprites/swamp-blue-deer/death-media36-v02/death-{}.png"
   }
  }
 }

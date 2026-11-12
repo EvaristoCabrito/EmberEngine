@@ -25,7 +25,8 @@ inline std::string backdropAsset(std::string_view file) { return "backdrop/" + s
 // draft id, used in place of the scene's own; "" = none.
 inline std::string emberBackdrop(std::string_view draftId) {
   static const std::pair<std::string_view, std::string_view> kOwn[] = {
-      {"ashen-forest-crossing", "ashen-forest-bg-v03.jpg"}, {"estalagem", "inn-panorama-v01.jpg"}};
+      {"ashen-forest-crossing", "ashen-forest-bg-v03.jpg"}, {"estalagem", "inn-panorama-v01.jpg"},
+      {"farol", "farol-panorama-v02-alpha.png"}};
   for (const auto& [id, file] : kOwn)
     if (draftId == id) return std::string(file);
   return {};
@@ -206,6 +207,15 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"mosteiro-v01", "nave", "ember-mosteiro-piso-v01", "content/ground/mosteiro-piso-v01.png", 3.2f, true},
     {"mosteiro-v01", "ruins", "ember-mosteiro-ruinas-v01", "content/ground/mosteiro-ruinas-v01.png", 4.0f, true},
     {"mosteiro-v01", "woods", "ember-mosteiro-bosque-v01", "content/ground/mosteiro-bosque-v01.png", 4.5f, true},
+    // O Farol: the user's new photograph textures for the headland, round tower, cellars and sea cave.
+    {"farol-v01", "nave", "ember-farol-piso-v01", "content/ground/farol-piso-v01.png", 3.6f, true},
+    {"farol-v01", "plains", "ember-farol-relva-v01", "content/ground/farol-relva-v01.png", 4.5f, true},
+    {"farol-v01", "ruins", "ember-farol-costa-v01", "content/ground/farol-costa-v01.png", 4.5f, true},
+    {"farol-v01", "hill", "ember-farol-caminho-v01", "content/ground/farol-caminho-v01.png", 4.0f, true},
+    {"farol-porao-v01", "nave", "ember-farol-porao-v01", "content/ground/farol-porao-v01.png", 4.2f, true},
+    {"farol-gruta-v01", "plains", "ember-farol-gruta-chao-v01", "content/ground/farol-gruta-chao-v01.png", 4.5f, true},
+    {"farol-gruta-v01", "snow", "ember-farol-gruta-margem-v01", "content/ground/farol-gruta-margem-v01.png", 4.0f, true},
+    {"farol-gruta-v01", "side", "ember-farol-gruta-parede-v01", "content/ground/farol-gruta-parede-v01.png", 3.0f},
     // A Estalagem's plank floor, a test (the user, 2026-10-30, with the Inn's word): ambientCG Planks037A (CC0, already seamless, its
     // 2K colour map; ~16 boards, ~2.2 m across) on the salão's plains and the Andar II's nave, over their baked art.
     {"inn-planks-v01", "plains", "ember-inn-planks-plains-v01", "content/ground/inn-planks-037a-v01.png", 3.4f, true},

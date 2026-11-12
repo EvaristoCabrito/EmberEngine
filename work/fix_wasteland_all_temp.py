@@ -1,0 +1,20 @@
+from pathlib import Path
+p=Path(r'C:\WastelandFarming\app.js')
+s=p.read_text(encoding='utf-8')
+def change(a,b, n=1):
+ global s
+ assert s.count(a)==n,(a,s.count(a))
+ s=s.replace(a,b)
+change("    tab: 'build', won: false, goalStep: 0, goalKills: 0,", "    tab: 'build', won: false, goalStep: 0,")
+change("  if (state.goalStep === 1) { state.goalKills = 0; payDebt(); }", "  if (state.goalStep === 1) payDebt();")
+change("  if (state.goalStep === 1 && ['Bandit', 'Monster'].includes(victim.className)) state.goalKills = (state.goalKills || 0) + 1;\n", "")
+change("    done: ['Os mortos do Vale do Luto aprenderam a ficar deitados. Pelo menos estes.', 'Último desafio: 10 camponeses e uma Taverna de pé. Gente feliz não pega forcado.'] },", "    done: ['O covil foi destruído.', ''] },")
+change("<p>Junte <b>600 moedas</b> no cofre. Quando o cofre chega lá, o cenário termina e você escolhe quem segue com o herdeiro: <b>2 servos</b> (camponeses) e <b>3 protetores</b> (heróis). No modo teste o objetivo não conta.</p>", "<p>O painel de objetivo mostra o que fazer agora e o progresso atual.</p>")
+change('<p class="mission-goal"><b>Próximo objetivo:</b> Noites de Ossos. Abata 4 caveiras ou ladrões.</p>', '<p class="mission-goal"><b>Objetivo atual:</b> destrua um covil. Na aba Heróis, ofereça uma recompensa para destruí-lo.</p>')
+change("${rows.map(([name, amount, source, shown])", "${[...rows].sort((a, b) => a[0].localeCompare(b[0], 'pt-BR')).map(([name, amount, source, shown])")
+change('${marketGoods().map(good =>', "${marketGoods().sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(good =>")
+change('${FARM_TYPES.map(type => {', "${[...FARM_TYPES].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(type => {",2)
+change("state.heroes.filter(h => h.alive).map(heroCard)", "state.heroes.filter(h => h.alive).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(heroCard)")
+change("state.workers.filter(worker => worker.alive).map(workerCard)", "state.workers.filter(worker => worker.alive).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(workerCard)")
+change('${FOOD_TYPES.map(food => { const on', "${[...FOOD_TYPES].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(food => { const on")
+p.write_text(s,encoding='utf-8',newline='')

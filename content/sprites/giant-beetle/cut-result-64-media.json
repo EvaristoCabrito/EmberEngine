@@ -30,7 +30,7 @@
     "h": 1.49972,
     "foot": 0.08874
    },
-   "pattern": "content/sprites/giant-beetle/move-media64-v01/move-{}.png"
+   "pattern": "content/sprites/giant-beetle/move-media64-v02/move-{}.png"
   },
   "base": {
    "video": "Attachments/GiantBeetle/GiantBeetleIdle.mp4",
@@ -62,7 +62,7 @@
     "h": 1.66833,
     "foot": 0.05029
    },
-   "pattern": "content/sprites/giant-beetle/base-media64-v01/base-{}.png"
+   "pattern": "content/sprites/giant-beetle/base-media64-v02/base-{}.png"
   },
   "atk": {
    "video": "Attachments/GiantBeetle/Giant_beetle_attacking_and_falling_20261026232021.mp4",
@@ -123,7 +123,7 @@
     "h": 1.61213,
     "foot": 0.06212
    },
-   "pattern": "content/sprites/giant-beetle/death-media64-v01/death-{}.png"
+   "pattern": "content/sprites/giant-beetle/death-media64-v02/death-{}.png"
   }
  }
 }

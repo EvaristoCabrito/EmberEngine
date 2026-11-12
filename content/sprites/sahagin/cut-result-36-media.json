@@ -1,0 +1,261 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Sahagin/SahaginIdleandLeftATT.mp4",
+   "first": 0,
+   "last": 120,
+   "bootRow": 681,
+   "bootRows": [
+    667,
+    684
+   ],
+   "frameCountFrom": 121,
+   "figurePx": 634.0,
+   "scaledTo": 610.0,
+   "frames": 36,
+   "frameMs": 140.04629629629628,
+   "nat": [
+    864,
+    636
+   ],
+   "crop": [
+    4,
+    4,
+    856,
+    628
+   ],
+   "box": {
+    "w": 3.96593,
+    "h": 2.91937,
+    "foot": 0.0485
+   },
+   "pattern": "content/sprites/sahagin/base-media36-v01/base-{}.png"
+  },
+  "atk-left": {
+   "video": "Attachments/Sahagin/SahaginIdleandLeftATT.mp4",
+   "first": 124,
+   "last": 180,
+   "bootRow": 680,
+   "bootRows": [
+    680,
+    680
+   ],
+   "frameCountFrom": 57,
+   "figurePx": 634.0,
+   "scaledTo": 610.2,
+   "frames": 36,
+   "frameMs": 65.97222222222223,
+   "nat": [
+    1216,
+    667
+   ],
+   "crop": [
+    5,
+    0,
+    1211,
+    663
+   ],
+   "box": {
+    "w": 5.58233,
+    "h": 3.06202,
+    "foot": 0.05294
+   },
+   "pattern": "content/sprites/sahagin/atk-left-media36-v01/atk-left-{}.png",
+   "impact": 0.5614
+  },
+  "move": {
+   "video": "Attachments/Sahagin/SahaginRightCharacter_walking_and_thrusting_\u2026_4884a850.mp4",
+   "first": 0,
+   "last": 84,
+   "loopFirst": 24,
+   "loopLast": 73,
+   "seamSteps": 3.27,
+   "bootRow": 669,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "frameCountFrom": 50,
+   "figurePx": 634.0,
+   "scaledTo": 609.7,
+   "frames": 36,
+   "frameMs": 57.87037037037036,
+   "nat": [
+    1047,
+    652
+   ],
+   "crop": [
+    0,
+    2,
+    1043,
+    646
+   ],
+   "box": {
+    "w": 4.80505,
+    "h": 2.99225,
+    "foot": 0.03522
+   },
+   "pattern": "content/sprites/sahagin/move-media36-v01/move-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Sahagin/SahaginRightCharacter_walking_and_thrusting_\u2026_4884a850.mp4",
+   "first": 88,
+   "last": 200,
+   "bootRow": 664,
+   "bootRows": [
+    664,
+    664
+   ],
+   "frameCountFrom": 113,
+   "figurePx": 634.0,
+   "scaledTo": 609.9,
+   "frames": 36,
+   "frameMs": 130.78703703703704,
+   "nat": [
+    1232,
+    633
+   ],
+   "crop": [
+    0,
+    4,
+    1232,
+    625
+   ],
+   "box": {
+    "w": 5.653,
+    "h": 2.9045,
+    "foot": 0.05288
+   },
+   "pattern": "content/sprites/sahagin/atk-media36-v01/atk-{}.png",
+   "impact": 0.6726
+  },
+  "move-left": {
+   "video": "Attachments/Sahagin/SahaginwalkfetandFall.mp4",
+   "first": 0,
+   "last": 112,
+   "loopFirst": 33,
+   "loopLast": 80,
+   "seamSteps": 1.72,
+   "bootRow": 669,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "frameCountFrom": 48,
+   "figurePx": 634.0,
+   "scaledTo": 610.3,
+   "frames": 36,
+   "frameMs": 55.55555555555556,
+   "nat": [
+    808,
+    618
+   ],
+   "crop": [
+    5,
+    4,
+    798,
+    609
+   ],
+   "box": {
+    "w": 3.70978,
+    "h": 2.83743,
+    "foot": 0.10599
+   },
+   "pattern": "content/sprites/sahagin/move-left-media36-v01/move-left-{}.png"
+  },
+  "cast": {
+   "video": "Attachments/Sahagin/SahaginCasting.mp4",
+   "first": 24,
+   "last": 140,
+   "bootRow": 672,
+   "bootRows": [
+    672,
+    672
+   ],
+   "frameCountFrom": 117,
+   "figurePx": 634.0,
+   "scaledTo": 609.8,
+   "frames": 36,
+   "frameMs": 135.41666666666666,
+   "nat": [
+    1044,
+    629
+   ],
+   "crop": [
+    0,
+    4,
+    1040,
+    620
+   ],
+   "box": {
+    "w": 4.7918,
+    "h": 2.88701,
+    "foot": 0.08379
+   },
+   "pattern": "content/sprites/sahagin/cast-media36-v01/cast-{}.png",
+   "impact": 0.4103
+  },
+  "hit": {
+   "video": "Attachments/Sahagin/HitReactFigure_recoiling_with_spear_d360d14d.mp4",
+   "first": 17,
+   "last": 100,
+   "bootRow": 681,
+   "bootRows": [
+    681,
+    681
+   ],
+   "frameCountFrom": 84,
+   "figurePx": 634.0,
+   "scaledTo": 610.2,
+   "frames": 36,
+   "frameMs": 97.22222222222223,
+   "nat": [
+    1023,
+    693
+   ],
+   "crop": [
+    0,
+    1,
+    1018,
+    692
+   ],
+   "box": {
+    "w": 4.69464,
+    "h": 3.18024,
+    "foot": 0.16776
+   },
+   "pattern": "content/sprites/sahagin/hit-media36-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Sahagin/SahaginwalkfetandFall.mp4",
+   "first": 112,
+   "last": 200,
+   "bootRow": 670,
+   "bootRows": [
+    670,
+    670
+   ],
+   "frameCountFrom": 89,
+   "figurePx": 634.0,
+   "scaledTo": 610.0,
+   "frames": 36,
+   "frameMs": 103.00925925925925,
+   "nat": [
+    1034,
+    610
+   ],
+   "crop": [
+    5,
+    4,
+    1024,
+    601
+   ],
+   "box": {
+    "w": 4.74763,
+    "h": 2.80083,
+    "foot": 0.08827
+   },
+   "pattern": "content/sprites/sahagin/death-media36-v01/death-{}.png"
+  }
+ }
+}

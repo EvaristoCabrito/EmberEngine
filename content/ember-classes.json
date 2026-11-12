@@ -93,6 +93,33 @@
    "spells": {},
    "spellList": [],
    "about": "The T10 summon (the user, 2026-11-06 / 2026-11-10). It had no class, so no battle could place it (the map Todas as Unidades, 2026-11-11). Working numbers, the user's to set: the Giant Spider's (3 hexes, mov 4, a 2D6 blow, its stats rows), no resistances, no spells."
+  },
+  "mushroomMan": {
+   "name": "MushroomMan", "nameEn": "MushroomMan", "role": "Fera",
+   "sprite": "mush", "size": 1, "mov": 3, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "A new unit from the user's Veo videos (2026-11-11, Attachments/Mush; \"simpole creature same pipeline\"): idle, the walk mirrored, the attack and the cast one clip. Working numbers, the user's to set: 1 hex, mov 3, a 1D8 blow, the Giant Beetle's stats rows, rank D, no spells."
+  },
+  "sahagin": {
+   "name": "Sahagin", "nameEn": "Sahagin", "role": "Lanceiro",
+   "sprite": "sahagin", "size": 1, "mov": 4, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "A new unit from the user's Veo videos (2026-11-12, Attachments/Sahagin: \"new unit for you to add\"): idle, a spear thrust to each side, a walk to each side, the fall. Working numbers, the user's to set: 1 hex, mov 4, a 1D8 spear, the Piqueiro Base's stats rows, rank D, no spells."
+  },
+  "nekomata": {
+   "name": "Nekomata", "nameEn": "Nekomata", "role": "Fera",
+   "sprite": "nekomata", "size": 1, "mov": 5, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "A new unit from the user's Veo videos (2026-11-12, Attachments/Nekomata): idle, the pounce, the lightning breath as its cast, the walk, hit and fall; the jump with lightning cut too. Working numbers, the user's to set: 1 hex, mov 5, a 1D8 claw, the Cão Zumbi's stats rows, rank D, no spells."
   }
  },
  "aboutHeroClasses": "EmberEngine's own hero classes (read by engine/world/BattleExport.cpp Rules, merged into content/data/battle-rules.json's classes with the same fields; their melee weapons of weaponTypes become usable by them). The Cruzado (the user, 2026-10-25; young Salazar's interlude class, docs/SKILLS_CRUSADER.md): level 10 at most (Spells.cpp classLevelCap), a hybrid a little under the Guerreiro and a little over the Curandeiro (each stat the two classes' mean at the level), the Arqueiro's tier table (T1 at 1, T2 at 4, T3 at 7, nothing above T3), Bênção from 1 and Cleave from 4 (his own spells come from Spells.cpp kEmberSpells); never a shield. Placeholder sprite: kaelEarly (an old warrior, on no map).",

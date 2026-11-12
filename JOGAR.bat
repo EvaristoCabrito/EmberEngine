@@ -12,7 +12,8 @@ if not exist "%EXE%" (
   goto :fim
 )
 
-set "GROUND=%ART%\ground\ground-v77-random-encounters-v01.pak"
+set "GROUND=%ART%\ground\ground-v80-farol-panorama-alpha-v01.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v77-random-encounters-v01.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v78-cemetery-makeover-v01.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v76-ashen-panorama.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v75-ashen.pak"
@@ -83,7 +84,9 @@ if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v4.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v3.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v2.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground.pak"
-set "MESHES=%ART%\meshes\props-v47.pak"
+set "MESHES=%ART%\meshes\props-v49.pak"
+if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v48.pak"
+if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v47.pak"
 if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v46.pak"
 if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v45.pak"
 if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v44.pak"

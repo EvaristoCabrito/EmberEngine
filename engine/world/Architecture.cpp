@@ -456,7 +456,8 @@ constexpr double kSillH = 0.19, kPlateH = 0.25, kStud = 0.22, kRailH = 0.16, kRa
 // as wide as its hex allows, 0.78 of the wall tall; studs only at corners, junctions and run ends, the panels between them clean)
 constexpr double kWinW = 1.4, kWinSill = 0.28, kWinHead = 0.76;  // the opening: its width, its sill and head as shares of the height
 constexpr double kDoorW = 1.5, kDoorHead = 0.78, kLeafT = 0.08;
-constexpr double kSconceZ = 0.56, kSconceOut = 0.40, kLanternW = 0.2, kLanternH = 0.3;
+constexpr double kSconceZ = 0.56, kSconceOut = 0.40, kLanternW = 0.26, kLanternH = 0.38;
+constexpr double kCandleTop = 0.125;  // the candle's top over the lantern's floor: where its flame stands
 // (2026-10-25, the user: "make better walls"): the frame stands on a coursed stone footing (tag 11), proud of the timber on both faces,
 // the sill beam on top of it, as a timber-framed inn is built off the damp ground.
 constexpr double kFootH = 0.46, kFootProud = 0.09;
@@ -577,36 +578,44 @@ Geometry innGeometry(const ArchitectureDef& def, double tile, double height, int
     Geometry hook = three::box(0.03, 0.03, 0.14);
     hook.translate(0, y0 - kSconceOut, zb + 0.35);
     part(std::move(hook), 2);
+    // The lantern (v02, 2026-11-12; the user: the fire looked "on a layer on top of it", not inside): an open iron cage, no
+    // panes, so the candle's flame (a volume of fire, MapStage) truly stands inside it, behind the near bars and in front of
+    // the far ones. A floor, four corner posts, a rail round the top and the bottom, a stepped cap; a wax candle on a dish.
     const double ly = y0 - kSconceOut, lw = kLanternW, lh = kLanternH;
-    Geometry cap = three::box(lw + 0.04, lw + 0.04, 0.04);
-    cap.translate(0, ly, zb + lh / 2 + 0.02);
+    Geometry cap = three::box(lw + 0.07, lw + 0.07, 0.025);
+    cap.translate(0, ly, zb + lh / 2 + 0.0125);
     part(std::move(cap), 2);
-    Geometry peak = three::box(0.08, 0.08, 0.05);
-    peak.translate(0, ly, zb + lh / 2 + 0.065);
+    Geometry cap2 = three::box(lw * 0.62, lw * 0.62, 0.035);
+    cap2.translate(0, ly, zb + lh / 2 + 0.0425);
+    part(std::move(cap2), 2);
+    Geometry peak = three::box(0.07, 0.07, 0.04);
+    peak.translate(0, ly, zb + lh / 2 + 0.08);
     part(std::move(peak), 2);
-    Geometry base = three::box(lw + 0.02, lw + 0.02, 0.03);
+    Geometry base = three::box(lw + 0.04, lw + 0.04, 0.03);
     base.translate(0, ly, zb - lh / 2 - 0.015);
     part(std::move(base), 2);
     for (int sx : {-1, 1})
       for (int sy : {-1, 1}) {
-        Geometry post = three::box(0.02, 0.02, lh);
+        Geometry post = three::box(0.022, 0.022, lh);
         post.translate(sx * lw / 2, ly + sy * lw / 2, zb);
         part(std::move(post), 2);
       }
-    // (the lantern's panes take the middle 40 % of the glass image's height: the image is a tall casement, 4 : 1)
-    for (int side : {-1, 1}) {
-      Geometry pane = three::box(lw - 0.04, 0.008, lh - 0.04);
-      paneUVs(pane, 8, 0, 2, lw - 0.04, (lh - 0.04) * 2.5);
-      pane.translate(0, ly + side * lw / 2, zb);
-      part(std::move(pane), 8);
-      Geometry pane2 = three::box(0.008, lw - 0.04, lh - 0.04);
-      paneUVs(pane2, 8, 1, 2, lw - 0.04, (lh - 0.04) * 2.5);
-      pane2.translate(side * lw / 2, ly, zb);
-      part(std::move(pane2), 8);
-    }
-    Geometry flame = flameDrop(0, 0, 0);
-    flame.scale(0.5, 0.5, 0.5).translate(0, ly, zb - lh / 2 + 0.08);
-    t.push_back(flame.toNonIndexed());
+    for (int side : {-1, 1})
+      for (int end : {-1, 1}) {
+        Geometry rail = three::box(lw, 0.018, 0.018);
+        rail.translate(0, ly + side * lw / 2, zb + end * (lh / 2 - 0.009));
+        part(std::move(rail), 2);
+        Geometry rail2 = three::box(0.018, lw, 0.018);
+        rail2.translate(side * lw / 2, ly, zb + end * (lh / 2 - 0.009));
+        part(std::move(rail2), 2);
+      }
+    Geometry dish = three::box(0.11, 0.11, 0.015);
+    dish.translate(0, ly, zb - lh / 2 + 0.0075);
+    part(std::move(dish), 2);
+    Geometry candle = three::box(0.05, 0.05, kCandleTop - 0.015);  // pale wax (the steps' stone)
+    candle.translate(0, ly, zb - lh / 2 + 0.015 + (kCandleTop - 0.015) / 2);
+    part(std::move(candle), 6);
+    // (its flame is no mesh: a volume of fire MapStage draws inside the lantern, VfxMaterial::FireVolume, with its light)
     Geometry all = three::merge(t);
     all.rotateZ(angle);
     parts.push_back(std::move(all));
@@ -793,7 +802,7 @@ Geometry torchAt(const TorchMount& m, std::array<double, 3>* flameOut) {
   Geometry head = three::box(0.2, 0.2, 0.22);
   head.rotateX(0.32).translate(0, -0.57, 0.78);
   add(std::move(head), 4);
-  t.push_back(flameDrop(0, -0.62, 1.06).toNonIndexed());
+  // (its flame is no mesh: a volume of fire MapStage draws over the head, VfxMaterial::FireVolume)
   const double theta = m.phi + kPi / 2;
   Geometry all = three::merge(t);
   all.rotateZ(theta).translate(m.x, m.y, m.z);
@@ -1154,7 +1163,7 @@ Geometry emberGeometry(const ArchitectureDef& def, double tile, double height, i
     Geometry head = three::box(0.2, 0.2, 0.22);
     head.rotateX(0.32).translate(0, y0 - 0.57, zb + 0.78);
     add(std::move(head), 4);
-    t.push_back(flameDrop(0, y0 - 0.62, zb + 1.06).toNonIndexed());  // the flame (emissive); its light is MapStage's
+    // (its flame is no mesh: a volume of fire MapStage draws over the head, VfxMaterial::FireVolume, with its light)
     Geometry all = three::merge(t);
     all.rotateZ(angle);
     parts.push_back(std::move(all));
@@ -1300,8 +1309,8 @@ std::array<double, 3> emberDoorHingePiece(const ArchitectureDef& def, int rotati
 
 std::array<double, 2> innSconceLight(const ArchitectureDef& def) {
   const double height = 0.75 * def.heightScale * 3.5 * 1.6, T = 0.32 * def.wallThicknessScale;
-  // the flame's tip: kSconceOut beyond the timber's face, at the lantern's foot + the flame's height (flameDrop's 0.15 x 2.6 at half size)
-  return {T / 2 + inn::kProud + inn::kSconceOut, height * inn::kSconceZ - inn::kLanternH / 2 + 0.08 + 0.2};
+  // the middle of the candle's flame: kSconceOut beyond the timber's face, 0.09 over the candle's top
+  return {T / 2 + inn::kProud + inn::kSconceOut, height * inn::kSconceZ - inn::kLanternH / 2 + inn::kCandleTop + 0.09};
 }
 
 std::array<double, 3> emberDirPiece(int rotation) { return emberToPiece(1, 0, 0, rotation); }
