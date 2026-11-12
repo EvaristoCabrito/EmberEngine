@@ -166,6 +166,9 @@ constexpr EmberSpell kEmberSpells[] = {
     // Telesm, the shell defender (the user: "a new defender familiar, T2 for Selene, T3 for the others", docs/SKILLS_CONJURER.md): every
     // Conjurador at 6 (T3); Selene from 3 as her T2 (grantClassSpells, unitTierOf)
     {{"summonTelesm", "Invocar Telesm", 3, "", false}, "conjurer", 6},
+    // the Hipóstase, the ultimate summon of Ember I (the user, 2026-11-12): the Arcanista's and the Necromante's T10, at 23 (T10 opens);
+    // the Necromante's in grantClassSpells
+    {{"summonHypostasis", "Invocar Hipóstase", 10, "", false}, "sorcerer", 23},
     {{"empowerSummons", "Fortalecer Invocações", 4, "", false}, "conjurer", 8},
     // Mago Negro (docs/SKILLS_MAGE.md, 2026-10-21; Voss, class `mage` / `voss`): the Bruxo and the Elementalista keep them
     {{"cloudOfDaggers", "Nuvem de Adagas", 4, "arcane", false}, "mage", 8},
@@ -452,6 +455,7 @@ constexpr SpellTrack kSpellTracks[] = {
     {"summonZombieDog", 20, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
     {"summonSwampDeer", 20, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
     {"summonTelesm", 6, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
+    {"summonHypostasis", 23, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
     {"empowerSummons", 15, "p1 p1 p1 R1 p1 p1 p1 p1 p1 p1 R1 p1 p1 p1"},
     {"boneLance", 15, "m0.1 l1 d1 f2 Z1 m0.1 t1 p10 m0.1 l1 d1 f2 p10 m0.1"},
     {"arcaneBlade", 1, "r1 - - r1 - - r1 - - r1 - r1 - -"},
@@ -2697,6 +2701,8 @@ void grantClassSpells(BattleUnit& u) {
   if (u.classId == "hypostasis" && !contains(u.spellList, std::string("twinResonance"))) u.spellList.push_back("twinResonance");
   // Selene summons Telesm from 3 (her T2), the other Conjuradores from 6 (kEmberSpells)
   if (u.side == "player" && u.name == "Selene" && u.level >= 3 && !contains(u.spellList, std::string("summonTelesm"))) u.spellList.push_back("summonTelesm");
+  // the Necromante summons the Hipóstase from 23 as the Arcanista does (kEmberSpells)
+  if (u.classId == "necromancer" && u.level >= 23 && !contains(u.spellList, std::string("summonHypostasis"))) u.spellList.push_back("summonHypostasis");
   // The ordinary spell bar and casting checks must grant Voss the same storm the effects preview can play.
   // Keep its existing casting implementation; this is a class unlock, not a new spell formula.
   if (u.side == "player" && emberClassFamily(u.classId) == std::string("mage") && u.level >= kMageIceStormLevel &&
@@ -2845,6 +2851,7 @@ std::string spellExplain(const std::string& kind, bool en) {
       {"summonZombieDog", "Invoca um Cão Zumbi num hex livre até o alcance; a mordida dele envenena.", "Summons a Zombie Dog on a free hex within reach; its bite poisons."},
       {"summonSwampDeer", "Invoca o Cervo Azul do Pântano num hex livre até o alcance; ele luta ao seu lado.", "Summons the Swamp Blue Deer on a free hex within reach; it fights at your side."},
       {"summonTelesm", "Invoca o Telesm num hex livre até o alcance: a concha que fica entre os inimigos e você.", "Summons Telesm on a free hex within reach: the shell that stands between the enemies and you."},
+      {"summonHypostasis", "Invoca a Hipóstase num hex livre até o alcance: a invocação suprema, com a Ressonância Geminada.", "Summons the Hypostasis on a free hex within reach: the ultimate summon, with its Twin Resonance."},
       {"longShot", "Um tiro de arco de longe: o dano da arma mais os dados da habilidade.", "A long bow shot: the weapon's damage plus the skill's dice."},
       {"bloodyShot", "Um tiro que multiplica o dano da arma e deixa o alvo sangrando por algumas rodadas.",
        "A shot that multiplies the weapon's damage and leaves the target bleeding for some rounds."},
@@ -3228,7 +3235,7 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"warp", "Warp"}, {"bless", "Bless"}, {"burningHands", "Burning Hands"}, {"turnUndead", "Turn Undead"},
     {"divineBolt", "Divine Bolt"}, {"summonFamiliar", "Summon Familiar"}, {"phantasmalForce", "Phantasmal Force"},
     {"webOfDreams", "Web of Dreams"}, {"summonFamiliar2", "Greater Familiar"}, {"summonFamiliar3", "Summon Numen"},
-    {"summonFamiliar4", "Radiant Familiar"}, {"summonZombieDog", "Zombie Dog"}, {"summonSwampDeer", "Swamp Blue Deer"}, {"summonTelesm", "Summon Telesm"}, {"lightningTier3", "Lightning 3"},
+    {"summonFamiliar4", "Radiant Familiar"}, {"summonZombieDog", "Zombie Dog"}, {"summonSwampDeer", "Swamp Blue Deer"}, {"summonTelesm", "Summon Telesm"}, {"summonHypostasis", "Summon Hypostasis"}, {"lightningTier3", "Lightning 3"},
     {"minorVenom", "Minor Venom"}, {"familiarLifeDrain", "Life Drain"}, {"divineWrath", "Divine Wrath"},
     {"shoulderSmash", "Shoulder Smash"}, {"stampede", "Stampede"}, {"auraOfProtection", "Aura of Protection"},
     {"intimidatingPresence", "Intimidating Presence"}, {"secondWind", "Second Wind"},

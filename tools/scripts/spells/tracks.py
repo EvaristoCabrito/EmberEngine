@@ -66,6 +66,7 @@ S = {
     "summonZombieDog": (20, dict(r=2), [("r", 1, 6)]),  # Cão Zumbi: the Necromante's T8, from 20 (the user, 2026-10-27)
     "summonSwampDeer": (None, dict(r=2), [("r", 1, 6)]),  # Cervo Azul do Pântano: the Arcanista's T8 (the user, 2026-10-27)
     "summonTelesm": (None, dict(r=2), [("r", 1, 6)]),  # Telesm: every Conjurador's T3 (at 6), Selene's T2 (at 3)
+    "summonHypostasis": (None, dict(r=2), [("r", 1, 6)]),  # Hipóstase: the Arcanista's and the Necromante's T10 (at 23)
     "empowerSummons": (15, dict(p=25, R=3), [("p", 1, 12), ("R", 1, 2)]),
     # the Necromante's T6 (the user, 2026-10-20: "deixar a magia Lança de Ossos como T6 para necromancer, e adaptar para algo mais forte e mais único")
     "boneLance": (None, dict(l=4, d=2, f=8, m=1.8, t=1, p=50), [("m", 0.1, 4), ("l", 1, 2), ("d", 1, 2), ("f", 2, 2), ("t", 1, 1), ("Z", 1, 1), ("p", 10, 2)]),
@@ -476,7 +477,7 @@ NAMES = {
     "summonFamiliar2": "Familiar Maior", "placeSwap": "Troca de Lugar", "boneLance": "Lança de Ossos (Necromante, T6)", "arcaneReflection": "Reflexo Arcano", "summonFamiliar4": "Familiar Radiante",
     "mirrorImage": "Imagem Espelhada", "detonateSummon": "Detonar Invocação", "summonFamiliar3": "Numen (Arcanista e Necromante, T6)",
     "sacrificeBond": "Elo de Sacrifício", "nightmare": "Pesadelo", "summonZombieDog": "Cão Zumbi (Necromante, T8)",
-    "summonSwampDeer": "Cervo Azul do Pântano (Arcanista, T8)", "summonTelesm": "Invocar Telesm (Conjurador, T3; Selene, T2)",
+    "summonSwampDeer": "Cervo Azul do Pântano (Arcanista, T8)", "summonTelesm": "Invocar Telesm (Conjurador, T3; Selene, T2)", "summonHypostasis": "Invocar Hipóstase (Arcanista e Necromante, T10)",
     "empowerSummons": "Fortalecer Invocações", "markOfRuin": "Marca da Ruína", "creepingPlague": "Praga Rastejante",
     "lifeDrain": "Dreno de Vida", "shroudOfShadows": "Mortalha de Sombras", "hemorrhage": "Hemorragia", "profaneSilence": "Silêncio Profano",
     "blackPestilence": "Peste Negra", "curseOfDecay": "Maldição da Decadência", "soulHarvest": "Colheita de Almas",

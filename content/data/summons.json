@@ -148,6 +148,21 @@
    "footprintH": null,
    "resistances": {},
    "initiativeBonus": 4
+  },
+  "hypostasis": {
+   "id": "hypostasis",
+   "name": "Hipóstase",
+   "role": "Invocação",
+   "sprite": "hypostasis",
+   "mov": 4,
+   "minRange": 1,
+   "maxRange": 1,
+   "size": 3,
+   "footprintOffsets": null,
+   "footprintW": null,
+   "footprintH": null,
+   "resistances": {},
+   "initiativeBonus": 4
   }
  },
  "tables": {

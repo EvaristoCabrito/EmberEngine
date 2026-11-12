@@ -232,6 +232,12 @@ Escala do nível 6 ao 20, uma melhoria pequena por nível: alcance 2 → 8.
 
 Nível a nível: 8: +1 hex de alcance, 10: +1 hex de alcance, 12: +1 hex de alcance, 15: +1 hex de alcance, 17: +1 hex de alcance, 19: +1 hex de alcance.
 
+### Invocar Hipóstase (Arcanista e Necromante, T10)
+
+Escala do nível 23 ao 37, uma melhoria pequena por nível: alcance 2 → 8.
+
+Nível a nível: 25: +1 hex de alcance, 27: +1 hex de alcance, 29: +1 hex de alcance, 32: +1 hex de alcance, 34: +1 hex de alcance, 36: +1 hex de alcance.
+
 ### Fortalecer Invocações
 
 Escala do nível 15 ao 29, uma melhoria pequena por nível: atributos % 25 → 37; rodadas 3 → 5.

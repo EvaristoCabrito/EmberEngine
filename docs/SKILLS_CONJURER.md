@@ -127,4 +127,6 @@ and the bond over many blows (the code path, not a statistic).
   Selene's T2 at 3 (`grantClassSpells`, `unitTierOf`); 2 hexes (the Cão Zumbi's footprint), MOV 3, x0.75 of the caster (the Familiar
   Maior's, first values the user sets), no spell of its own; the Radiante's blue summon light. Its art has a shell-defence pose the game
   does not play yet.
-- Coming (the user): **Hipóstase** (Summon Hypostasis), the ultimate summon of Ember I: its art and Ressonância Geminada exist, no spell summons it.
+- **Hipóstase** (`summonHypostasis`, class `hypostasis`, content/data/summons.json, 2026-11-12): the ultimate summon of Ember I, the
+  Arcanista's and the Necromante's T10 at 23 (the user's choice); 3 hexes, MOV 4, x1.5 of the caster (a first value), its own spell the
+  Ressonância Geminada (AP only, no charges); the Numen's summon light (ArmsFx Titan).
