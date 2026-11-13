@@ -108,12 +108,10 @@ nlohmann::json Battle::snapshot() const {
                       {"severTurns", m.severTurns}};
       // Garran's (docs/SKILLS_MOONWARDEN.md)
       if (m.wardAny() || m.wardMemory())
-        s["martial"]["ward"] = {{"wardCutPct", m.wardCutPct},   {"bracePct", m.bracePct},     {"braceHits", m.braceHits},           {"bracePush", m.bracePush},
-                                {"unbreakable", m.unbreakable}, {"interposeBy", m.interposeBy}, {"interposeCutPct", m.interposeCutPct}, {"holdPct", m.holdPct},
-                                {"holdBy", m.holdBy},           {"holdRanged", m.holdRanged}, {"barrier", m.barrier},               {"barrierBy", m.barrierBy},
-                                {"wardChallengePct", m.wardChallengePct}, {"wardChallengeBy", m.wardChallengeBy}, {"wardChallengeSlow", m.wardChallengeSlow},
-                                {"crushPct", m.crushPct},       {"crushTurns", m.crushTurns}, {"crushRound", m.crushRound},         {"crushKind", m.crushKind},
-                                {"hitBy", m.hitBy},             {"hitByPrev", m.hitByPrev},   {"stopped", m.stopped},               {"stoppedPrev", m.stoppedPrev}};
+        s["martial"]["ward"] = {{"bracePct", m.bracePct}, {"braceHits", m.braceHits}, {"bracePush", m.bracePush}, {"watchX", m.watchX},
+                                {"watchY", m.watchY},     {"watchPct", m.watchPct},   {"holdPct", m.holdPct},     {"holdBy", m.holdBy},
+                                {"weightPct", m.weightPct}, {"weightBy", m.weightBy}, {"accUpPct", m.accUpPct},   {"accUpTurns", m.accUpTurns},
+                                {"stopped", m.stopped},   {"stoppedPrev", m.stoppedPrev}};
     }
     if (!u.cooldowns.empty()) {
       nlohmann::json cds = nlohmann::json::array();
@@ -345,14 +343,11 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
               if (x.is_number_integer()) v.push_back(x.get<int>());
           return v;
         };
-        m.wardCutPct = w.value("wardCutPct", 0), m.bracePct = w.value("bracePct", 0), m.braceHits = w.value("braceHits", 0);
-        m.bracePush = w.value("bracePush", false), m.unbreakable = w.value("unbreakable", false);
-        m.interposeBy = w.value("interposeBy", -1), m.interposeCutPct = w.value("interposeCutPct", 0);
-        m.holdPct = w.value("holdPct", 0), m.holdBy = w.value("holdBy", -1), m.holdRanged = w.value("holdRanged", false);
-        m.barrier = w.value("barrier", 0), m.barrierBy = w.value("barrierBy", -1);
-        m.wardChallengePct = w.value("wardChallengePct", 0), m.wardChallengeBy = w.value("wardChallengeBy", -1), m.wardChallengeSlow = w.value("wardChallengeSlow", false);
-        m.crushPct = w.value("crushPct", 0), m.crushTurns = w.value("crushTurns", 0), m.crushRound = w.value("crushRound", -1), m.crushKind = w.value("crushKind", std::string());
-        m.hitBy = ids("hitBy"), m.hitByPrev = ids("hitByPrev"), m.stopped = ids("stopped"), m.stoppedPrev = ids("stoppedPrev");
+        m.bracePct = w.value("bracePct", 0), m.braceHits = w.value("braceHits", 0), m.bracePush = w.value("bracePush", false);
+        m.watchX = w.value("watchX", -1), m.watchY = w.value("watchY", -1), m.watchPct = w.value("watchPct", 0);
+        m.holdPct = w.value("holdPct", 0), m.holdBy = w.value("holdBy", -1), m.weightPct = w.value("weightPct", 0), m.weightBy = w.value("weightBy", -1);
+        m.accUpPct = w.value("accUpPct", 0), m.accUpTurns = w.value("accUpTurns", 0);
+        m.stopped = ids("stopped"), m.stoppedPrev = ids("stoppedPrev");
       }
     }
     u.cooldowns.clear();

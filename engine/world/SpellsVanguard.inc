@@ -58,17 +58,17 @@ constexpr TechniqueDef kTechniques[] = {
     {"reapTheFlanks", "Reap the Flanks", 1, TechAim::Arc},
     {"rollingAdvance", "Rolling Advance", 2, TechAim::Line},
     {"shatterTheLine", "Shatter the Line", 3, TechAim::Arc},
-    // Guardião da Lua (Garran's, docs/SKILLS_MOONWARDEN.md: SpellsMoonwarden.inc aims and casts them, the moon read as they commit)
-    {"guardedCut", "Guarded Cut", 0, TechAim::Foe},
-    {"brace", "Brace", 1, TechAim::Self},
-    {"wardenBash", "Shield Bash", 1, TechAim::Foe},
-    {"interpose", "Interpose", 1, TechAim::Foe},
-    {"gapThrust", "Gap Thrust", 1, TechAim::Foe},
-    {"affront", "Challenge", 2, TechAim::Foe2},
-    {"crushingBlow", "Crushing Blow", 2, TechAim::Foe},
-    {"holdTheLine", "Hold the Line", 3, TechAim::Foe},
+    // Guardião da Lua (Garran's T1-T10, docs/SKILLS_MOONWARDEN.md: SpellsMoonwarden.inc aims and casts them; the aims here unused)
+    {"steadyStrike", "Steady Strike", 0, TechAim::Foe},
+    {"digIn", "Dig In", 1, TechAim::Self},
+    {"flankStep", "Flank Step", 0, TechAim::StepFoe},
+    {"closeRanks", "Close Ranks", 1, TechAim::Foe},
+    {"breakStride", "Break Stride", 1, TechAim::Foe},
+    {"watchTheGap", "Watch the Gap", 2, TechAim::Foe},
+    {"followThrough", "Follow Through", 2, TechAim::Foe},
+    {"pullClear", "Pull Clear", 2, TechAim::Foe},
+    {"takeTheWeight", "Take the Weight", 3, TechAim::Foe},
     {"reckoning", "Reckoning", 3, TechAim::Foe},
-    {"unbreakable", "Unbreakable", 4, TechAim::Self},
 };
 const TechniqueDef* techniqueDef(const std::string& kind) {
   for (const TechniqueDef& t : kTechniques)
@@ -130,17 +130,17 @@ TechNumbers techniqueNumbersAt(const std::string& k, int s) {
   else if (k == "reapTheFlanks") n.dmg = v(80, 105);
   else if (k == "rollingAdvance") n.dmg = v(90, 115), n.dmg2 = v(70, 95);
   else if (k == "shatterTheLine") n.dmg = v(130, 160), n.dmg2 = v(85, 110), n.pct = v(10, 20);  // pct: the flanks' next attack points off
-  // Guardião da Lua (docs/SKILLS_MOONWARDEN.md)
-  else if (k == "guardedCut") n.dmg = v(100, 120), n.pct = v(10, 15);        // pct: his next physical weapon hit taken, % off
-  else if (k == "brace") n.pct = v(25, 40);                                  // pct: each braced hit, % off
-  else if (k == "wardenBash") n.dmg = v(60, 85);
-  else if (k == "interpose") n.pct = v(20, 30);                              // pct: the redirected hit's % off (waning moon)
-  else if (k == "gapThrust") n.dmg = v(105, 130), n.pct = v(20, 35);         // pct: armor ignored
-  else if (k == "affront") n.pct = v(25, 40);                                // pct: its hit on his party, % off
-  else if (k == "crushingBlow") n.dmg = v(120, 150), n.pct = v(20, 30), n.pct2 = v(30, 40);  // pct: its next attack's damage off; pct2: the full moon's
-  else if (k == "holdTheLine") n.pct = v(20, 35);                            // pct: each ally's next melee hit, % off
-  else if (k == "reckoning") n.dmg = v(130, 160), n.pct = v(35, 50);         // pct: points more on a foe he stopped (210 % at most)
-  else if (k == "unbreakable") n.pct = v(20, 30), n.pct2 = v(10, 15);        // pct: his barrier, % of max HP; pct2: the ally's (waning moon)
+  // Guardião da Lua (Garran's T1-T10, docs/SKILLS_MOONWARDEN.md)
+  else if (k == "steadyStrike") n.dmg = v(100, 115), n.pct = v(5, 15);       // pct: points to hit
+  else if (k == "digIn") n.pct = v(20, 35);                                  // pct: the first physical hit, % off
+  else if (k == "flankStep") n.dmg = v(85, 115);
+  else if (k == "closeRanks") n.pct = v(20, 35);                             // pct: the ally's first direct weapon hit, % off
+  else if (k == "breakStride") n.dmg = v(75, 100), n.hexes = s >= kTechniqueRanks - 1 ? 2 : 1;  // the first two steps at max rank
+  else if (k == "watchTheGap") n.dmg = v(75, 105);                           // the reaction's blow
+  else if (k == "followThrough") n.dmg = v(100, 125), n.dmg2 = v(55, 80);
+  else if (k == "pullClear") n.pct = v(15, 25);                              // pct: the ally's next weapon attack, points to hit
+  else if (k == "takeTheWeight") n.pct = v(30, 45);                          // pct: of the ally's hit, after mitigation, his instead
+  else if (k == "reckoning") n.dmg = v(125, 155), n.pct = v(35, 50);         // pct: points more on a foe he protected an ally from (205 % at most)
   return n;
 }
 TechNumbers techniqueNumbers(const std::string& kind, const BattleUnit& u) { return techniqueNumbersAt(kind, techniqueStep(u, kind)); }
@@ -540,11 +540,6 @@ void techniqueOnHit(Battle& b, const BattleStep& step, bool counter, bool ripost
   };
   if (riposte) expose(techniqueNumbers("riposte", a).pct);  // the old mark resolved first (above), then the Riposta's
   if (counter) return;
-  if (step.wardCutPct > 0) a.cond.martial.wardCutPct = std::max(a.cond.martial.wardCutPct, step.wardCutPct);  // Corte Guardado: his own guard
-  if (step.crushPct > 0) {  // Golpe Esmagador: its next weapon attack, through the end of its next full turn
-    m.crushPct = std::max(m.crushPct, step.crushPct), m.crushTurns = 2, m.crushRound = -1, m.crushKind.clear();
-    after.push_back(statusEffect(ti, std::format("{} -{}%", pick("Esmagado", "Crushed"), m.crushPct)));
-  }
   if (step.accDownPct > 0) {
     m.accDownPct = std::max(m.accDownPct, step.accDownPct), m.accDownTurns = 2;
     after.push_back(statusEffect(ti, std::format("-{} {}", m.accDownPct, pick("acerto", "to hit"))));
@@ -699,6 +694,7 @@ bool techniqueAfterStep(Battle& b, size_t walker, BattleHex from, BattleHex to, 
     k.cond.martial.plantPct = 0;  // the stance's one event
     if (techniqueReactionBlow(b, i, walker, "plantTheLine", pct, rng, out) && b.units()[walker].alive && techniqueDisplaceable(b.units()[walker])) stop = true;
   }
+  if (b.units()[walker].alive && wardAfterStep(b, walker, from, to, rng, out)) stop = true;  // Garran's Vigiar a Brecha
   return stop;
 }
 

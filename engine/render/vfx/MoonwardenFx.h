@@ -4,19 +4,19 @@
 // material's sheets, shells, ground rings, columns and streaks (shaders/vfx.hlsl kMaterialCombat) in moonlight - pale silver light, a
 // white core, a cold blue edge. One look each, version 01 (the user: "maybe you should create the visual effects for these new skills").
 //
-// His blows (on the struck foe, as the blow lands):
-//   Corte Guardado     a silver crescent swept across the chest, a ring of light on Garran's shield as the guard comes up;
-//   Pancada de Escudo  the shield's face: a flat shell bursting at the foe's chest toward the push, a ground ring, moon dust;
-//   Estocada na Brecha a lance of moonlight driven straight through the body, sparks where it breaks the armour;
-//   Golpe Esmagador    a heavy crescent brought straight down, a ground ring, dust, a dim ring settling on the foe (its next blow
-//                      weighed down);
+// The T1-T10 set (the user, 2026-11-13). His blows (on the struck foe, as the blow lands):
+//   Golpe Firme        a silver crescent swept across the chest, a ring of light on Garran's shield;
+//   Passo de Flanco,   a lance of moonlight driven straight through the body, sparks where it breaks the armour;
+//   Vigiar a Brecha    (the reaction blow)
+//   Quebrar o Passo    a heavy crescent brought straight down, a ground ring, dust, a dim ring settling on the foe (its next step weighed);
+//   Golpe Seguido      on each foe: the shield's face, a flat shell bursting at the chest, a ground ring, moon dust;
 //   Acerto de Contas   a full moon flaring behind the foe, a great crescent across it, a column of light.
 // His guards (on whoever they mark):
-//   Erguer o Escudo    a shell of moonlight round Garran, a crescent ring at his feet;
-//   Interpor           a thread of light from Garran to the ally he covers, a ring at the ally's feet;
-//   Afronta            a thread of light to the challenged foe, a crescent sigil on the ground under it;
-//   Segurar a Linha    a ring under every ally he holds, threads to each;
-//   Inquebrável        a barrier sphere round Garran (and the ally, under the waning moon), a column of light rising through it.
+//   Firmar o Pé        a shell of moonlight round Garran, a crescent ring at his feet;
+//   Cerrar Fileiras,   a thread of light from Garran to the ally, a ring at the ally's feet;
+//   Puxar para Longe
+//   Vigiar a Brecha    a crescent sigil on the ground of the watched hex;
+//   Assumir o Peso     a barrier sphere round Garran and the ally he covers, a column of light rising through it.
 //
 // World space (y up). Points on a body are pulled toward the eye (kPull) so they show over the card, as CombatFx does.
 
@@ -38,10 +38,10 @@ class MoonwardenFx {
     float height = 1.8f;  // the card's height
   };
 
-  // One of his blows (`kind`: guardedCut, wardenBash, gapThrust, crushingBlow, reckoning) on `foe` at `impact`, Garran standing at
-  // `from` (his card `height`); `landed`: the blow found the body (a miss draws the swing only).
+  // One of his blows (`kind`: steadyStrike, flankStep, breakStride, watchTheGap, followThrough, reckoning) on `foe` at `impact`, Garran
+  // standing at `from` (his card `height`); `landed`: the blow found the body (a miss draws the swing only).
   void strike(const std::string& kind, const Target& foe, const Target& from, float impact, bool landed);
-  // One of his guards (`kind`: brace, interpose, affront, holdTheLine, unbreakable) from Garran (`self`) on `marked` at `at`.
+  // One of his guards (`kind`: digIn, closeRanks, pullClear, watchTheGap, takeTheWeight) from Garran (`self`) on `marked` at `at`.
   void ward(const std::string& kind, const Target& self, const std::vector<Target>& marked, float at);
 
   bool active(float now) const;

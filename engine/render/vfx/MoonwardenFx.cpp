@@ -134,8 +134,13 @@ float MoonwardenFx::Effect::end() const {
 
 void MoonwardenFx::strike(const std::string& kind, const Target& foe, const Target& from, float impact, bool landed) {
   Effect e;
-  e.kind = kind == "wardenBash" ? Kind::Bash : kind == "gapThrust" ? Kind::Thrust : kind == "crushingBlow" ? Kind::Crush : kind == "reckoning" ? Kind::Reckoning
-                                                                                                                                                  : Kind::GuardedCut;
+  // Golpe Firme: the crescent; Passo de Flanco / Vigiar a Brecha: the lance; Quebrar o Passo: the heavy crescent and the weight;
+  // Golpe Seguido: the shield-face burst on each foe; Acerto de Contas: the full moon
+  e.kind = kind == "followThrough"                          ? Kind::Bash
+           : kind == "flankStep" || kind == "watchTheGap"   ? Kind::Thrust
+           : kind == "breakStride"                          ? Kind::Crush
+           : kind == "reckoning"                            ? Kind::Reckoning
+                                                            : Kind::GuardedCut;
   e.at = {foe.feet, bodyHeight(foe.height)}, e.self = {from.feet, bodyHeight(from.height)};
   e.dir = flatDir(foe.feet - from.feet, glm::vec3(0.0f, 0.0f, 1.0f));
   e.start = impact, e.landed = landed;
@@ -144,8 +149,13 @@ void MoonwardenFx::strike(const std::string& kind, const Target& foe, const Targ
 }
 void MoonwardenFx::ward(const std::string& kind, const Target& self, const std::vector<Target>& marked, float at) {
   Effect e;
-  e.kind = kind == "interpose" ? Kind::Interpose : kind == "affront" ? Kind::Affront : kind == "holdTheLine" ? Kind::Hold : kind == "unbreakable" ? Kind::Unbreakable
-                                                                                                                                                  : Kind::Brace;
+  // Firmar o Pé: the shell round him; Cerrar Fileiras / Puxar para Longe: the thread to the ally; Vigiar a Brecha: the sigil on the
+  // watched hex; Assumir o Peso: the barrier round the ally
+  e.kind = kind == "closeRanks"      ? Kind::Interpose
+           : kind == "pullClear"     ? Kind::Hold
+           : kind == "watchTheGap"   ? Kind::Affront
+           : kind == "takeTheWeight" ? Kind::Unbreakable
+                                     : Kind::Brace;
   e.self = e.at = {self.feet, bodyHeight(self.height)};
   for (const Target& t : marked) e.targets.push_back({t.feet, bodyHeight(t.height)});
   e.start = at;

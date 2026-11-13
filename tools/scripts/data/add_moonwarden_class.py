@@ -16,9 +16,12 @@ import sys
 CID = "moonwarden"
 PT, EN = "Guardião da Lua", "Moonwarden"
 HERO = "Garran Holt"
-# The design's AP per technique (a normal sword blow is 6, a turn 12)
-AP = {"guardedCut": 6, "brace": 4, "wardenBash": 6, "interpose": 5, "gapThrust": 7, "affront": 4, "crushingBlow": 8, "holdTheLine": 6,
-      "reckoning": 9, "unbreakable": 6}
+# The design's AP per technique ("Moonwarden — Permanent Skills, T1–T10"; a normal sword blow is 6, a turn 12; Vigiar a Brecha's
+# reaction blow is the sword's own 6)
+AP = {"steadyStrike": 6, "digIn": 4, "flankStep": 7, "closeRanks": 5, "breakStride": 6, "watchTheGap": 4, "followThrough": 9,
+      "pullClear": 5, "takeTheWeight": 6, "reckoning": 9}
+# the first draft's techniques (2026-11-13, the moon-phase one), replaced by the T1-T10 set: their AP rows go
+OLD = ["guardedCut", "brace", "wardenBash", "interpose", "gapThrust", "affront", "crushingBlow", "holdTheLine", "unbreakable"]
 
 
 def load(path):
@@ -72,7 +75,7 @@ def usable_line(text):  # "Usável: a, b" + the class name
 
 rules, _ = load("content/data/battle-rules.json")  # read only (generated): the Guerreiro's stats, the Arqueira's Medium tiers
 sword = rules["classes"]["swordsman"]
-medium = rules["classes"]["archer"]["tiers"]
+casters = rules["classes"]["mage"]["tiers"]  # T1-T10 open at 1, 3, 6, 8, 11, 13, 16, 18, 21, 23
 
 # --- content/ember-classes.json (hand laid out: the entry is inserted as text) ---
 ec, ec_text = load("content/ember-classes.json")
@@ -84,7 +87,7 @@ if CID not in ec.get("heroClasses", {}):
    "initiativeBonus": {sword['initiativeBonus']}, "shockCharges": 0, "fantomForceCharges": 0,
    "starterWeapon": "espada-larga", "weaponTypes": ["sword"],
    "stats": [{rows(sword['stats'], 5, 13)}],
-   "tiers": [{rows(medium, 4, 13)}],
+   "tiers": [{rows(casters, 4, 13)}],
    "spells": [{rows([[]] * len(sword['stats']), 15, 13)}]
   }}'''
     anchor = '\n  }\n },\n "aboutHeroBaseClasses"'
@@ -92,8 +95,15 @@ if CID not in ec.get("heroClasses", {}):
         sys.exit("content/ember-classes.json: the end of heroClasses was not where expected")
     text = ec_text.replace(anchor, '\n  },\n' + block + '\n },\n "aboutHeroBaseClasses"', 1)
     write_text("content/ember-classes.json", ec_text, text)
-else:
-    print("unchanged content/ember-classes.json")
+else:  # there already: its tier table set to the casters' (the T1-T10 set), the rest as it is
+    start = ec_text.index(f'"{CID}": {{', ec_text.index('"heroClasses"'))
+    at = ec_text.index('"tiers": [', start) + len('"tiers": [')
+    depth, end = 1, at
+    while depth:
+        depth += {"[": 1, "]": -1}.get(ec_text[end], 0)
+        end += 1
+    text = ec_text[:at] + rows(casters, 4, 13) + ec_text[end - 1:]
+    write_text("content/ember-classes.json", ec_text, text)
 
 # --- content/data/class-stats.json, classes.json ---
 cs, cs_text = load("content/data/class-stats.json")
@@ -129,11 +139,9 @@ for e in inn["equipment"]:
             e["tooltip"] = usable_line(e["tooltip"])
         elif isinstance(e.get("tooltip"), list):
             e["tooltip"] = [usable_line(t) for t in e["tooltip"]]
-inn["tierUses"][CID] = inn["tierUses"]["archer"]
+inn["tierUses"][CID] = casters
 inn["classNames"][CID] = PT
 save("content/data/inn.json", inn, inn_text)
-if inn["tierUses"]["archer"] != medium:
-    print("note: inn.json's Arqueira tier table differs from battle-rules.json's", file=sys.stderr)
 
 # --- content/data/overworld.json ---
 ow, ow_text = load("content/data/overworld.json")
@@ -145,9 +153,14 @@ save("content/data/overworld.json", ow, ow_text)
 # --- content/data/action-points.json (hand laid out: added to byKind's line) ---
 ap, ap_text = load("content/data/action-points.json")
 text = ap_text
-missing = {k: v for k, v in AP.items() if k not in ap["spells"]["byKind"]}
+for k in OLD:  # the replaced techniques' rows
+    text = text.replace(f', "{k}": {ap["spells"]["byKind"][k]}', "", 1) if k in ap["spells"]["byKind"] else text
+missing = {k: v for k, v in AP.items() if ap["spells"]["byKind"].get(k) != v}
+for k in list(missing):  # a row there with another value: its value changed in place
+    if k in ap["spells"]["byKind"]:
+        text = text.replace(f'"{k}": {ap["spells"]["byKind"][k]}', f'"{k}": {missing.pop(k)}', 1)
 if missing:
-    last = list(ap["spells"]["byKind"].items())[-1]
+    last = list(json.loads(text)["spells"]["byKind"].items())[-1]  # the line as it is now (the replaced rows gone)
     old = f'"{last[0]}": {last[1]}}}'
     if old not in text:
         sys.exit("content/action-points.json: the end of byKind was not where expected")

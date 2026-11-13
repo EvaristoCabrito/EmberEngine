@@ -140,18 +140,9 @@ struct BattleStep {
   double parriedAccBonus = 0;     // Segunda Intenção's second hit: when the first was parried, these points to hit ...
   int parriedIgnorePct = 0;       // ... and this % of armor ignored
   bool martialMove = false;       // Type::Move of a technique: the destination is checked again as it resolves (taken: the chain aborts)
-  // Garran's techniques (Guardião da Lua, docs/SKILLS_MOONWARDEN.md): every number the moon changes is read once, as the technique
-  // commits, and travels in its steps (the moon that was paid for).
-  int wardCutPct = 0;             // landed: the striker's own next physical weapon hit taken -this % (Corte Guardado)
-  int crushPct = 0;               // landed: Golpe Esmagador (the struck's next weapon attack -this % damage on every target)
-  int interposedBy = -1;          // this attack was redirected onto this Guardião by Interpor ...
-  int interposeCutPct = 0;        // ... and takes this % off (Lua minguante)
-  int braceHits = 0;              // Erguer o Escudo (Type::Effect, `bonus` its %): this many hits ...
-  bool bracePush = false;         // ... and the first push on him one hex shorter (Lua minguante)
-  bool holdRanged = false;        // Segurar a Linha (Type::Effect on `ids`, `bonus` its %): ranged weapon hits too (Lua nova)
-  bool wardChallengeSlow = false; // Afronta (Type::Effect, `bonus` its %): a reduced hit leaves +1 AP on the foe's next step (Lua crescente)
-  int barrierPct = 0;             // Inquebrável (Type::Effect): a barrier of this % of his max HP ...
-  int allyBarrierPct = 0;         // ... and of this % of the ally's in `ids` (Lua minguante)
+  // Garran's techniques (Guardião da Lua, docs/SKILLS_MOONWARDEN.md)
+  int braceHits = 0;              // Firmar o Pé (Type::Effect, `bonus` its %): this many hits ...
+  bool bracePush = false;         // ... and the first push on him one hex shorter
 };
 
 // What a step did, for the window: a number over a unit, a miss, a heal, a death.
@@ -235,12 +226,7 @@ int spellCooldownLeft(const Battle& b, size_t unit, const std::string& kind);
 // (true: the walk ends on `to`). Each resolves its blow at once (6 AP of his, checked as it commits) into `out`.
 bool reactBeforeStep(Battle& b, size_t walker, BattleHex from, BattleHex to, Mulberry32& rng, std::vector<BattleEffect>& out);
 bool reactAfterStep(Battle& b, size_t walker, BattleHex from, BattleHex to, Mulberry32& rng, std::vector<BattleEffect>& out);
-// Garran's Interpor (docs/SKILLS_MOONWARDEN.md): a weapon attack (Type::Combat) about to begin, before its roll: when it is a single-target
-// melee attack at an ally he covers, and he still stands beside that ally and within the attacker's reach, the attack is his (step.def
-// changed, the cover spent, "Interpor" in `out`). True when it was redirected. Called once as the step starts (the map's exchange, playSteps).
-bool interposeRedirect(Battle& b, BattleStep& step, std::vector<BattleEffect>& out);
-// Tonight's moon as Garran's techniques read it: 0 new, 1 waxing (crescent, first quarter, gibbous), 2 full (the blood moon too; also an
-// unknown moon), 3 waning (gibbous, last quarter, crescent).
+// Tonight's moon: 0 new, 1 waxing (crescent, first quarter, gibbous), 2 full (the blood moon too; also an unknown moon), 3 waning.
 int moonForm(const Battle& b);
 // Witch's Stitch rupture, offered only for a validated voluntary movement attempt.
 std::optional<BattleStep> witchStitchInterrupt(const Battle& b, size_t walker);

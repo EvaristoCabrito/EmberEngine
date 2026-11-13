@@ -307,39 +307,26 @@ struct BattleUnit {
       int challengePct = 0, challengeBy = -1, challengeTurns = 0;
       int lowCutHexes = 0, lowCutTurns = 0;
       int severTurns = 0;
-      // Garran's (the Guardião da Lua, docs/SKILLS_MOONWARDEN.md), each charge spent by the one hit it reduces (the strongest of them on
-      // a hit; only its charge spent). On him, until his next turn begins: Corte Guardado's (wardCutPct off his next physical weapon hit),
-      // Erguer o Escudo's (bracePct off each of his next braceHits physical weapon hits; bracePush: the first push on him one hex
-      // shorter), Inquebrável's immunity to newly laid stun and root (unbreakable). On anyone, until its Guardião's (`...By`) next turn:
-      // Interpor (the first single-target melee attack at this ally goes to interposeBy instead, interposeCutPct off it), Segurar a Linha
-      // (holdPct off this ally's next melee weapon hit while beside holdBy; holdRanged: ranged too), a barrier (barrier HP, absorbed after
-      // mitigation, laid by barrierBy). On a foe: Afronta (until wardChallengeBy's next turn: its first single-target weapon hit on
-      // another of his party -wardChallengePct; wardChallengeSlow: that reduction leaves Corte Baixo's +1 AP on its next step), Golpe
-      // Esmagador (crushPct off its next weapon attack, every target; through the end of its next full turn: crushTurns; crushRound /
-      // crushKind: the attack that spends it, so the same action's other hits count too).
-      // hitBy / stopped (and their ...Prev, the turn before): the foes that landed a weapon hit on this unit, and the foes whose attack
-      // it redirected or reduced, since the start of its own previous turn (Corte Guardado's Lua cheia, Acerto de Contas).
-      int wardCutPct = 0;
+      // Garran's (the Guardião da Lua, T1-T10, docs/SKILLS_MOONWARDEN.md). On him, until his next turn begins: Firmar o Pé (bracePct
+      // off the first physical hit while braceHits; bracePush: the first push on him one hex shorter, its own charge), Vigiar a Brecha
+      // (the hex watchX / watchY; watchPct: the reaction blow's weight, 0 = none). On an ally, until its Guardião's (`...By`) next turn:
+      // Cerrar Fileiras (holdPct off its first direct weapon hit while beside holdBy), Assumir o Peso (weightPct of its first landed
+      // single-target weapon hit, after mitigation, goes to weightBy). Puxar para Longe on an ally: accUpPct points on its next weapon
+      // attack, through the end of its next turn (accUpTurns). stopped (and stoppedPrev, the turn before): the foes whose hit on an
+      // ally he reduced or took, since the start of his previous turn (Acerto de Contas).
       int bracePct = 0, braceHits = 0;
-      bool bracePush = false, unbreakable = false;
-      int interposeBy = -1, interposeCutPct = 0;
+      bool bracePush = false;
+      int watchX = -1, watchY = -1, watchPct = 0;
       int holdPct = 0, holdBy = -1;
-      bool holdRanged = false;
-      int barrier = 0, barrierBy = -1;
-      int wardChallengePct = 0, wardChallengeBy = -1;
-      bool wardChallengeSlow = false;
-      int crushPct = 0, crushTurns = 0, crushRound = -1;
-      std::string crushKind;
-      std::vector<int> hitBy, hitByPrev, stopped, stoppedPrev;
+      int weightPct = 0, weightBy = -1;
+      int accUpPct = 0, accUpTurns = 0;
+      std::vector<int> stopped, stoppedPrev;
       bool any() const {
         return guardPct > 0 || footingPct > 0 || plantPct > 0 || measureTarget >= 0 || exposedPct > 0 || openPct > 0 || accDownPct > 0 ||
                challengePct > 0 || lowCutHexes > 0 || severTurns > 0 || wardAny();
       }
-      bool wardAny() const {
-        return wardCutPct > 0 || braceHits > 0 || bracePush || unbreakable || interposeBy >= 0 || holdPct > 0 || barrier > 0 ||
-               wardChallengePct > 0 || crushPct > 0;
-      }
-      bool wardMemory() const { return !hitBy.empty() || !hitByPrev.empty() || !stopped.empty() || !stoppedPrev.empty(); }
+      bool wardAny() const { return braceHits > 0 || bracePush || watchPct > 0 || holdPct > 0 || weightPct > 0 || accUpPct > 0; }
+      bool wardMemory() const { return !stopped.empty() || !stoppedPrev.empty(); }
     } martial;
     bool any() const {
       return markTurns > 0 || plagueSpread > 0 || plagueBurst || bleedTurns > 0 || silenceTurns > 0 || decayTurns > 0 || sunderPct > 0 || rallyPct > 0 ||

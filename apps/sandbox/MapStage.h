@@ -8109,7 +8109,10 @@ class MapStage final : public Stage {
           const float height = cardHeightOf(unitSpot(ui));
           spellFx_.combat().impact(CombatFx::Kind::HeavySlash, hit.feet, height, unitWorld(vs), lands);
           const SpellEffects::Spot kael = unitSpot(vs);
-          spellFx_.vanguard().reaction(measured[v] ? "deadMeasure" : "plantTheLine", {kael.feet, kael.cardHeight}, {hit.feet, height}, lands);
+          if (battle_->units()[v].classId == "moonwarden")  // Garran's Vigiar a Brecha: his own moonlight
+            spellFx_.moonwarden().strike("watchTheGap", {hit.feet, height}, {kael.feet, kael.cardHeight}, lands, true);
+          else
+            spellFx_.vanguard().reaction(measured[v] ? "deadMeasure" : "plantTheLine", {kael.feet, kael.cardHeight}, {hit.feet, height}, lands);
           tip_ = battle_->units()[v].name + tr(" reage ao movimento!", " answers the move!"), tipAt_ = now_;
         }
     if (route.size() < 2) {  // stopped before its first step: it never left its hex
@@ -8430,11 +8433,6 @@ class MapStage final : public Stage {
 
   // The step's pose starts: the striker turns to its target (and a struck foe to the striker).
   void startStep(Exchange& x) {
-    // Garran's Interpor: a covered ally's attacker turns on him before the blow (its pose, its roll, its counter are his)
-    if (!x.counter && x.steps[x.step].type == ember::BattleStep::Type::Combat) {
-      std::vector<ember::BattleEffect> fx;
-      if (ember::interposeRedirect(*battle_, x.steps[x.step], fx)) showEffects(fx);
-    }
     const ember::BattleStep& s = x.steps[x.step];
     const int striker = sceneUnitOf(static_cast<int>(x.counter ? s.def : s.att));
     using StepType = ember::BattleStep::Type;
@@ -8517,7 +8515,40 @@ class MapStage final : public Stage {
     // and the staff glows while they swing - Isolde's in ember, Voss's in his Arcano violet
     x.magicStaff = staffCounter && (isolde || strikerKey == "voss");
     if (x.magicStaff) x.element = isolde ? "ember" : "arcane", x.boltStrength = 0.55f;
-    const float length = (striker >= 0 && !pose.empty() ? poseSeconds(static_cast<size_t>(striker), pose) : 0.6f) / actionRate();
+    // A spell that leaves the caster's hands (Mãos Flamejantes, Sopro Venenoso; since 2026-10-18 also Míssil Mágico, Bola de Fogo,
+    // Veneno Cáustico, Frost: the user, "para o resto usar a mesma regra do burning hands"; not Relâmpago, it falls from the sky).
+    const bool fromHands = s.kind == "burningHands" || s.kind == "poisonBreath" || s.kind == "magicMissile" || s.kind == "magicMissileV2" ||
+                           s.kind == "fireball" || s.kind == "causticVenom" || s.kind == "frost";
+    // Aimed into the board, not at the camera (into the screen and to the side both; the user, 2026-10-17: "mesmo deste angulo ele
+    // precisa virar de costas", then "de lado fica de costas tbm"): within 60 degrees of straight toward the camera keeps the front.
+    auto aimedAway = [&](const std::vector<SpellEffects::Spot>& at) {
+      if (at.empty() || striker < 0) return false;
+      const SpellEffects::Spot from = unitSpot(static_cast<size_t>(striker));
+      glm::vec2 d{0.0f};
+      for (const SpellEffects::Spot& t : at) d += glm::vec2(t.feet.x - from.feet.x, t.feet.z - from.feet.z);
+      d /= static_cast<float>(at.size());
+      const float yaw = cam_.yaw;
+      const float away = -(d.x * std::sin(yaw) + d.y * std::cos(yaw));
+      return glm::length(d) > 1e-3f && away >= -0.5f * glm::length(d);
+    };
+    // Turned away to cast (the user, 2026-11-13: "use that turn around for casting and experiment with the illusion of depth"): such a
+    // spell aimed into the board, by a caster with a turn of its own (turnBack, from the turn-around videos) and a back still, plays the
+    // turn in place of its cast pose, quick (kTurnCastSeconds); the spell then leaves its hands with its back to us and flies into the
+    // depth of the board, its back still held, drawn over the effect, until the spell is over (shot.then below).
+    bool turnToCast = false;
+    float poseRate = actionRate();
+    if (striker >= 0 && !x.counter && fromHands && !flat_ && s.type != StepType::Combat && !pose.empty() &&
+        hasPose(static_cast<size_t>(striker), "turnBack") && hasPose(static_cast<size_t>(striker), "castBack")) {
+      std::vector<SpellEffects::Spot> aim;
+      for (const ember::BattleHex& h : s.tiles) aim.push_back(hexSpot(h));
+      if (aim.empty() && target >= 0) aim.push_back(unitSpot(static_cast<size_t>(target)));
+      if (aimedAway(aim)) {
+        turnToCast = true;
+        pose = "turnBack";
+        poseRate = actionRate() * std::max(1.0f, poseSeconds(static_cast<size_t>(striker), pose) / kTurnCastSeconds);
+      }
+    }
+    const float length = (striker >= 0 && !pose.empty() ? poseSeconds(static_cast<size_t>(striker), pose) : 0.6f) / poseRate;
     x.impact = now_ + length * (striker >= 0 && !pose.empty() ? poseImpact(static_cast<size_t>(striker), pose) : kImpactShare);
     x.end = now_ + length + kExchangeGap / actionRate();
     if (comboStep) {
@@ -8582,7 +8613,7 @@ class MapStage final : public Stage {
       x.end = now_ + dash + kExchangeGap / actionRate();
       return;
     }
-    if (striker >= 0 && !pose.empty()) unitShot_[static_cast<size_t>(striker)] = {pose, now_, false, actionRate()};
+    if (striker >= 0 && !pose.empty()) unitShot_[static_cast<size_t>(striker)] = {pose, now_, false, poseRate};
     // The casting light (Ember Battle3D syncCastLight): every caster while its cast pose plays, in its spell's colour (Malrec,
     // Salazar and Voss in their own); swings, shoves and arrow shots are not casts (NOT_CASTS). Malrec alone also lights his attacks
     // and counters, in yellow.
@@ -8831,23 +8862,11 @@ class MapStage final : public Stage {
           if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0) foes.push_back(unitSpot(static_cast<size_t>(ui)));
         spellFx_.warCryFear(foes, x.impact);
       }
-      // A spell that leaves the caster's hands (Mãos Flamejantes, Sopro Venenoso; since 2026-10-18 also Míssil Mágico, Bola
-      // de Fogo, Veneno Cáustico, Frost: the user, "para o resto usar a mesma regra do burning hands"; not Relâmpago, it
-      // falls from the sky) not aimed at the camera: after the cast pose the caster turns its back to us (its "castBack"
-      // still, the user's own picture) and the spell leaves its hands into the board, held until the effect is over.
-      // Aimed toward the camera it stays as it is.
-      const bool fromHands = s.kind == "burningHands" || s.kind == "poisonBreath" || s.kind == "magicMissile" || s.kind == "magicMissileV2" ||
-                             s.kind == "fireball" || s.kind == "causticVenom" || s.kind == "frost";
+      // A spell that leaves the caster's hands (fromHands above) not aimed at the camera: after the cast pose (or the turn, turnToCast)
+      // the caster has its back to us (its "castBack" still, the user's own picture) and the spell leaves its hands into the board,
+      // held until the effect is over. Aimed toward the camera it stays as it is.
       if (magic && fromHands && !spots.empty() && !flat_ && hasPose(static_cast<size_t>(striker), "castBack")) {
-        glm::vec2 d{0.0f};
-        for (const SpellEffects::Spot& t : spots) d += glm::vec2(t.feet.x - casterSpot.feet.x, t.feet.z - casterSpot.feet.z);
-        d /= static_cast<float>(spots.size());
-        const float yaw = cam_.yaw;
-        // Into the screen and to the side both turn it (the user, 2026-10-17: "mesmo deste angulo ele precisa virar de costas",
-        // then "de lado fica de costas tbm"); only an aim coming at the camera keeps the front: within 60 degrees of straight
-        // toward it (a walk's front cut, updateUnits).
-        const float away = -(d.x * std::sin(yaw) + d.y * std::cos(yaw));
-        if (glm::length(d) > 1e-3f && away >= -0.5f * glm::length(d)) {
+        if (turnToCast || aimedAway(spots)) {
           OneShot& shot = unitShot_[static_cast<size_t>(striker)];
           shot.then = "castBack";
           shot.thenUntil = std::max(spellFx_.castEnd(static_cast<int>(striker)), x.impact + 0.5f);
@@ -10686,6 +10705,7 @@ class MapStage final : public Stage {
               const SpellEffects::Spot at = unitSpot(static_cast<size_t>(ui));
               marked.push_back({at.feet, cardHeightOf(at)});
             }
+          if (s.kind == "watchTheGap" && !s.tiles.empty()) marked.push_back({hexSpot(s.tiles.front()).feet, 0.0f});  // the watched hex
           spellFx_.moonwarden().ward(s.kind, self, marked, now_);
         }
       }
@@ -14584,6 +14604,7 @@ class MapStage final : public Stage {
   ember::Mulberry32 rng_{1};
   static constexpr float kImpactShare = 0.55f;   // a strike lands this far into the attack pose
   static constexpr float kExchangeGap = 0.15f;   // a breath between the strike and the counter
+  static constexpr float kTurnCastSeconds = 1.1f;  // a caster turning away to cast into the board (turnToCast): its turn, sped up to this
   static constexpr float kCorpseSeconds = 1.5f;  // the fallen lie this long after their death pose
   static constexpr float kEnterSeconds = 0.8f;   // a cutscene's "enter": the card's fade-in
   static constexpr float kPopupSeconds = 1.2f;

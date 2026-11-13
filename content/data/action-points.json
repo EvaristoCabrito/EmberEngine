@@ -136,7 +136,7 @@
     "weaponSkillsUseWeaponCost": false,
     "byTier": {},
     "byKindNote": "Kael's techniques (docs/SKILLS_VANGUARD.md): the design's AP for the whole technique, its bundled step included",
-    "byKind": {"measuredCut": 6, "longstepSlash": 7, "crossguard": 4, "pommelCheck": 5, "lowCut": 6, "partingCut": 7, "overheadHew": 8, "steadyFooting": 4, "challenge": 5, "breakGuard": 8, "feint": 4, "passingStep": 7, "needlePoint": 7, "secondIntention": 9, "readTheBlade": 4, "severTheRhythm": 8, "perfectCut": 9, "deadMeasure": 5, "masterstroke": 11, "drivingCut": 8, "wideCleave": 8, "sidecast": 7, "plantTheLine": 5, "shoulderThrough": 8, "crushAgainstStone": 9, "splitTheRank": 9, "reapTheFlanks": 9, "rollingAdvance": 10, "shatterTheLine": 11, "guardedCut": 6, "brace": 4, "wardenBash": 6, "interpose": 5, "gapThrust": 7, "affront": 4, "crushingBlow": 8, "holdTheLine": 6, "reckoning": 9, "unbreakable": 6}
+    "byKind": {"measuredCut": 6, "longstepSlash": 7, "crossguard": 4, "pommelCheck": 5, "lowCut": 6, "partingCut": 7, "overheadHew": 8, "steadyFooting": 4, "challenge": 5, "breakGuard": 8, "feint": 4, "passingStep": 7, "needlePoint": 7, "secondIntention": 9, "readTheBlade": 4, "severTheRhythm": 8, "perfectCut": 9, "deadMeasure": 5, "masterstroke": 11, "drivingCut": 8, "wideCleave": 8, "sidecast": 7, "plantTheLine": 5, "shoulderThrough": 8, "crushAgainstStone": 9, "splitTheRank": 9, "reapTheFlanks": 9, "rollingAdvance": 10, "shatterTheLine": 11, "reckoning": 9, "steadyStrike": 6, "digIn": 4, "flankStep": 7, "closeRanks": 5, "breakStride": 6, "watchTheGap": 4, "followThrough": 9, "pullClear": 5, "takeTheWeight": 6}
   },
   "counters": {
     "staff": 6,
