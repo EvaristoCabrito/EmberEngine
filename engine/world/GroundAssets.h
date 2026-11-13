@@ -57,6 +57,9 @@ inline constexpr EmberGroundVariant kEmberGroundVariants[] = {
     {"plains", "ember-plains-grass-v3", "content/ground/plains-grass-ground-v03.png", 72, 4.0f},
     {"plains", "ember-plains-grass-v1-seamless", "content/ground/plains-grass-ground-v01-seamless.png", 73, 4.0f},
     {"plains", "ember-plains-grass-v3-seamless", "content/ground/plains-grass-ground-v03-seamless.png", 74, 4.0f},
+    // A plank floor on stone cells (the Watchtower's barracks wing; the user, 2026-11-13: "if there is no tile you just need to build
+    // it"): the Inn's worn planks. Still "nave" underneath, so the cell plays exactly like the stone around it.
+    {"nave", "ember-torre-madeira-v01", "content/ground/inn-planks-037a-v01.png", 91, 4.0f},
 };
 inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"ashen-straight-road-v01", "plains", "ember-ashen-straight-road-v01-plains", "content/backdrops/bosque-ground-v01.jpg", 16.0f, true},
