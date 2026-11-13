@@ -9401,6 +9401,23 @@ class MapStage final : public Stage {
     int look = 0;
     if (const size_t colon = kind.find(':'); colon != std::string::npos) look = std::atoi(kind.c_str() + colon + 1), kind.resize(colon);
     if (kind == "all") kind = kKinds[static_cast<size_t>(cycle) % std::size(kKinds)];
+    // "kael": his 30 techniques one after another, one a cycle (docs/SKILLS_VANGUARD.md), then the Riposta and the two reactions
+    static const char* kKael[] = {"measuredCut", "longstepSlash", "crossguard", "pommelCheck", "lowCut", "partingCut", "overheadHew", "steadyFooting",
+                                  "challenge", "breakGuard", "feint", "passingStep", "needlePoint", "secondIntention", "readTheBlade", "severTheRhythm",
+                                  "perfectCut", "deadMeasure", "masterstroke", "drivingCut", "wideCleave", "sidecast", "plantTheLine", "shoulderThrough",
+                                  "crushAgainstStone", "splitTheRank", "reapTheFlanks", "rollingAdvance", "shatterTheLine", "riposte"};
+    if (kind == "kael") {
+      kind = kKael[static_cast<size_t>(std::max(cycle, 0)) % std::size(kKael)];
+      const size_t target = nearestTarget(static_cast<size_t>(hero_), false);
+      const SpellEffects::Spot me = unitSpot(static_cast<size_t>(hero_)), them = unitSpot(target);
+      const float start = static_cast<float>(cycle) * kFxTestCycle;
+      logInfo("fx test: kael {} at {:.1f} s", kind, start);
+      if (hasPose(static_cast<size_t>(hero_), "specialAttack")) unitShot_[static_cast<size_t>(hero_)] = {"specialAttack", start, false, actionRate()};
+      if (kind == "riposte") spellFx_.vanguard().riposte({me.feet, me.cardHeight}, {them.feet, them.cardHeight}, start + 0.6f);
+      else spellFx_.cast(kind, 1, me, {them}, start, start + 0.6f, static_cast<int>(hero_));
+      if (kind == "crushAgainstStone") spellFx_.vanguard().stone({them.feet, them.cardHeight}, them.feet - me.feet, start + 0.7f);
+      return;
+    }
     if (look <= 0) look = std::max(spellLook(kind, static_cast<size_t>(hero_)), 1);
     logInfo("fx test: {} {:02} at {:.1f} s", kind, look, static_cast<float>(cycle) * kFxTestCycle);
     if (testCombat(static_cast<size_t>(hero_), kind, static_cast<float>(cycle) * kFxTestCycle)) return;
