@@ -1,0 +1,197 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Monsters/Embered Zombie/Idle/sprite-max-px-frames-64-rows-8-cols-8.png",
+   "first": 0,
+   "last": 63,
+   "bootRow": 1024,
+   "bootRows": [
+    1024,
+    1024
+   ],
+   "figurePx": 1008.0,
+   "bodyAt": 0.0,
+   "scaledTo": 610.3,
+   "frames": 64,
+   "frameMs": 70.0,
+   "nat": [
+    343,
+    623
+   ],
+   "crop": [
+    40,
+    1,
+    301,
+    620
+   ],
+   "box": {
+    "w": 1.51875,
+    "h": 2.75855,
+    "foot": 0.00985
+   },
+   "pattern": "content/sprites/embered-zombie/base-media64-v02/base-{}.png"
+  },
+  "move": {
+   "video": "Attachments/Monsters/Embered Zombie/Walk/sprite-max-px-frames-64-rows-8-cols-8.png",
+   "first": 0,
+   "last": 63,
+   "loopFirst": 0,
+   "loopLast": 63,
+   "seamSteps": NaN,
+   "bootRow": 720,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 699.5,
+   "bodyAt": 0.0,
+   "scaledTo": 610.4,
+   "frames": 64,
+   "frameMs": 72.0,
+   "nat": [
+    460,
+    637
+   ],
+   "crop": [
+    2,
+    1,
+    405,
+    632
+   ],
+   "box": {
+    "w": 2.03417,
+    "h": 2.81688,
+    "foot": 0.03445
+   },
+   "pattern": "content/sprites/embered-zombie/move-media64-v02/move-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/Monsters/Embered Zombie/Walk/sprite-max-px-frames-64-rows-8-cols-8.png",
+   "first": 0,
+   "last": 63,
+   "loopFirst": 0,
+   "loopLast": 63,
+   "seamSteps": NaN,
+   "bootRow": 720,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 699.5,
+   "bodyAt": 0.0,
+   "scaledTo": 610.4,
+   "frames": 64,
+   "frameMs": 72.0,
+   "nat": [
+    460,
+    637
+   ],
+   "crop": [
+    53,
+    1,
+    405,
+    632
+   ],
+   "box": {
+    "w": 2.03417,
+    "h": 2.81688,
+    "foot": 0.03445
+   },
+   "pattern": "content/sprites/embered-zombie/move-left-media64-v02/move-left-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Monsters/Embered Zombie/ATT/sprite-max-px-frames-64-rows-8-cols-8.png",
+   "first": 0,
+   "last": 63,
+   "bootRow": 739,
+   "bootRows": [
+    729,
+    740
+   ],
+   "figurePx": 725.0,
+   "bodyAt": 0.0,
+   "scaledTo": 610.4,
+   "frames": 64,
+   "frameMs": 51.0,
+   "nat": [
+    614,
+    634
+   ],
+   "crop": [
+    97,
+    1,
+    517,
+    626
+   ],
+   "box": {
+    "w": 2.71862,
+    "h": 2.80718,
+    "foot": 0.04811
+   },
+   "pattern": "content/sprites/embered-zombie/atk-media64-v02/atk-{}.png",
+   "impact": 0.2031
+  },
+  "hit": {
+   "video": "Attachments/Monsters/Embered Zombie/Fall/UpscaledTest/sprite-max-px-frames-64-rows-8-cols-8.png",
+   "first": 2,
+   "last": 15,
+   "bootRow": 927,
+   "bootRows": [
+    927,
+    927
+   ],
+   "figurePx": 881.0,
+   "bodyAt": 0.0,
+   "scaledTo": 609.6,
+   "frames": 27,
+   "frameMs": 58.0,
+   "nat": [
+    339,
+    629
+   ],
+   "crop": [
+    51,
+    4,
+    285,
+    621
+   ],
+   "box": {
+    "w": 1.5017,
+    "h": 2.78634,
+    "foot": 0.02997
+   },
+   "pattern": "content/sprites/embered-zombie/hit-media64-v02/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Monsters/Embered Zombie/Fall/UpscaledTest/sprite-max-px-frames-64-rows-8-cols-8.png",
+   "first": 0,
+   "last": 63,
+   "bootRow": 930,
+   "bootRows": [
+    930,
+    930
+   ],
+   "figurePx": 884.0,
+   "bodyAt": 0.0,
+   "scaledTo": 609.8,
+   "frames": 64,
+   "frameMs": 58.0,
+   "nat": [
+    472,
+    647
+   ],
+   "crop": [
+    6,
+    3,
+    462,
+    643
+   ],
+   "box": {
+    "w": 2.08914,
+    "h": 2.86372,
+    "foot": 0.10006
+   },
+   "pattern": "content/sprites/embered-zombie/death-media64-v02/death-{}.png"
+  }
+ }
+}

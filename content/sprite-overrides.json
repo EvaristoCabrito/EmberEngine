@@ -128,18 +128,19 @@
    "hero": "kael",
    "cut": "content/sprites/kael-v3/cut.json",
    "why": "the user, 2026-11-09: Kael from their videos (Attachments/KaelV3): the 6 s idle (KaelIdleLoop) in place of the idle of Kael-IdleBackDoubleStrike, KaelATT for the attack, the few frames of his back for the special skills that turn him away from the camera and for cutscenes, the walk (Medieval_warrior_walking_8ba19cd7) mirrored for the left \"for now\"; the double strike of the same video cut with the rest, no skill plays it yet. Kael_Final stays in the pack. v02 (the user, 2026-11-09: \"very large grey borders\", the cloak most): every clip cut again with the edge key; their second batch: the walk to the left (in place of the mirror), the special attack (\"its for special att\", no skill plays it yet), the hit and the fall.",
-   "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkLeft": "move-left", "turnBack": "turn-back", "castBack": "cast-back", "doubleStrike": "double-strike", "specialAttack": "special", "hit": "hit", "death": "death"},
-   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "walkLeft": "Andar (esquerda)", "turnBack": "De costas", "castBack": "De costas (parado)", "doubleStrike": "Golpe duplo", "specialAttack": "Ataque especial", "hit": "Dano", "death": "Queda"},
-   "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field"},
-   "strides": {"move": 2.5, "move-left": 1.0}
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkLeft": "move-left", "turnBack": "turn-back", "castBack": "cast-back", "doubleStrike": "double-strike", "specialAttack": "special", "hit": "hit", "death": "death", "emote01": "emote01"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "walkLeft": "Andar (esquerda)", "turnBack": "De costas", "castBack": "De costas (parado)", "doubleStrike": "Golpe duplo", "specialAttack": "Ataque especial", "hit": "Dano", "death": "Queda", "emote01": "KaelEmote01"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene"},
+   "strides": {"move": 2.5, "move-left": 1.0},
+   "whyIdleEmote": "the user, 2026-11-12: the final idle from KaelUltimateIdle (1080p, base v05: Alta at the video's own size, Media and Leve at ~610 px, the standard); the old idle (V3IdleLoop2) is KaelEmote01, cutscenes only"
   },
   {
    "set": "kael-v3-64-media",
    "version": "media64-v04",
    "mediumOf": {"hero": "kael", "set": "kael-v3"},
    "cut": "content/sprites/kael-v3/cut-64-media.json",
-   "why": "Kael's Personagens Média, as Voss's and Isolde's: every clip with at most 64 frames (picked evenly, the clip's timing kept), the figure ~916 px",
-   "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field"}
+   "why": "Kael's Personagens Média, as Voss's and Isolde's: every clip with at most 64 frames (picked evenly, the clip's timing kept), the figure ~916 px; the final idle (base media64-v05) and KaelEmote01 at ~610 px (the standard, 2026-11-12)",
+   "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene"}
   },
   {
    "set": "kael-v3-36-media",
@@ -147,7 +148,7 @@
    "lightOf": {"hero": "kael", "set": "kael-v3"},
    "cut": "content/sprites/kael-v3/cut-36-media.json",
    "why": "Kael's Personagens Leve, as Voss's and Isolde's: every clip with at most 36 frames, the figure ~610 px",
-   "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field"}
+   "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene"}
   },
   {
    "set": "neera-hydra",
@@ -452,10 +453,10 @@
    "hero": "ashesCrawler",
    "newHero": {"name": "Rastreador de Cinzas", "group": "monster", "sprite": "ashes-crawler", "reversed": false},
    "cut": "content/sprites/ashes-crawler/cut.json",
-   "why": "the user, 2026-11-06: the Ashes Crawler from their videos (Attachments/SandCrawler), Alta + 64 + 36 like the Hipóstase, 2 hexes; no hit / death yet",
+   "why": "the user, 2026-11-06: the Ashes Crawler from their videos (Attachments/SandCrawler), Alta + 64 + 36 like the Hipóstase, 2 hexes; hit and death from AshcrawlerHitandFall (2026-11-12)",
    "whySteady": "the user, 2026-11-11: \"a weird off set motion going up and down as he idles\": the idle video's camera sank ~30 px for a second; base-v02 (and its 64 / 36 copies) are base-v01 held still on the shell and rear legs (tools/scripts/sprites/steady_clip.py), v01 kept on disk",
-   "poses": {"idle": "base", "walk": "move", "attack": "atk"},
-   "labels": {"idle": "Parado", "walk": "Andar", "attack": "Atacar"},
+   "poses": {"idle": "base", "walk": "move", "attack": "atk", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "attack": "Atacar", "hit": "Dano", "death": "Morte"},
    "packs": {"base": "field", "move": "field"},
    "strides": {"move": 1.0}
   },
@@ -481,8 +482,9 @@
    "hero": "stagWolf",
    "cut": "content/sprites/stagwolf-v2/cut.json",
    "why": "the user, 2026-11-10: \"ZombieBOgWolfCharacter_walking_in_place_1ed8f6c1 see what you can do with this at least a walk down animation, maybe a mirrorerd improved version of walk left and walk right?\": the walk right (three-quarter view), the same walk mirrored for the left, and the walk toward the camera, at the StagWolf sheet walk's height; its idle, attack, cast, hit and death keep the StagWolf sheets",
-   "poses": {"walk": "move", "walkLeft": "move-left", "walkDown": "movefront"},
-   "labels": {"walk": "Andar", "walkLeft": "Andar (esquerda)", "walkDown": "Andar (frente)"},
+   "posesNote": "the user, 2026-11-12: \"regarding the stagwolf I will want you to add his walk down animation for sure\": only the walk toward the camera is his so far; the side walks (move, move-left) are cut and cooked but not his until the user has judged them, so they keep the StagWolf sheet walks",
+   "poses": {"walkDown": "movefront"},
+   "labels": {"walkDown": "Andar (frente)"},
    "packs": {"move": "field", "move-left": "field", "movefront": "field"},
    "strides": {"move": 1.0, "move-left": 1.0, "movefront": 1.0}
   },
@@ -597,6 +599,34 @@
    "strides": {"move": 1.0, "move-left": 1.0}
   },
   {
+   "set": "embered-zombie",
+   "version": "v01",
+   "hero": "emberedZombie",
+   "newHero": {"name": "Embered Zombie", "group": "monster", "sprite": "embered-zombie", "reversed": false},
+   "cut": "content/sprites/embered-zombie/cut.json",
+   "why": "the user, 2026-11-12: the Embered Zombie from their sheets (Attachments/Monsters/Embered Zombie), \"a type D + enemy\", \"closer to 3 resolutions ? Alta Media e Leve ? just less frames for alta\": Alta the 64-frame sheets, Media the same at ~916 px, Leve their 36-frame sheets; the hit is the start of the fall there and back",
+   "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "attack": "atk", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "walkLeft": "Andar (esquerda)", "attack": "Atacar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
+  },
+  {
+   "set": "embered-zombie-64-media",
+   "version": "media64-v02",
+   "cut": "content/sprites/embered-zombie/cut-64-media.json",
+   "why": "the Embered Zombie's Personagens Media: the 64 frames at ~916 px; v02 (the user, 2026-11-12): at ~610 px, the standard (v01 stays on disk)",
+   "mediumOf": {"hero": "emberedZombie", "set": "embered-zombie"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "embered-zombie-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/embered-zombie/cut-36-media.json",
+   "why": "the Embered Zombie's Personagens Leve: the user's 36-frame sheets at ~610 px",
+   "lightOf": {"hero": "emberedZombie", "set": "embered-zombie"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
    "set": "nekomata-64-media",
    "version": "media64-v01",
    "cut": "content/sprites/nekomata/cut-64-media.json",
@@ -639,6 +669,33 @@
    "why": "Telesm's Personagens Leve: 36 frames from the same mattes",
    "lightOf": {"hero": "telesm", "set": "telesm"},
    "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "radiant-familiar",
+   "version": "v01",
+   "hero": "familiar4",
+   "cut": "content/sprites/radiant-familiar/cut.json",
+   "why": "the user, 2026-11-12: remake the Familiar Radiante (the old set's visor was flawed and upscaled): idle, attack and walks from the 1080p of the original video, hit, death and an emote for cutscenes from the 1080p fall video, matched to it; Alta + 64 + 36. The walk keeps the old stride",
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkLeft": "move-left", "hit": "hit", "death": "death", "emote": "emote"},
+   "labels": {"emote": "Emote"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "emote": "cutscene"},
+   "strides": {"move": 1.69, "move-left": 1.69}
+  },
+  {
+   "set": "radiant-familiar-64-media",
+   "version": "media64-v02",
+   "cut": "content/sprites/radiant-familiar/cut-64-media.json",
+   "why": "the Familiar Radiante's Personagens Média: 64 frames from the same mattes; v02 (the user, 2026-11-12): at ~610 px, the standard (v01 ~916 px stays on disk)",
+   "mediumOf": {"hero": "familiar4", "set": "radiant-familiar"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "emote": "cutscene"}
+  },
+  {
+   "set": "radiant-familiar-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/radiant-familiar/cut-36-media.json",
+   "why": "the Familiar Radiante's Personagens Leve: 36 frames from the same mattes",
+   "lightOf": {"hero": "familiar4", "set": "radiant-familiar"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "emote": "cutscene"}
   }
  ],
  "clips": [

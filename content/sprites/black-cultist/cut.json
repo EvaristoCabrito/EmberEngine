@@ -7,7 +7,7 @@
  "clips": [
   {"clip": "base", "pose": "idle", "kind": "stand", "sheet": "Attachments/BlackCultist/Ilde/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "pingpong", "bodyAt": 0.0},
   {"clip": "cast", "pose": "cast", "kind": "stand", "sheet": "Attachments/BlackCultist/Cast/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "impactFrame": 13, "mode": "once", "bodyAt": 0.0, "why": "no attack sheet: the cast is his attack too; the open hand thrust out at 12-14, the spell leaves at 13"},
-  {"clip": "move", "pose": "walk", "kind": "walk", "sheet": "Attachments/BlackCultist/WalkLeft/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "loop", "mirror": true, "bodyAt": 0.0, "why": "the user: mirrored (the sheet walks left; the WalkRight folder is empty); the whole sheet is the loop"},
-  {"clip": "move-left", "pose": "walkLeft", "kind": "walk", "sheet": "Attachments/BlackCultist/WalkLeft/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "loop", "bodyAt": 0.0, "why": "the sheet as drawn: it walks left; the whole sheet is the loop"}
+  {"clip": "move", "pose": "walk", "kind": "walk", "sheet": "Attachments/BlackCultist/WalkLeft2/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 10, "last": 35, "loopMin": 18, "loopMax": 22, "mode": "loop", "mirror": true, "bodyAt": 0.0, "why": "the user, 2026-11-12: WalkLeft2 for a better loop (the old walk looped the whole sheet, front-facing turn included); only the side-on steps, cut at the best seam; mirrored (the sheet walks left)"},
+  {"clip": "move-left", "pose": "walkLeft", "kind": "walk", "sheet": "Attachments/BlackCultist/WalkLeft2/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 10, "last": 35, "loopMin": 18, "loopMax": 22, "mode": "loop", "bodyAt": 0.0, "why": "the user, 2026-11-12: WalkLeft2, side-on steps only, cut at the best seam; the sheet as drawn walks left"}
  ]
 }

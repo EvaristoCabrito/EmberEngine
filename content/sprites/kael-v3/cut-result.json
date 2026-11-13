@@ -1,35 +1,35 @@
 {
  "clips": {
   "base": {
-   "video": "Attachments/KaelV3/V3IdleLoop2.mp4",
+   "video": "Attachments/KaelV3/FinalIdle/KaelUltimateIdle.mp4",
    "first": 0,
-   "last": 143,
+   "last": 142,
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
-   "bootRow": 702,
+   "bootRow": 1062,
    "bootRows": [
-    697,
-    702
+    1043,
+    1063
    ],
-   "figurePx": 673.0,
-   "bodyAt": -0.1898,
-   "frames": 144,
+   "figurePx": 986.0,
+   "bodyAt": -0.1897,
+   "frames": 143,
    "frameMs": 41.666666666666664,
    "nat": [
-    501,
-    700
+    743,
+    1073
    ],
    "crop": [
     4,
     5,
-    429,
-    690
+    658,
+    1066
    ],
    "box": {
-    "w": 1.92062,
-    "h": 2.68351,
-    "foot": 0.05367
+    "w": 1.94416,
+    "h": 2.80765,
+    "foot": 0.04448
    },
-   "pattern": "content/sprites/kael-v3/base-v04/base-{}.png"
+   "pattern": "content/sprites/kael-v3/base-v05/base-{}.png"
   },
   "atk": {
    "video": "Attachments/KaelV3/KaelATT-v2-cropped.mp4",

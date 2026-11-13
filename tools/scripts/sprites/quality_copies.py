@@ -2,7 +2,7 @@
 for medium, and low get 610, anything less is just nasty looking"; frame counts are only ever 36 or 64):
 
     Alta   every frame, the video's own size (the cut spec itself)
-    Média  at most 64 frames, the figure ~916 px tall (Neera Hydra's height; a clip already shorter keeps its own size)
+    Média  at most 64 frames, the figure ~610 px tall (the user, 2026-11-12: Isolde's Média is the standard; was ~916 px)
     Leve   at most 36 frames, the figure ~610 px tall (never drawn smaller: MapStage pins a copy without halving it)
 
 Writes <spec dir>/cut-64-media.json and cut-36-media.json (sets <set>-64-media / <set>-36-media, results cut-result-64-media.json /
@@ -16,7 +16,7 @@ import json
 import os
 import sys
 
-RULE = (("64-media", "Média", 64, 916), ("36-media", "Leve", 36, 610))
+RULE = (("64-media", "Média", 64, 610), ("36-media", "Leve", 36, 610))
 
 
 def main():

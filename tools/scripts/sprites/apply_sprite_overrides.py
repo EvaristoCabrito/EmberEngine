@@ -192,6 +192,12 @@ def main():
             p.pop("medium", None)
             p.pop("light", None)
             p.pop("lightStep", None)
+            # a clip in the "cutscene" pack (an emote; the user, 2026-11-12: "This emote will not load during combat, only during
+            # cutscenes"): the pose is marked so a fight never pins it and a cutscene streams it in (MapStage requestScenePoses)
+            if st["packs"].get(name) == "cutscene":
+                fields["cutscene"] = True
+            else:
+                p.pop("cutscene", None)
             p.update(fields)
         for table in strides:
             if table is not None:

@@ -62,68 +62,68 @@
    "impact": 0.3611
   },
   "move": {
-   "video": "Attachments/BlackCultist/WalkLeft/sprite-max-px-frames-36-rows-6-cols-6.png",
-   "first": 0,
+   "video": "Attachments/BlackCultist/WalkLeft2/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 10,
    "last": 35,
-   "loopFirst": 0,
-   "loopLast": 35,
-   "seamSteps": NaN,
-   "bootRow": 593,
+   "loopFirst": 12,
+   "loopLast": 32,
+   "seamSteps": 1.37,
+   "bootRow": 581,
    "bodyDrift": [
-    -2,
-    50
+    -1,
+    21
    ],
-   "figurePx": 569.0,
+   "figurePx": 560.0,
    "bodyAt": 0.0,
-   "frames": 36,
-   "frameMs": 105.0,
+   "frames": 21,
+   "frameMs": 100.0,
    "nat": [
-    350,
-    594
+    376,
+    582
    ],
    "crop": [
-    16,
+    0,
     5,
-    328,
-    585
+    316,
+    574
    ],
    "box": {
-    "w": 1.69156,
-    "h": 2.87083,
-    "foot": 0.04833
+    "w": 1.84643,
+    "h": 2.85804,
+    "foot": 0.03929
    },
    "pattern": "content/sprites/black-cultist/move-v01/move-{}.png"
   },
   "move-left": {
-   "video": "Attachments/BlackCultist/WalkLeft/sprite-max-px-frames-36-rows-6-cols-6.png",
-   "first": 0,
+   "video": "Attachments/BlackCultist/WalkLeft2/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 10,
    "last": 35,
-   "loopFirst": 0,
-   "loopLast": 35,
-   "seamSteps": NaN,
-   "bootRow": 593,
+   "loopFirst": 12,
+   "loopLast": 32,
+   "seamSteps": 1.37,
+   "bootRow": 581,
    "bodyDrift": [
-    -2,
-    50
+    -1,
+    21
    ],
-   "figurePx": 569.0,
+   "figurePx": 560.0,
    "bodyAt": 0.0,
-   "frames": 36,
-   "frameMs": 105.0,
+   "frames": 21,
+   "frameMs": 100.0,
    "nat": [
-    350,
-    594
+    376,
+    582
    ],
    "crop": [
-    6,
+    60,
     5,
-    328,
-    585
+    316,
+    574
    ],
    "box": {
-    "w": 1.69156,
-    "h": 2.87083,
-    "foot": 0.04833
+    "w": 1.84643,
+    "h": 2.85804,
+    "foot": 0.03929
    },
    "pattern": "content/sprites/black-cultist/move-left-v01/move-left-{}.png"
   }

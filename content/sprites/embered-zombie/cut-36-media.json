@@ -1,0 +1,84 @@
+{
+ "about": "the Embered Zombie's Leve (the user, 2026-11-12: \"Alta Media e Leve ? just less frames for alta\"): their own 36-frame sheets (6 x 6), every frame and its timing as drawn, the figure ~610 px; the frames of the 64-frame Alta spec mapped to these 36 (x 35 / 63)",
+ "set": "embered-zombie-36-media",
+ "version": "media36-v01",
+ "figureUnits": 2.7,
+ "figureNote": "first value: a man's height (Kael 2.66); the user judges in play",
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "sheet": "Attachments/Monsters/Embered Zombie/Idle/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "mode": "pingpong",
+   "bodyAt": 0.0,
+   "scaleTo": 610
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "inPlace": true,
+   "mirror": true,
+   "sheet": "Attachments/Monsters/Embered Zombie/Walk/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "mode": "loop",
+   "bodyAt": 0.0,
+   "scaleTo": 610
+  },
+  {
+   "clip": "move-left",
+   "pose": "walkLeft",
+   "kind": "walk",
+   "inPlace": true,
+   "sheet": "Attachments/Monsters/Embered Zombie/Walk/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "mode": "loop",
+   "bodyAt": 0.0,
+   "scaleTo": 610
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "mirror": true,
+   "sheet": "Attachments/Monsters/Embered Zombie/ATT/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "impactFrame": 7,
+   "mode": "once",
+   "bodyAt": 0.0,
+   "scaleTo": 610
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "kind": "stand",
+   "sheet": "Attachments/Monsters/Embered Zombie/Fall/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 1,
+   "last": 8,
+   "andBack": true,
+   "standUntil": 2,
+   "mode": "once",
+   "bodyAt": 0.0,
+   "scaleTo": 610
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "kind": "stand",
+   "sheet": "Attachments/Monsters/Embered Zombie/Fall/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "standUntil": 3,
+   "mode": "once",
+   "bodyAt": 0.0,
+   "scaleTo": 610
+  }
+ ],
+ "result": "cut-result-36-media.json"
+}

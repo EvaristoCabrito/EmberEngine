@@ -112,6 +112,9 @@ struct HeroPose {
   std::string medium;        // the same clip at ~610 px of figure in this sprite set (Personagens Média); empty = none
   std::string light;         // the clip's own Leve copy in this sprite set (fewer frames, e.g. Voss's 36); empty = Leve halves `medium`
   int lightStep = 0;         // the Leve copy holds every Nth frame of the clip (video_sprite.py frameStepNear); 0 = picked evenly
+  // A cutscene-only pose (an emote; the user, 2026-11-12: "This emote will not load during combat, only during cutscenes"): cooked
+  // in the "cutscene" pack, never pinned with a fight's characters, streamed in by a cutscene whose "pose" steps play it.
+  bool cutscene = false;
   // Poses Ember holds on their hex (units/catalog.ts centerBody): per frame, how far right of frame 1 the body sits, as a
   // share of the pose's width (tools/scripts/data/measure_body_shift.py); empty = the pose plays as drawn.
   std::vector<float> bodyShift;

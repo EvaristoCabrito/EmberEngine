@@ -5407,10 +5407,41 @@ class MapStage final : public Stage {
     sprites_.pin(own, u.clip, t.halve || own == u.set);
     if (entry)
       for (const ember::HeroPose& p : entry->poses) {
+        if (p.cutscene) continue;  // an emote: never held with the fight, a cutscene streams it in (requestScenePoses)
         const std::string& set = artSet(p, t);
         sprites_.pin(set, p.clip, t.halve || set == p.set);
       }
   }
+  struct Cutscene;  // the on-map cutscene in play (defined with cutscene_ below)
+  // A cutscene-only pose's clip (HeroPose::cutscene: an emote), in the copy this unit draws (its left-facing cut when it faces
+  // left and has one, as the drawing picks it); kNoSpriteClip for any other pose.
+  SpriteClipId scenePoseClip(size_t ui, const std::string& pose) const {
+    const ember::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
+    if (!entry || !scene_ || ui >= scene_->units.size()) return kNoSpriteClip;
+    const ember::HeroPose* l = ui < unitFacing_.size() && unitFacing_[ui] == -1 ? entry->find(pose + "Left") : nullptr;
+    const ember::HeroPose* p = l && !l->pace.empty() ? l : entry->find(pose);
+    if (!p || !p->cutscene) return kNoSpriteClip;
+    return sprites_.find(artSet(*p, artTier(scene_->units[ui], entry)), p->clip);
+  }
+  // Every frame of a cutscene: the cutscene-only poses its "pose" steps still to come will play, asked of the sprite system ahead
+  // of time so they have landed when their step comes (a pose streamed in on its first frame draws from the 64 px tail). Asked
+  // only while the scene plays: afterwards nothing holds them and a fight's clips can take their room.
+  void requestScenePoses(const Cutscene& c) {
+    for (size_t i = c.step; i < c.script.steps.size(); ++i) {
+      const ember::CutsceneStep& st = c.script.steps[i];
+      if (st.kind != ember::CutsceneStep::Kind::Pose || st.text == "idle") continue;
+      const auto it = c.units.find(st.actor);
+      if (it == c.units.end()) continue;
+      const SpriteClipId clip = scenePoseClip(it->second, st.text);
+      if (clip != kNoSpriteClip) sprites_.request(clip, i == c.step ? SpriteSystem::kOnScreen : SpriteSystem::kSoon);
+    }
+  }
+  // A cutscene-only pose still drawing from its tail: its "pose" step waits for it, at most kScenePoseLoadSeconds.
+  bool scenePoseLoading(size_t ui, const std::string& pose) const {
+    const SpriteClipId clip = scenePoseClip(ui, pose);
+    return clip != kNoSpriteClip && !sprites_.texture(clip).full;
+  }
+  static constexpr float kScenePoseLoadSeconds = 2.0f;
   static const std::string& artSet(const ember::HeroPose& p, const ArtTier& t) {
     if (t.light && !p.light.empty()) return p.light;
     return t.medium && !p.medium.empty() ? p.medium : p.set;
@@ -7089,9 +7120,17 @@ class MapStage final : public Stage {
     else logInfo("cutscene {}: over ({} steps); controls back", id, step);
   }
 
+  // A "pose" step's pose played once (its last frame kept with "hold").
+  void playScenePose(Cutscene& c, size_t ui, const ember::CutsceneStep& st) {
+    unitShot_[ui] = {st.text, now_, st.flag, 1.0f};
+    if (st.flag) c.heldPoses.insert(ui);
+    logInfo("cutscene {}: step {} pose {} {}{}", c.script.id, c.step, st.actor, st.text, st.flag ? " (held)" : "");
+  }
+
   void updateCutscene() {
     if (!cutscene_ || !battle_ || !scene_) return;
     Cutscene& c = *cutscene_;
+    requestScenePoses(c);
     // "camera": "actors": the pivot on the middle of the actors standing on the board, gliding as they walk and enter (a scene
     // staged away from the fight stays in view; zoom, turn and tilt are the player's).
     if (cutCam_) {
@@ -7142,8 +7181,20 @@ class MapStage final : public Stage {
         case ember::CutsceneStep::Kind::Flash:
         case ember::CutsceneStep::Kind::Sfx:
         case ember::CutsceneStep::Kind::Music:
-        case ember::CutsceneStep::Kind::Emote:
-        case ember::CutsceneStep::Kind::Pose: break;
+        case ember::CutsceneStep::Kind::Emote: break;
+        case ember::CutsceneStep::Kind::Pose:
+          if (c.poseLoading) {  // its cutscene-only art streaming in: played once it has landed (or after kScenePoseLoadSeconds)
+            const ember::CutsceneStep& st = c.script.steps[c.step];
+            const auto it = c.units.find(st.actor);
+            if (it == c.units.end()) {
+              c.poseLoading = false;
+              break;
+            }
+            if (scenePoseLoading(it->second, st.text) && now_ - c.stepStart < kScenePoseLoadSeconds) return;
+            c.poseLoading = false;
+            playScenePose(c, it->second, st);
+          }
+          break;
       }
       c.waiting = false;
       ++c.step;
@@ -7383,9 +7434,12 @@ class MapStage final : public Stage {
           logWarn("cutscene {}: step {} pose {}: no pose \"{}\", left as it is", c.script.id, c.step, st.actor, st.text);
           return;
         }
-        unitShot_[*ui] = {st.text, now_, st.flag, 1.0f};
-        if (st.flag) c.heldPoses.insert(*ui);
-        logInfo("cutscene {}: step {} pose {} {}{}", c.script.id, c.step, st.actor, st.text, st.flag ? " (held)" : "");
+        if (scenePoseLoading(*ui, st.text)) {  // an emote not landed yet: played when it has (the waiting step above)
+          c.poseLoading = true;
+          logInfo("cutscene {}: step {} pose {} {}: waiting for its art", c.script.id, c.step, st.actor, st.text);
+          return;
+        }
+        playScenePose(c, *ui, st);
         return;
       }
     }
@@ -8169,6 +8223,7 @@ class MapStage final : public Stage {
     if (s.type != ember::BattleStep::Type::Combat || (!counter && !s.kind.empty())) return false;
     const ember::BattleUnit& actor = battle_->units()[counter ? s.def : s.att];
     if (strikeIsOffHand(s, counter) || actor.combat.arrow || !(actor.combat.arcane || actor.combat.staff)) return false;
+    if (!actor.combat.arcane && actor.weaponType == "sword") return false;
     element = actor.combat.staff ? actor.combat.staffElement : "arcane";
     return true;
   }
@@ -10129,7 +10184,23 @@ class MapStage final : public Stage {
     // Ours: the spell's own shape on the board (its area round the target, its line, its cone), when a battle is on.
     // (With no battle on, the Elementalista's ice still shows its shape, laid out from the caster toward the target on the ground:
     // the Lança's line of seven hexes, the Zero Absoluto's hex and the six round it, the Vendaval's cone of five rows.)
-    if (!battle_ && (kind == "iceLance" || kind == "absoluteZero" || kind == "glacialGale")) {
+    if (!battle_ && kind == "acidCloud") {  // the field itself: started here (the rules start it in a battle), the last test's ended
+      const SpellEffects::Spot them = unitSpot(target);
+      std::vector<SpellEffects::Spot> field{them};
+      for (int k = 0; k < 6; ++k) {
+        SpellEffects::Spot o = them;
+        const float a = static_cast<float>(k) * 1.0471976f;
+        o.feet = them.feet + glm::vec3(std::cos(a), 0.0f, std::sin(a)) * 1.7320508f;
+        o.feet.y = groundAt(o.feet.x, o.feet.z);
+        field.push_back(o);
+      }
+      if (testAcidZone_) spellFx_.zoneEnd(testAcidZone_, start);
+      spellFx_.cast(kind, look, unitSpot(hero), field, start, start + 0.4f, static_cast<int>(hero));
+      testAcidZone_ = spellFx_.zoneStart("acidCloud", "poison", field, start + 0.4f);
+      return;
+    }
+    if (!battle_ && (kind == "iceLance" || kind == "absoluteZero" || kind == "glacialGale" || kind == "poisonBreath" || kind == "minorVenom" ||
+                     kind == "causticVenom" || kind == "blackPestilence")) {
       constexpr float kHexW = 1.7320508f;
       const SpellEffects::Spot me = unitSpot(hero), them = unitSpot(target);
       glm::vec3 d = them.feet - me.feet;
@@ -10145,7 +10216,11 @@ class MapStage final : public Stage {
       spots.clear();
       if (kind == "iceLance") {
         for (int k = 1; k <= 7; ++k) spots.push_back(at(me.feet + d * (kHexW * static_cast<float>(k))));
-      } else if (kind == "absoluteZero") {
+      } else if (kind == "poisonBreath") {  // its cone of three rows
+        for (int r = 1; r <= 3; ++r)
+          for (int j = -(r * 3 / 4); j <= r * 3 / 4; ++j)
+            spots.push_back(at(me.feet + d * (kHexW * static_cast<float>(r)) + across * (kHexW * 0.92f * static_cast<float>(j))));
+      } else if (kind == "absoluteZero" || kind == "minorVenom" || kind == "causticVenom" || kind == "blackPestilence") {
         spots.push_back(at(them.feet));
         for (int k = 0; k < 6; ++k) {
           const float a = static_cast<float>(k) * 1.0471976f;
@@ -10418,6 +10493,9 @@ class MapStage final : public Stage {
         const glm::vec3 from = striker >= 0 && striker != ui ? unitWorld(static_cast<size_t>(striker)) : struck.feet - glm::vec3(0.0f, 0.0f, 1.0f);
         const ember::BattleUnit& bu = battle_->units()[e.unit];
         const bool heavy = e.crit || e.died || (bu.maxHp > 0 && e.amount * 10 >= bu.maxHp * 3);
+        const ember::BattleUnit* attacker = striker >= 0 ? &battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(striker)])] : nullptr;
+        const bool enchantedSword = attacker && attacker->weaponType == "sword" && attacker->combat.staff &&
+                                    s.type == StepType::Combat && (x.counter || s.kind.empty()) && !strikeIsOffHand(s, x.counter);
         if (x.bolt || x.magicStaff) {  // a bolt's arrival, or Isolde's / Voss's magical staff hit
           spellFx_.combat().impact(e.miss ? CombatFx::Kind::MagicalMiss : CombatFx::Kind::Magical, struck.feet, cardHeightOf(struck), from, now_,
                                    CombatPalette::of(x.element.c_str()), x.boltStrength);
@@ -10426,6 +10504,9 @@ class MapStage final : public Stage {
         } else if (!magic && !e.miss && striker >= 0) {
           // By the striker's weapon: a blade cuts, a spear stabs, a blunt weapon (or a beast's weight) knocks.
           const WeaponStyle style = weaponStyle(battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(striker)])]);
+          if (enchantedSword)
+            spellFx_.combat().impact(CombatFx::Kind::Magical, struck.feet, cardHeightOf(struck), from, now_,
+                                     CombatPalette::of(attacker->combat.staffElement.c_str()), 0.55f);
           // Golpe Duplo: every blow is the strong slash, read as the skill's (the user, 2026-10-28: "não tem o Slash")
           const bool skillSlash = !x.counter && s.kind == "doubleStrike";
           const CombatFx::Kind kind = skillSlash                    ? CombatFx::Kind::HeavySlash
@@ -13415,6 +13496,7 @@ class MapStage final : public Stage {
   std::vector<EffectInstance> effectList_;
   std::vector<SpellEffects::Light> fxLights_;
   int fxTestCycle_ = -1;
+  int testAcidZone_ = 0;  // the Névoa Ácida field the spell test last started (ended by the next test)
   // runScript
   size_t scriptStep_ = 0;
   bool scriptDone_ = false, scriptFailed_ = false, scriptStarted_ = false;
@@ -14011,6 +14093,7 @@ class MapStage final : public Stage {
     int selected = -1;                    // the control state taken over: the picked unit and the turns' hold
     bool heldTurns = false;
     std::set<size_t> heldPoses;           // units a "pose" step left holding a frame: back to their idle at the end
+    bool poseLoading = false;             // the "pose" step at `step` waits for its cutscene-only art to land (scenePoseLoading)
   };
   std::optional<Cutscene> cutscene_;
   // A scene's camera (the "shot" step, Stone Bridge 2026-11-06; docs/CUTSCENES.md): the goal the step set, reached from where the

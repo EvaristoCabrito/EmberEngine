@@ -39,7 +39,7 @@ static const uint kMaterialBasic = 0, kMaterialMissileCore = 1, kMaterialMissile
                   kMaterialStandard = 4, kMaterialFlame = 5, kMaterialImpactParticle = 6, kMaterialImpactFlash = 7,
                   kMaterialBlessWave = 8, kMaterialSpriteSheet = 9, kMaterialVenomSmoke = 10, kMaterialPfTendril = 11, kMaterialPfCore = 12,
                   kMaterialPfShell = 13, kMaterialWebThread = 14, kMaterialFlipbookParticle = 15, kMaterialHoly = 16,
-                  kMaterialCombat = 17, kMaterialIceStorm = 18, kMaterialTextured = 19, kMaterialFireVolume = 21;
+                  kMaterialCombat = 17, kMaterialIceStorm = 18, kMaterialTextured = 19, kMaterialFireVolume = 21, kMaterialGasVolume = 22;
 
 struct Push {
   uint64_t vertices;   // VfxVertex[]
@@ -49,7 +49,8 @@ struct Push {
   uint drawIndex;
   float brightness;
   uint samplerIndex;
-  uint backdrop;  // the scene's colour copied before the cards and the effects (Renderer: the water's backdrop), for the ice's refraction
+  uint backdrop;  // low 16 bits: the scene's colour copied before the cards and the effects (Renderer: the water's backdrop), for the
+                  // ice's refraction; high 16 bits: the scene's depth (reversed-Z; read-only in the effects pass), for the gas
 };
 [[vk::push_constant]] Push push;
 
@@ -211,6 +212,46 @@ float iceCracks(float3 p) {
   return sqrt(d2) - sqrt(d1);
 }
 
+// A volume of gas (kMaterialGasVolume: poison smoke), q = the point from the gas's origin (world, y up): how much gas is there.
+// Heavy gas: its noise sinks and creeps outward, slowly; `fade` thins it out through the noise (it never fades evenly). Bodies
+// (d.color.x): 0 a pool lying on the ground (radius R, H deep), 1 a puff (a ball of radius R, flattened, cut at the ground), 2 a
+// cone from the origin along `along` opening to radius R at its end, 3 a stream: a rope of gas from the origin along `along`, R thick.
+float gasDensity(float3 q, float body, float R, float H, float3 along, float t, float seed, float fade, bool fine) {
+  const float3 flow = float3(0.0, t * 0.22, 0.0);
+  float n = noise3(q * 0.9 + flow + seed);
+  if (fine) n = n * 0.42 + abs(noise3(q * 1.9 + flow * 1.7 - seed) * 2.0 - 1.0) * 0.36 + abs(noise3(q * 4.6 + flow * 2.6 + seed * 2.0) * 2.0 - 1.0) * 0.22;
+  float base;
+  if (body < 0.5) {
+    const float r = length(q.xz) / R, h = q.y / H;
+    base = (1.0 - smoothstep(0.35, 1.0, r + (n - 0.5) * 0.9)) * smoothstep(-0.02, 0.1, h) * (1.0 - smoothstep(0.15 + 0.75 * n, 1.0, h));
+  } else if (body < 1.5) {
+    const float dd = length(q * float3(1.0, 1.25, 1.0)) / R;
+    base = (1.0 - smoothstep(0.25, 1.0, dd + (n - 0.5) * 1.0)) * smoothstep(-0.02, 0.12, q.y);
+  } else {
+    const float L = max(length(along), 1e-4);
+    const float3 T = along / L;
+    const float s = dot(q, T), a = saturate(s / L);
+    const float3 qq = q - T * (t * (body < 2.5 ? 1.6 : 0.5));  // the gas streams along its way
+    float m = noise3(qq * 1.1 + seed);
+    if (fine) m = m * 0.42 + abs(noise3(qq * 2.1 - seed) * 2.0 - 1.0) * 0.36 + abs(noise3(qq * 4.9 + seed * 2.0) * 2.0 - 1.0) * 0.22;
+    const float wide = body < 2.5 ? lerp(0.16 * R, R, a) : R * (0.75 + 0.5 * m);
+    const float rad = length(q - T * clamp(s, 0.0, L)) / max(wide, 1e-4);
+    base = (1.0 - smoothstep(0.3, 1.0, rad + (m - 0.5) * 0.95)) * smoothstep(0.0, 0.06, a + (body < 2.5 ? 0.0 : 0.1)) * (1.0 - smoothstep(0.82, 1.0, a) * (body < 2.5 ? 1.0 : 0.0)) *
+           smoothstep(-0.02, 0.1, q.y + (body < 2.5 ? 10.0 : 0.0));
+    n = m;
+  }
+  // a firm edge (smoke has a surface) with the billows cut into it
+  return smoothstep(0.08, 0.42, base * 1.35 - (1.0 - n) * 0.3 - fade * (0.3 + 1.1 * n));
+}
+// The sphere a gas volume lies in (xyz centre, w radius).
+float4 gasBound(VfxDraw d) {
+  const float body = d.color.x, R = d.params0.w, H = d.params0.z;
+  if (body < 0.5) return float4(d.params1.xyz + float3(0.0, H * 0.5, 0.0), length(float2(R, H * 0.5)));
+  if (body < 1.5) return float4(d.params1.xyz + float3(0.0, R * 0.3, 0.0), R * 1.05);
+  const float3 along = d.model[0].xyz;
+  return float4(d.params1.xyz + along * 0.5, length(along) * 0.5 + R * 1.2);
+}
+
 // The sphere a fire's volume lies in (xyz centre, w radius).
 float4 fireBound(VfxDraw d) {
   if (d.color.z < 0.5) return float4(d.params1.xyz + float3(0.0, d.params0.z * 0.575, 0.0), length(float2(d.params0.w * kFireBound, d.params0.z * 0.575)));
@@ -257,6 +298,21 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
     o.world = w;
     o.normal = float3(0, 1, 0);
     o.particleB = inst.b;
+    if (sight.local <= 0.0) o.position = float4(0, 0, -1, 1);
+    return o;
+  }
+  if (d.material == kMaterialGasVolume) {
+    // A camera-facing quad (corners at +-0.5) over the gas's bounding sphere, pulled to the eye's side of it (the fragment walks the
+    // ray through the gas and stops at whatever the scene has there).
+    const float4 bound = gasBound(d);
+    const float3 right = float3(f.view[0].x, f.view[1].x, f.view[2].x), up = float3(f.view[0].y, f.view[1].y, f.view[2].y);
+    float3 w = bound.xyz + (right * v.position.x + up * v.position.y) * (bound.w * 2.2);
+    const float3 toEye = f.cameraPosition - w;
+    w += toEye * min(bound.w / max(length(toEye), 1e-3), 0.9);
+    o.position = mul(float4(w, 1.0), f.viewProjection);
+    o.local = v.position;
+    o.world = w;
+    o.normal = float3(0, 1, 0);
     if (sight.local <= 0.0) o.position = float4(0, 0, -1, 1);
     return o;
   }
@@ -794,7 +850,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
         const float away = max(length(f.cameraPosition - i.world), 0.5);
         const float2 shift = float2(dot(moved, right), -dot(moved, up)) * f.projectionY * f.screenSize.y * 0.5 / away;
         const int2 behindAt = int2(clamp(i.position.xy + shift, 0.0, f.screenSize - 1.0));
-        const float3 behind = gTextures[NonUniformResourceIndex(push.backdrop)].Load(int3(behindAt, 0)).rgb;
+        const float3 behind = gTextures[NonUniformResourceIndex(push.backdrop & 0xFFFFu)].Load(int3(behindAt, 0)).rgb;
         // parallax: the cracks at three depths inside, and the milky core
         float cracks = 0.0;
         float3 crackTint = 0.0;
@@ -1028,6 +1084,52 @@ float4 PSMain(VSOut i) : SV_Target0 {
       c += gTextures[NonUniformResourceIndex(emissiveMap)].Sample(smp, i.uv).rgb * tint * d.params1.w * push.brightness;
     const float opacity = saturate(d.color.a);
     return float4(applyVolume(f, c, i.world) * i.sight * opacity, opacity);
+  } else if (d.material == kMaterialGasVolume) {
+    // Poison gas, a real volume (the study of 2026-11-13: lit smoke, heavy, slow, a sickly body and a faint glow inside). The eye's
+    // ray is walked through the gas up to whatever the scene has there (its depth), so the ground, the walls and the bodies cut it
+    // softly and nothing shows a card's edge; at every step the gas is lit by the scene's light through the gas between it and the
+    // light (its own shadow inside it, a bright rim when lit from behind) and glows a little where it is thickest.
+    // params0 = time, thickness, depth (a pool's), radius; params1 = origin, seed; color = body, fade, glow, -;
+    // model[0] = the cone's / the stream's way, model[1] = the gas's colour, model[2] = its glow's.
+    const MeshFrame f = loadFrame(push.frame);
+    const float t = d.params0.x, thick = d.params0.y, H = d.params0.z, R = d.params0.w, seed = d.params1.w;
+    const float body = d.color.x, fade = d.color.y, glow = d.color.z;
+    const float3 along = d.model[0].xyz, tint = d.model[1].xyz, shine = d.model[2].xyz;
+    const float toQuad = max(length(i.world - f.cameraPosition), 1e-3);
+    const float3 rd = (i.world - f.cameraPosition) / toQuad, oc = f.cameraPosition - d.params1.xyz;
+    const float4 bound = gasBound(d);
+    const float3 sc = f.cameraPosition - bound.xyz;
+    const float B = dot(sc, rd), disc = B * B - (dot(sc, sc) - bound.w * bound.w);
+    if (disc <= 0.0) discard;
+    float t0 = max(-B - sqrt(disc), 0.0), t1 = -B + sqrt(disc);
+    // the scene behind this pixel: the ray stops there (linear distances from the reversed-Z depths)
+    const float sceneDepth = gTextures[NonUniformResourceIndex(push.backdrop >> 16u)].Load(int3(i.position.xy, 0)).r;
+    const float along0 = (f.zNear / max(i.position.z, 1e-7)) / toQuad;  // the ray's share of the view's depth
+    t1 = min(t1, (f.zNear / max(sceneDepth, 1e-7)) / max(along0, 1e-3));
+    if (t1 <= t0) discard;
+    static const int kSteps = 18;
+    const float dt = (t1 - t0) / kSteps;
+    float at = t0 + dt * frac(52.9829189 * frac(dot(i.position.xy, float2(0.06711056, 0.00583715))));
+    const float3 L = normalize(f.sunDirection + float3(0.0, 0.45, 0.0));
+    const float3 lit = clamp(f.skyColor * f.ambientIntensity * 0.65 + f.sunColor * f.sunIntensity * 0.18, 0.0, 1.0) + lerp(float3(1.0, 1.0, 1.0), shine, 0.08) * 0.34;
+    const float rimLight = 0.8 + 0.7 * pow(saturate(dot(rd, L)), 3.0);
+    float3 light = 0.0;
+    float through = 1.0;
+    for (int k = 0; k < kSteps; ++k, at += dt) {
+      const float3 q = oc + rd * at;
+      const float dens = gasDensity(q, body, R, H, along, t, seed, fade, true);
+      if (dens <= 0.002) continue;
+      // its own shadow: the gas between this point and the light
+      const float toLight = gasDensity(q + L * (R * 0.16), body, R, H, along, t, seed, fade, false) + gasDensity(q + L * (R * 0.42), body, R, H, along, t, seed, fade, false);
+      const float shade = exp(-toLight * thick * R * 0.8);
+      const float3 col = tint * lit * (0.1 + 1.5 * shade * rimLight) + shine * glow * 0.05 * dens * (1.0 - shade);  // the faint glow, only deep inside where its own shadow is
+      const float cover = 1.0 - exp(-dens * thick * 0.6 * dt);
+      light += through * cover * col;
+      through *= 1.0 - cover;
+      if (through < 0.02) break;
+    }
+    const float seen = i.sight * volumeTransmittance(f, i.world);
+    return float4(light * min(push.brightness, 1.6) * seen, (1.0 - through) * i.sight);
   } else if (d.material == kMaterialFireVolume) {
     // A real fire in 3D: the eye's ray is walked through the fire's volume, adding up the light of what burns along it, so it is
     // a body of fire from every side. params0 = time, strength, height (the flame's), radius; params1 = origin (world), seed;

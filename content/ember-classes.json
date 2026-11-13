@@ -119,7 +119,16 @@
    "resistances": {},
    "spells": {},
    "spellList": [],
-   "about": "A new unit from the user's Veo videos (2026-11-12, Attachments/Nekomata): idle, the pounce, the lightning breath as its cast, the walk, hit and fall; the jump with lightning cut too. Working numbers, the user's to set: 1 hex, mov 5, a 1D8 claw, the Cão Zumbi's stats rows, rank D, no spells."
+   "about": "A new unit from the user's Veo videos (2026-11-12, Attachments/Nekomata):idle, the pounce, the lightning breath as its cast, the walk, hit and fall; the jump with lightning cut too. Working numbers, the user's to set: 1 hex, mov 5, a 1D8 claw, the Cão Zumbi's stats rows, rank D, no spells."
+  },
+  "emberedZombie": {
+   "name": "Embered Zombie", "nameEn": "Embered Zombie", "role": "Morto-vivo",
+   "sprite": "embered-zombie", "size": 1, "mov": 3, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "A new unit from the user's sheets (2026-11-12, Attachments/Monsters/Embered Zombie: \"add the whole new unit as a type D + enemy\"): idle, walk, a punch, the hit (the start of the fall, there and back) and the fall. Working numbers, the user's to set: 1 hex, mov 3, a 1D8 blow, the Zumbi's stats rows, rank D (the Zumbi is E), no spells."
   }
  },
  "aboutHeroClasses": "EmberEngine's own hero classes (read by engine/world/BattleExport.cpp Rules, merged into content/data/battle-rules.json's classes with the same fields; their melee weapons of weaponTypes become usable by them). The Cruzado (the user, 2026-10-25; young Salazar's interlude class, docs/SKILLS_CRUSADER.md): level 10 at most (Spells.cpp classLevelCap), a hybrid a little under the Guerreiro and a little over the Curandeiro (each stat the two classes' mean at the level), the Arqueiro's tier table (T1 at 1, T2 at 4, T3 at 7, nothing above T3), Bênção from 1 and Cleave from 4 (his own spells come from Spells.cpp kEmberSpells); never a shield. Placeholder sprite: kaelEarly (an old warrior, on no map).",

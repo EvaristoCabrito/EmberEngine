@@ -376,6 +376,10 @@
    "src": "/game/portraits/sprites/nekomata.png",
    "framed": true
   },
+  "embered-zombie": {
+   "src": "/game/portraits/sprites/embered-zombie.png",
+   "framed": true
+  },
   "giant-spider": {
    "src": "/game/portraits/sprites/giant-spider.png",
    "framed": true

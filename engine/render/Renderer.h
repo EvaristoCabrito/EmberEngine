@@ -691,6 +691,8 @@ class Renderer {
   // Water look 003 (water_look003.hlsli): the scene under the water (ground, 3D pieces) copied before the water is drawn, read
   // with the depth for its refraction and thickness. Used only when a water sheet draws look 003 (waterRefracts).
   bool vfxBackdrop_ = false;  // this frame's effects read the copy too (setVfx)
+  // What the effects read of the screen (vfx.hlsl Push::backdrop): the scene's colour copy in the low 16 bits, its depth in the high.
+  uint32_t vfxScreenIndices() const { return (waterBackdropIndex_ & 0xFFFFu) | ((depthIndex_ & 0xFFFFu) << 16); }
   Image waterBackdrop_;
   uint32_t waterBackdropIndex_ = kNoIndex;
   bool waterRefracts() const {

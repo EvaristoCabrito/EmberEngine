@@ -7263,6 +7263,14 @@
         "y": 44,
         "level": 15,
         "useClassSprite": true
+      },
+      {
+        "name": "Familiar Radiante",
+        "classId": "familiar4",
+        "x": 24,
+        "y": 44,
+        "level": 15,
+        "useClassSprite": true
       }
     ],
     "enemySpawns": [
@@ -7398,6 +7406,14 @@
         "name": "Nekomata",
         "classId": "nekomata",
         "x": 18,
+        "y": 24,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Embered Zombie",
+        "classId": "emberedZombie",
+        "x": 23,
         "y": 24,
         "level": 15,
         "useClassSprite": true

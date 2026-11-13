@@ -391,7 +391,7 @@ std::string apCounterType(const Battle& b, const BattleUnit& d, const BattleUnit
   const int dist = Battle::distance({d.x, d.y}, from);
   if (d.combat.offHandWeapon && dist <= d.combat.offMaxRange) return apOffHandCategory(d);  // the dagger beside the bow
   const std::string category = apWeaponCategory(d);
-  const bool bolt = !d.combat.arrow && (d.combat.arcane || d.combat.staff);
+  const bool bolt = !d.combat.arrow && (d.combat.arcane || (d.combat.staff && category != "sword"));
   if (category == "staff" && dist <= 1) return "staff";  // its staff on the foe beside it (MapStage's counterStaff pose)
   if (bolt) return "spell";                               // its arcane bolt from afar
   (void)a;
@@ -404,7 +404,7 @@ int apCounterCost(const Battle& b, const BattleUnit& d, const BattleUnit& a, Bat
 
 int apOwnCounterCost(const Battle& b, const BattleUnit& u) {
   const std::string category = apWeaponCategory(u);
-  const bool bolt = !u.combat.arrow && (u.combat.arcane || u.combat.staff);
+  const bool bolt = !u.combat.arrow && (u.combat.arcane || (u.combat.staff && category != "sword"));
   const std::string type = category == "staff" ? "staff" : bolt ? "spell" : category;
   return apCost(b, u, ApAction::counter(type));
 }

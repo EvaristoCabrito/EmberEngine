@@ -1,0 +1,85 @@
+{
+ "about": "embered-zombie's Personagens Média (tools/scripts/sprites/quality_copies.py, the rule of 2026-10-25): every clip of cut.json from the same matted frames, at most 64 frames picked evenly (no blend, the clip's timing kept), the figure ~610 px tall (a clip already shorter keeps its own size). 2026-11-12 (v02): the user's standard, Media at ~610 px as Isolde's; v01 (~916 px) stays on disk.",
+ "set": "embered-zombie-64-media",
+ "version": "media64-v02",
+ "figureUnits": 2.7,
+ "figureNote": "first value: a man's height (Kael 2.66); the user judges in play",
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "sheet": "Attachments/Monsters/Embered Zombie/Idle/sprite-max-px-frames-64-rows-8-cols-8.png",
+   "first": 0,
+   "last": 63,
+   "mode": "pingpong",
+   "bodyAt": 0.0,
+   "scaleTo": 610
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "inPlace": true,
+   "mirror": true,
+   "sheet": "Attachments/Monsters/Embered Zombie/Walk/sprite-max-px-frames-64-rows-8-cols-8.png",
+   "first": 0,
+   "last": 63,
+   "mode": "loop",
+   "bodyAt": 0.0,
+   "scaleTo": 610
+  },
+  {
+   "clip": "move-left",
+   "pose": "walkLeft",
+   "kind": "walk",
+   "inPlace": true,
+   "sheet": "Attachments/Monsters/Embered Zombie/Walk/sprite-max-px-frames-64-rows-8-cols-8.png",
+   "first": 0,
+   "last": 63,
+   "mode": "loop",
+   "bodyAt": 0.0,
+   "scaleTo": 610
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "mirror": true,
+   "sheet": "Attachments/Monsters/Embered Zombie/ATT/sprite-max-px-frames-64-rows-8-cols-8.png",
+   "first": 0,
+   "last": 63,
+   "impactFrame": 13,
+   "mode": "once",
+   "bodyAt": 0.0,
+   "scaleTo": 610
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "kind": "stand",
+   "sheet": "Attachments/Monsters/Embered Zombie/Fall/UpscaledTest/sprite-max-px-frames-64-rows-8-cols-8.png",
+   "first": 2,
+   "last": 15,
+   "andBack": true,
+   "standUntil": 4,
+   "mode": "once",
+   "bodyAt": 0.0,
+   "scaleTo": 610
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "kind": "stand",
+   "sheet": "Attachments/Monsters/Embered Zombie/Fall/UpscaledTest/sprite-max-px-frames-64-rows-8-cols-8.png",
+   "first": 0,
+   "last": 63,
+   "standUntil": 6,
+   "mode": "once",
+   "bodyAt": 0.0,
+   "scaleTo": 610
+  }
+ ],
+ "result": "cut-result-64-media.json",
+ "frameCount": 64
+}

@@ -104,6 +104,65 @@
    },
    "pattern": "content/sprites/ashes-crawler/atk-media64-v01/atk-{}.png",
    "impact": 0.5
+  },
+  "hit": {
+   "video": "Attachments/AshcrawlerHitandFall.mp4",
+   "first": 8,
+   "last": 54,
+   "bootRow": 635,
+   "bootRows": [
+    635,
+    635
+   ],
+   "figurePx": 470.0,
+   "frames": 47,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    934,
+    625
+   ],
+   "crop": [
+    6,
+    5,
+    923,
+    615
+   ],
+   "box": {
+    "w": 3.2217,
+    "h": 2.15585,
+    "foot": 0.08623
+   },
+   "pattern": "content/sprites/ashes-crawler/hit-media64-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/AshcrawlerHitandFall.mp4",
+   "first": 120,
+   "last": 215,
+   "bootRow": 635,
+   "bootRows": [
+    635,
+    635
+   ],
+   "frameCountFrom": 96,
+   "figurePx": 470.0,
+   "frames": 64,
+   "frameMs": 62.5,
+   "nat": [
+    948,
+    495
+   ],
+   "crop": [
+    5,
+    4,
+    938,
+    486
+   ],
+   "box": {
+    "w": 3.26999,
+    "h": 1.70743,
+    "foot": 0.08623
+   },
+   "pattern": "content/sprites/ashes-crawler/death-media64-v01/death-{}.png"
   }
  }
 }

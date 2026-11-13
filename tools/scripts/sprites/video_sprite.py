@@ -297,6 +297,10 @@ def main():
         if "sheet" in c:
             # a sprite sheet (the Cultist's hit and death, 2026-10-22): the user's own frames and timing, alpha as drawn
             frames, frame_ms = load_sheet(c["sheet"], c["first"], c["last"])
+            if c.get("andBack"):
+                # `andBack` (the Embered Zombie's hit, 2026-11-12: "make a hit and fall from this fall video"): the frames
+                # played forward, then back to the first, so the start of a fall becomes a recoil that returns to the stance
+                frames = frames + frames[-2::-1]
             alpha = np.stack([np.clip(f[..., 3], 0, 255).astype(np.uint8) for f in frames])
         else:
             rgb, alpha = load_frames(os.path.join(ROOT, c["src"]), c["first"], c["last"])
@@ -381,6 +385,10 @@ def main():
                 # patch's tracking (the error adds up past the frame's width), so no frame is moved sideways
                 x_off = [0] * n
             soles = [sole_row(x.astype(np.uint8)) for x in al]
+            if c.get("floorRow", spec.get("floorRow")) is not None:
+                # `floorRow` here too (the Nekomata's 360p walk, 2026-11-12): its thin legs hold no block solid enough for
+                # sole_row, which read the belly as the feet; the video's floor row is the feet line and no frame is moved
+                soles = [int(c.get("floorRow", spec.get("floorRow")))] * n
             target = int(np.median(soles))
             frames = [shifted(f, x_off[i], target - soles[i]) for i, f in enumerate(frames)]
             if "loopMin" in c:

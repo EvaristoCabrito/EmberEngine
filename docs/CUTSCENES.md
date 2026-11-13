@@ -99,6 +99,15 @@ camera again when the scene ends.
   (a warning in the log). A held pose is drawn over a walk, so give the actor back its idle before it moves. Kael's `turnBack`
   (kael-v3: he turns his back to the camera and holds it) is the first: a card shows its front from every side, so a shot from
   behind an actor needs a back pose (Stone Bridge, the shot behind Kael when he will not look back at Lio).
+- **Cutscene-only poses (emotes)** (2026-11-12; the user: "This emote will not load during combat, only during cutscenes"; emotes
+  are coming for every MC and some villains). A pose whose clip is in the `cutscene` pack is never loaded with a fight: the fight
+  pins every other pose of its units, not these. A cutscene asks for the ones its `pose` steps will play from its first frame
+  (`requestScenePoses`), so they stream in while the scene runs. A `pose` step whose art has not landed yet waits for it, at most 2 s
+  (`kScenePoseLoadSeconds`), instead of playing as a 64 px blur. When the scene ends nothing holds them, and a fight takes the room back.
+  To add one: cut it like any clip (Alta + 64 + 36), list it in the set's `poses` in `content/sprite-overrides.json` under any name
+  (`emote`, `emote2`, `laugh`...), and set its clip to `"cutscene"` in `packs` in all three entries (Alta, `-64-media`, `-36-media`).
+  `apply_sprite_overrides.py` then marks the pose `"cutscene": true` in the roster. Play it with `{"pose", "actor", "pose": "emote"}`.
+  The Familiar Radiante's `emote` (it lights up and looks at the camera) is the first.
 - `move` with `"near": "<actor>"` instead of `"to"`: the free reachable hex nearest that actor (its body may be dead).
 - An actor declared `{"unit": "Vora", "fallen": true}` may be dead when the scene starts (an onVictory scene): it is found among the
   fallen, and its body never fades while the map is open (`keptBodies_`, read from this map's scenes at the start), so the scene's

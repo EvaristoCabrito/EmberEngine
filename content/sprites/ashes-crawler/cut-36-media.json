@@ -45,6 +45,37 @@
    "mode": "once",
    "mirror": true,
    "scaleTo": 610
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "kind": "stand",
+   "src": "build/video-cut/ashes-crawler/hitfall",
+   "video": "Attachments/AshcrawlerHitandFall.mp4",
+   "first": 8,
+   "last": 54,
+   "standUntil": 12,
+   "mode": "once",
+   "mirror": true,
+   "figurePx": 470,
+   "figureNote": "470 px: its standing body here is ~0.9 of the walk video's (522 px), by width and height on frames 6..12 and 48..54",
+   "why": "the user, 2026-11-12, \"AshcrawlerHitandFall\": rears back ~18..30, settles ~36..48, standing by ~54",
+   "scaleTo": 610
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "kind": "stand",
+   "src": "build/video-cut/ashes-crawler/hitfall",
+   "video": "Attachments/AshcrawlerHitandFall.mp4",
+   "first": 120,
+   "last": 215,
+   "standUntil": 124,
+   "mode": "once",
+   "mirror": true,
+   "figurePx": 470,
+   "why": "the same video: sinks ~126..138, rolls onto its back ~144..156, smoke ~150..200, still by ~200",
+   "scaleTo": 610
   }
  ],
  "figureNote": "set so the idle body (its opaque box) is 3.0 units wide",

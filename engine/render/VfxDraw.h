@@ -54,6 +54,10 @@ enum class VfxMaterial : uint32_t {
   FireVolume = 21,       // ours: a real 3D fire, the eye's ray walked through its volume. A camera-facing quad (corners at +-0.5);
                          // params0 = time, strength, height (a flame's), radius; params1 = origin (world), seed; color =
                          // turbulence, pull to the eye, body (0 flame, 1 ball, 2 burst), the burst's age; model[0] = the ball's tail
+  GasVolume = 22,        // ours: poison gas, a real volume lit by the scene and cut by its depth (vfx/PoisonFx). A camera-facing quad
+                         // (corners at +-0.5); params0 = time, thickness, a pool's depth, radius; params1 = origin (world), seed;
+                         // color = body (0 pool, 1 puff, 2 cone, 3 stream), fade, glow; model[0] = the cone's / stream's way,
+                         // model[1] = the gas's colour, model[2] = its glow's. Never among the cards (it samples the depth).
   Textured = 19,          // ours: a cooked mesh's own material (MeshScene::addEffect), lit by the scene like resolve.hlsl: texture =
                           // base colour, params1.xyz = normal, ORM, emissive (bindless indices as floats' bits, kNoTextureIndex =
                           // none), params1.w = emissive strength (display-relative, as Standard's); color = base factor + opacity;

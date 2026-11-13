@@ -2420,7 +2420,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
         const VkPipeline pipeline = vfxPipelines_[d.depthTest ? 1 : 0];
         if (pipeline != bound) vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, bound = pipeline);
         const VfxPush push{bufferAddress(context_, frame.vfxVertices), bufferAddress(context_, frame.vfxInstances), bufferAddress(context_, frame.vfxDraws),
-                           bufferAddress(context_, frame.meshFrame), i, effectBrightness_, spriteSamplerIndex_, waterBackdropIndex_};
+                           bufferAddress(context_, frame.meshFrame), i, effectBrightness_, spriteSamplerIndex_, vfxScreenIndices()};
         vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
         vkCmdDraw(cmd, d.gpu.vertexCount, d.gpu.firstInstance == 0xFFFFFFFFu ? 1u : d.instances, 0, 0);
       }
@@ -2457,7 +2457,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
           const VkPipeline pipeline = d.solid ? vfxSolidPipeline_ : vfxPipelines_[d.depthTest ? 1 : 0];
           if (pipeline != bound) vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, bound = pipeline);
           const VfxPush push{bufferAddress(context_, frame.vfxVertices), bufferAddress(context_, frame.vfxInstances), bufferAddress(context_, frame.vfxDraws),
-                             bufferAddress(context_, frame.meshFrame), behind[g].second, effectBrightness_, spriteSamplerIndex_, waterBackdropIndex_};
+                             bufferAddress(context_, frame.meshFrame), behind[g].second, effectBrightness_, spriteSamplerIndex_, vfxScreenIndices()};
           vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
           vkCmdDraw(cmd, d.gpu.vertexCount, d.gpu.firstInstance == 0xFFFFFFFFu ? 1u : d.instances, 0, 0);
         }
@@ -2472,7 +2472,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
           if (!d.solid || d.behindCard || d.underCards) continue;
           if (bound != vfxSolidPipeline_) vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, bound = vfxSolidPipeline_);
           const VfxPush push{bufferAddress(context_, frame.vfxVertices), bufferAddress(context_, frame.vfxInstances), bufferAddress(context_, frame.vfxDraws),
-                             bufferAddress(context_, frame.meshFrame), i, effectBrightness_, spriteSamplerIndex_, waterBackdropIndex_};
+                             bufferAddress(context_, frame.meshFrame), i, effectBrightness_, spriteSamplerIndex_, vfxScreenIndices()};
           vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
           vkCmdDraw(cmd, d.gpu.vertexCount, d.gpu.firstInstance == 0xFFFFFFFFu ? 1u : d.instances, 0, 0);
         }
@@ -2542,7 +2542,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       const VkPipeline pipeline = vfxPipelines_[d.depthTest ? 1 : 0];
       if (pipeline != bound) vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, bound = pipeline);
       const VfxPush push{bufferAddress(context_, frame.vfxVertices), bufferAddress(context_, frame.vfxInstances), bufferAddress(context_, frame.vfxDraws),
-                         bufferAddress(context_, frame.meshFrame), i, effectBrightness_, spriteSamplerIndex_, waterBackdropIndex_};
+                         bufferAddress(context_, frame.meshFrame), i, effectBrightness_, spriteSamplerIndex_, vfxScreenIndices()};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
       vkCmdDraw(cmd, d.gpu.vertexCount, d.gpu.firstInstance == 0xFFFFFFFFu ? 1u : d.instances, 0, 0);
     }

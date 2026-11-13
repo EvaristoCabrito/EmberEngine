@@ -168,6 +168,10 @@ DebugUi::DebugUi(VulkanContext& context, SDL_Window* window, VkFormat targetForm
   info.MinImageCount = kFramesInFlight;
   info.ImageCount = kFramesInFlight;
   info.UseDynamicRendering = true;
+  // The menus' vertex and index buffers made big enough once, at the start, while the GPU has room: grown later (a bigger
+  // screen of icons) they were made again in the middle of a fight, with the GPU full, and the game closed on
+  // VK_ERROR_OUT_OF_DEVICE_MEMORY (the user's log of 2026-11-12, the Ferraria de Duarte).
+  info.MinAllocationSize = 4ull << 20;
   info.PipelineInfoMain.PipelineRenderingCreateInfo = {VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};
   info.PipelineInfoMain.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
   info.PipelineInfoMain.PipelineRenderingCreateInfo.pColorAttachmentFormats = &targetFormat_;

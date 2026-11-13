@@ -73780,6 +73780,24 @@
     }
   },
   "weapons": {
+    "vanguard-espadao-t01-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 1, "faces": 6, "bonus": 0, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
+    "vanguard-espadao-t02-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
+    "vanguard-espadao-t03-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 1, "faces": 10, "bonus": 0, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
+    "vanguard-espadao-t04-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 1, "faces": 10, "bonus": 1, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
+    "vanguard-espadao-t05-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 1, "faces": 12, "bonus": 1, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
+    "vanguard-espadao-t06-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 6, "bonus": 1, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
+    "vanguard-espadao-t07-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
+    "vanguard-espadao-t08-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 8, "bonus": 1, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
+    "vanguard-espadao-t09-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 8, "bonus": 2, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
+    "vanguard-espadao-t10-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 10, "bonus": 1, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
+    "vanguard-espadao-t11-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 10, "bonus": 2, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
+    "vanguard-espadao-t12-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 12, "bonus": 1, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
+    "vanguard-espadao-t13-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 12, "bonus": 2, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
+    "vanguard-magica-t03-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 1, "faces": 10, "bonus": 0, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": {"attackElement": "fire", "elementalBonusPct": {"fire": 10}, "lifeStealPct": 0, "regeneration": 0, "magBonus": 0, "dexBonus": 0, "resistances": {}}},
+    "vanguard-magica-t06-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 6, "bonus": 1, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": {"attackElement": "ice", "elementalBonusPct": {"ice": 15}, "lifeStealPct": 0, "regeneration": 0, "magBonus": 0, "dexBonus": 0, "resistances": {}}},
+    "vanguard-magica-t09-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 8, "bonus": 2, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": {"attackElement": "lightning", "elementalBonusPct": {"lightning": 20}, "lifeStealPct": 0, "regeneration": 0, "magBonus": 0, "dexBonus": 0, "resistances": {}}},
+    "vanguard-magica-t11-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 10, "bonus": 2, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": {"attackElement": "darkness", "elementalBonusPct": {"darkness": 25}, "lifeStealPct": 0, "regeneration": 0, "magBonus": 0, "dexBonus": 0, "resistances": {}}},
+    "vanguard-magica-t13-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 12, "bonus": 5, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": {"attackElement": "ember", "elementalBonusPct": {"ember": 35}, "lifeStealPct": 0, "regeneration": 0, "magBonus": 0, "dexBonus": 0, "resistances": {}}},
     "cajado-de-osso": {
       "weaponType": "staff",
       "usableBy": [
@@ -85335,7 +85353,7 @@
       "kaelFinal": {
         "walk": [
           {
-            "file": "NeeraWalk.mp3",
+            "file": "KaelV3Walk001.mp3",
             "volume": 0.45,
             "offset": 0,
             "delay": 0,
@@ -85344,7 +85362,7 @@
         ],
         "hit": [
           {
-            "file": "HitreactArmor.mp3",
+            "file": "KaelV3Hit001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -85353,7 +85371,7 @@
         ],
         "death": [
           {
-            "file": "DeadArmor.mp3",
+            "file": "KaelV3Death001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -85603,6 +85621,24 @@
           {
             "file": "NeeraWalk.mp3",
             "volume": 0.45,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "hit": [
+          {
+            "file": "VossHit001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "death": [
+          {
+            "file": "VossDeath001.mp3",
+            "volume": 0.55,
             "offset": 0,
             "delay": 0,
             "exclusive": true
@@ -86010,7 +86046,7 @@
         ],
         "hit": [
           {
-            "file": "HitreactArmor.mp3",
+            "file": "HypostasisHit001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -86019,7 +86055,7 @@
         ],
         "death": [
           {
-            "file": "DeadArmor.mp3",
+            "file": "HypostasisDeath001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -86829,7 +86865,7 @@
         ],
         "walk": [
           {
-            "file": "WarDog2Walk001.mp3",
+            "file": "StagWolfWalk001.mp3",
             "volume": 0.45,
             "offset": 0,
             "delay": 0,
@@ -86934,7 +86970,7 @@
       "swamp-blue-deer": {
         "attack": [
           {
-            "file": "BigBlueOxATT001.mp3",
+            "file": "SwampBlueDeerATT001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -86943,7 +86979,7 @@
         ],
         "walk": [
           {
-            "file": "BigBlueOxWalk001.mp3",
+            "file": "SwampBlueDeerWalk001.mp3",
             "volume": 0.45,
             "offset": 0,
             "delay": 0,
@@ -86952,7 +86988,7 @@
         ],
         "hit": [
           {
-            "file": "BigBlueOxHit001.mp3",
+            "file": "SwampBlueDeerHit001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -86961,7 +86997,16 @@
         ],
         "death": [
           {
-            "file": "BigBlueOxDeath001.mp3",
+            "file": "SwampBlueDeerDeath001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "cast": [
+          {
+            "file": "SwampBlueDeerCast001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -86972,7 +87017,7 @@
       "giant-beetle": {
         "attack": [
           {
-            "file": "MinorHorrorATT001.mp3",
+            "file": "GiantBeetleATT001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -86981,7 +87026,7 @@
         ],
         "walk": [
           {
-            "file": "MinorHorrorWalk001.mp3",
+            "file": "GiantBeetleWalk001.mp3",
             "volume": 0.45,
             "offset": 0,
             "delay": 0,
@@ -86999,7 +87044,7 @@
         ],
         "death": [
           {
-            "file": "JacareDeath001.mp3",
+            "file": "GiantBeetleDeath001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87010,7 +87055,7 @@
       "giant-spider": {
         "attack": [
           {
-            "file": "MinorHorrorATT001.mp3",
+            "file": "GiantSpiderATT001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87019,7 +87064,7 @@
         ],
         "walk": [
           {
-            "file": "MinorHorrorWalk001.mp3",
+            "file": "GiantSpiderWalk001.mp3",
             "volume": 0.45,
             "offset": 0,
             "delay": 0,
@@ -87028,7 +87073,7 @@
         ],
         "hit": [
           {
-            "file": "JacareHit001.mp3",
+            "file": "GiantSpiderHit001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87037,7 +87082,16 @@
         ],
         "death": [
           {
-            "file": "JacareDeath001.mp3",
+            "file": "GiantSpiderDeath001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "cast": [
+          {
+            "file": "GiantSpiderCast001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87048,7 +87102,7 @@
       "ashes-crawler": {
         "attack": [
           {
-            "file": "MinorHorrorATT001.mp3",
+            "file": "AshCrawlerATT001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87057,7 +87111,7 @@
         ],
         "walk": [
           {
-            "file": "MinorHorrorWalk001.mp3",
+            "file": "AshCrawlerWalk001.mp3",
             "volume": 0.45,
             "offset": 0,
             "delay": 0,
@@ -87066,7 +87120,7 @@
         ],
         "hit": [
           {
-            "file": "JacareHit001.mp3",
+            "file": "AshCrawlerHit001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87075,7 +87129,7 @@
         ],
         "death": [
           {
-            "file": "JacareDeath001.mp3",
+            "file": "AshCrawlerDeath001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87086,7 +87140,7 @@
       "corrosive-slime": {
         "attack": [
           {
-            "file": "CarnivorousPlantATT001.mp3",
+            "file": "CorrosiveSlimeATT001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87095,7 +87149,7 @@
         ],
         "walk": [
           {
-            "file": "SaplingWalk001.mp3",
+            "file": "CorrosiveSlimeWalk001.mp3",
             "volume": 0.45,
             "offset": 0,
             "delay": 0,
@@ -87104,7 +87158,7 @@
         ],
         "hit": [
           {
-            "file": "CarnivorousPlantHit001.mp3",
+            "file": "CorrosiveSlimeHit001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87113,7 +87167,16 @@
         ],
         "death": [
           {
-            "file": "CarnivorousPlantDeath001.mp3",
+            "file": "CorrosiveSlimeDeath001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "cast": [
+          {
+            "file": "CorrosiveSlimeCast001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87124,7 +87187,7 @@
       "corrosive-slime-36": {
         "attack": [
           {
-            "file": "CarnivorousPlantATT001.mp3",
+            "file": "CorrosiveSlimeATT001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87133,7 +87196,7 @@
         ],
         "walk": [
           {
-            "file": "SaplingWalk001.mp3",
+            "file": "CorrosiveSlimeWalk001.mp3",
             "volume": 0.45,
             "offset": 0,
             "delay": 0,
@@ -87142,7 +87205,7 @@
         ],
         "hit": [
           {
-            "file": "CarnivorousPlantHit001.mp3",
+            "file": "CorrosiveSlimeHit001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87151,7 +87214,16 @@
         ],
         "death": [
           {
-            "file": "CarnivorousPlantDeath001.mp3",
+            "file": "CorrosiveSlimeDeath001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "cast": [
+          {
+            "file": "CorrosiveSlimeCast001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87162,7 +87234,7 @@
       "corrosive-slime-64": {
         "attack": [
           {
-            "file": "CarnivorousPlantATT001.mp3",
+            "file": "CorrosiveSlimeATT001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87171,7 +87243,7 @@
         ],
         "walk": [
           {
-            "file": "SaplingWalk001.mp3",
+            "file": "CorrosiveSlimeWalk001.mp3",
             "volume": 0.45,
             "offset": 0,
             "delay": 0,
@@ -87180,7 +87252,7 @@
         ],
         "hit": [
           {
-            "file": "CarnivorousPlantHit001.mp3",
+            "file": "CorrosiveSlimeHit001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87189,7 +87261,16 @@
         ],
         "death": [
           {
-            "file": "CarnivorousPlantDeath001.mp3",
+            "file": "CorrosiveSlimeDeath001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "cast": [
+          {
+            "file": "CorrosiveSlimeCast001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87200,7 +87281,7 @@
       "mush": {
         "attack": [
           {
-            "file": "SaplingATT001.mp3",
+            "file": "MushroomManATT001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87209,7 +87290,7 @@
         ],
         "cast": [
           {
-            "file": "SaplingCast001.mp3",
+            "file": "MushroomManCast001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87218,7 +87299,7 @@
         ],
         "walk": [
           {
-            "file": "SaplingWalk001.mp3",
+            "file": "MushroomManWalk001.mp3",
             "volume": 0.45,
             "offset": 0,
             "delay": 0,
@@ -87227,7 +87308,7 @@
         ],
         "hit": [
           {
-            "file": "SaplingHit001.mp3",
+            "file": "MushroomManHit001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87236,7 +87317,7 @@
         ],
         "death": [
           {
-            "file": "SaplingDeath001.mp3",
+            "file": "MushroomManDeath001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
@@ -87568,6 +87649,91 @@
         "death": [
           {
             "file": "IsoldeDeath001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ]
+      },
+      "telesm": {
+        "attack": [
+          {
+            "file": "TelesmATT001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "cast": [
+          {
+            "file": "TelesmCast001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "walk": [
+          {
+            "file": "TelesmWalk001.mp3",
+            "volume": 0.45,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "hit": [
+          {
+            "file": "TelesmHit001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "death": [
+          {
+            "file": "TelesmDeath001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ]
+      },
+      "embered-zombie": {
+        "attack": [
+          {
+            "file": "EmberedZombieATT001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "walk": [
+          {
+            "file": "EmberedZombieWalk001.mp3",
+            "volume": 0.45,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "hit": [
+          {
+            "file": "EmberedZombieHit001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "death": [
+          {
+            "file": "EmberedZombieDeath001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,

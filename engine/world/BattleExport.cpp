@@ -98,7 +98,8 @@ class Rules {
         for (const auto& [id, def] : ember["heroClasses"].items()) {
           r.j_["classes"][id] = def;
           for (auto& [wid, w] : r.j_["weapons"].items())
-            if (w.is_object() && !flag(w, "ranged") && listed(def["weaponTypes"], str(w, "weaponType")) && w["usableBy"].is_array() && !listed(w["usableBy"], id))
+            if (w.is_object() && !flag(w, "ranged") && !(str(w, "weaponType") == "sword" && flag(w, "twoHanded")) &&
+                listed(def["weaponTypes"], str(w, "weaponType")) && w["usableBy"].is_array() && !listed(w["usableBy"], id))
               w["usableBy"].push_back(id);
         }
       // EmberEngine's own heroes (content/ember-classes.json heroes; Isolde, 2026-10-25: "the full party at debug mode should include

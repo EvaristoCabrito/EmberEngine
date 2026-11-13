@@ -1,0 +1,231 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Radiant Familiar/Fantasy_creature_prompt_generation_d3875dd7_1080p.mp4",
+   "first": 0,
+   "last": 46,
+   "colorMatch": "build/video-cut/radiant-familiar/main 0:46 + the set's grade (match_set_light.py)",
+   "bootRow": 1023,
+   "bootRows": [
+    1023,
+    1023
+   ],
+   "figurePx": 903.0,
+   "scaledTo": 610.4,
+   "frames": 47,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    840,
+    632
+   ],
+   "crop": [
+    134,
+    3,
+    699,
+    590
+   ],
+   "box": {
+    "w": 3.67827,
+    "h": 2.76746,
+    "foot": 0.01113
+   },
+   "pattern": "content/sprites/radiant-familiar/base-media64-v02/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Radiant Familiar/Fantasy_creature_prompt_generation_d3875dd7_1080p.mp4",
+   "first": 157,
+   "last": 238,
+   "colorMatch": "build/video-cut/radiant-familiar/main 0:46 + the set's grade (match_set_light.py)",
+   "bootRow": 1023,
+   "bootRows": [
+    1023,
+    1023
+   ],
+   "frameCountFrom": 82,
+   "figurePx": 903.0,
+   "scaledTo": 609.9,
+   "frames": 64,
+   "frameMs": 53.385416666666664,
+   "nat": [
+    1154,
+    697
+   ],
+   "crop": [
+    176,
+    0,
+    925,
+    693
+   ],
+   "box": {
+    "w": 5.05319,
+    "h": 3.05206,
+    "foot": 0.02295
+   },
+   "pattern": "content/sprites/radiant-familiar/atk-media64-v02/atk-{}.png",
+   "impact": 0.378
+  },
+  "move": {
+   "video": "Attachments/Radiant Familiar/Fantasy_creature_prompt_generation_d3875dd7_1080p.mp4",
+   "first": 141,
+   "last": 148,
+   "colorMatch": "build/video-cut/radiant-familiar/main 0:46 + the set's grade (match_set_light.py)",
+   "loopFirst": 141,
+   "loopLast": 148,
+   "seamSteps": NaN,
+   "bootRow": 1023,
+   "bodyDrift": [
+    -63,
+    0
+   ],
+   "figurePx": 903.0,
+   "scaledTo": 609.9,
+   "frames": 8,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    946,
+    564
+   ],
+   "crop": [
+    0,
+    4,
+    941,
+    450
+   ],
+   "box": {
+    "w": 4.14249,
+    "h": 2.46973,
+    "foot": 0.01112
+   },
+   "pattern": "content/sprites/radiant-familiar/move-media64-v02/move-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/Radiant Familiar/Fantasy_creature_prompt_generation_d3875dd7_1080p.mp4",
+   "first": 141,
+   "last": 148,
+   "colorMatch": "build/video-cut/radiant-familiar/main 0:46 + the set's grade (match_set_light.py)",
+   "loopFirst": 141,
+   "loopLast": 148,
+   "seamSteps": NaN,
+   "bootRow": 1023,
+   "bodyDrift": [
+    -63,
+    0
+   ],
+   "figurePx": 903.0,
+   "scaledTo": 609.9,
+   "frames": 8,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    946,
+    564
+   ],
+   "crop": [
+    5,
+    4,
+    941,
+    450
+   ],
+   "box": {
+    "w": 4.14249,
+    "h": 2.46973,
+    "foot": 0.01112
+   },
+   "pattern": "content/sprites/radiant-familiar/move-left-media64-v02/move-left-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/Radiant Familiar/EmoteandFallBigCreature_moving_and_landing_462eae0d_1080p.mp4",
+   "first": 122,
+   "last": 132,
+   "colorMatch": "build/video-cut/radiant-familiar/main 0:46 + the set's grade (match_set_light.py)",
+   "bootRow": 923,
+   "bootRows": [
+    923,
+    923
+   ],
+   "thereAndBack": true,
+   "figurePx": 695.0,
+   "scaledTo": 610.1,
+   "frames": 21,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    776,
+    704
+   ],
+   "crop": [
+    7,
+    5,
+    764,
+    674
+   ],
+   "box": {
+    "w": 3.39609,
+    "h": 3.08099,
+    "foot": 0.0151
+   },
+   "pattern": "content/sprites/radiant-familiar/hit-media64-v02/hit-{}.png"
+  },
+  "emote": {
+   "video": "Attachments/Radiant Familiar/EmoteandFallBigCreature_moving_and_landing_462eae0d_1080p.mp4",
+   "first": 0,
+   "last": 62,
+   "colorMatch": "build/video-cut/radiant-familiar/main 0:46 + the set's grade (match_set_light.py)",
+   "bootRow": 940,
+   "bootRows": [
+    940,
+    940
+   ],
+   "figurePx": 695.0,
+   "scaledTo": 610.0,
+   "frames": 63,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    865,
+    710
+   ],
+   "crop": [
+    5,
+    4,
+    855,
+    692
+   ],
+   "box": {
+    "w": 3.78794,
+    "h": 3.10918,
+    "foot": 0.01511
+   },
+   "pattern": "content/sprites/radiant-familiar/emote-media64-v02/emote-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Radiant Familiar/EmoteandFallBigCreature_moving_and_landing_462eae0d_1080p.mp4",
+   "first": 122,
+   "last": 238,
+   "colorMatch": "build/video-cut/radiant-familiar/main 0:46 + the set's grade (match_set_light.py)",
+   "bootRow": 994,
+   "bootRows": [
+    994,
+    994
+   ],
+   "frameCountFrom": 117,
+   "figurePx": 695.0,
+   "scaledTo": 609.9,
+   "frames": 64,
+   "frameMs": 76.171875,
+   "nat": [
+    1458,
+    795
+   ],
+   "crop": [
+    5,
+    5,
+    1448,
+    786
+   ],
+   "box": {
+    "w": 6.38111,
+    "h": 3.47941,
+    "foot": 0.14183
+   },
+   "pattern": "content/sprites/radiant-familiar/death-media64-v02/death-{}.png"
+  }
+ }
+}

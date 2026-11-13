@@ -313,6 +313,9 @@
     "nekomata": {
       "mov": 5
     },
+    "emberedZombie": {
+      "mov": 3
+    },
     "ashesCrawler": {
       "mov": 4
     }

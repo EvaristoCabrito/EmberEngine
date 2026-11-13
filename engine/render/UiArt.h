@@ -131,6 +131,14 @@ inline const char* classicBriefArt(const std::string& id) {
 // encounters that look alike, the two merchants' old backgrounds, else the one shared random-encounter picture.
 inline std::filesystem::path briefArtFile(const std::string& id, const std::filesystem::path& /*artRoot, unused: kept for the callers*/) {
   static const std::pair<const char*, const char*> kOwn[] = {
+      {"mordavian-woods", "content/briefings/brief-mordavian-woods-v01.png"},
+      {"mordavian-woods-floor-1", "content/briefings/brief-mordavian-woods-floor-1-v01.png"},
+      {"misty-root-descent", "content/briefings/brief-misty-root-descent-v01.png"},
+      {"farol", "content/briefings/brief-farol-v01.png"},
+      {"farol-andar-2", "content/briefings/brief-farol-andar-2-v01.png"},
+      {"farol-topo", "content/briefings/brief-farol-topo-v01.png"},
+      {"farol-poroes", "content/briefings/brief-farol-poroes-v01.png"},
+      {"farol-gruta", "content/briefings/brief-farol-gruta-v01.png"},
       {"ashen-forest-crossing", "content/briefings/ashen-forest-brief-v02.jpg"},
       {"deep-ashen-forest", "content/briefings/ashen-forest-brief-v02.jpg"},
       {"deep-ashen-ravine", "content/briefings/ashen-forest-brief-v02.jpg"},

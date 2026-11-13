@@ -1,0 +1,253 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Nekomata/IdleNormalATT_720p.mp4",
+   "first": 0,
+   "last": 112,
+   "bootRow": 507,
+   "bootRows": [
+    507,
+    509
+   ],
+   "frameCountFrom": 113,
+   "figurePx": 238.0,
+   "frames": 36,
+   "frameMs": 130.78703703703704,
+   "nat": [
+    658,
+    326
+   ],
+   "crop": [
+    6,
+    5,
+    647,
+    316
+   ],
+   "box": {
+    "w": 4.7,
+    "h": 2.32857,
+    "foot": 0.05714
+   },
+   "pattern": "content/sprites/nekomata/base-media36-v01/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Nekomata/IdleNormalATT_720p.mp4",
+   "first": 116,
+   "last": 238,
+   "bootRow": 507,
+   "bootRows": [
+    507,
+    507
+   ],
+   "frameCountFrom": 123,
+   "figurePx": 238.0,
+   "frames": 36,
+   "frameMs": 142.36111111111111,
+   "nat": [
+    693,
+    407
+   ],
+   "crop": [
+    5,
+    5,
+    683,
+    398
+   ],
+   "box": {
+    "w": 4.95,
+    "h": 2.90714,
+    "foot": 0.09286
+   },
+   "pattern": "content/sprites/nekomata/atk-media36-v01/atk-{}.png",
+   "impact": 0.5203
+  },
+  "move": {
+   "video": "Attachments/Nekomata/Animal_walking_in_place_side_6c43c5a0.mp4",
+   "first": 40,
+   "last": 143,
+   "loopFirst": 92,
+   "loopLast": 139,
+   "seamSteps": 1.75,
+   "bootRow": 254,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "frameCountFrom": 48,
+   "figurePx": 119.0,
+   "frames": 36,
+   "frameMs": 55.55555555555556,
+   "nat": [
+    330,
+    152
+   ],
+   "crop": [
+    4,
+    5,
+    321,
+    143
+   ],
+   "box": {
+    "w": 4.71429,
+    "h": 2.17143,
+    "foot": 0.07143
+   },
+   "pattern": "content/sprites/nekomata/move-media36-v01/move-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/Nekomata/Animal_walking_in_place_side_6c43c5a0.mp4",
+   "first": 40,
+   "last": 143,
+   "loopFirst": 92,
+   "loopLast": 139,
+   "seamSteps": 1.75,
+   "bootRow": 254,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "frameCountFrom": 48,
+   "figurePx": 119.0,
+   "frames": 36,
+   "frameMs": 55.55555555555556,
+   "nat": [
+    330,
+    152
+   ],
+   "crop": [
+    5,
+    5,
+    321,
+    143
+   ],
+   "box": {
+    "w": 4.71429,
+    "h": 2.17143,
+    "foot": 0.07143
+   },
+   "pattern": "content/sprites/nekomata/move-left-media36-v01/move-left-{}.png"
+  },
+  "cast": {
+   "video": "Attachments/Nekomata/SpecialATTandCasting.mp4",
+   "first": 120,
+   "last": 239,
+   "bootRow": 254,
+   "bootRows": [
+    254,
+    254
+   ],
+   "frameCountFrom": 120,
+   "figurePx": 119.0,
+   "frames": 36,
+   "frameMs": 138.88888888888889,
+   "nat": [
+    344,
+    189
+   ],
+   "crop": [
+    4,
+    4,
+    335,
+    181
+   ],
+   "box": {
+    "w": 4.91429,
+    "h": 2.7,
+    "foot": 0.22857
+   },
+   "pattern": "content/sprites/nekomata/cast-media36-v01/cast-{}.png",
+   "impact": 0.5
+  },
+  "special": {
+   "video": "Attachments/Nekomata/SpecialATTandCasting.mp4",
+   "first": 24,
+   "last": 96,
+   "bootRow": 254,
+   "bootRows": [
+    254,
+    254
+   ],
+   "frameCountFrom": 73,
+   "figurePx": 119.0,
+   "frames": 36,
+   "frameMs": 84.49074074074073,
+   "nat": [
+    343,
+    210
+   ],
+   "crop": [
+    5,
+    4,
+    334,
+    202
+   ],
+   "box": {
+    "w": 4.9,
+    "h": 3.0,
+    "foot": 0.3
+   },
+   "pattern": "content/sprites/nekomata/special-media36-v01/special-{}.png",
+   "impact": 0.4932
+  },
+  "hit": {
+   "video": "Attachments/Nekomata/Animal_reaction_and_fall_choreog\u2026_e238f4bc.mp4",
+   "first": 4,
+   "last": 48,
+   "bootRow": 253,
+   "bootRows": [
+    253,
+    253
+   ],
+   "frameCountFrom": 45,
+   "figurePx": 119.0,
+   "frames": 36,
+   "frameMs": 52.083333333333336,
+   "nat": [
+    326,
+    208
+   ],
+   "crop": [
+    4,
+    5,
+    318,
+    198
+   ],
+   "box": {
+    "w": 4.65714,
+    "h": 2.97143,
+    "foot": 0.12857
+   },
+   "pattern": "content/sprites/nekomata/hit-media36-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Nekomata/Animal_reaction_and_fall_choreog\u2026_e238f4bc.mp4",
+   "first": 136,
+   "last": 215,
+   "bootRow": 253,
+   "bootRows": [
+    253,
+    253
+   ],
+   "frameCountFrom": 80,
+   "figurePx": 119.0,
+   "frames": 36,
+   "frameMs": 92.59259259259258,
+   "nat": [
+    354,
+    128
+   ],
+   "crop": [
+    5,
+    5,
+    344,
+    119
+   ],
+   "box": {
+    "w": 5.05714,
+    "h": 1.82857,
+    "foot": 0.17143
+   },
+   "pattern": "content/sprites/nekomata/death-media36-v01/death-{}.png"
+  }
+ }
+}
