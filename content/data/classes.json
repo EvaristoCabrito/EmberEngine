@@ -316,6 +316,15 @@
     "emberedZombie": {
       "mov": 3
     },
+    "stag": {
+      "mov": 4
+    },
+    "boar": {
+      "mov": 3
+    },
+    "omnieye": {
+      "mov": 4
+    },
     "ashesCrawler": {
       "mov": 4
     },

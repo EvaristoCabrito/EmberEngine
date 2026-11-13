@@ -7419,6 +7419,30 @@
         "useClassSprite": true
       },
       {
+        "name": "Stag",
+        "classId": "stag",
+        "x": 38,
+        "y": 24,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Boar",
+        "classId": "boar",
+        "x": 48,
+        "y": 24,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Omnieye",
+        "classId": "omnieye",
+        "x": 3,
+        "y": 24,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
         "name": "MushroomMan",
         "classId": "mushroomMan",
         "x": 48,

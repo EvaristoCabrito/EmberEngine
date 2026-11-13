@@ -78,8 +78,17 @@ paid for). The skills window says what tonight's moon does to each technique.
 - In the campaign nobody recruits him yet (no join mission); Modo teste has him. His sprite is the Guerreiro's until the user's own
   sheets come in.
 
+## Look
+
+- Sprites: the user's temporary sheets (`content/sprites/moonwarden-v01/human`, set `moonwarden-v01`, hero `garranHolt`): idle, walk,
+  attack, special (his strike techniques), block (his guards), hit, fall.
+- Effects: `engine/render/vfx/MoonwardenFx` (moonlight, ours, 3D), one look per technique, played from `MapStage` as the step lands.
+- Icons: `content/ui/spells/<kind>.jpg`, from the user's `Attachments/Icons` (98gm6 Corte Guardado, 72aWB Erguer o Escudo, XunVQ
+  Pancada de Escudo, U6vCA Interpor, VyGHz Estocada na Brecha, Cg1KH Afronta, sNZUZ Golpe Esmagador, zFOt6 Segurar a Linha, sz9Xs
+  Acerto de Contas, Y9dBy Inquebrável).
+
 ## Not done
 
-- His own sprite (the user is making temporary sheets) and sounds of his own.
+- Sounds of his own; the werewolf form (its sheets are in `content/sprites/moonwarden-v01/werewolf`, unused).
 - The werewolf form.
 - An enemy never uses them (no AI).
