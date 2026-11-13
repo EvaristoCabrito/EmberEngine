@@ -64,12 +64,14 @@ int SpellEffects::looks(const std::string& kind) {
   if (kind == "abyssalSwap") return 1;
   // Our 3D light (HolyLight, 2026-10-17): Cura Menor 02 after its flipbook cards; the first version of the other cures,
   // the meal and the potion.
-  if (kind == "cureMinor") return 2;
-  if (kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "createFoodAndWater" || kind == "potion") return 1;
+  // ... and the holy light of 2026-11-13 after them (vfx/HolyFx): Cura Menor 03, the other cures 02, Raio Divino 02.
+  if (kind == "cureMinor") return 3;
+  if (kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease") return 2;
+  if (kind == "createFoodAndWater" || kind == "potion") return 1;
   // 02: Ember's own effect, ported (render/vfx/*).
   // 03: ours in 3D (vfx/SpellBolts; the user, 2026-10-18: "the current ones are too bland"). 04: 03 small (the enemies').
   if (kind == "magicMissile" || kind == "magicMissileV2") return 4;
-  if (kind == "divineBolt") return 1;  // 01: ours in 3D (vfx/SpellBolts)
+  if (kind == "divineBolt") return 2;  // 01: ours in 3D (vfx/SpellBolts), 02 the strike from the sky (vfx/HolyFx)
   if (kind == "turnUndead") return 1;  // 01: ours in 3D (vfx/TurnUndead)
   if (isLightning(kind, 2)) return 3;  // 01 the flipbook cards, 02 ours in 3D (vfx/Lightning), 03 02 small (the enemies')
   // 01 Ember's BurningHandsV2VFX as it was, 02 its cone opening outward (ours).
@@ -133,10 +135,12 @@ int SpellEffects::looks(const std::string& kind) {
 }
 
 int SpellEffects::classicLook(const std::string& kind) {
-  if (kind == "cureMinor") return 2;  // HolyLight (Ember's own was 2D)
-  if (kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "createFoodAndWater" || kind == "potion") return 1;
+  // The holy light (vfx/HolyFx) is the heroes'; the enemies keep each spell's first version.
+  if (kind == "cureMinor") return 3;
+  if (kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease") return 2;
+  if (kind == "createFoodAndWater" || kind == "potion") return 1;
   if (kind == "magicMissile" || kind == "magicMissileV2") return 3;  // ours in 3D (SpellBolts; 02 = Ember's MagicMissileV2VFX)
-  if (kind == "divineBolt") return 1;                                // ours in 3D (SpellBolts)
+  if (kind == "divineBolt") return 2;                                // the strike from the sky (vfx/HolyFx; 01 = SpellBolts, the enemies)
   if (kind == "turnUndead") return 1;                                // ours in 3D (vfx/TurnUndead)
   if (isLightning(kind, 2)) return 2;                                // Raio, ours in 3D (vfx/Lightning; 01 = the cards, the enemies')
   if (kind == "fireball") return 2;                                  // ours, a volume of fire (01 = FireballVFX, the enemies')
@@ -217,6 +221,7 @@ float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& c
 
 float SpellEffects::leadIn(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const {
   if (const float delay = impactDelay(kind, look, caster, targets); delay > 0.0f) return delay;
+  if (isHolyLight(kind, look)) return HolySpell::leadIn(holyStyle(kind));  // the light gathers, then lands
   if (isHoly(kind, look)) return HolyLight::leadIn(HolyLight::Style::Minor);
   if (kind == "turnUndead" && look >= 1) return TurnUndead::kLead;  // the sigil gathers, then the burst
   if (isHealer(kind)) return HealerFx::leadIn(kind);                // the Curandeiro's: the light gathers, then lands
@@ -229,7 +234,7 @@ float SpellEffects::leadIn(const std::string& kind, int look, const Spot& caster
 }
 
 bool SpellEffects::isHoly(const std::string& kind, int look) {
-  return (kind == "cureMinor" && look == 2) || kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" ||
+  return (kind == "cureMinor" && look == 2) || (look == 1 && (kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease")) ||
          kind == "createFoodAndWater" || kind == "potion";
 }
 
@@ -285,6 +290,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     if (isFrost(kind, look) && !frosts_.empty()) end = std::max(end, frosts_.back().end());
     if (isIce(kind, look) && !ices_.empty()) end = std::max(end, ices_.back().end());
     if (isPoison(kind, look) && !poisons_.empty()) end = std::max(end, poisons_.back().end());
+    if (isHolyLight(kind, look) && !holySpells_.empty()) end = std::max(end, holySpells_.back().end());
     std::erase_if(casts_, [&](const Cast& c) { return c.end <= start; });
     casts_.push_back({owner, end});
   }
@@ -590,6 +596,19 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     else if (kind == "disarm") lancer_.disarm(foe, caster.feet, impact);
     else if (kind == "impaleDrag") lancer_.impale(foe, caster.feet, impact);
     else lancer_.vigilStrike(foe, caster.feet, impact);
+    return true;
+  }
+  if (isHolyLight(kind, look)) {
+    // The holy light (vfx/HolyFx): on every body a cure reaches; the Raio Divino on its aimed hex, the area round it.
+    if (kind == "divineBolt") {
+      const Spot& centre = areaCentre(targets);
+      std::vector<glm::vec3> area;
+      for (const Spot& s : targets) area.push_back(s.feet);
+      holySpells_.emplace_back(HolySpell::Style::Bolt, caster.feet, heightOf(caster), centre.feet, heightOf(centre), std::move(area), impact, static_cast<uint32_t>(random() * 4294967295.0f));
+    } else {
+      for (const Spot& s : targets)
+        holySpells_.emplace_back(holyStyle(kind), caster.feet, heightOf(caster), s.feet, heightOf(s), std::vector<glm::vec3>{}, impact, static_cast<uint32_t>(random() * 4294967295.0f));
+    }
     return true;
   }
   if (isPoison(kind, look)) {
@@ -1079,6 +1098,7 @@ bool SpellEffects::active(float now) const {
   if (std::any_of(lightnings_.begin(), lightnings_.end(), [&](const Lightning& l) { return !l.done(now); })) return true;
   if (std::any_of(frosts_.begin(), frosts_.end(), [&](const FrostLine& f) { return !f.done(now); })) return true;
   if (std::any_of(ices_.begin(), ices_.end(), [&](const IceSpell& s) { return !s.done(now); })) return true;
+  if (std::any_of(holySpells_.begin(), holySpells_.end(), [&](const HolySpell& s) { return !s.done(now); })) return true;
   if (std::any_of(poisons_.begin(), poisons_.end(), [&](const PoisonSpell& s) { return !s.done(now) && !s.standing(); })) return true;
   return std::any_of(elements_.begin(), elements_.end(), [&](const Element& e) { return e.end > now; });
 }
@@ -1133,6 +1153,8 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   for (const FrostLine& f : frosts_) f.build(now, vfx_, vfxLights);
   std::erase_if(ices_, [&](const IceSpell& s) { return s.done(now); });
   for (const IceSpell& s : ices_) s.build(now, camera, vfx_, vfxLights);
+  std::erase_if(holySpells_, [&](const HolySpell& s) { return s.done(now); });
+  for (const HolySpell& s : holySpells_) s.build(now, camera, vfx_, vfxLights);
   std::erase_if(poisons_, [&](const PoisonSpell& s) { return s.done(now); });
   for (const PoisonSpell& s : poisons_) s.build(now, camera, vfx_, vfxLights);
   std::erase_if(storms_, [&](const IceStorm& s) { return s.done(now); });

@@ -331,7 +331,7 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
     if (sight.local <= 0.0) o.position = float4(0, 0, -1, 1);
     return o;
   }
-  if (d.material == kMaterialImpactParticle || d.material == kMaterialFlipbookParticle || (d.material == kMaterialHoly && d.params0.y > 1.5 && d.params0.y < 2.5)) {
+  if (d.material == kMaterialImpactParticle || d.material == kMaterialFlipbookParticle || (d.material == kMaterialHoly && ((d.params0.y > 1.5 && d.params0.y < 2.5) || (d.params0.y > 6.5 && d.params0.y < 7.5)))) {
     // A camera-facing quad (PlaneGeometry 1x1) around the particle's centre, turned and sized in view space.
     const VfxInstance inst = loadInstance(d.firstInstance + instance);
     const float cs = cos(inst.b.x), sn = sin(inst.b.x);
@@ -676,7 +676,39 @@ float4 PSMain(VSOut i) : SV_Target0 {
     // opacity; color.rgb = its colour; params1.rgb = the hot core's colour, params1.a = the ground ring's radius.
     const MeshFrame f = loadFrame(push.frame);
     const float t = d.params0.x, mode = d.params0.y, intensity = d.params0.z, opacity = d.params0.w;
-    if (mode < 0.5 || mode > 2.5) {
+    if (mode > 4.5) {
+      // The soft looks of 2026-11-13 (render/vfx/HolyFx; the user's brief on holy light): everything feathered, nothing sharp;
+      // color = the light's colour, params1.rgb = its warm white core, well over 1 so the bloom takes it.
+      if (mode < 5.5) {
+        // 5, a god ray (a card: u across, v from its foot up to the sky; params1.a its seed): soft from side to side, gone toward
+        // the sky and gentle at its foot, a slow shimmer running down it.
+        const float across = pow(saturate(1.0 - abs(i.uv.x * 2.0 - 1.0)), 2.2);
+        const float along = smoothstep(0.0, 0.08, i.uv.y) * pow(saturate(1.0 - i.uv.y), 1.3);
+        const float shimmer = noise2(float2(i.uv.x * 5.0 + d.params1.a * 9.0, i.uv.y * 3.0 + t * 0.5)) * 0.6 + noise2(float2(i.uv.x * 12.0 - d.params1.a * 5.0, i.uv.y * 7.0 + t * 0.9)) * 0.4;
+        a = across * along * (0.4 + 0.6 * shimmer) * 0.75 * opacity;
+        c = lerp(d.color.rgb, d.params1.rgb, across * across * across * 0.7) * 0.95 * intensity;
+      } else if (mode < 6.5) {
+        // 6, not drawn (it was a circle of rings and rays of my own; the holy spells' mark is the original sigil: vfx/SigilParts.h).
+        discard;
+      } else if (mode < 7.5) {
+        // 7, the bloom (a billboard; b.z alpha, b.w intensity, c its tint): a wide soft glow with a warm white heart.
+        const float dd = length((i.uv - 0.5) * 2.0);
+        const float heart = exp(-dd * dd * 16.0), halo = exp(-dd * dd * 3.5) * (1.0 - smoothstep(0.75, 1.0, dd));
+        a = saturate(heart + halo * 0.4) * 0.8 * i.particleB.z * opacity;
+        if (a < 0.004) discard;
+        c = lerp(i.particleC.rgb, d.params1.rgb, heart * 0.8) * (0.8 + 0.9 * heart) * i.particleB.w * intensity;
+      } else {
+        // 8, a beam (a card: u across, v along; params1.a its seed): an almost white core in a wide soft sheath, its width and its
+        // colour varying along it, layers of light running down it at different speeds.
+        const float x = abs(i.uv.x * 2.0 - 1.0);
+        const float wob = noise2(float2(i.uv.y * 7.0 - t * 5.0, d.params1.a * 11.0)) * 0.6 + noise2(float2(i.uv.y * 19.0 - t * 11.0, d.params1.a * 3.0)) * 0.4;
+        const float core = 1.0 - smoothstep(0.0, 0.16 + 0.14 * wob, x);
+        const float sheath = pow(saturate(1.0 - x), 2.4);
+        const float ends = smoothstep(0.0, 0.03, i.uv.y) * (1.0 - smoothstep(0.75, 1.0, i.uv.y));
+        a = saturate(core + sheath * (0.45 + 0.4 * wob)) * ends * opacity;
+        c = lerp(lerp(d.color.rgb, d.params1.rgb, sheath), float3(1.0, 1.0, 0.98), core) * (1.0 + 1.6 * core) * intensity;
+      }
+    } else if (mode < 0.5 || mode > 2.5) {
       // A shaft of light (an open cylinder, u around, v up): seen through as a volume, brightest where it faces the eye,
       // faded toward its top, with rays rising through it.
       const float facing = abs(dot(normalize(i.normal), normalize(f.cameraPosition - i.world)));
