@@ -39,7 +39,7 @@ static const uint kMaterialBasic = 0, kMaterialMissileCore = 1, kMaterialMissile
                   kMaterialStandard = 4, kMaterialFlame = 5, kMaterialImpactParticle = 6, kMaterialImpactFlash = 7,
                   kMaterialBlessWave = 8, kMaterialSpriteSheet = 9, kMaterialVenomSmoke = 10, kMaterialPfTendril = 11, kMaterialPfCore = 12,
                   kMaterialPfShell = 13, kMaterialWebThread = 14, kMaterialFlipbookParticle = 15, kMaterialHoly = 16,
-                  kMaterialCombat = 17, kMaterialIceStorm = 18, kMaterialTextured = 19, kMaterialFireVolume = 21, kMaterialGasVolume = 22;
+                  kMaterialCombat = 17, kMaterialIceStorm = 18, kMaterialTextured = 19, kMaterialFireVolume = 21, kMaterialGasVolume = 22, kMaterialArcane = 23;
 
 struct Push {
   uint64_t vertices;   // VfxVertex[]
@@ -252,6 +252,15 @@ float4 gasBound(VfxDraw d) {
   return float4(d.params1.xyz + along * 0.5, length(along) * 0.5 + R * 1.2);
 }
 
+// Arcane energy's colours: one ramp read by brightness (the gradient map): near black violet at the edges, deep purple, magenta,
+// pink, almost white at the core. Never one flat purple.
+float3 arcaneRamp(float v) {
+  float3 c = lerp(float3(0.04, 0.0, 0.10), float3(0.26, 0.05, 0.55), smoothstep(0.0, 0.3, v));
+  c = lerp(c, float3(0.85, 0.16, 0.82), smoothstep(0.3, 0.58, v));
+  c = lerp(c, float3(1.0, 0.56, 0.92), smoothstep(0.58, 0.8, v));
+  return lerp(c, float3(1.0, 0.95, 1.0), smoothstep(0.8, 1.0, v));
+}
+
 // The sphere a fire's volume lies in (xyz centre, w radius).
 float4 fireBound(VfxDraw d) {
   if (d.color.z < 0.5) return float4(d.params1.xyz + float3(0.0, d.params0.z * 0.575, 0.0), length(float2(d.params0.w * kFireBound, d.params0.z * 0.575)));
@@ -331,7 +340,8 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
     if (sight.local <= 0.0) o.position = float4(0, 0, -1, 1);
     return o;
   }
-  if (d.material == kMaterialImpactParticle || d.material == kMaterialFlipbookParticle || (d.material == kMaterialHoly && ((d.params0.y > 1.5 && d.params0.y < 2.5) || (d.params0.y > 6.5 && d.params0.y < 7.5)))) {
+  if (d.material == kMaterialImpactParticle || d.material == kMaterialFlipbookParticle || (d.material == kMaterialArcane && (d.params0.y < 0.5 || d.params0.y > 1.5)) ||
+      (d.material == kMaterialHoly && ((d.params0.y > 1.5 && d.params0.y < 2.5) || (d.params0.y > 6.5 && d.params0.y < 7.5)))) {
     // A camera-facing quad (PlaneGeometry 1x1) around the particle's centre, turned and sized in view space.
     const VfxInstance inst = loadInstance(d.firstInstance + instance);
     const float cs = cos(inst.b.x), sn = sin(inst.b.x);
@@ -1116,6 +1126,47 @@ float4 PSMain(VSOut i) : SV_Target0 {
       c += gTextures[NonUniformResourceIndex(emissiveMap)].Sample(smp, i.uv).rgb * tint * d.params1.w * push.brightness;
     const float opacity = saturate(d.color.a);
     return float4(applyVolume(f, c, i.world) * i.sight * opacity, opacity);
+  } else if (d.material == kMaterialArcane) {
+    // Arcane energy (render/vfx/ArcaneFx; the user's brief of 2026-11-13): params0 = time, mode, intensity, opacity; params1.x seed.
+    const MeshFrame f = loadFrame(push.frame);
+    const float t = d.params0.x, mode = d.params0.y;
+    if (mode < 0.5) {
+      // 0, the energy (a billboard; b.y its seed, b.z alpha, b.w intensity): a noise warped by a second one that swirls round the
+      // middle, read through the ramp: dark violet at its edge, pink to white at its heart, turbulent inside. The world behind
+      // it is bent toward its middle (the scene's colour read aside).
+      const float2 p = (i.uv - 0.5) * 2.0;
+      const float r = length(p), seed = i.particleB.y;
+      const float swirl = (1.0 - saturate(r)) * 2.6 + t * 1.7;
+      const float2 q = float2(p.x * cos(swirl) - p.y * sin(swirl), p.x * sin(swirl) + p.y * cos(swirl));
+      const float2 warp = float2(noise2(q * 2.1 + seed + t * 0.6), noise2(q * 2.1 - seed - t * 0.5 + 7.3)) - 0.5;
+      const float n = noise2((q + warp * 0.9) * 2.6 + seed * 3.0) * 0.6 + noise2((q - warp * 0.6) * 5.5 - t * 0.9) * 0.4;
+      float v = saturate((1.0 - r) * 1.35 * (0.45 + 0.85 * n));
+      v = pow(v, 1.25);
+      const float body = smoothstep(0.03, 0.3, v) * i.particleB.z * d.params0.w;
+      const float lens = (1.0 - smoothstep(0.45, 1.0, r)) * 0.85 * i.particleB.z * d.params0.w;
+      const float2 bent = i.position.xy - normalize(p + 1e-4) * (1.0 - saturate(r)) * 38.0 * (0.6 + 0.8 * n);
+      const float3 behind = gTextures[NonUniformResourceIndex(push.backdrop & 0xFFFFu)].Load(int3(clamp(bent, 0.0, f.screenSize - 1.0), 0)).rgb;
+      const float3 glow = arcaneRamp(v) * (1.0 + 2.6 * pow(v, 4.0)) * i.particleB.w * d.params0.z * push.brightness;
+      const float cover = saturate(max(body, lens));
+      if (cover < 0.004) discard;
+      return float4((glow * body + behind * lens * (1.0 - body)) * i.sight, cover * i.sight);
+    } else if (mode < 1.5) {
+      // 1, a thread of energy (a card: u across, v along): a thin crackling line that jumps in steps, never smoothly, and blinks.
+      const float ts = floor(t * 14.0), seed = d.params1.x;
+      const float x = i.uv.x * 2.0 - 1.0 + (noise2(float2(i.uv.y * 7.0 + seed, ts * 3.7)) - 0.5) * 1.3 * sin(i.uv.y * 3.14159);
+      const float core = 1.0 - smoothstep(0.0, 0.1, abs(x)), halo = pow(saturate(1.0 - abs(x)), 4.0) * 0.5;
+      const float blink = step(0.3, hash2(float2(ts, seed)));
+      a = saturate(core + halo) * smoothstep(0.0, 0.08, i.uv.y) * (1.0 - smoothstep(0.85, 1.0, i.uv.y)) * blink * d.params0.w;
+      if (a < 0.004) discard;
+      c = arcaneRamp(0.55 + 0.45 * core) * (1.0 + 2.0 * core) * d.params0.z;
+    } else {
+      // 2, a wisp (a billboard; b.y seed, b.z alpha): a small soft knot of the same light.
+      const float dd = length((i.uv - 0.5) * 2.0);
+      const float v = exp(-dd * dd * 5.0);
+      a = v * (1.0 - smoothstep(0.8, 1.0, dd)) * i.particleB.z * d.params0.w;
+      if (a < 0.004) discard;
+      c = arcaneRamp(0.35 + 0.65 * v) * (1.0 + 1.5 * v * v) * d.params0.z;
+    }
   } else if (d.material == kMaterialGasVolume) {
     // Poison gas, a real volume (the study of 2026-11-13: lit smoke, heavy, slow, a sickly body and a faint glow inside). The eye's
     // ray is walked through the gas up to whatever the scene has there (its depth), so the ground, the walls and the bodies cut it

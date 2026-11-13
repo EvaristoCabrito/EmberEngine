@@ -34,6 +34,7 @@ add_library(EmberEngine STATIC
   render/vfx/IceFx.cpp
   render/vfx/PoisonFx.cpp
   render/vfx/HolyFx.cpp
+  render/vfx/ArcaneFx.cpp
   render/vfx/IceStorm.cpp
   render/vfx/SpellBolts.cpp
   render/vfx/Lightning.cpp

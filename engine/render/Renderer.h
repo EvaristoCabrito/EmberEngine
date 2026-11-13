@@ -96,6 +96,7 @@ class Renderer {
       vfxDraws_.push_back(d);
       // a body of ice (the IceStorm material's mode 8) refracts the scene behind it: the scene's colour is copied for it this frame
       if (d.gpu.material == static_cast<uint32_t>(VfxMaterial::IceStorm) && d.gpu.params0.y > 7.5f && d.gpu.params0.y < 8.5f) vfxBackdrop_ = true;
+      if (d.gpu.material == static_cast<uint32_t>(VfxMaterial::Arcane) && d.gpu.params0.y < 0.5f) vfxBackdrop_ = true;  // ... and arcane energy bends it
     }
   }
   static constexpr uint32_t kMaxVfxVertices = 1u << 18, kMaxVfxInstances = 1u << 12, kMaxVfxDraws = 1u << 12;

@@ -8512,8 +8512,13 @@ class MapStage final : public Stage {
       const bool ember = hero == "isolde";
       if (ember) x.element = "ember";
       x.boltStrength = hero == "voss" || ember ? 0.55f : 1.0f;
-      spellFx_.combat().bolt(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), now_, release, x.impact, CombatPalette::of(x.element.c_str()),
-                             x.boltStrength, ember ? CombatFx::BoltLook::Ember : CombatFx::BoltLook::Arcane);
+      // The Mago Negro's own (Voss, a hero): the arcane energy of vfx/ArcaneFx, small (the user, 2026-11-13: "the black mage regular
+      // RANGE ATT is also arcane effect"); every other caster keeps the bolt it had.
+      if (hero == "voss")
+        spellFx_.arcaneAttack(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), now_, release, x.impact);
+      else
+        spellFx_.combat().bolt(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), now_, release, x.impact, CombatPalette::of(x.element.c_str()),
+                               x.boltStrength, ember ? CombatFx::BoltLook::Ember : CombatFx::BoltLook::Arcane);
     }
     // A bow's plain attack or counter shoots the arrow Tiro Longo already flies (SpellEffects::arrow), landing on the hit.
     x.arrow = !x.bolt && striker >= 0 && target >= 0 && strikeIsArrow(s, x.counter);
@@ -10292,8 +10297,7 @@ class MapStage final : public Stage {
     if (kind == "arcaneAttack") {
       const float release = start + 0.45f;
       impact = release + CombatFx::flightSeconds(from.feet, to.feet);
-      spellFx_.combat().bolt(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), start, release, impact);
-      spellFx_.combat().impact(CombatFx::Kind::Magical, to.feet, cardHeightOf(to), from.feet, impact);
+      spellFx_.arcaneAttack(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), start, release, impact);
       logInfo("fx test: Arcano bolt released at {:.2f} s, lands at {:.2f} s", release, impact);
     } else {
       spellFx_.combat().impact(kind == "hitHeavy" ? CombatFx::Kind::Heavy : kind == "slash" ? CombatFx::Kind::Slash : kind == "thrust" ? CombatFx::Kind::Thrust

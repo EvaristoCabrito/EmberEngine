@@ -70,7 +70,9 @@ int SpellEffects::looks(const std::string& kind) {
   if (kind == "createFoodAndWater" || kind == "potion") return 1;
   // 02: Ember's own effect, ported (render/vfx/*).
   // 03: ours in 3D (vfx/SpellBolts; the user, 2026-10-18: "the current ones are too bland"). 04: 03 small (the enemies').
-  if (kind == "magicMissile" || kind == "magicMissileV2") return 4;
+  // 05: the arcane energy (vfx/ArcaneFx, 2026-11-13).
+  if (kind == "magicMissile" || kind == "magicMissileV2") return 5;
+  if (kind == "phantasmalForce") return 2;  // 01 Ember's PhantasmalForceVFX, 02 the arcane energy (vfx/ArcaneFx)
   if (kind == "divineBolt") return 2;  // 01: ours in 3D (vfx/SpellBolts), 02 the strike from the sky (vfx/HolyFx)
   if (kind == "turnUndead") return 1;  // 01: ours in 3D (vfx/TurnUndead)
   if (isLightning(kind, 2)) return 3;  // 01 the flipbook cards, 02 ours in 3D (vfx/Lightning), 03 02 small (the enemies')
@@ -94,7 +96,7 @@ int SpellEffects::looks(const std::string& kind) {
   // 01 of a spell with no flipbook-card version: Ember's own effect, ported.
   if (kind == "causticVenom") return 3;  // 01 Ember's CausticVenomVFX, 02 its impact in 3D (vfx/CausticVenom), 03 ours, gas (vfx/PoisonFx)
   if (kind == "fireball") return 2;  // 01 Ember's FireballVFX (the enemies'), 02 ours: a real volume of fire (vfx/Fireball, volume)
-  if (kind == "bless" || kind == "phantasmalForce" ||
+  if (kind == "bless" ||
       kind == "webOfDreams" || kind == "burningHands" || kind == "poisonBreath" || kind == "cleave" || kind == "sweep")
     return 1;
   if (kind == "longShot" || kind == "piercing") return 2;  // 01 the arrow card, 02 RangerFx's 3D arrow (the enemies')
@@ -139,7 +141,8 @@ int SpellEffects::classicLook(const std::string& kind) {
   if (kind == "cureMinor") return 3;
   if (kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease") return 2;
   if (kind == "createFoodAndWater" || kind == "potion") return 1;
-  if (kind == "magicMissile" || kind == "magicMissileV2") return 3;  // ours in 3D (SpellBolts; 02 = Ember's MagicMissileV2VFX)
+  // The arcane energy (vfx/ArcaneFx) is the heroes'; the enemies keep each spell's first version.
+  if (kind == "magicMissile" || kind == "magicMissileV2") return 5;
   if (kind == "divineBolt") return 2;                                // the strike from the sky (vfx/HolyFx; 01 = SpellBolts, the enemies)
   if (kind == "turnUndead") return 1;                                // ours in 3D (vfx/TurnUndead)
   if (isLightning(kind, 2)) return 2;                                // Raio, ours in 3D (vfx/Lightning; 01 = the cards, the enemies')
@@ -150,7 +153,7 @@ int SpellEffects::classicLook(const std::string& kind) {
   if (kind == "causticVenom" || kind == "poisonBreath") return 3;
   if (kind == "minorVenom") return 1;
   if (kind == "creepingPlague" || kind == "blackPestilence") return 2;
-  if (kind == "phantasmalForce") return 1;                           // PhantasmalForceVFX
+  if (kind == "phantasmalForce") return 2;                           // the arcane energy (01 = PhantasmalForceVFX, the enemies')
   if (kind == "webOfDreams") return 2;                               // ours in 3D (DreamWeb: shot, floor, net; 01 = WebOfDreamsVFX)
   if (kind == "burningHands") return 2;                              // BurningHandsV2VFX, its cone opening outward (02)
   if (kind == "cleave") return 1;                                    // CleaveSweepVFX
@@ -201,6 +204,8 @@ float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& c
     return MagicMissileV2::impactDelay(classicOrigin(caster), targets.front().body);
   if (kind == "fireball" && look >= 1 && !targets.empty()) return Fireball::travelSeconds(classicOrigin(caster), fireballTarget(targets));
   if (kind == "phantasmalForce" && look == 1) return PhantasmalForce::kImpactAt;
+  if (isArcane(kind, look) && !targets.empty())
+    return ArcaneSpell::lead(kind == "phantasmalForce" ? ArcaneSpell::Style::Phantasmal : ArcaneSpell::Style::Missile, caster.feet, targets.front().feet);
   if (kind == "spectralBolt" && !targets.empty()) return ArmsFx::spectralFlight(caster.feet, areaCentre(targets).feet);
   if (kind == "webOfDreams" && look >= 1) return look == 2 ? DreamWeb::kShotTravel : WebOfDreams::kShotTravel;
   if ((kind == "burningHands" || kind == "poisonBreath") && look >= 1) return BurningHands::kRelease;
@@ -291,6 +296,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     if (isIce(kind, look) && !ices_.empty()) end = std::max(end, ices_.back().end());
     if (isPoison(kind, look) && !poisons_.empty()) end = std::max(end, poisons_.back().end());
     if (isHolyLight(kind, look) && !holySpells_.empty()) end = std::max(end, holySpells_.back().end());
+    if (isArcane(kind, look) && !arcanes_.empty()) end = std::max(end, arcanes_.back().end());
     std::erase_if(casts_, [&](const Cast& c) { return c.end <= start; });
     casts_.push_back({owner, end});
   }
@@ -596,6 +602,13 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     else if (kind == "disarm") lancer_.disarm(foe, caster.feet, impact);
     else if (kind == "impaleDrag") lancer_.impale(foe, caster.feet, impact);
     else lancer_.vigilStrike(foe, caster.feet, impact);
+    return true;
+  }
+  if (isArcane(kind, look)) {
+    // The arcane energy (vfx/ArcaneFx): on the foe the cast names.
+    const Spot& foe = targets.front();
+    arcanes_.emplace_back(kind == "phantasmalForce" ? ArcaneSpell::Style::Phantasmal : ArcaneSpell::Style::Missile, caster.feet, heightOf(caster), foe.feet, heightOf(foe), start, impact,
+                          static_cast<uint32_t>(random() * 4294967295.0f));
     return true;
   }
   if (isHolyLight(kind, look)) {
@@ -1098,6 +1111,7 @@ bool SpellEffects::active(float now) const {
   if (std::any_of(lightnings_.begin(), lightnings_.end(), [&](const Lightning& l) { return !l.done(now); })) return true;
   if (std::any_of(frosts_.begin(), frosts_.end(), [&](const FrostLine& f) { return !f.done(now); })) return true;
   if (std::any_of(ices_.begin(), ices_.end(), [&](const IceSpell& s) { return !s.done(now); })) return true;
+  if (std::any_of(arcanes_.begin(), arcanes_.end(), [&](const ArcaneSpell& s) { return !s.done(now); })) return true;
   if (std::any_of(holySpells_.begin(), holySpells_.end(), [&](const HolySpell& s) { return !s.done(now); })) return true;
   if (std::any_of(poisons_.begin(), poisons_.end(), [&](const PoisonSpell& s) { return !s.done(now) && !s.standing(); })) return true;
   return std::any_of(elements_.begin(), elements_.end(), [&](const Element& e) { return e.end > now; });
@@ -1153,6 +1167,8 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   for (const FrostLine& f : frosts_) f.build(now, vfx_, vfxLights);
   std::erase_if(ices_, [&](const IceSpell& s) { return s.done(now); });
   for (const IceSpell& s : ices_) s.build(now, camera, vfx_, vfxLights);
+  std::erase_if(arcanes_, [&](const ArcaneSpell& s) { return s.done(now); });
+  for (const ArcaneSpell& s : arcanes_) s.build(now, camera, vfx_, vfxLights);
   std::erase_if(holySpells_, [&](const HolySpell& s) { return s.done(now); });
   for (const HolySpell& s : holySpells_) s.build(now, camera, vfx_, vfxLights);
   std::erase_if(poisons_, [&](const PoisonSpell& s) { return s.done(now); });

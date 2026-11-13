@@ -58,6 +58,8 @@ enum class VfxMaterial : uint32_t {
                          // (corners at +-0.5); params0 = time, thickness, a pool's depth, radius; params1 = origin (world), seed;
                          // color = body (0 pool, 1 puff, 2 cone, 3 stream), fade, glow; model[0] = the cone's / stream's way,
                          // model[1] = the gas's colour, model[2] = its glow's. Never among the cards (it samples the depth).
+  Arcane = 23,           // ours: arcane energy (vfx/ArcaneFx): params0 = time, mode (0 the energy, 1 a thread, 2 a wisp), intensity,
+                         // opacity; params1.x = seed. The energy reads the scene's colour behind it (it bends the world).
   Textured = 19,          // ours: a cooked mesh's own material (MeshScene::addEffect), lit by the scene like resolve.hlsl: texture =
                           // base colour, params1.xyz = normal, ORM, emissive (bindless indices as floats' bits, kNoTextureIndex =
                           // none), params1.w = emissive strength (display-relative, as Standard's); color = base factor + opacity;
