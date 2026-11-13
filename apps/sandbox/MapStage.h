@@ -10127,6 +10127,36 @@ class MapStage final : public Stage {
     const size_t target = nearestTarget(caster, spellOnFriend(kind));
     std::vector<SpellEffects::Spot> spots{unitSpot(target)};
     // Ours: the spell's own shape on the board (its area round the target, its line, its cone), when a battle is on.
+    // (With no battle on, the Elementalista's ice still shows its shape, laid out from the caster toward the target on the ground:
+    // the Lança's line of seven hexes, the Zero Absoluto's hex and the six round it, the Vendaval's cone of five rows.)
+    if (!battle_ && (kind == "iceLance" || kind == "absoluteZero" || kind == "glacialGale")) {
+      constexpr float kHexW = 1.7320508f;
+      const SpellEffects::Spot me = unitSpot(hero), them = unitSpot(target);
+      glm::vec3 d = them.feet - me.feet;
+      d.y = 0.0f;
+      d = glm::dot(d, d) > 1e-6f ? glm::normalize(d) : glm::vec3(0.0f, 0.0f, 1.0f);
+      const glm::vec3 across{-d.z, 0.0f, d.x};
+      auto at = [&](glm::vec3 p) {
+        SpellEffects::Spot o;
+        p.y = groundAt(p.x, p.z);
+        o.feet = p, o.body = p + glm::vec3(0.0f, 0.9f, 0.0f);
+        return o;
+      };
+      spots.clear();
+      if (kind == "iceLance") {
+        for (int k = 1; k <= 7; ++k) spots.push_back(at(me.feet + d * (kHexW * static_cast<float>(k))));
+      } else if (kind == "absoluteZero") {
+        spots.push_back(at(them.feet));
+        for (int k = 0; k < 6; ++k) {
+          const float a = static_cast<float>(k) * 1.0471976f;
+          spots.push_back(at(them.feet + (d * std::cos(a) + across * std::sin(a)) * kHexW));
+        }
+      } else {
+        for (int r = 1; r <= 5; ++r)
+          for (int j = -(r * 3 / 4); j <= r * 3 / 4; ++j)
+            spots.push_back(at(me.feet + d * (kHexW * static_cast<float>(r)) + across * (kHexW * 0.92f * static_cast<float>(j))));
+      }
+    }
     if (battle_ && !ember::emberSpellClass(kind).empty() && unitBattle_[hero] >= 0 && unitBattle_[target] >= 0) {
       const ember::BattleUnit& t = battle_->units()[static_cast<size_t>(unitBattle_[target])];
       const ember::BattleHex aim = kind == "eruption" ? ember::BattleHex{battle_->units()[static_cast<size_t>(unitBattle_[hero])].x,

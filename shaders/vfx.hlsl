@@ -49,7 +49,7 @@ struct Push {
   uint drawIndex;
   float brightness;
   uint samplerIndex;
-  uint pad;
+  uint backdrop;  // the scene's colour copied before the cards and the effects (Renderer: the water's backdrop), for the ice's refraction
 };
 [[vk::push_constant]] Push push;
 
@@ -194,6 +194,23 @@ float fireBurstDensity(float3 q, float R, float age, float t, float seed, out fl
   heat = saturate(dens * (1.25 - age));
   return dens;
 }
+// The fracture network inside a body of ice: how far a point is from the nearest wall between the cells of a 3D Voronoi (0 on a
+// crack). Read at several depths along the eye's ray bent into the ice, the cracks sit inside it and slide as the eye moves.
+float iceCracks(float3 p) {
+  const float3 ip = floor(p), fp = frac(p);
+  float d1 = 8.0, d2 = 8.0;
+  for (int z = -1; z <= 1; ++z)
+    for (int y = -1; y <= 1; ++y)
+      for (int x = -1; x <= 1; ++x) {
+        const float3 g = float3(x, y, z);
+        const float3 r = g + float3(hash31(ip + g), hash31(ip + g + 17.3), hash31(ip + g + 41.7)) - fp;
+        const float dd = dot(r, r);
+        if (dd < d1) d2 = d1, d1 = dd;
+        else if (dd < d2) d2 = dd;
+      }
+  return sqrt(d2) - sqrt(d1);
+}
+
 // The sphere a fire's volume lies in (xyz centre, w radius).
 float4 fireBound(VfxDraw d) {
   if (d.color.z < 0.5) return float4(d.params1.xyz + float3(0.0, d.params0.z * 0.575, 0.0), length(float2(d.params0.w * kFireBound, d.params0.z * 0.575)));
@@ -274,7 +291,8 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
     if (sight.local <= 0.0) o.position = float4(0, 0, -1, 1);
     return o;
   }
-  if (d.material == kMaterialIceStorm && ((d.params0.y > 0.5 && d.params0.y < 1.5) || (d.params0.y > 4.5 && d.params0.y < 6.5))) {
+  if (d.material == kMaterialIceStorm && ((d.params0.y > 0.5 && d.params0.y < 1.5) || (d.params0.y > 4.5 && d.params0.y < 6.5) ||
+                                          (d.params0.y > 9.5 && d.params0.y < 11.5) || (d.params0.y > 12.5 && d.params0.y < 13.5))) {
     // render/vfx/IceStorm's billboards (snow, ice dust, Blizzard2D's sprites): a camera-facing quad around a.xyz, c.xy wide
     // and tall, turned by b.x. Never thinner than 1.5 pixels (a snowflake is smaller than one); what is widened is dimmed by
     // as much, so it carries the same light.
@@ -731,7 +749,147 @@ float4 PSMain(VSOut i) : SV_Target0 {
     // render/vfx/IceStorm (Tempestade de Gelo). params0 = time, mode, intensity, opacity. Alpha-blended, as Blizzard2D's pass.
     const MeshFrame f = loadFrame(push.frame);
     const float t = d.params0.x, mode = d.params0.y, intensity = d.params0.z, opacity = d.params0.w;
-    if (mode < 0.5) {
+    if (mode > 7.5) {
+      // The ice look of 2026-11-12 (render/vfx/IceFx; the user's brief): ice is near white, its thin edges white, its body pale
+      // cyan, only deep cracks and the magic's glow strong blue; it never fades, it dissolves through noise with a bright lip.
+      static const float3 white = float3(1.0, 1.0, 1.0), pale = float3(0.80, 0.93, 1.0), deep = float3(0.16, 0.46, 1.0);
+      if (mode < 8.5) {
+        // 8, a body of ice (a faceted mesh; instance c = alpha, seed + 100 x its radius, dissolve 0..1, the inner glow). Built the
+        // way real-time ice is (the study of 2026-11-12: Unity's and UE4's parallax ice, the Beer-Lambert absorption, the faceted
+        // ice of ice-frost-skill-vfx):
+        //   refraction  the scene behind it is read through the facet, bent by the ice (index 1.31): the world shows through, moved;
+        //   absorption  the blue is thickness, not paint: red is taken first (sigma 3.3, 1.75, 0.78 a metre), so a thin edge or a
+        //               point stays near white and the thick middle goes cyan;
+        //   Fresnel     Schlick, F0 0.02: the facets mirror the sky at a grazing angle, each one differently as the eye moves;
+        //   parallax    the fracture network read at three depths along the bent ray: white cracks inside the ice, the deeper
+        //               fainter and bluer, sliding past each other as the eye moves; a milky core;
+        //   rime        white frost on the edges between the facets, at the foot and on the point; glitter in it that flashes
+        //               with the angle of view; a sharp highlight on each facet.
+        // It leaves by being eaten through noise behind a bright lip, never by fading.
+        const float alpha = i.particleC.x, dissolve = i.particleC.z, glow = i.particleC.w;
+        const float seed = frac(i.particleC.y), packed = floor(i.particleC.y) * 0.01;
+        const float radius = packed > 0.005 ? clamp(packed, 0.03, 0.45) : 0.15;
+        const float3 V = normalize(f.cameraPosition - i.world);
+        float3 N = normalize(i.normal);
+        if (dot(N, V) < 0.0) N = -N;
+        const float nv = saturate(dot(N, V));
+        const float fres = 0.02 + 0.98 * pow(1.0 - nv, 5.0);
+        // the ice the eye's ray crosses: about the chord of the crystal, less toward its two points
+        const float along = i.local.y;  // -0.5 its long point .. 0.5 its foot
+        const float taper = saturate(min((along + 0.5) / 0.45, (0.5 - along) / 0.25));
+        const float thick = 2.0 * radius * nv * (0.2 + 0.8 * taper);
+        const float3 through = exp(-float3(3.3, 1.75, 0.78) * thick * 5.0);
+        // the edges between the six facets, and where the frost sits
+        const float sixth = atan2(i.local.z, i.local.x) / 1.0471976;
+        const float toEdge = 1.0 - abs(frac(sixth) - 0.5) * 2.0;  // 0 on an edge
+        const float edgeW = max(fwidth(toEdge) * 1.5, 0.02);
+        const float edgeLine = 1.0 - smoothstep(0.0, 0.05 + edgeW, toEdge);
+        const float grain = noise3(i.world * 14.0 + seed * 9.0);
+        const float rime = saturate((1.0 - smoothstep(0.0, 0.06, toEdge)) * 0.45 + smoothstep(0.25, 0.5, along) * 0.5 + smoothstep(-0.4, -0.5, along) * 0.35) *
+                           (0.45 + 0.55 * grain);
+        // refraction: the scene behind, read where the bent ray lands
+        const float3 R = refract(-V, N, 1.0 / 1.31);
+        const float3 right = float3(f.view[0].x, f.view[1].x, f.view[2].x), up = float3(f.view[0].y, f.view[1].y, f.view[2].y);
+        const float3 moved = (R + V) * (thick * 1.6 + 0.06);
+        const float away = max(length(f.cameraPosition - i.world), 0.5);
+        const float2 shift = float2(dot(moved, right), -dot(moved, up)) * f.projectionY * f.screenSize.y * 0.5 / away;
+        const int2 behindAt = int2(clamp(i.position.xy + shift, 0.0, f.screenSize - 1.0));
+        const float3 behind = gTextures[NonUniformResourceIndex(push.backdrop)].Load(int3(behindAt, 0)).rgb;
+        // parallax: the cracks at three depths inside, and the milky core
+        float cracks = 0.0;
+        float3 crackTint = 0.0;
+        static const float kDepth[3] = {0.012, 0.05, 0.11}, kWeight[3] = {0.8, 0.5, 0.3};
+        for (int k = 0; k < 3; ++k) {
+          const float depth = kDepth[k] * radius / 0.15;
+          const float3 at = (i.world + R * depth) * (2.7 - k * 0.3) + seed * 31.0 + k * 7.3;
+          const float wall = iceCracks(at);
+          const float crackLine = (1.0 - smoothstep(0.0, 0.03 + fwidth(wall) * 1.2, wall)) * kWeight[k] * smoothstep(0.0, 0.06, thick - depth * 0.6);
+          cracks += crackLine;
+          crackTint += lerp(white, float3(0.62, 0.82, 1.0), k * 0.5) * crackLine;
+        }
+        const float milk = saturate(fbm((i.world + R * 0.05) * float3(2.2, 1.0, 2.2) + seed * 5.0) * 0.5 + 0.45) * nv * taper;
+        // light: the facet's highlight and its glitter (the sun or the moon, and the spell's own light from above)
+        const float3 L = normalize(f.sunDirection + float3(0.0, 0.35, 0.0));
+        const float3 H = normalize(L + V), H2 = normalize(normalize(float3(0.25, 0.9, 0.3)) + V);
+        const float spec = (pow(saturate(dot(N, H)), 160.0) + 0.6 * pow(saturate(dot(N, H2)), 90.0)) * (1.2 + 8.0 * fres);
+        const float3 cell = i.world * 60.0, ci = floor(cell);
+        const float3 tilt = normalize(N + (float3(hash31(ci + 3.1), hash31(ci + 7.7), hash31(ci + 11.3)) - 0.5) * 1.3);
+        const float glitter = pow(saturate(dot(reflect(-V, tilt), L)), 40.0) * step(0.55, hash31(ci)) * (1.0 - smoothstep(0.15, 0.5, length(frac(cell) - 0.5))) *
+                              (0.25 + rime);
+        const float pulse = 0.8 + 0.2 * sin(t * 2.4 + seed * 30.0);
+        const float3 own = push.brightness * volumeTransmittance(f, i.world);  // the ice's own light, display-relative like every effect
+        const float3 sky = float3(0.55, 0.74, 1.0);
+        // each facet takes the light differently (a crystal reads by its faces), and the ice has a body of its own: pale where it is
+        // thin, deep cold blue where the eye looks through its thick middle
+        const float facet = 0.45 + 0.55 * saturate(dot(N, normalize(float3(0.35, 0.75, 0.55))));
+        const float deepness = saturate(thick * 3.2);
+        float3 col = behind * through * (1.0 - fres) * (1.0 - 0.45 * milk) * (1.0 - 0.75 * rime) * 0.4;
+        col += lerp(float3(0.60, 0.85, 1.0), float3(0.04, 0.27, 0.78), deepness) * facet * 0.46 * own;
+        col += (float3(0.82, 0.92, 1.0) * milk * 0.3 + crackTint * 0.5 + white * (rime * 0.55 + edgeLine * 0.3 + spec * 0.8 + glitter * 1.8) + sky * fres * 0.75 +
+                float3(0.44, 0.64, 1.0) * glow * pulse * (0.2 + 0.6 * cracks) * 0.55) * own;
+        float cover = saturate(0.9 + 0.1 * rime + 0.3 * fres + 0.15 * cracks);
+        // the exit: eaten away through smooth noise, a bright lip running ahead of the hole
+        const float dn = saturate(fbm(i.local * float3(1.2, 2.2, 1.2) + seed * 13.0) * 0.5 + 0.5);
+        const float kept = smoothstep(dissolve - 0.03, dissolve + 0.07, dn + 0.04) * (1.0 - smoothstep(0.9, 1.0, dissolve));
+        const float lip = (1.0 - smoothstep(0.0, 0.12, abs(dn - dissolve - 0.03))) * step(0.001, dissolve) * (1.0 - smoothstep(0.85, 1.0, dissolve));
+        col += float3(0.7, 0.92, 1.0) * lip * 1.6 * own;
+        const float shown = saturate(cover * kept + lip * 0.6) * alpha * opacity * i.sight;
+        if (shown < 0.004) discard;
+        return float4(col * shown, shown);
+      } else if (mode < 9.5) {
+        // 9, frost on the ground (a disc or a hex lying flat): grown from the middle out to params1.x behind a bright leading edge,
+        // melted back by params1.y (the growth run in reverse); params1.z = a crack mark struck into its middle, params1.w its seed.
+        // A thin skin of rime: soft feathered crystals, the ground showing through it.
+        const float2 wp = i.world.xz;
+        const float r = length(i.local.xz);
+        const float n = saturate(fbm(float3(wp * 1.1, d.params1.w * 7.0)) * 0.5 + 0.5);
+        const float cover = d.params1.x * (1.0 - d.params1.y);
+        const float rr = r + (n - 0.5) * 0.45;
+        const float within = 1.0 - smoothstep(cover - 0.4, cover, rr);
+        const float lead = smoothstep(cover - 0.4, cover - 0.12, rr) * (1.0 - smoothstep(cover - 0.12, cover + 0.02, rr));
+        const float feather = smoothstep(0.55, 0.95, 1.0 - abs(snoise(float3(wp * 3.2, 1.7))));
+        const float fine = saturate(fbm(float3(wp * 5.0, 4.0)) * 0.5 + 0.5);
+        const float2 out2 = i.local.xz / max(r, 1e-4);
+        const float lines = smoothstep(0.8, 0.97, 1.0 - abs(snoise(float3(out2 * 1.7 + d.params1.w * 9.0, r * 0.35))));
+        const float mark = lines * (1.0 - smoothstep(0.05, 0.8, r)) * smoothstep(0.0, 0.08, r) * d.params1.z * (1.0 - d.params1.y);
+        a = saturate((0.1 + 0.22 * n + feather * 0.3 + fine * 0.12) * within + lead * 0.55 + mark * 0.7) * opacity * (1.0 - smoothstep(0.85, 1.0, r));
+        if (a < 0.004) discard;
+        c = lerp(float3(0.66, 0.84, 0.98), white, saturate(feather * 0.7 + lead + n * 0.3));
+        c = lerp(c, deep * 0.7, mark * 0.7 * (1.0 - lead)) * intensity;
+      } else if (mode < 10.5) {
+        // 10, cold mist (a billboard; b.y = its age 0..1, b.z alpha, c.w seed): a soft low cloud, torn by slow smooth noise, soft
+        // on every side and softest where it meets the ground; white, then cyan, then gone.
+        const float2 p = (i.uv - 0.5) * 2.0;
+        const float age = i.particleB.y, seed = i.particleC.w;
+        const float nz = saturate(fbm(float3(i.uv * 1.8 + seed * 7.0, t * 0.12 + seed)) * 0.5 + 0.5);
+        const float blob = 1.0 - smoothstep(0.1, 1.0, length(p * float2(1.0, 1.2)) + (nz - 0.5) * 0.5);
+        a = saturate(blob * 1.25) * (0.5 + 0.5 * nz) * i.particleB.z * pow(saturate(1.0 - age), 1.1) * smoothstep(0.0, 0.3, i.uv.y) * opacity;
+        if (a < 0.004) discard;
+        c = lerp(float3(0.92, 0.97, 1.0), float3(0.62, 0.86, 1.0), saturate(age * 1.4)) * intensity;
+      } else if (mode < 11.5) {
+        // 11, a glint (a billboard; b.z alpha, c.w seed): a small soft four-pointed star that breathes in and out.
+        const float2 p = abs((i.uv - 0.5) * 2.0);
+        const float star = exp(-p.x * 9.0) * exp(-p.y * 2.6) + exp(-p.y * 9.0) * exp(-p.x * 2.6) + exp(-dot(p, p) * 14.0);
+        const float flick = 0.6 + 0.4 * sin(t * 7.0 + i.particleC.w * 40.0);
+        a = saturate(star) * flick * i.particleB.z * (1.0 - smoothstep(0.7, 1.0, max(p.x, p.y))) * opacity;
+        if (a < 0.004) discard;
+        c = float3(0.9, 0.97, 1.0) * 1.5 * intensity;
+      } else if (mode < 12.5) {
+        // 12, a frost streak (u along: 0 its tail, 1 its head; v across; params1.x alpha, params1.y seed): the trail of flying ice.
+        const float across = 1.0 - pow(abs(i.uv.y * 2.0 - 1.0), 1.5);
+        const float along = smoothstep(0.0, 0.5, i.uv.x) * (1.0 - smoothstep(0.92, 1.0, i.uv.x));
+        const float streak = noise2(float2(i.uv.x * 5.0 - t * 3.0, i.uv.y * 9.0 + d.params1.y * 5.0)) * 0.6 + noise2(float2(i.uv.x * 14.0 - t * 5.0, i.uv.y * 23.0)) * 0.4;
+        a = across * along * smoothstep(0.25, 0.8, streak + i.uv.x * 0.3) * d.params1.x * opacity;
+        if (a < 0.004) discard;
+        c = lerp(float3(0.7, 0.9, 1.0), white, i.uv.x) * (1.0 + i.uv.x) * intensity;
+      } else {
+        // 13, the flash (a billboard; b.z alpha): a short soft burst, white in the middle with a cyan skirt.
+        const float dd = length((i.uv - 0.5) * 2.0);
+        a = exp(-dd * dd * 4.0) * (1.0 - smoothstep(0.6, 1.0, dd)) * i.particleB.z * 0.8 * opacity;
+        if (a < 0.004) discard;
+        c = lerp(float3(0.6, 0.85, 1.0), white, exp(-dd * dd * 10.0)) * 1.6 * intensity;
+      }
+    } else if (mode < 0.5) {
       // Ours: the frosted floor (a hex, local xz = its own coordinates), spreading from the middle out to params1.x; a
       // frost of crystal veins in world space (adjacent hexes join), glints twinkling in it.
       const float2 wp = i.world.xz;

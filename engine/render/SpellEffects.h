@@ -30,6 +30,7 @@
 #include "render/vfx/Fireball.h"
 #include "render/vfx/HolyLight.h"
 #include "render/vfx/FrostLine.h"
+#include "render/vfx/IceFx.h"
 #include "render/vfx/IceStorm.h"
 #include "render/vfx/Lightning.h"
 #include "render/vfx/SpellBolts.h"
@@ -158,7 +159,7 @@ class SpellEffects {
   void build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out, std::vector<Light>& lights);
   const VfxFrame& vfx() const { return vfx_; }
   bool active(float now) const;
-  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), dreamWebs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), frosts_.clear(), warrior_.clear(), arms_.clear(), ranger_.clear(), lancer_.clear(), turnUndead_.clear(), healer_.clear(), conjurer_.clear(), status_.clear(), daggers_.clear(), mage_.clear(), crusader_.clear(), selene_.clear(), handBolts_.clear(), witchStitch_.clear(), burialWeight_.clear(); }
+  void clear() { ices_.clear(), combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), dreamWebs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), frosts_.clear(), warrior_.clear(), arms_.clear(), ranger_.clear(), lancer_.clear(), turnUndead_.clear(), healer_.clear(), conjurer_.clear(), status_.clear(), daggers_.clear(), mage_.clear(), crusader_.clear(), selene_.clear(), handBolts_.clear(), witchStitch_.clear(), burialWeight_.clear(); }
   // The Mago Negro's Nuvem de Adagas standing round its caster (vfx/DaggerFx, ours, 3D): the stage keeps one cloud per unit (MapStage
   // syncDaggers); cast() plays the conjuring, the thrown dagger ("daggerStrike") and, through intercept(), the shot knocked down.
   DaggerFx& daggers() { return daggers_; }
@@ -285,8 +286,13 @@ class SpellEffects {
   std::vector<SpellBolt> bolts_;      // Míssil Mágico 03, Raio Divino 01 (ours, 3D)
   std::vector<Lightning> lightnings_; // Relâmpago / Relâmpago Maior / Choque 02 (ours, 3D)
   std::vector<FrostLine> frosts_;     // Frost 02 (ours, 3D)
+  std::vector<IceSpell> ices_;        // the ice look of 2026-11-12 (vfx/IceFx): Frost 03, Lança de Gelo / Zero Absoluto / Vendaval Glacial 02
   // Frost's 3D version (02).
   static bool isFrost(const std::string& kind, int look) { return look == 2 && kind == "frost"; }
+  // The ice spells in the ice look (vfx/IceFx): Frost 03; the Elementalista's three 02.
+  static bool isIce(const std::string& kind, int look) {
+    return (look == 3 && kind == "frost") || (look == 2 && (kind == "iceLance" || kind == "absoluteZero" || kind == "glacialGale"));
+  }
   // The lightning spells' 3D version (02).
   // Relâmpago / Choque 02, and 03 = the same at a small size (the enemies', the user 2026-10-20: "tiny ... thunder").
   static bool isLightning(const std::string& kind, int look) {

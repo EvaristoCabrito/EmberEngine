@@ -89,10 +89,13 @@ class Renderer {
     vfxVertices_.assign(frame.vertices.begin(), frame.vertices.begin() + std::min<size_t>(frame.vertices.size(), kMaxVfxVertices));
     vfxInstances_.assign(frame.instances.begin(), frame.instances.begin() + std::min<size_t>(frame.instances.size(), kMaxVfxInstances));
     vfxDraws_.clear();
+    vfxBackdrop_ = false;
     for (const VfxDraw& d : frame.draws) {
       if (vfxDraws_.size() >= kMaxVfxDraws || d.gpu.firstVertex + d.gpu.vertexCount > vfxVertices_.size()) continue;
       if (d.gpu.firstInstance != 0xFFFFFFFFu && d.gpu.firstInstance + d.instances > vfxInstances_.size()) continue;
       vfxDraws_.push_back(d);
+      // a body of ice (the IceStorm material's mode 8) refracts the scene behind it: the scene's colour is copied for it this frame
+      if (d.gpu.material == static_cast<uint32_t>(VfxMaterial::IceStorm) && d.gpu.params0.y > 7.5f && d.gpu.params0.y < 8.5f) vfxBackdrop_ = true;
     }
   }
   static constexpr uint32_t kMaxVfxVertices = 1u << 18, kMaxVfxInstances = 1u << 12, kMaxVfxDraws = 1u << 12;
@@ -687,6 +690,7 @@ class Renderer {
   uint32_t hizIndex_ = kNoIndex, depthIndex_ = kNoIndex;
   // Water look 003 (water_look003.hlsli): the scene under the water (ground, 3D pieces) copied before the water is drawn, read
   // with the depth for its refraction and thickness. Used only when a water sheet draws look 003 (waterRefracts).
+  bool vfxBackdrop_ = false;  // this frame's effects read the copy too (setVfx)
   Image waterBackdrop_;
   uint32_t waterBackdropIndex_ = kNoIndex;
   bool waterRefracts() const {

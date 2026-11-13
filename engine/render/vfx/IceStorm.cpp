@@ -209,6 +209,9 @@ void IceStorm::buildOurs(float now, float age, float env, glm::vec3 right, VfxFr
   const uint32_t crystalFirst = frame.addVertices(crystalGeometry());
   auto draw = [&](float mode, uint32_t first, size_t count, const glm::mat4& model, float opacity, glm::vec4 params1, glm::vec3 sight,
                   const std::vector<VfxInstance>* list) {
+    // 03: its ice in the ice look of vfx/IceFx (shaders/vfx.hlsl modes 8..10): the frosted floor with its bright edge, the falling
+    // ice as real bodies of ice, the ice dust as cold mist.
+    if (version_ >= 3) mode = mode == 0.0f ? 9.0f : mode == 3.0f ? 8.0f : mode == 6.0f ? 10.0f : mode;
     VfxDraw d;
     d.gpu.model = model;
     d.gpu.params0 = {age, mode, 1.0f, opacity};
@@ -230,6 +233,13 @@ void IceStorm::buildOurs(float now, float age, float env, glm::vec3 right, VfxFr
     frame.draws.push_back(d);
   };
   const float fade = env / std::max(std::min(1.0f, age / kGather), 1e-4f);
+  // 03 (2026-11-13; the first 03 was 02's needles in the new ice, "the worst" of them): a storm of great shards. A third of the
+  // spikes fall, each a blade of ice as long as a man is tall, from a bank of cloud high over the field; where one lands it stands
+  // driven into the ground a moment and is eaten away, its pieces thrown out, cold pouring off it; a carpet of mist turns over the
+  // whole field for as long as the storm stands.
+  const bool big = version_ >= 3;
+  auto falls = [&](const Mote& m) { return !big || m.phase * 7.31f - std::floor(m.phase * 7.31f) < 0.34f; };
+  auto packed = [](float seed, float radius) { return std::min(seed, 0.999f) + std::floor(radius * 100.0f); };  // the ice look's seed + 100 x radius
 
   // The floor frosts over from each hex's middle as the storm gathers (the cover reaches the corners at 1.2 s).
   const float cover = 0.15f + 1.25f * ease(0.0f, kGather * 1.3f, age);
@@ -273,8 +283,9 @@ void IceStorm::buildOurs(float now, float age, float env, glm::vec3 right, VfxFr
       flakes[cell].push_back(inst);
     } else if (m.kind == 1) {
       // An ice crystal falling tip first along its slanted path.
-      const float drop = 1.8f + layer * 0.26f;
-      const float length = 0.3f + 0.3f * m.size, radius = 0.025f + 0.02f * m.size;
+      if (!falls(m)) continue;
+      const float drop = big ? 5.2f + layer * 0.5f : 1.8f + layer * 0.26f;
+      const float length = big ? 1.4f + 1.0f * m.size : 0.3f + 0.3f * m.size, radius = big ? 0.14f + 0.08f * m.size : 0.025f + 0.02f * m.size;
       const float sideways = 0.12f * (1.5f * std::cos(age * 1.5f + m.turn + layer) * (1.0f - f) - gust * speed);
       const glm::vec3 velocity = right * sideways - glm::vec3(0, speed * drop, 0);
       const glm::vec3 up = -glm::normalize(velocity);
@@ -282,8 +293,43 @@ void IceStorm::buildOurs(float now, float age, float env, glm::vec3 right, VfxFr
       VfxInstance inst;
       inst.matrix = glm::translate(glm::mat4(1.0f), tip + up * (length * 0.5f)) * alongAxis(up, m.turn + age * 2.0f) *
                     glm::scale(glm::mat4(1.0f), {radius, length, radius});
-      inst.c = {env * 0.95f * ease(0.0f, 0.06f, f), m.phase, 0, 0};
+      inst.c = {env * 0.95f * ease(0.0f, 0.06f, f), big ? packed(m.phase, radius) : m.phase, 0, big ? 0.6f : 0.0f};
       crystals[cell].push_back(inst);
+    } else if (big) {
+      // 03: the blade stands where it struck, leaning, and is eaten away through the noise; its pieces fly; frost runs out over the
+      // ground; the cold pours off it.
+      if (!falls(m) || f >= 0.5f) continue;
+      const float k = f / 0.5f, t = f / speed;
+      const glm::vec3 at = ground + glm::vec3(0, 0.02f, 0);
+      const float length = (1.4f + 1.0f * m.size) * 0.85f, radius = 0.14f + 0.08f * m.size;
+      const glm::vec3 lean = glm::normalize(glm::vec3(std::cos(m.turn) * 0.35f, 1.0f, std::sin(m.turn) * 0.35f));
+      VfxInstance stuck;
+      stuck.matrix = glm::translate(glm::mat4(1.0f), at + lean * (length * 0.42f)) * alongAxis(-lean, m.turn) * glm::scale(glm::mat4(1.0f), {radius, length, radius});
+      stuck.c = {env, packed(m.phase, radius), ease(0.35f, 1.0f, k), 0.7f * (1.0f - k)};
+      crystals[cell].push_back(stuck);
+      for (uint32_t j = 0; j < 5; ++j) {
+        const float a = m.turn + static_cast<float>(j) * kTau / 5.0f + hash01(static_cast<uint32_t>(i), j) * 0.8f;
+        const float out = 1.4f + 1.2f * hash01(static_cast<uint32_t>(i), j + 11), lift = 2.2f + 1.4f * hash01(static_cast<uint32_t>(i), j + 23);
+        const glm::vec3 dir{std::cos(a), 0.0f, std::sin(a)};
+        const float y = lift * t - 4.9f * t * t;
+        if (y < -0.01f) continue;
+        const float len = 0.24f + 0.2f * hash01(static_cast<uint32_t>(i), j + 37);
+        VfxInstance inst;
+        inst.matrix = glm::translate(glm::mat4(1.0f), at + dir * (0.2f + out * t) + glm::vec3(0, y, 0)) *
+                      alongAxis(glm::normalize(glm::vec3(std::cos(a * 3.1f), 0.5f + std::sin(t * 8.0f), std::sin(a * 3.1f))), a * 3.0f + t * 9.0f) *
+                      glm::scale(glm::mat4(1.0f), {0.055f, len, 0.055f});
+        inst.c = {(1.0f - ease(0.6f, 1.0f, k)) * env, packed(hash01(static_cast<uint32_t>(i), j + 41), 0.055f), 0, 0.3f};
+        crystals[cell].push_back(inst);
+      }
+      VfxInstance ring;
+      ring.matrix = glm::translate(glm::mat4(1.0f), at + glm::vec3(0, 0.02f, 0)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.2f + 1.1f * ease(0.0f, 0.6f, k)));
+      ring.c = {(1.0f - k) * env * 0.8f, m.phase, 0, 0};
+      rings[cell].push_back(ring);
+      VfxInstance puff;
+      puff.a = glm::vec4(at + glm::vec3(0, 0.3f - 0.1f * k, 0), 0.0f);
+      puff.b = {m.turn, k, 0.9f * env, 0.0f};
+      puff.c = glm::vec4(1.1f + 1.9f * k, 0.8f + 0.6f * k, 0.0f, m.phase * 13.0f);
+      puffs[cell].push_back(puff);
     } else {
       // It shatters: splinters thrown out, a frost ring spreading, a puff of ice dust.
       if (f >= 0.28f) continue;
@@ -316,6 +362,41 @@ void IceStorm::buildOurs(float now, float age, float env, glm::vec3 right, VfxFr
     }
   }
   draw(2.0f, bandFirst, bandGeometry().size(), glm::mat4(1.0f), 1.0f, {}, centre_, &bands);
+  if (big) {
+    // The storm's own body: a carpet of cold mist turning slowly over every hex, and the bank of cloud the ice falls out of; glints
+    // in the air between.
+    std::vector<VfxInstance> carpet, sparks;
+    for (size_t h = 0; h < hexes_.size(); ++h) {
+      const uint32_t salt = static_cast<uint32_t>(h) * 131u + 7u;
+      for (uint32_t j = 0; j < 3; ++j) {
+        const float a = age * (0.22f + 0.08f * static_cast<float>(j)) + hash01(salt, j) * kTau, r = 0.2f + 0.6f * hash01(salt, j + 10);
+        VfxInstance low;
+        low.a = glm::vec4(hexes_[h] + glm::vec3(std::cos(a) * r, 0.3f + 0.22f * static_cast<float>(j), std::sin(a) * r), 0.0f);
+        low.b = {a, 0.3f, 0.6f * env, 0.0f};
+        low.c = {2.6f, 1.2f, 0.0f, hash01(salt, j + 20) * 13.0f};
+        carpet.push_back(low);
+      }
+      for (uint32_t j = 0; j < 2; ++j) {
+        const float a = age * 0.12f + hash01(salt, j + 30) * kTau;
+        VfxInstance high;
+        high.a = glm::vec4(hexes_[h] + glm::vec3(std::cos(a) * 0.5f, 5.3f + 0.5f * static_cast<float>(j), std::sin(a) * 0.5f), 0.0f);
+        high.b = {a, 0.15f, 0.5f * env, 0.0f};
+        high.c = {3.6f, 1.7f, 0.0f, hash01(salt, j + 40) * 13.0f};
+        carpet.push_back(high);
+      }
+      for (uint32_t j = 0; j < 3; ++j) {
+        const float blink = std::fmod(age * (0.6f + hash01(salt, j + 50)) + hash01(salt, j + 60), 1.0f);
+        const float a = hash01(salt, j + 70) * kTau, r = 0.8f * hash01(salt, j + 80);
+        VfxInstance spark;
+        spark.a = glm::vec4(hexes_[h] + glm::vec3(std::cos(a) * r, 0.4f + 3.6f * hash01(salt, j + 90), std::sin(a) * r), 0.0f);
+        spark.b = {0.0f, 0.0f, env * ease(0.0f, 0.2f, blink) * (1.0f - ease(0.5f, 1.0f, blink)), 0.0f};
+        spark.c = {0.26f, 0.26f, 0.0f, hash01(salt, j + 100)};
+        sparks.push_back(spark);
+      }
+    }
+    draw(10.0f, quadFirst, quadGeometry().size(), glm::mat4(1.0f), 1.0f, {}, centre_, &carpet);
+    draw(11.0f, quadFirst, quadGeometry().size(), glm::mat4(1.0f), 1.0f, {}, centre_, &sparks);
+  }
   for (size_t h = 0; h < hexes_.size(); ++h) {
     draw(7.0f, discFirst, discGeometry().size(), glm::mat4(1.0f), 1.0f, {}, hexes_[h], &rings[h]);
     draw(3.0f, crystalFirst, crystalGeometry().size(), glm::mat4(1.0f), 1.0f, {}, hexes_[h], &crystals[h]);

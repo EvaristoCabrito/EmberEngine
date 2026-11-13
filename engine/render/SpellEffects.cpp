@@ -75,9 +75,12 @@ int SpellEffects::looks(const std::string& kind) {
   // 01 Ember's BurningHandsV2VFX as it was, 02 its cone opening outward (ours).
   if (kind == "burningHands" || kind == "poisonBreath") return 2;
   // Tempestade de Gelo: 01 Ember's Blizzard2D (the enemies'), 02 ours in 3D (the heroes'): vfx/IceStorm.
-  if (kind == "iceStorm") return 2;
+  // ... 03: 02's storm with its ice in the ice look (vfx/IceFx, 2026-11-12).
+  if (kind == "iceStorm") return 3;
   if (kind == "acidCloud") return 1;
-  if (kind == "frost") return 2;  // 01 the flipbook cards, 02 ours in 3D (vfx/FrostLine)
+  if (kind == "frost") return 3;  // 01 the flipbook cards, 02 ours in 3D (vfx/FrostLine), 03 the ice look (vfx/IceFx)
+  // The Elementalista's ice: 01 the flipbook cards (SpellEffectsEmber.cpp), 02 the ice look (vfx/IceFx).
+  if (kind == "iceLance" || kind == "absoluteZero" || kind == "glacialGale") return 2;
   // Teia dos Sonhos: 01 Ember's WebOfDreamsVFX as ported (the net alone), 02 ours in 3D with the whole spell (vfx/DreamWeb).
   if (kind == "webOfDreams") return 2;
   // 01 of a spell with no flipbook-card version: Ember's own effect, ported.
@@ -139,9 +142,12 @@ int SpellEffects::classicLook(const std::string& kind) {
   if (kind == "cleave") return 1;                                    // CleaveSweepVFX
   if (kind == "piercingThrust") return 2;                            // ours in 3D (vfx/LancerFx; 01 = the flipbook burst)
   if (kind == "sweep") return 1;                                     // VarreduraVFX
-  if (kind == "iceStorm") return 2;  // ours in 3D (Ember's Blizzard2D, 01, is the enemies': content/fx/spell-looks.json)
+  // The ice look (vfx/IceFx) is the heroes'; the enemies keep each spell's first version (the user, 2026-11-12: "deixar as
+  // originais para os inimigos fazer as melhores para os herois").
+  if (kind == "iceStorm") return 3;  // ours in 3D, a storm of great shards in the ice look (01 Ember's Blizzard2D, the enemies')
+  if (kind == "iceLance" || kind == "absoluteZero" || kind == "glacialGale") return 2;  // the ice look (01 = the cards, the enemies')
   if (kind == "acidCloud") return 1;
-  if (kind == "frost") return 2;     // Frost, ours in 3D (vfx/FrostLine; 01 = the cards, the enemies')
+  if (kind == "frost") return 3;     // Frost, the ice look (vfx/IceFx; 02 = vfx/FrostLine; 01 = the cards, the enemies')
   return 0;
 }
 
@@ -267,6 +273,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     if (isBolt(kind, look) && !bolts_.empty()) end = std::max(end, bolts_.back().end());
     if (isLightning(kind, look) && !lightnings_.empty()) end = std::max(end, lightnings_.back().end());
     if (isFrost(kind, look) && !frosts_.empty()) end = std::max(end, frosts_.back().end());
+    if (isIce(kind, look) && !ices_.empty()) end = std::max(end, ices_.back().end());
     std::erase_if(casts_, [&](const Cast& c) { return c.end <= start; });
     casts_.push_back({owner, end});
   }
@@ -572,6 +579,15 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     else if (kind == "disarm") lancer_.disarm(foe, caster.feet, impact);
     else if (kind == "impaleDrag") lancer_.impale(foe, caster.feet, impact);
     else lancer_.vigilStrike(foe, caster.feet, impact);
+    return true;
+  }
+  if (isIce(kind, look)) {
+    // The ice look (vfx/IceFx): every ice spell on one kit, each with its build-up, release, travel, impact, linger and exit.
+    std::vector<glm::vec3> hexes;
+    for (const Spot& s : targets) hexes.push_back(s.feet);
+    const IceSpell::Style style = kind == "iceLance" ? IceSpell::Style::Lance : kind == "absoluteZero" ? IceSpell::Style::AbsoluteZero
+                                  : kind == "glacialGale" ? IceSpell::Style::Gale : IceSpell::Style::Frost;
+    ices_.emplace_back(style, caster.feet, heightOf(caster), std::move(hexes), start, impact, static_cast<uint32_t>(random() * 4294967295.0f));
     return true;
   }
   if (isFrost(kind, look)) {
@@ -1039,6 +1055,7 @@ bool SpellEffects::active(float now) const {
   if (std::any_of(bolts_.begin(), bolts_.end(), [&](const SpellBolt& b) { return !b.done(now); })) return true;
   if (std::any_of(lightnings_.begin(), lightnings_.end(), [&](const Lightning& l) { return !l.done(now); })) return true;
   if (std::any_of(frosts_.begin(), frosts_.end(), [&](const FrostLine& f) { return !f.done(now); })) return true;
+  if (std::any_of(ices_.begin(), ices_.end(), [&](const IceSpell& s) { return !s.done(now); })) return true;
   return std::any_of(elements_.begin(), elements_.end(), [&](const Element& e) { return e.end > now; });
 }
 
@@ -1090,6 +1107,8 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   for (const Lightning& l : lightnings_) l.build(now, camera, vfx_, vfxLights);
   std::erase_if(frosts_, [&](const FrostLine& f) { return f.done(now); });
   for (const FrostLine& f : frosts_) f.build(now, vfx_, vfxLights);
+  std::erase_if(ices_, [&](const IceSpell& s) { return s.done(now); });
+  for (const IceSpell& s : ices_) s.build(now, camera, vfx_, vfxLights);
   std::erase_if(storms_, [&](const IceStorm& s) { return s.done(now); });
   if (!storms_.empty()) {
     // Ember's two sheets, only when a storm of version 01 is on the board.
