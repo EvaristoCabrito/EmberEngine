@@ -696,6 +696,18 @@
    "why": "the Familiar Radiante's Personagens Leve: 36 frames from the same mattes",
    "lightOf": {"hero": "familiar4", "set": "radiant-familiar"},
    "packs": {"base": "field", "move": "field", "move-left": "field", "emote": "cutscene"}
+  },
+  {
+   "set": "moonwarden-v01",
+   "version": "v01",
+   "hero": "garranHolt",
+   "newHero": {"name": "Garran Holt", "group": "hero", "sprite": "moonwarden-v01", "reversed": false, "classId": "moonwarden"},
+   "cut": "content/sprites/moonwarden-v01/cut.json",
+   "why": "the user, 2026-11-13: Garran Holt's quick temporary sheets (content/sprites/moonwarden-v01/human, 4 frames a clip), made his art until the real ones; tools/scripts/sprites/moonwarden_temp_set.py writes the cut files",
+   "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "attack": "atk", "attackLeft": "atk-left", "specialAttack": "special", "block": "block", "hit": "hit", "death": "fall"},
+   "labels": {"idle": "Parado", "walk": "Andar", "walkLeft": "Andar (esquerda)", "attack": "Atacar", "attackLeft": "Atacar (esquerda)", "specialAttack": "Ataque especial", "block": "Defender", "hit": "Dano", "death": "Queda"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
   }
  ],
  "clips": [

@@ -1,0 +1,214 @@
+{
+ "clips": {
+  "base": {
+   "video": "content/sprites/moonwarden-v01/human/idle",
+   "frames": 4,
+   "frameMs": 180.0,
+   "bootRow": 361,
+   "figurePx": 308.5,
+   "nat": [
+    384,
+    384
+   ],
+   "crop": [
+    70,
+    35,
+    219,
+    327
+   ],
+   "box": {
+    "w": 3.31099,
+    "h": 3.31099,
+    "foot": 0.18969
+   },
+   "pattern": "content/sprites/moonwarden-v01/human/idle/0{}.png"
+  },
+  "move": {
+   "video": "content/sprites/moonwarden-v01/human/walk",
+   "frames": 4,
+   "frameMs": 120.0,
+   "bootRow": 355,
+   "figurePx": 308.5,
+   "nat": [
+    384,
+    384
+   ],
+   "crop": [
+    96,
+    49,
+    186,
+    307
+   ],
+   "box": {
+    "w": 3.31099,
+    "h": 3.31099,
+    "foot": 0.24143
+   },
+   "pattern": "content/sprites/moonwarden-v01/human/walk/0{}.png"
+  },
+  "move-left": {
+   "video": "content/sprites/moonwarden-v01/human/walk-left",
+   "frames": 4,
+   "frameMs": 120.0,
+   "bootRow": 356,
+   "figurePx": 308.5,
+   "nat": [
+    384,
+    384
+   ],
+   "crop": [
+    76,
+    34,
+    224,
+    323
+   ],
+   "box": {
+    "w": 3.31099,
+    "h": 3.31099,
+    "foot": 0.2328
+   },
+   "pattern": "content/sprites/moonwarden-v01/human/walk-left/0{}.png"
+  },
+  "atk": {
+   "video": "content/sprites/moonwarden-v01/human/attack",
+   "frames": 4,
+   "frameMs": 110.0,
+   "bootRow": 361,
+   "figurePx": 308.5,
+   "nat": [
+    384,
+    384
+   ],
+   "crop": [
+    64,
+    43,
+    273,
+    319
+   ],
+   "box": {
+    "w": 3.31099,
+    "h": 3.31099,
+    "foot": 0.18969
+   },
+   "pattern": "content/sprites/moonwarden-v01/human/attack/0{}.png",
+   "impact": 0.6
+  },
+  "atk-left": {
+   "video": "content/sprites/moonwarden-v01/human/attack-left",
+   "frames": 4,
+   "frameMs": 110.0,
+   "bootRow": 358,
+   "figurePx": 308.5,
+   "nat": [
+    384,
+    384
+   ],
+   "crop": [
+    57,
+    41,
+    262,
+    318
+   ],
+   "box": {
+    "w": 3.31099,
+    "h": 3.31099,
+    "foot": 0.21556
+   },
+   "pattern": "content/sprites/moonwarden-v01/human/attack-left/0{}.png",
+   "impact": 0.6
+  },
+  "special": {
+   "video": "content/sprites/moonwarden-v01/human/special",
+   "frames": 4,
+   "frameMs": 120.0,
+   "bootRow": 359,
+   "figurePx": 308.5,
+   "nat": [
+    384,
+    384
+   ],
+   "crop": [
+    56,
+    48,
+    271,
+    312
+   ],
+   "box": {
+    "w": 3.31099,
+    "h": 3.31099,
+    "foot": 0.20694
+   },
+   "pattern": "content/sprites/moonwarden-v01/human/special/0{}.png",
+   "impact": 0.6
+  },
+  "block": {
+   "video": "content/sprites/moonwarden-v01/human/block",
+   "frames": 4,
+   "frameMs": 130.0,
+   "bootRow": 358,
+   "figurePx": 308.5,
+   "nat": [
+    384,
+    384
+   ],
+   "crop": [
+    60,
+    52,
+    249,
+    307
+   ],
+   "box": {
+    "w": 3.31099,
+    "h": 3.31099,
+    "foot": 0.21556
+   },
+   "pattern": "content/sprites/moonwarden-v01/human/block/0{}.png"
+  },
+  "hit": {
+   "video": "content/sprites/moonwarden-v01/human/hit",
+   "frames": 4,
+   "frameMs": 110.0,
+   "bootRow": 355,
+   "figurePx": 308.5,
+   "nat": [
+    384,
+    384
+   ],
+   "crop": [
+    66,
+    53,
+    233,
+    303
+   ],
+   "box": {
+    "w": 3.31099,
+    "h": 3.31099,
+    "foot": 0.24143
+   },
+   "pattern": "content/sprites/moonwarden-v01/human/hit/0{}.png"
+  },
+  "fall": {
+   "video": "content/sprites/moonwarden-v01/human/fall",
+   "frames": 4,
+   "frameMs": 160.0,
+   "bootRow": 360,
+   "figurePx": 308.5,
+   "nat": [
+    384,
+    384
+   ],
+   "crop": [
+    31,
+    56,
+    315,
+    305
+   ],
+   "box": {
+    "w": 3.31099,
+    "h": 3.31099,
+    "foot": 0.19831
+   },
+   "pattern": "content/sprites/moonwarden-v01/human/fall/0{}.png"
+  }
+ }
+}

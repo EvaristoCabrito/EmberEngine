@@ -1,0 +1,71 @@
+{
+ "about": "Garran Holt's temporary sprites (the user, 2026-11-13: quick temp sheets, 4 frames a clip; tools/scripts/sprites/moonwarden_temp_set.py). Human form only.",
+ "set": "moonwarden-v01",
+ "version": "v01",
+ "figureUnits": 2.66,
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "mode": "pingpong",
+   "frames": "content/sprites/moonwarden-v01/human/idle"
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "mode": "loop",
+   "frames": "content/sprites/moonwarden-v01/human/walk"
+  },
+  {
+   "clip": "move-left",
+   "pose": "walkLeft",
+   "kind": "walk",
+   "mode": "loop",
+   "frames": "content/sprites/moonwarden-v01/human/walk-left"
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "mode": "once",
+   "frames": "content/sprites/moonwarden-v01/human/attack"
+  },
+  {
+   "clip": "atk-left",
+   "pose": "attackLeft",
+   "kind": "stand",
+   "mode": "once",
+   "frames": "content/sprites/moonwarden-v01/human/attack-left"
+  },
+  {
+   "clip": "special",
+   "pose": "specialAttack",
+   "kind": "stand",
+   "mode": "once",
+   "frames": "content/sprites/moonwarden-v01/human/special"
+  },
+  {
+   "clip": "block",
+   "pose": "block",
+   "kind": "stand",
+   "mode": "once",
+   "frames": "content/sprites/moonwarden-v01/human/block"
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "kind": "stand",
+   "mode": "once",
+   "frames": "content/sprites/moonwarden-v01/human/hit"
+  },
+  {
+   "clip": "fall",
+   "pose": "death",
+   "kind": "stand",
+   "mode": "once",
+   "frames": "content/sprites/moonwarden-v01/human/fall"
+  }
+ ]
+}

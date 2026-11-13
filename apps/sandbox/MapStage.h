@@ -8486,7 +8486,8 @@ class MapStage final : public Stage {
     // cast), never the plain swing
     if (striker >= 0 && !x.counter && wardenTechnique(s.kind) && (s.type == StepType::Combat || s.type == StepType::Effect)) {
       const size_t su = static_cast<size_t>(striker);
-      if (hasPose(su, "specialAttack")) pose = "specialAttack";
+      if (s.type == StepType::Effect && hasPose(su, "block")) pose = "block";  // his guards: the shield raised (his sheets' block)
+      else if (hasPose(su, "specialAttack")) pose = "specialAttack";
       else if (hasPose(su, "attack2")) pose = "attack2";
       else if (hasPose(su, "cast")) pose = "cast";
     }
