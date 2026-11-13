@@ -298,7 +298,7 @@ bool wardAfterStep(Battle& b, size_t walker, BattleHex, BattleHex to, Mulberry32
 void wardConditions(const BattleUnit& u, const std::function<void(const std::string&)>& add) {
   const BattleUnit::Conditions::Martial& m = u.cond.martial;
   if (m.braceHits > 0) add(std::format("{} -{}%", pick("Firmar o Pé", "Dig In"), m.bracePct));
-  if (m.bracePush) add(pick("Firme contra empurrões", "Braced against pushes"));
+  if (m.bracePush) add(pick("Firme contra empurrões e puxões", "Braced against pushes and pulls"));
   if (m.watchPct > 0) add(pick("Vigiando a brecha", "Watching the gap"));
   if (m.holdPct > 0) add(std::format("{} -{}%", pick("Fileiras cerradas", "Ranks closed"), m.holdPct));
   if (m.weightPct > 0) add(std::format("{} {}%", pick("Peso dividido", "Weight shared"), m.weightPct));
@@ -308,7 +308,8 @@ std::string wardTooltipText(const std::string& k, const TechNumbers& n, int) {
   const auto pct = [](int v) { return std::format("{}%", v); };
   if (k == "steadyStrike") return std::format("inimigo ao lado · {} · +{} de acerto", pct(n.dmg), n.pct);
   if (k == "digIn")
-    return std::format("até o seu próximo turno: o primeiro golpe físico em você -{}; o primeiro empurrão contra você anda 1 hex a menos (cada um a sua carga)", pct(n.pct));
+    return std::format("até o seu próximo turno: o primeiro golpe físico em você -{}; o primeiro empurrão, puxão ou arrasto contra você anda 1 hex a menos (cada um a sua carga)",
+                       pct(n.pct));
   if (k == "flankStep") return std::format("um passo para um hex livre ao lado, depois golpeia um inimigo ao lado dele · {}", pct(n.dmg));
   if (k == "closeRanks")
     return std::format("aliado a até 2 hexes · até um passo para terminar ao lado dele · o primeiro golpe de arma direto nele -{}, enquanto estiver ao seu lado · até o seu próximo turno", pct(n.pct));

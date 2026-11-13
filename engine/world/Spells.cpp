@@ -5443,6 +5443,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
   int thrustHits = 0, enemiesStruck = 0, drained = 0;
   std::vector<size_t> struck;  // ours: who took the hit and stands (Colheita's extra ticks)
   bool thrown = false;         // the Lanceiro's: the struck body was moved
+  std::optional<BattleHex> dragTo = step.dragTo;  // Empalar e Arrastar: where the caster follows (one hex shorter after Firmar o Pé)
   const bool ability = weaponAbility(step.kind);
   if (step.sacrifice && *step.sacrifice < b.units().size()) {  // Detonar Invocação: the summon blows up before its blast lands
     BattleUnit& sm = b.units()[*step.sacrifice];
@@ -5633,9 +5634,29 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     if (foe.alive && step.push > 0 && pushAway(b, id, {att.x, att.y}, step.push)) e.pushed = true;
     // The Lanceiro's throws, pulls and drags: the body lands where the cast planned (its card flies there: `arc`).
     if (foe.alive && step.throwTo && (oneHex(foe) || (step.kind == "hookPull" && pullable(foe)))) {
-      foe.x = step.throwTo->x, foe.y = step.throwTo->y;
-      e.pushed = true, e.arc = step.arc;
-      thrown = true;
+      BattleHex to = *step.throwTo;
+      const BattleHex stood{foe.x, foe.y};
+      // Firmar o Pé (Garran's, docs/SKILLS_MOONWARDEN.md): the first hostile pull (Gancho) or drag (Empalar e Arrastar) on him one hex
+      // shorter; a pull of one hex, or a drag of one, does not move him at all (nor the caster after him)
+      if ((step.kind == "hookPull" || step.kind == "impaleDrag") && foe.side != att.side && foe.cond.martial.bracePush) {
+        foe.cond.martial.bracePush = false;
+        const std::vector<BattleHex>& t = step.tiles;  // the hook: caster .. foe; the drag: the foe's hex .. where it ends
+        const auto at = std::find(t.begin(), t.end(), to);
+        if (step.kind == "hookPull") {
+          const BattleHex back = at != t.end() && at + 1 != t.end() ? *(at + 1) : stood;
+          to = back == stood || bodyFitsAt(b, foe, id, back) ? back : stood;
+        } else {
+          to = at != t.end() && at != t.begin() ? *(at - 1) : stood;
+          dragTo = !(to == stood) && at - 1 != t.begin() ? std::optional<BattleHex>(*(at - 2)) : std::optional<BattleHex>(stood);
+          if (to == stood) dragTo.reset();
+        }
+        out.push_back(statusEffect(id, pick("Firmar o Pé: 1 hex a menos", "Dig In: 1 hex shorter")));
+      }
+      if (!(to == stood)) {
+        foe.x = to.x, foe.y = to.y;
+        e.pushed = true, e.arc = step.arc;
+        thrown = true;
+      }
     }
     if (!bonded) out.push_back(e);
     if (!foe.alive) {
@@ -5733,8 +5754,8 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     struck.push_back(id);
   }
   // Empalar e Arrastar: the caster runs one hex behind the dragged body (its card dashes after it).
-  if (step.dragTo && thrown && att.alive) {
-    att.x = step.dragTo->x, att.y = step.dragTo->y;
+  if (dragTo && thrown && att.alive) {
+    att.x = dragTo->x, att.y = dragTo->y;
     if (step.throwTo) faceToward(att, *step.throwTo);
     BattleEffect m;
     m.unit = step.att, m.moved = true, m.pushed = true, m.arc = 0.0f;

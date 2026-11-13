@@ -29,7 +29,7 @@ game. His loop: guard an ally, take part of the hit, punish the foe responsible.
 | Tier · nível | Técnica (kind) | PA | Recarga | 1º → máx. posto |
 |---|---|---|---|---|
 | T1 · 1 | Golpe Firme (`steadyStrike`) | 6 | — | inimigo ao lado: 100 → 115 %, +5 → +15 de acerto |
-| T2 · 3 | Firmar o Pé (`digIn`) | 4 | 1 | o primeiro golpe físico nele -20 → -35 %; o primeiro empurrão nele anda 1 hex a menos (cada um a sua carga) |
+| T2 · 3 | Firmar o Pé (`digIn`) | 4 | 1 | o primeiro golpe físico nele -20 → -35 %; o primeiro empurrão, puxão ou arrasto nele anda 1 hex a menos (cada um a sua carga) |
 | T3 · 6 | Passo de Flanco (`flankStep`) | 7 | — | um passo para um hex livre ao lado, depois um inimigo ao lado dele: 85 → 115 % |
 | T4 · 8 | Cerrar Fileiras (`closeRanks`) | 5 | 1 | aliado a até 2; até um passo para terminar ao lado dele; o primeiro golpe de arma direto nele -20 → -35 %, enquanto ao lado |
 | T5 · 11 | Quebrar o Passo (`breakStride`) | 6 | 1 | 75 → 100 %; o primeiro passo do próximo turno dele +1 PA (os dois primeiros no posto máximo) |
@@ -49,7 +49,9 @@ game. His loop: guard an ally, take part of the hit, punish the foe responsible.
 
 - Golpe Seguido's two blows draw no counter (as every multi-target weapon skill of the game).
 - Cerrar Fileiras' "direct weapon hit": any weapon hit on the ally, melee or ranged.
-- Firmar o Pé's push: the game has no pull yet; it shortens pushes.
+- Firmar o Pé's push or pull: the first hostile push (the techniques', Empurrão de Escudo, Investida), the Lanceiro's Gancho pull or
+  his Empalar e Arrastar drag on Garran goes 1 hex shorter (the Lanceiro following the drag stops 1 hex shorter too); a 1-hex pull or
+  drag does not move him.
 - Quebrar o Passo's tax and Puxar para Longe's aim last through the end of the foe's / ally's next turn.
 - In the campaign nobody recruits him yet; Modo teste has him.
 
