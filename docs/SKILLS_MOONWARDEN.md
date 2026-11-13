@@ -1,94 +1,68 @@
 # Garran Holt: Guardião da Lua (Moonwarden)
 
-The user, 2026-11-13: the design "Werewolf — Human Form" (10 skills, tiers 1–5, sword and shield), the name "Garran Holt — Moonwarden",
-then "Guardião da Lua em Português, add him". This is his human form only; the werewolf form is not in the game yet.
-
-His loop: take the hit meant for an ally, then punish the enemy that committed to it. Each tier gives him one blow and one guard.
+The user, 2026-11-13: "Garran Holt — Moonwarden", "Guardião da Lua em Português", then the design "Moonwarden — Permanent Skills,
+T1–T10", which replaced the first moon-phase draft (ten skills over T1-T5, three changed by the moon): one class from level 1 to 30,
+one permanent skill a tier. The skills work in every form (human, intermediate, werewolf, full wolf); only the human form is in the
+game. His loop: guard an ally, take part of the hit, punish the foe responsible.
 
 ## Where it lives
 
-- Data: `content/ember-classes.json` `heroClasses.moonwarden` (the Guerreiro's stats, the Conjuração Média tier table, one-handed swords,
-  a shield in the off hand, no Guerreiro skill), `content/data/weapons.json` / `inn.json` (every one-handed sword, every shield and piece
-  of armour the Guerreiro uses; the class name, the tier uses), `overworld.json`, `class-stats.json`, `classes.json`,
-  `action-points.json` (`spells.byKind`: each technique's AP), `content/progression.json` (Garran Holt: the Guerreiro's gains).
-  Written by `tools/scripts/data/add_moonwarden_class.py` (running it again changes nothing).
-- Rules: `engine/world/SpellsMoonwarden.inc` (the moon, the aims, the casts, Interpor's redirect, the reductions, the barrier, the
-  immunity, the words), included by `SpellsVanguard.inc`: the same technique system as Kael's (`kTechniques`, ranks, cooldowns, one use
-  of the tier). Hooks: `Spells.cpp` (`resolveStrikeImpl`, `resolveStep` / `resolveStrike`, the damage sites for the barrier),
-  `Battle.h` (`Conditions::Martial` ward fields, `Battle::moonPhase`), `BattleSave.cpp`.
-- Map: `MapStage.h` hands the battle the moon it shows (`tonightsMoon()`), runs Interpor as an attack step starts, plays his special pose
-  (specialAttack, else attack2, else cast) and a moonlight impact (`CombatPalette::of("moon")`) on his blows and guards.
-- Party: Garran Holt is on the Party screen's roster (`Overworld::kPartyHeroes`, `content/ember-classes.json` "heroes"), on the
-  reserve in Modo teste (`kTestReserve`) at the test level, for the user to pick into the six. Not on any map's spawn list.
+- Data: `content/ember-classes.json` `heroClasses.moonwarden` (the Guerreiro's stats, the casters' tier table - T1-T10 open at 1, 3,
+  6, 8, 11, 13, 16, 18, 21, 23 - one-handed swords, a shield in the off hand), `content/data/weapons.json` / `inn.json`,
+  `overworld.json`, `class-stats.json`, `classes.json`, `action-points.json` (`spells.byKind`), `content/progression.json` (Garran
+  Holt: the Guerreiro's gains). Written by `tools/scripts/data/add_moonwarden_class.py` (running it again changes nothing).
+- Rules: `engine/world/SpellsMoonwarden.inc` (aims, casts, the guards, Assumir o Peso's transfer, Vigiar a Brecha's reaction, the
+  words), included by `SpellsVanguard.inc`: the same technique system as Kael's (`kTechniques`, ranks, cooldowns, one use of the
+  tier). Hooks: `Spells.cpp` `resolveStrikeImpl` (Puxar para Longe's aim, the reductions, the transfer), `Battle.h`
+  (`Conditions::Martial`), `BattleSave.cpp`.
+- Party: on the Party screen's roster (`Overworld::kPartyHeroes`, `content/ember-classes.json` "heroes"), on the reserve in Modo teste.
 - One code path: no test-mode branch anywhere.
-
-## The moon
-
-Read from the world's clock as the map shows it (the real sky's phase; else the panel's / the campaign day's / the map's Lua; else the
-full moon). Nova = new; Crescente = waxing crescent, first quarter, waxing gibbous; Cheia = full **and the blood moon**; Minguante =
-waning gibbous, last quarter, waning crescent. A technique reads it once, as it commits, and keeps it (an armed Interpor keeps the moon
-paid for). The skills window says what tonight's moon does to each technique.
 
 ## Common rules
 
-- Damage: a share of an ordinary blow of his sword. Ranks: one a level from the level learned, 15 ranks (Kael's rule).
-- Cooldown N blocks it for his next N turns. His guards and covers last until his next turn begins.
-- Bundled steps are paid by the technique's AP; the hex is checked again as it resolves.
-- Several of his reductions on one hit (Interpor's, Corte Guardado, Erguer o Escudo, Afronta, Segurar a Linha): the strongest applies, only
-  its charge is spent. Kael's guards stay apart.
-- Golpe Esmagador's penalty: the foe's next attack spends it (landed or not); the same action's other hits of that skill count too.
+- Damage: a share of an ordinary blow of his weapon. Ranks: one a level from the level learned, 15 ranks (Kael's rule).
+- Cooldown N blocks it for his next N turns. His guards last until his next turn begins.
+- Several reductions of his on one hit: the strongest applies, only its charge is spent. Kael's guards stay apart.
 
-## Técnicas (T1–T5 of the Média table: 1, 4, 7, 10, 13)
+## Técnicas
 
 | Tier · nível | Técnica (kind) | PA | Recarga | 1º → máx. posto |
 |---|---|---|---|---|
-| T1 · 1 | Corte Guardado (`guardedCut`) | 6 | — | 100 → 120 %; acertou: o próximo golpe físico de arma nele -10 → -15 % |
-| T1 · 2 | Erguer o Escudo (`brace`) | 4 | 1 | os próximos 2 golpes físicos de arma nele -25 → -40 % cada |
-| T2 · 4 | Pancada de Escudo (`wardenBash`) | 6 | 1 | 60 → 85 %, empurra 1 (bloqueado: o dano vem mesmo assim) |
-| T2 · 5 | Interpor (`interpose`) | 5 | 1 | aliado ao lado: o 1º ataque corpo a corpo de alvo único nele vem para Garran (ainda ao lado e ao alcance do atacante); rola contra ele, pode errar |
-| T3 · 7 | Estocada na Brecha (`gapThrust`) | 7 | 1 | 105 → 130 %, ignora 20 → 35 % da armadura |
-| T3 · 8 | Afronta (`affront`) | 4 | 2 | inimigo a até 3: o 1º golpe de arma de alvo único dele em outro do grupo -25 → -40 %; em Garran, dano cheio |
-| T4 · 10 | Golpe Esmagador (`crushingBlow`) | 8 | 2 | 120 → 150 %; acertou: o próximo ataque de arma dele -20 → -30 % em todos os alvos |
-| T4 · 11 | Segurar a Linha (`holdTheLine`) | 6 | 3 | até 2 aliados ao lado: o próximo golpe corpo a corpo de arma em cada um -20 → -35 %, se ainda ao lado dele |
-| T5 · 13 | Acerto de Contas (`reckoning`) | 9 | 3 | 130 → 160 %; +35 → +50 pontos se ele deteve esse inimigo (Interpor, Afronta, Segurar a Linha) desde o início do turno anterior; máx. 210 % |
-| T5 · 14 | Inquebrável (`unbreakable`) | 6 | 4 | com 35 % da vida ou menos: barreira de 20 → 30 % da vida máxima, imune a novo atordoamento e enraizamento |
-
-## O que a lua muda
-
-| Lua | Técnicas |
-|---|---|
-| Nova | Erguer o Escudo cobre 3 golpes. Estocada na Brecha alcança um inimigo a 2 hexes com um passo antes. Segurar a Linha cobre golpes à distância também. |
-| Crescente | Corte Guardado: um passo para o lado depois de acertar, ainda ao lado do mesmo inimigo. Afronta: quando reduz um golpe, o próximo passo do inimigo custa +1 PA. Acerto de Contas: um passo antes do golpe. |
-| Cheia (e sangrenta) | Corte Guardado +20 pontos contra quem o acertou com arma desde o início do turno anterior. Pancada de Escudo: o próximo contra-ataque do alvo não vem (o desta pancada incluído). Golpe Esmagador -30 → -40 %. |
-| Minguante | Erguer o Escudo: o primeiro empurrão nele anda 1 hex a menos. Interpor: o golpe redirecionado -20 → -30 %. Inquebrável: um aliado ao lado escolhido ganha barreira de 10 → 15 % da vida máxima dele. |
+| T1 · 1 | Golpe Firme (`steadyStrike`) | 6 | — | inimigo ao lado: 100 → 115 %, +5 → +15 de acerto |
+| T2 · 3 | Firmar o Pé (`digIn`) | 4 | 1 | o primeiro golpe físico nele -20 → -35 %; o primeiro empurrão nele anda 1 hex a menos (cada um a sua carga) |
+| T3 · 6 | Passo de Flanco (`flankStep`) | 7 | — | um passo para um hex livre ao lado, depois um inimigo ao lado dele: 85 → 115 % |
+| T4 · 8 | Cerrar Fileiras (`closeRanks`) | 5 | 1 | aliado a até 2; até um passo para terminar ao lado dele; o primeiro golpe de arma direto nele -20 → -35 %, enquanto ao lado |
+| T5 · 11 | Quebrar o Passo (`breakStride`) | 6 | 1 | 75 → 100 %; o primeiro passo do próximo turno dele +1 PA (os dois primeiros no posto máximo) |
+| T6 · 13 | Vigiar a Brecha (`watchTheGap`) | 4 (+6 na reação) | 2 | vigia um hex ao lado; o primeiro inimigo que entrar nele andando leva 75 → 105 % (6 PA); acertou: o movimento acaba |
+| T7 · 16 | Golpe Seguido (`followThrough`) | 9 | 2 | dois inimigos diferentes ao lado: 100 → 125 % e 55 → 80 %, cada um rola sozinho |
+| T8 · 18 | Puxar para Longe (`pullClear`) | 5 | 2 | um aliado ao lado vai 1 hex para um hex livre também ao lado dele; o próximo ataque de arma do aliado +15 → +25 de acerto |
+| T9 · 21 | Assumir o Peso (`takeTheWeight`) | 6 | 3 | aliado ao lado: no primeiro golpe de arma de alvo único que ele levar, ainda ao lado, 30 → 45 % do dano (depois da mitigação) vai para Garran, direto |
+| T10 · 23 | Acerto de Contas (`reckoning`) | 9 | 3 | 125 → 155 %; +35 → +50 pontos se Cerrar Fileiras ou Assumir o Peso protegeu um aliado desse inimigo desde o início do turno anterior; máx. 205 % |
 
 ## How a pick works on screen
 
-- A step technique (Estocada na Brecha nova, Acerto de Contas crescente): first the hex to step to (his own hex = no step), then the foe.
-- Corte Guardado crescente: first the foe, then the sidestep's hex (his own = no step). The step comes only after a landed hit.
-- Segurar a Linha: one pick per ally beside him, two at most (one when only one stands beside him).
-- Inquebrável: his own hex; under the waning moon, click an ally beside him instead to give the ally a barrier too.
+- Passo de Flanco: the hex first, then the foe beside it. Golpe Seguido: the first foe, then the second.
+- Cerrar Fileiras: the ally first, then where he ends (his own hex: no step). Puxar para Longe: the ally, then the hex it goes to.
+- Vigiar a Brecha: the watched hex.
 
 ## Decided here (defaults, the user can change them)
 
-- The blood moon counts as the full moon. A battle with no moon told (no sky, no Lua) is the full moon.
-- "Pull": the game has no pull yet; Erguer o Escudo shortens pushes (Pancada / Golpe de Escudo's push, Investida, the techniques' pushes).
-- Roots: the Peso Sepulcral's root is the root Inquebrável stops; stun is the game's `stunned`.
-- Corte Guardado's guard comes on a hit that leaves the foe standing (a killing blow lays no guard).
-- In the campaign nobody recruits him yet (no join mission); Modo teste has him. His sprite is the Guerreiro's until the user's own
-  sheets come in.
+- Golpe Seguido's two blows draw no counter (as every multi-target weapon skill of the game).
+- Cerrar Fileiras' "direct weapon hit": any weapon hit on the ally, melee or ranged.
+- Firmar o Pé's push: the game has no pull yet; it shortens pushes.
+- Quebrar o Passo's tax and Puxar para Longe's aim last through the end of the foe's / ally's next turn.
+- In the campaign nobody recruits him yet; Modo teste has him.
 
 ## Look
 
 - Sprites: the user's temporary sheets (`content/sprites/moonwarden-v01/human`, set `moonwarden-v01`, hero `garranHolt`): idle, walk,
-  attack, special (his strike techniques), block (his guards), hit, fall.
-- Effects: `engine/render/vfx/MoonwardenFx` (moonlight, ours, 3D), one look per technique, played from `MapStage` as the step lands.
-- Icons: `content/ui/spells/<kind>.jpg`, from the user's `Attachments/Icons` (98gm6 Corte Guardado, 72aWB Erguer o Escudo, XunVQ
-  Pancada de Escudo, U6vCA Interpor, VyGHz Estocada na Brecha, Cg1KH Afronta, sNZUZ Golpe Esmagador, zFOt6 Segurar a Linha, sz9Xs
-  Acerto de Contas, Y9dBy Inquebrável).
+  attack, special (his blows), block (his guards), hit, fall.
+- Effects: `engine/render/vfx/MoonwardenFx` (moonlight, ours, 3D), one look per skill, played from `MapStage` as the step lands.
+- Icons: `content/ui/spells/<kind>.jpg`, from the user's `Attachments/Icons` (98gm6 Golpe Firme, 72aWB Firmar o Pé, VyGHz Passo de
+  Flanco, zFOt6 Cerrar Fileiras, sNZUZ Quebrar o Passo, Cg1KH Vigiar a Brecha, LSx9Q Golpe Seguido, U6vCA Puxar para Longe, Y9dBy
+  Assumir o Peso, sz9Xs Acerto de Contas).
 
 ## Not done
 
-- Sounds of his own; the werewolf form (its sheets are in `content/sprites/moonwarden-v01/werewolf`, unused).
-- The werewolf form.
-- An enemy never uses them (no AI).
+- The other forms (intermediate, werewolf, full wolf) and transforming; the werewolf sheets are in
+  `content/sprites/moonwarden-v01/werewolf`, unused. Sounds of his own. An enemy never uses them (no AI).
