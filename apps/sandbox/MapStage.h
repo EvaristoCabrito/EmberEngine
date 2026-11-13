@@ -8085,8 +8085,9 @@ class MapStage final : public Stage {
         paid = &c;
       }
     u.cond.martial.lowCutHexes = 0, u.cond.martial.lowCutTurns = 0;  // Corte Baixo (Kael's): this walk paid it
-    std::vector<int> apBefore;  // who answers the walk (Kael's movement reactions spend his AP)
-    for (const ember::BattleUnit& v : battle_->units()) apBefore.push_back(v.ap);
+    std::vector<int> apBefore;  // who answers the walk (Kael's movement reactions spend his AP), and with which: a mark on the walker = Medida Mortal
+    std::vector<bool> measured;
+    for (const ember::BattleUnit& v : battle_->units()) apBefore.push_back(v.ap), measured.push_back(v.cond.martial.measureTarget == static_cast<int>(b));
     // Hex by hex: a flame underfoot burns, a warp gate carries it across, a reaction may stop it (the route is cut / extended to what it walked)
     std::vector<ember::BattleHex> route = planned;
     walkHexes(b, route, fx, true);
@@ -8107,7 +8108,8 @@ class MapStage final : public Stage {
           const SpellEffects::Spot hit = hexSpot(route.back());
           const float height = cardHeightOf(unitSpot(ui));
           spellFx_.combat().impact(CombatFx::Kind::HeavySlash, hit.feet, height, unitWorld(vs), lands);
-          spellFx_.combat().impact(CombatFx::Kind::Magical, hit.feet, height, unitWorld(vs), lands, CombatPalette::of("arcane"), 0.85f);
+          const SpellEffects::Spot kael = unitSpot(vs);
+          spellFx_.vanguard().reaction(measured[v] ? "deadMeasure" : "plantTheLine", {kael.feet, kael.cardHeight}, {hit.feet, height}, lands);
           tip_ = battle_->units()[v].name + tr(" reage ao movimento!", " answers the move!"), tipAt_ = now_;
         }
     if (route.size() < 2) {  // stopped before its first step: it never left its hex
@@ -8700,6 +8702,11 @@ class MapStage final : public Stage {
           }
       }
     }
+    // Kael's Riposta (a counter that is a technique): the parry's sparks on him, his blade snapping back down the attacker's line
+    if (striker >= 0 && target >= 0 && x.counter && x.special) {
+      const SpellEffects::Spot kael = unitSpot(static_cast<size_t>(striker)), foe = unitSpot(static_cast<size_t>(target));
+      spellFx_.vanguard().riposte({kael.feet, kael.cardHeight}, {foe.feet, foe.cardHeight}, x.impact);
+    }
     // The spell's visual, laid out so it lands on the impact (a counter or a plain attack has none: its blow's sparks
     // come when it lands).
     if (striker >= 0 && !x.counter && !s.kind.empty()) {
@@ -8707,6 +8714,26 @@ class MapStage final : public Stage {
       const ember::Battle::IceZone* storm = s.kind == "iceStorm" && !s.tiles.empty() ? iceZoneOf(s.tiles.front(), battle_->units()[s.att].id) : nullptr;
       if (storm) {  // Tempestade de Gelo: the storm covers the field the rules just laid (the step aims its centre only)
         for (const ember::BattleHex& h : storm->cells) spots.push_back(hexSpot(h));
+      } else if (vanguardTechnique(s.kind)) {
+        // Kael's (VanguardFx): the struck or marked body first, then the hexes it reaches (the arc, the hex the foe is moved to); on himself,
+        // his own hex and the nearest foe's (the way his guard and his stance face)
+        if (s.type == StepType::Combat && target >= 0) spots.push_back(unitSpot(static_cast<size_t>(target)));
+        for (size_t id : s.ids)
+          if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0) spots.push_back(unitSpot(static_cast<size_t>(ui)));
+        if (spots.empty()) {
+          const ember::BattleUnit& me = battle_->units()[s.att];
+          spots.push_back(hexSpot({me.x, me.y}));
+          int nearest = -1, best = 1 << 20;
+          for (size_t i = 0; i < battle_->units().size(); ++i) {
+            const ember::BattleUnit& v = battle_->units()[i];
+            if (!v.alive || v.side == me.side || v.side == "neutral") continue;
+            if (const int d = ember::Battle::distance({me.x, me.y}, {v.x, v.y}); d < best && sceneUnitOf(static_cast<int>(i)) >= 0) best = d, nearest = static_cast<int>(i);
+          }
+          if (nearest >= 0) spots.push_back(unitSpot(static_cast<size_t>(sceneUnitOf(nearest))));
+        }
+        if (s.type == StepType::Combat)
+          for (const ember::BattleHex& h : s.tiles) spots.push_back(hexSpot(h));
+        if (s.moveFoeTo) spots.push_back(hexSpot(*s.moveFoeTo));
       } else if (s.kind == "warCry" || s.kind == "steelWhirlwind" || s.kind == "empowerSummons" || s.kind == "sacrificeBond" || s.kind == "provoke" ||
                  s.kind == "crusaderMantle" || ember::daggerStrikeKind(s.kind) ||
                  ember::arcaneMarkBurstKind(s.kind)) {  // Grito de Guerra: the allies it rallies (the caster among them); Redemoinho: the foes it reaches; the Conjurador's: its summons; a Nuvem's dagger: the body it flies at; a Marca Arcana: the marked body
@@ -10576,6 +10603,13 @@ class MapStage final : public Stage {
         if (!later.empty()) pendingFx_.push_back({std::max(flightEnd, now_ + later.front().delay / actionRate()), later});
       }
       showEffects(fx);
+      // Esmagar na Pedra (Kael's): the push stopped by the stone, its impact landed: grit and a crack behind the foe
+      for (const ember::BattleEffect& e : fx)
+        if (!e.text.empty() && (e.text.find("pedra") != std::string::npos || e.text.find("stone") != std::string::npos))
+          if (const int fu = sceneUnitOf(static_cast<int>(e.unit)), su = sceneUnitOf(static_cast<int>(s.att)); fu >= 0 && su >= 0) {
+            const SpellEffects::Spot foe = unitSpot(static_cast<size_t>(fu));
+            spellFx_.vanguard().stone({foe.feet, foe.cardHeight}, foe.feet - unitWorld(static_cast<size_t>(su)), now_);
+          }
       // Câmera de ação: a body that fell keeps the camera on it a while after the action
       for (const ember::BattleEffect& e : fx)
         if (e.died)
@@ -10617,13 +10651,29 @@ class MapStage final : public Stage {
       const bool bowSkill = archerKind(s.kind);  // the Arqueiro's (ours): arrows, so the arrow's hit lands on each struck body
       const bool magic = s.type == ember::BattleStep::Type::Spell && s.kind != "longShot" && s.kind != "piercing" && s.kind != "piercingThrust" && !bowSkill;
       const int striker = sceneUnitOf(static_cast<int>(x.counter ? s.def : s.att));
+      // Garran's techniques (the Guardião da Lua): their own moonlight, once a step (MoonwardenFx): his blows on the struck foe (the swing
+      // alone on a miss), his guards on whoever they mark
+      if (!x.counter && striker >= 0 && wardenTechnique(s.kind)) {
+        const SpellEffects::Spot me = unitSpot(static_cast<size_t>(striker));
+        const MoonwardenFx::Target self{me.feet, cardHeightOf(me)};
+        if (s.type == ember::BattleStep::Type::Combat) {
+          if (const int foe = sceneUnitOf(static_cast<int>(s.def)); foe >= 0) {
+            const SpellEffects::Spot at = unitSpot(static_cast<size_t>(foe));
+            const bool landed = std::any_of(fx.begin(), fx.end(), [&](const ember::BattleEffect& e) { return e.unit == s.def && !e.miss && !e.status && !e.heal; });
+            spellFx_.moonwarden().strike(s.kind, {at.feet, cardHeightOf(at)}, self, now_, landed);
+          }
+        } else if (s.type == ember::BattleStep::Type::Effect) {
+          std::vector<MoonwardenFx::Target> marked;
+          for (const size_t id : s.ids)
+            if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0 && ui != striker) {
+              const SpellEffects::Spot at = unitSpot(static_cast<size_t>(ui));
+              marked.push_back({at.feet, cardHeightOf(at)});
+            }
+          spellFx_.moonwarden().ward(s.kind, self, marked, now_);
+        }
+      }
       for (const ember::BattleEffect& e : fx) {
         const int ui = sceneUnitOf(static_cast<int>(e.unit));
-        // Garran's guards and covers (Erguer o Escudo, Interpor, Afronta, Segurar a Linha, Inquebrável): moonlight on each unit they mark
-        if (ui >= 0 && e.status && !x.counter && s.type == ember::BattleStep::Type::Effect && wardenTechnique(s.kind)) {
-          const SpellEffects::Spot on = unitSpot(static_cast<size_t>(ui));
-          spellFx_.combat().impact(CombatFx::Kind::Magical, on.feet, cardHeightOf(on), on.feet - glm::vec3(0.0f, 0.0f, 1.0f), now_, CombatPalette::of("moon"), 0.6f);
-        }
         if (ui < 0 || e.heal || e.status) continue;
         const size_t u = static_cast<size_t>(ui);
         const SpellEffects::Spot struck = unitSpot(u);
@@ -10654,11 +10704,8 @@ class MapStage final : public Stage {
           // the skill's cut across the chest (62 % of the card), not its middle (CombatFx's contact: half the card, the hips)
           const glm::vec3 cutAt = skillSlash ? struck.feet + glm::vec3(0.0f, std::clamp(cardHeightOf(struck), 1.0f, 4.0f) * 0.12f, 0.0f) : struck.feet;
           spellFx_.combat().impact(kind, cutAt, cardHeightOf(struck), from, now_);
-          // Kael's techniques: the purple of his special's lit sword bursts on the blow
-          // (Garran's, the Guardião da Lua: the moon's pale silver instead)
-          if (x.special)
-            spellFx_.combat().impact(CombatFx::Kind::Magical, struck.feet, cardHeightOf(struck), from, now_,
-                                     CombatPalette::of(!x.counter && wardenTechnique(s.kind) ? "moon" : "arcane"), 0.85f);
+          // Garran's techniques carry their own look (MoonwardenFx, above), Kael's theirs (VanguardFx, started with the step; the Riposta's
+          // from startStep)
         }
         // The Cruzado's holy on a blow that landed: Golpe Consagrado's flash, the Manto's spark on any blow of its bearer
         if (!e.miss && s.type == ember::BattleStep::Type::Combat && striker >= 0 && striker != ui) {

@@ -111,9 +111,23 @@ blow that lands stops only a one-hex body; the hexes not walked are not paid.
 use, each technique played on aldeia015, the guards and the Riposta, the reactions, the cooldowns, Corte Baixo's AP, the off hand and the
 snapshot round trip. 101 checks, all passing on 2026-11-13.
 
+## The look (the user, 2026-11-13: "never plain blade for special, not a single character")
+
+- Poses: every technique, the Riposta and the movement reactions play Kael's special attack (`specialAttack`, the purple sword); Golpe
+  Duplo plays his own `doubleStrike` clip once for the whole skill, the overhead cut landing on its impact frame, the low sweep at 66 %
+  (MapStage startStep).
+- Effects: `engine/render/vfx/VanguardFx` (3D, version 01 of each), in the violet of his special's lit sword: a cut of blade light drawn
+  along each technique's own curve (diagonal, level, low, rising, overhead, on the turn, the arc's sweep, the line's through-cut), its
+  contact (flash, sparks, light), and its own pieces: the crossed blades of Guarda Cruzada, Pé Firme's stone ring and dust, Desafio's
+  line and ring, the broken violet ring Romper a Guarda leaves, Finta's Exposto sigil, Ponta de Agulha's needle, Corte Perfeito's
+  splitting glint, Medida Mortal's sight line and ring (and its lunge), Golpe de Mestre's hanging cut and shock ring, Firmar a Linha's
+  front arc on the ground (and its short cut), the pushes' dust, Esmagar na Pedra's grit and crack when the stone stops the push, the
+  Riposta's parry ring and its blade snapped back. The arc and line techniques draw their sweep once and a contact on each foe.
+- Icons: the user's art (Attachments/Icons, 2026-11-13), one per technique, in `content/ui/spells/<kind>.jpg`.
+
 ## Not done
 
-- Effects, sounds and icons of their own: the techniques play Kael's attack pose and the ordinary blade impact.
+- Sounds of their own: they play Kael's attack sound.
 - Passo de Passagem's "suppresses the selected enemy's movement reactions": no enemy has a movement reaction yet, so nothing to suppress.
 - Action XP is per hit as for every other multi-hit skill (the design: one use per technique).
 - An enemy never uses them (no AI).

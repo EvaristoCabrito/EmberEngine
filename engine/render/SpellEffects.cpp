@@ -133,6 +133,7 @@ int SpellEffects::looks(const std::string& kind) {
                                  "cloudOfDaggers", "daggerStrike", "dispelMagic", "globeOfInvulnerability"};
   for (const char* k : kEmber)
     if (kind == k) return 1;
+  if (VanguardFx::handles(kind)) return 1;  // Kael's techniques (vfx/VanguardFx, ours, 3D)
   return 0;
 }
 
@@ -283,6 +284,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     if (kind == "turnUndead") end = std::max(end, turnUndead_.latestEnd());
     if (isHealer(kind)) end = std::max(end, healer_.latestEnd());
     if (isCrusader(kind)) end = std::max(end, crusader_.latestEnd());
+    if (VanguardFx::handles(kind)) end = std::max(end, vanguard_.latestEnd());
     if (isSelene(kind)) end = std::max(end, selene_.latestEnd());
     if (isConjurer(kind)) end = std::max(end, conjurer_.latestEnd());
     if (isDagger(kind)) end = std::max(end, daggers_.latestEnd());
@@ -352,6 +354,13 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
       daggers_.summon(caster.feet, caster.cardHeight, impact);  // the cast's flash on the caster; the bubble itself rises from the stage (syncGlobes)
     }
     return true;
+  }
+  // Kael's techniques (VanguardFx, ours, 3D). Targets: the struck / marked body first, then the hexes it reaches (an arc's, a line's
+  // second hex, the hex a foe is moved to); none for a stance or a guard on himself.
+  if (VanguardFx::handles(kind)) {
+    std::vector<VanguardFx::Target> reached;
+    for (const Spot& s : targets) reached.push_back({s.feet, s.cardHeight});
+    return vanguard_.technique(kind, {caster.feet, caster.cardHeight}, reached, start, impact);
   }
   // The Guerreiro's skills (WarriorFx, ours, 3D). Targets: the foes round the caster (Redemoinho), the struck foe (Quebra-Guarda, the
   // Salto's blow), the allies rallied (Grito).
@@ -1092,8 +1101,9 @@ void SpellEffects::swapFlight(const Spot& a, const Spot& b, float start, float f
 void SpellEffects::disarmed(const Spot& foe, const Spot& from, float at) { lancer_.disarmed({foe.feet, foe.cardHeight}, from.feet, at); }
 
 bool SpellEffects::active(float now) const {
-  if (combat_.active(now) || warrior_.active(now) || arms_.active(now) || ranger_.active(now) || lancer_.active(now) || turnUndead_.active(now) || healer_.active(now) ||
-      conjurer_.active(now) || daggers_.active(now) || mage_.active(now) || crusader_.active(now) || selene_.active(now) || handBolts_.active(now) || witchStitch_.active(now) || burialWeight_.active(now))
+  if (combat_.active(now) || warrior_.active(now) || vanguard_.active(now) || arms_.active(now) || ranger_.active(now) || lancer_.active(now) || turnUndead_.active(now) || healer_.active(now) ||
+      conjurer_.active(now) || daggers_.active(now) || mage_.active(now) || crusader_.active(now) || selene_.active(now) || handBolts_.active(now) || witchStitch_.active(now) || burialWeight_.active(now) ||
+      moonwarden_.active(now))
     return true;
   if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
   if (std::any_of(fireballs_.begin(), fireballs_.end(), [&](const Fireball& f) { return !f.done(now); })) return true;
@@ -1183,12 +1193,14 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   }
   combat_.build(now, camera, vfx_, vfxLights);
   warrior_.build(now, camera, vfx_, vfxLights);
+  vanguard_.build(now, camera, vfx_, vfxLights);
   arms_.build(now, camera, vfx_, vfxLights);
   ranger_.build(now, camera, vfx_, vfxLights);
   lancer_.build(now, camera, vfx_, vfxLights);
   turnUndead_.build(now, camera, vfx_, vfxLights);
   healer_.build(now, camera, vfx_, vfxLights);
   crusader_.build(now, camera, vfx_, vfxLights);
+  moonwarden_.build(now, camera, vfx_, vfxLights);
   selene_.build(now, camera, vfx_, vfxLights);
   handBolts_.build(now, camera, vfx_, vfxLights);
   witchStitch_.build(now, vfx_, vfxLights);

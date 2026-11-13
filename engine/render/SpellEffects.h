@@ -53,6 +53,8 @@
 #include "render/vfx/MageFx.h"
 #include "render/vfx/RangerFx.h"
 #include "render/vfx/WarriorFx.h"
+#include "render/vfx/MoonwardenFx.h"
+#include "render/vfx/VanguardFx.h"
 #include "render/vfx/ArmsFx.h"
 #include "render/vfx/DreamWeb.h"
 #include "render/vfx/WebOfDreams.h"
@@ -167,7 +169,7 @@ class SpellEffects {
     arcanes_.emplace_back(ArcaneSpell::Style::Missile, from, fromHeight, to, toHeight, start, impact, static_cast<uint32_t>(random() * 4294967295.0f));
     arcanes_.back().asAttack(start, release, impact, 0.6f);
   }
-  void clear() { arcanes_.clear(), holySpells_.clear(), poisons_.clear(), ices_.clear(), combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), dreamWebs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), frosts_.clear(), warrior_.clear(), arms_.clear(), ranger_.clear(), lancer_.clear(), turnUndead_.clear(), healer_.clear(), conjurer_.clear(), status_.clear(), daggers_.clear(), mage_.clear(), crusader_.clear(), selene_.clear(), handBolts_.clear(), witchStitch_.clear(), burialWeight_.clear(); }
+  void clear() { arcanes_.clear(), holySpells_.clear(), poisons_.clear(), ices_.clear(), combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), dreamWebs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), frosts_.clear(), warrior_.clear(), vanguard_.clear(), arms_.clear(), ranger_.clear(), lancer_.clear(), turnUndead_.clear(), healer_.clear(), conjurer_.clear(), status_.clear(), daggers_.clear(), mage_.clear(), crusader_.clear(), selene_.clear(), handBolts_.clear(), witchStitch_.clear(), burialWeight_.clear(), moonwarden_.clear(); }
   // The Mago Negro's Nuvem de Adagas standing round its caster (vfx/DaggerFx, ours, 3D): the stage keeps one cloud per unit (MapStage
   // syncDaggers); cast() plays the conjuring, the thrown dagger ("daggerStrike") and, through intercept(), the shot knocked down.
   DaggerFx& daggers() { return daggers_; }
@@ -182,6 +184,8 @@ class SpellEffects {
   // The Cruzado's (vfx/CrusaderFx, ours, 3D): cast() plays the casts; the stage times the holy flash and the mantle's sparks on the blows
   // that land and keeps the standing Juramento / Manto (MapStage syncCrusader).
   CrusaderFx& crusader() { return crusader_; }
+  MoonwardenFx& moonwarden() { return moonwarden_; }  // Garran's techniques (the Guardião da Lua, ours, 3D)
+  VanguardFx& vanguard() { return vanguard_; }  // Kael's techniques: the Riposta, the movement reactions, the stone's impact, timed by the stage
   // Selene's Lâmina Arcana (vfx/SeleneFx, ours, 3D): cast() plays the blade's glow and the mark's burst; the stage times the mark laid on
   // a landed blow and keeps the standing mark (MapStage syncArcaneMarks).
   SeleneFx& selene() { return selene_; }
@@ -342,12 +346,14 @@ class SpellEffects {
   int stormSerial_ = 0;
   CombatFx combat_;
   WarriorFx warrior_;  // the Guerreiro's skills (ours, 3D)
+  VanguardFx vanguard_;  // Kael's techniques (ours, 3D)
   ArmsFx arms_;        // the weapon skills, auras and summons that had no effect (ours, 3D, 2026-10-20)
   RangerFx ranger_;    // the Arqueiro's skills (ours, 3D)
   LancerFx lancer_;    // the Lanceiro's skills (ours, 3D)
   TurnUndead turnUndead_;  // Expulsar Mortos-Vivos 01 (ours, 3D)
   HealerFx healer_;        // the Curandeiro's Círculo de Cura / Ressurreição / Julgamento (ours, 3D)
   static bool isHealer(const std::string& kind) { return kind == "circleOfHealing" || kind == "resurrection" || kind == "judgment"; }
+  MoonwardenFx moonwarden_;  // Garran's techniques: moonlight crescents, shield shells, threads, barriers (ours, 3D)
   CrusaderFx crusader_;    // the Cruzado's Golpe Consagrado / Toque Sagrado / Juramento / Manto do Cruzado (ours, 3D)
   static bool isCrusader(const std::string& kind) { return kind == "holyStrike" || kind == "holyTouch" || kind == "crusaderMantle"; }
   SeleneFx selene_;        // Selene's Lâmina Arcana and its mark (ours, 3D)

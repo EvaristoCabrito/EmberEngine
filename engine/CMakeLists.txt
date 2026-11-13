@@ -49,6 +49,8 @@ add_library(EmberEngine STATIC
   render/vfx/BurningHands.cpp
   render/vfx/Sweeps.cpp
   render/vfx/WarriorFx.cpp
+  render/vfx/MoonwardenFx.cpp
+  render/vfx/VanguardFx.cpp
   render/vfx/ArmsFx.cpp
   render/vfx/RangerFx.cpp
   render/vfx/LancerFx.cpp
