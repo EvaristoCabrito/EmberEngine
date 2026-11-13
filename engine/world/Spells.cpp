@@ -12,8 +12,11 @@
 #include <map>
 #include <set>
 
+#include <functional>
+
 #include "core/Log.h"
 #include "world/ActionPoints.h"
+#include "world/BattleExport.h"
 #include "world/Progression.h"
 
 namespace ember {
@@ -128,6 +131,51 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"guardBreak", "Quebra-Guarda", 4, "", true}, "swordsman", 13},
     {{"warCry", "Grito de Guerra", 5, "", false}, "swordsman", 15},
     {{"leapingStrike", "Salto Devastador", 5, "", true}, "swordsman", 17},
+    // Kael (docs/SKILLS_VANGUARD.md, the user 2026-11-13): the Vanguarda's ten, two a tier of the Conjuração Média (T1-T5 open at 1, 4,
+    // 7, 10, 13; the second of a tier a level later); the Mestre da Espada's and the Arauto da Guerra's ten each from 15 (T5 at 15, T6
+    // at 16 / 17, T7 at 19 / 20, T8 at 22 / 23 and, Média having no T9 / T10, at 25 / 27). The prestige keeps the Vanguarda's.
+    {{"measuredCut", "Corte Medido", 1, "", true}, "vanguard", 1},
+    {{"longstepSlash", "Passo Longo", 1, "", true}, "vanguard", 2},
+    {{"crossguard", "Guarda Cruzada", 2, "", true}, "vanguard", 4},
+    {{"pommelCheck", "Golpe de Pomo", 2, "", true}, "vanguard", 5},
+    {{"lowCut", "Corte Baixo", 3, "", true}, "vanguard", 7},
+    {{"partingCut", "Corte de Saída", 3, "", true}, "vanguard", 8},
+    {{"overheadHew", "Talho por Cima", 4, "", true}, "vanguard", 10},
+    {{"steadyFooting", "Pé Firme", 4, "", true}, "vanguard", 11},
+    {{"challenge", "Desafio", 5, "", true}, "vanguard", 13},
+    {{"breakGuard", "Romper a Guarda", 5, "", true}, "vanguard", 14},
+    {{"feint", "Finta", 5, "", true}, "swordmaster", 15},
+    {{"riposte", "Riposta", 5, "", true}, "swordmaster", 15},
+    {{"passingStep", "Passo de Passagem", 6, "", true}, "swordmaster", 16},
+    {{"needlePoint", "Ponta de Agulha", 6, "", true}, "swordmaster", 17},
+    {{"secondIntention", "Segunda Intenção", 7, "", true}, "swordmaster", 19},
+    {{"readTheBlade", "Ler a Lâmina", 7, "", true}, "swordmaster", 20},
+    {{"severTheRhythm", "Quebrar o Ritmo", 8, "", true}, "swordmaster", 22},
+    {{"perfectCut", "Corte Perfeito", 8, "", true}, "swordmaster", 23},
+    {{"deadMeasure", "Medida Mortal", 8, "", true}, "swordmaster", 25},
+    {{"masterstroke", "Golpe de Mestre", 8, "", true}, "swordmaster", 27},
+    {{"drivingCut", "Corte Impulsionado", 5, "", true}, "warbringer", 15},
+    {{"wideCleave", "Talho Largo", 5, "", true}, "warbringer", 15},
+    {{"sidecast", "Desvio Lateral", 6, "", true}, "warbringer", 16},
+    {{"plantTheLine", "Firmar a Linha", 6, "", true}, "warbringer", 17},
+    {{"shoulderThrough", "Ombrada", 7, "", true}, "warbringer", 19},
+    {{"crushAgainstStone", "Esmagar na Pedra", 7, "", true}, "warbringer", 20},
+    {{"splitTheRank", "Rachar a Fileira", 8, "", true}, "warbringer", 22},
+    {{"reapTheFlanks", "Ceifar os Flancos", 8, "", true}, "warbringer", 23},
+    {{"rollingAdvance", "Avanço Rolante", 8, "", true}, "warbringer", 25},
+    {{"shatterTheLine", "Estilhaçar a Linha", 8, "", true}, "warbringer", 27},
+    // Garran Holt, the Guardião da Lua (docs/SKILLS_MOONWARDEN.md, the user 2026-11-13): one blow and one guard a tier, T1-T5 of the
+    // Conjuração Média as the Vanguarda's (1 / 2, 4 / 5, 7 / 8, 10 / 11, 13 / 14); the moon changes three at a time (SpellsMoonwarden.inc)
+    {{"guardedCut", "Corte Guardado", 1, "", true}, "moonwarden", 1},
+    {{"brace", "Erguer o Escudo", 1, "", true}, "moonwarden", 2},
+    {{"wardenBash", "Pancada de Escudo", 2, "", true}, "moonwarden", 4},
+    {{"interpose", "Interpor", 2, "", true}, "moonwarden", 5},
+    {{"gapThrust", "Estocada na Brecha", 3, "", true}, "moonwarden", 7},
+    {{"affront", "Afronta", 3, "", true}, "moonwarden", 8},
+    {{"crushingBlow", "Golpe Esmagador", 4, "", true}, "moonwarden", 10},
+    {{"holdTheLine", "Segurar a Linha", 4, "", true}, "moonwarden", 11},
+    {{"reckoning", "Acerto de Contas", 5, "", true}, "moonwarden", 13},
+    {{"unbreakable", "Inquebrável", 5, "", true}, "moonwarden", 14},
     // Arqueiro (docs/SKILLS_ARCHER.md, 2026-10-18): bow skills (the bow's own roll + bonus dice), the second of T1 / T3, two of T4 / T5
     {{"venomArrow", "Milf's Acid Arrow", 1, "", true}, "archer", 2},  // the user's name (2026-10-21, a gag), both languages
     {{"arrowRain", "Chuva de Flechas", 3, "", true}, "archer", 7},
@@ -196,6 +244,7 @@ constexpr EmberSpell kEmberSpells[] = {
 // Arqueiro's into the Patrulheiro and the Assassino, the Lanceiro's into the Sentinela and the Templário).
 const char* emberClassFamily(const std::string& classId) {
   if (classId == "paladin" || classId == "heavyKnight") return "swordsman";
+  if (classId == "swordmaster" || classId == "warbringer") return "vanguard";  // Kael's prestige keeps the Vanguarda's techniques
   // Neera's own class id in most battle files is "neera" (an archer with her sprite; "archer" in a few older exports)
   if (classId == "ranger" || classId == "assassin" || classId == "neera") return "archer";
   if (classId == "sentinel" || classId == "templar" || classId == "lancer") return "aldric";
@@ -1595,6 +1644,9 @@ bool bondRedirects(Battle& b, size_t target, int dmg, Mulberry32& rng, std::vect
 int marked(const BattleUnit& t, int dmg) {
   return t.cond.markTurns > 0 ? static_cast<int>(std::floor(dmg * (1 + t.cond.markPct / 100.0))) : dmg;
 }
+// Inquebrável's barrier (SpellsMoonwarden.inc): it takes any damage first, after every mitigation; what is left
+int wardAbsorb(BattleUnit& t, size_t ti, int dmg, std::vector<BattleEffect>* after);
+int wardTake(BattleUnit& t, int dmg) { return wardAbsorb(t, 0, dmg, nullptr); }
 // Maldição da Decadência: its stats at the curse's current percentage off what they were.
 void applyDecay(BattleUnit& u) {
   if (!u.decayBase) u.decayBase = BattleUnit::Stats{u.atk, u.mag, u.def, u.dex, u.mov};
@@ -1654,7 +1706,7 @@ void tickConditions(Battle& b, size_t id, Mulberry32& rng, std::vector<BattleEff
   BattleUnit& u = b.units()[id];
   auto hurt = [&](int dmg, const std::string& element, const char* cause) {
     if (!u.alive) return;
-    dmg = marked(u, std::max(0, dmg));
+    dmg = wardTake(u, marked(u, std::max(0, dmg)));
     u.hp = std::max(0, u.hp - dmg);
     if (!element.empty()) trainResistance(u, element, std::nullopt, rng);
     BattleEffect e;
@@ -1708,7 +1760,7 @@ void zoneEffects(Battle& b, size_t id, Mulberry32& rng, std::vector<BattleEffect
     int dmg = 0;
     if (z.hazardDice > 0) dmg = static_cast<int>(std::floor(elementalDamage(rollDice(z.hazardDice, z.hazardFaces, 0, rng), u.combat.resistance(z.element), 0)));
     else dmg = static_cast<int>(std::floor(elementalDamage(std::floor(std::floor(z.mag / 2) * z.mul) + rollDice(z.dice, z.faces, 0, rng), u.combat.resistance(z.element), z.mag)));
-    dmg = marked(u, std::max(0, dmg));
+    dmg = wardTake(u, marked(u, std::max(0, dmg)));
     u.hp = std::max(0, u.hp - dmg);
     trainResistance(u, z.element, std::nullopt, rng);
     BattleEffect e;
@@ -1738,7 +1790,7 @@ void landMeteors(Battle& b, size_t caster, Mulberry32& rng, std::vector<BattleEf
       const int roll = centre ? rollDice(z.centreDice, z.centreFaces, 0, rng) : rollDice(z.ringDice, z.ringFaces, 0, rng);
       const double base = std::floor(std::floor(z.mag / 2) * (centre ? z.centreMul : z.ringMul)) + roll - b.cell(foe.x, foe.y).cover;
       int dmg = static_cast<int>(std::floor(elementalDamage(std::max(1.0, base), foe.combat.resistance("fire"), z.mag)));
-      dmg = marked(foe, std::max(1, dmg));
+      dmg = wardTake(foe, marked(foe, std::max(1, dmg)));
       foe.hp = std::max(0, foe.hp - dmg);
       trainResistance(foe, "fire", att.alive ? std::optional<int>(att.level) : std::nullopt, rng);
       if (att.alive) {
@@ -2533,6 +2585,7 @@ bool leavesZone(const std::string& kind) {
 }
 
 #include "SpellsCore.inc"
+#include "SpellsVanguard.inc"  // Kael's techniques (docs/SKILLS_VANGUARD.md)
 
 }  // namespace
 
@@ -2696,6 +2749,9 @@ void grantClassSpells(BattleUnit& u) {
     if (!contains(u.spellList, std::string("bless"))) u.spellList.push_back("bless");
     if (u.level >= 4 && !contains(u.spellList, std::string("cleave"))) u.spellList.push_back("cleave");
   }
+  // Kael's classes (docs/SKILLS_VANGUARD.md): of the Guerreiro's skills his battle files list, only Golpe Duplo stays (the user, 2026-11-13)
+  if (emberClassFamily(u.classId) == std::string("vanguard"))
+    std::erase_if(u.spellList, [](const std::string& k) { return k != "doubleStrike" && !techniqueKind(k); });
   for (const std::string& k : emberSpells(u.classId, u.level, u.name))
     if (!contains(u.spellList, k)) u.spellList.push_back(k);
   if (u.classId == "hypostasis" && !contains(u.spellList, std::string("twinResonance"))) u.spellList.push_back("twinResonance");
@@ -2725,6 +2781,10 @@ std::string promotionName(const std::string& classId) {
   if (classId == "elementalist") return "Elementalista";
   if (classId == "mage" || classId == "voss" || classId.empty()) return "Mago Negro";
   if (classId == "swordsman") return "Guerreiro";
+  if (classId == "vanguard") return pick("Vanguarda", "Vanguard");
+  if (classId == "swordmaster") return pick("Mestre da Espada", "Swordmaster");
+  if (classId == "warbringer") return pick("Arauto da Guerra", "Warbringer");
+  if (classId == "moonwarden") return pick("Guardião da Lua", "Moonwarden");
   if (classId == "paladin") return "Paladino";
   if (classId == "heavyKnight") return "Cavaleiro Pesado";
   if (classId == "archer") return "Arqueira";  // Neera, the only one
@@ -2745,6 +2805,17 @@ void setPromotion(BattleUnit& u, const std::string& classId) {
   u.classId = classId.empty() ? "mage" : classId;
   u.className = promotionName(u.classId);
   std::erase_if(u.spellList, [](const std::string& k) { return emberSpell(k) != nullptr; });
+  // A hero whose new class draws its uses from another tier table (Kael: the Guerreiro's Conjuração Lenta -> the Vanguarda's Média):
+  // its growth rows take the class's table, and its uses are the new table's at its level (the save's spent uses come off after).
+  if (u.side == "player" && !u.growth.empty())
+    if (const std::vector<std::array<int, 10>> table = classTierTable(u.classId); !table.empty()) {
+      bool changed = false;
+      for (size_t i = 0; i < u.growth.size(); ++i)
+        for (size_t t = 0; t < 10; ++t)
+          if (const int uses = table[std::min(i, table.size() - 1)][t]; u.growth[i][5 + t] != uses) u.growth[i][5 + t] = uses, changed = true;
+      if (changed && u.level >= 1 && static_cast<size_t>(u.level) <= u.growth.size())
+        for (size_t t = 0; t < 10; ++t) u.spells[t] = u.growth[static_cast<size_t>(u.level - 1)][5 + t];
+    }
   grantClassSpells(u);
 }
 std::string conditionsText(const BattleUnit& u) {
@@ -2788,7 +2859,8 @@ std::string conditionsText(const BattleUnit& u) {
   if (u.crippled) add(pick("Aleijado -10%", "Crippled -10%"));
   if (u.fearTurns > 0) add(std::string(pick("Com medo", "Afraid")) + std::format(" ({})", u.fearTurns));
   if (u.blessedRoundsLeft > 0) add(std::string(pick("Abençoado", "Blessed")) + std::format(" +{}% ({})", static_cast<int>(jsRound(u.blessedHitBonusPct * 100)), u.blessedRoundsLeft));
-  if (u.cond.twinResonancePercent > 0) add(std::format("{} {}%", pick("Ressonância Geminada", "Twin Resonance"), u.cond.twinResonancePercent));
+  techniqueConditions(u, add);  // Kael's guards and stances, the marks on his foes
+  if (u.cond.twinResonancePercent > 0)add(std::format("{} {}%", pick("Ressonância Geminada", "Twin Resonance"), u.cond.twinResonancePercent));
   return s;
 }
 std::string spellExplain(const std::string& kind, bool en) {
@@ -3109,7 +3181,8 @@ std::string spellScaleTextRaw(const BattleUnit& c, const std::string& kind, bool
   }
   return {};
 }
-std::string spellTooltip(const BattleUnit& c, const std::string& kind) {
+std::string spellTooltip(const BattleUnit& c, const std::string& kind, int moon) {
+  if (techniqueKind(kind)) return techniqueTooltip(c, kind, moon);  // Kael's and Garran's techniques: their numbers at the rank (Garran's: the moon)
   const EmberSpell* e = emberSpell(kind);
   if (!e) return {};
   const EmberNumbers n = emberNumbers(kind, c.level);
@@ -3262,6 +3335,8 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
 
 std::string spellNameIn(const std::string& kind, bool english) {
   if (english)
+    if (const TechniqueDef* t = techniqueDef(kind)) return t->en;
+  if (english)
     for (const auto& [k, en] : kSpellNamesEnglish)
       if (kind == k) return en;
   return spellName(kind);
@@ -3284,9 +3359,9 @@ bool spellInstant(const std::string& kind) {
 // area of effect".
 bool spellSelfArea(const std::string& kind) {
   return kind == "sweep" || kind == "turnUndead" || kind == "steelWhirlwind" || kind == "warCry" || kind == "sentinelVigil" || kind == "eruption" ||
-         kind == "globeOfInvulnerability" || kind == "crusaderMantle";
+         kind == "globeOfInvulnerability" || kind == "crusaderMantle" || kind == "crossguard" || kind == "steadyFooting" || kind == "plantTheLine";
 }
-bool spellPassive(const std::string& kind) { return kind == "crusaderOath"; }
+bool spellPassive(const std::string& kind) { return kind == "crusaderOath" || kind == "riposte"; }
 bool spellAimsDirection(const std::string& kind) {
   return kind == "piercing" || kind == "piercingThrust" || kind == "frost" || kind == "iceLance" || kind == "glacialGale" ||
          kind == "burningHands" || kind == "poisonBreath" || kind == "divineWrath" || kind == "stampede" || kind == "boneLance";
@@ -3422,7 +3497,7 @@ std::string spellPose(const std::string& kind) {
   if (kind == "longShot" || kind == "bloodyShot" || kind == "multiShot" || kind == "piercing" || kind == "doubleStrike" || kind == "piercingThrust" ||
       kind == "cleave" || kind == "sweep" || kind == "trip" || kind == "bullRush" || kind == "executionerStrike" || kind == "shieldBash" ||
       kind == "shoulderSmash" || kind == "stampede" || kind == "steelWhirlwind" || kind == "guardBreak" || kind == "warCry" || kind == "leapingStrike" || kind == "holyStrike" ||
-      kind == "arcaneBlade" ||
+      kind == "arcaneBlade" || techniqueKind(kind) ||
       archerShot(kind) || archerVolley(kind) || (lancerKind(kind) && kind != "sentinelVigil"))
     return "attack";
   return "cast";
@@ -3534,6 +3609,7 @@ std::vector<ArcaneBanquetOption> arcaneBanquetOptions(const Battle& b, size_t ca
 
 int spellTargetCount(const Battle& b, size_t unit, const std::string& kind) {
   if (kind == "twinResonance") return 2;
+  if (techniqueKind(kind)) return techniqueTargetCount(b, unit, kind);  // Kael's step techniques: a hex and a foe (Garran's: by the moon)
   if (kind == "wrathOfTheSkies") return emberNumbers(kind, b.units()[unit].level).count;
   if (kind == "multiShot") return multiShotTargets(b.units()[unit].level);
   return kind == "magicMissile" || kind == "magicMissileV2" ? magicMissileCount(b.units()[unit].level) : 1;
@@ -3548,7 +3624,8 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   int minRange = 0, maxRange = -1;
   bool shot = false, arrow = false;
   const auto grown = [&](int base) { return grownReach(kind, base, u.level); };
-  if (kind == "longShot") minRange = u.minRange, maxRange = grown(kLongShotRange), shot = true, arrow = true;
+  if (techniqueKind(kind)) minRange = techniqueReach(b, kind) > 0 ? 1 : 0, maxRange = techniqueReach(b, kind);  // Kael's: beside him, or 2 hexes
+  else if (kind == "longShot") minRange = u.minRange, maxRange = grown(kLongShotRange), shot = true, arrow = true;
   else if (kind == "lightning") maxRange = grown(kLightningRange);
   else if (kind == "shock") maxRange = kShockRange;
   else if (kind == "magicMissile" || kind == "magicMissileV2") maxRange = grown(kMissileRange), shot = true;
@@ -3620,6 +3697,7 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
     return false;
   };
   if (!b.inBounds(cell.x, cell.y)) return fail("Fora do mapa.");
+  if (techniqueKind(kind)) return techniqueAimValid(b, caster, kind, cell, error);  // Kael's (SpellsVanguard.inc)
   const int here = occAt(b, cell);
   const int d = hexDist(from, cell);
   if (kind == "frost") return frostTiles(b, from, cell, u.level).empty() ? fail("Escolha uma reta a partir do personagem.") : true;
@@ -3828,6 +3906,7 @@ std::vector<BattleHex> spellArea(const Battle& b, size_t caster, const std::stri
   if (kind == "frost") return frostTiles(b, {u.x, u.y}, cell, u.level);
   if (kind == "piercing") return piercingRay(b, {u.x, u.y}, cell);
   if (kind == "piercingThrust") return piercingThrustRay(b, u, cell);
+  if (techniqueKind(kind)) return techniqueArea(b, caster, kind, cell);  // Kael's: the arc, the line, the hex between
   if (emberSpell(kind)) {
     const EmberNumbers n = emberNumbers(kind, u.level);
     if (kind == "iceLance") return piercingRay(b, {u.x, u.y}, cell);
@@ -3895,12 +3974,16 @@ std::optional<std::vector<BattleStep>> castSpell(Battle& b, size_t caster, const
   if (static_cast<int>(cells.size()) != spellTargetCount(b, caster, kind)) return fail("Escolha todos os alvos.");
   if (checkUses && u.side == "player" && !contains(u.spellList, kind)) return fail("A classe ou o nível não permite esta magia.");
   if (checkUses && spellUsesLeft(b, caster, kind) <= 0) return fail("Sem usos restantes.");
+  // Kael's techniques: a cooldown blocks the next turns of his after a use (docs/SKILLS_VANGUARD.md)
+  if (checkUses && techniqueCooling(b, u, kind))
+    return fail(std::format("Em recarga ({} turno{}).", std::max(1, techniqueCooldownLeft(b, u, kind)), techniqueCooldownLeft(b, u, kind) > 1 ? "s" : ""));
   // Action Points (world/ActionPoints.h): the cast must be payable before any use is spent; its AP leave at the action's commit
   if (checkUses && !apCanAfford(u, apCost(b, u, ApAction::cast(kind)))) return fail(std::format("Sem PA para esta habilidade ({} PA).", apCost(b, u, ApAction::cast(kind))));
   for (const BattleHex& c : cells)
     if (!spellAimValid(b, caster, kind, c, error)) return std::nullopt;
   if (summonSpec(kind)) return castE2(b, caster, kind, cells, error, checkUses);  // every summon, the Cervo (one of ours) too
   if (e2Kind(kind)) return castE2(b, caster, kind, cells, error, checkUses, selectedBuff);
+  if (techniqueKind(kind)) return castTechnique(b, caster, kind, cells, error);  // Kael's (SpellsVanguard.inc)
   if (emberSpell(kind)) return castEmber(b, caster, kind, cells, error);
   const BattleHex cell = cells[0];
   std::vector<BattleStep> steps;
@@ -4008,7 +4091,8 @@ std::optional<std::vector<BattleStep>> castSpell(Battle& b, size_t caster, const
   return steps;
 }
 
-bool strikesBack(const Battle& b, const BattleStep& step) {
+// Every rule of a counter but Quebrar o Ritmo's (Kael's): whether the defender could strike back now.
+static bool counterAllowed(const Battle& b, const BattleStep& step) {
   if (step.noCounter) return false;
   const BattleUnit &u = b.units()[step.att], &t = b.units()[step.def];
   if (!u.alive || !t.alive || t.stunned) return false;
@@ -4017,6 +4101,11 @@ bool strikesBack(const Battle& b, const BattleStep& step) {
   if (!apCanCounter(b, t, u, {u.x, u.y})) return false;
   const Fighter a = fighterAt(b, step.att, u.x, u.y), d = fighterAt(b, step.def, t.x, t.y);
   return canCounter(b, a, {u.x, u.y}, d);
+}
+bool strikesBack(const Battle& b, const BattleStep& step) {
+  // Quebrar o Ritmo (docs/SKILLS_VANGUARD.md): its next weapon counter does not come (spent on this exchange: -1)
+  if (step.def < b.units().size() && b.units()[step.def].cond.martial.severTurns != 0) return false;
+  return counterAllowed(b, step);
 }
 
 namespace {
@@ -4102,7 +4191,7 @@ void tileHazard(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffec
   for (int i = 0; i < c.hazardDice; ++i) dmg += 1 + static_cast<int>(std::floor(rng() * c.hazardFaces));
   const std::string element = c.terrain == "flame" ? "fire" : c.terrain == "ember" ? "ember" : "";
   if (!element.empty()) dmg = static_cast<int>(std::floor(elementalDamage(dmg, u.combat.resistance(element), 0)));
-  dmg = marked(u, dmg);
+  dmg = wardTake(u, marked(u, dmg));
   u.hp = std::max(0, u.hp - dmg);
   if (!element.empty()) trainResistance(u, element, std::nullopt, rng);
   BattleEffect e{unit, dmg, false, false, false, false, false};
@@ -4132,7 +4221,7 @@ void iceStormsStrike(Battle& b, size_t unit, Mulberry32& rng, std::vector<Battle
     for (size_t i = 0; i < b.units().size(); ++i)
       if (b.units()[i].id == zone.casterId) casterIdx = static_cast<int>(i);
     const double staffed = casterIdx >= 0 ? base * (1 + staffBonus(b.units()[static_cast<size_t>(casterIdx)].combat, "ice") / 100) : base;
-    const int dmg = static_cast<int>(std::floor(elementalDamage(staffed, u.combat.resistance("ice"), zone.casterMag)));
+    const int dmg = wardTake(u, static_cast<int>(std::floor(elementalDamage(staffed, u.combat.resistance("ice"), zone.casterMag))));
     const int actual = std::min(u.hp, dmg);
     u.hp = std::max(0, u.hp - dmg);
     if (casterIdx >= 0 && b.units()[static_cast<size_t>(casterIdx)].side != u.side) staffDrain(b.units()[static_cast<size_t>(casterIdx)], actual);
@@ -4161,7 +4250,7 @@ void acidCloudsStrike(Battle& b, size_t unit, Mulberry32& rng, std::vector<Battl
     z.struckRound[target.id] = b.round();
     const Battle::Zone cloud = z;
     const double base = std::floor(std::floor(cloud.mag / 2) * cloud.mul) + rollDice(cloud.dice, cloud.faces, 0, rng);
-    const int damage = static_cast<int>(std::floor(elementalDamage(base, target.combat.resistance("poison"), cloud.mag)));
+    const int damage = wardTake(target, static_cast<int>(std::floor(elementalDamage(base, target.combat.resistance("poison"), cloud.mag))));
     target.hp = std::max(0, target.hp - damage);
     trainResistance(target, "poison", std::nullopt, rng);
     BattleEffect hit{unit, damage, false, false, false, false, false};
@@ -4197,10 +4286,23 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
   const size_t ai = counter ? step.def : step.att, ti = counter ? step.att : step.def;
   BattleUnit& actor = b.units()[ai];
   BattleUnit& target = b.units()[ti];
+  // Kael's techniques (docs/SKILLS_VANGUARD.md): the blow he parried this exchange turns his counter into the Riposta (one counter per
+  // event; a counter never opens another)
+  const bool riposte = counter && riposteReady(b, ai, ti);
+  if (counter) actor.cond.martial.parriedBy = -1;
   // Action Points: the counter's commit. Its AP leave the defender's reserve here, once, as the strike back resolves (strikesBack
   // checked them before the exchange began); without them there is no counter at all.
   if (counter && !apTrySpend(actor, apCounterCost(b, actor, target, {target.x, target.y}))) return;
+  if (riposte) spendTier(actor, "riposte");
   const bool hitStage = !counter;
+  // a new exchange on the target: what it parried before is forgotten (Segunda Intenção's second cut reads its first), Quebrar o
+  // Ritmo's spent mark too
+  bool firstParried = false;
+  if (hitStage) {
+    firstParried = target.cond.martial.parriedBy == static_cast<int>(ai);
+    target.cond.martial.parriedBy = -1;
+    if (target.cond.martial.severTurns < 0) target.cond.martial.severTurns = 0;
+  }
   const bool bash = hitStage && step.kind == "shieldBash";
   // Explicit dice: the attacker's own off-hand strike, or the defender's off-hand counter when the attacker stands within
   // its reach.
@@ -4224,17 +4326,24 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
   if (target.side != actor.side && mirrorAbsorbs(target, rng, ti, out)) return;  // Imagem Espelhada: the blow found a copy
   if (target.side != actor.side && arrowShot && daggerIntercepts(target, ti, out)) return;  // Nuvem de Adagas: the arrow was knocked down
   const Fighter A = fighterAt(b, ai, actor.x, actor.y), T = fighterAt(b, ti, target.x, target.y);
-  Hit hit = rollDamage(b, A, T, rng, !bash, useCustom ? &custom : nullptr);
-  if (target.side == "enemy" && !bash) trainWeapon(actor, target.level, rng, useCustom);  // the off-hand weapon on an off-hand strike
-  if (actor.side == "enemy") trainDodge(target, actor.level, rng);
   const bool usesArcane = arcaneBolt && !useCustom && (counter || step.kind.empty());
   const bool usesStaff = actor.combat.staff && !useCustom && (counter || step.kind.empty());
+  // Kael's techniques: the blow's points to hit and the armor it ignores (its own, Exposto, an open guard: the strongest)
+  StrikeMods mods;
+  const TechniqueStrike martial = techniqueBeforeRoll(b, step, counter, riposte, firstParried, ai, ti, usesArcane || usesStaff, mods);
+  const int crushed = wardCrushShare(b, step, counter, ai);  // Golpe Esmagador on the attacker: this attack spends it, landed or not
+  Hit hit = rollDamage(b, A, T, rng, !bash, useCustom ? &custom : nullptr, &mods);
+  if (!bash) techniqueSpendAccuracy(b, ai, ti);  // Golpe de Pomo's / Desafio's points off: this weapon roll spent them
+  if (target.side == "enemy" && !bash) trainWeapon(actor, target.level, rng, useCustom);  // the off-hand weapon on an off-hand strike
+  if (actor.side == "enemy") trainDodge(target, actor.level, rng);
   if (!hit.landed) {
     BattleEffect m{ti, 0, false, true, false, false, counter};
     if (hitStage && step.kind == "bullRush") m.abortRush = true;  // a missed charge shoves nobody aside: the rest of it is dropped
+    if (hitStage && (step.abortOnMiss || step.abortOnNoPush)) m.abortRush = true;  // Kael's: a missed blow ends the chain (no push, no follow)
     out.push_back(m);
     return;
   }
+  const int ordinary = hit.dmg;  // the ordinary blow (Esmagar na Pedra's impact is a share of it, no second roll)
   int dmg = hit.dmg;
   int bonusRoll = 0;
   if (hitStage && step.bonusDice > 0) {
@@ -4249,13 +4358,23 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
     if (target.maxHp > 0 && static_cast<double>(target.hp) / target.maxHp <= p.threshold)
       dmg = std::max(1, static_cast<int>(std::floor((hit.preCritDmg + bonusRoll) * p.mult)));
   }
-  if (hitStage && step.dmgMul != 1) dmg = std::max(1, static_cast<int>(std::floor(dmg * step.dmgMul)));
+  // the skill's share of the blow (Corte Perfeito: more against Exposto; the Riposta: its own share)
+  if (const double mul = hitStage ? step.dmgMul + martial.exposedDamagePct / 100.0 : riposte ? techniqueNumbers("riposte", actor).dmg / 100.0 : 1.0; mul != 1)
+    dmg = std::max(1, static_cast<int>(std::floor(dmg * mul)));
+  if (crushed > 0) dmg = std::max(1, static_cast<int>(std::floor(dmg * (1 - crushed / 100.0))));
   if (hitStage && step.stunChance > 0 && rng() < step.stunChance) target.stunned = true, target.stunTurns = 1;
   if (target.asleep) {  // a hit on a sleeper hurts 25% more and wakes it
     dmg = std::max(1, static_cast<int>(std::floor(dmg * (1 + kWebSleepBonusDamage))));
     target.asleep = false, target.sleepTurns = 0;
   }
   dmg = std::max(1, static_cast<int>(std::floor(dmg * b.zoneDamageMul(target))));
+  // Kael's guards on a physical blow at him: the parry (Guarda Cruzada / Ler a Lâmina) and Pé Firme take their share off
+  bool parried = false;
+  int parryExpose = 0;
+  if (!(usesArcane || usesStaff)) dmg = techniqueGuard(b, ai, ti, arrowShot, dmg, parried, parryExpose);
+  // Garran's on a physical weapon hit (docs/SKILLS_MOONWARDEN.md): the strongest of his reductions, its charge alone spent
+  std::vector<BattleEffect> wardAfter;
+  if (!(usesArcane || usesStaff)) dmg = wardReduce(b, step, counter, ai, ti, arrowShot, dmg, wardAfter);
   if (usesArcane || usesStaff) {
     const std::string element = usesStaff ? actor.combat.staffElement : "arcane";
     const double staffed = dmg * (1 + (usesStaff ? staffBonus(actor.combat, element) : 0) / 100);
@@ -4271,6 +4390,8 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
     if (holy > 0) dmg += static_cast<int>(std::floor(elementalDamage(holy, target.combat.resistance("holy"), A.mag)));
   }
   dmg = marked(target, dmg);  // Marca da Ruína
+  dmg = wardAbsorb(target, ti, dmg, &wardAfter);  // Inquebrável's barrier, after every mitigation
+  if (target.side != actor.side) wardNote(target.cond.martial.hitBy, static_cast<int>(ai));  // a landed weapon hit (Corte Guardado's full moon)
   if (hitStage && !step.kind.empty() && dmg > 0) affinityDelta(b, ai, ti, -1);  // a skill that hurts a friend costs affinity
   const bool bonded = target.side != actor.side && bondRedirects(b, ti, dmg, rng, out);  // Elo de Sacrifício: its summon takes it
   if (bonded) dmg = 0;
@@ -4284,10 +4405,21 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
     else gainCounterExp(actor);
   }
   BattleEffect e{ti, dmg, hit.crit, false, false, false, counter};
+  std::vector<BattleEffect> martialAfter = std::move(wardAfter);  // Kael's and Garran's words and impacts, shown after the blow's number
+  if (parried) {
+    martialAfter.push_back(statusEffect(ti, pick("Aparado", "Parried")));
+    if (parryExpose > 0 && actor.alive) {  // Ler a Lâmina: the attacker left Exposto to him
+      BattleUnit::Conditions::Martial& am = actor.cond.martial;
+      am.exposedPct = std::max(am.exposedBy == static_cast<int>(ti) ? am.exposedPct : 0, parryExpose), am.exposedBy = static_cast<int>(ti), am.exposedTurns = 2;
+      martialAfter.push_back(statusEffect(ai, std::format("{} {}%", pick("Exposto", "Exposed"), am.exposedPct)));
+    }
+  }
   if (target.hp <= 0) {
     markDead(target, rng);
     e.died = true;
+    if (hitStage && step.abortOnNoPush) e.abortRush = true;  // nobody pushed out of the hex: no follow
   } else {
+    techniqueOnHit(b, step, counter, riposte, martial, ai, ti, ordinary, e, martialAfter, rng);
     if (hitStage) maybeInflictDisease(actor, target, rng);
     if (hitStage && step.kind == "trip") {
       // Rasteira causes Bleeding (1D8 each action) and takes 10% off every stat for the rest of the fight.
@@ -4316,16 +4448,27 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
       applyDisarm(target);
     }
     if (hitStage && step.kind == "bullRush" && step.knockTo) {
-      target.x = step.knockTo->x, target.y = step.knockTo->y;
-      e.pushed = true;
+      if (target.cond.martial.footingPct > 0) target.cond.martial.footingPct = 0;  // Pé Firme: the one-hex shove comes to nothing
+      else if (target.cond.martial.bracePush) target.cond.martial.bracePush = false;  // Erguer o Escudo (waning moon): the same
+      else {
+        target.x = step.knockTo->x, target.y = step.knockTo->y;
+        e.pushed = true;
+      }
     }
     // Empurrão de Escudo (the Golpe de Escudo's talent): the struck shoved away from the attacker
-    if (hitStage && step.push > 0 && step.kind != "bullRush" && pushAway(b, ti, {actor.x, actor.y}, step.push)) e.pushed = true;
+    if (hitStage && step.push > 0 && step.kind != "bullRush") {
+      int hexes = step.push;
+      if (target.cond.martial.bracePush) --hexes, target.cond.martial.bracePush = false;  // Erguer o Escudo (waning moon): one hex shorter
+      if (hexes > 0 && pushAway(b, ti, {actor.x, actor.y}, hexes)) e.pushed = true;
+    }
     if (hitStage && step.drainUses > 0)  // Mão Ferida (the Desarmar's talent): a use of its strongest skill lost
       for (int t = 9, left = step.drainUses; t >= 0 && left > 0; --t)
         if (target.spells[t] > 0) target.spells[t] -= 1, --left;
   }
   if (!bonded) out.push_back(e);
+  out.insert(out.end(), martialAfter.begin(), martialAfter.end());
+  // Quebrar o Ritmo: the foe that could strike back at this blow does not; the mark is spent on this exchange
+  if (hitStage && target.alive && target.cond.martial.severTurns > 0 && counterAllowed(b, step)) target.cond.martial.severTurns = -1;
   if (!target.alive) {
     // Sentença (the Golpe do Carrasco's talent): a killing blow gives the skill's use back
     if (hitStage && step.kind == "executionerStrike" && hasTalent(step.kind, actor.level))
@@ -4419,6 +4562,21 @@ std::vector<BattleStep> vigilInterrupts(const Battle& b, size_t attacker, const 
 }
 
 bool daggerStrikeKind(const std::string& kind) { return kind == "daggerStrike"; }
+
+bool spellCoolingDown(const Battle& b, size_t unit, const std::string& kind) {
+  return unit < b.units().size() && techniqueCooling(b, b.units()[unit], kind);
+}
+int spellCooldownLeft(const Battle& b, size_t unit, const std::string& kind) {
+  return unit < b.units().size() ? techniqueCooldownLeft(b, b.units()[unit], kind) : 0;
+}
+bool reactBeforeStep(Battle& b, size_t walker, BattleHex from, BattleHex to, Mulberry32& rng, std::vector<BattleEffect>& out) {
+  return walker < b.units().size() && techniqueBeforeStep(b, walker, from, to, rng, out);
+}
+bool reactAfterStep(Battle& b, size_t walker, BattleHex from, BattleHex to, Mulberry32& rng, std::vector<BattleEffect>& out) {
+  return walker < b.units().size() && techniqueAfterStep(b, walker, from, to, rng, out);
+}
+bool interposeRedirect(Battle& b, BattleStep& step, std::vector<BattleEffect>& out) { return wardRedirect(b, step, out); }
+int moonForm(const Battle& b) { return wardMoon(b); }
 
 bool globeBlocks(const Battle& b, size_t caster, const std::string& kind, size_t target) {
   if (caster >= b.units().size() || target >= b.units().size()) return false;
@@ -4526,7 +4684,9 @@ void resolveStrike(Battle& b, const BattleStep& step, bool counter, Mulberry32& 
   std::vector<int> hpBefore;
   hpBefore.reserve(b.units().size());
   for (const BattleUnit& unit : b.units()) hpBefore.push_back(unit.hp);
+  const std::vector<WardImmunity> immune = wardImmunityBefore(b);  // Inquebrável: no new stun or root
   resolveStrikeImpl(b, step, counter, rng, out);
+  wardImmunityAfter(b, immune, out);
   const size_t source = counter ? step.def : step.att;
   const std::string element = source < b.units().size() && b.units()[source].combat.staff ? b.units()[source].combat.staffElement : "physical";
   echoTwinResonanceEvents(b, source, from, hpBefore, element, rng, out);
@@ -4552,7 +4712,9 @@ void playSteps(Battle& b, const std::vector<BattleStep>& steps, Mulberry32& rng,
     const size_t actor = queue[i].att;
     std::vector<BattleStep> kept(queue.begin(), queue.begin() + static_cast<long>(i) + 1);
     for (size_t k = i + 1; k < queue.size(); ++k)
-      if (!(queue[k].att == actor && (queue[k].type == BattleStep::Type::Move || (queue[k].type == BattleStep::Type::Combat && queue[k].kind == "bullRush")))) kept.push_back(queue[k]);
+      if (!(queue[k].att == actor && (queue[k].type == BattleStep::Type::Move || (queue[k].type == BattleStep::Type::Combat && queue[k].kind == "bullRush") ||
+                                      queue[k].chained)))  // Kael's: what needs the step before it
+        kept.push_back(queue[k]);
     queue = std::move(kept);
   }
 }
@@ -4627,6 +4789,7 @@ static void echoTwinResonance(Battle& b, size_t source, size_t struck, int hpLos
     damage = static_cast<int>(std::floor(elementalDamage(damage, target.combat.resistance(type), 0)));
     damage = static_cast<int>(std::floor(damage * b.zoneDamageMul(target)));
     if (damage <= 0) break;
+    damage = wardTake(target, damage);
     const int actual = std::min(target.hp, damage);
     target.hp = std::max(0, target.hp - damage);
     BattleEffect echo;
@@ -4671,9 +4834,11 @@ void resolveStep(Battle& b, const BattleStep& step, Mulberry32& rng, std::vector
   }
   gNotes.clear();
   const size_t from = out.size();
+  const std::vector<WardImmunity> immune = wardImmunityBefore(b);  // Inquebrável: no new stun or root
   // Globo de Invulnerabilidade: whoever it shields from this spell is dropped from the step ("Bloqueado"); the rest of it plays.
   if (step.kind == "witchStitchRupture") resolveStepImpl(b, step, rng, out);  // a laid filament cannot be intercepted after movement begins
   else if (const std::optional<BattleStep> s = globeFilter(b, step, out)) resolveStepImpl(b, *s, rng, out);
+  wardImmunityAfter(b, immune, out);
   std::string damageType;
   if (const SpellData* data = spellData(step.kind)) damageType = data->element;
   echoTwinResonanceEvents(b, step.att, from, hpBefore, damageType, rng, out);
@@ -4688,18 +4853,27 @@ namespace {
 void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::vector<BattleEffect>& out) {
   BattleUnit& att = b.units()[step.att];
   if (step.type == BattleStep::Type::Combat) {
-    BattleUnit& def = b.units()[step.def];
+    BattleStep st = step;
+    interposeRedirect(b, st, out);  // Garran's Interpor: before the roll, the attack may be his (the map's exchange does it as the step starts)
+    BattleUnit& def = b.units()[st.def];
     if (!att.alive || !def.alive) return;
     faceToward(att, {def.x, def.y});
-    resolveStrike(b, step, false, rng, out);
-    if (strikesBack(b, step)) {
+    resolveStrike(b, st, false, rng, out);
+    if (strikesBack(b, st)) {
       faceToward(def, {att.x, att.y});
-      resolveStrike(b, step, true, rng, out);
+      resolveStrike(b, st, true, rng, out);
     }
     return;
   }
   if (step.type == BattleStep::Type::Move) {  // a charge: the walk, hex by hex (a flame underfoot burns)
     if (!att.alive || step.path.size() < 2) return;
+    // Kael's bundled step: its hex checked again as it resolves; taken (or he cannot move), he stays and the chain ends
+    if (step.martialMove && (!techniqueStandable(b, step.path.back()) || att.burialWeightActive || !att.cond.burialRootSources.empty())) {
+      BattleEffect stay;
+      stay.unit = step.att, stay.moved = true, stay.abortRush = true;
+      out.push_back(stay);
+      return;
+    }
     for (size_t k = 1; k < step.path.size() && att.alive; ++k) {
       att.x = step.path[k].x, att.y = step.path[k].y;
       stepOnHex(b, step.att, rng, out);
@@ -4727,6 +4901,10 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     return;
   }
   if (step.type == BattleStep::Type::Effect) {
+    if (techniqueKind(step.kind)) {  // Kael's guards, stances and marks (SpellsVanguard.inc)
+      techniqueEffect(b, step, out);
+      return;
+    }
     if (step.kind == "witchStitch") {
       if (!att.alive) return;
       for (size_t id : step.ids) {
@@ -5112,7 +5290,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     int damage = static_cast<int>(std::floor(std::floor(mag / 2.0) * mul)) + rollDice(dice, faces, 0, rng);
     damage = static_cast<int>(std::floor(elementalDamage(damage, target.combat.resistance("arcane"), mag)));
     damage = marked(target, damage);
-    damage = std::max(0, static_cast<int>(std::floor(damage * b.zoneDamageMul(target))));
+    damage = wardTake(target, std::max(0, static_cast<int>(std::floor(damage * b.zoneDamageMul(target)))));
     const int actual = std::min(target.hp, damage);
     target.hp = std::max(0, target.hp - damage);
     b.noteDamage(step.att, id, actual, true);
@@ -5379,6 +5557,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
         if (!att.alive) afterDeath(b, step.att, out);
       }
     }
+    dmg = wardTake(foe, dmg);  // Inquebrável's barrier
     const bool bonded = foe.side != att.side && bondRedirects(b, id, dmg, rng, out);  // Elo de Sacrifício: its summon takes it
     if (bonded) dmg = 0;
     const int actual = std::min(foe.hp, dmg);
@@ -5544,7 +5723,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
       for (const size_t who : {id, *step.collideWith}) {
         BattleUnit& v = b.units()[who];
         if (!v.alive) continue;
-        const int d = marked(v, std::max(1, rollDice(step.collideDice, step.collideFaces, 0, rng)));
+        const int d = wardTake(v, marked(v, std::max(1, rollDice(step.collideDice, step.collideFaces, 0, rng))));
         v.hp = std::max(0, v.hp - d);
         if (v.hp > 0 && step.kind == "spearToss" && hasTalent(step.kind, att.level)) v.stunned = true, v.stunTurns = std::max(v.stunTurns, 1);  // Colisão Atordoante
         b.noteDamage(step.att, who, d, false);
@@ -5581,7 +5760,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     BattleUnit& foe = b.units()[id];
     if (!foe.alive) continue;
     const int roll = rollDice(step.echoDice, step.echoFaces, step.echoBonus, rng);
-    const int dmg = marked(foe, static_cast<int>(std::floor(elementalDamage(roll, foe.combat.resistance("lightning"), A.mag))));
+    const int dmg = wardTake(foe, marked(foe, static_cast<int>(std::floor(elementalDamage(roll, foe.combat.resistance("lightning"), A.mag)))));
     foe.hp = std::max(0, foe.hp - dmg);
     trainResistance(foe, "lightning", att.level, rng);
     b.noteDamage(step.att, id, dmg, true);
@@ -5632,11 +5811,12 @@ void startOfTurnEffects(Battle& b, size_t unit, Mulberry32& rng, std::vector<Bat
 static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) {
   BattleUnit& u = b.units()[unit];
   if (!u.alive) return;
+  techniqueTurnStart(b, unit);  // Kael's guards and stances end as his turn begins; the marks on a foe count its turns
   if (u.shock) {
     const BattleUnit::Echo echo = *u.shock;
     u.shock.reset();
     const int base = rollDice(echo.dice, echo.faces, echo.bonus, rng);
-    const int dmg = static_cast<int>(std::floor(elementalDamage(base, u.combat.resistance("lightning"), echo.mag)));
+    const int dmg = wardTake(u, static_cast<int>(std::floor(elementalDamage(base, u.combat.resistance("lightning"), echo.mag))));
     u.hp = std::max(0, u.hp - dmg);
     trainResistance(u, "lightning", std::nullopt, rng);
     BattleEffect e{unit, dmg, false, false, false, false, false};
@@ -5986,7 +6166,7 @@ bool bleedOnAction(Battle& b, size_t unit, bool isMove, Mulberry32& rng, std::ve
   BattleUnit& u = b.units()[unit];
   if (!u.alive || !u.bleeding || (isMove && u.bleedMovedThisTurn)) return u.alive;
   if (isMove) u.bleedMovedThisTurn = true;
-  const int dmg = rollDice(1, 8, 0, rng);
+  const int dmg = wardTake(u, rollDice(1, 8, 0, rng));
   u.hp = std::max(0, u.hp - dmg);
   BattleEffect e{unit, dmg, false, false, false, false, false};
   e.cause = pick("Sangramento fere", "Bleeding hurts");

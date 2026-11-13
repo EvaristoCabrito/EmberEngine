@@ -64,7 +64,8 @@ struct NpcTalk {
     if (a == "tavern" || a == "smith" || a == "healer") {
       if (!hasInn) return map.battleLog(tr("Sem dados da Estalagem (content/data/inn.json).", "No Inn data (content/data/inn.json)."));
       if (record && !testSave) save = record->activeSave();
-      inn.emplace(a == "smith" ? InnScreen::Entry::Smith : a == "healer" ? InnScreen::Entry::Healer : InnScreen::Entry::Tavern);
+      inn.emplace(a == "smith" ? InnScreen::Entry::Smith : a == "healer" ? InnScreen::Entry::Healer : InnScreen::Entry::Tavern,
+                  a == "smith" && map.draftId() == "farmlands-smith");
       return;
     }
     if (a.starts_with("acceptQuest:") || a.starts_with("turnInQuest:")) {

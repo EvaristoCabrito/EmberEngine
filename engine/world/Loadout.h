@@ -37,6 +37,7 @@ struct ClassArms {
   std::string starter;                   // starterWeaponFor ("" = none)
   std::vector<std::string> weaponTypes;  // weaponTypesForClass
   int minRange = 1, maxRange = 1;        // the class's own reach (statsFor), used without a weapon
+  bool offHandLocked = false;            // nothing in the off hand, ever (Kael's classes: docs/SKILLS_VANGUARD.md)
 };
 
 class Loadouts {

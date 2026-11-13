@@ -694,6 +694,11 @@ std::vector<ReachCell> Battle::reachable(size_t unit, bool pruneStops) const {
       int apStep = 0;
       const std::optional<int> step = stepCost(n.x, n.y, u, occ, false, apFree ? nullptr : &apStep);
       if (!step) continue;
+      // Corte Baixo (Kael's, docs/SKILLS_VANGUARD.md): the first lowCutHexes hexes of its walk cost 1 AP more each
+      if (!apFree && u.cond.martial.lowCutHexes > 0) {
+        const bool first = cur.x == u.x && cur.y == u.y, second = !first && cur.parentX == u.x && cur.parentY == u.y;
+        if (first || (second && u.cond.martial.lowCutHexes >= 2)) apStep += 1;
+      }
       const int next = cur.cost + *step;
       if (next > movBudget) continue;
       const long long nextApWide = static_cast<long long>(cur.ap) + apStep;
@@ -742,6 +747,7 @@ bool Battle::move(size_t unit, int x, int y) {
       if (!apTrySpend(u, c.ap)) return false;  // the reach was built on its AP, so this holds; still the one spend
       u.x = x, u.y = y;
       u.moveUsed += c.cost;
+      u.cond.martial.lowCutHexes = 0, u.cond.martial.lowCutTurns = 0;  // Corte Baixo: its first walk paid it
       return true;
     }
   return false;
@@ -767,6 +773,7 @@ bool Battle::legalVoluntaryPath(size_t unit, const std::vector<BattleHex>& route
     int apStep = 0;
     const std::optional<int> step = stepCost(route[i].x, route[i].y, u, occ, i + 1 == route.size(), apFree ? nullptr : &apStep);
     if (!step) return false;
+    if (!apFree && static_cast<int>(i) <= u.cond.martial.lowCutHexes) apStep += 1;  // Corte Baixo, as reachable prices it
     ap += apStep;
     if (ap > apBudget) return false;  // AP is the only movement budget
   }

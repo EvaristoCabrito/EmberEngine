@@ -4,10 +4,10 @@
   "draft": {
     "id": "watchtower-gate-floor",
     "index": 18,
-    "title": "Andar 0 · Guarnição do Portão",
-    "place": "Torre de Vigia — Andar I · Guarnição do Portão",
+    "title": "Térreo",
+    "place": "Guarnição do Portão",
     "briefing": "O piso térreo organiza o acesso à torre: depósitos a oeste, uma sala de guarda ao norte e escadas para as fundações e os andares superiores.",
-    "objective": "Explore o andar e use as passagens para continuar pela torre.",
+    "objective": "Explore o andar.",
     "win": "escape",
     "hub": false,
     "explore": false,

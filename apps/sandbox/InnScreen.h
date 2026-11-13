@@ -35,7 +35,7 @@ class InnScreen {
  public:
   // Who opened it in the walkable Inn (GameApp innEntry); Ember's InnScreen startInSmith / startInHealer.
   enum class Entry { Tavern, Smith, Healer };
-  explicit InnScreen(Entry entry = Entry::Tavern) : entry_(entry) {}
+  explicit InnScreen(Entry entry = Entry::Tavern, bool farmlandsSmith = false) : entry_(entry), farmlandsSmith_(farmlandsSmith) {}
   // Vargan's first-visit film is on (GameApp: the Inn's music waits for it).
   bool filmPlaying() const { return film_.has_value(); }
   // True only after all nested service screens have been left.
@@ -61,7 +61,7 @@ class InnScreen {
       // InnScreen's first view: the healer's service, or the forge (Vargan's film first, the first time), or the tavern.
       started_ = true;
       if (entry_ == Entry::Healer) view_ = View::Healer;
-      else if (entry_ == Entry::Smith && !c.save.value("seenSmithIntro", false)) film_.emplace(c.artRoot, "game/smith-intro.webm");
+      else if (entry_ == Entry::Smith && !farmlandsSmith_ && !c.save.value("seenSmithIntro", false)) film_.emplace(c.artRoot, "game/smith-intro.webm");
       else if (entry_ == Entry::Smith) view_ = View::Smith;
     }
     if (std::exchange(leaveNow_, false)) return true;
@@ -520,9 +520,10 @@ class InnScreen {
   void drawSmith(ImVec2 size, Context& c) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     dl->AddRectFilled({0, 0}, size, IM_COL32(17, 17, 17, 255));
-    if (const UiImage* bg = uiImage(c.artRoot / "game/ui/smith-background.jpg")) imageCover(dl, *bg, {0, 0}, size, 0.0f, 0.5f);
+    if (const UiImage* bg = uiImage(c.artRoot / (farmlandsSmith_ ? "game/assets/farmlands-smith-background-014.jpg" : "game/ui/smith-background.jpg")))
+      imageCover(dl, *bg, {0, 0}, size, 0.0f, 0.5f);
     bool back = false;
-    header(size, c, "‹ VOLTAR", "A forja no porão", "Vargan, o Ferreiro", back, false);
+    header(size, c, "‹ VOLTAR", farmlandsSmith_ ? "Ferraria de Duarte" : "A forja no porão", farmlandsSmith_ ? "Farmlands" : "Vargan, o Ferreiro", back, false);
     if (back) {
       if (entry_ == Entry::Smith) leaveNow_ = true;  // opened by Vargan: back to the Inn's room
       else view_ = View::Main;
@@ -530,7 +531,6 @@ class InnScreen {
     }
     const std::vector<std::string> party = roster(c);
     if (std::find(party.begin(), party.end(), smithHero_) == party.end() && !party.empty()) smithHero_ = party[0];
-    const std::string cls = c.rules.heroClass(c.save, smithHero_);
     const float colW = std::min(512.0f, size.x - 32);
     const float x0 = size.x - 16 - colW, top = 72;
     ImGui::SetCursorScreenPos({x0, top});
@@ -541,10 +541,12 @@ class InnScreen {
     panel(colW, 12, [&](float w) {
       kicker("Equipamento exibido");
       heroRow(c, smithHero_, "##smithhero", [&] { smithNote_.clear(); });
+      const std::string cls = c.rules.heroClass(c.save, smithHero_);
+      const std::string_view smith = farmlandsSmith_ ? "duarte" : "vargan";
       // The pool: weapons this hero's class can wield, weakest first.
       std::vector<const ember::InnWeapon*> pool;
       for (const ember::InnWeapon& wpn : c.data.weapons)
-        if (!wpn.questOnly && wpn.price > 0 && std::find(wpn.usableBy.begin(), wpn.usableBy.end(), cls) != wpn.usableBy.end()) pool.push_back(&wpn);
+        if (std::find(wpn.usableBy.begin(), wpn.usableBy.end(), cls) != wpn.usableBy.end()) pool.push_back(&wpn);
       std::stable_sort(pool.begin(), pool.end(), [](const auto* a, const auto* b) { return a->power < b->power; });
       const ember::Json& owned = c.save.value("weapons", ember::Json::object());
       const std::string equippedId = c.save.value("equipped", ember::Json::object()).value(smithHero_, "");
@@ -559,7 +561,7 @@ class InnScreen {
           ImGui::SetCursorScreenPos({bx, by});
           if (button("##upgrade", next ? std::format("+1 · {} Gold", *next) : std::string("Máx."), 132, 26, true, !next || ember(c) < *next, 10.0f)) {
             std::optional<ember::Json> s = c.rules.upgradeWeapon(c.save, equippedId);
-            smithNote_ = s ? equipped->name + " aprimorada." : "Vargan recusou. Falta Gold ou já está no máximo.";
+            smithNote_ = s ? equipped->name + " aprimorada." : "Falta Gold ou a arma já está no máximo.";
             apply(c, std::move(s));
           }
           ImGui::SetCursorScreenPos({bx, by + 30});
@@ -579,13 +581,13 @@ class InnScreen {
       std::vector<const ember::InnWeapon*> inBag, onBench;
       for (const ember::InnWeapon* wpn : pool) {
         if (owned.contains(wpn->id) && wpn->id != equippedId && !c.rules.weaponUnknown(c.save, wpn->id)) inBag.push_back(wpn);  // an unknown one: below, unnamed
-        if (!owned.contains(wpn->id)) onBench.push_back(wpn);
+        if (!owned.contains(wpn->id) && wpn->soldBy(smith)) onBench.push_back(wpn);
       }
       // Itens desconhecidos (docs/SKILLS_MAGE.md): Vargan buys them unseen, for little; Identificar (the Mago Negro's field spell) reveals them
       if (const std::vector<ember::InnRules::UnknownItem> unknowns = c.rules.unknownItems(c.save); !unknowns.empty()) {
         ImGui::Dummy({1, 4});
         kicker("Itens desconhecidos");
-        text("Vargan nem olha: paga pouco por coisa sem nome. Um Mago Negro identifica no mapa do mundo.", 11.0f, kMuted, w);
+        text("O ferreiro paga pouco por itens desconhecidos. Um Mago Negro pode identificá-los no mapa do mundo.", 11.0f, kMuted, w);
         for (size_t i = 0; i < unknowns.size(); ++i) {
           const ember::InnRules::UnknownItem& u = unknowns[i];
           const ImVec2 a = ImGui::GetCursorScreenPos();
@@ -635,11 +637,11 @@ class InnScreen {
             ImGui::SetCursorScreenPos({bx, by});
             if (button("##buy", "Comprar", 132, 26, true, bagFull || ember(c) < wpn->price, 10.0f)) {
               if (!c.world.bagHasRoom(c.save, 1)) smithNote_ = "Mochila cheia.";
-              else if (std::optional<ember::Json> s = c.rules.buyWeapon(c.save, wpn->id)) {
+              else if (std::optional<ember::Json> s = c.rules.buyWeapon(c.save, wpn->id, smith)) {
                 apply(c, std::move(s));
                 smithNote_ = wpn->name + " comprada. Equipe no saco quando quiser.";
               } else {
-                smithNote_ = "Vargan recusou. Falta Gold.";
+                smithNote_ = "Compra indisponível.";
               }
             }
           }, cls);
@@ -748,7 +750,7 @@ class InnScreen {
           apply(c, std::move(s));
           smithNote_ = g->name + " foi colocada na Mochila.";
         } else {
-          smithNote_ = "Vargan recusou. Falta Gold.";
+          smithNote_ = "Compra indisponível.";
         }
       }
       ImGui::PopID();
@@ -897,6 +899,7 @@ class InnScreen {
 
   View view_ = View::Main;
   Entry entry_ = Entry::Tavern;
+  bool farmlandsSmith_ = false;
   bool started_ = false, leaveNow_ = false;
   int npc_ = 0;
   bool talked_ = false;

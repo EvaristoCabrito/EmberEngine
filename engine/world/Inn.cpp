@@ -69,6 +69,7 @@ bool InnData::load(const std::filesystem::path& file) {
     InnWeapon x;
     x.id = w["id"], x.name = w["name"], x.price = w["price"].get<int>();
     x.questOnly = w.value("questOnly", false);
+    x.smith = w.value("smith", "");
     if (w["recommendedLevel"].is_number()) x.recommendedLevel = w["recommendedLevel"].get<int>();
     if (w["bonusClass"].is_string()) x.bonusClass = w["bonusClass"], x.bonusClassName = w["bonusClassName"].is_string() ? w["bonusClassName"].get<std::string>() : "";
     if (w["magic"].is_string()) x.magic = w["magic"];
@@ -97,6 +98,8 @@ bool InnData::load(const std::filesystem::path& file) {
     equipment.push_back(std::move(x));
   }
   for (const auto& [k, v] : j["classNames"].items()) classNames[k] = v.get<std::string>();
+  for (const Json& c : j.value("offHandLockedClasses", Json::array()))
+    if (c.is_string()) offHandLockedClasses.push_back(c.get<std::string>());
   for (const Json& s : j.value("equipmentSlots", Json::array())) equipmentSlots.push_back({s["id"], s["label"]});
   const Json tiers = j.value("tierUses", Json::object());  // a named copy: items() of a temporary dangles
   for (const auto& [k, levels] : tiers.items()) {
@@ -146,7 +149,8 @@ int InnRules::ember(const Json& save) const { return static_cast<int>(num(save, 
 std::string InnRules::heroClass(const Json& save, const std::string& hero) const {
   const Json& promo = child(child(save, "promotions"), hero);
   if (promo.is_string()) return promo.get<std::string>();
-  static const std::map<std::string, std::string> kBase = {{"Kael", "kaelFinal"}, {"Neera", "neera"}, {"Voss", "voss"},
+  // Kael is a Vanguarda (docs/SKILLS_VANGUARD.md, the user 2026-11-13; content/ember-classes.json heroBaseClasses)
+  static const std::map<std::string, std::string> kBase = {{"Kael", "vanguard"}, {"Neera", "neera"}, {"Voss", "voss"},
                                                            {"Salazar", "salazar"}, {"Aldric", "aldric"}, {"Malrec", "conjurer"}};
   const auto it = kBase.find(hero);
   return it == kBase.end() ? "swordsman" : it->second;
@@ -288,9 +292,9 @@ std::optional<Json> InnRules::cureAilments(const Json& save, const std::vector<s
 
 // --- Vargan ------------------------------------------------------------------------------------------------------------
 
-std::optional<Json> InnRules::buyWeapon(const Json& save, const std::string& weaponId) const {
+std::optional<Json> InnRules::buyWeapon(const Json& save, const std::string& weaponId, std::string_view smith) const {
   const InnWeapon* w = data_.weapon(weaponId);
-  if (!w || w->questOnly || child(save, "weapons").contains(weaponId)) return std::nullopt;
+  if (!w || !w->soldBy(smith) || child(save, "weapons").contains(weaponId)) return std::nullopt;
   if (!world_.bagHasRoom(save, 1) || ember(save) < w->price) return std::nullopt;
   Json next = save;
   next["ember"] = ember(save) - w->price;
@@ -384,6 +388,8 @@ bool InnRules::fitsHeroSlot(const InnGear& item, const std::string& hero, const 
 bool InnRules::offHandBlocked(const Json& save, const std::string& hero) const {
   const Json& id = child(child(save, "equipped"), hero);
   const InnWeapon* w = id.is_string() ? data_.weapon(id.get<std::string>()) : nullptr;
+  const std::vector<std::string>& locked = data_.offHandLockedClasses;  // Kael's classes: the off hand always locked (the user, 2026-11-13)
+  if (std::find(locked.begin(), locked.end(), heroClass(save, hero)) != locked.end()) return true;
   return w && w->twoHanded && w->weaponType != "bow";  // a bow leaves the off hand free (the user, 2026-10-25)
 }
 

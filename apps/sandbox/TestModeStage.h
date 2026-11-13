@@ -66,7 +66,7 @@ inline TestSession freshTestSession(const ember::Campaign& campaign) {
   s.save = campaign.emptySave();
   ember::Json levels = ember::Json::object();
   // the six and EmberEngine's own heroes (content/ember-classes.json heroes: Isolde), every one at the test level with its spells
-  for (const char* h : {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec", "Isolde"}) levels[h] = kDefaultTestLevel;
+  for (const char* h : {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec", "Isolde", "Garran Holt"}) levels[h] = kDefaultTestLevel;
   levels["Selene"] = std::min(kDefaultTestLevel, ember::heroLevelCap("Selene", "conjurer"));  // her cap: 10 (the user, 2026-10-25)
   s.save["levels"] = levels;
   s.save["ember"] = kTestEmber;
@@ -80,6 +80,8 @@ inline TestSession freshTestSession(const ember::Campaign& campaign) {
     s.save["flags"].push_back(std::string("recruited:") + h);
     if (std::ranges::none_of(ember::kTestReserve, [&](const char* r) { return std::string_view(h) == r; })) s.save["partyActive"].push_back(h);
   }
+  // ... and the party the Party screen chose last time, kept between entries as the campaign's save keeps its own
+  ember::restoreTestParty(s.save, {std::begin(ember::Overworld::kPartyHeroes), std::end(ember::Overworld::kPartyHeroes)});
   return s;
 }
 
@@ -325,10 +327,20 @@ class TestModeStage : public Stage {
   // Every map of a place, from the one place list (content/data/locations.json, world/Locais.h; the user, 2026-11-11: "todos só
   // devem ter um único caminho"): its maps, then its floors (Modo teste opens each one straight from here).
   std::vector<const ember::MapMission*> placeMaps(const ember::MapLocation& loc) const {
-    std::vector<const ember::MapMission*> out = world_.visibleMissionsOf(loc, realSave_, true);
-    if (const auto it = locais_.submaps.find(loc.id); it != locais_.submaps.end())
-      for (const ember::LocaisFloor& f : it->second)
-        if (const ember::MapMission* m = world_.mission(f.missionId); m && std::find(out.begin(), out.end(), m) == out.end()) out.push_back(m);
+    // A building's floors top to bottom: the upper floors, the place's own maps (the ground floor), then the basements.
+    const std::vector<const ember::MapMission*> ground = world_.visibleMissionsOf(loc, realSave_, true);
+    std::vector<const ember::MapMission*> out;
+    const auto floors = locais_.submaps.find(loc.id);
+    auto addFloors = [&](bool upper) {
+      if (floors == locais_.submaps.end()) return;
+      for (const ember::LocaisFloor& f : floors->second)
+        if (const ember::MapMission* m = world_.mission(f.missionId); m && (f.floor > 0) == upper && std::find(out.begin(), out.end(), m) == out.end() &&
+                                                                       std::find(ground.begin(), ground.end(), m) == ground.end())
+          out.push_back(m);
+    };
+    addFloors(true);
+    out.insert(out.end(), ground.begin(), ground.end());
+    addFloors(false);
     return out;
   }
 
@@ -599,8 +611,10 @@ class TestModeStage : public Stage {
       if (st == "locked") iconLock(dl, {kx + 6, a.y + 21}, 12, IM_COL32(220, 190, 140, alpha)), kx += 18;
       if (st == "done") iconCheck(dl, {kx + 6, a.y + 21}, 12, kAccent), kx += 18;
       const std::string kick = std::format("{:02} · {}{}", i + 1, place, st == "done" ? " · feito" : "");
+      dl->PushClipRect({a.x + 2, a.y}, {b.x - 14, b.y}, true);  // the row's text stays inside its box
       emberKicker(dl, {kx, a.y + 12}, 14.0f, upperUtf8(kick).c_str());
       emberTitle(dl, {a.x + 16, a.y + 34}, 24.0f, (cm ? cm->title : m->title).c_str());
+      dl->PopClipRect();
       wrapped(dl, sans(), 16.0f, {a.x + 16, a.y + 34 + 32}, IM_COL32(180, 180, 180, alpha), objective, inner - 32);
       if (clicked) {
         if (st == "locked") flashId_ = m->id, flashAt_ = now_;

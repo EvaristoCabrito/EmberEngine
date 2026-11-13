@@ -97,11 +97,14 @@ class Rules {
       if (ember.is_object() && ember.contains("heroClasses") && ember["heroClasses"].is_object())
         for (const auto& [id, def] : ember["heroClasses"].items()) {
           r.j_["classes"][id] = def;
+          // the two-handed swords only for a class that says so (Kael's, twoHandedSwords; docs/SKILLS_VANGUARD.md)
           for (auto& [wid, w] : r.j_["weapons"].items())
-            if (w.is_object() && !flag(w, "ranged") && !(str(w, "weaponType") == "sword" && flag(w, "twoHanded")) &&
+            if (w.is_object() && !flag(w, "ranged") && !(str(w, "weaponType") == "sword" && flag(w, "twoHanded") && !flag(def, "twoHandedSwords")) &&
                 listed(def["weaponTypes"], str(w, "weaponType")) && w["usableBy"].is_array() && !listed(w["usableBy"], id))
               w["usableBy"].push_back(id);
         }
+      // The class a hero plays as when its battle file still names one it replaced (Kael's maps say swordsman: he is a Vanguarda)
+      if (ember.is_object() && ember.contains("heroBaseClasses") && ember["heroBaseClasses"].is_object()) r.j_["heroBaseClasses"] = ember["heroBaseClasses"];
       // EmberEngine's own heroes (content/ember-classes.json heroes; Isolde, 2026-10-25: "the full party at debug mode should include
       // her, as a stress test too because the goal is a 8 members party"): added after the table's six, so every prepared map seats
       // them; the campaign keeps only the heroes its save recruited (main.cpp setUpParty), Modo teste seats everyone
@@ -864,6 +867,29 @@ std::vector<std::string> classSpellsAt(const std::string& classId, int level, co
   for (const json& k : Spawner{*r}.spellList(classId, level, name))
     if (k.is_string()) out.push_back(k.get<std::string>());
   return out;
+}
+
+std::vector<std::array<int, 10>> classTierTable(const std::string& classId) {
+  std::vector<std::array<int, 10>> out;
+  const Rules* r = Rules::shared();
+  const json* c = r ? r->cls(classId) : nullptr;
+  if (!c || !c->contains("tiers") || !(*c)["tiers"].is_array()) return out;
+  for (const json& row : (*c)["tiers"]) {
+    std::array<int, 10> uses{};
+    for (size_t t = 0; t < uses.size() && row.is_array() && t < row.size(); ++t) uses[t] = row[t].is_number() ? row[t].get<int>() : 0;
+    out.push_back(uses);
+  }
+  return out;
+}
+
+std::string heroBaseClass(const std::string& hero, const std::string& classId) {
+  const Rules* r = Rules::shared();
+  if (!r || !r->all().contains("heroBaseClasses")) return {};
+  const json& all = r->all()["heroBaseClasses"];
+  if (!all.contains(hero) || !all[hero].is_object()) return {};
+  const json& h = all[hero];
+  const std::string base = str(h, "class");
+  return !base.empty() && contains(h["replaces"], classId) ? base : std::string();
 }
 
 // --- make_test_map.ts ------------------------------------------------------------------------------------------------

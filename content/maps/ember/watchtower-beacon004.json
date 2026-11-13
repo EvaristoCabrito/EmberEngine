@@ -4,10 +4,10 @@
   "draft": {
     "id": "watchtower-beacon",
     "index": 18,
-    "title": "Andar IV · O Farol Apagado",
-    "place": "Torre de Vigia — Andar IV · O Farol Apagado",
+    "title": "3º Andar",
+    "place": "O Farol Apagado",
     "briefing": "No topo, uma plataforma de basalto sustenta o antigo braseiro de sinalização. O vento e a luz fria atravessam o último posto de vigia. Vença os sentinelas e encerre a expedição.",
-    "objective": "Derrote a guarda do farol ou retorne pelos andares inferiores.",
+    "objective": "Derrote a guarda do farol.",
     "win": "escape",
     "hub": false,
     "explore": false,

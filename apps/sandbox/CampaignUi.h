@@ -28,7 +28,40 @@ namespace ember {
 // Modo teste's reserve (the user, 2026-10-29: "remove Malrec and Selene from the default Party, its getting too heavy to load"; then
 // 2026-10-30: all eight in the party, these two on the reserve): the fresh test save's active party is everyone else
 // (TestModeStage freshTestSession, "partyActive"); the Party screen moves heroes between the two.
-inline constexpr const char* kTestReserve[] = {"Malrec", "Selene"};
+// Garran Holt starts on the reserve too, for the user to pick on the Party screen (2026-11-13: "coloca na party para eu escolher").
+inline constexpr const char* kTestReserve[] = {"Malrec", "Selene", "Garran Holt"};
+
+// Modo teste's party is the player's, as the campaign save's is (the user, 2026-11-13: "the party size is 6 only 6 why each map keeps
+// changing and ignoring the party setup"): what the Party screen chose (the six, the formation, the leader, the class paths) is kept in
+// %LOCALAPPDATA%\Ember\test-party.json each time the test save is written, and every fresh test session starts from it.
+inline constexpr const char* kTestPartyKeys[] = {"partyActive", "partyFormation", "partyLeader", "promotions"};
+inline std::filesystem::path testPartyPath() { return GamePrefs::path().parent_path() / "test-party.json"; }
+inline void keepTestParty(const Json& save) {
+  Json kept = Json::object();
+  for (const char* k : kTestPartyKeys)
+    if (save.contains(k)) kept[k] = save[k];
+  std::error_code ec;
+  std::filesystem::create_directories(testPartyPath().parent_path(), ec);
+  std::ofstream out(testPartyPath(), std::ios::binary | std::ios::trunc);
+  if (out) out << kept.dump();
+}
+inline void restoreTestParty(Json& save, const std::vector<std::string>& heroes) {
+  std::ifstream in(testPartyPath(), std::ios::binary);
+  const Json kept = in ? Json::parse(in, nullptr, false) : Json();
+  if (!kept.is_object()) return;
+  const auto known = [&](const Json& h) { return h.is_string() && std::ranges::find(heroes, h.get<std::string>()) != heroes.end(); };
+  if (kept.contains("partyActive") && kept["partyActive"].is_array()) {
+    Json active = Json::array();
+    for (const Json& h : kept["partyActive"])
+      if (known(h) && active.size() < 6 && std::find(active.begin(), active.end(), h) == active.end()) active.push_back(h);
+    if (!active.empty()) save["partyActive"] = active;
+  }
+  if (kept.contains("partyFormation") && kept["partyFormation"].is_array()) save["partyFormation"] = kept["partyFormation"];
+  if (kept.contains("partyLeader") && known(kept["partyLeader"])) save["partyLeader"] = kept["partyLeader"];
+  if (kept.contains("promotions") && kept["promotions"].is_object())
+    for (const auto& [hero, cls] : kept["promotions"].items())
+      if (cls.is_string()) save["promotions"][hero] = cls;
+}
 
 // What a screen knows how to start: a map with its imported scene and (when exported) its battle.
 struct MissionEntry {

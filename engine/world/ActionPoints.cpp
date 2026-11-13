@@ -433,7 +433,11 @@ int apStepsCost(const Battle& b, size_t owner, const std::vector<BattleStep>& st
         return apCost(b, u, ApAction::offHand());  // the off hand's bash (offHandStep), not the Golpe de Escudo skill
       return apCost(b, u, ApAction::cast(s.kind));
     case BattleStep::Type::Potion: return apCost(b, u, ApAction::potion());
-    case BattleStep::Type::Move: return 0;  // a walk is paid hex by hex (Battle::move / MapStage walkAlong)
+    case BattleStep::Type::Move:
+      // a walk is paid hex by hex (Battle::move / MapStage walkAlong); a technique that opens with its bundled step (Kael's, spells.byKind)
+      // pays the technique's whole AP
+      if (!s.kind.empty() && apRules().spells.byKind.contains(s.kind)) return apCost(b, u, ApAction::cast(s.kind));
+      return 0;
     default: return apCost(b, u, ApAction::cast(s.kind));
   }
 }

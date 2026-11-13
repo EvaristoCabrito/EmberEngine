@@ -1801,6 +1801,10 @@ int runWindow(const Options& o) {
         // The campaign's party (or Modo teste's), laid out by the Party screen's formation; the editor's Testar keeps the draft's places.
         if (hasWorld && !inEditorTest)
           setUpParty(options, testSession ? testSession->save : campaign.activeSave(), world, !testSession && !playing.empty(), hasInterlude ? &interlude : nullptr);
+        // ... the editor's Testar seats the same party (the user, 2026-11-13: "all maps are meant to follow the party setup"), on the
+        // draft's own places
+        if (hasWorld && inEditorTest && !options.partyRoster)
+          options.partyRoster = activePartyRoster(testSession ? testSession->save : campaign.activeSave(), world, testSession.has_value() || playing.empty());
         options.arrivedFrom = std::exchange(arriveFrom, {});
         options.openingCutscenes = pending->cutscenes;  // the Map Editor's Testar esta cena
         options.preserveKnockouts = std::exchange(preserveKnockouts, false);

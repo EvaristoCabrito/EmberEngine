@@ -283,12 +283,78 @@ struct BattleUnit {
     // Ressonância Geminada: paired enemy link, stored on the Hipóstase until its next turn begins.
     std::vector<std::string> twinResonanceTargets;
     int twinResonancePercent = 0;
+    // Kael's techniques (Vanguarda / Mestre da Espada / Arauto da Guerra, docs/SKILLS_VANGUARD.md). Battle indices (-1 = none).
+    struct Martial {
+      // On Kael, until his next turn begins or spent: the one guard slot (Guarda Cruzada / Ler a Lâmina: the next parryable melee
+      // hit that lands, from guardFrom or anyone, takes guardPct % less physical damage and counts as a parry; Ler a Lâmina's
+      // parry leaves the attacker Exposto by guardExposePct), Pé Firme (footingPct % less physical damage, the first push or
+      // pull against him one hex shorter), Firmar a Linha's stance (plantPct: its reaction blow's weight, 0 = no stance) and
+      // Medida Mortal's mark (measureTarget, its reaction blow's weight measurePct). parriedBy: the attacker whose blow he just
+      // parried (his counter may be the Riposta), cleared as the exchange's counter resolves.
+      int guardPct = 0, guardFrom = -1, guardExposePct = 0;
+      int footingPct = 0;
+      int plantPct = 0;
+      int measureTarget = -1, measurePct = 0;
+      int parriedBy = -1;
+      // On his foes, each until `turns` more of the foe's own turn starts (2 when laid: through the end of its next full turn):
+      // Exposto (Kael's next landed technique hit ignores exposedPct % of its armor), Romper a Guarda (the next landed physical
+      // hit by anyone ignores openPct %), its next weapon attack -accDownPct points to hit (Golpe de Pomo, Estilhaçar a Linha),
+      // Desafio (its first attack action on an ally other than challengeBy: -challengePct points), Corte Baixo (the first
+      // lowCutHexes hexes of its next walk +1 AP each), Quebrar o Ritmo (its next weapon counter does not come).
+      int exposedPct = 0, exposedBy = -1, exposedTurns = 0;
+      int openPct = 0, openTurns = 0;
+      int accDownPct = 0, accDownTurns = 0;
+      int challengePct = 0, challengeBy = -1, challengeTurns = 0;
+      int lowCutHexes = 0, lowCutTurns = 0;
+      int severTurns = 0;
+      // Garran's (the Guardião da Lua, docs/SKILLS_MOONWARDEN.md), each charge spent by the one hit it reduces (the strongest of them on
+      // a hit; only its charge spent). On him, until his next turn begins: Corte Guardado's (wardCutPct off his next physical weapon hit),
+      // Erguer o Escudo's (bracePct off each of his next braceHits physical weapon hits; bracePush: the first push on him one hex
+      // shorter), Inquebrável's immunity to newly laid stun and root (unbreakable). On anyone, until its Guardião's (`...By`) next turn:
+      // Interpor (the first single-target melee attack at this ally goes to interposeBy instead, interposeCutPct off it), Segurar a Linha
+      // (holdPct off this ally's next melee weapon hit while beside holdBy; holdRanged: ranged too), a barrier (barrier HP, absorbed after
+      // mitigation, laid by barrierBy). On a foe: Afronta (until wardChallengeBy's next turn: its first single-target weapon hit on
+      // another of his party -wardChallengePct; wardChallengeSlow: that reduction leaves Corte Baixo's +1 AP on its next step), Golpe
+      // Esmagador (crushPct off its next weapon attack, every target; through the end of its next full turn: crushTurns; crushRound /
+      // crushKind: the attack that spends it, so the same action's other hits count too).
+      // hitBy / stopped (and their ...Prev, the turn before): the foes that landed a weapon hit on this unit, and the foes whose attack
+      // it redirected or reduced, since the start of its own previous turn (Corte Guardado's Lua cheia, Acerto de Contas).
+      int wardCutPct = 0;
+      int bracePct = 0, braceHits = 0;
+      bool bracePush = false, unbreakable = false;
+      int interposeBy = -1, interposeCutPct = 0;
+      int holdPct = 0, holdBy = -1;
+      bool holdRanged = false;
+      int barrier = 0, barrierBy = -1;
+      int wardChallengePct = 0, wardChallengeBy = -1;
+      bool wardChallengeSlow = false;
+      int crushPct = 0, crushTurns = 0, crushRound = -1;
+      std::string crushKind;
+      std::vector<int> hitBy, hitByPrev, stopped, stoppedPrev;
+      bool any() const {
+        return guardPct > 0 || footingPct > 0 || plantPct > 0 || measureTarget >= 0 || exposedPct > 0 || openPct > 0 || accDownPct > 0 ||
+               challengePct > 0 || lowCutHexes > 0 || severTurns > 0 || wardAny();
+      }
+      bool wardAny() const {
+        return wardCutPct > 0 || braceHits > 0 || bracePush || unbreakable || interposeBy >= 0 || holdPct > 0 || barrier > 0 ||
+               wardChallengePct > 0 || crushPct > 0;
+      }
+      bool wardMemory() const { return !hitBy.empty() || !hitByPrev.empty() || !stopped.empty() || !stoppedPrev.empty(); }
+    } martial;
     bool any() const {
       return markTurns > 0 || plagueSpread > 0 || plagueBurst || bleedTurns > 0 || silenceTurns > 0 || decayTurns > 0 || sunderPct > 0 || rallyPct > 0 ||
              hobblePct > 0 || disarmPct > 0 || staggered || vigilPct > 0 || mirrorCopies > 0 || bondPct > 0 || empowerPct > 0 || reflectTurns > 0 || daggers > 0 ||
-             acidTurns > 0 || mantleDice > 0 || arcaneMarkDice > 0 || witchStitchDice > 0 || twinResonancePercent > 0 || !burialRootSources.empty();
+             acidTurns > 0 || mantleDice > 0 || arcaneMarkDice > 0 || witchStitchDice > 0 || twinResonancePercent > 0 || !burialRootSources.empty() ||
+             martial.any();
     }
   } cond;
+  // A technique's cooldown (Kael's, docs/SKILLS_VANGUARD.md): used in round `used`, usable again from round `ready` (a cooldown of N
+  // blocks it for the next N of his turns: he acts once a round).
+  struct Cooldown {
+    std::string kind;
+    int used = 0, ready = 0;
+  };
+  std::vector<Cooldown> cooldowns;
   std::optional<int> hobbleBase;       // its MOV before Tiro Paralisante (given back when it lifts)
   std::optional<int> disarmBase;       // its ATK before Desarmar (given back when it lifts)
 
@@ -723,6 +789,10 @@ class Battle {
   void beginTurn(size_t unit);
   void advanceConditionMinutes(int minutes);
   int round() const { return round_; }
+  // Tonight's moon on the world's clock (TimeOfDay.h kMoonPhases name; "" = not told: the full moon), as the map shows it: the
+  // Guardião da Lua's techniques read it as they commit (docs/SKILLS_MOONWARDEN.md). Set by the stage that plays the battle.
+  const std::string& moonPhase() const { return moonPhase_; }
+  void setMoonPhase(std::string phase) { moonPhase_ = std::move(phase); }
   const std::vector<size_t>& turnOrder() const { return turnOrder_; }
   // Ember evaluateEnd: "defeat" once no hero stands (a summon does not count), "victory" once the mission was ended
   // (confirmFinish); empty while it goes on. Winning does not end it by itself: winAvailable() offers the end.
@@ -798,6 +868,7 @@ class Battle {
   void sortTurnOrder();
   std::vector<size_t> turnOrder_;
   int round_ = 1;
+  std::string moonPhase_;
   struct Enmity {
     size_t enemy, hero;
     double ce = 0, ve = 0;

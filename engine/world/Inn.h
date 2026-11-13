@@ -11,6 +11,7 @@
 #include <map>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "world/Campaign.h"
@@ -33,6 +34,8 @@ struct InnWeapon {
   std::vector<std::string> usableBy, tooltip;  // tooltip per enhancement 0..max
   std::vector<int> sell;                       // sell value per enhancement 0..max
   std::string weaponType;                      // ours: "sword", "bow", ... (content/data/weapons.json), the unknown item's only word
+  std::string smith;
+  bool soldBy(std::string_view vendor) const { return !questOnly && price > 0 && (smith.empty() || smith == vendor); }
 };
 struct InnGear {
   std::string id, name, slot, typeSlot, tooltip, icon, kind, summary;  // kind: "", "weapon" or "shield" (off-hand)
@@ -54,6 +57,7 @@ struct InnData {
   std::map<std::string, std::string> classNames;
   std::vector<std::pair<std::string, std::string>> equipmentSlots;  // id, label (EQUIPMENT_SLOTS)
   std::map<std::string, std::vector<std::vector<int>>> tierUses;  // [class][level - 1][tier - 1]
+  std::vector<std::string> offHandLockedClasses;  // nothing ever goes in their off hand (Kael's classes: docs/SKILLS_VANGUARD.md)
 
   bool load(const std::filesystem::path& file);
   const InnPotion* potion(const std::string& id) const;
@@ -81,7 +85,7 @@ class InnRules {
   std::optional<Json> passNight(const Json& save, const std::vector<std::string>& heroes, int& healed) const;
   std::optional<Json> healerCast(const Json& save, const std::string& hero, int& amount) const;  // Cura Média: 25 % max HP
   std::optional<Json> cureAilments(const Json& save, const std::vector<std::string>& heroes, int& count) const;
-  std::optional<Json> buyWeapon(const Json& save, const std::string& weaponId) const;
+  std::optional<Json> buyWeapon(const Json& save, const std::string& weaponId, std::string_view smith = "vargan") const;
   std::optional<Json> buyEquipment(const Json& save, const std::string& itemId) const;
   std::optional<Json> upgradeWeapon(const Json& save, const std::string& weaponId) const;
   std::optional<Json> sellWeapon(const Json& save, const std::string& weaponId, int& value) const;

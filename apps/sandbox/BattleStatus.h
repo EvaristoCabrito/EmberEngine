@@ -483,7 +483,8 @@ class BattleStatusSheet {
 
   // The class's rows of spells and skills for the unit's level (status-rows.json), then the ones this port has that the sheet of the
   // class does not list, by tier.
-  static std::vector<SpellRow> spellRows(const ember::BattleUnit& u, bool en) {
+  // moon: tonight's (ember::moonForm), for Garran's techniques' words
+  static std::vector<SpellRow> spellRows(const ember::BattleUnit& u, bool en, int moon = -1) {
     std::string key = ember::FieldSpells::rulesClass(u.classId);
     if (key == "aldric") key = "lancer";
     if (key == "healer" && u.name == "Salazar") key = "healer:Salazar";
@@ -531,7 +532,7 @@ class BattleStatusSheet {
       if (std::any_of(rows.begin(), rows.end(), [&](const SpellRow& r) { return r.kind == kind; })) continue;
       const int tier = ember::spellTierNumber(kind);
       // ours: their numbers and what they do (spellTooltip, after its tier · element line)
-      std::string about = ember::spellTooltip(u, kind);
+      std::string about = ember::spellTooltip(u, kind, moon);
       rows.push_back({kind, about, tier, tier >= 1 && tier <= 10 ? u.spells[tier - 1] : 0});
     }
     for (SpellRow& r : rows) {
@@ -629,7 +630,7 @@ class BattleStatusSheet {
       // name, tier and uses, how it works, its numbers at this level, its scaling track ---
       sectionTitle(bd, {x0, y}, en ? "Spells and skills" : "Magias e habilidades");
       y += 28.0f;
-      const std::vector<SpellRow> rows = spellRows(u, en);
+      const std::vector<SpellRow> rows = spellRows(u, en, ember::moonForm(battle));
       constexpr float kTitle = 19.0f, kBody = 16.0f, kNote = 14.0f;
       const float gap = 10.0f, cardW = bw, iconS = 56.0f, textW = cardW - 14.0f - iconS - 14.0f - 16.0f;
       ImFont* title = uiFont(UiFont::Display);

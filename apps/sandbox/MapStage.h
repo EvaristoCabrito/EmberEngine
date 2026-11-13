@@ -651,6 +651,8 @@ class MapStage final : public Stage {
     laps.lap("camera");
     updateUnits(dt);
     laps.lap("units");
+    // The moon the map shows is the battle's (Garran's techniques read it as they commit, docs/SKILLS_MOONWARDEN.md)
+    if (battle_ && battle_->moonPhase() != tonightsMoon()) battle_->setMoonPhase(tonightsMoon());
     if (!levelUpMoment_) updateExchange();
     laps.lap("exchange");
     if (!levelUpMoment_) {
@@ -2104,6 +2106,14 @@ class MapStage final : public Stage {
         static const char* kPaths[3] = {"Mago Negro", "Elementalista", "Bruxo"};
         static const char* kIds[3] = {"mage", "elementalist", "warlock"};
         int path = u.classId == "elementalist" ? 1 : u.classId == "warlock" ? 2 : 0;
+        if (dropdown(u.name.c_str(), path, 3, [](int i) { return std::string(kPaths[i]); })) ember::setPromotion(u, kIds[path]);
+      }
+      // Kael's path the same way (docs/SKILLS_VANGUARD.md): Vanguarda, Mestre da Espada or Arauto da Guerra
+      for (ember::BattleUnit& u : battle_->units()) {
+        if (u.side != "player" || !(u.classId == "vanguard" || u.classId == "swordmaster" || u.classId == "warbringer")) continue;
+        static const char* kPaths[3] = {"Vanguarda", "Mestre da Espada", "Arauto da Guerra"};
+        static const char* kIds[3] = {"vanguard", "swordmaster", "warbringer"};
+        int path = u.classId == "swordmaster" ? 1 : u.classId == "warbringer" ? 2 : 0;
         if (dropdown(u.name.c_str(), path, 3, [](int i) { return std::string(kPaths[i]); })) ember::setPromotion(u, kIds[path]);
       }
       // Health bars and numbers of the units near the camera: shown always, or fading away as their card fills the
@@ -4847,6 +4857,12 @@ class MapStage final : public Stage {
 
   // The map's light (ARCHITECTURE 7.5) in the chosen mode. Time of day picks sun or moon and where it stands;
   // the map's own sliders set the strengths (Ember's 3D ignored them); the atmosphere colours the light.
+  // Tonight's moon as the map shows it (the real sky's phase, else the panel's / the campaign day's / the map's Lua, else the full moon).
+  const char* tonightsMoon() const {
+    if (skyLit_) return skyPhaseName_;
+    const int phase = moonPhaseIndex();
+    return phase < 0 ? "full" : ember::kMoonPhases[phase];
+  }
   Renderer::Lighting mapLighting(float time) const {
     using ember::TimeOfDayLight;
     Renderer::Lighting l;
@@ -5717,6 +5733,9 @@ class MapStage final : public Stage {
     // (Ember's own Bruxo enemies too) knows our spells of its level.
     for (ember::BattleUnit& u : battle_->units()) {
       if (const auto it = options_.heroClass.find(u.name); it != options_.heroClass.end() && u.side == "player") ember::setPromotion(u, it->second);
+      // a hero whose battle file still names a class it replaced plays as its own (Kael: Vanguarda; content/ember-classes.json heroBaseClasses)
+      else if (u.side == "player" && !u.summoned)
+        if (const std::string base = ember::heroBaseClass(u.name, u.classId); !base.empty()) ember::setPromotion(u, base);
       if (u.side == "player" && options_.fullSpells.contains(u.name)) {  // the class's row first, in its order, then what it already knew
         std::vector<std::string> all = ember::classSpellsAt(u.classId, u.level, u.name);
         for (const std::string& k : u.spellList)
@@ -8054,17 +8073,47 @@ class MapStage final : public Stage {
     }
     // Its cost along the route (the step costs of the reach it was planned on), and its Action Points, hex by hex (ReachCell::ap):
     // legalVoluntaryPath above already refused a route it cannot pay, so the spend holds; it is still the one spend of a walk.
-    for (const ember::ReachCell& c : battle_->reachable(b, false))
+    const std::vector<ember::ReachCell> reach = battle_->reachable(b, false);
+    const ember::ReachCell* paid = nullptr;
+    for (const ember::ReachCell& c : reach)
       if (c.x == planned.back().x && c.y == planned.back().y) {
         if (!ember::apTrySpend(u, c.ap)) {
           logError("battle: {} cannot pay {} AP for its walk (has {}): not walked", u.name, c.ap, u.ap);
           return;
         }
         u.moveUsed += c.cost;
+        paid = &c;
       }
-    // Hex by hex: a flame underfoot burns, a warp gate carries it across (the route is cut / extended to what it walked)
+    u.cond.martial.lowCutHexes = 0, u.cond.martial.lowCutTurns = 0;  // Corte Baixo (Kael's): this walk paid it
+    std::vector<int> apBefore;  // who answers the walk (Kael's movement reactions spend his AP)
+    for (const ember::BattleUnit& v : battle_->units()) apBefore.push_back(v.ap);
+    // Hex by hex: a flame underfoot burns, a warp gate carries it across, a reaction may stop it (the route is cut / extended to what it walked)
     std::vector<ember::BattleHex> route = planned;
-    walkHexes(b, route, fx);
+    walkHexes(b, route, fx, true);
+    ember::BattleUnit& walker = battle_->units()[b];
+    // A walk cut short by a reaction: the hexes not walked are not paid (their AP and movement back)
+    if (paid && !(route.back() == planned.back()))
+      for (const ember::ReachCell& c : reach)
+        if (c.x == route.back().x && c.y == route.back().y) walker.ap += std::max(0, paid->ap - c.ap), walker.moveUsed -= std::max(0, paid->cost - c.cost);
+    for (size_t v = 0; v < apBefore.size() && v < battle_->units().size(); ++v)
+      if (v != b && battle_->units()[v].ap < apBefore[v])
+        if (const int vu = sceneUnitOf(static_cast<int>(v)); vu >= 0) {  // his blow as the walker reaches the hex it was answered on
+          // his special (Medida Mortal / Firmar a Linha are techniques: never the plain blade), its purple burst on the walker as it lands
+          const size_t vs = static_cast<size_t>(vu);
+          const std::string pose = hasPose(vs, "specialAttack") ? "specialAttack" : "attack";
+          const float at = now_ + stepSeconds() * static_cast<float>(route.size() - 1);
+          unitShot_[vs] = {pose, at, false, actionRate()};
+          const float lands = at + poseSeconds(vs, pose) * poseImpact(vs, pose) / actionRate();
+          const SpellEffects::Spot hit = hexSpot(route.back());
+          const float height = cardHeightOf(unitSpot(ui));
+          spellFx_.combat().impact(CombatFx::Kind::HeavySlash, hit.feet, height, unitWorld(vs), lands);
+          spellFx_.combat().impact(CombatFx::Kind::Magical, hit.feet, height, unitWorld(vs), lands, CombatPalette::of("arcane"), 0.85f);
+          tip_ = battle_->units()[v].name + tr(" reage ao movimento!", " answers the move!"), tipAt_ = now_;
+        }
+    if (route.size() < 2) {  // stopped before its first step: it never left its hex
+      showEffects(fx);
+      return;
+    }
     pendingFx_.push_back({now_ + stepSeconds() * static_cast<float>(route.size()), fx});
     Walk w;
     for (size_t k = 1; k < route.size(); ++k) w.points.push_back(anchorWorld(u, route[k])), w.hexes.push_back(route[k]);
@@ -8090,13 +8139,27 @@ class MapStage final : public Stage {
   // The rules of a walk, hex by hex (Ember stepActive "move"): the unit stands on each hex in turn, a hazard there hurts
   // it (and may kill it: the walk stops there), a warp gate carries it across (it comes out beside the other). `route` is
   // cut to what it really walked; the unit is left on its last hex.
-  void walkHexes(size_t b, std::vector<ember::BattleHex>& route, std::vector<ember::BattleEffect>& fx) {
-    ember::BattleUnit& u = battle_->units()[b];
+  // `voluntary`: a walk of its own (not a flight in fear): Kael's movement reactions answer it (Medida Mortal before a step, Firmar a
+  // Linha after it; docs/SKILLS_VANGUARD.md), and a blow of theirs that lands may end it there.
+  void walkHexes(size_t b, std::vector<ember::BattleHex>& route, std::vector<ember::BattleEffect>& fx, bool voluntary = false) {
     for (size_t k = 1; k < route.size(); ++k) {
+      if (voluntary && ember::reactBeforeStep(*battle_, b, route[k - 1], route[k], rng_, fx)) {
+        route.resize(k);  // the step is cancelled: it stays where it was
+        return;
+      }
+      if (!battle_->units()[b].alive) {
+        route.resize(k);
+        return;
+      }
+      ember::BattleUnit& u = battle_->units()[b];
       u.x = route[k].x, u.y = route[k].y;
       ember::stepOnHex(*battle_, b, rng_, fx);
-      if (!u.alive) {
+      if (!battle_->units()[b].alive) {
         route.resize(k + 1);
+        return;
+      }
+      if (voluntary && (ember::reactAfterStep(*battle_, b, route[k - 1], route[k], rng_, fx) || !battle_->units()[b].alive)) {
+        route.resize(k + 1);  // its movement ends on the hex it entered
         return;
       }
       if (const std::optional<ember::BattleHex> across = ember::warpCrossing(*battle_, b)) {
@@ -8151,6 +8214,10 @@ class MapStage final : public Stage {
     bool magicStaff = false;    // Isolde's / Voss's staff blow: a magical hit (the impact in their colour, the staff glowing), no bolt
     bool arrow = false;    // this strike is a bow shot: the arrow flies and lands on the hit
     bool interrupt = false;  // a sentinel's thrust out of its turn (Vigília da Sentinela): nothing of the owner's turn is spent
+    // Kael's techniques and his Riposta (docs/SKILLS_VANGUARD.md): his special pose and the special's own impact, never the plain blade
+    bool special = false;
+    // Golpe Duplo on a clip of its own (Kael's "doubleStrike"): the clip plays once for the whole skill, every blow on its own cut
+    float comboStart = -1.0f, comboLength = 0.0f;
     int banquetFxId = -1;   // opening fissures are prepared before the resistance resolves; their collapse follows its result
   };
 
@@ -8361,6 +8428,11 @@ class MapStage final : public Stage {
 
   // The step's pose starts: the striker turns to its target (and a struck foe to the striker).
   void startStep(Exchange& x) {
+    // Garran's Interpor: a covered ally's attacker turns on him before the blow (its pose, its roll, its counter are his)
+    if (!x.counter && x.steps[x.step].type == ember::BattleStep::Type::Combat) {
+      std::vector<ember::BattleEffect> fx;
+      if (ember::interposeRedirect(*battle_, x.steps[x.step], fx)) showEffects(fx);
+    }
     const ember::BattleStep& s = x.steps[x.step];
     const int striker = sceneUnitOf(static_cast<int>(x.counter ? s.def : s.att));
     using StepType = ember::BattleStep::Type;
@@ -8397,6 +8469,36 @@ class MapStage final : public Stage {
         pose = "specialAttack";
       }
     }
+    // A special never plays the plain blade (the user, 2026-11-13: "never plain blade for special, not a single character"). Kael's
+    // techniques are specials; so is his Riposta, the counter he answers a parried blow with (the rules' riposteReady).
+    x.special = false;
+    if (striker >= 0 && s.type == StepType::Combat) {
+      const size_t su = static_cast<size_t>(striker);
+      if (!x.counter) x.special = vanguardTechnique(s.kind) || wardenTechnique(s.kind);
+      else if (s.def < battle_->units().size()) {
+        const ember::BattleUnit& d = battle_->units()[s.def];
+        x.special = d.cond.martial.parriedBy == static_cast<int>(s.att) && std::find(d.spellList.begin(), d.spellList.end(), "riposte") != d.spellList.end() &&
+                    ember::spellUsesLeft(*battle_, s.def, "riposte") > 0;
+      }
+      if (x.special && hasPose(su, "specialAttack")) pose = "specialAttack";
+    }
+    // Garran's (docs/SKILLS_MOONWARDEN.md): his blows and his guards play his special (specialAttack, else his Especial attack2, else his
+    // cast), never the plain swing
+    if (striker >= 0 && !x.counter && wardenTechnique(s.kind) && (s.type == StepType::Combat || s.type == StepType::Effect)) {
+      const size_t su = static_cast<size_t>(striker);
+      if (hasPose(su, "specialAttack")) pose = "specialAttack";
+      else if (hasPose(su, "attack2")) pose = "attack2";
+      else if (hasPose(su, "cast")) pose = "cast";
+    }
+    // Golpe Duplo with its own clip (Kael's "doubleStrike", the overhead cut then the low sweep): the first blow starts the clip, the
+    // next blows of the skill play on, each landing on its cut
+    const bool comboStep = s.type == StepType::Combat && !x.counter && s.kind == "doubleStrike" && striker >= 0 && hasPose(static_cast<size_t>(striker), "doubleStrike");
+    size_t comboIndex = 0, comboCount = 0;
+    if (comboStep) {
+      for (size_t k = 0; k < x.steps.size(); ++k)
+        if (x.steps[k].type == StepType::Combat && x.steps[k].kind == "doubleStrike" && x.steps[k].att == s.att) comboIndex += k < x.step ? 1 : 0, ++comboCount;
+      pose = comboIndex == 0 ? "doubleStrike" : "";
+    }
     // A counter on a foe beside it: the unit's staff blow when it has one (Voss; the user, 2026-10-17: "he will counter with
     // his staff when the enemy is close ranged, and ... the regular mage ATT when in distance"). No bolt flies from it.
     // Isolde also strikes with it when she attacks a foe beside her (the user, 2026-10-25: "when she is too close for a bolt, them
@@ -8415,6 +8517,15 @@ class MapStage final : public Stage {
     const float length = (striker >= 0 && !pose.empty() ? poseSeconds(static_cast<size_t>(striker), pose) : 0.6f) / actionRate();
     x.impact = now_ + length * (striker >= 0 && !pose.empty() ? poseImpact(static_cast<size_t>(striker), pose) : kImpactShare);
     x.end = now_ + length + kExchangeGap / actionRate();
+    if (comboStep) {
+      const size_t su = static_cast<size_t>(striker);
+      if (comboIndex == 0 || x.comboStart < 0.0f) x.comboStart = now_, x.comboLength = poseSeconds(su, "doubleStrike") / actionRate();
+      // the overhead cut at the clip's own impact (its cut.json impactFrame), the low sweep at 66 % (frame ~42 of 64)
+      const float first = poseImpact(su, "doubleStrike"), last = std::max(first, 0.66f);
+      const float share = comboCount <= 1 ? first : first + (last - first) * static_cast<float>(comboIndex) / static_cast<float>(comboCount - 1);
+      x.impact = std::max(now_, x.comboStart + x.comboLength * share);
+      x.end = comboIndex + 1 >= comboCount ? x.comboStart + x.comboLength + kExchangeGap / actionRate() : x.impact + 0.01f;
+    }
     x.landed = false;
     x.release = 0.0f;
     // A pose whose art throws a bolt from the hands (content/fx/hand-bolts.json; the Aparição's attack, the user 2026-11-10: the old 2D
@@ -10205,7 +10316,7 @@ class MapStage final : public Stage {
       return;
     }
     if (!battle_ && (kind == "iceLance" || kind == "absoluteZero" || kind == "glacialGale" || kind == "poisonBreath" || kind == "minorVenom" ||
-                     kind == "causticVenom" || kind == "blackPestilence")) {
+                     kind == "causticVenom" || kind == "blackPestilence" || kind == "iceStorm")) {
       constexpr float kHexW = 1.7320508f;
       const SpellEffects::Spot me = unitSpot(hero), them = unitSpot(target);
       glm::vec3 d = them.feet - me.feet;
@@ -10225,7 +10336,8 @@ class MapStage final : public Stage {
         for (int r = 1; r <= 3; ++r)
           for (int j = -(r * 3 / 4); j <= r * 3 / 4; ++j)
             spots.push_back(at(me.feet + d * (kHexW * static_cast<float>(r)) + across * (kHexW * 0.92f * static_cast<float>(j))));
-      } else if (kind == "absoluteZero" || kind == "minorVenom" || kind == "causticVenom" || kind == "blackPestilence") {
+      } else if (kind == "absoluteZero" || kind == "minorVenom" || kind == "causticVenom" || kind == "blackPestilence" ||
+                 kind == "iceStorm") {  // Tempestade de Gelo: its field from level 8, the hex and the six round it (the rules' radius 1)
         spots.push_back(at(them.feet));
         for (int k = 0; k < 6; ++k) {
           const float a = static_cast<float>(k) * 1.0471976f;
@@ -10237,7 +10349,14 @@ class MapStage final : public Stage {
             spots.push_back(at(me.feet + d * (kHexW * static_cast<float>(r)) + across * (kHexW * 0.92f * static_cast<float>(j))));
       }
     }
-    if (battle_ && !ember::emberSpellClass(kind).empty() && unitBattle_[hero] >= 0 && unitBattle_[target] >= 0) {
+    // Every spell, Ember's and ours (the user, 2026-11-13: "todas as magias do teste precisam da área completa"): the hexes the
+    // rules cover (spellArea, the same the cast lays), so the test shows the area the game strikes. Ember's single-target ones
+    // keep aiming at the body (their area is the one hex).
+    if (battle_ && unitBattle_[hero] >= 0 && unitBattle_[target] >= 0 &&
+        (!ember::emberSpellClass(kind).empty() ||
+         ember::spellArea(*battle_, static_cast<size_t>(unitBattle_[hero]), kind,
+                          {battle_->units()[static_cast<size_t>(unitBattle_[target])].x, battle_->units()[static_cast<size_t>(unitBattle_[target])].y})
+                 .size() > 1)) {
       const ember::BattleUnit& t = battle_->units()[static_cast<size_t>(unitBattle_[target])];
       const ember::BattleHex aim = kind == "eruption" ? ember::BattleHex{battle_->units()[static_cast<size_t>(unitBattle_[hero])].x,
                                                                    battle_->units()[static_cast<size_t>(unitBattle_[hero])].y}
@@ -10311,6 +10430,13 @@ class MapStage final : public Stage {
       unitRecoil_[target] = {impact, glm::dot(dir, dir) > 1e-6f ? glm::normalize(dir) : glm::vec3(0.0f), kind == "hitHeavy"};
     return true;
   }
+  // Kael's techniques (docs/SKILLS_VANGUARD.md): the Vanguarda's, the Mestre da Espada's, the Arauto da Guerra's
+  static bool vanguardTechnique(const std::string& kind) {
+    const std::string cls = ember::emberSpellClass(kind);
+    return cls == "vanguard" || cls == "swordmaster" || cls == "warbringer";
+  }
+  // Garran's (the Guardião da Lua, docs/SKILLS_MOONWARDEN.md): specials too, in the moon's palette
+  static bool wardenTechnique(const std::string& kind) { return ember::emberSpellClass(kind) == "moonwarden"; }
   static bool weaponStrikeKind(const std::string& kind) {
     return kind == "doubleStrike" || kind == "longShot" || kind == "piercing" || kind == "piercingThrust";
   }
@@ -10478,7 +10604,8 @@ class MapStage final : public Stage {
         // erased in place after this step, so `s` stays valid
         x.steps.erase(std::remove_if(x.steps.begin() + static_cast<long>(x.step) + 1, x.steps.end(),
                                      [&](const ember::BattleStep& q) {
-                                       return q.att == actor && (q.type == ember::BattleStep::Type::Move || (q.type == ember::BattleStep::Type::Combat && q.kind == "bullRush"));
+                                       return q.att == actor && (q.type == ember::BattleStep::Type::Move || (q.type == ember::BattleStep::Type::Combat && q.kind == "bullRush") ||
+                                                                 q.chained);  // Kael's: what needs the step before it
                                      }),
                       x.steps.end());
       }
@@ -10491,6 +10618,11 @@ class MapStage final : public Stage {
       const int striker = sceneUnitOf(static_cast<int>(x.counter ? s.def : s.att));
       for (const ember::BattleEffect& e : fx) {
         const int ui = sceneUnitOf(static_cast<int>(e.unit));
+        // Garran's guards and covers (Erguer o Escudo, Interpor, Afronta, Segurar a Linha, Inquebrável): moonlight on each unit they mark
+        if (ui >= 0 && e.status && !x.counter && s.type == ember::BattleStep::Type::Effect && wardenTechnique(s.kind)) {
+          const SpellEffects::Spot on = unitSpot(static_cast<size_t>(ui));
+          spellFx_.combat().impact(CombatFx::Kind::Magical, on.feet, cardHeightOf(on), on.feet - glm::vec3(0.0f, 0.0f, 1.0f), now_, CombatPalette::of("moon"), 0.6f);
+        }
         if (ui < 0 || e.heal || e.status) continue;
         const size_t u = static_cast<size_t>(ui);
         const SpellEffects::Spot struck = unitSpot(u);
@@ -10499,20 +10631,20 @@ class MapStage final : public Stage {
         const bool heavy = e.crit || e.died || (bu.maxHp > 0 && e.amount * 10 >= bu.maxHp * 3);
         const ember::BattleUnit* attacker = striker >= 0 ? &battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(striker)])] : nullptr;
         const bool enchantedSword = attacker && attacker->weaponType == "sword" && attacker->combat.staff &&
-                                    s.type == StepType::Combat && (x.counter || s.kind.empty()) && !strikeIsOffHand(s, x.counter);
+                                    s.type == ember::BattleStep::Type::Combat && (x.counter || s.kind.empty()) && !strikeIsOffHand(s, x.counter);
         if (x.bolt || x.magicStaff) {  // a bolt's arrival, or Isolde's / Voss's magical staff hit
           spellFx_.combat().impact(e.miss ? CombatFx::Kind::MagicalMiss : CombatFx::Kind::Magical, struck.feet, cardHeightOf(struck), from, now_,
                                    CombatPalette::of(x.element.c_str()), x.boltStrength);
         } else if ((x.arrow || bowSkill) && !e.miss) {
           spellFx_.combat().impact(heavy ? CombatFx::Kind::HeavyArrowHit : CombatFx::Kind::ArrowHit, struck.feet, cardHeightOf(struck), from, now_);
-        } else if (!magic && !e.miss && striker >= 0) {
+        } else if (!magic && !e.miss && attacker) {
           // By the striker's weapon: a blade cuts, a spear stabs, a blunt weapon (or a beast's weight) knocks.
-          const WeaponStyle style = weaponStyle(battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(striker)])]);
+          const WeaponStyle style = weaponStyle(*attacker);
           if (enchantedSword)
             spellFx_.combat().impact(CombatFx::Kind::Magical, struck.feet, cardHeightOf(struck), from, now_,
                                      CombatPalette::of(attacker->combat.staffElement.c_str()), 0.55f);
           // Golpe Duplo: every blow is the strong slash, read as the skill's (the user, 2026-10-28: "não tem o Slash")
-          const bool skillSlash = !x.counter && s.kind == "doubleStrike";
+          const bool skillSlash = (!x.counter && s.kind == "doubleStrike") || x.special;
           const CombatFx::Kind kind = skillSlash                    ? CombatFx::Kind::HeavySlash
                                       : style == WeaponStyle::Blade ? (heavy ? CombatFx::Kind::HeavySlash : CombatFx::Kind::Slash)
                                       : style == WeaponStyle::Thrust ? CombatFx::Kind::Thrust
@@ -10521,6 +10653,11 @@ class MapStage final : public Stage {
           // the skill's cut across the chest (62 % of the card), not its middle (CombatFx's contact: half the card, the hips)
           const glm::vec3 cutAt = skillSlash ? struck.feet + glm::vec3(0.0f, std::clamp(cardHeightOf(struck), 1.0f, 4.0f) * 0.12f, 0.0f) : struck.feet;
           spellFx_.combat().impact(kind, cutAt, cardHeightOf(struck), from, now_);
+          // Kael's techniques: the purple of his special's lit sword bursts on the blow
+          // (Garran's, the Guardião da Lua: the moon's pale silver instead)
+          if (x.special)
+            spellFx_.combat().impact(CombatFx::Kind::Magical, struck.feet, cardHeightOf(struck), from, now_,
+                                     CombatPalette::of(!x.counter && wardenTechnique(s.kind) ? "moon" : "arcane"), 0.85f);
         }
         // The Cruzado's holy on a blow that landed: Golpe Consagrado's flash, the Manto's spark on any blow of its bearer
         if (!e.miss && s.type == ember::BattleStep::Type::Combat && striker >= 0 && striker != ui) {
@@ -11405,6 +11542,12 @@ class MapStage final : public Stage {
       if (const std::optional<std::string> potion = potionOf(kind)) ImGui::TextUnformatted(ember::potionName(*potion).c_str());
       else ImGui::TextUnformatted(tr(ember::spellName(kind)).c_str());
       if (cost >= 0) ImGui::TextColored(ImColor(255, 214, 140), "%s", (tr("Custo: ", "Cost: ") + apLabel(cost)).c_str());
+      // Kael's techniques: the turns of his its cooldown still blocks
+      if (battle_ && selected_ >= 0 && static_cast<size_t>(selected_) < unitBattle_.size() && unitBattle_[static_cast<size_t>(selected_)] >= 0)
+        if (const size_t sb = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]); ember::spellCoolingDown(*battle_, sb, kind)) {
+          const int left = std::max(1, ember::spellCooldownLeft(*battle_, sb, kind));
+          ImGui::TextColored(ImColor(200, 170, 230), "%s", std::format("{} {} {}", tr("Recarga:", "Cooldown:"), left, left > 1 ? tr("turnos", "turns") : tr("turno", "turn")).c_str());
+        }
       ImGui::PopFont();
       ImGui::EndTooltip();
     }
@@ -11784,7 +11927,8 @@ class MapStage final : public Stage {
     const int uses = ember::spellUsesLeft(*battle_, b, kind);
     const int cost = ember::apCost(*battle_, u, ember::ApAction::cast(kind));
     const bool paid = ember::apCanAfford(u, cost);  // Action Points
-    return SocketState{uses, canAct && ember::spellPorted(kind) && uses > 0 && paid, cost};
+    const bool ready = !ember::spellCoolingDown(*battle_, b, kind);  // Kael's techniques: not in cooldown
+    return SocketState{uses, canAct && ember::spellPorted(kind) && uses > 0 && paid && ready, cost};
   }
   // F1..F12: the socket's spell / potion, as a click on it.
   void pressHotbar(int slot) {

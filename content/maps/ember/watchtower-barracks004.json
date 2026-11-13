@@ -4,10 +4,10 @@
   "draft": {
     "id": "watchtower-barracks",
     "index": 18,
-    "title": "Andar II · Caserna e Arsenal",
-    "place": "Torre de Vigia — Andar II · Caserna e Arsenal",
+    "title": "1º Andar",
+    "place": "Caserna e Arsenal",
     "briefing": "A caserna divide o piso entre uma ala de madeira e um arsenal de pedra. Os pilares centrais mantêm abertas duas rotas para a escada norte.",
-    "objective": "Explore o andar e use as passagens para continuar pela torre.",
+    "objective": "Explore o andar.",
     "win": "escape",
     "hub": false,
     "explore": false,

@@ -18,6 +18,7 @@
 //
 // Cooker check-battle-export compares exportBattle's file with the TypeScript exporter's for the proof maps.
 
+#include <array>
 #include <filesystem>
 #include <map>
 #include <optional>
@@ -47,6 +48,11 @@ std::optional<nlohmann::json> partyBattle(const std::vector<std::string>& heroes
 // The class's spell list at `level` (battle-rules.json classes.<id>.spells; Salazar's own row, spellsSalazar, for `name`
 // "Salazar"), as a fresh unit of that level is spawned with. Empty for a class the rules do not know.
 std::vector<std::string> classSpellsAt(const std::string& classId, int level, const std::string& name);
+// The class's uses per tier, level 1 first (battle-rules.json classes.<id>.tiers, our hero classes merged in). Empty when unknown.
+std::vector<std::array<int, 10>> classTierTable(const std::string& classId);
+// The class `hero` plays as when its battle file names `classId`, one it replaced (content/ember-classes.json heroBaseClasses: Kael's
+// maps say swordsman, he is a Vanguarda); empty when the file's class stands.
+std::string heroBaseClass(const std::string& hero, const std::string& classId);
 
 // The scene file of a built scene (export_scene.ts's shape, with measure_art.py's art already in it).
 nlohmann::json sceneJson(const SceneData& scene, const MapDraft& draft, const std::map<std::string, int>& skipped);

@@ -457,9 +457,13 @@ class OverworldStage : public Stage {
   // 2026-10-25: "precisa adicionar Isolde a party no mapa mundi do debug"); the campaign keeps only the recruited (heroRecruited:
   // "recruited:Isolde" flag).
   // Selene too (the user, 2026-10-25: "make her available in debug mode as stress test"; never recruited in the campaign yet).
-  static constexpr const char* kHeroes[8] = {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec", "Isolde", "Selene"};
+  // Garran Holt too (the user, 2026-11-13: "coloca na party para eu escolher"; docs/SKILLS_MOONWARDEN.md).
+  static constexpr const char* kHeroes[9] = {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec", "Isolde", "Selene", "Garran Holt"};
   // EmberEngine's own heroes have no row in the world tables (baseClass, portraits): their class and bust from here.
-  static const char* ownHeroClass(const std::string& hero) { return hero == "Isolde" || hero == "Selene" ? "conjurer" : nullptr; }
+  static const char* ownHeroClass(const std::string& hero) {
+    if (hero == "Garran Holt") return "moonwarden";
+    return hero == "Isolde" || hero == "Selene" ? "conjurer" : nullptr;
+  }
   int baseMaxHp(const std::string& hero) const {
     if (const int hp = world_.maxHp(save_, hero); hp > 0) return hp;
     const char* cls = ownHeroClass(hero);
@@ -495,6 +499,7 @@ class OverworldStage : public Stage {
   void write() {
     if (testSave_) {  // Modo teste: the session's own save, never the real bank
       *testSave_ = save_;
+      ember::keepTestParty(save_);  // its party choice outlives the session (CampaignUi.h)
       return;
     }
     if (!campaign_.saveActive(save_)) notice_ = "Não foi possível gravar o progresso (" + ember::Campaign::savePath().string() + ").";
@@ -1009,6 +1014,7 @@ class OverworldStage : public Stage {
       if (u.side != "player") continue;
       if (levels.contains(u.name) && levels[u.name].is_number_integer()) ember::raiseToLevel(u, levels[u.name].get<int>(), xp.value(u.name, 0));
       if (promotions.contains(u.name) && promotions[u.name].is_string()) ember::setPromotion(u, promotions[u.name].get<std::string>());
+      else if (const std::string base = ember::heroBaseClass(u.name, u.classId); !base.empty()) ember::setPromotion(u, base);  // Kael: Vanguarda
       ember::grantClassSpells(u);
       if (const auto it = states.find(u.name); it != states.end()) MapStage::applyHeroState(u, it->second);
       if (hasInn_) MapStage::wearFromSave(u, save_, innRules_);
@@ -1865,8 +1871,10 @@ class OverworldStage : public Stage {
       float kx = a.x + 16;
       if (st == "locked") iconLock(dl, {kx + 6, a.y + 20}, 12, IM_COL32(223, 191, 142, fade)), kx += 18;
       if (st == "done") iconCheck(dl, {kx + 6, a.y + 20}, 12, kAccent), kx += 18;
+      dl->PushClipRect({a.x + 2, a.y}, {a.x + inner - 14, a.y + h}, true);  // the row's text stays inside its box
       emberKicker(dl, {kx, a.y + 12}, 14.0f, upperUtf8(kick).c_str());
       emberTitle(dl, {a.x + 16, a.y + 32}, 24.0f, m->title.c_str());
+      dl->PopClipRect();
       dl->AddText(ui, 16.0f, {a.x + 16, a.y + 62}, IM_COL32(180, 180, 180, fade), objective.c_str(), nullptr, inner - 32);
       if (hover && st != "locked" && !optionalCrossing) dl->AddRect(a, {a.x + inner, a.y + h}, IM_COL32(226, 170, 100, 120), 0.0f, 1.0f, ImDrawFlags_None);
       if (clicked && !optionalCrossing) {
@@ -1940,7 +1948,9 @@ class OverworldStage : public Stage {
     struct Path {
       const char *base, *first, *second;
     };
-    static const Path kPaths[] = {{"mage", "elementalist", "warlock"},  {"voss", "elementalist", "warlock"}, {"swordsman", "paladin", "heavyKnight"},
+    // Kael: Vanguarda -> Mestre da Espada or Arauto da Guerra (docs/SKILLS_VANGUARD.md); the Guerreiro's path stays for the shield warrior
+    static const Path kPaths[] = {{"mage", "elementalist", "warlock"},  {"voss", "elementalist", "warlock"}, {"vanguard", "swordmaster", "warbringer"},
+                                  {"swordsman", "paladin", "heavyKnight"},
                                   {"archer", "ranger", "assassin"},     {"aldric", "sentinel", "templar"},   {"healer", "cleric", "bishop"},
                                   {"conjurer", "sorcerer", "necromancer"}};
     struct Row {

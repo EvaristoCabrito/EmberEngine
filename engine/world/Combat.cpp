@@ -135,6 +135,11 @@ double powerOf(const Fighter& f) { return std::floor((f.magicBlows() ? f.mag : f
 namespace {
 
 double protOf(const Fighter& a, const Fighter& d) { return std::floor((a.magicBlows() ? 0 : d.def) / 2); }
+// ... less the share a technique ignores (Kael's, StrikeMods::armorIgnore, capped at all of it)
+double protOf(const Fighter& a, const Fighter& d, double ignore) {
+  const double p = protOf(a, d);
+  return ignore > 0 ? std::floor(p * (1 - std::min(1.0, ignore))) : p;
+}
 
 // combat.ts terrainBonus: the defender's ground (and cover from shots), the attacker's high ground (+10% of its stat).
 std::pair<double, double> terrainBonus(const Battle& b, const Fighter& a, const BattleCell::Terrain& att, const BattleCell::Terrain& def) {
@@ -231,7 +236,7 @@ Preview previewDamage(const Battle& b, const Fighter& a, const Fighter& d, const
     weapon = p.dice * (p.faces + 1.0) / 2 * damageMul + p.bonus + p.enh;
   }
   const bool high = archerHighGround(b, a, d, offHand);
-  const double chance = useSkill ? hitChance(a, d, accuracy + (high ? kHighGroundHit : 0), rear) : 100.0;
+  const double chance = useSkill ? hitChance(a, d, accuracy + (high ? kHighGroundHit : 0) + martialAccuracy(b, a.unit, d.unit), rear) : 100.0;
   const double highAtk = high ? jsRound(a.atk * kHighGroundAtkPct / 100) : 0;
   const double raw = powerOf(a) + weapon + bonusAtk + highAtk - protOf(a, d) - bonusDef;
   double dmg = std::max(1.0, std::floor(std::max(1.0, raw) * (offHand ? 1 : (p.classBonus ? 1.1 : 1)) * (rear ? 1.1 : 1)));
@@ -353,7 +358,18 @@ Forecast forecast(const Battle& b, size_t attacker, BattleHex from, size_t defen
   return f;
 }
 
-Hit rollDamage(const Battle& b, const Fighter& a, const Fighter& d, Mulberry32& rng, bool useWeaponSkill, const CustomDice* custom) {
+double martialAccuracy(const Battle& b, size_t attacker, size_t defender) {
+  if (attacker >= b.units().size() || defender >= b.units().size()) return 0;
+  const BattleUnit::Conditions::Martial& m = b.units()[attacker].cond.martial;
+  double shift = -m.accDownPct;
+  // Desafio: the blows of its first attack on one of the challenger's allies (never on the challenger himself)
+  if (m.challengePct > 0 && m.challengeBy >= 0 && static_cast<size_t>(m.challengeBy) < b.units().size() && defender != static_cast<size_t>(m.challengeBy) &&
+      b.units()[defender].side == b.units()[static_cast<size_t>(m.challengeBy)].side)
+    shift -= m.challengePct;
+  return shift;
+}
+
+Hit rollDamage(const Battle& b, const Fighter& a, const Fighter& d, Mulberry32& rng, bool useWeaponSkill, const CustomDice* custom, const StrikeMods* mods) {
   const CombatProfile& p = b.units()[a.unit].combat;
   const BattleCell::Terrain &att = tileAt(b, a.x, a.y), &def = tileAt(b, d.x, d.y);
   const auto [bonusAtk, bonusDef] = terrainBonus(b, a, att, def);
@@ -371,9 +387,10 @@ Hit rollDamage(const Battle& b, const Fighter& a, const Fighter& d, Mulberry32& 
   else if (p.hasWeapon) weapon = roll(p.dice, p.faces) * damageMul + p.bonus + p.enh;
   Hit h;
   const bool high = archerHighGround(b, a, d, custom != nullptr);
-  h.hitChance = useWeaponSkill ? hitChance(a, d, accuracy + (high ? kHighGroundHit : 0), rear) : 100;
+  const double extra = useWeaponSkill ? martialAccuracy(b, a.unit, d.unit) + (mods ? mods->accuracy : 0) : 0;
+  h.hitChance = useWeaponSkill ? hitChance(a, d, accuracy + (high ? kHighGroundHit : 0) + extra, rear) : 100;
   const double highAtk = high ? jsRound(a.atk * kHighGroundAtkPct / 100) : 0;
-  const double raw = powerOf(a) + weapon + bonusAtk + highAtk - protOf(a, d) - bonusDef;
+  const double raw = powerOf(a) + weapon + bonusAtk + highAtk - protOf(a, d, mods ? mods->armorIgnore : 0) - bonusDef;
   const double classMul = !custom && p.classBonus ? 1.1 : 1;
   h.preCritDmg = static_cast<int>(std::max(1.0, std::floor(std::max(1.0, raw) * classMul * (rear ? 1.1 : 1))));
   double dmg = h.preCritDmg;

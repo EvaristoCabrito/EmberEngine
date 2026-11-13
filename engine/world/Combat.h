@@ -56,10 +56,20 @@ struct CustomDice {
   int dice = 1, faces = 4, bonus = 0;
 };
 
+// One roll's extras (Kael's techniques, docs/SKILLS_VANGUARD.md): points added to the hit chance, and the share (0..1) of the
+// defender's armor (its DEF's part of the mitigation, floor(DEF / 2)) the blow ignores.
+struct StrikeMods {
+  double accuracy = 0;
+  double armorIgnore = 0;
+};
+// The points the attacker's own conditions take off its weapon blows at this defender (Golpe de Pomo, Estilhaçar a Linha, Desafio):
+// 0 for every unit without them. The forecast and the roll read the same number.
+double martialAccuracy(const Battle& b, size_t attacker, size_t defender);
+
 // combat.ts rollDamage (rollDamageCustom with `custom`): no element step. useWeaponSkill = false drops the weapon's
-// mastery and the rear bonus and always lands (spell-like hits).
+// mastery and the rear bonus and always lands (spell-like hits). `mods`: a technique's extras (none = the plain roll).
 Hit rollDamage(const Battle& b, const Fighter& attacker, const Fighter& defender, Mulberry32& rng, bool useWeaponSkill = true,
-               const CustomDice* custom = nullptr);
+               const CustomDice* custom = nullptr, const StrikeMods* mods = nullptr);
 // pathfinding.ts hexLine / shotBlocker == null (`arrow` = an arrow's flight, else a bolt; decorations folded in or not).
 std::vector<BattleHex> hexLine(BattleHex a, BattleHex b);
 bool clearShot(const Battle& b, BattleHex from, BattleHex to, bool arrow, bool decorations = true);

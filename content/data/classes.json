@@ -318,6 +318,18 @@
     },
     "ashesCrawler": {
       "mov": 4
+    },
+    "vanguard": {
+      "mov": 5
+    },
+    "swordmaster": {
+      "mov": 5
+    },
+    "warbringer": {
+      "mov": 5
+    },
+    "moonwarden": {
+      "mov": 5
     }
   }
 }

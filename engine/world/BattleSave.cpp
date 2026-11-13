@@ -97,6 +97,29 @@ nlohmann::json Battle::snapshot() const {
                    {"witchStitchAnchorY", c.witchStitchAnchorY}, {"burialRootSources", c.burialRootSources},
                    {"twinResonanceTargets", c.twinResonanceTargets}, {"twinResonancePercent", c.twinResonancePercent}};
     }
+    // Kael's techniques (docs/SKILLS_VANGUARD.md): his guards and stances, the marks on his foes, his cooldowns
+    if (u.cond.martial.any() || u.cond.martial.parriedBy >= 0 || u.cond.martial.wardMemory()) {
+      const BattleUnit::Conditions::Martial& m = u.cond.martial;
+      s["martial"] = {{"guardPct", m.guardPct},         {"guardFrom", m.guardFrom},       {"guardExposePct", m.guardExposePct}, {"footingPct", m.footingPct},
+                      {"plantPct", m.plantPct},         {"measureTarget", m.measureTarget}, {"measurePct", m.measurePct},     {"parriedBy", m.parriedBy},
+                      {"exposedPct", m.exposedPct},     {"exposedBy", m.exposedBy},       {"exposedTurns", m.exposedTurns},     {"openPct", m.openPct},
+                      {"openTurns", m.openTurns},       {"accDownPct", m.accDownPct},     {"accDownTurns", m.accDownTurns},     {"challengePct", m.challengePct},
+                      {"challengeBy", m.challengeBy},   {"challengeTurns", m.challengeTurns}, {"lowCutHexes", m.lowCutHexes}, {"lowCutTurns", m.lowCutTurns},
+                      {"severTurns", m.severTurns}};
+      // Garran's (docs/SKILLS_MOONWARDEN.md)
+      if (m.wardAny() || m.wardMemory())
+        s["martial"]["ward"] = {{"wardCutPct", m.wardCutPct},   {"bracePct", m.bracePct},     {"braceHits", m.braceHits},           {"bracePush", m.bracePush},
+                                {"unbreakable", m.unbreakable}, {"interposeBy", m.interposeBy}, {"interposeCutPct", m.interposeCutPct}, {"holdPct", m.holdPct},
+                                {"holdBy", m.holdBy},           {"holdRanged", m.holdRanged}, {"barrier", m.barrier},               {"barrierBy", m.barrierBy},
+                                {"wardChallengePct", m.wardChallengePct}, {"wardChallengeBy", m.wardChallengeBy}, {"wardChallengeSlow", m.wardChallengeSlow},
+                                {"crushPct", m.crushPct},       {"crushTurns", m.crushTurns}, {"crushRound", m.crushRound},         {"crushKind", m.crushKind},
+                                {"hitBy", m.hitBy},             {"hitByPrev", m.hitByPrev},   {"stopped", m.stopped},               {"stoppedPrev", m.stoppedPrev}};
+    }
+    if (!u.cooldowns.empty()) {
+      nlohmann::json cds = nlohmann::json::array();
+      for (const BattleUnit::Cooldown& c : u.cooldowns) cds.push_back({{"kind", c.kind}, {"used", c.used}, {"ready", c.ready}});
+      s["cooldowns"] = std::move(cds);
+    }
     if (u.empowerBase)
       s["empowerBase"] = {{"atk", u.empowerBase->atk}, {"mag", u.empowerBase->mag}, {"def", u.empowerBase->def}, {"dex", u.empowerBase->dex}, {"mov", u.empowerBase->mov}};
     if (u.hobbleBase) s["hobbleBase"] = *u.hobbleBase;
@@ -302,6 +325,41 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       o.reflectTurns = c.value("reflectTurns", 0), o.reflectPct = c.value("reflectPct", 0), o.reflectHealPct = c.value("reflectHealPct", 0);
       o.daggers = c.value("daggers", 0);
     }
+    if (s.contains("martial") && s["martial"].is_object()) {
+      const nlohmann::json& c = s["martial"];
+      BattleUnit::Conditions::Martial& m = u.cond.martial;
+      m.guardPct = c.value("guardPct", 0), m.guardFrom = c.value("guardFrom", -1), m.guardExposePct = c.value("guardExposePct", 0);
+      m.footingPct = c.value("footingPct", 0), m.plantPct = c.value("plantPct", 0);
+      m.measureTarget = c.value("measureTarget", -1), m.measurePct = c.value("measurePct", 0), m.parriedBy = c.value("parriedBy", -1);
+      m.exposedPct = c.value("exposedPct", 0), m.exposedBy = c.value("exposedBy", -1), m.exposedTurns = c.value("exposedTurns", 0);
+      m.openPct = c.value("openPct", 0), m.openTurns = c.value("openTurns", 0);
+      m.accDownPct = c.value("accDownPct", 0), m.accDownTurns = c.value("accDownTurns", 0);
+      m.challengePct = c.value("challengePct", 0), m.challengeBy = c.value("challengeBy", -1), m.challengeTurns = c.value("challengeTurns", 0);
+      m.lowCutHexes = c.value("lowCutHexes", 0), m.lowCutTurns = c.value("lowCutTurns", 0), m.severTurns = c.value("severTurns", 0);
+      if (c.contains("ward") && c["ward"].is_object()) {  // Garran's (docs/SKILLS_MOONWARDEN.md)
+        const nlohmann::json& w = c["ward"];
+        auto ids = [&](const char* key) {
+          std::vector<int> v;
+          if (w.contains(key) && w[key].is_array())
+            for (const nlohmann::json& x : w[key])
+              if (x.is_number_integer()) v.push_back(x.get<int>());
+          return v;
+        };
+        m.wardCutPct = w.value("wardCutPct", 0), m.bracePct = w.value("bracePct", 0), m.braceHits = w.value("braceHits", 0);
+        m.bracePush = w.value("bracePush", false), m.unbreakable = w.value("unbreakable", false);
+        m.interposeBy = w.value("interposeBy", -1), m.interposeCutPct = w.value("interposeCutPct", 0);
+        m.holdPct = w.value("holdPct", 0), m.holdBy = w.value("holdBy", -1), m.holdRanged = w.value("holdRanged", false);
+        m.barrier = w.value("barrier", 0), m.barrierBy = w.value("barrierBy", -1);
+        m.wardChallengePct = w.value("wardChallengePct", 0), m.wardChallengeBy = w.value("wardChallengeBy", -1), m.wardChallengeSlow = w.value("wardChallengeSlow", false);
+        m.crushPct = w.value("crushPct", 0), m.crushTurns = w.value("crushTurns", 0), m.crushRound = w.value("crushRound", -1), m.crushKind = w.value("crushKind", std::string());
+        m.hitBy = ids("hitBy"), m.hitByPrev = ids("hitByPrev"), m.stopped = ids("stopped"), m.stoppedPrev = ids("stoppedPrev");
+      }
+    }
+    u.cooldowns.clear();
+    if (s.contains("cooldowns") && s["cooldowns"].is_array())
+      for (const nlohmann::json& c : s["cooldowns"])
+        if (c.is_object() && c.contains("kind") && c["kind"].is_string())
+          u.cooldowns.push_back({c["kind"].get<std::string>(), c.value("used", 0), c.value("ready", 0)});
     u.empowerBase.reset();
     if (s.contains("empowerBase") && s["empowerBase"].is_object()) {
       const nlohmann::json& d = s["empowerBase"];
