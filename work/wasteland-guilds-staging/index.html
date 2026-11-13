@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#151714">
+    <meta name="description" content="Protótipo de estratégia indireta em Mordavia, no universo Ember Ashes.">
+    <title>Wasteland Farming: Heritage of Ashes</title>
+    <link rel="preload" as="image" href="public/art/mordavia-map.webp">
+    <link rel="preload" as="image" href="public/art/warrior-walk-v01.webp">
+    <link rel="preload" as="image" href="public/art/healer-walk-v01.webp">
+    <link rel="preload" as="image" href="public/art/peasant-walk-v01.webp">
+    <link rel="preload" as="font" href="public/fonts/PirataOne.ttf" type="font/ttf" crossorigin>
+    <link rel="stylesheet" href="app.css?v=370">
+    <script defer src="data/scenarios/01-floresta.js"></script>
+    <script defer src="data/peasant-professions.js"></script>
+    <script defer src="app.js?v=395"></script>
+    <script defer src="data/monarch-spells.js?v=347"></script>
+    <script defer src="spell-fx.js?v=344"></script>
+    <script defer src="monarch.js?v=350"></script>
+  </head>
+  <body>
+    <div class="game">
+      <header class="hud">
+        <div class="hud-stats" aria-label="Situação do domínio">
+          <div class="stat resource-stat" title="Ouro. Vem dos impostos, cobrados à meia-noite (camponeses e taverna)." aria-label="Ouro"><img class="hud-icon" src="public/art/icon-coin-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong id="gold">240</strong><em id="gold-rate" class="visually-hidden">+2/dia</em></span></div>
+          <div class="stat resource-stat" title="Comida guardada. Clique para abrir a lista de alimentos." aria-label="Comida"><img class="hud-icon" src="public/art/icon-provisions-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong><span id="grain">58</span><i>/<span id="storage-cap">100</span></i></strong><em id="grain-rate" class="visually-hidden">+0/s</em></span></div>
+          <div class="stat resource-stat" title="Madeira e quanto rende por segundo" aria-label="Madeira"><img class="hud-icon" src="public/art/icon-logs-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong id="timber">30</strong><em id="timber-rate">+0/s</em></span></div>
+          <div class="stat resource-stat" title="Metal" aria-label="Metal"><img class="hud-icon" src="public/art/icon-metal-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><small>METAL</small><strong id="metal">0</strong><em id="metal-rate">+0/s</em></span></div>
+          <div class="stat resource-stat" title="Ember, refinado no Laboratório de Ember a partir dos Dead Remains" aria-label="Ember"><img class="hud-icon" src="public/art/icon-ember-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><small>EMBER</small><strong id="ember">0</strong><em id="ember-rate">0 restos</em></span></div>
+          <div class="stat resource-stat" title="Pedra de Construção para obras comuns" aria-label="Pedra de Construção"><img class="hud-icon" src="public/art/icon-stone-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><small>PEDRA DE CONSTRUÇÃO</small><strong id="stone">0</strong><em id="stone-rate">+0/s</em></span></div>
+          <div class="stat resource-stat" title="Mármore extraído pela pedreira nível 2 para a mansão" aria-label="Mármore"><img class="hud-icon" src="public/art/icon-stone-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><small>MÁRMORE</small><strong id="marble">0</strong><em id="marble-rate">+0/s</em></span></div>
+          <div class="stat mood resource-stat" title="Felicidade dos camponeses, de 0 a 100. Comida servida e imposto baixo aumentam; ração pequena, imposto alto e fome diminuem." aria-label="Felicidade dos camponeses"><img class="hud-icon" src="public/art/icon-happiness-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong id="happiness">50</strong><em id="happiness-label" class="visually-hidden">Conformados</em></span></div>
+          <div class="stat mood favor" title="Favor dos nobres, de 0 a 100. Tributos entregues no prazo aumentam; atraso diminui. Abaixo de 20, eles atacam. Clique para ver os tributos."><small>FAVOR</small><strong id="favor">50</strong><em id="favor-label">Tolerado</em></div>
+          <div class="stat" title="Alojamento: casarão, guildas, hotel e taverna. Com vaga, chega 1 herói a cada 4 horas; cada ponto investido em CHA acelera a chegada em 1%."><small>HERÓIS</small><strong><span id="hero-count">1</span><i>/<span id="hero-cap">1</span></i></strong></div>
+          <div class="stat" title="Limite: 2 no casarão + 2 por casebre (5 no grande). Com vaga, chega 1 trabalhador a cada 2 horas; cada ponto investido em CHA acelera a chegada em 1%. Cada um come 0,075 provisão/s e recebe 5 de ouro/dia."><small>TRABALHADORES</small><strong><span id="worker-count">1</span><i>/<span id="worker-cap">1</span></i></strong></div>
+        </div>
+
+        <div class="hud-time">
+          <div class="world-clock"><span class="live-dot"></span><span id="clock">06:20</span><small id="date">Manhã · Dia 1 · Mês 1 · Ano 1</small></div>
+          <button class="sheet-btn graveyard-btn" id="graveyard-btn" type="button" title="Cemitério: heróis e camponeses perdidos nesta região" aria-label="Abrir o cemitério desta região"><img src="public/art/icon-heroes-cemetery-photo-v01.png" alt="" aria-hidden="true"></button>
+          <button class="sheet-btn" id="sheet-btn" type="button" title="Ficha do herdeiro" aria-label="Abrir a ficha do herdeiro">FICHA</button>
+          <button class="music-toggle" type="button" data-music-toggle title="Música: ligada" aria-label="Desligar música" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="spk" d="M4 9h4l5-4v14l-5-4H4z"/><path class="waves" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/><path class="mute" d="M16 9l6 6M22 9l-6 6"/></svg></button>
+          <button class="menu-btn" id="menu-btn" type="button" title="Menu (Esc)" aria-label="Abrir menu do jogo">MENU</button>
+        </div>
+      </header>
+
+      <main class="stage">
+        <section class="map-scene" id="map-scene" aria-label="Mapa de City. Alterne para Wilds pelo ícone. Arraste para explorar; use as setas do teclado ou a roda do mouse para mover a câmera.">
+          <div class="map-world" id="map-world" data-map="city" data-map-set="1">
+            <div class="map-region manor-region">
+              <img class="map-art" src="public/art/mordavia-map.webp" alt="Mapa de City" draggable="false">
+              <div class="map-atmosphere" aria-hidden="true"><span class="manor-smoke smoke-a"></span><span class="manor-smoke smoke-b"></span><span class="manor-smoke smoke-c"></span><span class="manor-smoke smoke-d"></span></div>
+            </div>
+            <div class="site-layer" id="site-layer" aria-label="Construções do domínio">
+              <div class="placement-preview" id="placement-preview" aria-hidden="true"></div>
+            </div>
+            <div class="lair-layer" id="lair-layer" aria-label="Covis e cemiterios"></div>
+            <div class="fishing-layer" id="fishing-layer" aria-label="Pontos de pesca das Wilds"></div>
+            <img class="tree-foreground manor-trees" src="public/art/mordavia-forest-layer.png" alt="" draggable="false">
+            <div id="poi-layer" class="poi-layer" aria-label="Covis e locais do cenário"></div>
+            <div id="hero-layer" class="hero-layer" aria-label="Personagens do domínio"></div>
+            <button class="manor-inventory-trigger" id="manor-inventory-trigger" type="button" aria-label="Abrir o inventário do casarão" title="Abrir inventário do casarão"></button>
+            <div id="flag-layer" class="flag-layer" aria-label="Bandeiras de recompensa"></div>
+          </div>
+          <div class="map-vignette"></div>
+          <div class="demand-alerts" id="demand-alerts" aria-live="polite" aria-label="Tributos dos nobres"></div>
+          <div class="map-tools">
+            <button class="camera-wilds" id="camera-wilds" type="button" aria-label="Ir para Wilds" title="Ir para Wilds">WILDS</button>
+            <div class="zoom-control" role="group" aria-label="Nível de zoom">
+              <button class="zoom-btn active" type="button" data-zoom="0" aria-label="Zoom 1: visão ampla" aria-pressed="true" title="Ampla">1</button>
+              <button class="zoom-btn" type="button" data-zoom="1" aria-label="Zoom 2: visão normal" aria-pressed="false" title="Normal">2</button>
+              <button class="zoom-btn" type="button" data-zoom="2" aria-label="Zoom 3: visão próxima" aria-pressed="false" title="Próxima">3</button>
+            </div>
+          </div>
+          <div class="spell-hotbar" id="spell-hotbar" role="toolbar" aria-label="Magias rápidas, teclas F1 a F12" hidden></div>
+          <aside class="site-inspector" id="site-inspector" aria-label="Construção selecionada" hidden></aside>
+          <div class="toast" id="toast" role="status" aria-live="polite"></div>
+        </section>
+
+        <aside class="side-panel">
+          <section class="objective-card">
+            <div class="objective-head"><span class="eyebrow">OBJETIVO <span id="objective-step">1 de 3</span></span><b id="objective-title">Acumule 600 moedas</b></div>
+            <div class="objective-progress"><div class="progress-track"><i id="objective-bar"></i></div><span class="progress-value" id="objective-text">240 / 600</span></div>
+            <details class="objective-journal" id="objective-journal"><summary>OBJETIVOS</summary><ol id="objective-list"></ol></details>
+            <div class="objective-actions">
+              <div class="tax-control" role="group" aria-label="Imposto"><small>IMPOSTO</small><button type="button" id="tax-down" aria-label="Baixar imposto">−</button><b id="tax-pct">10%</b><button type="button" id="tax-up" aria-label="Subir imposto">+</button><span id="tax-preview"></span></div>
+              <button type="button" class="economy-open-btn" id="economy-open-btn">VER ECONOMIA</button>
+            </div>
+          </section>
+
+          <section class="command-card">
+            <div class="tabs" role="tablist" aria-label="Painel do domínio">
+              <button class="tab active" data-tab="build" role="tab" aria-selected="true">CONSTRUIR</button>
+              <button class="tab" data-tab="heroes" role="tab" aria-selected="false">HERÓIS</button>
+              <button class="tab" data-tab="workers" role="tab" aria-selected="false">OFÍCIOS</button>
+              <button class="tab" data-tab="food" role="tab" aria-selected="false">ALIMENTOS</button>
+              <button class="tab" data-tab="economy" role="tab" aria-selected="false">ECONOMIA</button>
+              <button class="tab" data-tab="market" role="tab" aria-selected="false">MERCADO</button>
+            </div>
+            <div class="panel-view" id="panel-view"></div>
+          </section>
+
+          <section class="editor-card" id="editor-card" hidden></section>
+
+          <section class="event-card" aria-live="polite">
+            <p id="event-line">A herança foi aceita. Os credores já estão a caminho.</p>
+            <button type="button" class="card-sheet-btn event-log-btn" id="log-btn" title="Todas as mensagens da partida">LOG</button>
+            <span class="map-hint" id="map-hint" hidden>A névoa guarda o resto de Mordavia.</span>
+            
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <div class="inventory-layer" id="inventory-layer" hidden>
+      <div class="inventory-backdrop" data-inventory-close aria-hidden="true"></div>
+      <section class="inventory-dialog" id="inventory-content" role="dialog" aria-modal="true" aria-label="Inventário do Casarão"></section>
+    </div>
+    <div class="menu-layer is-title" id="menu-layer">
+      <div class="menu-backdrop" aria-hidden="true"></div>
+      <div class="menu-panel" id="menu-panel" role="dialog" aria-modal="true" aria-label="Menu do jogo"></div>
+    </div>
+    <button class="music-toggle title-music" type="button" data-music-toggle title="Música: ligada" aria-label="Desligar música" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="spk" d="M4 9h4l5-4v14l-5-4H4z"/><path class="waves" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/><path class="mute" d="M16 9l6 6M22 9l-6 6"/></svg></button>
+  </body>
+</html>
