@@ -152,6 +152,30 @@
    },
    "why": "the same video: struck at 136, the staff falls from 150, on his knees by 175, sitting still by 200; his feet line and height from the frames he still stands in (134-150); bodyAt keeps the body where the idle has it although the fallen staff widens the frame on the left",
    "scaleTo": 610
+  },
+  {
+   "clip": "turn-back",
+   "pose": "turnBack",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/turn",
+   "video": "Attachments/KaelV3/supersize/Voss_turning_180_degrees_3a633cfa (2).mp4",
+   "first": 6,
+   "last": 108,
+   "mode": "once",
+   "bodyAt": -0.242,
+   "scaleTo": 610
+  },
+  {
+   "clip": "cast-back",
+   "pose": "castBack",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/turn",
+   "video": "Attachments/KaelV3/supersize/Voss_turning_180_degrees_3a633cfa (2).mp4",
+   "first": 140,
+   "last": 140,
+   "mode": "once",
+   "bodyAt": -0.242,
+   "scaleTo": 610
   }
  ]
 }

@@ -420,6 +420,56 @@
    "mode": "once",
    "bodyAt": -0.226,
    "why": "the user, 2026-10-24: \"there is only fall no death\": her fall (Fallat3sec.mp4 from 3 s), played when her HP reaches 0"
+  },
+  {
+   "clip": "move-up",
+   "pose": "walkUp",
+   "kind": "walk",
+   "src": "build/video-cut/isolde-veo/updown",
+   "video": "Attachments/Isolde/IsoldeUPandDown.mp4",
+   "first": 0,
+   "last": 119,
+   "loopMin": 40,
+   "loopMax": 110,
+   "mode": "loop",
+   "why": "the user, 2026-11-13: IsoldeUPandDown, walking away from the camera in place (0-119; the video cuts to her front at 120)"
+  },
+  {
+   "clip": "move-down",
+   "pose": "walkDown",
+   "kind": "walk",
+   "src": "build/video-cut/isolde-veo/updown",
+   "video": "Attachments/Isolde/IsoldeUPandDown.mp4",
+   "first": 121,
+   "last": 239,
+   "loopMin": 40,
+   "loopMax": 110,
+   "mode": "loop",
+   "why": "the same video, walking toward the camera in place (121-239)"
+  },
+  {
+   "clip": "turn-back",
+   "pose": "turnBack",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-veo/turn",
+   "video": "Attachments/KaelV3/supersize/Isolde_turning_in_studio_47cd8c5d.mp4",
+   "first": 18,
+   "last": 112,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "why": "the user, 2026-11-13: her 180 degree turn in the studio (a test at 720 x 1280), from her stance to her back settled"
+  },
+  {
+   "clip": "cast-back",
+   "pose": "castBack",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-veo/turn",
+   "video": "Attachments/KaelV3/supersize/Isolde_turning_in_studio_47cd8c5d.mp4",
+   "first": 135,
+   "last": 135,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "why": "the back still: the turn's settled end"
   }
  ],
  "bodyNote": "bodyAt -0.226 on every standing clip but the idle: the head where the idle has it (measured on its first frame), so she never slides sideways when a pose starts"

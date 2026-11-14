@@ -148,6 +148,30 @@
     "why": "video 152-161: the falling staff is motion-blurred and the model took it for background (white head, the shaft gone, frame 160 almost empty); the region is the staff's sweep left of the body; only while it falls (before, the purple glow lit the wall; after, its shadow lies on the floor); low / high = a dark staff over the 230 wall, so alpha follows the blur; low 28: under it the wall's darker top corner leaked faint patches (alpha <= 23)"
    },
    "scaleTo": 610
+  },
+  {
+   "clip": "turn-back",
+   "pose": "turnBack",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/turn",
+   "video": "Attachments/KaelV3/supersize/Voss_turning_180_degrees_3a633cfa (2).mp4",
+   "first": 6,
+   "last": 108,
+   "mode": "once",
+   "bodyAt": -0.242,
+   "scaleTo": 610
+  },
+  {
+   "clip": "cast-back",
+   "pose": "castBack",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/turn",
+   "video": "Attachments/KaelV3/supersize/Voss_turning_180_degrees_3a633cfa (2).mp4",
+   "first": 140,
+   "last": 140,
+   "mode": "once",
+   "bodyAt": -0.242,
+   "scaleTo": 610
   }
  ]
 }

@@ -214,6 +214,130 @@
    },
    "pattern": "content/sprites/isolde-veo/counter-staff-v01/counter-staff-{}.png",
    "impact": 0.2526
+  },
+  "move-up": {
+   "video": "Attachments/Isolde/IsoldeUPandDown.mp4",
+   "first": 0,
+   "last": 119,
+   "loopFirst": 18,
+   "loopLast": 57,
+   "seamSteps": 1.76,
+   "bootRow": 1031,
+   "bodyDrift": [
+    -6,
+    22
+   ],
+   "figurePx": 959.0,
+   "frames": 40,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    510,
+    991
+   ],
+   "crop": [
+    6,
+    6,
+    499,
+    979
+   ],
+   "box": {
+    "w": 1.4146,
+    "h": 2.74876,
+    "foot": 0.03606
+   },
+   "pattern": "content/sprites/isolde-veo/move-up-v01/move-up-{}.png"
+  },
+  "move-down": {
+   "video": "Attachments/Isolde/IsoldeUPandDown.mp4",
+   "first": 121,
+   "last": 239,
+   "loopFirst": 173,
+   "loopLast": 212,
+   "seamSteps": 0.95,
+   "bootRow": 1058,
+   "bodyDrift": [
+    10,
+    29
+   ],
+   "figurePx": 995.0,
+   "frames": 40,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    581,
+    1052
+   ],
+   "crop": [
+    5,
+    5,
+    571,
+    1042
+   ],
+   "box": {
+    "w": 1.55323,
+    "h": 2.81238,
+    "foot": 0.04545
+   },
+   "pattern": "content/sprites/isolde-veo/move-down-v01/move-down-{}.png"
+  },
+  "turn-back": {
+   "video": "Attachments/KaelV3/supersize/Isolde_turning_in_studio_47cd8c5d.mp4",
+   "first": 18,
+   "last": 112,
+   "bootRow": 1131,
+   "bootRows": [
+    1129,
+    1146
+   ],
+   "figurePx": 914.0,
+   "bodyAt": -0.2255,
+   "frames": 95,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    752,
+    967
+   ],
+   "crop": [
+    0,
+    6,
+    645,
+    954
+   ],
+   "box": {
+    "w": 2.18853,
+    "h": 2.81425,
+    "foot": 0.06112
+   },
+   "pattern": "content/sprites/isolde-veo/turn-back-v01/turn-back-{}.png"
+  },
+  "cast-back": {
+   "video": "Attachments/KaelV3/supersize/Isolde_turning_in_studio_47cd8c5d.mp4",
+   "first": 135,
+   "last": 135,
+   "bootRow": 1131,
+   "bootRows": [
+    1131,
+    1131
+   ],
+   "figurePx": 914.0,
+   "bodyAt": -0.2255,
+   "frames": 1,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    695,
+    937
+   ],
+   "crop": [
+    4,
+    5,
+    433,
+    927
+   ],
+   "box": {
+    "w": 2.02265,
+    "h": 2.72694,
+    "foot": 0.02037
+   },
+   "pattern": "content/sprites/isolde-veo/cast-back-v01/cast-back-{}.png"
   }
  }
 }

@@ -265,6 +265,72 @@
     "foot": 0.1103
    },
    "pattern": "content/sprites/voss-veo/death-leve-passo-v01/death-{}.png"
+  },
+  "turn-back": {
+   "video": "Attachments/KaelV3/supersize/Voss_turning_180_degrees_3a633cfa (2).mp4",
+   "first": 6,
+   "last": 108,
+   "bootRow": 1733,
+   "bootRows": [
+    1723,
+    1753
+   ],
+   "frameStep": 3,
+   "frameStepFrom": 103,
+   "figurePx": 1460.0,
+   "bodyAt": -0.242,
+   "scaledTo": 609.6,
+   "frames": 35,
+   "frameMs": 125.0,
+   "nat": [
+    479,
+    676
+   ],
+   "crop": [
+    49,
+    3,
+    430,
+    671
+   ],
+   "box": {
+    "w": 2.11095,
+    "h": 2.97913,
+    "foot": 0.02816
+   },
+   "pattern": "content/sprites/voss-veo/turn-back-leve-passo-v01/turn-back-{}.png"
+  },
+  "cast-back": {
+   "video": "Attachments/KaelV3/supersize/Voss_turning_180_degrees_3a633cfa (2).mp4",
+   "first": 140,
+   "last": 140,
+   "bootRow": 1733,
+   "bootRows": [
+    1733,
+    1733
+   ],
+   "frameStep": 1,
+   "frameStepFrom": 1,
+   "figurePx": 1463.0,
+   "bodyAt": -0.2424,
+   "scaledTo": 610.1,
+   "frames": 1,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    484,
+    628
+   ],
+   "crop": [
+    2,
+    2,
+    293,
+    624
+   ],
+   "box": {
+    "w": 2.13417,
+    "h": 2.76913,
+    "foot": 0.01159
+   },
+   "pattern": "content/sprites/voss-veo/cast-back-leve-passo-v01/cast-back-{}.png"
   }
  }
 }
