@@ -76,6 +76,14 @@
    "spellList": [],
    "about": "The user, 2026-10-28: Attachments/GiantBeetle, body type 1, 64 / 36 frames like the Deer. Working numbers, the user's to set: 1 hex, mov 4, a 1D8 horn blow, stats the Mordavian Wolf's row, rank D, no spells."
   },
+  "deepgroundBeetle": {
+   "name": "Besouro das Profundezas", "nameEn": "DeepGround Beetle", "role": "Fera", "sprite": "deepground-beetle", "size": 1, "mov": 4, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "A new unit from the user's videos (2026-11-14, Attachments/Monsters/Horse, DeepGround Beetle). Working numbers, the user's to set: the Giant Beetle's (1 hex, mov 4, a 1D8 blow, its stats row, rank D), no spells."
+  },
   "ashesCrawler": {
    "name": "Rastreador de Cinzas", "nameEn": "Ashes Crawler", "role": "Fera",
    "sprite": "ashes-crawler", "size": 2, "mov": 4, "strikesWith": "atk",

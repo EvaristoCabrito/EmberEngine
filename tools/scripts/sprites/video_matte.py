@@ -9,10 +9,18 @@ written are skipped, so a run cut short (power) carries on where it stopped.
 
 --model lite = BiRefNet general lite (rembg's birefnet-general-lite, same input size, a quarter of the weights; the user, 2026-10-22,
 for the Giant Spider: "try again on light mode").
+
+--device (the user, 2026-11-17: "why are we not using the graphics card at all"): cpu, dml (the graphics card through DirectML) or
+auto (the default): the graphics card once build/ort-dml/GPU-OK is there (written after a test frame matched the CPU's), else the CPU.
+DirectML lives in its own environment (build/ort-dml: the system one's onnxruntime files are held open by the running mattes), so a
+run started with the system Python carries itself over to that environment's Python; if the card cannot run the model, the CPU.
 """
 import argparse
+import atexit
+import ctypes
 import os
 import subprocess
+import sys
 import time
 
 import numpy as np
@@ -23,8 +31,23 @@ MODELS = {
     "general": os.path.expanduser("~/.rembg/models/birefnet-general/birefnet-general.onnx"),
     "lite": os.path.expanduser("~/.rembg/models/birefnet-general-lite/birefnet-general-lite.onnx"),
 }
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+DML_PY = os.path.join(ROOT, "build", "ort-dml", "Scripts", "python.exe")
+DML_OK = os.path.join(ROOT, "build", "ort-dml", "GPU-OK")
 MEAN = np.array([0.485, 0.456, 0.406], np.float32)
 STD = np.array([0.229, 0.224, 0.225], np.float32)
+
+
+def pid_alive(pid):
+    """Whether a Windows process with that pid is still running (read-only: opened for waiting only, never touched)."""
+    if not pid.isdigit():
+        return False
+    h = ctypes.windll.kernel32.OpenProcess(0x00100000, False, int(pid))  # SYNCHRONIZE
+    if not h:
+        return False
+    alive = ctypes.windll.kernel32.WaitForSingleObject(h, 0) == 0x102  # WAIT_TIMEOUT: not ended
+    ctypes.windll.kernel32.CloseHandle(h)
+    return alive
 
 
 def video_size(path):
@@ -54,6 +77,36 @@ def read_frames(path, first, last):
         p.wait()
 
 
+FIRST_FRAME_LIMIT = 180  # s: the graphics card's run must finish its first frame by then (loading the model on it included)
+CPU_FALLBACK_THREADS = 2  # only when the card fails outright (the user, 2026-11-17: "burn this video card to the max ... leave my CPU alone")
+
+
+def gpu_run(cmd):
+    """The run on the graphics card (DirectML's own Python), watched: its lines passed on; stopped only when it has no frame done
+    within FIRST_FRAME_LIMIT or fails (never for being slow: the card works flat out, the CPU stays free). True = it finished the
+    whole stretch. Never two at once: this process only waits while it runs, and frames it finished are kept (the CPU skips them)."""
+    import re
+    import threading
+    child = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+    first = threading.Event()
+
+    def watch():
+        for line in child.stdout:
+            print(line.rstrip(), flush=True)
+            m = re.search(r"\((\d+) done, ([\d.]+) s a frame\)", line)
+            if m:
+                first.set()
+
+    t = threading.Thread(target=watch, daemon=True)
+    t.start()
+    if not first.wait(FIRST_FRAME_LIMIT):
+        print(f"graphics card: no frame in {FIRST_FRAME_LIMIT} s", flush=True)
+        child.kill()
+    code = child.wait()
+    t.join(5)
+    return code == 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("video")
@@ -62,11 +115,52 @@ def main():
     ap.add_argument("last", type=int)
     ap.add_argument("--threads", type=int, default=12)
     ap.add_argument("--model", choices=sorted(MODELS), default="general")
+    ap.add_argument("--device", choices=["auto", "cpu", "dml"], default="auto")
     a = ap.parse_args()
+    # build/video-cut/matte-threads.txt (the user's to set, read at the start of every video): the CPU threads, whatever the queue
+    # started with, so a change never needs a running queue stopped (2026-11-17: "dont stop any processes ever")
+    setting = os.path.join(ROOT, "build", "video-cut", "matte-threads.txt")
+    if os.path.exists(setting) and open(setting).read().strip().isdigit():
+        a.threads = int(open(setting).read().strip())
+    # two mattes run side by side (the user, 2026-11-17: "two cutting jobs at the same time with 3 cores each"): a video being matted
+    # holds <out>/.matte-lock (its pid); another job on the same video waits for it to end, then only does what is still missing
+    os.makedirs(a.out, exist_ok=True)
+    lock = os.path.join(a.out, ".matte-lock")
+    while os.path.exists(lock) and pid_alive(open(lock).read().strip()):
+        time.sleep(30)
+    open(lock, "w").write(str(os.getpid()))
+    atexit.register(lambda: os.path.exists(lock) and open(lock).read().strip() == str(os.getpid()) and os.remove(lock))
+    # a stretch already whole (a queue run again after a stop): nothing to load, nothing to do
+    frames = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=nb_frames", "-of", "csv=p=0",
+                             a.video], capture_output=True, text=True).stdout.strip()
+    last = min(a.last, int(frames) - 1) if frames.isdigit() else a.last
+    if all(os.path.exists(os.path.join(a.out, f"{k}-{i:04d}.png")) for i in range(a.first, last + 1) for k in ("src", "alpha")):
+        print(f"{a.out}: frames {a.first}-{last} already done", flush=True)
+        return
+    if a.device == "auto":
+        a.device = "dml" if os.path.exists(DML_OK) else "cpu"
+    if a.device == "dml" and "DmlExecutionProvider" not in ort.get_available_providers():
+        if os.path.exists(DML_PY) and os.path.normcase(os.path.abspath(sys.executable)) != os.path.normcase(DML_PY):
+            if gpu_run([DML_PY, "-I", os.path.abspath(__file__), *sys.argv[1:], "--device", "dml"]):
+                return
+            print(f"{a.out}: the graphics card failed; the rest on the CPU at {CPU_FALLBACK_THREADS} threads", flush=True)
+            a.threads = min(a.threads, CPU_FALLBACK_THREADS)
+        a.device = "cpu"
     os.makedirs(a.out, exist_ok=True)
     so = ort.SessionOptions()
-    so.intra_op_num_threads = a.threads
-    sess = ort.InferenceSession(MODELS[a.model], so, providers=["CPUExecutionProvider"])
+    so.intra_op_num_threads = 1 if a.device == "dml" else a.threads  # on the card: the CPU only for the small steps around it
+    sess = None
+    if a.device == "dml":
+        so.enable_mem_pattern = False
+        so.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+        try:
+            sess = ort.InferenceSession(MODELS[a.model], so, providers=["DmlExecutionProvider", "CPUExecutionProvider"])
+            print(f"{a.out}: on the graphics card (DirectML)", flush=True)
+        except Exception as e:  # the card cannot hold the model: the CPU (the watching run carries on there)
+            print(f"{a.out}: graphics card failed ({str(e)[:120]})", flush=True)
+            sys.exit(3)
+    if sess is None:
+        sess = ort.InferenceSession(MODELS[a.model], so, providers=["CPUExecutionProvider"])
     name = sess.get_inputs()[0].name
     t0 = time.time()
     done = 0

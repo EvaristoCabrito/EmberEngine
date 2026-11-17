@@ -793,6 +793,34 @@
    "why": "the Omnieye's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "omnieye", "set": "omnieye"},
    "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "deepground-beetle",
+   "version": "v01",
+   "hero": "deepgroundBeetle",
+   "newHero": {"name": "Besouro das Profundezas", "group": "monster", "sprite": "deepground-beetle", "reversed": true},
+   "cut": "content/sprites/deepground-beetle/cut.json",
+   "why": "the user, 2026-11-14: the DeepGround Beetle, a new unit from two videos (Attachments/Monsters/Horse): idle, attack and cast in three-quarters, walk, hit and death in profile; Alta + 64 + 36; a rank D enemy on Todas as Unidades",
+   "poses": {"idle": "base", "attack": "atk", "cast": "cast", "walk": "move", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "cast": "Conjurar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "deepground-beetle-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/deepground-beetle/cut-64-media.json",
+   "why": "the DeepGround Beetle's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "deepgroundBeetle", "set": "deepground-beetle"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "deepground-beetle-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/deepground-beetle/cut-36-media.json",
+   "why": "the DeepGround Beetle's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "deepgroundBeetle", "set": "deepground-beetle"},
+   "packs": {"base": "field", "move": "field"}
   }
  ],
  "clips": [

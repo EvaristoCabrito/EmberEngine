@@ -85002,6 +85002,53 @@
       "arrowRelease:neera": []
     },
     "monster": {
+      "deepground-beetle": {
+        "attack": [
+          {
+            "file": "DeepGroundBeetleATT001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "cast": [
+          {
+            "file": "DeepGroundBeetleCast001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "walk": [
+          {
+            "file": "DeepGroundBeetleWalk001.mp3",
+            "volume": 0.45,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "hit": [
+          {
+            "file": "DeepGroundBeetleHit001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "death": [
+          {
+            "file": "DeepGroundBeetleDeath001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ]
+      },
       "omnieye": {
         "cast": [
           {

@@ -304,6 +304,9 @@
     "giantBeetle": {
       "mov": 4
     },
+    "deepgroundBeetle": {
+      "mov": 4
+    },
     "mushroomMan": {
       "mov": 3
     },
