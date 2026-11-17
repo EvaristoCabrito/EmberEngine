@@ -1,0 +1,161 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Classic Animals/Creature_performing_movement_rou\u2026_49af85e4 (1).mp4",
+   "first": 0,
+   "last": 70,
+   "bootRow": 652,
+   "bootRows": [
+    652,
+    652
+   ],
+   "frameCountFrom": 71,
+   "figurePx": 529.0,
+   "frames": 64,
+   "frameMs": 46.22395833333333,
+   "nat": [
+    840,
+    567
+   ],
+   "crop": [
+    5,
+    6,
+    829,
+    556
+   ],
+   "box": {
+    "w": 2.69943,
+    "h": 1.82212,
+    "foot": 0.01928
+   },
+   "pattern": "content/sprites/classic-boar/base-media64-v01/base-{}.png"
+  },
+  "cast": {
+   "video": "Attachments/Classic Animals/Creature_performing_movement_rou\u2026_49af85e4 (1).mp4",
+   "first": 150,
+   "last": 228,
+   "bootRow": 654,
+   "bootRows": [
+    641,
+    663
+   ],
+   "frameCountFrom": 79,
+   "figurePx": 532.0,
+   "frames": 64,
+   "frameMs": 51.432291666666664,
+   "nat": [
+    1027,
+    577
+   ],
+   "crop": [
+    5,
+    6,
+    1016,
+    566
+   ],
+   "box": {
+    "w": 3.28177,
+    "h": 1.8438,
+    "foot": 0.03515
+   },
+   "pattern": "content/sprites/classic-boar/cast-media64-v01/cast-{}.png"
+  },
+  "move": {
+   "video": "Attachments/Classic Animals/Creature_walking_and_falling_down_c6c5f507 (1).mp4",
+   "first": 4,
+   "last": 88,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/classic-boar/idle-cast 96:118",
+   "loopFirst": 16,
+   "loopLast": 54,
+   "seamSteps": 1.49,
+   "bootRow": 696,
+   "bodyDrift": [
+    21,
+    46
+   ],
+   "figurePx": 640.0,
+   "scaledTo": 610.1,
+   "frames": 39,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1058,
+    654
+   ],
+   "crop": [
+    5,
+    6,
+    1048,
+    643
+   ],
+   "box": {
+    "w": 2.94844,
+    "h": 1.82257,
+    "foot": 0.02916
+   },
+   "pattern": "content/sprites/classic-boar/move-media64-v01/move-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/Classic Animals/Creature_walking_and_falling_down_c6c5f507 (1).mp4",
+   "first": 97,
+   "last": 140,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/classic-boar/idle-cast 96:118",
+   "bootRow": 697,
+   "bootRows": [
+    673,
+    697
+   ],
+   "figurePx": 651.0,
+   "scaledTo": 610.4,
+   "frames": 44,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1087,
+    661
+   ],
+   "crop": [
+    5,
+    6,
+    1075,
+    651
+   ],
+   "box": {
+    "w": 3.02919,
+    "h": 1.84203,
+    "foot": 0.02343
+   },
+   "pattern": "content/sprites/classic-boar/hit-media64-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Classic Animals/Creature_walking_and_falling_down_c6c5f507 (1).mp4",
+   "first": 145,
+   "last": 215,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/classic-boar/idle-cast 96:118",
+   "bootRow": 694,
+   "bootRows": [
+    694,
+    694
+   ],
+   "frameCountFrom": 71,
+   "figurePx": 636.0,
+   "scaledTo": 609.7,
+   "frames": 64,
+   "frameMs": 46.22395833333333,
+   "nat": [
+    1165,
+    648
+   ],
+   "crop": [
+    5,
+    5,
+    1155,
+    638
+   ],
+   "box": {
+    "w": 3.24764,
+    "h": 1.80641,
+    "foot": 0.03735
+   },
+   "pattern": "content/sprites/classic-boar/death-media64-v01/death-{}.png"
+  }
+ }
+}

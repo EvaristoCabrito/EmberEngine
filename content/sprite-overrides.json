@@ -131,7 +131,7 @@
    "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkLeft": "move-left", "turnBack": "turn-back", "castBack": "cast-back", "doubleStrike": "double-strike", "specialAttack": "special", "hit": "hit", "death": "death", "walkUp": "move-up", "walkDown": "move-down", "emote01": "emote01", "emote02": "emote02", "emote03": "emote03", "emote04": "emote04"},
    "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "walkLeft": "Andar (esquerda)", "walkUp": "Andar (costas)", "walkDown": "Andar (frente)", "turnBack": "De costas", "castBack": "De costas (parado)", "doubleStrike": "Golpe duplo", "specialAttack": "Ataque especial", "hit": "Dano", "death": "Queda", "emote01": "KaelEmote01", "emote02": "KaelEmote02", "emote03": "KaelEmote03", "emote04": "KaelEmote04"},
    "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene", "emote02": "cutscene", "emote03": "cutscene", "emote04": "cutscene"},
-   "strides": {"move": 2.5, "move-left": 1.0},
+   "strides": {"move": 3.0, "move-left": 1.0},
    "whyIdleEmote": "the user, 2026-11-12: the final idle from KaelUltimateIdle (1080p, base v05: Alta at the video's own size, Media and Leve at ~610 px, the standard); the old idle (V3IdleLoop2) is KaelEmote01, cutscenes only",
    "whyV05": "the user, 2026-11-13: every clip again from their 1080p videos (Attachments/KaelV3/supersize; content/sprites/kael-v3/cut.json v05): the hit is HitReactUltimate, the hit before is KaelEmote04, KaelEmote01 the old idle at 1080p, KaelEmote02 and 03 new (cutscenes only); the walks up and down (KaelWalkBack5sec, KaelWalkFront); the turn away (Kael_turning_180_degrees, a test) and the back still from the walk up (\"it has the proper cape design\")"
   },
@@ -709,6 +709,90 @@
    "labels": {"idle": "Parado", "walk": "Andar", "walkLeft": "Andar (esquerda)", "attack": "Atacar", "attackLeft": "Atacar (esquerda)", "specialAttack": "Ataque especial", "block": "Defender", "hit": "Dano", "death": "Queda"},
    "packs": {"base": "field", "move": "field", "move-left": "field"},
    "strides": {"move": 1.0, "move-left": 1.0}
+  },
+  {
+   "set": "classic-stag",
+   "version": "v01",
+   "hero": "stag",
+   "newHero": {"name": "Stag", "group": "monster", "sprite": "classic-stag", "reversed": true},
+   "cut": "content/sprites/classic-stag/cut.json",
+   "why": "the user, 2026-11-13: Stag, a new unit from their videos (Attachments/Classic Animals); Alta + 64 + 36; its cast is its blow (no attack clip); a rank D enemy on Todas as Unidades",
+   "poses": {"idle": "base", "cast": "cast", "walk": "move", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "cast": "Conjurar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "classic-stag-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/classic-stag/cut-64-media.json",
+   "why": "the Stag's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "stag", "set": "classic-stag"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "classic-stag-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/classic-stag/cut-36-media.json",
+   "why": "the Stag's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "stag", "set": "classic-stag"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "classic-boar",
+   "version": "v01",
+   "hero": "boar",
+   "newHero": {"name": "Boar", "group": "monster", "sprite": "classic-boar", "reversed": true},
+   "cut": "content/sprites/classic-boar/cut.json",
+   "why": "the user, 2026-11-13: Boar, a new unit from their videos (Attachments/Classic Animals); Alta + 64 + 36; its cast is its blow (no attack clip); a rank D enemy on Todas as Unidades",
+   "poses": {"idle": "base", "cast": "cast", "walk": "move", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "cast": "Conjurar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "classic-boar-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/classic-boar/cut-64-media.json",
+   "why": "the Boar's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "boar", "set": "classic-boar"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "classic-boar-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/classic-boar/cut-36-media.json",
+   "why": "the Boar's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "boar", "set": "classic-boar"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "omnieye",
+   "version": "v01",
+   "hero": "omnieye",
+   "newHero": {"name": "Omnieye", "group": "monster", "sprite": "omnieye", "reversed": false},
+   "cut": "content/sprites/omnieye/cut.json",
+   "why": "the user, 2026-11-13: Omnieye, a new unit from their videos (Attachments/Classic Animals); Alta + 64 + 36; its cast is its blow (no attack clip); a rank D enemy on Todas as Unidades",
+   "poses": {"idle": "base", "cast": "cast", "walk": "move", "walkLeft": "move-left", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "cast": "Conjurar", "walk": "Andar", "walkLeft": "Andar (esquerda)", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
+  },
+  {
+   "set": "omnieye-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/omnieye/cut-64-media.json",
+   "why": "the Omnieye's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "omnieye", "set": "omnieye"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "omnieye-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/omnieye/cut-36-media.json",
+   "why": "the Omnieye's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "omnieye", "set": "omnieye"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
   }
  ],
  "clips": [

@@ -1,0 +1,156 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Classic Animals/Creature_performing_animation_ro\u2026_fd278c24.mp4",
+   "first": 104,
+   "last": 150,
+   "bootRow": 685,
+   "bootRows": [
+    676,
+    687
+   ],
+   "figurePx": 602.0,
+   "frames": 47,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    679,
+    690
+   ],
+   "crop": [
+    5,
+    4,
+    669,
+    681
+   ],
+   "box": {
+    "w": 2.93256,
+    "h": 2.98007,
+    "foot": 0.04319
+   },
+   "pattern": "content/sprites/classic-stag/base-media64-v01/base-{}.png"
+  },
+  "cast": {
+   "video": "Attachments/Classic Animals/Creature_performing_animation_ro\u2026_fd278c24.mp4",
+   "first": 150,
+   "last": 210,
+   "bootRow": 685,
+   "bootRows": [
+    676,
+    687
+   ],
+   "figurePx": 585.0,
+   "frames": 61,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    700,
+    696
+   ],
+   "crop": [
+    5,
+    4,
+    690,
+    688
+   ],
+   "box": {
+    "w": 3.11111,
+    "h": 3.09333,
+    "foot": 0.04889
+   },
+   "pattern": "content/sprites/classic-stag/cast-media64-v01/cast-{}.png"
+  },
+  "move": {
+   "video": "Attachments/Classic Animals/Quadruped_walking_and_collapsing_7db95ead.mp4",
+   "first": 0,
+   "last": 90,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/classic-stag/idle-cast 104:150",
+   "loopFirst": 20,
+   "loopLast": 58,
+   "seamSteps": 1.87,
+   "bootRow": 674,
+   "bodyDrift": [
+    36,
+    69
+   ],
+   "figurePx": 562.0,
+   "frames": 39,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    752,
+    664
+   ],
+   "crop": [
+    5,
+    5,
+    742,
+    655
+   ],
+   "box": {
+    "w": 3.479,
+    "h": 3.07189,
+    "foot": 0.05089
+   },
+   "pattern": "content/sprites/classic-stag/move-media64-v01/move-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/Classic Animals/Quadruped_walking_and_collapsing_7db95ead.mp4",
+   "first": 98,
+   "last": 140,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/classic-stag/idle-cast 104:150",
+   "bootRow": 676,
+   "bootRows": [
+    674,
+    677
+   ],
+   "figurePx": 593.0,
+   "frames": 43,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    769,
+    685
+   ],
+   "crop": [
+    5,
+    2,
+    759,
+    679
+   ],
+   "box": {
+    "w": 3.37167,
+    "h": 3.00337,
+    "foot": 0.03508
+   },
+   "pattern": "content/sprites/classic-stag/hit-media64-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Classic Animals/Quadruped_walking_and_collapsing_7db95ead.mp4",
+   "first": 145,
+   "last": 215,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/classic-stag/idle-cast 104:150",
+   "bootRow": 674,
+   "bootRows": [
+    674,
+    674
+   ],
+   "frameCountFrom": 71,
+   "figurePx": 583.5,
+   "frames": 64,
+   "frameMs": 46.22395833333333,
+   "nat": [
+    893,
+    681
+   ],
+   "crop": [
+    5,
+    4,
+    883,
+    672
+   ],
+   "box": {
+    "w": 3.97909,
+    "h": 3.03445,
+    "foot": 0.05793
+   },
+   "pattern": "content/sprites/classic-stag/death-media64-v01/death-{}.png"
+  }
+ }
+}

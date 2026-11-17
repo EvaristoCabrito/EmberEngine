@@ -1,0 +1,186 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Classic Animals/Omnieye.mp4",
+   "first": 96,
+   "last": 136,
+   "bootRow": 707,
+   "bootRows": [
+    707,
+    707
+   ],
+   "figurePx": 665.0,
+   "frames": 41,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    342,
+    690
+   ],
+   "crop": [
+    5,
+    4,
+    332,
+    686
+   ],
+   "box": {
+    "w": 1.13143,
+    "h": 2.28271,
+    "foot": 0.0397
+   },
+   "pattern": "content/sprites/omnieye/base-v01/base-{}.png"
+  },
+  "cast": {
+   "video": "Attachments/Classic Animals/Omnieye.mp4",
+   "first": 140,
+   "last": 236,
+   "bootRow": 707,
+   "bootRows": [
+    707,
+    707
+   ],
+   "figurePx": 665.0,
+   "frames": 97,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1169,
+    688
+   ],
+   "crop": [
+    36,
+    5,
+    1107,
+    683
+   ],
+   "box": {
+    "w": 3.86737,
+    "h": 2.27609,
+    "foot": 0.0397
+   },
+   "pattern": "content/sprites/omnieye/cast-v01/cast-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/Classic Animals/Omnieye.mp4",
+   "first": 52,
+   "last": 84,
+   "loopFirst": 52,
+   "loopLast": 84,
+   "seamSteps": NaN,
+   "bootRow": 707,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 665.0,
+   "frames": 33,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    688,
+    692
+   ],
+   "crop": [
+    5,
+    6,
+    678,
+    680
+   ],
+   "box": {
+    "w": 2.27609,
+    "h": 2.28932,
+    "foot": 0.03308
+   },
+   "pattern": "content/sprites/omnieye/move-left-v01/move-left-{}.png"
+  },
+  "move": {
+   "video": "Attachments/Classic Animals/Omnieye.mp4",
+   "first": 52,
+   "last": 84,
+   "loopFirst": 52,
+   "loopLast": 84,
+   "seamSteps": NaN,
+   "bootRow": 707,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 665.0,
+   "frames": 33,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    688,
+    692
+   ],
+   "crop": [
+    5,
+    6,
+    678,
+    680
+   ],
+   "box": {
+    "w": 2.27609,
+    "h": 2.28932,
+    "foot": 0.03308
+   },
+   "pattern": "content/sprites/omnieye/move-v01/move-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/Monsters/OmnieyeHitandFallV2.mp4",
+   "first": 22,
+   "last": 56,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/omnieye/main 96:136",
+   "bootRow": 677,
+   "bootRows": [
+    677,
+    677
+   ],
+   "figurePx": 586.3,
+   "frames": 35,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    456,
+    649
+   ],
+   "crop": [
+    4,
+    5,
+    446,
+    639
+   ],
+   "box": {
+    "w": 1.71107,
+    "h": 2.43527,
+    "foot": 0.03752
+   },
+   "pattern": "content/sprites/omnieye/hit-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Monsters/OmnieyeHitandFallV2.mp4",
+   "first": 128,
+   "last": 215,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/omnieye/main 96:136",
+   "bootRow": 677,
+   "bootRows": [
+    677,
+    677
+   ],
+   "figurePx": 586.3,
+   "frames": 88,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    717,
+    656
+   ],
+   "crop": [
+    5,
+    5,
+    707,
+    646
+   ],
+   "box": {
+    "w": 2.69043,
+    "h": 2.46154,
+    "foot": 0.10131
+   },
+   "pattern": "content/sprites/omnieye/death-v01/death-{}.png"
+  }
+ }
+}
