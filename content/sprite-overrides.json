@@ -821,6 +821,34 @@
    "why": "the DeepGround Beetle's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "deepgroundBeetle", "set": "deepground-beetle"},
    "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "screeching-bat",
+   "version": "v01",
+   "hero": "screechingBat",
+   "newHero": {"name": "Screeching Bat", "group": "monster", "sprite": "screeching-bat", "reversed": true},
+   "cut": "content/sprites/screeching-bat/cut.json",
+   "why": "the user, 2026-11-14: the Screeching Bat, a new unit from their videos (Attachments/Monsters/Bat); the last video's size and colours matched to the others; Alta + 64 + 36; a rank D enemy on Todas as Unidades",
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "hit": "hit", "hit2": "hit2", "death": "death", "hoverSide": "hover-side", "fallSide": "fall-side"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Voar", "hit": "Dano", "hit2": "Dano (lado)", "death": "Morte", "hoverSide": "Pairar (lado)", "fallSide": "Queda (lado)"},
+   "packs": {"base": "field", "move": "field", "hover-side": "cutscene", "fall-side": "cutscene"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "screeching-bat-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/screeching-bat/cut-64-media.json",
+   "why": "the Screeching Bat's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "screechingBat", "set": "screeching-bat"},
+   "packs": {"base": "field", "move": "field", "hover-side": "cutscene", "fall-side": "cutscene"}
+  },
+  {
+   "set": "screeching-bat-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/screeching-bat/cut-36-media.json",
+   "why": "the Screeching Bat's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "screechingBat", "set": "screeching-bat"},
+   "packs": {"base": "field", "move": "field", "hover-side": "cutscene", "fall-side": "cutscene"}
   }
  ],
  "clips": [

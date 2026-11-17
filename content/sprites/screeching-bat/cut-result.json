@@ -1,0 +1,251 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Monsters/Bat/Screeching Bat Idle.mp4",
+   "first": 0,
+   "last": 52,
+   "bootRow": 824,
+   "bootRows": [
+    824,
+    824
+   ],
+   "loopFirst": 17,
+   "loopLast": 39,
+   "seamSteps": 0.63,
+   "figurePx": 467.5,
+   "frames": 23,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1280,
+    645
+   ],
+   "crop": [
+    0,
+    5,
+    1280,
+    597
+   ],
+   "box": {
+    "w": 3.83316,
+    "h": 1.93155,
+    "foot": -0.31444
+   },
+   "pattern": "content/sprites/screeching-bat/base-v01/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Monsters/Bat/Screeching Bat Idle.mp4",
+   "first": 52,
+   "last": 100,
+   "bootRow": 824,
+   "bootRows": [
+    824,
+    824
+   ],
+   "figurePx": 467.5,
+   "frames": 49,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1280,
+    639
+   ],
+   "crop": [
+    0,
+    6,
+    1276,
+    567
+   ],
+   "box": {
+    "w": 3.83316,
+    "h": 1.91358,
+    "foot": -0.31444
+   },
+   "pattern": "content/sprites/screeching-bat/atk-v01/atk-{}.png"
+  },
+  "move": {
+   "video": "Attachments/Monsters/Bat/ScreechingBatMoveATT.mp4",
+   "first": 0,
+   "last": 130,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/screeching-bat/idle 0:52",
+   "loopFirst": 36,
+   "loopLast": 61,
+   "seamSteps": 0.32,
+   "bootRow": 804,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 488.5,
+   "frames": 26,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    964,
+    720
+   ],
+   "crop": [
+    4,
+    0,
+    954,
+    720
+   ],
+   "box": {
+    "w": 2.76274,
+    "h": 2.06346,
+    "foot": -0.2436
+   },
+   "pattern": "content/sprites/screeching-bat/move-v01/move-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/Monsters/Bat/ScreetchingBatHitReactFall.mp4",
+   "first": 62,
+   "last": 104,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/screeching-bat/idle 0:52",
+   "bootRow": 675,
+   "bootRows": [
+    675,
+    675
+   ],
+   "figurePx": 386.0,
+   "frames": 43,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1190,
+    675
+   ],
+   "crop": [
+    5,
+    5,
+    1181,
+    634
+   ],
+   "box": {
+    "w": 4.31606,
+    "h": 2.44819,
+    "foot": 0.01451
+   },
+   "pattern": "content/sprites/screeching-bat/hit-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Monsters/Bat/ScreetchingBatHitReactFall.mp4",
+   "first": 118,
+   "last": 200,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/screeching-bat/idle 0:52",
+   "bootRow": 675,
+   "bootRows": [
+    675,
+    675
+   ],
+   "figurePx": 386.0,
+   "frames": 83,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1181,
+    644
+   ],
+   "crop": [
+    5,
+    4,
+    1170,
+    635
+   ],
+   "box": {
+    "w": 4.28342,
+    "h": 2.33575,
+    "foot": 0.0399
+   },
+   "pattern": "content/sprites/screeching-bat/death-v01/death-{}.png"
+  },
+  "hit2": {
+   "video": "Attachments/Monsters/Bat/Bat_hovering_and_falling_4f4f65dd.mp4",
+   "first": 56,
+   "last": 92,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/screeching-bat/idle 0:52",
+   "bootRow": 651,
+   "bootRows": [
+    651,
+    651
+   ],
+   "figurePx": 480.5,
+   "frames": 37,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1172,
+    693
+   ],
+   "crop": [
+    5,
+    0,
+    1162,
+    688
+   ],
+   "box": {
+    "w": 3.41478,
+    "h": 2.01915,
+    "foot": 0.11946
+   },
+   "pattern": "content/sprites/screeching-bat/hit2-v01/hit2-{}.png"
+  },
+  "hover-side": {
+   "video": "Attachments/Monsters/Bat/Bat_hovering_and_falling_4f4f65dd.mp4",
+   "first": 0,
+   "last": 55,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/screeching-bat/idle 0:52",
+   "bootRow": 651,
+   "bootRows": [
+    651,
+    651
+   ],
+   "loopFirst": 10,
+   "loopLast": 41,
+   "seamSteps": 0.77,
+   "figurePx": 480.5,
+   "frames": 32,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1204,
+    647
+   ],
+   "crop": [
+    5,
+    5,
+    1199,
+    637
+   ],
+   "box": {
+    "w": 3.50801,
+    "h": 1.88512,
+    "foot": 0.09032
+   },
+   "pattern": "content/sprites/screeching-bat/hover-side-v01/hover-side-{}.png"
+  },
+  "fall-side": {
+   "video": "Attachments/Monsters/Bat/Bat_hovering_and_falling_4f4f65dd.mp4",
+   "first": 140,
+   "last": 200,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/screeching-bat/idle 0:52",
+   "bootRow": 651,
+   "bootRows": [
+    651,
+    651
+   ],
+   "figurePx": 480.5,
+   "frames": 61,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1039,
+    525
+   ],
+   "crop": [
+    5,
+    5,
+    1029,
+    515
+   ],
+   "box": {
+    "w": 3.02726,
+    "h": 1.52966,
+    "foot": 0.05536
+   },
+   "pattern": "content/sprites/screeching-bat/fall-side-v01/fall-side-{}.png"
+  }
+ }
+}

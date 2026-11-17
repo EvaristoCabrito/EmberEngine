@@ -7419,6 +7419,14 @@
         "useClassSprite": true
       },
       {
+        "name": "Screeching Bat",
+        "classId": "screechingBat",
+        "x": 8,
+        "y": 29,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
         "name": "DeepGround Beetle",
         "classId": "deepgroundBeetle",
         "x": 23,

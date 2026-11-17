@@ -16,8 +16,6 @@ DirectML lives in its own environment (build/ort-dml: the system one's onnxrunti
 run started with the system Python carries itself over to that environment's Python; if the card cannot run the model, the CPU.
 """
 import argparse
-import atexit
-import ctypes
 import os
 import subprocess
 import sys
@@ -38,16 +36,18 @@ MEAN = np.array([0.485, 0.456, 0.406], np.float32)
 STD = np.array([0.229, 0.224, 0.225], np.float32)
 
 
-def pid_alive(pid):
-    """Whether a Windows process with that pid is still running (read-only: opened for waiting only, never touched)."""
-    if not pid.isdigit():
-        return False
-    h = ctypes.windll.kernel32.OpenProcess(0x00100000, False, int(pid))  # SYNCHRONIZE
-    if not h:
-        return False
-    alive = ctypes.windll.kernel32.WaitForSingleObject(h, 0) == 0x102  # WAIT_TIMEOUT: not ended
-    ctypes.windll.kernel32.CloseHandle(h)
-    return alive
+def earlier_mattes():
+    """The other video_matte.py processes started before this one (read-only: listed, never touched)."""
+    me = os.getpid()
+    ps = ("Get-CimInstance Win32_Process -Filter \"Name='python.exe'\" | ? { $_.CommandLine -match 'video_matte\\.py' } | "
+          "% { '' + $_.ProcessId + ' ' + $_.ParentProcessId + ' ' + $_.CreationDate.ToString('yyyyMMddHHmmss.fffffff') }")
+    rows = [r.split() for r in subprocess.run(["powershell", "-NoProfile", "-Command", ps], capture_output=True, text=True).stdout.split("\n")
+            if len(r.split()) == 3]
+    mine = next((r[2] for r in rows if r[0] == str(me)), None)
+    if mine is None:
+        return []
+    # a matte's own card child (gpu_run) has it as parent: not another matte
+    return [r for r in rows if r[0] not in (str(me), str(os.getppid())) and r[1] != str(me) and (r[2], int(r[0])) < (mine, me)]
 
 
 def video_size(path):
@@ -117,19 +117,17 @@ def main():
     ap.add_argument("--model", choices=sorted(MODELS), default="general")
     ap.add_argument("--device", choices=["auto", "cpu", "dml"], default="auto")
     a = ap.parse_args()
-    # build/video-cut/matte-threads.txt (the user's to set, read at the start of every video): the CPU threads, whatever the queue
+    # one matte at a time (the user, 2026-11-17: "move on to 12 cores in a single process as soon as possible"): however many queue
+    # lanes call it, a matte waits until every video_matte started before it has ended (first come, first served), then only does the
+    # frames still missing, so two never run together and none is done twice
+    os.makedirs(a.out, exist_ok=True)
+    while earlier_mattes():
+        time.sleep(30)
+    # build/video-cut/matte-threads.txt (the user's to set, read when the matte's turn comes): the CPU threads, whatever the queue
     # started with, so a change never needs a running queue stopped (2026-11-17: "dont stop any processes ever")
     setting = os.path.join(ROOT, "build", "video-cut", "matte-threads.txt")
     if os.path.exists(setting) and open(setting).read().strip().isdigit():
         a.threads = int(open(setting).read().strip())
-    # two mattes run side by side (the user, 2026-11-17: "two cutting jobs at the same time with 3 cores each"): a video being matted
-    # holds <out>/.matte-lock (its pid); another job on the same video waits for it to end, then only does what is still missing
-    os.makedirs(a.out, exist_ok=True)
-    lock = os.path.join(a.out, ".matte-lock")
-    while os.path.exists(lock) and pid_alive(open(lock).read().strip()):
-        time.sleep(30)
-    open(lock, "w").write(str(os.getpid()))
-    atexit.register(lambda: os.path.exists(lock) and open(lock).read().strip() == str(os.getpid()) and os.remove(lock))
     # a stretch already whole (a queue run again after a stop): nothing to load, nothing to do
     frames = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=nb_frames", "-of", "csv=p=0",
                              a.video], capture_output=True, text=True).stdout.strip()

@@ -85002,6 +85002,44 @@
       "arrowRelease:neera": []
     },
     "monster": {
+      "screeching-bat": {
+        "attack": [
+          {
+            "file": "ScreechingBatATT001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "walk": [
+          {
+            "file": "ScreechingBatWalk001.mp3",
+            "volume": 0.45,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "hit": [
+          {
+            "file": "ScreechingBatHit001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "death": [
+          {
+            "file": "ScreechingBatDeath001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ]
+      },
       "deepground-beetle": {
         "attack": [
           {
