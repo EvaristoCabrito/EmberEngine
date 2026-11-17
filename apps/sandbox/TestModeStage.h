@@ -325,22 +325,16 @@ class TestModeStage : public Stage {
   }
   const ember::CampaignMission* missionData(const std::string& id) const { return campaign_.data().mission(id); }
   // Every map of a place, from the one place list (content/data/locations.json, world/Locais.h; the user, 2026-11-11: "todos só
-  // devem ter um único caminho"): its maps, then its floors (Modo teste opens each one straight from here).
+  // devem ter um único caminho"), in the one floor order (the user, 2026-11-17: "precisa existir ordem nesses andares e eles
+  // começam no térreo"): the place's own maps (the térreo) first, then 1º, 2º, 3º andar, then Subsolo 1, 2, 3.
   std::vector<const ember::MapMission*> placeMaps(const ember::MapLocation& loc) const {
-    // A building's floors top to bottom: the upper floors, the place's own maps (the ground floor), then the basements.
-    const std::vector<const ember::MapMission*> ground = world_.visibleMissionsOf(loc, realSave_, true);
-    std::vector<const ember::MapMission*> out;
-    const auto floors = locais_.submaps.find(loc.id);
-    auto addFloors = [&](bool upper) {
-      if (floors == locais_.submaps.end()) return;
-      for (const ember::LocaisFloor& f : floors->second)
-        if (const ember::MapMission* m = world_.mission(f.missionId); m && (f.floor > 0) == upper && std::find(out.begin(), out.end(), m) == out.end() &&
-                                                                       std::find(ground.begin(), ground.end(), m) == ground.end())
-          out.push_back(m);
-    };
-    addFloors(true);
-    out.insert(out.end(), ground.begin(), ground.end());
-    addFloors(false);
+    std::vector<const ember::MapMission*> out = world_.visibleMissionsOf(loc, realSave_, true);
+    if (const auto it = locais_.submaps.find(loc.id); it != locais_.submaps.end()) {
+      std::vector<ember::LocaisFloor> floors = it->second;
+      ember::sortFloors(floors);
+      for (const ember::LocaisFloor& f : floors)
+        if (const ember::MapMission* m = world_.mission(f.missionId); m && std::find(out.begin(), out.end(), m) == out.end()) out.push_back(m);
+    }
     return out;
   }
 

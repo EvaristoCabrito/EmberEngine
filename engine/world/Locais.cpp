@@ -64,6 +64,7 @@ Locais Locais::load(const std::filesystem::path& catalogFile) {
     std::vector<LocaisFloor>& floors = l.defaultSubmaps[id];
     for (const Json& f : loc.value("submaps", Json::array()))
       if (f.is_object() && f.contains("missionId")) floors.push_back({f["missionId"].get<std::string>(), f.value("floor", 0)});
+    sortFloors(floors);
   }
   l.submaps = l.defaultSubmaps;
   l.own = !l.base.empty();

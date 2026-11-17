@@ -4464,7 +4464,7 @@ class MapEditorStage : public Stage {
     for (ember::LocaisFloor& f : list)
       if (oldFloor && f.floor == floor) f.floor = *oldFloor;
     list.push_back({missionId, floor});
-    std::stable_sort(list.begin(), list.end(), [](const ember::LocaisFloor& a, const ember::LocaisFloor& b) { return a.floor > b.floor; });
+    ember::sortFloors(list);
     for (auto& [l, ids] : order_) ids.erase(std::remove(ids.begin(), ids.end(), missionId), ids.end());
     saveLocais("Andares atualizados.");
   }
@@ -4567,8 +4567,8 @@ class MapEditorStage : public Stage {
         ImGui::EndCombo();
       }
       if (ImGui::IsItemHovered()) ImGui::SetTooltip("Move pra este Local um mapa que já está em outro Local da campanha");
-      hint("Andar 0: entrada. Valores negativos: subsolo. Valores positivos: acima da entrada.");
-      // the campaign's missions (floor 0) and the floors, highest first
+      hint("Andar 0: térreo (entrada). Valores positivos: 1º, 2º, 3º andar. Valores negativos: subsolos.");
+      // the campaign's missions (the ground floor) and the floors in the one floor order: térreo, 1, 2, 3, then -1, -2
       struct Row {
         std::string id;
         int floor = 0, campaignIndex = -1;
@@ -4576,7 +4576,7 @@ class MapEditorStage : public Stage {
       std::vector<Row> rowsOf;
       for (size_t i = 0; i < ids.size(); ++i) rowsOf.push_back({ids[i], 0, static_cast<int>(i)});
       for (const ember::LocaisFloor& f : locais_.submaps[locId]) rowsOf.push_back({f.missionId, f.floor, -1});
-      std::stable_sort(rowsOf.begin(), rowsOf.end(), [](const Row& a, const Row& b) { return a.floor > b.floor; });
+      std::stable_sort(rowsOf.begin(), rowsOf.end(), [](const Row& a, const Row& b) { return ember::floorBefore(a.floor, b.floor); });
       std::optional<std::function<void()>> act;
       const bool table = !rowsOf.empty() && ImGui::BeginTable("##rows", 3, ImGuiTableFlags_SizingFixedFit);
       if (table) {

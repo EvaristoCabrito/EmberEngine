@@ -33,16 +33,16 @@
    ],
    "submaps": [
     {
-     "missionId": "wisp-forest-crossing-boss",
-     "floor": 1
-    },
-    {
      "missionId": "wisp-forest-2",
      "floor": 0
     },
     {
      "missionId": "wisp-forest",
      "floor": 0
+    },
+    {
+     "missionId": "wisp-forest-crossing-boss",
+     "floor": 1
     }
    ]
   },
@@ -122,12 +122,12 @@
      "floor": 0
     },
     {
-     "missionId": "cemiterio-esquecidos-cripta",
-     "floor": -1
-    },
-    {
      "missionId": "cemiterio-esquecidos-mausoleu",
      "floor": 0
+    },
+    {
+     "missionId": "cemiterio-esquecidos-cripta",
+     "floor": -1
     },
     {
      "missionId": "cemiterio-esquecidos-ruinas",
@@ -142,16 +142,16 @@
      "floor": -2
     },
     {
+     "missionId": "cemiterio-esquecidos-cripta-2",
+     "floor": -2
+    },
+    {
      "missionId": "cemetery-ground-deep-crypt-3",
      "floor": -3
     },
     {
      "missionId": "cemetery-ground-deep-crypt-4",
      "floor": -4
-    },
-    {
-     "missionId": "cemiterio-esquecidos-cripta-2",
-     "floor": -2
     }
    ]
   },
@@ -169,16 +169,16 @@
    ],
    "submaps": [
     {
-     "missionId": "watchtower-beacon",
-     "floor": 3
+     "missionId": "watchtower-barracks",
+     "floor": 1
     },
     {
      "missionId": "watchtower-command",
      "floor": 2
     },
     {
-     "missionId": "watchtower-barracks",
-     "floor": 1
+     "missionId": "watchtower-beacon",
+     "floor": 3
     },
     {
      "missionId": "watchtower-undercroft",
@@ -295,6 +295,10 @@
    ],
    "submaps": [
     {
+     "missionId": "farmlands-elevation-day",
+     "floor": 0
+    },
+    {
      "missionId": "farmlands-smith",
      "floor": 1
     },
@@ -317,10 +321,6 @@
     {
      "missionId": "farmlands-villagers",
      "floor": 1
-    },
-    {
-     "missionId": "farmlands-elevation-day",
-     "floor": 0
     }
    ],
    "openAccess": true
@@ -388,10 +388,6 @@
      "floor": -2
     },
     {
-     "missionId": "misty-hollow-earth",
-     "floor": -5
-    },
-    {
      "missionId": "misty-root-descent",
      "floor": -3
     },
@@ -402,6 +398,10 @@
     {
      "missionId": "misty-sporehaven",
      "floor": -4
+    },
+    {
+     "missionId": "misty-hollow-earth",
+     "floor": -5
     },
     {
      "missionId": "mordavia-underdark",
@@ -423,12 +423,8 @@
    ],
    "submaps": [
     {
-     "missionId": "frozen-swamp-crossing-2",
-     "floor": 2
-    },
-    {
-     "missionId": "frozen-swamp-crossing-3",
-     "floor": 3
+     "missionId": "frozen-tundra-crossing",
+     "floor": 0
     },
     {
      "missionId": "frozen-swamp-1-sunk-vault",
@@ -439,6 +435,10 @@
      "floor": 1
     },
     {
+     "missionId": "frozen-swamp-crossing-2",
+     "floor": 2
+    },
+    {
      "missionId": "frozen-swamp-2-sunk-vault",
      "floor": 2
     },
@@ -447,16 +447,16 @@
      "floor": 2
     },
     {
+     "missionId": "frozen-swamp-crossing-3",
+     "floor": 3
+    },
+    {
      "missionId": "frozen-swamp-3-sunk-vault",
      "floor": 3
     },
     {
      "missionId": "frozen-swamp-3-hidden-cellar",
      "floor": 3
-    },
-    {
-     "missionId": "frozen-tundra-crossing",
-     "floor": 0
     }
    ],
    "openAccess": true,
@@ -511,16 +511,16 @@
    "missionIds": [],
    "submaps": [
     {
+     "missionId": "crypt-of-whispers",
+     "floor": -1
+    },
+    {
      "missionId": "crypt-of-whispers-2",
      "floor": -2
     },
     {
      "missionId": "crypt-of-whispers-3",
      "floor": -3
-    },
-    {
-     "missionId": "crypt-of-whispers",
-     "floor": -1
     }
    ]
   }

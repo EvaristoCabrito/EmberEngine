@@ -8,6 +8,7 @@
 // it; there is no other copy (overworld*.json, campaign.json and editor-catalog.json no longer hold places). The
 // R-Encounter regions: Ember's from content/data/editor-catalog.json, EmberEngine's edits in content/maps/random-encounters.json.
 
+#include <algorithm>
 #include <filesystem>
 #include <map>
 #include <optional>
@@ -22,6 +23,15 @@ struct LocaisFloor {
   std::string missionId;
   int floor = 0;
 };
+
+// The one floor order (the user, 2026-11-17: "não faz sentido nenhum começar a torre ou qualquer dungeon em qualquer andar que
+// não seja térreo, depois é primeiro segundo e terceiro, seguido dos subsolos"): the ground floor (0), then 1, 2, 3 upward, then
+// the basements -1, -2, -3 downward. Every list of floors (the place list, the Map Editor, Modo teste) goes in this order.
+inline int floorRank(int floor) { return floor >= 0 ? floor : 100000 - floor; }
+inline bool floorBefore(int a, int b) { return floorRank(a) < floorRank(b); }
+inline void sortFloors(std::vector<LocaisFloor>& floors) {
+  std::stable_sort(floors.begin(), floors.end(), [](const LocaisFloor& a, const LocaisFloor& b) { return floorBefore(a.floor, b.floor); });
+}
 
 struct EncounterRegion {
   std::string id, name;
