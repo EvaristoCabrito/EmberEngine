@@ -27,6 +27,10 @@ S = {
     "frost": (5, dict(l=2, d=1, f=6, m=1.1), [("l", 1, 6), ("d", 1, 3), ("m", 0.05, 5)]),
     "poisonBreath": (3, dict(l=1, d=1, f=4, m=1.05), [("l", 1, 2), ("d", 1, 2), ("f", 2, 2), ("m", 0.04, 8)]),
     "fireball": (6, dict(r=5, a=0, d=2, f=6), [("r", 1, 6), ("r", 2, 1), ("a", 1, 2), ("d", 1, 4)]),
+    # Ignite, monsters only (the user, 2026-11-17: "a basic flame spell ... with proper scaling, but the aoe is always radius 2"):
+    # reach, dice and weight on MAG; never an area step (radius 2 from the first level to the last). T2 (the user: "move it to T2"):
+    # anchored at 3, as the Relâmpago and the Teia dos Sonhos
+    "ignite": (3, dict(r=5, a=2, d=1, f=6, m=1.0), [("r", 1, 4), ("d", 1, 4), ("m", 0.05, 6)]),
     "causticVenom": (11, dict(r=7, a=0, d=1, f=10, m=1.5), [("r", 1, 4), ("r", 2, 1), ("a", 1, 3), ("d", 1, 2), ("m", 0.1, 3)]),
     "lightningTier3": (15, dict(r=7, d=3, f=12, m=3.0), [("r", 1, 4), ("r", 2, 1), ("d", 1, 3), ("m", 0.1, 6)]),
     # --- Curandeiro / Paladino -----------------------------------------------------------------------------------------
@@ -469,6 +473,7 @@ print("Como jogar rows changed:", changed, "| with a track and no row there:", "
 # docs/SPELLS_SCALING.md
 NAMES = {
     "magicMissile": "Míssil Mágico", "lightning": "Relâmpago", "frost": "Frost", "poisonBreath": "Sopro Venenoso", "fireball": "Bola de Fogo",
+    "ignite": "Ignite (monstros; o Elementalista com a especialização)",
     "causticVenom": "Veneno Cáustico", "lightningTier3": "Relâmpago Maior", "cureMinor": "Cura Menor", "bless": "Bênção", "cureWounds": "Cura Média",
     "burningHands": "Mãos Flamejantes", "turnUndead": "Expulsar Mortos-Vivos", "cureDisease": "Curar Doença", "divineBolt": "Raio Divino",
     "circleOfHealing": "Círculo de Cura", "resurrection": "Ressurreição", "judgment": "Julgamento", "cureLight": "Mãos Curativas",

@@ -781,6 +781,7 @@ struct Cues {
     for (const char* k : {"shock", "frost", "fantomForce"})
       if (std::find(kinds.begin(), kinds.end(), k) == kinds.end()) kinds.push_back(k);
     if (u.classId == "cultistV2") kinds.push_back("acidArrow");  // the White Cultist's two Flechas Ácidas (Battle.cpp): his cast's sound
+    if (u.classId == "roccoTheBird") kinds.push_back("ignite");  // Rocco's two Ignites (Battle.cpp): his cast's sound
     for (const std::string& k : kinds) spells[k] = spell(u, k);
     const bool plant = u.sprite == "carnivorous-plant-001" || u.sprite == "sapling-001";
     json hit = json::array(), death = json::array();

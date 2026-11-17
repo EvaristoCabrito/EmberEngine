@@ -151,6 +151,9 @@ void applyEmberClass(BattleUnit& o) {
     for (const json& k : c["spellList"])
       if (k.is_string()) o.spellList.push_back(k.get<std::string>());
   o.shockCharges = o.frostCharges = o.fantomForceCharges = o.spectralCharges = 0;
+  // its own Ignites a fight (the Ember Mushroom's), on top of its tier uses
+  o.igniteCharges.reset();
+  if (c.contains("igniteCharges") && c["igniteCharges"].is_number()) o.igniteCharges = integer(c, "igniteCharges");
   o.undead = c.value("undead", false);
   o.footprintOffsets.reset();
 }
@@ -370,6 +373,11 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
       o.spectralCharges = o.classId == "emberedWraith" ? 2 : o.classId == "apparition" || o.classId == "undeadOx" ? 1 : 0;
     // The White Cultist (the user, 2026-11-10: "2X Milf Acid Arrow on top of regular spells"): two Flechas Ácidas a fight of its own
     if (progressionEnabled() && o.side == "enemy" && o.classId == "cultistV2") o.acidArrowCharges = 2;
+    // Rocco The Bird (the user, 2026-11-17: "you can add 2X ignite to Rocco too"): two Ignites a fight of his own
+    if (progressionEnabled() && o.side == "enemy" && o.classId == "roccoTheBird") {
+      o.igniteCharges = 2;
+      if (std::find(o.spellList.begin(), o.spellList.end(), std::string("ignite")) == o.spellList.end()) o.spellList.push_back("ignite");
+    }
     if (u.contains("fantomForceDice") && u["fantomForceDice"].is_object())
       o.fantomDice = integer(u["fantomForceDice"], "dice"), o.fantomFaces = integer(u["fantomForceDice"], "faces");
     o.xp = integer(u, "xp");

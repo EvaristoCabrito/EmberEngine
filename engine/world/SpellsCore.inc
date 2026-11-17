@@ -159,6 +159,22 @@ constexpr int kFireballRange = 5, kFireballSize = 1 /* small area (D&D Fireball,
 constexpr double kFireballMul = 1.35;
 // AD&D 2e Fireball gains dice with the caster's level: here on its track (kSpellTracks).
 int fireballDice(int level) { return kFireballDice + spellGains("fireball", level).n('d'); }
+// Ignite (the user, 2026-11-17: "make a basic flame spell in 3D for monsters only, with proper scaling, but the aoe is always radius
+// 2", "call it just Ignite", "make it a T3 spell too", then "move it to T2"; no projectile): the air over the aimed hex catches fire. Tier 2, Fogo, aimed
+// at a hex in reach with a line of fire;
+// every hex within 2 rings of it at every level (its track has no area steps), the caster's foes only. 1D6 x 1.0 on MAG at first;
+// its track adds reach, dice and weight on MAG (kSpellTracks). A monster carries it in its spellList (its own casts: igniteCharges);
+// the Elementalista gains it with the specialization ("make elementalist gain access to it", grantClassSpells).
+constexpr int kIgniteRange = 5, kIgniteRadius = 2, kIgniteDice = 1, kIgniteFaces = 6;
+constexpr double kIgniteMul = 1.0;
+struct IgniteP {
+  int dice, faces;
+  double mul;
+};
+IgniteP ignitePower(int level) {
+  const TrackGains g = spellGains("ignite", level);
+  return {kIgniteDice + g.n('d'), kIgniteFaces, kIgniteMul + g('m')};
+}
 struct BoltData {
   int size, range, centerDice, centerFaces, centerBonus, splashDice, splashFaces, splashBonus;
   double centerMul, splashMul;
@@ -848,6 +864,7 @@ bool aimE2(const Battle& b, size_t caster, const std::string& kind, BattleHex ce
     return clearShot(b, from, cell, false) ? yes() : no("O impacto está bloqueado.");
   }
   if (kind == "fireball") return bolt(grown(kFireballRange));
+  if (kind == "ignite") return bolt(grown(kIgniteRange));
   if (kind == "iceStorm") return bolt(grown(iceStormPower(u.level).range));
   if (kind == "acidCloud") return bolt(grown(iceStormPower(u.level).range));
   if (kind == "causticVenom") return bolt(grown(kCausticVenom.range));
@@ -1195,6 +1212,14 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
       s.poison = kind != "divineBolt";
     }
     steps.push_back(s);
+  } else if (kind == "ignite") {
+    if (checkUses && tierRemaining(u, kind) <= 0) return fail("Sem usos de Ignite.");
+    const IgniteP p = ignitePower(u.level);
+    const std::vector<BattleHex> tiles = areaTiles(b, cell, kIgniteRadius);
+    spendTier(u, kind);
+    s.tiles = tiles, s.ids = unitsAlong(b, tiles, caster, &u.side);
+    s.dice = p.dice, s.faces = p.faces, s.bonus = 0, s.spellMul = p.mul;
+    steps.push_back(s);
   } else if (kind == "iceStorm") {
     const IceStormP p = iceStormPower(u.level);
     const std::vector<BattleHex> area = iceStormAreaTiles(b, cell, u.level);
@@ -1373,7 +1398,8 @@ bool e2Kind(const std::string& k) {
                                       "divineBolt", "minorVenom", "iceStorm",   "turnUndead",        "lightningTier3", "familiarLifeDrain",  "phantasmalForce",
                                       "provoke",    "bullRush",     "bless",     "webOfDreams", "auraOfProtection", "intimidatingPresence", "warp",
                                       "summonFamiliar", "summonFamiliar2", "summonFamiliar3", "summonFamiliar4", "summonZombieDog", "spectralBolt",
-                                      "acidCloud", "acidArrow", "witchStitch", "burialWeight", "abyssalSwap", "arcaneBanquet", "twinResonance"};
+                                      "acidCloud", "acidArrow", "witchStitch", "burialWeight", "abyssalSwap", "arcaneBanquet", "twinResonance",
+                                      "ignite"};
   for (const char* c : kinds)
     if (k == c) return true;
   return false;
@@ -1400,6 +1426,7 @@ std::vector<BattleHex> areaE2(const Battle& b, size_t caster, const std::string&
   if (kind == "spectralBolt" || kind == "acidArrow") return areaTiles(b, cell, 0);
   if (kind == "burialWeight") return areaTiles(b, cell, 1);
   if (kind == "fireball") return areaTiles(b, cell, areaRadius(kind, kFireballSize, u.level));
+  if (kind == "ignite") return areaTiles(b, cell, kIgniteRadius);
   if (kind == "causticVenom") return areaTiles(b, cell, areaRadius(kind, kCausticVenom.size, u.level));
   if (kind == "minorVenom") return areaTiles(b, cell, areaRadius(kind, kMinorVenom.size, u.level));
   if (kind == "divineBolt") return areaTiles(b, cell, areaRadius(kind, kDivineBolt.size, u.level));

@@ -95,6 +95,7 @@ inline const std::vector<SpellEntry>& allSpells() {
       {"poisonBreath", "Sopro Venenoso", false},
       {"tendrilSwipe", "Golpe de Tentáculo", true},  // [ours]
       {"burningHands", "Mãos Flamejantes", false},
+      {"ignite", "Ignite", false},  // [ours] the monsters' T2 fire, the Elementalista's extra spell (2026-11-17)
       {"turnUndead", "Expulsar Mortos-Vivos", false},
       {"createFoodAndWater", "Criar Comida e Água", false},
       // EmberEngine's own: the Bruxo's and the Elementalista's T6-T10 (world/Spells.cpp kEmberSpells)

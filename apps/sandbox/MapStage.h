@@ -11444,7 +11444,7 @@ class MapStage final : public Stage {
     if (const std::optional<std::string> potion = potionOf(kind)) return artRoot / "game/icons" / ("potion-" + *potion + ".png");
     static const std::pair<const char*, const char*> kIcons[] = {
         {"doubleStrike", "refresh-001/spells/cleave-crossed-blades.png"}, {"cleave", "refresh-001/spells/cleave.png"},
-        {"fireball", "refresh-001/spells/fireball.png"}, {"frost", "frost.jpg"}, {"iceStorm", "ice-storm.jpg"},
+        {"fireball", "refresh-001/spells/fireball.png"}, {"ignite", "refresh-001/spells/fireball.png"}, {"frost", "frost.jpg"}, {"iceStorm", "ice-storm.jpg"},
         {"causticVenom", "refresh-001/spells/caustic-venom.png"}, {"minorVenom", "refresh-001/spells/caustic-venom.png"},
         {"divineBolt", "divine-bolt.jpg"}, {"lightning", "refresh-001/spells/lightning.png"}, {"lightningTier3", "refresh-001/spells/lightning.png"},
         {"shock", "refresh-001/spells/lightning.png"}, {"magicMissile", "refresh-001/spells/magic-missile.png"},
@@ -14284,7 +14284,7 @@ class MapStage final : public Stage {
   // own colour whatever the spell (the user, 2026-10-18): Malrec blue, Salazar yellow, Voss purple.
   static std::array<float, 3> castTint(const std::string& kind, bool heal, const std::string& hero, bool attack) {
     static const std::unordered_map<std::string, uint32_t> kTint = {
-        {"fireball", 0xff8a3c}, {"burningHands", 0xff8a3c}, {"frost", 0x9fd6ff}, {"iceStorm", 0x9fd6ff}, {"lightning", 0xb8d2ff},
+        {"fireball", 0xff8a3c}, {"ignite", 0xff8a3c}, {"burningHands", 0xff8a3c}, {"frost", 0x9fd6ff}, {"iceStorm", 0x9fd6ff}, {"lightning", 0xb8d2ff},
         {"shock", 0xb8d2ff}, {"causticVenom", 0x86ff7c}, {"minorVenom", 0x86ff7c}, {"poisonBreath", 0x86ff7c}, {"lifeDrain", 0xff5a6e},
         {"magicMissile", 0xc7b4ff}, {"magicMissileV2", 0xc7b4ff}, {"phantasmalForce", 0xc7b4ff}, {"fantomForce", 0xc7b4ff},
         {"webOfDreams", 0xd8c8ff}, {"warp", 0xb48cff}};

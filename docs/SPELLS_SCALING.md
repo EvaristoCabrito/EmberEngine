@@ -46,6 +46,12 @@ Escala do nível 6 ao 20, uma melhoria pequena por nível: dano 2D6 → 6D6; alc
 
 Nível a nível: 7: +1 hex de alcance, 8: +1 dado, 9: +1 anel, 10: +1 hex de alcance, 11: +1 dado, 12: +1 hex de alcance, 14: +1 hex de alcance, 15: +1 hex de alcance, 16: +1 dado, 17: +1 hex de alcance, 18: +1 anel, 19: +1 dado, 20: +1 hex de alcance.
 
+### Ignite (monstros)
+
+Escala do nível 3 ao 17, uma melhoria pequena por nível: dano 1D6 → 5D6; alcance 5 → 9; peso do MAG 1 → 1,3.
+
+Nível a nível: 4: +0,05 peso do MAG, 5: +1 hex de alcance, 6: +1 dado, 7: +0,05 peso do MAG, 8: +1 hex de alcance, 9: +1 dado, 10: +0,05 peso do MAG, 11: +0,05 peso do MAG, 12: +1 hex de alcance, 13: +1 dado, 14: +0,05 peso do MAG, 15: +1 hex de alcance, 16: +1 dado, 17: +0,05 peso do MAG.
+
 ### Veneno Cáustico
 
 Escala do nível 11 ao 25, uma melhoria pequena por nível: dano 1D10 → 3D10; alcance 7 → 13; área 3 hexes → 3 anéis; peso do MAG 1,5 → 1,8.

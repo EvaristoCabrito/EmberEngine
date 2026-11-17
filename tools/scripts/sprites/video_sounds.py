@@ -8,9 +8,11 @@ death from it, as the Nekomata's, the Telesm's and the Sahagin's).
 - `attackFrom`: a unit whose cast plays as its blow (no attack clip) gets its cast's sound for the attack too;
 - every sound brought to one loudness (EBU R128, -18 LUFS, the -2 dBTP ceiling), the levels set as the other units' (0.55, the walk 0.45);
 - a clip whose audio is silence (under -55 dB mean) is skipped, and a file of that name already there is never overwritten (the next
-  number is used).
+  number is used);
+- `--borrow sprite:kind,kind`: those kinds take another unit's sounds (its row in sounds.monster) instead of the clips' own audio
+  (the Ember Mushroom, the user 2026-11-17: its hit / fall video's sound not to be used, the Mush's instead).
 
-    python -I tools/scripts/sprites/video_sounds.py <cut.json> <Name> [--attack-from cast]
+    python -I tools/scripts/sprites/video_sounds.py <cut.json> <Name> [--attack-from cast] [--borrow sprite:kind,kind]
 """
 import argparse
 import json
@@ -69,11 +71,19 @@ def main():
     ap.add_argument("spec")
     ap.add_argument("name")
     ap.add_argument("--attack-from", default="")
+    ap.add_argument("--borrow", default="")
     a = ap.parse_args()
     spec = json.load(open(a.spec, encoding="utf-8"))
     res = json.load(open(os.path.join(os.path.dirname(a.spec), spec.get("result", "cut-result.json")), encoding="utf-8"))["clips"]
     sprite = spec["set"]
     sounds = {}
+    if a.borrow:
+        donor, kinds = a.borrow.split(":", 1)
+        row = json.load(open(RULES, encoding="utf-8"))["sounds"]["monster"][donor]
+        for kind in kinds.split(","):
+            if kind in row:
+                sounds[kind] = row[kind]
+                print(f"{sprite} {kind}: borrowed from {donor} ({', '.join(s['file'] for s in row[kind])})")
     for c in spec["clips"]:
         kind = c.get("pose") if c.get("pose") in KINDS else None
         if kind is None or kind in sounds:

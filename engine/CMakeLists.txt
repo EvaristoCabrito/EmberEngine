@@ -28,6 +28,7 @@ add_library(EmberEngine STATIC
   render/SpellEffectsEmber.cpp
   render/vfx/MagicMissileV2.cpp
   render/vfx/Fireball.cpp
+  render/vfx/Ignite.cpp
   render/vfx/Bless.cpp
   render/vfx/HolyLight.cpp
   render/vfx/FrostLine.cpp

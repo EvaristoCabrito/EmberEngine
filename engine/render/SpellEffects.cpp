@@ -96,6 +96,7 @@ int SpellEffects::looks(const std::string& kind) {
   // 01 of a spell with no flipbook-card version: Ember's own effect, ported.
   if (kind == "causticVenom") return 3;  // 01 Ember's CausticVenomVFX, 02 its impact in 3D (vfx/CausticVenom), 03 ours, gas (vfx/PoisonFx)
   if (kind == "fireball") return 2;  // 01 Ember's FireballVFX (the enemies'), 02 ours: a real volume of fire (vfx/Fireball, volume)
+  if (kind == "ignite") return 1;    // 01 ours: the air over the area catches fire, no projectile (vfx/Ignite)
   if (kind == "bless" ||
       kind == "webOfDreams" || kind == "burningHands" || kind == "poisonBreath" || kind == "cleave" || kind == "sweep")
     return 1;
@@ -148,6 +149,7 @@ int SpellEffects::classicLook(const std::string& kind) {
   if (kind == "turnUndead") return 1;                                // ours in 3D (vfx/TurnUndead)
   if (isLightning(kind, 2)) return 2;                                // Raio, ours in 3D (vfx/Lightning; 01 = the cards, the enemies')
   if (kind == "fireball") return 2;                                  // ours, a volume of fire (01 = FireballVFX, the enemies')
+  if (kind == "ignite") return 1;                                    // ours, the air catching fire (vfx/Ignite)
   if (kind == "bless") return 1;                                     // BlessVFX
   // The poison gas (vfx/PoisonFx) is the heroes'; the enemies keep each spell's first version (the user, 2026-11-13: "os inimigos
   // novamente podem continuar com as versões antigas para termos variação de efeitos").
@@ -204,6 +206,7 @@ float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& c
   if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2 && !targets.empty())
     return MagicMissileV2::impactDelay(classicOrigin(caster), targets.front().body);
   if (kind == "fireball" && look >= 1 && !targets.empty()) return Fireball::travelSeconds(classicOrigin(caster), fireballTarget(targets));
+  if (kind == "ignite" && look >= 1) return Ignite::kLead;  // no flight: the heat gathers over the area, then it ignites
   if (kind == "phantasmalForce" && look == 1) return PhantasmalForce::kImpactAt;
   if (isArcane(kind, look) && !targets.empty())
     return ArcaneSpell::lead(kind == "phantasmalForce" ? ArcaneSpell::Style::Phantasmal : ArcaneSpell::Style::Missile, caster.feet, targets.front().feet);
@@ -291,6 +294,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     if (isMage(kind)) end = std::max(end, mage_.latestEnd());
     for (size_t i = before[7]; i < burns_.size(); ++i) end = std::max(end, burns_[i].first.end());
     if (kind == "acidCloud") end = std::max(end, start + 0.55f);
+    if (kind == "ignite" && !ignites_.empty()) end = std::max(end, ignites_.back().end());
     if (kind == "iceStorm" && !storms_.empty()) end = std::max(end, storms_.back().start() + 1.0f);  // its first second, not the whole storm
     if (isBolt(kind, look) && !bolts_.empty()) end = std::max(end, bolts_.back().end());
     if (isLightning(kind, look) && !lightnings_.empty()) end = std::max(end, lightnings_.back().end());
@@ -677,6 +681,12 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     }
   } else if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2) missiles_.emplace_back(classicOrigin(caster), targets.front().body, start);
   else if (kind == "fireball") fireballs_.emplace_back(classicOrigin(caster), fireballTarget(targets), fireballArea(targets), start, look == 2);
+  else if (kind == "ignite") {
+    // Ignite (vfx/Ignite): every hex of the area, the aimed one (the area's middle) the first to catch fire, at the impact
+    std::vector<glm::vec3> cells;
+    for (const Spot& s : targets) cells.push_back(s.feet);
+    ignites_.emplace_back(std::move(cells), areaCentre(targets).feet, impact, static_cast<uint32_t>(random() * 4294967295.0f));
+  }
   else if (kind == "phantasmalForce") phantasms_.emplace_back(targets.front().body, start);
   else if (kind == "cleave" || kind == "sweep") {
     // BattleSpells3D: Cleave's blade swings at weapon height (0.7) through its targets, Varredura's wave runs on the
@@ -1107,6 +1117,7 @@ bool SpellEffects::active(float now) const {
     return true;
   if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
   if (std::any_of(fireballs_.begin(), fireballs_.end(), [&](const Fireball& f) { return !f.done(now); })) return true;
+  if (std::any_of(ignites_.begin(), ignites_.end(), [&](const Ignite& g) { return !g.done(now); })) return true;
   if (std::any_of(blesses_.begin(), blesses_.end(), [&](const Bless& b) { return !b.done(now); })) return true;
   if (std::any_of(holies_.begin(), holies_.end(), [&](const HolyLight& h) { return !h.done(now); })) return true;
   if (std::any_of(venoms_.begin(), venoms_.end(), [&](const CausticVenom& v) { return !v.done(now); })) return true;
@@ -1169,6 +1180,8 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
     const VfxFlipbook fire = flipbook("fire-flipbook-4x4");
     for (Fireball& f : fireballs_) f.build(now, camera, fire, vfx_, vfxLights);
   }
+  std::erase_if(ignites_, [&](const Ignite& g) { return g.done(now); });
+  for (const Ignite& g : ignites_) g.build(now, camera, vfx_, vfxLights);
   std::erase_if(bolts_, [&](const SpellBolt& b) { return b.done(now); });
   for (const SpellBolt& b : bolts_) b.build(now, camera, vfx_, vfxLights);
   std::erase_if(lightnings_, [&](const Lightning& l) { return l.done(now); });

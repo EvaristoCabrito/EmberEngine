@@ -71,6 +71,7 @@ constexpr SpellData kSpells[] = {
     {"warp", "Portal", 3, "arcane", false},
     {"bless", "Bênção", 1, "", false},
     {"burningHands", "Mãos Flamejantes", 2, "fire", false},
+    {"ignite", "Ignite", 2, "fire", false},  // the monsters' and the Elementalista's (the user, 2026-11-17): the air over the aimed hex catches fire, radius 2 always
     {"turnUndead", "Expulsar Mortos-Vivos", 3, "holy", false},
     {"divineBolt", "Raio Divino", 4, "holy", false},
     {"summonFamiliar", "Invocar Familiar", 1, "", false},
@@ -473,6 +474,7 @@ constexpr SpellTrack kSpellTracks[] = {
     {"frost", 5, "l1 m0.05 d1 l1 m0.05 l1 d1 m0.05 l1 m0.05 l1 d1 m0.05 l1"},
     {"poisonBreath", 3, "m0.04 l1 m0.04 d1 m0.04 f2 m0.04 m0.04 l1 m0.04 d1 m0.04 f2 m0.04"},
     {"fireball", 6, "r1 d1 a1 r1 d1 r1 - r2 r1 d1 r1 a1 d1 r1"},
+    {"ignite", 3, "m0.05 r1 d1 m0.05 r1 d1 m0.05 m0.05 r1 d1 m0.05 r1 d1 m0.05"},
     {"causticVenom", 11, "r1 a1 m0.1 d1 r1 r2 - a1 m0.1 r1 d1 a1 m0.1 r1"},
     {"lightningTier3", 15, "m0.1 r1 d1 m0.1 r1 m0.1 r2 d1 m0.1 r1 m0.1 d1 r1 m0.1"},
     {"cureMinor", 1, "m0.05 r1 d1 m0.05 m0.05 r1 d1 m0.05 r1 m0.05 m0.05 d1 r1 m0.05"},
@@ -1145,6 +1147,7 @@ std::vector<BattleHex> frostTiles(const Battle& b, BattleHex origin, BattleHex t
 int tierRemaining(const BattleUnit& u, const std::string& kind) {
   if (kind == "frost" && u.side == "enemy") return u.frostCharges;
   if (kind == "acidArrow" && u.acidArrowCharges) return *u.acidArrowCharges;  // its own casts, never its tier-2 uses
+  if (kind == "ignite" && u.igniteCharges) return *u.igniteCharges;            // its own casts, never its tier-2 uses
   if (kind == "poisonBreath" && u.level < 3) return 0;  // POISON_BREATH.unlockLevel
   if (kind == "burningHands" && u.level < 5) return 0;
   const int tier = unitTierOf(u, kind);
@@ -1157,6 +1160,10 @@ void spendTier(BattleUnit& u, const std::string& kind) {
   }
   if (kind == "acidArrow" && u.acidArrowCharges) {
     u.acidArrowCharges = std::max(0, *u.acidArrowCharges - 1);
+    return;
+  }
+  if (kind == "ignite" && u.igniteCharges) {
+    u.igniteCharges = std::max(0, *u.igniteCharges - 1);
     return;
   }
   const int tier = unitTierOf(u, kind);
@@ -2630,6 +2637,9 @@ std::vector<std::string> checkSpellTracks(std::vector<std::string>* report) {
       add({double(p.length), double(p.dice), double(p.faces), p.mul});
     } else if (kind == "fireball") {
       add({double(fireballDice(lv))});
+    } else if (kind == "ignite") {
+      const IgniteP p = ignitePower(lv);
+      add({double(p.dice), p.mul});
     } else if (kind == "causticVenom" || kind == "minorVenom" || kind == "divineBolt") {
       const BoltData d = boltPower(kind, lv);
       add({double(d.centerDice), d.centerMul, double(d.splashDice), d.splashMul});
@@ -2761,6 +2771,9 @@ void grantClassSpells(BattleUnit& u) {
   if (u.side == "player" && emberClassFamily(u.classId) == std::string("mage") && u.level >= kMageIceStormLevel &&
       !contains(u.spellList, std::string("iceStorm")))
     u.spellList.push_back("iceStorm");
+  // Ignite (the monsters' T2 fire): the Elementalista gains it as one more spell once he takes the specialization (the user,
+  // 2026-11-17: "make elementalist gain access to it as additional spell when he picks the specialization"); his tier-2 uses
+  if (u.classId == "elementalist" && !contains(u.spellList, std::string("ignite"))) u.spellList.push_back("ignite");
   if (progressionEnabled() && u.side == "player") {
     // the user, 2026-10-27: the Numen (the old Familiar Titã) is a T6 the Arcanista and the Necromante share (T6 opens at 15), the Cão Zumbi the
     // Necromante's T8, both T8 summons from 20 (the user, 2026-10-27: "espaçar mais o ganho de familiares"), beside the Arcanista's Cervo
@@ -2885,6 +2898,8 @@ std::string spellExplain(const std::string& kind, bool en) {
        "A cone of fire in front of you: everyone in it takes damage, allies too."},
       {"fireball", "Explode no hex que você mira: todos na área levam o mesmo dano, aliados também. Precisa de linha de tiro até o hex.",
        "Bursts on the hex you aim at: everyone in the area takes the same damage, allies too. Needs a clear shot to the hex."},
+      {"ignite", "O ar sobre o hex mirado pega fogo, raio 2 em todo nível; só os inimigos de quem lança levam o dano. Precisa de linha de tiro até o hex.",
+       "The air over the aimed hex catches fire, radius 2 at every level; only the caster's foes take the damage. Needs a clear shot to the hex."},
       {"causticVenom", "Ácido venenoso no hex mirado: quem está no centro leva o golpe forte, os outros na área levam o respingo; todos ficam envenenados, aliados também.",
        "Poisonous acid on the aimed hex: whoever stands in the centre takes the strong hit, the others in the area the splash; all are poisoned, allies too."},
       {"minorVenom", "Veneno fraco no hex mirado: o centro leva o golpe, a área em volta o respingo; todos ficam envenenados.",
@@ -3050,6 +3065,10 @@ std::string spellScaleTextRaw(const BattleUnit& c, const std::string& kind, bool
     return std::format("{} {} hexes · {} {}", pick("cone de", "cone of"), p.radius, damage, dmg(p.mul, p.dice, p.faces));
   }
   if (kind == "fireball") return std::format("{} · {} · {} {}", reach(kFireballRange), area(kFireballSize), damage, dmg(kFireballMul, fireballDice(lv), kFireballFaces));
+  if (kind == "ignite") {
+    const IgniteP p = ignitePower(lv);
+    return std::format("{} · {} · {} {}", reach(kIgniteRange), area(kIgniteRadius), damage, dmg(p.mul, p.dice, p.faces));
+  }
   if (kind == "acidCloud") {
     const IceStormP p = acidCloudPower(lv);
     return std::format("{} · {} · {} · {}% {}", reach(p.range), area(p.size), dmg(p.mul, p.dice, p.faces),
@@ -3301,7 +3320,7 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"cureDisease", "Cure Disease"}, {"createFoodAndWater", "Create Food and Water"}, {"fantomForce", "Phantom Force"}, {"spectralBolt", "Spectral Bolt"},
     {"bloodyShot", "Bloody Shot"}, {"multiShot", "Multi Shot"}, {"provoke", "Provoke"}, {"cleave", "Cleave"}, {"sweep", "Sweep"},
     {"trip", "Trip"}, {"bullRush", "Bull Rush"}, {"shieldBash", "Shield Bash"}, {"executionerStrike", "Executioner's Strike"},
-    {"fireball", "Fireball"}, {"iceStorm", "Ice Storm"}, {"acidCloud", "Acid Cloud"}, {"acidArrow", "Milf's Acid Arrow"}, {"causticVenom", "Caustic Venom"}, {"poisonBreath", "Poison Breath"},
+    {"fireball", "Fireball"}, {"ignite", "Ignite"}, {"iceStorm", "Ice Storm"}, {"acidCloud", "Acid Cloud"}, {"acidArrow", "Milf's Acid Arrow"}, {"causticVenom", "Caustic Venom"}, {"poisonBreath", "Poison Breath"},
     {"warp", "Warp"}, {"bless", "Bless"}, {"burningHands", "Burning Hands"}, {"turnUndead", "Turn Undead"},
     {"divineBolt", "Divine Bolt"}, {"summonFamiliar", "Summon Familiar"}, {"phantasmalForce", "Phantasmal Force"},
     {"webOfDreams", "Web of Dreams"}, {"summonFamiliar2", "Greater Familiar"}, {"summonFamiliar3", "Summon Numen"},
@@ -3652,6 +3671,7 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   else if (kind == "swapPost") maxRange = emberNumbers(kind, u.level).range;
   else if (kind == "spearToss" || kind == "impaleDrag") maxRange = -1;  // wherever a throw / a drag can end
   else if (kind == "fireball") maxRange = grown(kFireballRange), shot = true;
+  else if (kind == "ignite") maxRange = grown(kIgniteRange), shot = true;
   else if (kind == "causticVenom") maxRange = grown(kCausticVenom.range), shot = true;
   else if (kind == "minorVenom") maxRange = grown(kMinorVenom.range), shot = true;
   else if (kind == "divineBolt") maxRange = grown(kDivineBolt.range), shot = true;
@@ -5436,7 +5456,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
       }
     }
   const bool ember = emberSpell(step.kind) != nullptr;
-  static const char* const kAoeKinds[] = {"turnUndead", "fireball", "cleave", "piercing", "causticVenom", "minorVenom", "piercingThrust", "sweep",
+  static const char* const kAoeKinds[] = {"turnUndead", "fireball", "ignite", "cleave", "piercing", "causticVenom", "minorVenom", "piercingThrust", "sweep",
                                           "divineWrath", "shoulderSmash", "stampede", "burningHands", "poisonBreath", "tendrilSwipe"};
   const bool aoe = std::any_of(std::begin(kAoeKinds), std::end(kAoeKinds), [&](const char* k) { return step.kind == k; }) || (ember && step.ids.size() > 1);
   bool firstAoe = true;
@@ -6280,6 +6300,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
         else if (s.kind == "fantomForce") w.fantomForceCharges += 1;
         else if (s.kind == "spectralBolt") w.spectralCharges += 1;
         else if (s.kind == "acidArrow" && w.acidArrowCharges) *w.acidArrowCharges += 1;
+        else if (s.kind == "ignite" && w.igniteCharges) *w.igniteCharges += 1;
         else if (const int tier = unitTierOf(w, s.kind); tier > 0) w.spells[tier - 1] += 1;
       }
       return std::nullopt;
@@ -6307,6 +6328,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
     else if (s.kind == "fantomForce") w.fantomForceCharges += 1;
     else if (s.kind == "spectralBolt") w.spectralCharges += 1;
     else if (s.kind == "acidArrow" && w.acidArrowCharges) *w.acidArrowCharges += 1;
+    else if (s.kind == "ignite" && w.igniteCharges) *w.igniteCharges += 1;
     else if (const int tier = unitTierOf(w, s.kind); tier > 0) w.spells[tier - 1] += 1;
   }
   return std::nullopt;
@@ -6632,52 +6654,122 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
         return single(*p, "magicMissile", kMissileDice, kMissileFaces, kMissileBonus, missileMul(u.level), std::nullopt);
       }
   }
-  // Rocco The Bird: Burning Beak (Maos Flamejantes) outranks Missil Magico outranks Choque; the cone is never aimed where it would
-  // also burn one of his own.
-  if (c == "roccoTheBird" && (u.spells[0] > 0 || u.spells[1] > 0 || u.shockCharges > 0)) {
-    if (u.spells[1] > 0) {
-      const ConeP power = burningHandsPower(u.level);
-      struct ConePick {
-        std::vector<BattleHex> tiles;
+  // Mãos Flamejantes from the best hex of its reach: the cone that burns the most foes, never aimed where it would also burn one of
+  // its own (Rocco The Bird's Burning Beak, the fire casters below).
+  auto burningCone = [&]() -> std::optional<AiCast> {
+    const ConeP power = burningHandsPower(u.level);
+    struct ConePick {
+      std::vector<BattleHex> tiles;
+      std::vector<size_t> ids;
+      BattleHex from;
+      int score = 0;
+    };
+    std::optional<ConePick> cone;
+    for (const ReachCell& cell : reach)
+      for (const CubeI& dir : kCubeDirs) {
+        const std::vector<BattleHex> tiles = coneSector(b, {cell.x, cell.y}, dir, power.radius);
         std::vector<size_t> ids;
-        BattleHex from;
-        int score = 0;
-      };
-      std::optional<ConePick> cone;
-      for (const ReachCell& cell : reach)
-        for (const CubeI& dir : kCubeDirs) {
-          const std::vector<BattleHex> tiles = coneSector(b, {cell.x, cell.y}, dir, power.radius);
-          std::vector<size_t> ids;
-          int sc = 0;
-          bool burnsAlly = false;
-          for (const BattleHex& t : tiles) {
-            const int who = firstAt(b, t);
-            if (who < 0 || static_cast<size_t>(who) == unit || std::find(ids.begin(), ids.end(), static_cast<size_t>(who)) != ids.end()) continue;
-            const BattleUnit& v = b.units()[static_cast<size_t>(who)];
-            if (v.side != "player") burnsAlly = true;
-            ids.push_back(static_cast<size_t>(who));
-            sc += 10 + (v.maxHp - v.hp) * 3 + (v.hp <= 8 ? 20 : 0);
-          }
-          if (burnsAlly || ids.empty()) continue;
-          if (!cone || sc > cone->score) cone = ConePick{tiles, ids, {cell.x, cell.y}, sc};
+        int sc = 0;
+        bool burnsAlly = false;
+        for (const BattleHex& t : tiles) {
+          const int who = firstAt(b, t);
+          if (who < 0 || static_cast<size_t>(who) == unit || std::find(ids.begin(), ids.end(), static_cast<size_t>(who)) != ids.end()) continue;
+          const BattleUnit& v = b.units()[static_cast<size_t>(who)];
+          if (v.side != "player") burnsAlly = true;
+          ids.push_back(static_cast<size_t>(who));
+          sc += 10 + (v.maxHp - v.hp) * 3 + (v.hp <= 8 ? 20 : 0);
         }
-      if (cone) {
-        AiCast cast;
-        cast.path = walkTo(cone->from);
-        spendTier(u, "burningHands");
-        BattleStep s;
-        s.att = unit, s.kind = "burningHands", s.tiles = cone->tiles, s.ids = cone->ids;
-        s.dice = power.dice, s.faces = power.faces, s.bonus = 0, s.spellMul = power.mul;
-        cast.steps.push_back(s);
-        return cast;
+        if (burnsAlly || ids.empty()) continue;
+        if (!cone || sc > cone->score) cone = ConePick{tiles, ids, {cell.x, cell.y}, sc};
       }
+    if (!cone) return std::nullopt;
+    AiCast cast;
+    cast.path = walkTo(cone->from);
+    spendTier(u, "burningHands");
+    BattleStep s;
+    s.att = unit, s.kind = "burningHands", s.tiles = cone->tiles, s.ids = cone->ids;
+    s.dice = power.dice, s.faces = power.faces, s.bonus = 0, s.spellMul = power.mul;
+    cast.steps.push_back(s);
+    return cast;
+  };
+  // The best centre (a hex of a foe's body or one beside it) for a fire area of `radius` rings: the foes it catches weighted by their
+  // wounds, at least `minFoes`, none of its own side when `burnsAll` (the Bola de Fogo burns everyone); from a hex of its reach within
+  // `range` with a line of fire. Rocco's Ignites and the fire casters below.
+  auto fireArea = [&](const std::string& kind, int range, int radius, bool burnsAll, int minFoes) -> std::optional<AiCast> {
+    struct AreaPick {
+      BattleHex at, from;
+      int score = 0;
+    };
+    std::optional<AreaPick> pick;
+    std::vector<BattleHex> centres;
+    for (size_t h : heroes)
+      for (const BattleHex& cell : Battle::footprint(b.units()[h], b.units()[h].x, b.units()[h].y)) {
+        std::vector<BattleHex> around = Battle::neighbors(cell.x, cell.y);
+        around.push_back(cell);
+        for (const BattleHex& q : around)
+          if (b.inBounds(q.x, q.y) && std::find(centres.begin(), centres.end(), q) == centres.end()) centres.push_back(q);
+      }
+    for (const BattleHex& at : centres) {
+      const std::vector<BattleHex> tiles = areaTiles(b, at, radius);
+      auto inside = [&](const BattleUnit& v) { return std::any_of(tiles.begin(), tiles.end(), [&](const BattleHex& q) { return occupies(v, q.x, q.y); }); };
+      int caught = 0, sc = 0;
+      bool own = false;
+      for (size_t i = 0; i < b.units().size(); ++i) {
+        const BattleUnit& v = b.units()[i];
+        if (!v.alive || !inside(v)) continue;
+        if (std::find(heroes.begin(), heroes.end(), i) != heroes.end()) ++caught, sc += 10 + (v.maxHp - v.hp) + (v.hp <= 8 ? 15 : 0);
+        else if (v.side == u.side) own = true;
+      }
+      if (caught < minFoes || (burnsAll && own) || (pick && sc <= pick->score)) continue;
+      for (const ReachCell& cell : reach)
+        if (hexDist({cell.x, cell.y}, at) <= range && clearShot(b, {cell.x, cell.y}, at, false) &&
+            (!burnsAll || std::none_of(tiles.begin(), tiles.end(), [&](const BattleHex& q) { return q.x == cell.x && q.y == cell.y; }))) {
+          pick = AreaPick{at, {cell.x, cell.y}, sc};
+          break;
+        }
     }
+    if (!pick) return std::nullopt;
+    AiCast cast;
+    cast.path = walkTo(pick->from);
+    std::optional<std::vector<BattleStep>> steps = castE2(b, unit, kind, {pick->at}, nullptr, false);
+    if (!steps) return std::nullopt;
+    cast.steps = std::move(*steps);
+    return cast;
+  };
+  // Rocco The Bird: Burning Beak (Maos Flamejantes) outranks his two Ignites of his own (the user, 2026-11-17: "you can add 2X ignite to
+  // Rocco too"; never his tier-2 uses) outranks Missil Magico outranks Choque.
+  const bool roccoIgnite = c == "roccoTheBird" && u.igniteCharges && *u.igniteCharges > 0;
+  if (c == "roccoTheBird" && (u.spells[0] > 0 || u.spells[1] > 0 || u.shockCharges > 0 || roccoIgnite)) {
+    if (u.spells[1] > 0)
+      if (std::optional<AiCast> cone = burningCone()) return cone;
+    if (roccoIgnite)
+      if (std::optional<AiCast> a = fireArea("ignite", grownReach("ignite", kIgniteRange, u.level), kIgniteRadius, false, 1)) return a;
     if (u.spells[0] > 0)
       if (const std::optional<Pick> p = best(grownReach("magicMissile", kMissileRange, u.level), true)) {
         spendTier(u, "magicMissile");
         return single(*p, "magicMissile", kMissileDice, kMissileFaces, kMissileBonus, missileMul(u.level), std::nullopt);
       }
     if (std::optional<AiCast> s = shock()) return s;
+  }
+  // The fire casters (the Ember Mushroom, the user 2026-11-17: "complete with fire magic"): any other enemy carrying Ignite, Bola de Fogo
+  // or Mãos Flamejantes in its spell list. Bola de Fogo when its blast catches two foes or more and none of its own side, else Ignite
+  // on two or more (radius 2, foes only), else the cone, else Ignite or Bola de Fogo on one; with none left it strikes with its blow.
+  auto carries = [&](const char* k) { return std::find(u.spellList.begin(), u.spellList.end(), std::string(k)) != u.spellList.end(); };
+  if (c != "roccoTheBird" && (carries("ignite") || carries("fireball") || carries("burningHands"))) {
+    const bool fireball = carries("fireball") && tierRemaining(u, "fireball") > 0;
+    const bool ignite = carries("ignite") && tierRemaining(u, "ignite") > 0;
+    const int fireballRange = grownReach("fireball", kFireballRange, u.level), fireballRadius = areaRadius("fireball", kFireballSize, u.level);
+    const int igniteRange = grownReach("ignite", kIgniteRange, u.level);
+    if (fireball)
+      if (std::optional<AiCast> a = fireArea("fireball", fireballRange, fireballRadius, true, 2)) return a;
+    if (ignite)
+      if (std::optional<AiCast> a = fireArea("ignite", igniteRange, kIgniteRadius, false, 2)) return a;
+    if (carries("burningHands") && tierRemaining(u, "burningHands") > 0)
+      if (std::optional<AiCast> cone = burningCone()) return cone;
+    if (ignite)
+      if (std::optional<AiCast> a = fireArea("ignite", igniteRange, kIgniteRadius, false, 1)) return a;
+    if (fireball)
+      if (std::optional<AiCast> a = fireArea("fireball", fireballRange, fireballRadius, true, 1)) return a;
   }
   // The Carnivorous Plant (runAiFor): with more than one foe in reach of her tendril swipe she swipes them all; else Veneno Caustico (her
   // own tier 3), Sopro Venenoso (tier 1), Veneno Menor (tier 4). The Sapling has only its one Sopro Venenoso.

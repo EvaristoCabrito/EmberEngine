@@ -199,6 +199,8 @@ struct BattleUnit {
   int spectralCharges = 0;  // Raio Espectral (the Aparição's and the Espectro em Brasa's, ours): its casts this fight
   // Milf's Acid Arrow on casts of its own, on top of its tier uses (the White Cultist's two, ours); unset = its tier-2 uses
   std::optional<int> acidArrowCharges;
+  // Ignite on casts of its own, on top of its tier uses (Rocco's two, an Ember class's "igniteCharges"); unset = its tier-2 uses
+  std::optional<int> igniteCharges;
   int fantomDice = 0, fantomFaces = 0;
   int xp = 0;
   bool guaranteedDrop = false;
