@@ -306,7 +306,7 @@ class MapStage final : public Stage {
     // 3D textures stream (MeshScene): Opções > Gráficos > Texturas 3D, read when the map opens (Alta 2048, Média 1024, Leve 512: the
     // largest side loaded from the one 2K file); gated so the characters' sprites reserve their GPU memory first (the user, 2026-10-29).
     const std::string& tex = gamePrefs().textures3d;
-    meshes_.setQuality(tex == "leve" ? 512u : tex == "media" ? 1024u : 2048u);
+    meshes_.setQuality(tex == "extra" ? 256u : tex == "leve" ? 512u : tex == "media" ? 1024u : 2048u);
     meshes_.setStreamGate(true);
     meshes_.setRegionStreaming(true);
     // The Nuvem de Adagas' dagger (the Poly Haven dagger, arcane v02, in build/meshes/effects.pak): loaded with the map's meshes,
@@ -5372,19 +5372,22 @@ class MapStage final : public Stage {
     // Extra baixa (the user, 2026-11-06: "resolução extra baixa com a metade da resolução da baixa e frames de 36 normais"):
     // Leve's copies, every clip pinned as two versions with the light one asked, so each is held from kBaseFirstMip: half of
     // Leve's resolution, the same frames.
-    extraLowArt_ = gamePrefs().characters == "extra";
+    // (2026-11-18, the user: "o extra Leve que eu já pedi diversas vezes"): Invocações and Inimigos have it too. The sprite system's
+    // half resolution is one choice for the whole fight (SpriteSystem::setLight): any of the three asking for it asks for it.
+    extraLowArt_ = gamePrefs().characters == "extra" || gamePrefs().summons == "extra" || gamePrefs().enemies == "extra";
     sprites_.setLight(extraLowArt_);
     // A pose with a Leve copy of its own (HeroPose::light: Voss's 36-frame cut, the user 2026-10-22: "36 is on with LEVE, 64 is
     // on with Medium, High plays the full version") draws it in Leve.
     // Three choices (the user, 2026-11-12: "Summon Resolution should have its own toggle in the graphics options", "we should also
     // split the Enemy Units graphical quailty"): Personagens for the party and the neutrals, Invocações for the summons, Inimigos
-    // for the enemy side; only Personagens has Extra baixa's halving.
-    const auto tier = [](const std::string& v, bool extra) {
+    // for the enemy side; each has Extra baixa's halving ("extra": Leve's copies, held at half resolution).
+    const auto tier = [](const std::string& v) {
+      const bool extra = v == "extra";
       return ArtTier{v == "media" || v == "leve" || extra, v == "leve" || extra, extra};
     };
-    artTiers_[kArtParty] = tier(gamePrefs().characters, extraLowArt_);
-    artTiers_[kArtSummon] = tier(gamePrefs().summons, false);
-    artTiers_[kArtEnemy] = tier(gamePrefs().enemies, false);
+    artTiers_[kArtParty] = tier(gamePrefs().characters);
+    artTiers_[kArtSummon] = tier(gamePrefs().summons);
+    artTiers_[kArtEnemy] = tier(gamePrefs().enemies);
     for (size_t i = 0; i < scene_->units.size(); ++i) pinArt(scene_->units[i], i < unitCatalog_.size() ? unitCatalog_[i] : nullptr);
   }
   // A summon's class: content/data/summons.json's classes and EmberEngine's own classes of role Invocação (content/ember-classes.json:

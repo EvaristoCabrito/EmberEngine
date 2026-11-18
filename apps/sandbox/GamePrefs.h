@@ -38,7 +38,8 @@ struct GamePrefs {
   std::string characters = "media";
   // Opções > Gráficos > Invocações (the user, 2026-11-12: "Summon Resolution should have its own toggle in the graphics options"):
   // the summons' art (content/data/summons.json classes and EmberEngine's own of role Invocação) by its own Alta / Média / Leve,
-  // as Personagens is for everyone else; Extra baixa's halving stays Personagens' only. Saved as "summonArt"; a file without it
+  // as Personagens is for everyone else; "extra" = Extra baixa here too (the user, 2026-11-18, "o extra Leve que eu já pedi diversas
+  // vezes"), likewise for Inimigos and Texturas 3D (256). Saved as "summonArt"; a file without it
   // takes Personagens' choice (Leve for Extra baixa).
   std::string summons = "media";
   // Opções > Gráficos > Inimigos (the user, 2026-11-12: "we should also split the Enemy Units graphical quailty"): the enemy side's
@@ -80,14 +81,14 @@ struct GamePrefs {
     if (art == "alta" || art == "media" || art == "leve" || art == "extra") p.characters = art;
     else if (j.value("characters", std::string()) == "leve") p.characters = "leve";
     const std::string summonArt = j.value("summonArt", std::string());
-    if (summonArt == "alta" || summonArt == "media" || summonArt == "leve") p.summons = summonArt;
+    if (summonArt == "alta" || summonArt == "media" || summonArt == "leve" || summonArt == "extra") p.summons = summonArt;
     else p.summons = p.characters == "extra" ? "leve" : p.characters;
     const std::string enemyArt = j.value("enemyArt", std::string());
-    if (enemyArt == "alta" || enemyArt == "media" || enemyArt == "leve") p.enemies = enemyArt;
+    if (enemyArt == "alta" || enemyArt == "media" || enemyArt == "leve" || enemyArt == "extra") p.enemies = enemyArt;
     else p.enemies = p.characters == "extra" ? "leve" : p.characters;
     p.partyLight = j.value("partyLight", p.partyLight);
     const std::string tex = j.value("meshTextures", std::string());
-    if (tex == "alta" || tex == "media" || tex == "leve") p.textures3d = tex;
+    if (tex == "alta" || tex == "media" || tex == "leve" || tex == "extra") p.textures3d = tex;
     else if (j.value("textures3d", std::string()) == "leve") p.textures3d = "media";
     return p;
   }
