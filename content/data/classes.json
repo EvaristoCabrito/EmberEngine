@@ -310,6 +310,9 @@
     "mushroomMan": {
       "mov": 3
     },
+    "emberMushroom": {
+      "mov": 3
+    },
     "sahagin": {
       "mov": 4
     },

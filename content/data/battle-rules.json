@@ -85002,6 +85002,53 @@
       "arrowRelease:neera": []
     },
     "monster": {
+      "ember-mushroom": {
+        "hit": [
+          {
+            "file": "MushroomManHit001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "death": [
+          {
+            "file": "MushroomManDeath001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "attack": [
+          {
+            "file": "EmberMushroomATT001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "cast": [
+          {
+            "file": "EmberMushroomCast001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "walk": [
+          {
+            "file": "EmberMushroomWalk001.mp3",
+            "volume": 0.45,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ]
+      },
       "sick-rat": {
         "attack": [
           {

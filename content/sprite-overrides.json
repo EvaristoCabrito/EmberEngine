@@ -933,6 +933,34 @@
    "why": "the Sick Rat's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "sickRat", "set": "sick-rat"},
    "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "ember-mushroom",
+   "version": "v01",
+   "hero": "emberMushroom",
+   "newHero": {"name": "Cogumelo de Brasa", "group": "monster", "sprite": "ember-mushroom", "reversed": false},
+   "cut": "content/sprites/ember-mushroom/cut.json",
+   "why": "the user, 2026-11-17: the Ember Mushroom, a new rank C fire caster from three videos (Attachments/Monsters/EmberMushroom): idle, root lash and cast, walk, hit and fall; Alta + 64 + 36; an enemy on Todas as Unidades",
+   "poses": {"idle": "base", "attack": "atk", "cast": "cast", "walk": "move", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "cast": "Conjurar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "ember-mushroom-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/ember-mushroom/cut-64-media.json",
+   "why": "the Ember Mushroom's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "emberMushroom", "set": "ember-mushroom"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "ember-mushroom-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/ember-mushroom/cut-36-media.json",
+   "why": "the Ember Mushroom's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "emberMushroom", "set": "ember-mushroom"},
+   "packs": {"base": "field", "move": "field"}
   }
  ],
  "clips": [

@@ -1,0 +1,198 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Monsters/EmberMushroom/EmberMushroomIdle.mp4",
+   "first": 0,
+   "last": 143,
+   "bootRow": 648,
+   "bootRows": [
+    642,
+    653
+   ],
+   "loopFirst": 17,
+   "loopLast": 140,
+   "seamSteps": 3.96,
+   "frameCountFrom": 124,
+   "figurePx": 564.0,
+   "frames": 36,
+   "frameMs": 143.5185185185185,
+   "nat": [
+    685,
+    586
+   ],
+   "crop": [
+    4,
+    4,
+    675,
+    578
+   ],
+   "box": {
+    "w": 2.42908,
+    "h": 2.07801,
+    "foot": 0.12057
+   },
+   "pattern": "content/sprites/ember-mushroom/base-media36-v01/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Monsters/EmberMushroom/EmberMushroomIdleCasting.mp4",
+   "first": 16,
+   "last": 60,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/ember-mushroom/idle 0:143",
+   "bootRow": 651,
+   "bootRows": [
+    650,
+    655
+   ],
+   "frameCountFrom": 45,
+   "figurePx": 615.0,
+   "scaledTo": 610.2,
+   "frames": 36,
+   "frameMs": 52.083333333333336,
+   "nat": [
+    692,
+    631
+   ],
+   "crop": [
+    5,
+    5,
+    682,
+    621
+   ],
+   "box": {
+    "w": 2.26992,
+    "h": 2.06982,
+    "foot": 0.13342
+   },
+   "pattern": "content/sprites/ember-mushroom/atk-media36-v01/atk-{}.png",
+   "impact": 0.4
+  },
+  "cast": {
+   "video": "Attachments/Monsters/EmberMushroom/EmberMushroomIdleCasting.mp4",
+   "first": 136,
+   "last": 208,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/ember-mushroom/idle 0:143",
+   "bootRow": 654,
+   "bootRows": [
+    645,
+    655
+   ],
+   "frameCountFrom": 73,
+   "figurePx": 615.0,
+   "scaledTo": 610.2,
+   "frames": 36,
+   "frameMs": 84.49074074074073,
+   "nat": [
+    719,
+    631
+   ],
+   "crop": [
+    5,
+    5,
+    709,
+    621
+   ],
+   "box": {
+    "w": 2.35772,
+    "h": 2.06916,
+    "foot": 0.13663
+   },
+   "pattern": "content/sprites/ember-mushroom/cast-media36-v01/cast-{}.png",
+   "impact": 0.3836
+  },
+  "move": {
+   "video": "Attachments/Monsters/EmberMushroom/EmberMushroomWalk.mp4",
+   "first": 0,
+   "last": 143,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/ember-mushroom/idle 0:143",
+   "loopFirst": 3,
+   "loopLast": 132,
+   "seamSteps": 0.85,
+   "bootRow": 631,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "frameCountFrom": 130,
+   "figurePx": 537.0,
+   "frames": 36,
+   "frameMs": 150.46296296296293,
+   "nat": [
+    717,
+    576
+   ],
+   "crop": [
+    5,
+    4,
+    706,
+    567
+   ],
+   "box": {
+    "w": 2.67039,
+    "h": 2.14525,
+    "foot": 0.19739
+   },
+   "pattern": "content/sprites/ember-mushroom/move-media36-v01/move-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/Monsters/EmberMushroom/EmberMushroomHitReaqctandFalldontusethisound.mp4",
+   "first": 6,
+   "last": 36,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/ember-mushroom/idle 0:143",
+   "bootRow": 639,
+   "bootRows": [
+    638,
+    639
+   ],
+   "figurePx": 608.0,
+   "frames": 31,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    721,
+    622
+   ],
+   "crop": [
+    5,
+    5,
+    711,
+    612
+   ],
+   "box": {
+    "w": 2.37171,
+    "h": 2.04605,
+    "foot": 0.13816
+   },
+   "pattern": "content/sprites/ember-mushroom/hit-media36-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Monsters/EmberMushroom/EmberMushroomHitReaqctandFalldontusethisound.mp4",
+   "first": 150,
+   "last": 239,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/ember-mushroom/idle 0:143",
+   "bootRow": 643,
+   "bootRows": [
+    643,
+    643
+   ],
+   "frameCountFrom": 90,
+   "figurePx": 608.0,
+   "frames": 36,
+   "frameMs": 104.16666666666667,
+   "nat": [
+    786,
+    629
+   ],
+   "crop": [
+    5,
+    5,
+    777,
+    619
+   ],
+   "box": {
+    "w": 2.58553,
+    "h": 2.06908,
+    "foot": 0.15461
+   },
+   "pattern": "content/sprites/ember-mushroom/death-media36-v01/death-{}.png"
+  }
+ }
+}
