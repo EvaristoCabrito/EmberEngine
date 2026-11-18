@@ -161,7 +161,7 @@ struct MapStageOptions {
   int fogLook = 11;  // the fog look shown first (render/FogLooks.h numbers): 011 = 009 in grey (the user, 2026-11-06: "cinza normal")
   int cardStance = 1;  // the panel's "Cards" at the start: 0 em pé (vertical), 1 para a câmera (--cards N)
   int barsFade = 1;    // the panel's "Vida perto" at the start: 0 OFF, 1 bars near the camera fade (--bars-fade N)
-  int actionCamera = 1;  // the panel's "Câmera de ação" at the start: 0 OFF, 1 cinema (--action-camera N)
+  int actionCamera = 0;  // the panel's "Câmera de ação" at the start: 0 OFF, 1 cinema (--action-camera N)
   int floorImage = 1;  // the panel's "Chão do vão" at the start (--floor N)
   int windFog = 1;     // the panel's "Névoa do vento" at the start (--wind-fog N)
   // Luz das janelas (indoor maps): -1 as the map says (on for the watchtower's roofed floors), 0 OFF, 1 real (--window-light N)
@@ -14130,8 +14130,7 @@ class MapStage final : public Stage {
   bool ashenForest() const { return board_ && board_->draft().id == "ashen-forest-crossing"; }
   // The camera as before, on every map, only the tilt reaches 80 deg up into the sky (the user, 2026-10-19: "eu quero como estava
   // antes de agora e com vista para o céu só isso"); the eye still never goes under the ground (eyeView).
-  float minPitch() const { return kSkyMinPitch; }
-  static constexpr float kSkyMinPitch = -1.3963f;
+  float minPitch() const { return aldeia() ? kMinPitch : kMinEyePitch; }
   float gameHour_ = -1.0f;  // MapStageOptions::gameHour
   int dayCycle_ = 0;  // the panel's "Hora": 0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3.. a fixed hour (cycleHour; --hour N)
   static constexpr float kTiltStep = 0.0873f, kTurnStep = 0.2618f;  // Ember's bar: 5 deg; 15 deg
@@ -14622,7 +14621,7 @@ class MapStage final : public Stage {
   int gridLook_ = 2;  // Tactical overlays only; the terrain's permanent hex outlines stay hidden.
   int cardStance_ = 1;  // panel "Cards": 0 em pé (vertical), 1 para a câmera (leaning back with the tilt, upright on screen)
   int barsFade_ = 1;    // panel "Vida perto": 0 OFF (bars always shown), 1 the bars of units near the camera fade away
-  int actionCamera_ = 1;  // panel "Câmera de ação": 0 OFF, 1 cinema (the shots of every action: applyActionShot)
+  int actionCamera_ = 0;  // panel "Câmera de ação": 0 OFF, 1 cinema (the shots of every action: applyActionShot)
   static constexpr float kBarsFadeFrom = 0.30f, kBarsFadeTo = 0.45f;  // the card's share of the screen's height
   static constexpr float kAirCardHeight = 2.0f;                         // world units: a unit's card, the yardstick of the particles' fade
   // Ember DIR_ACTION_WALK: sprites whose walks are drawn for each side, never mirrored while moving.
