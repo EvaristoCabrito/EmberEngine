@@ -331,11 +331,24 @@ void SpriteSystem::decideFight() {
   // Budget plus the pinned full clips plus one block of slack, all allocated at once; a fragmented pool opens holes
   // (makeHole). Measured (512 MB budget): 64 MB blocks stream as well as a pool 50% over budget. The last fight's pool
   // stays when it holds this one's (at most one block too big): what it holds stays on the GPU.
+  // ... but never so big that the margin above is eaten: the pool is made of whole blocks (338 MB each), and the slack block took
+  // what the map's 3D pieces need (trees are admitted only with their bytes + 16 MB free, and the fight's turns wait for every piece:
+  // the user, 2026-11-18, Wisp Forest Crossing: no tree, the wolf's turn never ends; the log: pool 4 x 338 MB of 1429 MB free, 77 MB
+  // left). Short of room the slack block goes first; the pinned clips' own blocks (plus one for packing) never.
   const VkDeviceSize block = std::max(kPoolBlockBytes, largestClip_);
   const auto blocksFor = [&](uint64_t bytes) { return static_cast<size_t>(bytes / block + 1); };
   uint64_t want = streaming + fullOne + (lightActive_ ? 0 : fullTwo);
+  const auto poolBlocks = [&](uint64_t bytes) {
+    size_t blocks = blocksFor(bytes);
+    if (blocks * block + kMargin > free) {
+      const size_t fit = free > kMargin ? static_cast<size_t>((free - kMargin) / block) : 0;
+      blocks = std::max(blocksFor(fullOne + (lightActive_ ? 0 : fullTwo)), std::min(blocks, fit));
+    }
+    return blocks;
+  };
   const size_t have = fullPool_ && fullPoolBlock_ == block ? static_cast<size_t>(fullPoolBytes_ / block) : 0;
-  const bool keepPool = have > 0 && have >= blocksFor(want) && have <= blocksFor(want) + 1;
+  const size_t needBlocks = poolBlocks(want);
+  const bool keepPool = have > 0 && have >= needBlocks && (have == needBlocks || (have == needBlocks + 1 && have * block + kMargin <= free));
   VkResult result = VK_SUCCESS;
   if (!keepPool) {
     destroyFullPool();
@@ -343,7 +356,7 @@ void SpriteSystem::decideFight() {
     poolInfo.memoryTypeIndex = fullMemoryType_;
     poolInfo.blockSize = block;
     const auto createPool = [&](uint64_t bytes) {
-      poolInfo.minBlockCount = poolInfo.maxBlockCount = blocksFor(bytes);
+      poolInfo.minBlockCount = poolInfo.maxBlockCount = poolBlocks(bytes);
       return vmaCreatePool(context_.allocator, &poolInfo, &fullPool_);
     };
     result = createPool(want);
