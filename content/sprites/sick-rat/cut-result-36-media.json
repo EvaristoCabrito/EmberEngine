@@ -1,0 +1,164 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Monsters/Horse/Rat_animation_movement_instructions_c85756ad_1080p.mp4",
+   "first": 0,
+   "last": 96,
+   "bootRow": 967,
+   "bootRows": [
+    967,
+    967
+   ],
+   "frameCountFrom": 97,
+   "figurePx": 784.0,
+   "scaledTo": 610.0,
+   "frames": 36,
+   "frameMs": 112.26851851851852,
+   "nat": [
+    1194,
+    631
+   ],
+   "crop": [
+    4,
+    6,
+    1180,
+    622
+   ],
+   "box": {
+    "w": 2.1523,
+    "h": 1.13744,
+    "foot": 0.03486
+   },
+   "pattern": "content/sprites/sick-rat/base-media36-v01/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Monsters/Horse/Rat_animation_movement_instructions_c85756ad_1080p.mp4",
+   "first": 96,
+   "last": 239,
+   "bootRow": 992,
+   "bootRows": [
+    964,
+    999
+   ],
+   "frameCountFrom": 144,
+   "figurePx": 784.0,
+   "scaledTo": 610.4,
+   "frames": 36,
+   "frameMs": 166.66666666666666,
+   "nat": [
+    1412,
+    647
+   ],
+   "crop": [
+    3,
+    6,
+    1405,
+    637
+   ],
+   "box": {
+    "w": 2.54656,
+    "h": 1.16687,
+    "foot": 0.04333
+   },
+   "pattern": "content/sprites/sick-rat/atk-media36-v01/atk-{}.png",
+   "impact": 0.25
+  },
+  "move": {
+   "video": "Attachments/Monsters/Horse/Rat_walks,_recoils,_and_collapses_4bffe6bf_1080p.mp4",
+   "first": 2,
+   "last": 90,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/sick-rat/combat 0:96",
+   "loopFirst": 18,
+   "loopLast": 47,
+   "seamSteps": 0.98,
+   "bootRow": 915,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 697.0,
+   "scaledTo": 609.8,
+   "frames": 30,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1377,
+    650
+   ],
+   "crop": [
+    5,
+    6,
+    1369,
+    640
+   ],
+   "box": {
+    "w": 2.4825,
+    "h": 1.17184,
+    "foot": 0.08032
+   },
+   "pattern": "content/sprites/sick-rat/move-media36-v01/move-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/Monsters/Horse/Rat_walks,_recoils,_and_collapses_4bffe6bf_1080p.mp4",
+   "first": 96,
+   "last": 118,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/sick-rat/combat 0:96",
+   "bootRow": 934,
+   "bootRows": [
+    919,
+    937
+   ],
+   "figurePx": 697.0,
+   "scaledTo": 610.1,
+   "frames": 23,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1373,
+    695
+   ],
+   "crop": [
+    4,
+    5,
+    1365,
+    685
+   ],
+   "box": {
+    "w": 2.47618,
+    "h": 1.25342,
+    "foot": 0.0504
+   },
+   "pattern": "content/sprites/sick-rat/hit-media36-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Monsters/Horse/Rat_walks,_recoils,_and_collapses_4bffe6bf_1080p.mp4",
+   "first": 147,
+   "last": 239,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/sick-rat/combat 0:96",
+   "bootRow": 934,
+   "bootRows": [
+    934,
+    934
+   ],
+   "frameCountFrom": 93,
+   "figurePx": 697.0,
+   "scaledTo": 609.8,
+   "frames": 36,
+   "frameMs": 107.63888888888889,
+   "nat": [
+    1488,
+    615
+   ],
+   "crop": [
+    3,
+    7,
+    1481,
+    604
+   ],
+   "box": {
+    "w": 2.68293,
+    "h": 1.10887,
+    "foot": 0.04563
+   },
+   "pattern": "content/sprites/sick-rat/death-media36-v01/death-{}.png"
+  }
+ }
+}

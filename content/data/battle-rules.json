@@ -85002,6 +85002,44 @@
       "arrowRelease:neera": []
     },
     "monster": {
+      "sick-rat": {
+        "attack": [
+          {
+            "file": "SickRatATT001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "walk": [
+          {
+            "file": "SickRatWalk001.mp3",
+            "volume": 0.45,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "hit": [
+          {
+            "file": "SickRatHit001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "death": [
+          {
+            "file": "SickRatDeath001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ]
+      },
       "bandit-horseman": {
         "attack": [
           {

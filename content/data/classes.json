@@ -319,6 +319,9 @@
     "emberedZombie": {
       "mov": 3
     },
+    "sickRat": {
+      "mov": 5
+    },
     "banditHorseman": {
       "mov": 6
     },

@@ -1,0 +1,932 @@
+{
+ "version": 1,
+ "about": "Clips whose art EmberEngine replaces (Ember's file stays untouched in ). Applied to the battle pack's manifest and the heroes file by tools/scripts/sprites/apply_sprite_overrides.py. Paths are relative to the repo root.",
+ "feet": ["aldric"],
+ "speed": [
+  {"hero": "malrec", "poses": ["attack", "cast"], "factor": 2.0, "why": "the user, 2026-10-17: Malrec's casting and ATT are far too slow (his clips run 3.33 s at 10.8 fps, then the fight plays them at its pace: more than 5 s a cast)"}
+ ],
+ "pingpong": [
+  {"hero": "familiar2", "poses": ["idle"], "why": "the user, 2026-11-03: the Familiar Maior's idle back and forth"}
+ ],
+ "sets": [
+  {
+   "set": "salazar-v3",
+   "version": "v02",
+   "hero": "salazar",
+   "cut": "content/sprites/salazar-v3/cut.json",
+   "why": "the user, 2026-10-25: \"salazar looks severely lower res than neera\", \"delete current version re cut properly\", then \"every Salazar clip at 587 px in every setting\": salazar-final's frames were the user's sheets shrunk to 416 x 613; this set is his sheets (Attachments/SalazarOG: the 10-10 originals, Walkright2, the back picture), every clip's figure at 587 px. salazar-final's walk right (move v03) and back picture (cast-back v01) stay in the pack, not in use.",
+   "poses": {
+    "idle": "base",
+    "attack": "atk",
+    "cast": "cast",
+    "heal": "heal",
+    "walk": "move",
+    "walkLeft": "move-left",
+    "castBack": "cast-back"
+   },
+   "packs": {
+    "base": "field",
+    "move": "field",
+    "move-left": "field"
+   },
+   "strides": {
+    "move": 2.0,
+    "move-left": 2.12
+   }
+  },
+  {
+   "set": "voss-veo",
+   "version": "v01",
+   "hero": "voss",
+   "cut": "content/sprites/voss-veo/cut.json",
+   "why": "the user, 2026-10-17: Voss cut from their Veo videos (Attachments/VeoVoss) as a new sprite set, his default; voss-final kept (its back pose stays on Poison Breath); every native frame, the video's own resolution",
+   "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "cast": "cast", "attack": "atk", "counter": "counter-staff", "counterStaff": "counter-staff", "hit": "hit", "death": "death", "turnBack": "turn-back", "castBack": "cast-back"},
+   "labels": {"counterStaff": "Contra-ataque (cajado)", "hit": "Dano", "death": "Morte", "turnBack": "De costas", "castBack": "De costas (parado)"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field"},
+   "strides": {"move": 1.5, "move-left": 1.0}
+  },
+  {
+   "set": "voss-veo-media",
+   "version": "media-v01",
+   "unused": true,
+   "wasMediumOf": {"hero": "voss", "set": "voss-veo"},
+   "unusedWhy": "the user, 2026-10-22: \"64 is on with Medium\": voss-veo-64-media is Voss's Média now; this all-frames copy stays in the pack, drawn by nobody",
+   "cut": "content/sprites/voss-veo/cut-media.json",
+   "why": "the user, 2026-10-21: \"deixar todos em ~610 px\", then \"com a opção de medium e high nas configurações de video, o padrão será medium\": idle, both walks, attack and staff counter at ~610 px of figure (like cast, hit and death); Personagens Média (default) draws them, Alta voss-veo's full resolution",
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "voss-veo-64-media",
+   "version": "media64-v01",
+   "mediumOf": {"hero": "voss", "set": "voss-veo"},
+   "cut": "content/sprites/voss-veo/cut-64-media.json",
+   "why": "the user, 2026-10-22: \"36 is on with LEVE setup and 64 is on with Medium. High plays the full version\": every clip at ~610 px of figure with 64 frames (picked evenly, the clip's timing kept); Personagens Média",
+   "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field"}
+  },
+  {
+   "set": "voss-veo-36-media",
+   "version": "media36-v01",
+   "unused": true,
+   "wasLightOf": {"hero": "voss", "set": "voss-veo"},
+   "unusedWhy": "the user, 2026-10-27: \"refaz só o Voss Leve com passo inteiro\": voss-veo-leve-passo is Voss's Leve now; this copy (36 picked evenly, loops of 2026-10-22) stays in the pack, drawn by nobody",
+   "cut": "content/sprites/voss-veo/cut-36-media.json",
+   "why": "the user, 2026-10-22: \"36 is on with LEVE setup\": every clip at ~610 px of figure with 36 frames; Personagens Leve draws it halved",
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "voss-veo-leve-passo",
+   "version": "leve-passo-v01",
+   "lightOf": {"hero": "voss", "set": "voss-veo"},
+   "cut": "content/sprites/voss-veo/cut-leve-passo.json",
+   "why": "the user, 2026-10-27: \"refaz só o Voss Leve com passo inteiro (cada N-ésimo frame) e tempo fixo por frame, como os besteiros\": cut.json's clips at ~610 px, every Nth frame (about 36), one fixed time a frame; Personagens Leve draws it halved",
+   "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field"}
+  },
+  {
+   "set": "isolde-veo",
+   "version": "v01",
+   "hero": "isolde",
+   "newHero": {"name": "Isolde", "group": "hero", "sprite": "isolde-veo", "reversed": false, "classId": "conjurer"},
+   "cut": "content/sprites/isolde-veo/cut.json",
+   "why": "the user, 2026-10-24: Isolde, a new main character, from their videos (Attachments/Isolde) like Voss, in all three quality settings; a conjurer with the conjurer's spells until her own; her plain attack and her ranged counter play her cast (the ember bolt), the staff counter when the foe is beside her",
+   "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "walkUp": "move-up", "walkDown": "move-down", "turnBack": "turn-back", "castBack": "cast-back", "cast": "cast", "counterStaff": "counter-staff", "hit": "hit", "death": "fall"},
+   "labels": {"idle": "Parado", "walk": "Andar", "walkLeft": "Andar (esquerda)", "walkUp": "Andar (costas)", "walkDown": "Andar (frente)", "turnBack": "De costas", "castBack": "De costas (parado)", "cast": "Conjurar", "counterStaff": "Contra-ataque (cajado)", "hit": "Dano", "death": "Queda"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field"},
+   "strides": {"move": 3.0, "move-left": 1.5}
+  },
+  {
+   "set": "isolde-veo-64-media",
+   "version": "media64-v01",
+   "mediumOf": {"hero": "isolde", "set": "isolde-veo"},
+   "cut": "content/sprites/isolde-veo/cut-64-media.json",
+   "why": "Isolde's Personagens Média, as Voss's: every clip at ~610 px of figure with 64 frames (picked evenly, the clip's timing kept)",
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field"}
+  },
+  {
+   "set": "isolde-veo-36-media",
+   "version": "media36-v01",
+   "lightOf": {"hero": "isolde", "set": "isolde-veo"},
+   "cut": "content/sprites/isolde-veo/cut-36-media.json",
+   "why": "Isolde's Personagens Leve, as Voss's: every clip at ~610 px of figure with 36 frames; Leve draws it halved",
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field"}
+  },
+  {
+   "set": "selene",
+   "version": "v01",
+   "hero": "selene",
+   "newHero": {"name": "Selene", "group": "hero", "sprite": "selene", "reversed": false, "classId": "conjurer"},
+   "cut": "content/sprites/selene/cut.json",
+   "why": "the user, 2026-10-25: Selene's sheets (Desktop/Characters/Salazar/Selene, copied as Attachments/Selene), \"só corta e liga no roster, não cozinha o pack ainda\", then \"try to make all the animations with these, I will create more later\": idle, attack (her dagger), cast, walk right; no walk left yet (the walk right plays both ways)",
+   "poses": {"idle": "base", "attack": "atk", "cast": "cast", "walk": "move"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "cast": "Conjurar", "walk": "Andar"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.5},
+   "stridesNote": "the user, 2026-11-10, \"fixing the pace of selene walk V2\": move v03 (WalkV2) lands a foot every 12 frames (8, 21, 33), three steps in its 36-frame loop: 1.5 full strides (move v02 held 2 steps in 22 frames: 1.0)"
+  },
+  {
+   "set": "kael-v3",
+   "version": "v05",
+   "hero": "kael",
+   "cut": "content/sprites/kael-v3/cut.json",
+   "why": "the user, 2026-11-09: Kael from their videos (Attachments/KaelV3): the 6 s idle (KaelIdleLoop) in place of the idle of Kael-IdleBackDoubleStrike, KaelATT for the attack, the few frames of his back for the special skills that turn him away from the camera and for cutscenes, the walk (Medieval_warrior_walking_8ba19cd7) mirrored for the left \"for now\"; the double strike of the same video cut with the rest, no skill plays it yet. Kael_Final stays in the pack. v02 (the user, 2026-11-09: \"very large grey borders\", the cloak most): every clip cut again with the edge key; their second batch: the walk to the left (in place of the mirror), the special attack (\"its for special att\", no skill plays it yet), the hit and the fall.",
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkLeft": "move-left", "turnBack": "turn-back", "castBack": "cast-back", "doubleStrike": "double-strike", "specialAttack": "special", "hit": "hit", "death": "death", "walkUp": "move-up", "walkDown": "move-down", "emote01": "emote01", "emote02": "emote02", "emote03": "emote03", "emote04": "emote04"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "walkLeft": "Andar (esquerda)", "walkUp": "Andar (costas)", "walkDown": "Andar (frente)", "turnBack": "De costas", "castBack": "De costas (parado)", "doubleStrike": "Golpe duplo", "specialAttack": "Ataque especial", "hit": "Dano", "death": "Queda", "emote01": "KaelEmote01", "emote02": "KaelEmote02", "emote03": "KaelEmote03", "emote04": "KaelEmote04"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene", "emote02": "cutscene", "emote03": "cutscene", "emote04": "cutscene"},
+   "strides": {"move": 3.0, "move-left": 1.0},
+   "whyIdleEmote": "the user, 2026-11-12: the final idle from KaelUltimateIdle (1080p, base v05: Alta at the video's own size, Media and Leve at ~610 px, the standard); the old idle (V3IdleLoop2) is KaelEmote01, cutscenes only",
+   "whyV05": "the user, 2026-11-13: every clip again from their 1080p videos (Attachments/KaelV3/supersize; content/sprites/kael-v3/cut.json v05): the hit is HitReactUltimate, the hit before is KaelEmote04, KaelEmote01 the old idle at 1080p, KaelEmote02 and 03 new (cutscenes only); the walks up and down (KaelWalkBack5sec, KaelWalkFront); the turn away (Kael_turning_180_degrees, a test) and the back still from the walk up (\"it has the proper cape design\")"
+  },
+  {
+   "set": "kael-v3-64-media",
+   "version": "media64-v05",
+   "mediumOf": {"hero": "kael", "set": "kael-v3"},
+   "cut": "content/sprites/kael-v3/cut-64-media.json",
+   "why": "Kael's Personagens Média, as Voss's and Isolde's: every clip with at most 64 frames (picked evenly, the clip's timing kept); v05 (2026-11-13): from the 1080p recut at ~610 px, the standard",
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene", "emote02": "cutscene", "emote03": "cutscene", "emote04": "cutscene"}
+  },
+  {
+   "set": "kael-v3-36-media",
+   "version": "media36-v05",
+   "lightOf": {"hero": "kael", "set": "kael-v3"},
+   "cut": "content/sprites/kael-v3/cut-36-media.json",
+   "why": "Kael's Personagens Leve, as Voss's and Isolde's: every clip with at most 36 frames, the figure ~610 px; v05 (2026-11-13): from the 1080p recut",
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene", "emote02": "cutscene", "emote03": "cutscene", "emote04": "cutscene"}
+  },
+  {
+   "set": "neera-hydra",
+   "version": "v01",
+   "hero": "neera",
+   "cut": "content/sprites/neera-hydra/cut.json",
+   "why": "the user, 2026-10-22: \"add these new animations to Neera, they should have the same size, we dont need to keep the previous\" (Hydra+ sheets: Idle and Offhand); neera-v2-001's idle and atk-short stay in the pack, unused",
+   "poses": {"walk": "move"},
+   "labels": {"walk": "Andar"},
+   "whyAttackShort": "the user, 2026-10-27: \"Can we get Neera's Dagger animation back to the previous version?\": the off-hand strike (attackShort) is neera-v2-001's atk-short again; this set's atk-short clip stays in the pack, unused",
+   "whyIdleAttack": "the user, 2026-10-25: \"recupere os sprites de Neera antes das ultimas mudanças, ela começou a virar reptiliana\", \"recover only Idle and ATT the rest is fine\": idle and attack are neera-v2-001's again; this set's idle and atk clips stay in the pack, unused",
+   "packs": {"idle": "field", "move": "field"},
+   "strides": {"move": 2.0},
+   "whyWalk": "the user, 2026-10-22: \"WalkRight ... now add this new one\" (walk to the right; walkLeft keeps neera-v2-001's move-left until a left sheet exists)"
+  },
+  {
+   "set": "corrosive-slime",
+   "version": "v01",
+   "hero": "corrosiveSlime",
+   "newHero": {"name": "Slime Corrosivo", "group": "monster", "sprite": "corrosive-slime", "reversed": false},
+   "cut": "content/sprites/corrosive-slime/cut.json",
+   "why": "the user, 2026-10-21/22: the Corrosive Slime from their videos (Attachments/Corrosive Slime) in all three resolutions; walk and attack in one direction only (the game mirrors them); the Small Slime fills one hex, the Large one two (same art x2)",
+   "poses": {"idle": "base", "walk": "move", "attack": "atk", "cast": "cast", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "attack": "Atacar", "cast": "Conjurar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0},
+   "copies": [
+    {"key": "corrosiveSlimeLarge", "name": "Slime Corrosivo Grande", "scale": 2.0}
+   ]
+  },
+  {
+   "set": "corrosive-slime-media",
+   "version": "media-v01",
+   "mediumOf": {
+    "hero": "corrosiveSlime",
+    "set": "corrosive-slime"
+   },
+   "cut": "content/sprites/corrosive-slime/cut-media.json",
+   "why": "not in use since 2026-10-26 (the user: Média / Leve by the heroes' rule, 64 / 36 frames, never under 610 px: this copy was every frame at 0.555 of the size); kept",
+   "packs": {
+    "base": "field",
+    "move": "field"
+   },
+   "unused": true
+  },
+  {
+   "set": "corrosive-slime-64",
+   "version": "v01",
+   "cut": "content/sprites/corrosive-slime-64/cut.json",
+   "why": "the Slime's Personagens Média (the user, 2026-10-26: \"wire the Slime's 64 / 36 cuts as Média / Leve\"): the Slime64 test unit's cut, 64 frames at the video's own size (562 px, under 916)",
+   "mediumOf": {
+    "hero": "corrosiveSlime",
+    "set": "corrosive-slime"
+   },
+   "packs": {
+    "base": "field",
+    "move": "field"
+   }
+  },
+  {
+   "set": "corrosive-slime-36",
+   "version": "v01",
+   "cut": "content/sprites/corrosive-slime-36/cut.json",
+   "why": "the Slime's Personagens Leve (the same order): the Slime36 test unit's cut, 36 frames at its own size (under 610)",
+   "lightOf": {
+    "hero": "corrosiveSlime",
+    "set": "corrosive-slime"
+   },
+   "packs": {
+    "base": "field",
+    "move": "field"
+   }
+  },
+  {
+   "set": "giant-spider",
+   "version": "v01",
+   "hero": "giantSpider",
+   "newHero": {"name": "Aranha Gigante", "group": "monster", "sprite": "giant-spider", "reversed": false},
+   "cut": "content/sprites/giant-spider/cut.json",
+   "why": "the user, 2026-10-22: the Giant Spider from their videos (Attachments/Giant Spider) in all three resolutions, like the Corrosive Slime",
+   "poses": {"idle": "base", "walk": "move", "attack": "atk", "cast": "cast", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "attack": "Atacar", "cast": "Conjurar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "giant-spider-media",
+   "version": "media-v01",
+   "mediumOf": {
+    "hero": "giantSpider",
+    "set": "giant-spider"
+   },
+   "cut": "content/sprites/giant-spider/cut-media.json",
+   "why": "not in use since 2026-10-26 (the user: Média / Leve by the heroes' rule, 64 / 36 frames, never under 610 px: this copy was every frame at 0.555 of the size); kept",
+   "packs": {
+    "base": "field",
+    "move": "field"
+   },
+   "unused": true
+  },
+  {
+   "set": "giant-spider-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/giant-spider/cut-64-media.json",
+   "why": "the Spider's Personagens Média (the user, 2026-10-26): 64 frames from the same mattes, its own size (403-455 px)",
+   "mediumOf": {
+    "hero": "giantSpider",
+    "set": "giant-spider"
+   },
+   "packs": {
+    "base": "field",
+    "move": "field"
+   }
+  },
+  {
+   "set": "giant-spider-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/giant-spider/cut-36-media.json",
+   "why": "the Spider's Personagens Leve (the same order): 36 frames from the same mattes, its own size",
+   "lightOf": {
+    "hero": "giantSpider",
+    "set": "giant-spider"
+   },
+   "packs": {
+    "base": "field",
+    "move": "field"
+   }
+  },
+  {
+   "set": "swamp-blue-deer",
+   "version": "v01",
+   "hero": "swampBlueDeer",
+   "newHero": {"name": "Cervo Azul do Pântano", "group": "monster", "sprite": "swamp-blue-deer", "reversed": false},
+   "cut": "content/sprites/swamp-blue-deer/cut.json",
+   "why": "the user, 2026-10-27: the Swamp Blue Deer from their videos (Attachments/SwampBlueDeer); first cut 64 / 36 only (\"no need to max out this one\"); the user, 2026-11-12: \"why would you leave high out ? its the games selling point\": the all-frames Alta is the unit's own art now, the 64 and 36 copies (v02, the idle the first 3 seconds played back and forth) its Média and Leve",
+   "poses": {"idle": "base", "walk": "move", "attack": "atk", "cast": "cast", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "attack": "Atacar", "cast": "Conjurar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "swamp-blue-deer-64-media",
+   "version": "media64-v02",
+   "cut": "content/sprites/swamp-blue-deer/cut-64-media.json",
+   "why": "the Deer's Personagens Média: 64 frames from the same mattes",
+   "mediumOf": {"hero": "swampBlueDeer", "set": "swamp-blue-deer"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "swamp-blue-deer-36-media",
+   "version": "media36-v02",
+   "cut": "content/sprites/swamp-blue-deer/cut-36-media.json",
+   "why": "the Deer's Personagens Leve (the same order): 36 frames from the same mattes",
+   "lightOf": {
+    "hero": "swampBlueDeer",
+    "set": "swamp-blue-deer"
+   },
+   "packs": {
+    "base": "field",
+    "move": "field"
+   }
+  },
+  {
+   "set": "giant-beetle",
+   "version": "v01",
+   "hero": "giantBeetle",
+   "newHero": {"name": "Besouro Gigante", "group": "monster", "sprite": "giant-beetle", "reversed": false},
+   "cut": "content/sprites/giant-beetle/cut.json",
+   "why": "the user, 2026-10-28: the Giant Beetle from their videos (Attachments/GiantBeetle), body type 1, first cut 64 / 36 only (\"formatos 64 frames e 36 como os últimos\"); the user, 2026-11-12: \"why would you leave high out ? its the games selling point\", \"as all veo generated units should be\": the all-frames Alta is the unit's own art now, the 64 and 36 copies (v02) its Média and Leve",
+   "poses": {"idle": "base", "walk": "move", "attack": "atk", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "attack": "Atacar", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "giant-beetle-64-media",
+   "version": "media64-v02",
+   "cut": "content/sprites/giant-beetle/cut-64-media.json",
+   "why": "the Beetle's Personagens Média: 64 frames from the same mattes",
+   "mediumOf": {"hero": "giantBeetle", "set": "giant-beetle"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "giant-beetle-36-media",
+   "version": "media36-v02",
+   "cut": "content/sprites/giant-beetle/cut-36-media.json",
+   "why": "the Beetle's Personagens Leve (the same order): 36 frames from the same mattes",
+   "lightOf": {
+    "hero": "giantBeetle",
+    "set": "giant-beetle"
+   },
+   "packs": {
+    "base": "field",
+    "move": "field"
+   }
+  },
+  {
+   "set": "chain-bound-penitent",
+   "version": "v01",
+   "hero": "chainBoundPenitent",
+   "newHero": {"name": "Penitente Acorrentado", "group": "monster", "sprite": "chain-bound-penitent", "reversed": false},
+   "cut": "content/sprites/chain-bound-penitent/cut.json",
+   "why": "the user, 2026-10-27: the Chain-Bound Penitent from their sheets (Attachments/ChainBoundPenitent), \"mirror ATT and walk\", one resolution (no Média / Leve copies), the hit react later; 2026-11-10: their Walkright sheet (Ludo) is his walk right (move v02), the WalkLeft sheet as drawn his walk left (move-left)",
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkLeft": "move-left"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "walkLeft": "Andar (esquerda)"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
+  },
+  {
+   "set": "black-cultist",
+   "version": "v01",
+   "hero": "blackCultist",
+   "newHero": {"name": "Cultista Negro", "group": "monster", "sprite": "black-cultist", "reversed": false},
+   "cut": "content/sprites/black-cultist/cut.json",
+   "why": "the user, 2026-11-10: the Black Cultist from their sheets (Attachments/BlackCultist: Ilde, Cast, WalkLeft), \"you will need to mirror the walk animation for this one\"; no attack sheet, so the cast is his attack too; one resolution",
+   "poses": {"idle": "base", "attack": "cast", "cast": "cast", "walk": "move", "walkLeft": "move-left"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "cast": "Conjurar", "walk": "Andar", "walkLeft": "Andar (esquerda)"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
+  },
+  {
+   "set": "corrosive-slime-36",
+   "version": "v01",
+   "hero": "corrosiveSlime36",
+   "newHero": {"name": "Slime36", "group": "monster", "sprite": "corrosive-slime-36", "reversed": false},
+   "cut": "content/sprites/corrosive-slime-36/cut.json",
+   "why": "the user, 2026-10-22: \"Slime36 with 36 frames per animation to see what happens in game, same size as small slime\": the Corrosive Slime's clips at 36 frames each, for comparing memory and look in play",
+   "poses": {"idle": "base", "walk": "move", "attack": "atk", "cast": "cast", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "attack": "Atacar", "cast": "Conjurar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "corrosive-slime-36-media",
+   "version": "media-v01",
+   "mediumOf": {"hero": "corrosiveSlime36", "set": "corrosive-slime-36"},
+   "cut": "content/sprites/corrosive-slime-36/cut-media.json",
+   "why": "Slime36's medium copy (Personagens: Média, the default; Leve halves it): every clip at 0.555 of the video's size",
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "corrosive-slime-64",
+   "version": "v01",
+   "hero": "corrosiveSlime64",
+   "newHero": {"name": "Slime64", "group": "monster", "sprite": "corrosive-slime-64", "reversed": false},
+   "cut": "content/sprites/corrosive-slime-64/cut.json",
+   "why": "the user, 2026-10-22: \"also make a Slime64 ... all resolutions side by side\": the Corrosive Slime's clips at 64 frames each (a clip with fewer keeps them all)",
+   "poses": {"idle": "base", "walk": "move", "attack": "atk", "cast": "cast", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "attack": "Atacar", "cast": "Conjurar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "corrosive-slime-64-media",
+   "version": "media-v01",
+   "mediumOf": {"hero": "corrosiveSlime64", "set": "corrosive-slime-64"},
+   "cut": "content/sprites/corrosive-slime-64/cut-media.json",
+   "why": "Slime64's medium copy (Personagens: Média, the default; Leve halves it): every clip at 0.555 of the video's size",
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "cultist-v2-ember",
+   "version": "v01",
+   "hero": "cultistV2",
+   "cut": "content/sprites/cultist-v2-ember/cut.json",
+   "why": "the user, 2026-10-22: the Cultista Ancestral's hit (sheet frames 1-14), second hit in a row (16-36; frame 15, the red slash, in no clip) and death (the whole Fall sheet), from Attachments/Cultist; his idle, attack, cast and walks keep cultist-v2",
+   "poses": {"hit": "hit", "hit2": "hit2", "death": "death"},
+   "labels": {"hit": "Dano", "hit2": "Dano seguido", "death": "Morte"},
+   "packs": {}
+  },
+  {
+   "set": "hypostasis",
+   "version": "v03",
+   "hero": "hypostasis",
+   "newHero": {"name": "Hipóstase", "group": "monster", "sprite": "hypostasis", "reversed": false},
+   "cut": "content/sprites/hypostasis/cut.json",
+   "why": "the user, 2026-11-06: the Hipóstase (Summon Hypostasis) from their videos, Alta + 64 + 36, 3 hexes",
+   "poses": {"idle": "base", "walk": "move", "walkDown": "movefront", "attack": "atk", "attack2": "atk2", "cast": "cast", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "walkDown": "Andar (frente)", "attack": "Atacar", "attack2": "Atacar 2", "cast": "Conjurar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field", "movefront": "field"},
+   "strides": {"move": 1.0, "movefront": 1.0}
+  },
+  {
+   "set": "hypostasis-64-media",
+   "version": "media64-v03",
+   "cut": "content/sprites/hypostasis/cut-64-media.json",
+   "why": "the Hipóstase's Personagens Média (the user, 2026-11-06): 64 frames from the same mattes",
+   "mediumOf": {"hero": "hypostasis", "set": "hypostasis"},
+   "packs": {"base": "field", "move": "field", "movefront": "field"}
+  },
+  {
+   "set": "hypostasis-36-media",
+   "version": "media36-v03",
+   "cut": "content/sprites/hypostasis/cut-36-media.json",
+   "why": "the Hipóstase's Personagens Leve (the same order): 36 frames from the same mattes",
+   "lightOf": {"hero": "hypostasis", "set": "hypostasis"},
+   "packs": {"base": "field", "move": "field", "movefront": "field"}
+  },
+  {
+   "set": "ashes-crawler",
+   "version": "v01",
+   "hero": "ashesCrawler",
+   "newHero": {"name": "Rastreador de Cinzas", "group": "monster", "sprite": "ashes-crawler", "reversed": false},
+   "cut": "content/sprites/ashes-crawler/cut.json",
+   "why": "the user, 2026-11-06: the Ashes Crawler from their videos (Attachments/SandCrawler), Alta + 64 + 36 like the Hipóstase, 2 hexes; hit and death from AshcrawlerHitandFall (2026-11-12)",
+   "whySteady": "the user, 2026-11-11: \"a weird off set motion going up and down as he idles\": the idle video's camera sank ~30 px for a second; base-v02 (and its 64 / 36 copies) are base-v01 held still on the shell and rear legs (tools/scripts/sprites/steady_clip.py), v01 kept on disk",
+   "poses": {"idle": "base", "walk": "move", "attack": "atk", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "attack": "Atacar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "ashes-crawler-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/ashes-crawler/cut-64-media.json",
+   "why": "the Ashes Crawler's Personagens Média (the user, 2026-11-06): 64 frames from the same mattes",
+   "mediumOf": {"hero": "ashesCrawler", "set": "ashes-crawler"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "ashes-crawler-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/ashes-crawler/cut-36-media.json",
+   "why": "the Ashes Crawler's Personagens Leve (the same order): 36 frames from the same mattes",
+   "lightOf": {"hero": "ashesCrawler", "set": "ashes-crawler"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "stagwolf-v2",
+   "version": "v01",
+   "hero": "stagWolf",
+   "cut": "content/sprites/stagwolf-v2/cut.json",
+   "why": "the user, 2026-11-10: \"ZombieBOgWolfCharacter_walking_in_place_1ed8f6c1 see what you can do with this at least a walk down animation, maybe a mirrorerd improved version of walk left and walk right?\": the walk right (three-quarter view), the same walk mirrored for the left, and the walk toward the camera, at the StagWolf sheet walk's height; its idle, attack, cast, hit and death keep the StagWolf sheets",
+   "posesNote": "the user, 2026-11-12: \"regarding the stagwolf I will want you to add his walk down animation for sure\": only the walk toward the camera is his so far; the side walks (move, move-left) are cut and cooked but not his until the user has judged them, so they keep the StagWolf sheet walks",
+   "poses": {"walkDown": "movefront"},
+   "labels": {"walkDown": "Andar (frente)"},
+   "packs": {"move": "field", "move-left": "field", "movefront": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0, "movefront": 1.0}
+  },
+  {
+   "set": "stagwolf-v2-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/stagwolf-v2/cut-64-media.json",
+   "why": "the StagWolf walks' Personagens Média: 64 frames from the same mattes",
+   "mediumOf": {"hero": "stagWolf", "set": "stagwolf-v2"},
+   "packs": {"move": "field", "move-left": "field", "movefront": "field"}
+  },
+  {
+   "set": "stagwolf-v2-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/stagwolf-v2/cut-36-media.json",
+   "why": "the StagWolf walks' Personagens Leve: 36 frames from the same mattes",
+   "lightOf": {"hero": "stagWolf", "set": "stagwolf-v2"},
+   "packs": {"move": "field", "move-left": "field", "movefront": "field"}
+  },
+  {
+   "set": "zombie-dog",
+   "version": "v01",
+   "hero": "zombieDog",
+   "cut": "content/sprites/zombie-dog/cut.json",
+   "why": "the user, 2026-11-11: \"Creatures Remade, lets start with the zombie dog, the crop on his jaws is ridiculous\"; every pose he has, cut again from the 720p videos, \"25% smaller than he used to be\" (the walk's stride 2.0 -> 1.5 with him); one death (\"just give him a single death animation\"): death2 draws the same clip",
+   "poses": {"idle": "base", "walk": "move", "attack": "atk", "cast": "cast", "hit": "hit", "death": "death", "death2": "death"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.5}
+  },
+  {
+   "set": "zombie-dog-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/zombie-dog/cut-64-media.json",
+   "why": "the Cão Zumbi's Personagens Média: 64 frames from the same mattes",
+   "mediumOf": {"hero": "zombieDog", "set": "zombie-dog"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "zombie-dog-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/zombie-dog/cut-36-media.json",
+   "why": "the Cão Zumbi's Personagens Leve: 36 frames from the same mattes",
+   "lightOf": {"hero": "zombieDog", "set": "zombie-dog"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "mush",
+   "version": "v01",
+   "hero": "mushroomMan",
+   "newHero": {"name": "MushroomMan","group": "monster", "sprite": "mush", "reversed": false},
+   "cut": "content/sprites/mush/cut.json",
+   "why": "the user, 2026-11-11: \"try making this new unit C:\\EmberEngineB\\Attachments\\Mush\", \"Idle , movement to mirror and ATT / CAST on the same\", \"simpole creature same pipeline\": Veo videos, Alta + 64 + 36",
+   "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "attack": "cast", "cast": "cast", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "walkLeft": "Andar (esquerda)", "attack": "Atacar", "cast": "Conjurar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
+  },
+  {
+   "set": "mush-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/mush/cut-64-media.json",
+   "why": "Mush's Personagens Média: 64 frames from the same mattes",
+   "mediumOf": {"hero": "mushroomMan", "set": "mush"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "mush-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/mush/cut-36-media.json",
+   "why": "Mush's Personagens Leve: 36 frames from the same mattes",
+   "lightOf": {"hero": "mushroomMan", "set": "mush"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "sahagin",
+   "version": "v01",
+   "hero": "sahagin",
+   "newHero": {"name": "Sahagin", "group": "monster", "sprite": "sahagin", "reversed": false},
+   "cut": "content/sprites/sahagin/cut.json",
+   "why": "the user, 2026-11-12: \"C:\\EmberEngineB\\Attachments\\Sahagin new unit for you to add\": Veo videos, Alta + 64 + 36; the idle turned to face right like his walk and thrust to the right, the thrust and walk to the left as filmed, the fall turned to face right",
+   "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "attack": "atk", "attackLeft": "atk-left", "cast": "cast", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "walkLeft": "Andar (esquerda)", "attack": "Atacar", "attackLeft": "Atacar (esquerda)", "cast": "Conjurar (água)", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
+  },
+  {
+   "set": "sahagin-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/sahagin/cut-64-media.json",
+   "why": "Sahagin's Personagens Média: 64 frames from the same mattes",
+   "mediumOf": {"hero": "sahagin", "set": "sahagin"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "sahagin-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/sahagin/cut-36-media.json",
+   "why": "Sahagin's Personagens Leve: 36 frames from the same mattes",
+   "lightOf": {"hero": "sahagin", "set": "sahagin"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "nekomata",
+   "version": "v01",
+   "hero": "nekomata",
+   "newHero": {"name": "Nekomata", "group": "monster", "sprite": "nekomata", "reversed": false},
+   "cut": "content/sprites/nekomata/cut.json",
+   "why": "the user, 2026-11-12: a new unit, \"C:\\EmberEngineB\\Attachments\\Nekomata\": Veo videos, Alta + 64 + 36; filmed facing left, turned to face right, the walk to the left as filmed",
+   "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "attack": "atk", "cast": "cast", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "walkLeft": "Andar (esquerda)", "attack": "Atacar", "cast": "Conjurar (raio)", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
+  },
+  {
+   "set": "embered-zombie",
+   "version": "v01",
+   "hero": "emberedZombie",
+   "newHero": {"name": "Embered Zombie", "group": "monster", "sprite": "embered-zombie", "reversed": false},
+   "cut": "content/sprites/embered-zombie/cut.json",
+   "why": "the user, 2026-11-12: the Embered Zombie from their sheets (Attachments/Monsters/Embered Zombie), \"a type D + enemy\", \"closer to 3 resolutions ? Alta Media e Leve ? just less frames for alta\": Alta the 64-frame sheets, Media the same at ~916 px, Leve their 36-frame sheets; the hit is the start of the fall there and back",
+   "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "attack": "atk", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "walkLeft": "Andar (esquerda)", "attack": "Atacar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
+  },
+  {
+   "set": "embered-zombie-64-media",
+   "version": "media64-v02",
+   "cut": "content/sprites/embered-zombie/cut-64-media.json",
+   "why": "the Embered Zombie's Personagens Media: the 64 frames at ~916 px; v02 (the user, 2026-11-12): at ~610 px, the standard (v01 stays on disk)",
+   "mediumOf": {"hero": "emberedZombie", "set": "embered-zombie"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "embered-zombie-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/embered-zombie/cut-36-media.json",
+   "why": "the Embered Zombie's Personagens Leve: the user's 36-frame sheets at ~610 px",
+   "lightOf": {"hero": "emberedZombie", "set": "embered-zombie"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "nekomata-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/nekomata/cut-64-media.json",
+   "why": "Nekomata's Personagens Média: 64 frames from the same mattes",
+   "mediumOf": {"hero": "nekomata", "set": "nekomata"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "nekomata-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/nekomata/cut-36-media.json",
+   "why": "Nekomata's Personagens Leve: 36 frames from the same mattes",
+   "lightOf": {"hero": "nekomata", "set": "nekomata"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "telesm",
+   "version": "v01",
+   "hero": "telesm",
+   "newHero": {"name": "Telesm", "group": "summon", "sprite": "telesm", "reversed": false},
+   "cut": "content/sprites/telesm/cut.json",
+   "why": "the user, 2026-11-10: the shell defence summon, a giant shell monster that sits on the ground (Attachments/Telesm): idle, attack, the shell defence, walk, cast, hit and fall (\"always hit and fall, never death\"), Alta + 64 + 36. No summon spell places it yet",
+   "poses": {"idle": "base", "attack": "atk", "defend": "defend", "walk": "move", "cast": "cast", "hit": "defend", "death": "death"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "defend": "Defesa (concha)", "walk": "Andar", "cast": "Conjurar", "hit": "Dano", "death": "Queda"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "telesm-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/telesm/cut-64-media.json",
+   "why": "Telesm's Personagens Média: 64 frames from the same mattes",
+   "mediumOf": {"hero": "telesm", "set": "telesm"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "telesm-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/telesm/cut-36-media.json",
+   "why": "Telesm's Personagens Leve: 36 frames from the same mattes",
+   "lightOf": {"hero": "telesm", "set": "telesm"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "radiant-familiar",
+   "version": "v01",
+   "hero": "familiar4",
+   "cut": "content/sprites/radiant-familiar/cut.json",
+   "why": "the user, 2026-11-12: remake the Familiar Radiante (the old set's visor was flawed and upscaled): idle, attack and walks from the 1080p of the original video, hit, death and an emote for cutscenes from the 1080p fall video, matched to it; Alta + 64 + 36. The walk keeps the old stride",
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkLeft": "move-left", "hit": "hit", "death": "death", "emote": "emote"},
+   "labels": {"emote": "Emote"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "emote": "cutscene"},
+   "strides": {"move": 1.69, "move-left": 1.69}
+  },
+  {
+   "set": "radiant-familiar-64-media",
+   "version": "media64-v02",
+   "cut": "content/sprites/radiant-familiar/cut-64-media.json",
+   "why": "the Familiar Radiante's Personagens Média: 64 frames from the same mattes; v02 (the user, 2026-11-12): at ~610 px, the standard (v01 ~916 px stays on disk)",
+   "mediumOf": {"hero": "familiar4", "set": "radiant-familiar"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "emote": "cutscene"}
+  },
+  {
+   "set": "radiant-familiar-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/radiant-familiar/cut-36-media.json",
+   "why": "the Familiar Radiante's Personagens Leve: 36 frames from the same mattes",
+   "lightOf": {"hero": "familiar4", "set": "radiant-familiar"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "emote": "cutscene"}
+  },
+  {
+   "set": "moonwarden-v01",
+   "version": "v01",
+   "hero": "garranHolt",
+   "newHero": {"name": "Garran Holt", "group": "hero", "sprite": "moonwarden-v01", "reversed": false, "classId": "moonwarden"},
+   "cut": "content/sprites/moonwarden-v01/cut.json",
+   "why": "the user, 2026-11-13: Garran Holt's quick temporary sheets (content/sprites/moonwarden-v01/human, 4 frames a clip), made his art until the real ones; tools/scripts/sprites/moonwarden_temp_set.py writes the cut files",
+   "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "attack": "atk", "attackLeft": "atk-left", "specialAttack": "special", "block": "block", "hit": "hit", "death": "fall"},
+   "labels": {"idle": "Parado", "walk": "Andar", "walkLeft": "Andar (esquerda)", "attack": "Atacar", "attackLeft": "Atacar (esquerda)", "specialAttack": "Ataque especial", "block": "Defender", "hit": "Dano", "death": "Queda"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
+  },
+  {
+   "set": "classic-stag",
+   "version": "v01",
+   "hero": "stag",
+   "newHero": {"name": "Stag", "group": "monster", "sprite": "classic-stag", "reversed": true},
+   "cut": "content/sprites/classic-stag/cut.json",
+   "why": "the user, 2026-11-13: Stag, a new unit from their videos (Attachments/Classic Animals); Alta + 64 + 36; its cast is its blow (no attack clip); a rank D enemy on Todas as Unidades",
+   "poses": {"idle": "base", "cast": "cast", "walk": "move", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "cast": "Conjurar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "classic-stag-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/classic-stag/cut-64-media.json",
+   "why": "the Stag's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "stag", "set": "classic-stag"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "classic-stag-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/classic-stag/cut-36-media.json",
+   "why": "the Stag's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "stag", "set": "classic-stag"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "classic-boar",
+   "version": "v01",
+   "hero": "boar",
+   "newHero": {"name": "Boar", "group": "monster", "sprite": "classic-boar", "reversed": true},
+   "cut": "content/sprites/classic-boar/cut.json",
+   "why": "the user, 2026-11-13: Boar, a new unit from their videos (Attachments/Classic Animals); Alta + 64 + 36; its cast is its blow (no attack clip); a rank D enemy on Todas as Unidades",
+   "poses": {"idle": "base", "cast": "cast", "walk": "move", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "cast": "Conjurar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "classic-boar-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/classic-boar/cut-64-media.json",
+   "why": "the Boar's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "boar", "set": "classic-boar"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "classic-boar-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/classic-boar/cut-36-media.json",
+   "why": "the Boar's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "boar", "set": "classic-boar"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "omnieye",
+   "version": "v01",
+   "hero": "omnieye",
+   "newHero": {"name": "Omnieye", "group": "monster", "sprite": "omnieye", "reversed": false},
+   "cut": "content/sprites/omnieye/cut.json",
+   "why": "the user, 2026-11-13: Omnieye, a new unit from their videos (Attachments/Classic Animals); Alta + 64 + 36; its cast is its blow (no attack clip); a rank D enemy on Todas as Unidades",
+   "poses": {"idle": "base", "cast": "cast", "walk": "move", "walkLeft": "move-left", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "cast": "Conjurar", "walk": "Andar", "walkLeft": "Andar (esquerda)", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
+  },
+  {
+   "set": "omnieye-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/omnieye/cut-64-media.json",
+   "why": "the Omnieye's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "omnieye", "set": "omnieye"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "omnieye-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/omnieye/cut-36-media.json",
+   "why": "the Omnieye's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "omnieye", "set": "omnieye"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "deepground-beetle",
+   "version": "v01",
+   "hero": "deepgroundBeetle",
+   "newHero": {"name": "Besouro das Profundezas", "group": "monster", "sprite": "deepground-beetle", "reversed": true},
+   "cut": "content/sprites/deepground-beetle/cut.json",
+   "why": "the user, 2026-11-14: the DeepGround Beetle, a new unit from two videos (Attachments/Monsters/Horse): idle, attack and cast in three-quarters, walk, hit and death in profile; Alta + 64 + 36; a rank D enemy on Todas as Unidades",
+   "poses": {"idle": "base", "attack": "atk", "cast": "cast", "walk": "move", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "cast": "Conjurar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "deepground-beetle-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/deepground-beetle/cut-64-media.json",
+   "why": "the DeepGround Beetle's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "deepgroundBeetle", "set": "deepground-beetle"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "deepground-beetle-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/deepground-beetle/cut-36-media.json",
+   "why": "the DeepGround Beetle's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "deepgroundBeetle", "set": "deepground-beetle"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "screeching-bat",
+   "version": "v01",
+   "hero": "screechingBat",
+   "newHero": {"name": "Screeching Bat", "group": "monster", "sprite": "screeching-bat", "reversed": true},
+   "cut": "content/sprites/screeching-bat/cut.json",
+   "why": "the user, 2026-11-14: the Screeching Bat, a new unit from their videos (Attachments/Monsters/Bat); the last video's size and colours matched to the others; Alta + 64 + 36; a rank D enemy on Todas as Unidades",
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "hit": "hit", "hit2": "hit2", "death": "death", "hoverSide": "hover-side", "fallSide": "fall-side"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Voar", "hit": "Dano", "hit2": "Dano (lado)", "death": "Morte", "hoverSide": "Pairar (lado)", "fallSide": "Queda (lado)"},
+   "packs": {"base": "field", "move": "field", "hover-side": "cutscene", "fall-side": "cutscene"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "screeching-bat-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/screeching-bat/cut-64-media.json",
+   "why": "the Screeching Bat's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "screechingBat", "set": "screeching-bat"},
+   "packs": {"base": "field", "move": "field", "hover-side": "cutscene", "fall-side": "cutscene"}
+  },
+  {
+   "set": "screeching-bat-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/screeching-bat/cut-36-media.json",
+   "why": "the Screeching Bat's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "screechingBat", "set": "screeching-bat"},
+   "packs": {"base": "field", "move": "field", "hover-side": "cutscene", "fall-side": "cutscene"}
+  },
+  {
+   "set": "horse",
+   "version": "v01",
+   "hero": "horse",
+   "newHero": {"name": "Horse", "group": "monster", "sprite": "horse", "reversed": true},
+   "cut": "content/sprites/horse/cut.json",
+   "why": "the user, 2026-11-14: the Horse, a new unit from their videos (Attachments/Monsters/Horse); Alta + 64 + 36; a rank F enemy on Todas as Unidades (the user: \"Horse is a Rank F bandid is D+\")",
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "horse-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/horse/cut-64-media.json",
+   "why": "the Horse's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "horse", "set": "horse"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "horse-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/horse/cut-36-media.json",
+   "why": "the Horse's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "horse", "set": "horse"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "bandit-horseman",
+   "version": "v01",
+   "hero": "banditHorseman",
+   "newHero": {"name": "Bandit Horseman", "group": "monster", "sprite": "bandit-horseman", "reversed": true},
+   "cut": "content/sprites/bandit-horseman/cut.json",
+   "why": "the user, 2026-11-14: the Bandit Horseman, a new unit from their videos (Attachments/Monsters/Horse); Alta + 64 + 36; a rank D+ enemy on Todas as Unidades (the user: \"Horse is a Rank F bandid is D+\")",
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "bandit-horseman-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/bandit-horseman/cut-64-media.json",
+   "why": "the Bandit Horseman's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "banditHorseman", "set": "bandit-horseman"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "bandit-horseman-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/bandit-horseman/cut-36-media.json",
+   "why": "the Bandit Horseman's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "banditHorseman", "set": "bandit-horseman"},
+   "packs": {"base": "field", "move": "field"}
+  }
+ ],
+ "clips": [
+  {
+   "set": "voss-final",
+   "clip": "cast-back",
+   "version": "v01",
+   "add": {"mode": "once", "pack": "combat"},
+   "why": "the user's picture of Voss from the back (2026-10-17): after his cast pose he turns away and Sopro Venenoso leaves his hands when its target lies away from the camera",
+   "frames": {"count": 1, "pattern": "content/sprites/voss-final/cast-back-v01/cast-back-{}.png"},
+   "frameMs": 1000,
+   "poses": [
+    {
+     "hero": "voss",
+     "pose": "castBack",
+     "label": "Conjurar (costas)",
+     "nat": [535, 792],
+     "crop": [29, 4, 480, 784],
+     "box": {"w": 1.8916, "h": 2.80028, "foot": 0.01335},
+     "boxNote": "tools/scripts/sprites/prepare_still_pose.py source-VossBack.png against Ember's idle frame 1 (box h 4.36196): head to feet 2.687 units as in the idle, 760 px (1.5x the idle's 507)"
+    }
+   ]
+  }
+ ]
+}

@@ -7419,6 +7419,14 @@
         "useClassSprite": true
       },
       {
+        "name": "Sick Rat",
+        "classId": "sickRat",
+        "x": 28,
+        "y": 29,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
         "name": "Bandit Horseman",
         "classId": "banditHorseman",
         "x": 18,

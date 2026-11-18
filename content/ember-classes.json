@@ -138,6 +138,14 @@
    "spellList": [],
    "about": "A new unit from the user's sheets (2026-11-12, Attachments/Monsters/Embered Zombie: \"add the whole new unit as a type D + enemy\"): idle, walk, a punch, the hit (the start of the fall, there and back) and the fall. Working numbers, the user's to set: 1 hex, mov 3, a 1D8 blow, the Zumbi's stats rows, rank D (the Zumbi is E), no spells."
   },
+  "sickRat": {
+   "name": "Rato Doente", "nameEn": "Sick Rat", "role": "Fera", "sprite": "sick-rat", "size": 1, "mov": 5, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 6, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "A new unit from the user's videos (2026-11-14, Attachments/Monsters/Horse, Sick Rat). Working numbers, the user's to set: 1 hex, mov 5, a 1D6 bite, the Embered Zombie's stats row, rank F, no spells."
+  },
   "stag": {
    "name": "Stag", "nameEn": "Stag", "role": "Fera", "sprite": "classic-stag", "size": 1, "mov": 4, "strikesWith": "atk",
    "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
