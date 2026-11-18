@@ -11,12 +11,12 @@
    "clip": "base",
    "pose": "idle",
    "kind": "stand",
-   "src": "build/video-cut/zombie-dog/big-reference",
+   "src": "build/video-cut/zombie-dog/big-reference-hrm",
    "video": "Attachments/BigZombie_dog_animation_reference_ba9abcc5_720p.mp4",
    "first": 0,
    "last": 96,
    "mode": "pingpong",
-   "why": "standing and breathing, until the mouth starts to open for the roar at ~98; played back and forth: the best hard-cut loop in this stretch jumps 4.2 x a frame's step at its seam"
+   "why": "standing and breathing, until the mouth starts to open for the roar at ~98; played back and forth: the best hard-cut loop in this stretch jumps 4.2 x a frame's step at its seam; 2026-11-17 the user: \"you will redo the idle\": matted with the HR matting model (hr_matte.py --crop 200,0,1050,720; the user: \"there is less of that annoying drool on the new one ... keep the new one\")"
   },
   {
    "clip": "cast",

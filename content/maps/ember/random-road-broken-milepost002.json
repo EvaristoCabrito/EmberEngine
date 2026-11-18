@@ -1414,13 +1414,6 @@
         "level": 8
       },
       {
-        "name": "Cão da patrulha",
-        "classId": "wardog",
-        "x": 17,
-        "y": 14,
-        "level": 8
-      },
-      {
         "name": "Chefe do marco",
         "classId": "captain",
         "x": 21,

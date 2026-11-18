@@ -1413,13 +1413,6 @@
         "x": 19,
         "y": 11,
         "level": 8
-      },
-      {
-        "name": "Cão da patrulha",
-        "classId": "wardog",
-        "x": 17,
-        "y": 14,
-        "level": 8
       }
     ],
     "neutralSpawns": [],

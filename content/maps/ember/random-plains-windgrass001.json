@@ -1656,13 +1656,6 @@
         "x": 21,
         "y": 5,
         "level": 2
-      },
-      {
-        "name": "Cão de guerra",
-        "classId": "wardog",
-        "x": 15,
-        "y": 13,
-        "level": 1
       }
     ],
     "neutralSpawns": [],

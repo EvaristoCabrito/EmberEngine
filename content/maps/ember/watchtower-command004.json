@@ -5411,13 +5411,6 @@
         "level": 10
       },
       {
-        "name": "Cão de guarda",
-        "classId": "zombieDog",
-        "x": 25,
-        "y": 20,
-        "level": 10
-      },
-      {
         "name": "Vigia espectral",
         "classId": "emberedWraith",
         "x": 19,

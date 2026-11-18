@@ -3022,13 +3022,6 @@
         "level": 10
       },
       {
-        "name": "Cão de guarda",
-        "classId": "zombieDog",
-        "x": 11,
-        "y": 19,
-        "level": 10
-      },
-      {
         "name": "Guarda desperto",
         "classId": "zombie2",
         "x": 16,

@@ -5387,13 +5387,6 @@
         "level": 10
       },
       {
-        "name": "Cão da cripta",
-        "classId": "zombieDog",
-        "x": 34,
-        "y": 11,
-        "level": 10
-      },
-      {
         "name": "Sentinela da torre",
         "classId": "miliciaV2",
         "x": 42,

@@ -116,6 +116,10 @@ def main():
     ap.add_argument("--threads", type=int, default=12)
     ap.add_argument("--model", choices=sorted(MODELS), default="general")
     ap.add_argument("--device", choices=["auto", "cpu", "dml"], default="auto")
+    # --crop x0,y0,x1,y1 (the user, 2026-11-17, the Cão Zumbi's idle: "cutting over"): the model sees only this part of the frame,
+    # so a figure much smaller than the frame gets the model's whole 1024 px (the teeth no longer a few pixels); the alpha is written
+    # at the frame's size, clear outside the crop
+    ap.add_argument("--crop", default="")
     a = ap.parse_args()
     # one matte at a time (the user, 2026-11-17: "move on to 12 cores in a single process as soon as possible"): however many queue
     # lanes call it, a matte waits until every video_matte started before it has ended (first come, first served), then only does the
@@ -168,11 +172,17 @@ def main():
         if os.path.exists(alpha) and os.path.exists(src):
             continue
         im = Image.fromarray(rgb)
-        x = np.asarray(im.resize((1024, 1024), Image.BICUBIC), np.float32) / 255
+        box = tuple(int(v) for v in a.crop.split(",")) if a.crop else (0, 0, im.width, im.height)
+        part = im.crop(box)
+        x = np.asarray(part.resize((1024, 1024), Image.BICUBIC), np.float32) / 255
         x = ((x - MEAN) / STD).transpose(2, 0, 1)[None]
         y = sess.run(None, {name: x})[0][0, 0]
         m = 1 / (1 + np.exp(-np.clip(y, -40, 40)))
-        m = Image.fromarray((m * 255 + 0.5).astype(np.uint8)).resize(im.size, Image.BICUBIC)
+        m = Image.fromarray((m * 255 + 0.5).astype(np.uint8)).resize(part.size, Image.BICUBIC)
+        if a.crop:
+            full = Image.new("L", im.size, 0)
+            full.paste(m, box[:2])
+            m = full
         im.save(src)
         m.save(alpha + ".tmp.png")
         os.replace(alpha + ".tmp.png", alpha)  # the alpha last: a frame counts as done only when both are whole

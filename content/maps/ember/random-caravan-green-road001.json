@@ -1323,13 +1323,6 @@
         "x": 6,
         "y": 16,
         "level": 8
-      },
-      {
-        "name": "Cão dos saqueadores",
-        "classId": "wardog",
-        "x": 16,
-        "y": 14,
-        "level": 8
       }
     ],
     "neutralSpawns": [

@@ -16,7 +16,7 @@
 
   "familiar2": {"src": "content/assets/game/sprites/familiar2/1.png", "box": [0.30, 0.06, 0.58, 0.55]},
   "familiar4": {"src": "content/assets/game/sprites/familiar4/1.png", "box": [0.445, 0.05, 0.685, 0.55]},
-  "zombieDog": {"src": "content/assets/game/sprites/zombieDog/1.png", "box": [0.70, 0.20, 0.97, 0.60]},
+  "zombieDog": {"src": "content/sprites/zombie-dog/base-v01/base-1.png", "box": [0.68, 0.10, 0.99, 0.62], "keep": [0.62, 0.0, 1.0, 0.70], "ours": true},
   "plague-bearing-cattle": {"src": "content/assets/game/sprites/plague-bearing-cattle/1.png", "box": [0.68, 0.10, 0.90, 0.52]},
   "jacare": {"src": "content/assets/game/sprites/jacare/1.png", "box": [0.55, 0.10, 0.82, 0.85]},
   "cobalt-blue-deer": {"src": "content/assets/game/sprites/cobalt-blue-deer/1.png", "box": [0.17, 0.0, 0.73, 0.36]},
