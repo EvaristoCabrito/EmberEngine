@@ -24,6 +24,7 @@ Esquiva / 2). Escape: min(100, 60 + DEX / 3).
 | E | 1.0 | 10 | 20 | 30 |
 | D | 1.5 | 15 | 30 | 45 |
 | D+ | 1.75 | 17.5 | 35 | 52.5 |
+| C- | 1.875 | 18.75 | 37.5 | 56.25 |
 | C | 2.0 | 20 | 40 | 60 |
 | B | 2.5 | 25 | 50 | 75 |
 | A | 3.0 | 30 | 60 | 90 |
@@ -43,6 +44,7 @@ Esquiva / 2). Escape: min(100, 60 + DEX / 3).
 - **D+** (the user, 2026-10-27: "ele é tipo um D+"; halfway between D and C): Chain-Bound Penitent (chainBoundPenitent), a warrior
   a little stronger than The Butcher (its stats x1.10, content/data/class-stats.json) with strong magic resistance (50 % to arcane,
   darkness, ember, fire, holy, ice, lightning); first values.
+- **C-** (the user, 2026-11-18: "its a C- type"; halfway between D+ and C): Vampire Mosquito (vampireMosquito), a flier; first values.
 - **B**: Carnivorous Plant (carnivorousPlant).
 - **A**: Birolho (birolho, birolho2, birolho3, birolhoLegs, birolhoLegs2).
 - **S**: Asherah.

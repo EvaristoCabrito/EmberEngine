@@ -346,6 +346,9 @@
     "screechingBat": {
       "mov": 5
     },
+    "vampireMosquito": {
+      "mov": 5
+    },
     "ashesCrawler": {
       "mov": 4
     },

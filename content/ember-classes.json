@@ -196,6 +196,14 @@
    "spellList": [],
    "about": "A new unit from the user's videos (2026-11-14, Attachments/Monsters/Bat, \"Screeching Bat\"): it flies; idle, the screech (its blow), the flight, hit and fall. Working numbers, the user's to set: 1 hex, mov 5, a 1D8 bite, the Embered Zombie's stats rows, rank D, no spells."
   },
+  "vampireMosquito": {
+   "name": "Mosquito Vampiro", "nameEn": "Vampire Mosquito", "role": "Fera", "sprite": "vampire-mosquito", "size": 1, "mov": 5, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 6, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "A new unit from the user's videos (2026-11-18, Attachments/Monsters/VampireMosquito: \"its a C- type\"); it flies. Working numbers, the user's to set: 1 hex, mov 5, a 1D6 proboscis stab, the Embered Zombie's stats rows (the Screeching Bat's), rank C- (1.875 a level, between D+ and C), no spells (its blood drain is only the cast pose)."
+  },
   "horse": {
    "name": "Horse", "nameEn": "Horse", "role": "Fera", "sprite": "horse", "size": 1, "mov": 6, "strikesWith": "atk",
    "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},

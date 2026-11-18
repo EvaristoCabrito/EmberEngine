@@ -7419,6 +7419,14 @@
         "useClassSprite": true
       },
       {
+        "name": "Vampire Mosquito",
+        "classId": "vampireMosquito",
+        "x": 43,
+        "y": 29,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
         "name": "Witch",
         "classId": "witch",
         "x": 38,

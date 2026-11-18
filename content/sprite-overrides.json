@@ -989,6 +989,34 @@
    "why": "the Witch's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "witch", "set": "witch"},
    "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "vampire-mosquito",
+   "version": "v01",
+   "hero": "vampireMosquito",
+   "newHero": {"name": "Mosquito Vampiro", "group": "monster", "sprite": "vampire-mosquito", "reversed": true},
+   "cut": "content/sprites/vampire-mosquito/cut.json",
+   "why": "the user, 2026-11-18: the Vampire Mosquito, a new rank C- flier from four videos (Attachments/Monsters/VampireMosquito): idle and flight, proboscis attack, blood drain, hit and fall, flying toward and away from the camera; Alta + 64 + 36; an enemy on Todas as Unidades",
+   "poses": {"idle": "base", "attack": "atk", "cast": "cast", "walk": "move", "walkUp": "move-up", "walkDown": "move-down", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "cast": "Conjurar", "walk": "Voar", "walkUp": "Voar (costas)", "walkDown": "Voar (frente)", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"},
+   "strides": {"move": 1.0, "move-up": 1.0, "move-down": 1.0}
+  },
+  {
+   "set": "vampire-mosquito-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/vampire-mosquito/cut-64-media.json",
+   "why": "the Vampire Mosquito's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "vampireMosquito", "set": "vampire-mosquito"},
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
+  },
+  {
+   "set": "vampire-mosquito-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/vampire-mosquito/cut-36-media.json",
+   "why": "the Vampire Mosquito's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "vampireMosquito", "set": "vampire-mosquito"},
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   }
  ],
  "clips": [
