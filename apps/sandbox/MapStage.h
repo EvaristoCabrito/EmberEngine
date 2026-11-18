@@ -586,7 +586,10 @@ class MapStage final : public Stage {
       // for a small board left it a dot on the screen. The farthest zoom is 2.2 x the distance that frames the whole board (aldeia's
       // 112.42), never beyond aldeia's.
       const float fitDistance = std::max(boardWidth_ / (2 * tanHalf * aspect), boardDepth_ * 1.35f) * 1.05f;
-      maxDistance_ = std::min(kMaxDistance, std::max(2.2f * fitDistance, kMinDistance * 4.0f));
+      // One farthest zoom for every map, from the character's size on screen and not from the board's size (the user, 2026-11-18:
+      // "this kind of zoom out is not acceptable"; the board is no dot on the screen): the game's own framing, the opening view
+      // five wheel notches in from the farthest (see kStartDistance), whatever the map.
+      maxDistance_ = kMaxDistance;
       distance_ = std::min(maxDistance_, fitDistance) / options_.zoom;
       // Every map opens at the same zoom, over the party (the user, 2026-10-19: "esse deve ser o zoom padrão em que todos os mapas
       // se iniciam com a camera em cima do grupo, caso estiverem separados na maior concentração de membros"). Captures that frame
@@ -1616,7 +1619,10 @@ class MapStage final : public Stage {
     if (e.type == SDL_EVENT_MOUSE_MOTION && panning_ && (e.motion.state & SDL_BUTTON_LMASK)) {
       const std::optional<glm::vec3> a = groundUnder(e.motion.windowID, e.motion.x - e.motion.xrel, e.motion.y - e.motion.yrel);
       const std::optional<glm::vec3> b = groundUnder(e.motion.windowID, e.motion.x, e.motion.y);
-      if (a && b) target_ += glm::vec3{a->x - b->x, 0.0f, a->z - b->z}, cam_.target += glm::vec3{a->x - b->x, 0.0f, a->z - b->z};
+      if (a && b) {
+        const glm::vec3 grab = grabDelta(*a, *b);
+        target_ += grab, cam_.target += grab;
+      }
     }
     // F1..F12: the battle bar's sockets (Ctrl+F1 is Modo teste's numbers)
     if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.scancode >= SDL_SCANCODE_F1 && e.key.scancode <= SDL_SCANCODE_F12 &&
@@ -1626,26 +1632,43 @@ class MapStage final : public Stage {
     if ((e.type == SDL_EVENT_MOUSE_MOTION && (e.motion.state & (SDL_BUTTON_RMASK | SDL_BUTTON_MMASK) || panning_)) || e.type == SDL_EVENT_MOUSE_WHEEL)
       cameraMoved_ = true;  // the camera log (frame)
     if (e.type == SDL_EVENT_MOUSE_MOTION && (e.motion.state & SDL_BUTTON_RMASK) && !flat_) {  // Tática never turns
-      yaw_ -= e.motion.xrel * kTurnPerPixel;
-      pitch_ = std::clamp(pitch_ + e.motion.yrel * kTurnPerPixel, minPitch(), kMaxPitch);
+      // A hand flick never throws the view: one motion event turns at most kMaxTurnPixels (a fast drag is many events).
+      yaw_ -= std::clamp(e.motion.xrel, -kMaxTurnPixels, kMaxTurnPixels) * kTurnPerPixel;
+      pitch_ = std::clamp(pitch_ + std::clamp(e.motion.yrel, -kMaxTurnPixels, kMaxTurnPixels) * kTurnPerPixel, minPitch(), kMaxPitch);
     }
     if (e.type == SDL_EVENT_MOUSE_MOTION && (e.motion.state & SDL_BUTTON_MMASK)) {
       // The ground point under the cursor stays under it (the board follows the hand).
       const std::optional<glm::vec3> a = groundUnder(e.motion.windowID, e.motion.x - e.motion.xrel, e.motion.y - e.motion.yrel);
       const std::optional<glm::vec3> b = groundUnder(e.motion.windowID, e.motion.x, e.motion.y);
-      if (a && b) target_ += glm::vec3{a->x - b->x, 0.0f, a->z - b->z}, cam_.target += glm::vec3{a->x - b->x, 0.0f, a->z - b->z};
+      if (a && b) {
+        const glm::vec3 grab = grabDelta(*a, *b);
+        target_ += grab, cam_.target += grab;
+      }
     }
     if (e.type == SDL_EVENT_MOUSE_WHEEL && e.wheel.y != 0.0f) {
-      const float next = std::clamp(distance_ * std::pow(kZoomStep, e.wheel.y), kMinDistance, maxDistance_);
-      // Toward the cursor: the pivot moves to the cursor's ground point by the share of the distance zoomed.
+      // One wheel event zooms at most kMaxWheelSteps notches (a fast or smooth wheel sends big values).
+      const float next = std::clamp(distance_ * std::pow(kZoomStep, std::clamp(e.wheel.y, -kMaxWheelSteps, kMaxWheelSteps)), kMinDistance, maxDistance_);
+      // Toward the cursor: the pivot moves to the cursor's ground point by the share of the distance zoomed. A cursor ray that
+      // meets the ground far away (a low tilt, the horizon) never drags the pivot farther than the view's own reach.
       if (const std::optional<glm::vec3> p = groundUnder(e.wheel.windowID, e.wheel.mouse_x, e.wheel.mouse_y)) {
         const float share = 1.0f - next / distance_;
-        target_.x += (p->x - target_.x) * share;
-        target_.z += (p->z - target_.z) * share;
+        glm::vec2 pull{p->x - target_.x, p->z - target_.z};
+        const float reach = distance_ * kGrabReach;
+        if (const float len = glm::length(pull); len > reach) pull *= reach / len;
+        target_.x += pull.x * share;
+        target_.z += pull.y * share;
       }
       distance_ = next;
     }
   }
+  // The ground a grab moves the pivot by, from the point first held to the point now under the cursor, never more than the view's
+  // reach in one event (a ray near the horizon meets the ground very far away: that was an enormous jump).
+  glm::vec3 grabDelta(const glm::vec3& held, const glm::vec3& now) const {
+    glm::vec3 d{held.x - now.x, 0.0f, held.z - now.z};
+    const float reach = distance_ * kGrabReach, len = glm::length(d);
+    return len > reach ? d * (reach / len) : d;
+  }
+  static constexpr float kMaxTurnPixels = 60.0f, kMaxWheelSteps = 3.0f, kGrabReach = 0.6f;
 
   // The left button held still long enough arms the pan (called every frame). Ember's gauntlet shows while the
   // board is held: the armed left button, or the middle button's grab.
@@ -14136,7 +14159,7 @@ class MapStage final : public Stage {
   static constexpr float kTiltStep = 0.0873f, kTurnStep = 0.2618f;  // Ember's bar: 5 deg; 15 deg
   static constexpr float kTurnPerPixel = 0.005f, kZoomStep = 0.85f, kPanPerSecond = 0.9f;
   static constexpr float kMinDistance = 3.0f, kEyeClearance = 0.8f;
-  static constexpr float kMaxDistance = 112.42f;  // sqrt(3) x 29.5 (aldeia's board width) x 2.2
+  static constexpr float kMaxDistance = 56.3f;  // the farthest zoom of every map: the opening view 5 wheel notches out (25 / 0.85^5)
   static constexpr float kStartDistance = 25.0f;  // the user's chosen opening zoom (aldeia's old framing 56.3 x 0.85^5)
   static constexpr float kGroupRadius = 8.0f;     // party members within this of each other count as one group
 
