@@ -5,7 +5,7 @@
   "Neera": {"file": "game/portraits/NeeraProperSide-profile.jpg", "anchorY": 0.5},
   "Voss": {"file": "game/portraits/voss-v2-bust.jpg"},
   "Salazar": {"file": "game/portraits/salazar-v2-bust.jpg"},
-  "Aldric": {"file": "game/portraits/aldric-profile-001.jpg"},
+  "Aldric": {"file": "game/portraits/aldric-portrait-v02.jpg", "face": [0.4995, 0.1104, 0.1032]},
   "Malrec": {"file": "game/portraits/conjurer-002.png"},
   "Isolde": {"file": "game/portraits/isolde-portrait-v05.jpg", "face": [0.5049, 0.1042, 0.0943]},
   "Selene": {"file": "game/portraits/selene-portrait-v04.jpg", "face": [0.4992, 0.1452, 0.1588]},
