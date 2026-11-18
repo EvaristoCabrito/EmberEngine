@@ -319,6 +319,12 @@
     "emberedZombie": {
       "mov": 3
     },
+    "banditHorseman": {
+      "mov": 6
+    },
+    "horse": {
+      "mov": 6
+    },
     "stag": {
       "mov": 4
     },

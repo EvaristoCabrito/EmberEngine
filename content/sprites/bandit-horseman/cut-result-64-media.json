@@ -1,0 +1,164 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Monsters/Horse/BanditHorseMan/Idle_Walk.mp4",
+   "first": 0,
+   "last": 96,
+   "bootRow": 679,
+   "bootRows": [
+    675,
+    679
+   ],
+   "frameCountFrom": 97,
+   "figurePx": 629.0,
+   "scaledTo": 609.7,
+   "frames": 64,
+   "frameMs": 63.151041666666664,
+   "nat": [
+    760,
+    631
+   ],
+   "crop": [
+    5,
+    4,
+    747,
+    623
+   ],
+   "box": {
+    "w": 4.48712,
+    "h": 3.72549,
+    "foot": 0.03425
+   },
+   "pattern": "content/sprites/bandit-horseman/base-media64-v01/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Monsters/Horse/BanditHorseMan/BandiHorsemanATT.mp4",
+   "first": 12,
+   "last": 136,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/bandit-horseman/idle-walk 0:96",
+   "bootRow": 679,
+   "bootRows": [
+    666,
+    698
+   ],
+   "frameCountFrom": 125,
+   "figurePx": 615.0,
+   "scaledTo": 609.6,
+   "frames": 64,
+   "frameMs": 81.38020833333333,
+   "nat": [
+    707,
+    682
+   ],
+   "crop": [
+    8,
+    5,
+    693,
+    672
+   ],
+   "box": {
+    "w": 4.17366,
+    "h": 4.02608,
+    "foot": 0.0819
+   },
+   "pattern": "content/sprites/bandit-horseman/atk-media64-v01/atk-{}.png",
+   "impact": 0.288
+  },
+  "move": {
+   "video": "Attachments/Monsters/Horse/BanditHorseMan/Idle_Walk.mp4",
+   "first": 108,
+   "last": 239,
+   "loopFirst": 143,
+   "loopLast": 171,
+   "seamSteps": 0.55,
+   "bootRow": 675,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 610.0,
+   "frames": 29,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    776,
+    652
+   ],
+   "crop": [
+    5,
+    5,
+    764,
+    642
+   ],
+   "box": {
+    "w": 4.57967,
+    "h": 3.84787,
+    "foot": 0.10033
+   },
+   "pattern": "content/sprites/bandit-horseman/move-media64-v01/move-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/Monsters/Horse/BanditHorseMan/HitReactandFall.mp4",
+   "first": 18,
+   "last": 96,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/bandit-horseman/idle-walk 0:96",
+   "bootRow": 684,
+   "bootRows": [
+    679,
+    684
+   ],
+   "frameCountFrom": 79,
+   "figurePx": 628.0,
+   "scaledTo": 610.1,
+   "frames": 64,
+   "frameMs": 51.432291666666664,
+   "nat": [
+    696,
+    646
+   ],
+   "crop": [
+    4,
+    4,
+    684,
+    638
+   ],
+   "box": {
+    "w": 4.11019,
+    "h": 3.81492,
+    "foot": 0.05728
+   },
+   "pattern": "content/sprites/bandit-horseman/hit-media64-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Monsters/Horse/BanditHorseMan/HitReactandFall.mp4",
+   "first": 138,
+   "last": 215,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/bandit-horseman/idle-walk 0:96",
+   "bootRow": 683,
+   "bootRows": [
+    683,
+    683
+   ],
+   "frameCountFrom": 78,
+   "figurePx": 617.5,
+   "scaledTo": 610.0,
+   "frames": 64,
+   "frameMs": 50.78125,
+   "nat": [
+    701,
+    652
+   ],
+   "crop": [
+    5,
+    4,
+    691,
+    644
+   ],
+   "box": {
+    "w": 4.13927,
+    "h": 3.84994,
+    "foot": 0.17496
+   },
+   "pattern": "content/sprites/bandit-horseman/death-media64-v01/death-{}.png"
+  }
+ }
+}

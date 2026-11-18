@@ -1,0 +1,288 @@
+{
+ "about": "EmberEngine's own unit classes (read by engine/world/Battle.cpp applyEmberClass). A battle file's exporter knows only the old classes, so a unit of these arrives under a stand-in and is made what its class says here: stats at its level from content/data/class-stats.json, movement, body size (hexes), its blow (strikesWith atk = the weapon's dice on ATK), resistances, spell uses per tier and spells, its names. Ranks in content/enemy-ranks.json. The Corrosive Slime (the user, 2026-10-22): AD&D 2e's oozes are immune to acid (Veneno here, the game's acid); the Small Slime casts Milf's Acid Arrow twice (tier 2) and Névoa Ácida once (tier 3) a fight, the Large Slime three and two, its stats 75% higher, three hexes (two until 2026-10-26, the user: size 3 should do him fine).",
+ "standIn": "zombie",
+ "aboutHeroes": "EmberEngine's own heroes beside the campaign's six (read by engine/world/BattleExport.cpp Rules: added to the hero order and classes, so every prepared map seats them). Modo teste's party seats them all (the user, 2026-10-25: 'the full party at debug mode should include her, as a stress test too because the goal is a 8 members party'); the campaign keeps only the heroes its save has recruited. Isolde = a conjurer (the conjurer's spells until her own), her plain attack and counters like Voss's (BattleExport isArcaneCaster, MapStage's staff blow).",
+ "heroes": [{"name": "Isolde", "classId": "conjurer"}, {"name": "Selene", "classId": "conjurer"}, {"name": "Garran Holt", "classId": "moonwarden"}],
+ "classes": {
+  "corrosiveSlime": {
+   "name": "Slime Corrosivo", "nameEn": "Corrosive Slime", "role": "Gosma",
+   "sprite": "corrosive-slime", "size": 1, "mov": 3, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {"poison": 100},
+   "spells": {"tier2": 2, "tier3": 1},
+   "spellList": ["acidArrow", "acidCloud"]
+  },
+  "corrosiveSlimeLarge": {
+   "name": "Slime Corrosivo Grande", "nameEn": "Large Corrosive Slime", "role": "Gosma",
+   "sprite": "corrosive-slime", "size": 3, "mov": 3, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {"poison": 100},
+   "spells": {"tier2": 3, "tier3": 2},
+   "spellList": ["acidArrow", "acidCloud"]
+  },
+  "corrosiveSlime36": {
+   "name": "Slime36", "nameEn": "Slime36", "role": "Gosma",
+   "sprite": "corrosive-slime-36", "size": 1, "mov": 3, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {"poison": 100},
+   "spells": {"tier2": 2, "tier3": 1},
+   "spellList": ["acidArrow", "acidCloud"]
+  },
+  "corrosiveSlime64": {
+   "name": "Slime64", "nameEn": "Slime64", "role": "Gosma",
+   "sprite": "corrosive-slime-64", "size": 1, "mov": 3, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {"poison": 100},
+   "spells": {"tier2": 2, "tier3": 1},
+   "spellList": ["acidArrow", "acidCloud"]
+  },
+  "giantSpider": {
+   "name": "Aranha Gigante", "nameEn": "Giant Spider", "role": "Fera",
+   "sprite": "giant-spider", "size": 3, "mov": 4, "strikesWith": "atk",
+   "weapon": {"dice": 2, "faces": 6, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {"poison": 50},
+   "spells": {},
+   "spellList": []
+  },
+  "swampBlueDeer": {
+   "name": "Cervo Azul do Pântano", "nameEn": "Swamp Blue Deer", "role": "Fera",
+   "sprite": "swamp-blue-deer", "size": 1, "mov": 5, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 6, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": []
+  },
+  "chainBoundPenitent": {
+   "name": "Penitente Acorrentado", "nameEn": "Chain-Bound Penitent", "role": "Bruto",
+   "sprite": "chain-bound-penitent", "size": 1, "mov": 4, "strikesWith": "atk",
+   "weapon": {"dice": 2, "faces": 6, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {"arcane": 50, "darkness": 50, "ember": 50, "fire": 50, "holy": 50, "ice": 50, "lightning": 50},
+   "spells": {},
+   "spellList": [],
+   "sounds": {
+    "attack": [{"file": "HeavyCleave-Balanced-Medium.mp3", "volume": 0.55, "offset": 0, "delay": 0, "exclusive": true}],
+    "counter": [{"file": "HeavyCleave-Balanced-Medium.mp3", "volume": 0.55, "offset": 0, "delay": 0, "exclusive": true}],
+    "walk": [{"file": "ChainBoundPenitentWalkRight.mp3", "volume": 0.45, "offset": 0, "delay": 0, "exclusive": true}],
+    "walkLeft": [{"file": "HeavySteps1-Balanced-Medium.mp3", "volume": 0.45, "offset": 0, "delay": 0, "exclusive": true}],
+    "walkFade": true
+   }
+  },
+  "giantBeetle": {
+   "name": "Besouro Gigante", "nameEn": "Giant Beetle", "role": "Fera",
+   "sprite": "giant-beetle", "size": 1, "mov": 4, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "The user, 2026-10-28: Attachments/GiantBeetle, body type 1, 64 / 36 frames like the Deer. Working numbers, the user's to set: 1 hex, mov 4, a 1D8 horn blow, stats the Mordavian Wolf's row, rank D, no spells."
+  },
+  "deepgroundBeetle": {
+   "name": "Besouro das Profundezas", "nameEn": "DeepGround Beetle", "role": "Fera", "sprite": "deepground-beetle", "size": 1, "mov": 4, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "A new unit from the user's videos (2026-11-14, Attachments/Monsters/Horse, DeepGround Beetle). Working numbers, the user's to set: the Giant Beetle's (1 hex, mov 4, a 1D8 blow, its stats row, rank D), no spells."
+  },
+  "ashesCrawler": {
+   "name": "Rastreador de Cinzas", "nameEn": "Ashes Crawler", "role": "Fera",
+   "sprite": "ashes-crawler", "size": 2, "mov": 4, "strikesWith": "atk",
+   "weapon": {"dice": 2, "faces": 6, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {"ember": 50, "fire": 50},
+   "spells": {},
+   "spellList": [],
+   "about": "The user, 2026-11-06: Attachments/SandCrawler, \"its called Ashes Crawler\", \"they live in ashen forest primarily\". Working numbers, the user's to set: 2 hexes, mov 4, a 2D6 claw blow, stats the mean of the Giant Beetle's and the Giant Spider's rows, rank D, half damage from fire and ember (it lives in the ash), no spells."
+  },
+  "hypostasis": {
+   "name": "Hipóstase", "nameEn": "Hypostasis", "role": "Invocação",
+   "sprite": "hypostasis", "size": 3, "mov": 4, "strikesWith": "atk",
+   "weapon": {"dice": 2, "faces": 6, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "The T10 summon (the user, 2026-11-06 / 2026-11-10). It had no class, so no battle could place it (the map Todas as Unidades, 2026-11-11). Working numbers, the user's to set: the Giant Spider's (3 hexes, mov 4, a 2D6 blow, its stats rows), no resistances, no spells."
+  },
+  "mushroomMan": {
+   "name": "MushroomMan", "nameEn": "MushroomMan", "role": "Fera",
+   "sprite": "mush", "size": 1, "mov": 3, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "A new unit from the user's Veo videos (2026-11-11, Attachments/Mush; \"simpole creature same pipeline\"): idle, the walk mirrored, the attack and the cast one clip. Working numbers, the user's to set: 1 hex, mov 3, a 1D8 blow, the Giant Beetle's stats rows, rank D, no spells."
+  },
+  "sahagin": {
+   "name": "Sahagin", "nameEn": "Sahagin", "role": "Lanceiro",
+   "sprite": "sahagin", "size": 1, "mov": 4, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "A new unit from the user's Veo videos (2026-11-12, Attachments/Sahagin: \"new unit for you to add\"): idle, a spear thrust to each side, a walk to each side, the fall. Working numbers, the user's to set: 1 hex, mov 4, a 1D8 spear, the Piqueiro Base's stats rows, rank D, no spells."
+  },
+  "nekomata": {
+   "name": "Nekomata", "nameEn": "Nekomata", "role": "Fera",
+   "sprite": "nekomata", "size": 1, "mov": 5, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "A new unit from the user's Veo videos (2026-11-12, Attachments/Nekomata):idle, the pounce, the lightning breath as its cast, the walk, hit and fall; the jump with lightning cut too. Working numbers, the user's to set: 1 hex, mov 5, a 1D8 claw, the Cão Zumbi's stats rows, rank D, no spells."
+  },
+  "emberedZombie": {
+   "name": "Embered Zombie", "nameEn": "Embered Zombie", "role": "Morto-vivo",
+   "sprite": "embered-zombie", "size": 1, "mov": 3, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "A new unit from the user's sheets (2026-11-12, Attachments/Monsters/Embered Zombie: \"add the whole new unit as a type D + enemy\"): idle, walk, a punch, the hit (the start of the fall, there and back) and the fall. Working numbers, the user's to set: 1 hex, mov 3, a 1D8 blow, the Zumbi's stats rows, rank D (the Zumbi is E), no spells."
+  },
+  "stag": {
+   "name": "Stag", "nameEn": "Stag", "role": "Fera", "sprite": "classic-stag", "size": 1, "mov": 4, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "A new unit from the user's Veo videos (2026-11-13, Attachments/Classic Animals, \"Stag\"): idle, the golden-sparks cast (its blow: no attack clip, the cast plays), walk, hit and fall. Working numbers, the user's to set: 1 hex, mov 4, a 1D8 blow, the Embered Zombie's stats rows, rank D, no spells."
+  },
+  "boar": {
+   "name": "Boar", "nameEn": "Boar", "role": "Fera", "sprite": "classic-boar", "size": 1, "mov": 3, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "A new unit from the user's Veo videos (2026-11-13, Attachments/Classic Animals, \"Boar\"): idle, the roar and ember-sparks cast (its blow: no attack clip, the cast plays), walk, hit and fall. Working numbers, the user's to set: 1 hex, mov 3, a 1D8 blow, the Embered Zombie's stats rows, rank D, no spells."
+  },
+  "omnieye": {
+   "name": "Omnieye", "nameEn": "Omnieye", "role": "Aberração", "sprite": "omnieye", "size": 1, "mov": 4, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "A new unit from the user's video (2026-11-13, Attachments/Classic Animals/Omnieye.mp4, a new video model): it hovers; idle and the purple vortex cast (its blow), the move made from the idle (\"he would just look to the side and float that way\"); hit and fall to come. Working numbers, the user's to set: 1 hex, mov 4, a 1D8 blow, the Embered Zombie's stats rows, rank D, no spells."
+  },
+  "screechingBat": {
+   "name": "Screeching Bat", "nameEn": "Screeching Bat", "role": "Fera", "sprite": "screeching-bat", "size": 1, "mov": 5, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "A new unit from the user's videos (2026-11-14, Attachments/Monsters/Bat, \"Screeching Bat\"): it flies; idle, the screech (its blow), the flight, hit and fall. Working numbers, the user's to set: 1 hex, mov 5, a 1D8 bite, the Embered Zombie's stats rows, rank D, no spells."
+  }
+ },
+ "aboutHeroClasses": "EmberEngine's own hero classes (read by engine/world/BattleExport.cpp Rules, merged into content/data/battle-rules.json's classes with the same fields; their melee weapons of weaponTypes become usable by them). The Cruzado (the user, 2026-10-25; young Salazar's interlude class, docs/SKILLS_CRUSADER.md): level 10 at most (Spells.cpp classLevelCap), a hybrid a little under the Guerreiro and a little over the Curandeiro (each stat the two classes' mean at the level), the Arqueiro's tier table (T1 at 1, T2 at 4, T3 at 7, nothing above T3), Bênção from 1 and Cleave from 4 (his own spells come from Spells.cpp kEmberSpells); never a shield. Placeholder sprite: kaelEarly (an old warrior, on no map).",
+ "heroClasses": {
+  "crusader": {
+   "name": "Cruzado", "role": "Híbrido sagrado", "sprite": "kaelEarly", "size": 1, "editorHero": "Salazar Jovem",
+   "footprintW": null, "footprintH": null, "footprintOffsets": null, "resistances": {},
+   "minRange": 1, "maxRange": 1, "mov": 5, "boss": false, "undead": false, "summon": false,
+   "initiativeBonus": 3, "shockCharges": 0, "fantomForceCharges": 0,
+   "starterWeapon": "espada-larga", "weaponTypes": ["sword", "mace", "hammer"],
+   "stats": [[30, 7, 4, 5, 5], [34, 8, 5, 7, 6], [37, 9, 5, 9, 8], [41, 10, 6, 11, 9], [44, 11, 6, 13, 11],
+             [48, 12, 7, 15, 12], [51, 13, 7, 17, 14], [55, 14, 8, 19, 15], [58, 15, 8, 21, 17], [62, 16, 9, 23, 18]],
+   "tiers": [[1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+             [3, 1, 0, 0, 0, 0, 0, 0, 0, 0], [3, 2, 0, 0, 0, 0, 0, 0, 0, 0], [4, 2, 1, 0, 0, 0, 0, 0, 0, 0], [4, 3, 1, 0, 0, 0, 0, 0, 0, 0],
+             [5, 3, 2, 0, 0, 0, 0, 0, 0, 0], [5, 4, 2, 0, 0, 0, 0, 0, 0, 0]],
+   "spells": [["bless"], ["bless"], ["bless"], ["bless", "cleave"], ["bless", "cleave"], ["bless", "cleave"], ["bless", "cleave"],
+              ["bless", "cleave"], ["bless", "cleave"], ["bless", "cleave"]]
+  },
+  "vanguard": {
+   "name": "Vanguarda", "nameEn": "Vanguard", "role": "Linha de frente", "sprite": "defaultWarrior", "size": 1,
+   "footprintW": null, "footprintH": null, "footprintOffsets": null, "resistances": {},
+   "minRange": 1, "maxRange": 1, "mov": 5, "boss": false, "undead": false, "summon": false,
+   "initiativeBonus": 4, "shockCharges": 0, "fantomForceCharges": 0,
+   "starterWeapon": "vanguard-espadao-t01-v01", "weaponTypes": ["sword"], "twoHandedSwords": true, "offHandLocked": true,
+   "stats": [[34, 9, 0, 6, 3], [38, 11, 0, 8, 4], [42, 13, 0, 10, 5], [46, 15, 0, 12, 6], [50, 17, 0, 14, 7],
+             [54, 19, 0, 16, 8], [58, 21, 0, 18, 9], [62, 23, 0, 20, 10], [66, 25, 0, 22, 11], [70, 27, 0, 24, 12],
+             [74, 29, 0, 26, 13], [78, 31, 0, 28, 14], [82, 33, 0, 30, 15], [86, 35, 0, 32, 16], [90, 37, 0, 34, 17],
+             [94, 39, 0, 36, 18], [98, 41, 0, 38, 19], [102, 43, 0, 40, 20], [106, 45, 0, 42, 21], [110, 47, 0, 44, 22],
+             [114, 49, 0, 46, 23], [118, 51, 0, 48, 24], [122, 53, 0, 50, 25], [126, 55, 0, 52, 26], [130, 57, 0, 54, 27],
+             [134, 59, 0, 56, 28], [138, 61, 0, 58, 29], [142, 63, 0, 60, 30], [146, 65, 0, 62, 31], [150, 67, 0, 64, 32]],
+   "tiers": [[1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+             [3, 1, 0, 0, 0, 0, 0, 0, 0, 0], [3, 2, 0, 0, 0, 0, 0, 0, 0, 0], [4, 2, 1, 0, 0, 0, 0, 0, 0, 0], [4, 3, 1, 0, 0, 0, 0, 0, 0, 0],
+             [5, 3, 2, 0, 0, 0, 0, 0, 0, 0], [5, 4, 2, 1, 0, 0, 0, 0, 0, 0], [5, 4, 3, 1, 0, 0, 0, 0, 0, 0], [5, 5, 3, 2, 0, 0, 0, 0, 0, 0],
+             [5, 5, 4, 2, 1, 0, 0, 0, 0, 0], [5, 5, 4, 3, 1, 0, 0, 0, 0, 0], [5, 5, 5, 3, 2, 0, 0, 0, 0, 0], [5, 5, 5, 4, 2, 1, 0, 0, 0, 0],
+             [5, 5, 5, 4, 3, 1, 0, 0, 0, 0], [5, 5, 5, 5, 3, 2, 0, 0, 0, 0], [5, 5, 5, 5, 4, 2, 1, 0, 0, 0], [5, 5, 5, 5, 4, 3, 1, 0, 0, 0],
+             [5, 5, 5, 5, 5, 3, 2, 0, 0, 0], [5, 5, 5, 5, 5, 4, 2, 1, 0, 0], [5, 5, 5, 5, 5, 4, 3, 1, 0, 0], [5, 5, 5, 5, 5, 5, 3, 2, 0, 0],
+             [5, 5, 5, 5, 5, 5, 4, 2, 0, 0], [5, 5, 5, 5, 5, 5, 4, 3, 0, 0], [5, 5, 5, 5, 5, 5, 5, 3, 0, 0], [5, 5, 5, 5, 5, 5, 5, 4, 0, 0],
+             [5, 5, 5, 5, 5, 5, 5, 4, 0, 0], [5, 5, 5, 5, 5, 5, 5, 5, 0, 0]],
+   "spells": [["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"],
+             ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"],
+             ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"]]
+  },
+  "swordmaster": {
+   "name": "Mestre da Espada", "nameEn": "Swordmaster", "role": "Promovido — Vanguarda", "sprite": "defaultWarrior", "size": 1,
+   "footprintW": null, "footprintH": null, "footprintOffsets": null, "resistances": {},
+   "minRange": 1, "maxRange": 1, "mov": 5, "boss": false, "undead": false, "summon": false,
+   "initiativeBonus": 4, "shockCharges": 0, "fantomForceCharges": 0,
+   "starterWeapon": "vanguard-espadao-t01-v01", "weaponTypes": ["sword"], "twoHandedSwords": true, "offHandLocked": true,
+   "stats": [[34, 9, 0, 6, 3], [38, 11, 0, 8, 4], [42, 13, 0, 10, 5], [46, 15, 0, 12, 6], [50, 17, 0, 14, 7],
+             [54, 19, 0, 16, 8], [58, 21, 0, 18, 9], [62, 23, 0, 20, 10], [66, 25, 0, 22, 11], [70, 27, 0, 24, 12],
+             [74, 29, 0, 26, 13], [78, 31, 0, 28, 14], [82, 33, 0, 30, 15], [86, 35, 0, 32, 16], [90, 37, 0, 34, 17],
+             [94, 39, 0, 36, 18], [98, 41, 0, 38, 19], [102, 43, 0, 40, 20], [106, 45, 0, 42, 21], [110, 47, 0, 44, 22],
+             [114, 49, 0, 46, 23], [118, 51, 0, 48, 24], [122, 53, 0, 50, 25], [126, 55, 0, 52, 26], [130, 57, 0, 54, 27],
+             [134, 59, 0, 56, 28], [138, 61, 0, 58, 29], [142, 63, 0, 60, 30], [146, 65, 0, 62, 31], [150, 67, 0, 64, 32]],
+   "tiers": [[1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+             [3, 1, 0, 0, 0, 0, 0, 0, 0, 0], [3, 2, 0, 0, 0, 0, 0, 0, 0, 0], [4, 2, 1, 0, 0, 0, 0, 0, 0, 0], [4, 3, 1, 0, 0, 0, 0, 0, 0, 0],
+             [5, 3, 2, 0, 0, 0, 0, 0, 0, 0], [5, 4, 2, 1, 0, 0, 0, 0, 0, 0], [5, 4, 3, 1, 0, 0, 0, 0, 0, 0], [5, 5, 3, 2, 0, 0, 0, 0, 0, 0],
+             [5, 5, 4, 2, 1, 0, 0, 0, 0, 0], [5, 5, 4, 3, 1, 0, 0, 0, 0, 0], [5, 5, 5, 3, 2, 0, 0, 0, 0, 0], [5, 5, 5, 4, 2, 1, 0, 0, 0, 0],
+             [5, 5, 5, 4, 3, 1, 0, 0, 0, 0], [5, 5, 5, 5, 3, 2, 0, 0, 0, 0], [5, 5, 5, 5, 4, 2, 1, 0, 0, 0], [5, 5, 5, 5, 4, 3, 1, 0, 0, 0],
+             [5, 5, 5, 5, 5, 3, 2, 0, 0, 0], [5, 5, 5, 5, 5, 4, 2, 1, 0, 0], [5, 5, 5, 5, 5, 4, 3, 1, 0, 0], [5, 5, 5, 5, 5, 5, 3, 2, 0, 0],
+             [5, 5, 5, 5, 5, 5, 4, 2, 0, 0], [5, 5, 5, 5, 5, 5, 4, 3, 0, 0], [5, 5, 5, 5, 5, 5, 5, 3, 0, 0], [5, 5, 5, 5, 5, 5, 5, 4, 0, 0],
+             [5, 5, 5, 5, 5, 5, 5, 4, 0, 0], [5, 5, 5, 5, 5, 5, 5, 5, 0, 0]],
+   "spells": [["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"],
+             ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"],
+             ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"]]
+  },
+  "warbringer": {
+   "name": "Arauto da Guerra", "nameEn": "Warbringer", "role": "Promovido — Vanguarda", "sprite": "defaultWarrior", "size": 1,
+   "footprintW": null, "footprintH": null, "footprintOffsets": null, "resistances": {},
+   "minRange": 1, "maxRange": 1, "mov": 5, "boss": false, "undead": false, "summon": false,
+   "initiativeBonus": 4, "shockCharges": 0, "fantomForceCharges": 0,
+   "starterWeapon": "vanguard-espadao-t01-v01", "weaponTypes": ["sword"], "twoHandedSwords": true, "offHandLocked": true,
+   "stats": [[34, 9, 0, 6, 3], [38, 11, 0, 8, 4], [42, 13, 0, 10, 5], [46, 15, 0, 12, 6], [50, 17, 0, 14, 7],
+             [54, 19, 0, 16, 8], [58, 21, 0, 18, 9], [62, 23, 0, 20, 10], [66, 25, 0, 22, 11], [70, 27, 0, 24, 12],
+             [74, 29, 0, 26, 13], [78, 31, 0, 28, 14], [82, 33, 0, 30, 15], [86, 35, 0, 32, 16], [90, 37, 0, 34, 17],
+             [94, 39, 0, 36, 18], [98, 41, 0, 38, 19], [102, 43, 0, 40, 20], [106, 45, 0, 42, 21], [110, 47, 0, 44, 22],
+             [114, 49, 0, 46, 23], [118, 51, 0, 48, 24], [122, 53, 0, 50, 25], [126, 55, 0, 52, 26], [130, 57, 0, 54, 27],
+             [134, 59, 0, 56, 28], [138, 61, 0, 58, 29], [142, 63, 0, 60, 30], [146, 65, 0, 62, 31], [150, 67, 0, 64, 32]],
+   "tiers": [[1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+             [3, 1, 0, 0, 0, 0, 0, 0, 0, 0], [3, 2, 0, 0, 0, 0, 0, 0, 0, 0], [4, 2, 1, 0, 0, 0, 0, 0, 0, 0], [4, 3, 1, 0, 0, 0, 0, 0, 0, 0],
+             [5, 3, 2, 0, 0, 0, 0, 0, 0, 0], [5, 4, 2, 1, 0, 0, 0, 0, 0, 0], [5, 4, 3, 1, 0, 0, 0, 0, 0, 0], [5, 5, 3, 2, 0, 0, 0, 0, 0, 0],
+             [5, 5, 4, 2, 1, 0, 0, 0, 0, 0], [5, 5, 4, 3, 1, 0, 0, 0, 0, 0], [5, 5, 5, 3, 2, 0, 0, 0, 0, 0], [5, 5, 5, 4, 2, 1, 0, 0, 0, 0],
+             [5, 5, 5, 4, 3, 1, 0, 0, 0, 0], [5, 5, 5, 5, 3, 2, 0, 0, 0, 0], [5, 5, 5, 5, 4, 2, 1, 0, 0, 0], [5, 5, 5, 5, 4, 3, 1, 0, 0, 0],
+             [5, 5, 5, 5, 5, 3, 2, 0, 0, 0], [5, 5, 5, 5, 5, 4, 2, 1, 0, 0], [5, 5, 5, 5, 5, 4, 3, 1, 0, 0], [5, 5, 5, 5, 5, 5, 3, 2, 0, 0],
+             [5, 5, 5, 5, 5, 5, 4, 2, 0, 0], [5, 5, 5, 5, 5, 5, 4, 3, 0, 0], [5, 5, 5, 5, 5, 5, 5, 3, 0, 0], [5, 5, 5, 5, 5, 5, 5, 4, 0, 0],
+             [5, 5, 5, 5, 5, 5, 5, 4, 0, 0], [5, 5, 5, 5, 5, 5, 5, 5, 0, 0]],
+   "spells": [["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"],
+             ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"],
+             ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"], ["doubleStrike"]]
+  },
+  "moonwarden": {
+   "name": "Guardião da Lua", "nameEn": "Moonwarden", "role": "Linha de frente — escudo", "sprite": "defaultWarrior", "size": 1,
+   "footprintW": null, "footprintH": null, "footprintOffsets": null, "resistances": {},
+   "minRange": 1, "maxRange": 1, "mov": 5, "boss": false, "undead": false, "summon": false,
+   "initiativeBonus": 4, "shockCharges": 0, "fantomForceCharges": 0,
+   "starterWeapon": "espada-larga", "weaponTypes": ["sword"],
+   "stats": [[34, 9, 0, 6, 3], [38, 11, 0, 8, 4], [42, 13, 0, 10, 5], [46, 15, 0, 12, 6], [50, 17, 0, 14, 7],
+             [54, 19, 0, 16, 8], [58, 21, 0, 18, 9], [62, 23, 0, 20, 10], [66, 25, 0, 22, 11], [70, 27, 0, 24, 12],
+             [74, 29, 0, 26, 13], [78, 31, 0, 28, 14], [82, 33, 0, 30, 15], [86, 35, 0, 32, 16], [90, 37, 0, 34, 17],
+             [94, 39, 0, 36, 18], [98, 41, 0, 38, 19], [102, 43, 0, 40, 20], [106, 45, 0, 42, 21], [110, 47, 0, 44, 22],
+             [114, 49, 0, 46, 23], [118, 51, 0, 48, 24], [122, 53, 0, 50, 25], [126, 55, 0, 52, 26], [130, 57, 0, 54, 27],
+             [134, 59, 0, 56, 28], [138, 61, 0, 58, 29], [142, 63, 0, 60, 30], [146, 65, 0, 62, 31], [150, 67, 0, 64, 32]],
+   "tiers": [[1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 1, 0, 0, 0, 0, 0, 0, 0, 0], [3, 2, 0, 0, 0, 0, 0, 0, 0, 0],
+             [3, 2, 0, 0, 0, 0, 0, 0, 0, 0], [4, 3, 1, 0, 0, 0, 0, 0, 0, 0], [4, 3, 2, 0, 0, 0, 0, 0, 0, 0], [5, 4, 2, 1, 0, 0, 0, 0, 0, 0],
+             [5, 4, 3, 2, 0, 0, 0, 0, 0, 0], [5, 5, 3, 2, 0, 0, 0, 0, 0, 0], [5, 5, 4, 3, 1, 0, 0, 0, 0, 0], [5, 5, 4, 3, 2, 0, 0, 0, 0, 0],
+             [5, 5, 5, 4, 2, 1, 0, 0, 0, 0], [5, 5, 5, 4, 3, 2, 0, 0, 0, 0], [5, 5, 5, 5, 3, 2, 0, 0, 0, 0], [5, 5, 5, 5, 4, 3, 1, 0, 0, 0],
+             [5, 5, 5, 5, 4, 3, 2, 0, 0, 0], [5, 5, 5, 5, 5, 4, 2, 1, 0, 0], [5, 5, 5, 5, 5, 4, 3, 2, 0, 0], [5, 5, 5, 5, 5, 5, 3, 2, 0, 0],
+             [5, 5, 5, 5, 5, 5, 4, 3, 1, 0], [5, 5, 5, 5, 5, 5, 4, 3, 2, 0], [5, 5, 5, 5, 5, 5, 5, 4, 2, 1], [5, 5, 5, 5, 5, 5, 5, 4, 3, 2],
+             [5, 5, 5, 5, 5, 5, 5, 5, 3, 2], [5, 5, 5, 5, 5, 5, 5, 5, 4, 3], [5, 5, 5, 5, 5, 5, 5, 5, 4, 3], [5, 5, 5, 5, 5, 5, 5, 5, 5, 4],
+             [5, 5, 5, 5, 5, 5, 5, 5, 5, 4], [5, 5, 5, 5, 5, 5, 5, 5, 5, 5]],
+   "spells": [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [],
+             [], [], [], [], [], [], [], [], [], [], [], [], [], [], []]
+  }
+ },
+ "aboutHeroBaseClasses": "Kael's classes (the user, 2026-11-13; docs/SKILLS_VANGUARD.md): Vanguarda, then Mestre da Espada or Arauto da Guerra at 15. The Guerreiro's stats, the Conjuração Média tiers (the Arqueira's table), Golpe Duplo the one Guerreiro skill kept (his techniques come from engine/world/SpellsVanguard.inc), swords only: one-handed in the main hand or two-handed (twoHandedSwords), the off hand locked (offHandLocked). heroBaseClasses: the class a hero plays as when the battle file still names one it replaced (Kael's maps say swordsman).",
+ "heroBaseClasses": {"Kael": {"class": "vanguard", "replaces": ["swordsman", "kaelFinal", "kaelEarly"]}}
+}

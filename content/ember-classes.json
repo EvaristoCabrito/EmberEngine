@@ -169,6 +169,22 @@
    "spells": {},
    "spellList": [],
    "about": "A new unit from the user's videos (2026-11-14, Attachments/Monsters/Bat, \"Screeching Bat\"): it flies; idle, the screech (its blow), the flight, hit and fall. Working numbers, the user's to set: 1 hex, mov 5, a 1D8 bite, the Embered Zombie's stats rows, rank D, no spells."
+  },
+  "horse": {
+   "name": "Horse", "nameEn": "Horse", "role": "Fera", "sprite": "horse", "size": 1, "mov": 6, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "A new unit from the user's videos (2026-11-14, Attachments/Monsters/Horse, \"Horse\"). Working numbers, the user's to set: 1 hex, mov 6, a 1D8 blow, the Embered Zombie's stats rows, rank F (the user, 2026-11-14), no spells."
+  },
+  "banditHorseman": {
+   "name": "Bandit Horseman", "nameEn": "Bandit Horseman", "role": "Cavaleiro", "sprite": "bandit-horseman", "size": 1, "mov": 6, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "A new unit from the user's videos (2026-11-14, Attachments/Monsters/Horse, \"Bandit Horseman\"). Working numbers, the user's to set: 1 hex, mov 6, a 1D8 blow, the Embered Zombie's stats rows, rank D+ (the user, 2026-11-14), no spells."
   }
  },
  "aboutHeroClasses": "EmberEngine's own hero classes (read by engine/world/BattleExport.cpp Rules, merged into content/data/battle-rules.json's classes with the same fields; their melee weapons of weaponTypes become usable by them). The Cruzado (the user, 2026-10-25; young Salazar's interlude class, docs/SKILLS_CRUSADER.md): level 10 at most (Spells.cpp classLevelCap), a hybrid a little under the Guerreiro and a little over the Curandeiro (each stat the two classes' mean at the level), the Arqueiro's tier table (T1 at 1, T2 at 4, T3 at 7, nothing above T3), Bênção from 1 and Cleave from 4 (his own spells come from Spells.cpp kEmberSpells); never a shield. Placeholder sprite: kaelEarly (an old warrior, on no map).",

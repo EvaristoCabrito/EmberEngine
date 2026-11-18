@@ -1,0 +1,154 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Monsters/Horse/HorsewalkreactFall.mp4",
+   "first": 118,
+   "last": 148,
+   "bootRow": 653,
+   "bootRows": [
+    653,
+    653
+   ],
+   "figurePx": 511.0,
+   "frames": 31,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    873,
+    551
+   ],
+   "crop": [
+    5,
+    5,
+    859,
+    541
+   ],
+   "box": {
+    "w": 4.9544,
+    "h": 3.12701,
+    "foot": 0.03405
+   },
+   "pattern": "content/sprites/horse/base-v01/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Monsters/Horse/Horse_kicks_back_with_legs_2aeab5ed.mp4",
+   "first": 44,
+   "last": 110,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/horse/walk-fall 118:148",
+   "bootRow": 719,
+   "bootRows": [
+    709,
+    719
+   ],
+   "figurePx": 684.0,
+   "frames": 67,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1084,
+    720
+   ],
+   "crop": [
+    5,
+    0,
+    1074,
+    720
+   ],
+   "box": {
+    "w": 4.59591,
+    "h": 3.05263,
+    "foot": 0.0
+   },
+   "pattern": "content/sprites/horse/atk-v01/atk-{}.png",
+   "impact": 0.3284
+  },
+  "move": {
+   "video": "Attachments/Monsters/Horse/HorsewalkreactFall.mp4",
+   "first": 0,
+   "last": 96,
+   "loopFirst": 3,
+   "loopLast": 27,
+   "seamSteps": 3.8,
+   "bootRow": 652,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 453.0,
+   "frames": 25,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    828,
+    473
+   ],
+   "crop": [
+    5,
+    5,
+    815,
+    463
+   ],
+   "box": {
+    "w": 5.30066,
+    "h": 3.02804,
+    "foot": 0.06402
+   },
+   "pattern": "content/sprites/horse/move-v01/move-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/Monsters/Horse/HorsewalkreactFall.mp4",
+   "first": 98,
+   "last": 140,
+   "bootRow": 653,
+   "bootRows": [
+    653,
+    655
+   ],
+   "figurePx": 514.0,
+   "frames": 43,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    892,
+    648
+   ],
+   "crop": [
+    5,
+    6,
+    878,
+    638
+   ],
+   "box": {
+    "w": 5.03268,
+    "h": 3.65603,
+    "foot": 0.03385
+   },
+   "pattern": "content/sprites/horse/hit-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Monsters/Horse/HorsewalkreactFall.mp4",
+   "first": 150,
+   "last": 215,
+   "bootRow": 653,
+   "bootRows": [
+    653,
+    653
+   ],
+   "figurePx": 471.5,
+   "frames": 66,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1008,
+    519
+   ],
+   "crop": [
+    5,
+    5,
+    995,
+    510
+   ],
+   "box": {
+    "w": 6.19979,
+    "h": 3.19215,
+    "foot": 0.09841
+   },
+   "pattern": "content/sprites/horse/death-v01/death-{}.png"
+  }
+ }
+}

@@ -430,6 +430,7 @@
    "loopMin": 24,
    "loopMax": 120,
    "mode": "loop",
+   "inPlace": true,
    "scaleTo": 610
   },
   {

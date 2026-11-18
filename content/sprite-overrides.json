@@ -849,6 +849,62 @@
    "why": "the Screeching Bat's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "screechingBat", "set": "screeching-bat"},
    "packs": {"base": "field", "move": "field", "hover-side": "cutscene", "fall-side": "cutscene"}
+  },
+  {
+   "set": "horse",
+   "version": "v01",
+   "hero": "horse",
+   "newHero": {"name": "Horse", "group": "monster", "sprite": "horse", "reversed": true},
+   "cut": "content/sprites/horse/cut.json",
+   "why": "the user, 2026-11-14: the Horse, a new unit from their videos (Attachments/Monsters/Horse); Alta + 64 + 36; a rank F enemy on Todas as Unidades (the user: \"Horse is a Rank F bandid is D+\")",
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "horse-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/horse/cut-64-media.json",
+   "why": "the Horse's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "horse", "set": "horse"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "horse-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/horse/cut-36-media.json",
+   "why": "the Horse's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "horse", "set": "horse"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "bandit-horseman",
+   "version": "v01",
+   "hero": "banditHorseman",
+   "newHero": {"name": "Bandit Horseman", "group": "monster", "sprite": "bandit-horseman", "reversed": true},
+   "cut": "content/sprites/bandit-horseman/cut.json",
+   "why": "the user, 2026-11-14: the Bandit Horseman, a new unit from their videos (Attachments/Monsters/Horse); Alta + 64 + 36; a rank D+ enemy on Todas as Unidades (the user: \"Horse is a Rank F bandid is D+\")",
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "bandit-horseman-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/bandit-horseman/cut-64-media.json",
+   "why": "the Bandit Horseman's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "banditHorseman", "set": "bandit-horseman"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "bandit-horseman-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/bandit-horseman/cut-36-media.json",
+   "why": "the Bandit Horseman's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "banditHorseman", "set": "bandit-horseman"},
+   "packs": {"base": "field", "move": "field"}
   }
  ],
  "clips": [

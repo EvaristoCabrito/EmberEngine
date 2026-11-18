@@ -7419,6 +7419,22 @@
         "useClassSprite": true
       },
       {
+        "name": "Bandit Horseman",
+        "classId": "banditHorseman",
+        "x": 18,
+        "y": 29,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Horse",
+        "classId": "horse",
+        "x": 13,
+        "y": 29,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
         "name": "Screeching Bat",
         "classId": "screechingBat",
         "x": 8,
