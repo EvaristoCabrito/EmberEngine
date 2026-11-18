@@ -1,0 +1,353 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Aldric/AldricIdleATT.mp4",
+   "first": 0,
+   "last": 119,
+   "bootRow": 1039,
+   "bootRows": [
+    1038,
+    1039
+   ],
+   "figurePx": 899.0,
+   "frames": 120,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    593,
+    936
+   ],
+   "crop": [
+    5,
+    5,
+    582,
+    926
+   ],
+   "box": {
+    "w": 1.65631,
+    "h": 2.61434,
+    "foot": 0.01955
+   },
+   "pattern": "content/sprites/aldric-veo/base-v01/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Aldric/AldricIdleATT.mp4",
+   "first": 126,
+   "last": 204,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/aldric/idle 0:119",
+   "bootRow": 1033,
+   "bootRows": [
+    1029,
+    1039
+   ],
+   "figurePx": 883.0,
+   "bodyAt": 0.2247,
+   "frames": 79,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1304,
+    986
+   ],
+   "crop": [
+    9,
+    5,
+    1289,
+    976
+   ],
+   "box": {
+    "w": 3.7082,
+    "h": 2.8039,
+    "foot": 0.02275
+   },
+   "pattern": "content/sprites/aldric-veo/atk-v01/atk-{}.png",
+   "impact": 0.4304
+  },
+  "cast": {
+   "video": "Attachments/Aldric/AldricSpecialAndFall.mp4",
+   "first": 12,
+   "last": 112,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/aldric/idle 0:119",
+   "bootRow": 1028,
+   "bootRows": [
+    1024,
+    1032
+   ],
+   "figurePx": 928.0,
+   "bodyAt": 0.2246,
+   "frames": 101,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1830,
+    975
+   ],
+   "crop": [
+    395,
+    5,
+    1435,
+    965
+   ],
+   "box": {
+    "w": 4.95165,
+    "h": 2.63817,
+    "foot": 0.02165
+   },
+   "pattern": "content/sprites/aldric-veo/cast-v01/cast-{}.png",
+   "impact": 0.5545
+  },
+  "move": {
+   "video": "Attachments/Aldric/Aldric_walking_left_in_place_51472b70_1080p.mp4",
+   "first": 0,
+   "last": 100,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/aldric/idle 0:119",
+   "loopFirst": 30,
+   "loopLast": 72,
+   "seamSteps": 1.14,
+   "bootRow": 1049,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 952.0,
+   "frames": 43,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    589,
+    1045
+   ],
+   "crop": [
+    6,
+    4,
+    577,
+    1036
+   ],
+   "box": {
+    "w": 1.55355,
+    "h": 2.7563,
+    "foot": 0.02901
+   },
+   "pattern": "content/sprites/aldric-veo/move-v01/move-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/Aldric/Aldric_walking_left_in_place_51472b70_1080p.mp4",
+   "first": 0,
+   "last": 100,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/aldric/idle 0:119",
+   "loopFirst": 30,
+   "loopLast": 72,
+   "seamSteps": 1.14,
+   "bootRow": 1049,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 952.0,
+   "frames": 43,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    589,
+    1045
+   ],
+   "crop": [
+    6,
+    4,
+    577,
+    1036
+   ],
+   "box": {
+    "w": 1.55355,
+    "h": 2.7563,
+    "foot": 0.02901
+   },
+   "pattern": "content/sprites/aldric-veo/move-left-v01/move-left-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/Aldric/AldricHitReactFinal.mp4",
+   "first": 2,
+   "last": 56,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/aldric/idle 0:119",
+   "bootRow": 1051,
+   "bootRows": [
+    1051,
+    1051
+   ],
+   "figurePx": 967.0,
+   "bodyAt": -0.2246,
+   "frames": 55,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    783,
+    1008
+   ],
+   "crop": [
+    40,
+    5,
+    736,
+    998
+   ],
+   "box": {
+    "w": 2.03321,
+    "h": 2.61746,
+    "foot": 0.01558
+   },
+   "pattern": "content/sprites/aldric-veo/hit-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Aldric/AldricSpecialAndFall.mp4",
+   "first": 118,
+   "last": 196,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/aldric/idle 0:119",
+   "bootRow": 1026,
+   "bootRows": [
+    1026,
+    1026
+   ],
+   "figurePx": 925.5,
+   "bodyAt": -0.2252,
+   "frames": 79,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1715,
+    1018
+   ],
+   "crop": [
+    287,
+    6,
+    1422,
+    1008
+   ],
+   "box": {
+    "w": 4.65301,
+    "h": 2.76196,
+    "foot": 0.04341
+   },
+   "pattern": "content/sprites/aldric-veo/death-v01/death-{}.png"
+  },
+  "turn-back": {
+   "video": "Attachments/Aldric/AldricCharacter_turning_around_in_studio_f67b35ed_1080p.mp4",
+   "first": 30,
+   "last": 104,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/aldric/idle 0:119",
+   "bootRow": 1025,
+   "bootRows": [
+    1016,
+    1028
+   ],
+   "figurePx": 952.5,
+   "bodyAt": -0.2254,
+   "frames": 75,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    795,
+    1013
+   ],
+   "crop": [
+    8,
+    6,
+    778,
+    1002
+   ],
+   "box": {
+    "w": 2.0958,
+    "h": 2.67049,
+    "foot": 0.02636
+   },
+   "pattern": "content/sprites/aldric-veo/turn-back-v01/turn-back-{}.png"
+  },
+  "cast-back": {
+   "video": "Attachments/Aldric/AldricCharacter_turning_around_in_studio_f67b35ed_1080p.mp4",
+   "first": 130,
+   "last": 130,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/aldric/idle 0:119",
+   "bootRow": 1024,
+   "bootRows": [
+    1024,
+    1024
+   ],
+   "figurePx": 952.5,
+   "bodyAt": -0.2254,
+   "frames": 1,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    757,
+    963
+   ],
+   "crop": [
+    4,
+    4,
+    453,
+    955
+   ],
+   "box": {
+    "w": 1.99562,
+    "h": 2.53868,
+    "foot": 0.01318
+   },
+   "pattern": "content/sprites/aldric-veo/cast-back-v01/cast-back-{}.png"
+  },
+  "move-up": {
+   "video": "Attachments/Aldric/AldricWalkupandDown.mp4",
+   "first": 0,
+   "last": 96,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/aldric/idle 0:119",
+   "loopFirst": 50,
+   "loopLast": 90,
+   "seamSteps": 1.22,
+   "bootRow": 1054,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 1012.0,
+   "frames": 41,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    628,
+    1048
+   ],
+   "crop": [
+    10,
+    5,
+    613,
+    1039
+   ],
+   "box": {
+    "w": 1.55821,
+    "h": 2.60032,
+    "foot": 0.02729
+   },
+   "pattern": "content/sprites/aldric-veo/move-up-v01/move-up-{}.png"
+  },
+  "move-down": {
+   "video": "Attachments/Aldric/AldricWalkupandDown.mp4",
+   "first": 124,
+   "last": 220,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/aldric/idle 0:119",
+   "loopFirst": 144,
+   "loopLast": 187,
+   "seamSteps": 1.11,
+   "bootRow": 1064,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 1021.0,
+   "frames": 44,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    707,
+    1080
+   ],
+   "crop": [
+    5,
+    0,
+    697,
+    1077
+   ],
+   "box": {
+    "w": 1.73876,
+    "h": 2.6561,
+    "foot": 0.03689
+   },
+   "pattern": "content/sprites/aldric-veo/move-down-v01/move-down-{}.png"
+  }
+ }
+}

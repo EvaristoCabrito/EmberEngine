@@ -199,11 +199,27 @@ def main():
             else:
                 p.pop("cutscene", None)
             p.update(fields)
+        # "drop": poses the hero had that the new set does not replace and must not keep (Aldric's attackLeft / castLeft in the old art:
+        # the new attack and cast are drawn facing right and the game mirrors them for the left, as Kael's)
+        if st.get("drop"):
+            hero["poses"] = [p for p in hero["poses"] if p["pose"] not in st["drop"]]
         for table in strides:
             if table is not None:
                 for name, n in st.get("strides", {}).items():
                     table[f"{st['set']}/{name}"] = n
         print(f"{st['set']} {st['version']}: {len(clips)} clips, {st['hero']}'s poses {', '.join(st['poses'])}")
+
+    # "reuse" (the user, 2026-11-18, "make the original Aldric sprites became the sprites for enemy Lancers and their prestige classes"):
+    # these heroes are drawn with the poses of a file (the art stays in the pack under its own set), whatever they had; the file keeps
+    # a hero's poses that its own entry in the roster no longer has once new art replaced them.
+    for ru in over.get("reuse", []):
+        src = load(os.path.join(ROOT, ru["poses"]))["poses"]
+        for key in ru["heroes"]:
+            hero = next((h for h in roster["heroes"] if h.get("key") == key), None)
+            if hero is None:
+                raise SystemExit(f"reuse: {key} not in {roster_path}")
+            hero["poses"] = copy.deepcopy(src)
+            print(f"reuse {key}: {len(src)} poses of {ru['poses']}")
 
     # "copies" (after every set, so a medium copy's marks come along): another unit drawn with the same art at `scale` (the Large
     # Corrosive Slime: two hexes, the Small one's art twice as big); its poses are the hero's, each box (width, height, foot) scaled.
