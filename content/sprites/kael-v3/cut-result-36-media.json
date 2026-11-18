@@ -271,37 +271,37 @@
    "impact": 0.6263
   },
   "hit": {
-   "video": "Attachments/KaelV3/supersize/HitReactUltimate.mp4",
-   "first": 20,
-   "last": 128,
+   "video": "Attachments/KaelV3/KaelHitreactCharacter_taking_impact_reaction_afb38c9a_1080p.mp4",
+   "first": 2,
+   "last": 50,
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
-   "bootRow": 1063,
+   "bootRow": 1889,
    "bootRows": [
-    1061,
-    1063
+    1888,
+    1890
    ],
-   "frameCountFrom": 109,
-   "figurePx": 971.0,
-   "bodyAt": -0.19,
-   "scaledTo": 609.9,
+   "frameCountFrom": 49,
+   "figurePx": 1836.0,
+   "bodyAt": -0.1904,
+   "scaledTo": 609.7,
    "frames": 36,
-   "frameMs": 126.15740740740739,
+   "frameMs": 56.71296296296296,
    "nat": [
-    623,
-    652
+    420,
+    622
    ],
    "crop": [
-    3,
-    3,
-    617,
-    646
+    1,
+    2,
+    330,
+    618
    ],
    "box": {
-    "w": 2.6358,
-    "h": 2.75849,
-    "foot": 0.0311
+    "w": 1.77621,
+    "h": 2.63048,
+    "foot": 0.00982
    },
-   "pattern": "content/sprites/kael-v3/hit-media36-v05/hit-{}.png"
+   "pattern": "content/sprites/kael-v3/hit-media36-v06/hit-{}.png"
   },
   "death": {
    "video": "Attachments/KaelV3/supersize/HitandFall.mp4",
@@ -537,6 +537,39 @@
     "foot": 0.01609
    },
    "pattern": "content/sprites/kael-v3/move-down-media36-v05/move-down-{}.png"
+  },
+  "emote05": {
+   "video": "Attachments/KaelV3/supersize/HitReactUltimate.mp4",
+   "first": 20,
+   "last": 128,
+   "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
+   "bootRow": 1063,
+   "bootRows": [
+    1061,
+    1063
+   ],
+   "frameCountFrom": 109,
+   "figurePx": 971.0,
+   "bodyAt": -0.19,
+   "scaledTo": 609.9,
+   "frames": 36,
+   "frameMs": 126.15740740740739,
+   "nat": [
+    623,
+    652
+   ],
+   "crop": [
+    3,
+    3,
+    617,
+    646
+   ],
+   "box": {
+    "w": 2.6358,
+    "h": 2.75849,
+    "foot": 0.0311
+   },
+   "pattern": "content/sprites/kael-v3/emote05-media36-v05/emote05-{}.png"
   }
  }
 }

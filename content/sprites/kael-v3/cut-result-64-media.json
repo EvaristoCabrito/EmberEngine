@@ -270,37 +270,36 @@
    "impact": 0.6263
   },
   "hit": {
-   "video": "Attachments/KaelV3/supersize/HitReactUltimate.mp4",
-   "first": 20,
-   "last": 128,
+   "video": "Attachments/KaelV3/KaelHitreactCharacter_taking_impact_reaction_afb38c9a_1080p.mp4",
+   "first": 2,
+   "last": 50,
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
-   "bootRow": 1063,
+   "bootRow": 1889,
    "bootRows": [
-    1061,
-    1063
+    1888,
+    1890
    ],
-   "frameCountFrom": 109,
-   "figurePx": 971.0,
-   "bodyAt": -0.19,
-   "scaledTo": 609.9,
-   "frames": 64,
-   "frameMs": 70.96354166666666,
+   "figurePx": 1836.0,
+   "bodyAt": -0.1904,
+   "scaledTo": 609.7,
+   "frames": 49,
+   "frameMs": 41.666666666666664,
    "nat": [
-    628,
-    652
+    420,
+    622
    ],
    "crop": [
-    6,
-    3,
-    617,
-    646
+    1,
+    2,
+    330,
+    618
    ],
    "box": {
-    "w": 2.65705,
-    "h": 2.7586,
-    "foot": 0.0311
+    "w": 1.77621,
+    "h": 2.63048,
+    "foot": 0.00982
    },
-   "pattern": "content/sprites/kael-v3/hit-media64-v05/hit-{}.png"
+   "pattern": "content/sprites/kael-v3/hit-media64-v06/hit-{}.png"
   },
   "death": {
    "video": "Attachments/KaelV3/supersize/HitandFall.mp4",
@@ -534,6 +533,39 @@
     "foot": 0.01609
    },
    "pattern": "content/sprites/kael-v3/move-down-media64-v05/move-down-{}.png"
+  },
+  "emote05": {
+   "video": "Attachments/KaelV3/supersize/HitReactUltimate.mp4",
+   "first": 20,
+   "last": 128,
+   "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
+   "bootRow": 1063,
+   "bootRows": [
+    1061,
+    1063
+   ],
+   "frameCountFrom": 109,
+   "figurePx": 971.0,
+   "bodyAt": -0.19,
+   "scaledTo": 609.9,
+   "frames": 64,
+   "frameMs": 70.96354166666666,
+   "nat": [
+    628,
+    652
+   ],
+   "crop": [
+    6,
+    3,
+    617,
+    646
+   ],
+   "box": {
+    "w": 2.65705,
+    "h": 2.7586,
+    "foot": 0.0311
+   },
+   "pattern": "content/sprites/kael-v3/emote05-media64-v05/emote05-{}.png"
   }
  }
 }

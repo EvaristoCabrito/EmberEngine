@@ -1,0 +1,203 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Witch/Idle.mp4",
+   "first": 0,
+   "last": 119,
+   "bootRow": 704,
+   "bootRows": [
+    695,
+    704
+   ],
+   "loopFirst": 7,
+   "loopLast": 103,
+   "seamSteps": 2.52,
+   "frameCountFrom": 97,
+   "figurePx": 659.0,
+   "scaledTo": 610.3,
+   "frames": 36,
+   "frameMs": 112.26851851851852,
+   "nat": [
+    398,
+    626
+   ],
+   "crop": [
+    5,
+    5,
+    388,
+    617
+   ],
+   "box": {
+    "w": 1.73566,
+    "h": 2.72996,
+    "foot": 0.03618
+   },
+   "pattern": "content/sprites/witch/base-media36-v01/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Witch/ATTandCasting.mp4",
+   "first": 24,
+   "last": 120,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/witch/idle 0:119",
+   "bootRow": 688,
+   "bootRows": [
+    688,
+    688
+   ],
+   "frameCountFrom": 97,
+   "figurePx": 636.5,
+   "scaledTo": 610.0,
+   "frames": 36,
+   "frameMs": 112.26851851851852,
+   "nat": [
+    500,
+    622
+   ],
+   "crop": [
+    8,
+    5,
+    487,
+    612
+   ],
+   "box": {
+    "w": 2.18149,
+    "h": 2.71378,
+    "foot": 0.02918
+   },
+   "pattern": "content/sprites/witch/atk-media36-v01/atk-{}.png",
+   "impact": 0.4124
+  },
+  "cast": {
+   "video": "Attachments/Witch/ATTandCasting.mp4",
+   "first": 126,
+   "last": 224,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/witch/idle 0:119",
+   "bootRow": 688,
+   "bootRows": [
+    687,
+    688
+   ],
+   "frameCountFrom": 99,
+   "figurePx": 636.5,
+   "scaledTo": 610.2,
+   "frames": 36,
+   "frameMs": 114.58333333333333,
+   "nat": [
+    882,
+    627
+   ],
+   "crop": [
+    5,
+    5,
+    866,
+    617
+   ],
+   "box": {
+    "w": 3.84478,
+    "h": 2.73319,
+    "foot": 0.02916
+   },
+   "pattern": "content/sprites/witch/cast-media36-v01/cast-{}.png",
+   "impact": 0.6263
+  },
+  "move": {
+   "video": "Attachments/Witch/Woman_walking_in_place_4635965f (1).mp4",
+   "first": 0,
+   "last": 143,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/witch/idle 0:119",
+   "loopFirst": 20,
+   "loopLast": 66,
+   "seamSteps": 0.77,
+   "bootRow": 674,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "frameCountFrom": 47,
+   "figurePx": 625.0,
+   "scaledTo": 609.6,
+   "frames": 36,
+   "frameMs": 54.398148148148145,
+   "nat": [
+    377,
+    634
+   ],
+   "crop": [
+    5,
+    5,
+    368,
+    624
+   ],
+   "box": {
+    "w": 1.64282,
+    "h": 2.76272,
+    "foot": 0.0467
+   },
+   "pattern": "content/sprites/witch/move-media36-v01/move-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/Witch/Hitreact.mp4",
+   "first": 8,
+   "last": 60,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/witch/idle 0:119",
+   "bootRow": 1245,
+   "bootRows": [
+    1245,
+    1245
+   ],
+   "frameCountFrom": 53,
+   "figurePx": 1124.0,
+   "scaledTo": 610.0,
+   "frames": 36,
+   "frameMs": 61.34259259259258,
+   "nat": [
+    285,
+    623
+   ],
+   "crop": [
+    3,
+    3,
+    279,
+    617
+   ],
+   "box": {
+    "w": 1.2448,
+    "h": 2.7211,
+    "foot": 0.01559
+   },
+   "pattern": "content/sprites/witch/hit-media36-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Witch/Fallat4Woman_falling_and_lying_still_7d74dba9 (1).mp4",
+   "first": 122,
+   "last": 216,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/witch/idle 0:119",
+   "bootRow": 682,
+   "bootRows": [
+    682,
+    682
+   ],
+   "frameCountFrom": 95,
+   "figurePx": 632.0,
+   "scaledTo": 610.3,
+   "frames": 36,
+   "frameMs": 109.9537037037037,
+   "nat": [
+    927,
+    647
+   ],
+   "crop": [
+    4,
+    6,
+    918,
+    636
+   ],
+   "box": {
+    "w": 4.04051,
+    "h": 2.82007,
+    "foot": 0.13462
+   },
+   "pattern": "content/sprites/witch/death-media36-v01/death-{}.png"
+  }
+ }
+}

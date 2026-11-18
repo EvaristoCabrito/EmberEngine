@@ -40,9 +40,9 @@
    "hero": "voss",
    "cut": "content/sprites/voss-veo/cut.json",
    "why": "the user, 2026-10-17: Voss cut from their Veo videos (Attachments/VeoVoss) as a new sprite set, his default; voss-final kept (its back pose stays on Poison Breath); every native frame, the video's own resolution",
-   "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "cast": "cast", "attack": "atk", "counter": "counter-staff", "counterStaff": "counter-staff", "hit": "hit", "death": "death", "turnBack": "turn-back", "castBack": "cast-back"},
-   "labels": {"counterStaff": "Contra-ataque (cajado)", "hit": "Dano", "death": "Morte", "turnBack": "De costas", "castBack": "De costas (parado)"},
-   "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field"},
+   "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "cast": "cast", "attack": "atk", "counter": "counter-staff", "counterStaff": "counter-staff", "hit": "hit", "death": "death", "turnBack": "turn-back", "castBack": "cast-back", "emote01": "emote01"},
+   "labels": {"counterStaff": "Contra-ataque (cajado)", "hit": "Dano", "death": "Morte", "turnBack": "De costas", "castBack": "De costas (parado)", "emote01": "VossEmote01"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene"},
    "strides": {"move": 1.5, "move-left": 1.0}
   },
   {
@@ -61,7 +61,7 @@
    "mediumOf": {"hero": "voss", "set": "voss-veo"},
    "cut": "content/sprites/voss-veo/cut-64-media.json",
    "why": "the user, 2026-10-22: \"36 is on with LEVE setup and 64 is on with Medium. High plays the full version\": every clip at ~610 px of figure with 64 frames (picked evenly, the clip's timing kept); Personagens Média",
-   "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field"}
+   "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene"}
   },
   {
    "set": "voss-veo-36-media",
@@ -79,7 +79,7 @@
    "lightOf": {"hero": "voss", "set": "voss-veo"},
    "cut": "content/sprites/voss-veo/cut-leve-passo.json",
    "why": "the user, 2026-10-27: \"refaz só o Voss Leve com passo inteiro (cada N-ésimo frame) e tempo fixo por frame, como os besteiros\": cut.json's clips at ~610 px, every Nth frame (about 36), one fixed time a frame; Personagens Leve draws it halved",
-   "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field"}
+   "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene"}
   },
   {
    "set": "isolde-veo",
@@ -128,9 +128,9 @@
    "hero": "kael",
    "cut": "content/sprites/kael-v3/cut.json",
    "why": "the user, 2026-11-09: Kael from their videos (Attachments/KaelV3): the 6 s idle (KaelIdleLoop) in place of the idle of Kael-IdleBackDoubleStrike, KaelATT for the attack, the few frames of his back for the special skills that turn him away from the camera and for cutscenes, the walk (Medieval_warrior_walking_8ba19cd7) mirrored for the left \"for now\"; the double strike of the same video cut with the rest, no skill plays it yet. Kael_Final stays in the pack. v02 (the user, 2026-11-09: \"very large grey borders\", the cloak most): every clip cut again with the edge key; their second batch: the walk to the left (in place of the mirror), the special attack (\"its for special att\", no skill plays it yet), the hit and the fall.",
-   "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkLeft": "move-left", "turnBack": "turn-back", "castBack": "cast-back", "doubleStrike": "double-strike", "specialAttack": "special", "hit": "hit", "death": "death", "walkUp": "move-up", "walkDown": "move-down", "emote01": "emote01", "emote02": "emote02", "emote03": "emote03", "emote04": "emote04"},
-   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "walkLeft": "Andar (esquerda)", "walkUp": "Andar (costas)", "walkDown": "Andar (frente)", "turnBack": "De costas", "castBack": "De costas (parado)", "doubleStrike": "Golpe duplo", "specialAttack": "Ataque especial", "hit": "Dano", "death": "Queda", "emote01": "KaelEmote01", "emote02": "KaelEmote02", "emote03": "KaelEmote03", "emote04": "KaelEmote04"},
-   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene", "emote02": "cutscene", "emote03": "cutscene", "emote04": "cutscene"},
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkLeft": "move-left", "turnBack": "turn-back", "castBack": "cast-back", "doubleStrike": "double-strike", "specialAttack": "special", "hit": "hit", "death": "death", "walkUp": "move-up", "walkDown": "move-down", "emote01": "emote01", "emote02": "emote02", "emote03": "emote03", "emote04": "emote04", "emote05": "emote05"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "walkLeft": "Andar (esquerda)", "walkUp": "Andar (costas)", "walkDown": "Andar (frente)", "turnBack": "De costas", "castBack": "De costas (parado)", "doubleStrike": "Golpe duplo", "specialAttack": "Ataque especial", "hit": "Dano", "death": "Queda", "emote01": "KaelEmote01", "emote02": "KaelEmote02", "emote03": "KaelEmote03", "emote04": "KaelEmote04", "emote05": "KaelEmote05"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene", "emote02": "cutscene", "emote03": "cutscene", "emote04": "cutscene", "emote05": "cutscene"},
    "strides": {"move": 3.0, "move-left": 1.0},
    "whyIdleEmote": "the user, 2026-11-12: the final idle from KaelUltimateIdle (1080p, base v05: Alta at the video's own size, Media and Leve at ~610 px, the standard); the old idle (V3IdleLoop2) is KaelEmote01, cutscenes only",
    "whyV05": "the user, 2026-11-13: every clip again from their 1080p videos (Attachments/KaelV3/supersize; content/sprites/kael-v3/cut.json v05): the hit is HitReactUltimate, the hit before is KaelEmote04, KaelEmote01 the old idle at 1080p, KaelEmote02 and 03 new (cutscenes only); the walks up and down (KaelWalkBack5sec, KaelWalkFront); the turn away (Kael_turning_180_degrees, a test) and the back still from the walk up (\"it has the proper cape design\")"
@@ -141,7 +141,7 @@
    "mediumOf": {"hero": "kael", "set": "kael-v3"},
    "cut": "content/sprites/kael-v3/cut-64-media.json",
    "why": "Kael's Personagens Média, as Voss's and Isolde's: every clip with at most 64 frames (picked evenly, the clip's timing kept); v05 (2026-11-13): from the 1080p recut at ~610 px, the standard",
-   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene", "emote02": "cutscene", "emote03": "cutscene", "emote04": "cutscene"}
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene", "emote02": "cutscene", "emote03": "cutscene", "emote04": "cutscene", "emote05": "cutscene"}
   },
   {
    "set": "kael-v3-36-media",
@@ -149,7 +149,7 @@
    "lightOf": {"hero": "kael", "set": "kael-v3"},
    "cut": "content/sprites/kael-v3/cut-36-media.json",
    "why": "Kael's Personagens Leve, as Voss's and Isolde's: every clip with at most 36 frames, the figure ~610 px; v05 (2026-11-13): from the 1080p recut",
-   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene", "emote02": "cutscene", "emote03": "cutscene", "emote04": "cutscene"}
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene", "emote02": "cutscene", "emote03": "cutscene", "emote04": "cutscene", "emote05": "cutscene"}
   },
   {
    "set": "neera-hydra",
@@ -960,6 +960,34 @@
    "cut": "content/sprites/ember-mushroom/cut-36-media.json",
    "why": "the Ember Mushroom's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "emberMushroom", "set": "ember-mushroom"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "witch",
+   "version": "v01",
+   "hero": "witch",
+   "newHero": {"name": "Bruxa", "group": "monster", "sprite": "witch", "reversed": false},
+   "cut": "content/sprites/witch/cut.json",
+   "why": "the user, 2026-11-18: the Witch, a new rank C fire caster from five videos (Attachments/Witch): idle, ember-smoke blow and fireball cast, walk, hit and fall; Alta + 64 + 36; an enemy on Todas as Unidades",
+   "poses": {"idle": "base", "attack": "atk", "cast": "cast", "walk": "move", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "cast": "Conjurar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "witch-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/witch/cut-64-media.json",
+   "why": "the Witch's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "witch", "set": "witch"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "witch-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/witch/cut-36-media.json",
+   "why": "the Witch's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "witch", "set": "witch"},
    "packs": {"base": "field", "move": "field"}
   }
  ],

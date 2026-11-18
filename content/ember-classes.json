@@ -120,6 +120,15 @@
    "igniteCharges": 3,
    "about": "A new unit from the user's videos (2026-11-17, Attachments/Monsters/EmberMushroom: \"Type C monster complete with fire magic\"). Working numbers, the user's to set: 1 hex, mov 3, a 1D8 root lash, the MushroomMan's stats row, rank C, immune to fire; three Ignites of its own a fight, Maos Flamejantes twice (tier 2), Bola de Fogo once (tier 3)."
   },
+  "witch": {
+   "name": "Bruxa", "nameEn": "Witch", "role": "Conjuradora", "sprite": "witch", "size": 1, "mov": 4, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 6, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {"tier2": 2, "tier3": 1},
+   "spellList": ["ignite", "burningHands", "fireball"],
+   "igniteCharges": 3,
+   "about": "A new unit from the user's videos (2026-11-18, Attachments/Witch). Working numbers, the user's to set: 1 hex, mov 4, a 1D6 ember-smoke blow, the Ember Mushroom's stats row, rank C; three Ignites of its own a fight, Maos Flamejantes twice (tier 2), Bola de Fogo once (tier 3)."
+  },
   "sahagin": {
    "name": "Sahagin", "nameEn": "Sahagin", "role": "Lanceiro",
    "sprite": "sahagin", "size": 1, "mov": 4, "strikesWith": "atk",

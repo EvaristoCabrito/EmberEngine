@@ -313,6 +313,9 @@
     "emberMushroom": {
       "mov": 3
     },
+    "witch": {
+      "mov": 4
+    },
     "sahagin": {
       "mov": 4
     },
