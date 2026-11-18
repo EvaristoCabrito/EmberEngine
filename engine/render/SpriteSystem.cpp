@@ -319,25 +319,20 @@ void SpriteSystem::decideFight() {
   const uint64_t own = fullPoolBytes_ + baseBytes_;
   const uint64_t used = heap.usage > own ? heap.usage - own : 0;
   const uint64_t free = heap.budget > used ? heap.budget - used : 0;
-  // The rest of the fight: the map's 3D pieces (trees, props: their geometry is admitted only while the GPU has the bytes + 16 MB
-  // free, and the fight's turns wait for every piece: MapStage openingDone_), effects, the frame. The user, 2026-11-17: no tree on
-  // any map and the first turn never ended: the pool below, rounded up to whole blocks (338 MB each), had eaten the whole margin.
-  constexpr uint64_t kMargin = 384ull << 20;
+  constexpr uint64_t kMargin = 256ull << 20;  // the rest of the fight (effects, meshes still landing)
   const uint64_t streaming = streamingBytes_;
+  lightActive_ = lightAsked_;
+  if (!lightActive_ && fullTwo > 0 && streaming + fullOne + fullTwo + kMargin > free) {
+    lightActive_ = true;
+    logWarn("sprites: Personagens Alta needs {} MB, the GPU has {} MB free: Leve for this fight", (streaming + fullOne + fullTwo + kMargin) >> 20,
+            free >> 20);
+  }
+
   // Budget plus the pinned full clips plus one block of slack, all allocated at once; a fragmented pool opens holes
   // (makeHole). Measured (512 MB budget): 64 MB blocks stream as well as a pool 50% over budget. The last fight's pool
   // stays when it holds this one's (at most one block too big): what it holds stays on the GPU.
   const VkDeviceSize block = std::max(kPoolBlockBytes, largestClip_);
   const auto blocksFor = [&](uint64_t bytes) { return static_cast<size_t>(bytes / block + 1); };
-  lightActive_ = lightAsked_;
-  // The pool's real size (whole blocks), not the bytes asked for: the margin must stay free after it is allocated.
-  const uint64_t altaPool = blocksFor(streaming + fullOne + fullTwo) * block;
-  if (!lightActive_ && fullTwo > 0 && altaPool + kMargin > free) {
-    lightActive_ = true;
-    logWarn("sprites: Personagens Alta needs {} MB (pool in whole blocks) plus {} MB for the map's 3D pieces, the GPU has {} MB free: Leve for this fight",
-            altaPool >> 20, kMargin >> 20, free >> 20);
-  }
-
   uint64_t want = streaming + fullOne + (lightActive_ ? 0 : fullTwo);
   const size_t have = fullPool_ && fullPoolBlock_ == block ? static_cast<size_t>(fullPoolBytes_ / block) : 0;
   const bool keepPool = have > 0 && have >= blocksFor(want) && have <= blocksFor(want) + 1;
