@@ -570,6 +570,72 @@
     "foot": 0.0311
    },
    "pattern": "content/sprites/kael-v3/emote05-media36-v05/emote05-{}.png"
+  },
+  "emote06": {
+   "video": "Attachments/KaelV3/KaelVauEmote.mp4",
+   "first": 0,
+   "last": 99,
+   "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
+   "bootRow": 1047,
+   "bootRows": [
+    1047,
+    1055
+   ],
+   "frameCountFrom": 100,
+   "figurePx": 997.0,
+   "bodyAt": 0.1902,
+   "scaledTo": 610.0,
+   "frames": 36,
+   "frameMs": 115.74074074074072,
+   "nat": [
+    548,
+    629
+   ],
+   "crop": [
+    5,
+    2,
+    463,
+    624
+   ],
+   "box": {
+    "w": 2.31605,
+    "h": 2.65838,
+    "foot": 0.04573
+   },
+   "pattern": "content/sprites/kael-v3/emote06-media36-v05/emote06-{}.png"
+  },
+  "emote07": {
+   "video": "Attachments/KaelV3/KaelVauEmote.mp4",
+   "first": 100,
+   "last": 239,
+   "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
+   "bootRow": 1059,
+   "bootRows": [
+    1044,
+    1077
+   ],
+   "frameCountFrom": 140,
+   "figurePx": 1004.0,
+   "bodyAt": 0.1902,
+   "scaledTo": 609.6,
+   "frames": 36,
+   "frameMs": 162.03703703703704,
+   "nat": [
+    469,
+    643
+   ],
+   "crop": [
+    9,
+    3,
+    456,
+    635
+   ],
+   "box": {
+    "w": 1.98382,
+    "h": 2.71983,
+    "foot": 0.03769
+   },
+   "pattern": "content/sprites/kael-v3/emote07-media36-v05/emote07-{}.png"
   }
  }
 }

@@ -3,6 +3,7 @@
   "id": "estranhos-na-costa",
   "camera": "actors",
   "_note": "Estranhos na Costa (the user's script, 2026-11-06): the Vau's opening, before the fight, on the empty east half of the south bank. Kael walks up the hill over the water (17,8); Neera steps out from behind the cottage (14,11); Voss stands farther up the hill (21,8); at the end Voss heads west towards the ford and the other two follow, so the fight starts with the three on the south bank. Neera and Voss are party heroes from the start (overworld joinIndex 0) kept off the board until their 'enter' (MapStage sendOffstage).",
+  "_emote": "the user, 2026-11-18 (KaelVauEmote): Kael alone in the rain, muttering to himself before he meets Neera. The video is split in two cutscene-only poses played in sequence on this map: emote06 (he stands, mutters 'How many', looks round, turns to his side; 100 frames = 4.17 s) and emote07 (he walks off in place, 140 frames = 5.83 s), then the real walk up the hill. The voice (KaelV3HowMany001.mp3, cut from 0.5 s of the video) plays 0.5 s into the first.",
   "actors": {
     "kael": { "unit": "Kael" },
     "neera": { "unit": "Neera", "offstage": true },
@@ -10,6 +11,13 @@
   },
   "steps": [
     { "do": "wait", "seconds": 0.8 },
+    { "do": "face", "actor": "kael", "direction": "e" },
+    { "do": "pose", "actor": "kael", "pose": "emote06" },
+    { "do": "wait", "seconds": 0.5 },
+    { "do": "sfx", "file": "KaelV3HowMany001.mp3", "volume": 0.55 },
+    { "do": "wait", "seconds": 3.6 },
+    { "do": "pose", "actor": "kael", "pose": "emote07" },
+    { "do": "wait", "seconds": 5.8 },
     { "do": "move", "actor": "kael", "to": [17, 8] },
     { "do": "face", "actor": "kael", "direction": "nw" },
     { "do": "wait", "seconds": 1.4 },

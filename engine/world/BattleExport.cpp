@@ -802,7 +802,10 @@ struct Cues {
             {"walkFade", u.sprite == "plague-bearing-cattle" || monster(u.sprite, "walk") != nullptr},
             {"hit", hit},
             {"hitOnDeath", u.classId != "bigBlueCalf"},
-            {"death", death}};
+            {"death", death},
+            // his voice, played now and then as one of his lines opens (MapStage: a cutscene's / a battle line's `say`); the user, 2026-11-18:
+            // the "How many" of KaelVauEmote as a sound effect "that will play sometimes in conversations"
+            {"talk", u.sprite == "kaelFinal" ? cue("kaelTalk") : none()}};
   }
 };
 

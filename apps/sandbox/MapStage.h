@@ -7389,6 +7389,9 @@ class MapStage final : public Stage {
         if (!st.portrait.empty()) line["portrait"] = st.portrait;
         ember::Json tree = {{"id", std::format("cutscene:{}:{}", c.script.id, c.step)}, {"startId", "l"}, {"lines", ember::Json::array({line})}};
         cutsceneDialog_.emplace(tree, npcPortraits(tree, characters()), options_.artRoot);
+        // The speaker's own voice (a unit's "talk" cue: Kael's "How many", the user, 2026-11-18) now and then as a line opens: one line in
+        // kTalkEvery, picked by the line's id so the same line sounds the same on every playthrough. A unit with no "talk" cue stays silent.
+        if (ui && std::hash<std::string>{}(tree["id"].get<std::string>()) % kTalkEvery == 0) playCues(sounds(static_cast<size_t>(unitBattle_[*ui]), "talk"));
         if (ui && cutCam_ && c.script.id.starts_with("stone-bridge-")) {
           const SpellEffects::Spot spot = unitSpot(*ui);
           const float h = cardHeightOf(spot);
@@ -14632,6 +14635,7 @@ class MapStage final : public Stage {
   static constexpr float kTurnCastSeconds = 1.1f;  // a caster turning away to cast into the board (turnToCast): its turn, sped up to this
   static constexpr float kCorpseSeconds = 1.5f;  // the fallen lie this long after their death pose
   static constexpr float kEnterSeconds = 0.8f;   // a cutscene's "enter": the card's fade-in
+  static constexpr size_t kTalkEvery = 5;        // a spoken line: one in this many opens with its speaker's own voice cue
   static constexpr float kPopupSeconds = 1.2f;
   glm::vec2 mouse_{-1.0f};
   SDL_WindowID mouseWindow_ = 0;

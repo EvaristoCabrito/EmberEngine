@@ -84719,6 +84719,15 @@
           "exclusive": true
         }
       ],
+      "kaelTalk": [
+        {
+          "file": "KaelV3HowMany001.mp3",
+          "volume": 0.55,
+          "offset": 0,
+          "delay": 0,
+          "exclusive": true
+        }
+      ],
       "minorHorrorAttack": [
         {
           "file": "MinorHorrorATT001.mp3",
