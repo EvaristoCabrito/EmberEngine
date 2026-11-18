@@ -126,6 +126,41 @@
    "mode": "once",
    "why": "stumbles ~144..164, falls ~168..188, lying still to the end",
    "floorRow": 253
+  },
+  {
+   "clip": "move-down",
+   "pose": "walkDown",
+   "kind": "walk",
+   "inPlace": true,
+   "mirror": true,
+   "src": "build/video-cut/nekomata/updown",
+   "video": "Attachments/Monsters/Nekomata/Nekomata720UpandDown.mp4",
+   "first": 0,
+   "last": 100,
+   "loopMin": 32,
+   "loopMax": 100,
+   "mode": "loop",
+   "figurePx": 319.3,
+   "floorRow": 581,
+   "why": "the user, 2026-11-18: Nekomata720UpandDown, walking toward the camera in three-quarters, in place (720p); turned to face right"
+  },
+  {
+   "clip": "move-up",
+   "pose": "walkUp",
+   "kind": "walk",
+   "inPlace": true,
+   "mirror": true,
+   "src": "build/video-cut/nekomata/updown",
+   "video": "Attachments/Monsters/Nekomata/Nekomata720UpandDown.mp4",
+   "first": 124,
+   "last": 224,
+   "loopMin": 32,
+   "loopMax": 100,
+   "mode": "loop",
+   "figurePx": 301.4,
+   "floorRow": 571,
+   "why": "the same video, walking away from the camera, its back (the video cuts to it at ~116); 720p"
   }
- ]
+ ],
+ "scaleNote2": "measured 2026-11-18: the old side walk's median height 139 px in its 360p video, drawn at figurePx 119 (x 0.856); the new video's median height 373 px walking toward the camera, 352 px away: figurePx 319.3 and 301.4; paws at row 581 and 571"
 }

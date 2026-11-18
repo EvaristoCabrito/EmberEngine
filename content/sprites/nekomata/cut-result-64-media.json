@@ -245,6 +245,70 @@
     "foot": 0.17143
    },
    "pattern": "content/sprites/nekomata/death-media64-v01/death-{}.png"
+  },
+  "move-down": {
+   "video": "Attachments/Monsters/Nekomata/Nekomata720UpandDown.mp4",
+   "first": 0,
+   "last": 100,
+   "loopFirst": 40,
+   "loopLast": 95,
+   "seamSteps": 1.98,
+   "bootRow": 581,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 319.3,
+   "frames": 56,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    484,
+    401
+   ],
+   "crop": [
+    5,
+    6,
+    474,
+    390
+   ],
+   "box": {
+    "w": 2.57689,
+    "h": 2.13498,
+    "foot": 0.08519
+   },
+   "pattern": "content/sprites/nekomata/move-down-media64-v01/move-down-{}.png"
+  },
+  "move-up": {
+   "video": "Attachments/Monsters/Nekomata/Nekomata720UpandDown.mp4",
+   "first": 124,
+   "last": 224,
+   "loopFirst": 159,
+   "loopLast": 192,
+   "seamSteps": 1.18,
+   "bootRow": 571,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 301.4,
+   "frames": 34,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    222,
+    374
+   ],
+   "crop": [
+    5,
+    5,
+    212,
+    365
+   ],
+   "box": {
+    "w": 1.25216,
+    "h": 2.10949,
+    "foot": 0.0564
+   },
+   "pattern": "content/sprites/nekomata/move-up-media64-v01/move-up-{}.png"
   }
  }
 }
