@@ -170,7 +170,7 @@ struct Options {
   int fogLook = 11;  // 011: the grey mist (the user, 2026-11-06)
   int cardStance = 1;  // --cards N: 0 vertical cards, 1 leaning back with the camera's tilt (panel "Cards")
   int barsFade = 1;    // --bars-fade N: 0 bars always shown, 1 the bars of units near the camera fade (panel "Vida perto")
-  int actionCamera = 0;  // --action-camera N: 0 OFF, 1 cinema (panel "Câmera de ação": the shots of every blow, shot and spell)
+  int actionCamera = 1;  // --action-camera N: 0 OFF, 1 cinema (panel "Câmera de ação": the shots of every blow, shot and spell)
   int floorImage = 1;  // --floor N: maps whose draft lays its painting under the board: 0 OFF, 1 on (panel "Chão do vão")
   int windFog = 1;     // --wind-fog N: maps whose draft names a wind fog: 0 OFF, 1 on (panel "Névoa do vento")
   int windowLight = -1;  // --window-light N: indoor maps' "Luz das janelas": -1 as the map says, 0 OFF, 1 real
