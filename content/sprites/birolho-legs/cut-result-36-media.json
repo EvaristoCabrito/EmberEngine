@@ -1,0 +1,370 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Birolho/BiroLegs/Birolho2IdleATT.mp4",
+   "first": 0,
+   "last": 72,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
+   "bootRow": 1085,
+   "bootRows": [
+    1085,
+    1085
+   ],
+   "loopFirst": 0,
+   "loopLast": 58,
+   "seamSteps": 1.48,
+   "frameCountFrom": 59,
+   "figurePx": 878.0,
+   "scaledTo": 610.4,
+   "frames": 36,
+   "frameMs": 68.28703703703702,
+   "nat": [
+    746,
+    689
+   ],
+   "crop": [
+    3,
+    3,
+    739,
+    619
+   ],
+   "box": {
+    "w": 6.01587,
+    "h": 5.55621,
+    "foot": -0.03487
+   },
+   "pattern": "content/sprites/birolho-legs/base-media36-v01/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Birolho/BiroLegs/Birolho2IdleATT.mp4",
+   "first": 140,
+   "last": 194,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
+   "bootRow": 1100,
+   "bootRows": [
+    1100,
+    1100
+   ],
+   "frameCountFrom": 55,
+   "figurePx": 923.2,
+   "scaledTo": 609.9,
+   "frames": 36,
+   "frameMs": 63.657407407407405,
+   "nat": [
+    854,
+    662
+   ],
+   "crop": [
+    4,
+    3,
+    846,
+    659
+   ],
+   "box": {
+    "w": 6.88797,
+    "h": 5.33939,
+    "foot": -0.11327
+   },
+   "pattern": "content/sprites/birolho-legs/atk-media36-v01/atk-{}.png",
+   "impact": 0.5455
+  },
+  "atk2": {
+   "video": "Attachments/Birolho/BiroLegs/Birolhoextending_limbs_and_posing_ef1650aa_1080p.mp4",
+   "first": 1,
+   "last": 93,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
+   "bootRow": 1030,
+   "bootRows": [
+    1030,
+    1030
+   ],
+   "frameCountFrom": 93,
+   "figurePx": 896.5,
+   "scaledTo": 609.8,
+   "frames": 36,
+   "frameMs": 107.63888888888889,
+   "nat": [
+    1198,
+    670
+   ],
+   "crop": [
+    3,
+    3,
+    1192,
+    664
+   ],
+   "box": {
+    "w": 9.65497,
+    "h": 5.39969,
+    "foot": 0.04805
+   },
+   "pattern": "content/sprites/birolho-legs/atk2-media36-v01/atk2-{}.png",
+   "impact": 0.914
+  },
+  "unfold": {
+   "video": "Attachments/Birolho/BiroLegs/Birolhoextending_limbs_and_posing_ef1650aa_1080p.mp4",
+   "first": 1,
+   "last": 32,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
+   "bootRow": 1007,
+   "bootRows": [
+    1007,
+    1007
+   ],
+   "figurePx": 937.6,
+   "scaledTo": 609.6,
+   "frames": 32,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    645,
+    632
+   ],
+   "crop": [
+    3,
+    3,
+    637,
+    626
+   ],
+   "box": {
+    "w": 5.1981,
+    "h": 5.09333,
+    "foot": 0.09815
+   },
+   "pattern": "content/sprites/birolho-legs/unfold-media36-v01/unfold-{}.png"
+  },
+  "cast": {
+   "video": "Attachments/Birolho/BiroLegs/BiroCastReactFall.mp4",
+   "first": 1,
+   "last": 100,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
+   "bootRow": 1162,
+   "bootRows": [
+    1162,
+    1162
+   ],
+   "frameCountFrom": 100,
+   "figurePx": 1049.5,
+   "scaledTo": 610.3,
+   "frames": 36,
+   "frameMs": 115.74074074074072,
+   "nat": [
+    1116,
+    628
+   ],
+   "crop": [
+    0,
+    0,
+    1116,
+    621
+   ],
+   "box": {
+    "w": 8.9972,
+    "h": 5.06294,
+    "foot": -0.39078
+   },
+   "pattern": "content/sprites/birolho-legs/cast-media36-v01/cast-{}.png",
+   "impact": 0.59
+  },
+  "hit": {
+   "video": "Attachments/Birolho/BiroLegs/BirolhoHitReactV2.mp4",
+   "first": 4,
+   "last": 56,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
+   "bootRow": 1045,
+   "bootRows": [
+    1045,
+    1045
+   ],
+   "frameCountFrom": 53,
+   "figurePx": 954.4,
+   "scaledTo": 610.0,
+   "frames": 36,
+   "frameMs": 61.34259259259258,
+   "nat": [
+    768,
+    643
+   ],
+   "crop": [
+    3,
+    3,
+    762,
+    618
+   ],
+   "box": {
+    "w": 6.18872,
+    "h": 5.18144,
+    "foot": 0.01915
+   },
+   "pattern": "content/sprites/birolho-legs/hit-media36-v01/hit-{}.png",
+   "impact": 0.1509
+  },
+  "death": {
+   "video": "Attachments/Birolho/BiroLegs/BirolhoHitReactV2.mp4",
+   "first": 88,
+   "last": 142,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
+   "bootRow": 1045,
+   "bootRows": [
+    1045,
+    1045
+   ],
+   "frameCountFrom": 55,
+   "figurePx": 954.4,
+   "scaledTo": 610.3,
+   "frames": 36,
+   "frameMs": 63.657407407407405,
+   "nat": [
+    940,
+    649
+   ],
+   "crop": [
+    3,
+    3,
+    934,
+    643
+   ],
+   "box": {
+    "w": 7.57487,
+    "h": 5.22989,
+    "foot": 0.1119
+   },
+   "pattern": "content/sprites/birolho-legs/death-media36-v01/death-{}.png"
+  },
+  "move-down": {
+   "video": "Attachments/Birolho/BiroLegs/BirolhoWalkandATT2.mp4",
+   "first": 36,
+   "last": 70,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
+   "loopFirst": 36,
+   "loopLast": 66,
+   "seamSteps": 1.1,
+   "bootRow": 950,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 641.8,
+   "scaledTo": 610.0,
+   "frames": 31,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    754,
+    730
+   ],
+   "crop": [
+    4,
+    4,
+    744,
+    722
+   ],
+   "box": {
+    "w": 6.07662,
+    "h": 5.8832,
+    "foot": 0.12237
+   },
+   "pattern": "content/sprites/birolho-legs/move-down-media36-v01/move-down-{}.png"
+  },
+  "move-up": {
+   "video": "Attachments/Birolho/BiroLegs/BirolhoWalkandATT2.mp4",
+   "first": 72,
+   "last": 104,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
+   "loopFirst": 72,
+   "loopLast": 92,
+   "seamSteps": 2.27,
+   "bootRow": 947,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 627.1,
+   "scaledTo": 610.2,
+   "frames": 21,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    717,
+    759
+   ],
+   "crop": [
+    4,
+    4,
+    708,
+    750
+   ],
+   "box": {
+    "w": 5.77989,
+    "h": 6.11846,
+    "foot": 0.14893
+   },
+   "pattern": "content/sprites/birolho-legs/move-up-media36-v01/move-up-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/Birolho/BiroLegs/BirolhoWalkandATT2.mp4",
+   "first": 108,
+   "last": 176,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
+   "loopFirst": 114,
+   "loopLast": 151,
+   "seamSteps": 0.49,
+   "bootRow": 951,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "frameCountFrom": 38,
+   "figurePx": 569.2,
+   "frames": 36,
+   "frameMs": 43.98148148148148,
+   "nat": [
+    548,
+    789
+   ],
+   "crop": [
+    5,
+    4,
+    539,
+    780
+   ],
+   "box": {
+    "w": 4.73483,
+    "h": 6.81712,
+    "foot": 0.24193
+   },
+   "pattern": "content/sprites/birolho-legs/move-left-media36-v01/move-left-{}.png"
+  },
+  "move": {
+   "video": "Attachments/Birolho/BiroLegs/BirolhoWalkandATT2.mp4",
+   "first": 108,
+   "last": 176,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
+   "loopFirst": 114,
+   "loopLast": 151,
+   "seamSteps": 0.49,
+   "bootRow": 951,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "frameCountFrom": 38,
+   "figurePx": 569.2,
+   "frames": 36,
+   "frameMs": 43.98148148148148,
+   "nat": [
+    548,
+    789
+   ],
+   "crop": [
+    4,
+    4,
+    539,
+    780
+   ],
+   "box": {
+    "w": 4.73483,
+    "h": 6.81712,
+    "foot": 0.24193
+   },
+   "pattern": "content/sprites/birolho-legs/move-media36-v01/move-{}.png"
+  }
+ }
+}

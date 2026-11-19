@@ -84355,6 +84355,62 @@
       "arrowRelease:neera": []
     },
     "monster": {
+      "BirolhoLegs": {
+        "attack": [
+          {
+            "file": "BirolhoLegsATT001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "cast": [
+          {
+            "file": "BirolhoLegsCast001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "hit": [
+          {
+            "file": "BirolhoLegsHit001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "death": [
+          {
+            "file": "BirolhoLegsDeath001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "walk": [
+          {
+            "file": "BirolhoLegsWalk001.mp3",
+            "volume": 0.45,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "attack2": [
+          {
+            "file": "BirolhoLegsATT2_001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ]
+      },
       "troll": {
         "attack": [
           {
@@ -84896,26 +84952,6 @@
         "death": [
           {
             "file": "DeadArmor.mp3",
-            "volume": 0.55,
-            "offset": 0,
-            "delay": 0,
-            "exclusive": true
-          }
-        ]
-      },
-      "BirolhoLegs": {
-        "attack": [
-          {
-            "file": "BirolhoLegsATT001.mp3",
-            "volume": 0.55,
-            "offset": 0,
-            "delay": 0,
-            "exclusive": true
-          }
-        ],
-        "cast": [
-          {
-            "file": "BirolhoLegsCast001.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,
