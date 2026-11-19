@@ -9,24 +9,34 @@ rule says which problem it prevents.
 Put this block in every prompt of a character, word for word, so all their moves match:
 
 ```
-Full-body shot of [CHARACTER DESCRIPTION, identical in every video], standing on a flat, plain medium-grey studio floor in front of a
-seamless plain medium-grey studio backdrop. Soft, even, neutral studio lighting from the front and both sides, no colored light, no
-shadows on the wall. Locked-off static camera at chest height, no camera movement, no zoom, no cuts. Vertical 9:16 frame. The whole
-body, the head, the feet and the entire [STAFF / WEAPON] stay inside the frame at all times, with a clear margin of empty backdrop
-above the head, below the feet and on both sides. The character fills about 80% of the frame's height. Realistic, photographic,
-sharp focus, natural colors.
+A single continuous full-screen shot of [CHARACTER DESCRIPTION, identical in every video], standing on a flat, plain medium-grey studio
+floor in front of a seamless plain medium-grey studio backdrop that fills the whole picture from edge to edge. Soft, even, neutral studio
+lighting from the front and both sides, no colored light, no shadows on the wall. Locked-off static camera at chest height, placed far
+enough back that the whole character, from the top of the [STAFF / WEAPON] to the soles of the boots, is always visible, with plenty
+of empty grey space above, below and on both sides. The character fills about 80% of the picture's height. One single plain picture:
+no borders, no black bars, no letterbox, no inset, no picture-in-picture, no blurred or duplicated copy of the video behind or beside
+it, no vignette, no text. No camera movement, no zoom, no cuts. Realistic, photographic, sharp focus, natural colors. Audio: only sound
+effects of the character itself and its movement; no narration, no voice-over, no speech, no dialogue, no music, no background ambience.
 ```
+
+**Never write the words "frame", "framed", "inside the frame" or an aspect ratio such as "9:16" in a prompt** (the user, 2026-11-19): the
+generator takes them literally and draws a smaller picture inside the picture (IsoldeHitReacV4: a 1920 × 1080 video with the shot as a
+panel in the middle and blurred copies of her at both sides). Say "picture", "screen", "visible", "empty space around her" instead, and
+set the aspect ratio (vertical, 9:16) in the generator's own setting, never in the text.
 
 | Rule | Why (what happened) |
 |---|---|
 | Plain medium-grey backdrop and floor, every video | Isolde's hit was made on a dark stone wall: the cut-out was harder and her light had to be matched by hand. |
 | Even neutral light, no colored light | The stone-wall set lit her half a stop darker; every move must look like the same person in the same light. |
 | No camera movement, no cuts | Isolde's right walk opens on another shot and cuts at 1 s: that second is lost. |
-| Margin on every side, staff included | Isolde's hit sways off the frame's edge, and Voss's fallen staff runs off the left edge: those pixels can't be recovered. |
-| ~80% of the frame's height, the same in every move | Voss is ~1100 px tall in his idle but only ~610 px in his cast, hit and death (filmed from farther away), so those clips can't be sharper. |
+| Empty space on every side, staff included (said as "always visible", never as "inside the frame") | Isolde's hit sways off the picture's edge, and Voss's fallen staff runs off the left edge: those pixels can't be recovered. |
+| No borders / inset / blurred copies, said in the prompt; no "frame" or "9:16" in the text | IsoldeHitReacV4 came out as a 1920 × 1080 video with the shot as a smaller panel and blurred copies of her at the sides: the cut-out would pick up the copies. |
+| ~80% of the picture's height, the same in every move | Voss is ~1100 px tall in his idle but only ~610 px in his cast, hit and death (filmed from farther away), so those clips can't be sharper. |
+| Audio line: sound effects only, no narration (the user, 2026-11-19) | The game's unit sounds are cut from the videos' own audio; a narrated video can't be used for them. |
 | The same description in every video | The costume and the staff must not change between moves. |
 
-Settings: 720 × 1280, 24 fps, 8 s (the longest clip Veo gives; more seconds = more frames to pick the best loop from).
+Settings (in the generator, not in the prompt): vertical 9:16, 1080 × 1920 when offered (720 × 1280 otherwise), 24 fps, 8 s for loops (the
+longest clip Veo gives; more seconds = more frames to pick the best loop from), 4 s is enough for a hit.
 
 ## Each move
 
@@ -44,9 +54,9 @@ to the first pose.
 **Walk right / walk left (loops)**
 ```
 The character walks in place to the [RIGHT / LEFT] in exact profile view, as if on a treadmill: the body stays in the center of the
-frame while the legs and the [STAFF] move in a steady, natural walking rhythm at a constant pace, for the whole video. The character is
-already walking in the first frame and keeps walking until the last frame, never slowing down, never stopping, never turning toward
-the camera.
+picture while the legs and the [STAFF] move in a steady, natural walking rhythm at a constant pace, for the whole video. The character is
+already walking at the very first moment and keeps walking until the very last moment, never slowing down, never stopping, never turning
+toward the camera.
 ```
 Why: Voss turns toward the camera in the last second of his right walk and stops in the last 2 s of his left walk; Isolde's left walk
 spends its first second turning. Only the steady part can be looped.
@@ -63,20 +73,21 @@ left, the staff hand is on the far side, the staff partly behind the body. A lef
 
 Isolde's walk right (right-handed), the whole prompt:
 ```
-Full-body shot of a young woman with long wavy copper-red hair and freckles, wearing a black studded leather corset with dark leather
-shoulder guards and bracers, a long tattered black cloak, a tattered dark burgundy skirt and tall black leather boots, carrying a tall
-ornate black staff whose head is a dark crescent of curved spikes cradling a red gem, standing on a flat, plain medium-grey studio floor
-in front of a seamless plain medium-grey studio backdrop. Soft, even, neutral studio lighting from the front and both sides, no colored
-light, no shadows on the wall. Locked-off static camera at chest height, no camera movement, no zoom, no cuts. Vertical 9:16 frame. The
-whole body, the head, the feet and the entire staff stay inside the frame at all times, with a clear margin of empty backdrop above the
-staff's head, below the feet and on both sides. The character fills about 80% of the frame's height. Realistic, photographic, sharp
-focus, natural colors.
-She walks in place to the RIGHT in exact profile view, as if on a treadmill: the body stays in the center of the frame while the legs
+A single continuous full-screen shot of a young woman with long wavy copper-red hair and freckles, wearing a black studded leather
+corset with dark leather shoulder guards and bracers, a long tattered black cloak, a tattered dark burgundy skirt and tall black leather
+boots, carrying a tall ornate black staff whose head is a dark crescent of curved spikes cradling a red gem, standing on a flat, plain
+medium-grey studio floor in front of a seamless plain medium-grey studio backdrop that fills the whole picture from edge to edge. Soft,
+even, neutral studio lighting from the front and both sides, no colored light, no shadows on the wall. Locked-off static camera at chest
+height, placed far enough back that the whole woman, from the top of her staff to the soles of her boots, is always visible, with plenty
+of empty grey space above, below and on both sides. She fills about 80% of the picture's height. One single plain picture: no borders,
+no black bars, no letterbox, no inset, no picture-in-picture, no blurred or duplicated copy of the video behind or beside it, no
+vignette, no text. No camera movement, no zoom, no cuts. Realistic, photographic, sharp focus, natural colors.
+She walks in place to the RIGHT in exact profile view, as if on a treadmill: the body stays in the center of the picture while the legs
 and the cloak move in a steady, natural walking rhythm at a constant pace, for the whole video. She holds the staff in her RIGHT hand
 only, the same hand as in every other video: walking to the right, her right arm is the one nearest the camera, so she holds the staff
 with that near arm, upright in front of her body, planted lightly with each step. Her left arm, on the far side of her body, swings
-freely and empty. She is already walking in the first frame and keeps walking until the last frame, never slowing down, never
-stopping, never turning toward the camera.
+freely and empty. She is already walking at the very first moment and keeps walking until the very last moment, never slowing down,
+never stopping, never turning toward the camera.
 ```
 
 **Turn to walk (optional, played once before the walk loop)**
@@ -93,21 +104,23 @@ The character starts in the relaxed idle pose, [ACTION: e.g. raises the staff an
 on the RIGHT side], then returns to exactly the relaxed idle pose and holds still for the last second.
 ```
 Why: a one-shot starts and ends on the idle pose, so the game passes from idle into it and back with no jump. Keep glows and magic
-small and inside the frame: bright effects crossing the figure confuse the cut-out (Voss's cast lost half its staff), and the game
+small and close to the character: bright effects crossing the figure confuse the cut-out (Voss's cast lost half its staff), and the game
 draws its own 3D spell effects anyway.
 
 **Hit (played once)**
 ```
-The character starts in the relaxed idle pose, is struck hard in the chest by an unseen blow from the RIGHT, staggers back one step
-without leaving the frame, recovers and returns to exactly the relaxed idle pose, holding still for the last second.
+The character starts in the relaxed idle pose, is struck hard in the chest by an unseen blow from the RIGHT, staggers back one small
+step staying on the same spot of the floor, recovers and returns to exactly the relaxed idle pose, holding still for the last second.
 ```
 
 **Death / fall (played once, held on the last frame)**
 ```
 The character starts in the relaxed idle pose, is struck by an unseen blow, collapses and falls to the floor, and lies completely still
-for the last two seconds. The whole body and the [STAFF] stay inside the frame while falling and lying down.
+for the last two seconds. The whole body and the [STAFF] stay fully visible, with empty space around them, while falling and lying down;
+the character falls toward the camera side, not sideways.
 ```
-Why: Voss's death is 1204 px wide because he ends up lying across the frame; with the margin rule the fallen body and staff stay whole.
+Why: Voss's death is 1204 px wide because he ends up lying across the picture, and Isolde's Hit2Fall lying pose runs off both sides
+(2026-11-19); with the empty-space rule the fallen body and staff stay whole.
 
 ## After the video
 
