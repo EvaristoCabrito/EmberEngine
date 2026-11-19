@@ -148,6 +148,8 @@ rem senao o jogo nem abre (06/11/2026).
 set "LOG=%HERE%\JOGAR-log.txt"
 (break > "%LOG%") 2>nul || set "LOG=%HERE%\JOGAR-log-2.txt"
 (break > "%LOG%") 2>nul || set "LOG=%TEMP%\JOGAR-log.txt"
+rem TEMPORARIO (18/11/2026): o jogo anota no log o que as pecas 3D ainda esperam (Wisp Forest travada). Tirar depois.
+set "EMBER_STREAM_CHECK=1"
 echo Abrindo o Ember...
 "%EXE%" --title --ground "%GROUND%" --sprites "%SPRITES%" --meshes "%MESHES%" --meshes-extra "%MESHES_EXTRA%" --scenes "%ART%\scenes" --maps "%HERE%\content\maps\ember" --game-assets "%HERE%\content\assets" %HEROES% > "%LOG%" 2>&1
 set "RUNERR=%ERRORLEVEL%"
