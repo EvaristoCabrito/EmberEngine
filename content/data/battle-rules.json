@@ -21992,7 +21992,7 @@
       ]
     },
     "birolhoLegs2": {
-      "name": "BirolhoLegs2",
+      "name": "Birolho1",
       "role": "Abominação",
       "sprite": "BirolhoLegs2",
       "size": 4,
@@ -84355,6 +84355,53 @@
       "arrowRelease:neera": []
     },
     "monster": {
+      "BirolhoLegs2": {
+        "cast": [
+          {
+            "file": "BirolhoLegs2Cast001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "walk": [
+          {
+            "file": "BirolhoLegs2Walk001.mp3",
+            "volume": 0.45,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "attack": [
+          {
+            "file": "BirolhoLegs2ATT001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "hit": [
+          {
+            "file": "BirolhoLegs2Hit001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "death": [
+          {
+            "file": "BirolhoLegs2Death001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ]
+      },
       "BirolhoLegs": {
         "attack": [
           {
@@ -84953,26 +85000,6 @@
           {
             "file": "DeadArmor.mp3",
             "volume": 0.55,
-            "offset": 0,
-            "delay": 0,
-            "exclusive": true
-          }
-        ]
-      },
-      "BirolhoLegs2": {
-        "cast": [
-          {
-            "file": "BirolhoLegs2Cast001.mp3",
-            "volume": 0.55,
-            "offset": 0,
-            "delay": 0,
-            "exclusive": true
-          }
-        ],
-        "walk": [
-          {
-            "file": "BirolhoLegs2Walk001.mp3",
-            "volume": 0.45,
             "offset": 0,
             "delay": 0,
             "exclusive": true

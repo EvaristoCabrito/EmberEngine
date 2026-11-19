@@ -1129,6 +1129,33 @@
    "why": "the BirolhoLegs's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "birolhoLegs", "set": "birolho-legs"},
    "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}
+  },
+  {
+   "set": "birolho-1",
+   "version": "v01",
+   "hero": "birolhoLegs2",
+   "cut": "content/sprites/birolho-1/cut.json",
+   "why": "the user, 2026-11-19: Birolho1 (birolhoLegs2) remade from BirolhoIdlewalkUpSidewaysattCast; Alta + 64 + 36; sounds from the video",
+   "poses": {"idle": "base", "attack": "atk", "unfold": "unfold", "cast": "cast", "hit": "hit", "death": "death", "fold": "fold", "walk": "move", "walkLeft": "move-left", "walkDown": "move-down", "walkUp": "move-up"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "unfold": "Abrir os membros", "cast": "Conjurar", "hit": "Dano", "death": "Morte", "fold": "Fechar os membros", "walk": "Andar", "walkLeft": "Andar (esquerda)", "walkDown": "Andar (frente)", "walkUp": "Andar (costas)"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0, "move-down": 1.0, "move-up": 1.0}
+  },
+  {
+   "set": "birolho-1-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/birolho-1/cut-64-media.json",
+   "why": "the Birolho1's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "birolhoLegs2", "set": "birolho-1"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}
+  },
+  {
+   "set": "birolho-1-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/birolho-1/cut-36-media.json",
+   "why": "the Birolho1's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "birolhoLegs2", "set": "birolho-1"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}
   }
  ],
  "clips": [
