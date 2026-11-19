@@ -5,3 +5,6 @@ captures/
 build-log.txt
 build-log-release.txt
 __pycache__/
+
+# Source videos and reference pictures: kept on disk, not in git (2026-11-18, the user: "we need to trim the fat from attachments")
+/Attachments/
