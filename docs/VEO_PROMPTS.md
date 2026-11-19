@@ -113,7 +113,7 @@ The character starts in the relaxed idle pose, is struck hard in the chest by an
 step staying on the same spot of the floor, recovers and returns to exactly the relaxed idle pose, holding still for the last second.
 ```
 
-**Death / fall (played once, held on the last frame)**
+**Death / fall (played once, held on the last pose)**
 ```
 The character starts in the relaxed idle pose, is struck by an unseen blow, collapses and falls to the floor, and lies completely still
 for the last two seconds. The whole body and the [STAFF] stay fully visible, with empty space around them, while falling and lying down;
