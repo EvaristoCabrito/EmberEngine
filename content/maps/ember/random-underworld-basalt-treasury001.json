@@ -1660,7 +1660,7 @@
     "enemySpawns": [
       {
         "name": "Devorador de Basalto",
-        "classId": "troll2",
+        "classId": "troll",
         "x": 20,
         "y": 10,
         "level": 14

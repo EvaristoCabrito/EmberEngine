@@ -1,0 +1,267 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Monsters/Cave_troll_standing_breathing_24073d90_1080p.mp4",
+   "first": 0,
+   "last": 142,
+   "bootRow": 1074,
+   "bootRows": [
+    1055,
+    1079
+   ],
+   "frameCountFrom": 143,
+   "figurePx": 1002.0,
+   "scaledTo": 610.3,
+   "frames": 64,
+   "frameMs": 93.09895833333333,
+   "nat": [
+    641,
+    631
+   ],
+   "crop": [
+    3,
+    3,
+    635,
+    628
+   ],
+   "box": {
+    "w": 5.25449,
+    "h": 5.17252,
+    "foot": 0.02336
+   },
+   "pattern": "content/sprites/cave-troll/base-media64-v01/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Monsters/Cave_troll_animation_set_9bb2b8b8_720p.mp4",
+   "first": 178,
+   "last": 238,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/cave-troll/idle 0:142",
+   "bootRow": 715,
+   "bootRows": [
+    715,
+    715
+   ],
+   "figurePx": 677.0,
+   "scaledTo": 610.0,
+   "frames": 61,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    747,
+    610
+   ],
+   "crop": [
+    4,
+    4,
+    738,
+    606
+   ],
+   "box": {
+    "w": 6.1226,
+    "h": 4.99971,
+    "foot": 0.02913
+   },
+   "pattern": "content/sprites/cave-troll/atk-media64-v01/atk-{}.png",
+   "impact": 0.3607
+  },
+  "move": {
+   "video": "Attachments/Monsters/Cave_troll_animation_set_9bb2b8b8_720p.mp4",
+   "first": 106,
+   "last": 176,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/cave-troll/idle 0:142",
+   "loopFirst": 110,
+   "loopLast": 173,
+   "seamSteps": 1.87,
+   "bootRow": 716,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 677.0,
+   "scaledTo": 610.2,
+   "frames": 64,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    481,
+    621
+   ],
+   "crop": [
+    4,
+    3,
+    473,
+    618
+   ],
+   "box": {
+    "w": 3.94387,
+    "h": 5.09177,
+    "foot": 0.02177
+   },
+   "pattern": "content/sprites/cave-troll/move-media64-v01/move-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/Monsters/Cave_troll_animation_set_9bb2b8b8_720p.mp4",
+   "first": 106,
+   "last": 176,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/cave-troll/idle 0:142",
+   "loopFirst": 110,
+   "loopLast": 173,
+   "seamSteps": 1.87,
+   "bootRow": 716,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 677.0,
+   "scaledTo": 610.2,
+   "frames": 64,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    481,
+    621
+   ],
+   "crop": [
+    4,
+    3,
+    473,
+    618
+   ],
+   "box": {
+    "w": 3.94387,
+    "h": 5.09177,
+    "foot": 0.02177
+   },
+   "pattern": "content/sprites/cave-troll/move-left-media64-v01/move-left-{}.png"
+  },
+  "move-down": {
+   "video": "Attachments/Monsters/Cave_troll_animation_set_9bb2b8b8_720p.mp4",
+   "first": 72,
+   "last": 104,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/cave-troll/idle 0:142",
+   "loopFirst": 86,
+   "loopLast": 101,
+   "seamSteps": 5.39,
+   "bootRow": 708,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 677.0,
+   "scaledTo": 609.9,
+   "frames": 16,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    524,
+    609
+   ],
+   "crop": [
+    4,
+    3,
+    516,
+    601
+   ],
+   "box": {
+    "w": 4.29838,
+    "h": 4.99563,
+    "foot": 0.0661
+   },
+   "pattern": "content/sprites/cave-troll/move-down-media64-v01/move-down-{}.png"
+  },
+  "move-up": {
+   "video": "Attachments/Monsters/Cave_troll_animation_set_9bb2b8b8_720p.mp4",
+   "first": 36,
+   "last": 70,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/cave-troll/idle 0:142",
+   "loopFirst": 41,
+   "loopLast": 56,
+   "seamSteps": 4.74,
+   "bootRow": 712,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 677.0,
+   "scaledTo": 610.0,
+   "frames": 16,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    504,
+    601
+   ],
+   "crop": [
+    4,
+    4,
+    496,
+    597
+   ],
+   "box": {
+    "w": 4.12851,
+    "h": 4.92308,
+    "foot": 0.05126
+   },
+   "pattern": "content/sprites/cave-troll/move-up-media64-v01/move-up-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/Monsters/Cave_troll_falls_down_426a3a6c_1080p.mp4",
+   "first": 21,
+   "last": 58,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/cave-troll/idle 0:142",
+   "bootRow": 1074,
+   "bootRows": [
+    1054,
+    1074
+   ],
+   "figurePx": 1008.5,
+   "scaledTo": 610.1,
+   "frames": 38,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    816,
+    640
+   ],
+   "crop": [
+    4,
+    3,
+    808,
+    637
+   ],
+   "box": {
+    "w": 6.68815,
+    "h": 5.24561,
+    "foot": 0.02317
+   },
+   "pattern": "content/sprites/cave-troll/hit-media64-v01/hit-{}.png",
+   "impact": 0.0
+  },
+  "death": {
+   "video": "Attachments/Monsters/Cave_troll_falls_down_426a3a6c_1080p.mp4",
+   "first": 78,
+   "last": 142,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/cave-troll/idle 0:142",
+   "bootRow": 1054,
+   "bootRows": [
+    1054,
+    1054
+   ],
+   "frameCountFrom": 65,
+   "figurePx": 1008.5,
+   "scaledTo": 610.0,
+   "frames": 64,
+   "frameMs": 42.31770833333333,
+   "nat": [
+    872,
+    597
+   ],
+   "crop": [
+    3,
+    3,
+    865,
+    594
+   ],
+   "box": {
+    "w": 7.14923,
+    "h": 4.8946,
+    "foot": 0.12236
+   },
+   "pattern": "content/sprites/cave-troll/death-media64-v01/death-{}.png"
+  }
+ }
+}

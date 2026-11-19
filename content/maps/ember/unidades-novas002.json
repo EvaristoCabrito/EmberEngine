@@ -7571,8 +7571,8 @@
         "useClassSprite": true
       },
       {
-        "name": "Troll da caverna 2",
-        "classId": "troll2",
+        "name": "Troll da caverna",
+        "classId": "troll",
         "x": 43,
         "y": 19,
         "level": 15,

@@ -304,10 +304,6 @@
    "src": "/game/portraits/sprites/troll.png?v=1",
    "framed": true
   },
-  "troll2": {
-   "src": "/game/portraits/sprites/troll2.png?v=1",
-   "framed": true
-  },
   "undeadOx": {
    "src": "/game/portraits/sprites/undeadOx.png?v=1",
    "framed": true

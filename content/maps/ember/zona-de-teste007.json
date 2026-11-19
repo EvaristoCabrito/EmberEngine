@@ -1407,7 +1407,7 @@
       },
       {
         "name": "Inimigo 19",
-        "classId": "troll2",
+        "classId": "troll",
         "x": 2,
         "y": 2,
         "level": 1,
@@ -1422,7 +1422,7 @@
       },
       {
         "name": "Inimigo 21",
-        "classId": "troll2",
+        "classId": "troll",
         "x": 7,
         "y": 3,
         "level": 1,
@@ -1430,7 +1430,7 @@
       },
       {
         "name": "Inimigo 22",
-        "classId": "troll2",
+        "classId": "troll",
         "x": 9,
         "y": 1,
         "level": 1,
