@@ -4471,6 +4471,12 @@ class MapStage final : public Stage {
       // A cutscene's "enter": the card fades in over kEnterSeconds (the corpse's fade run backwards).
       if (ui < unitEnterAt_.size() && unitEnterAt_[ui] >= 0.0f)
         corpseFade = std::max(corpseFade, 1.0f - std::clamp((time - unitEnterAt_[ui]) / kEnterSeconds, 0.0f, 1.0f));
+      float unfoldClock = -1.0f;  // >= 0: the walk's "unfold" lead-in (or the "fold" after it) is showing, this many seconds into it
+      // When a walk ends, a sheet with a "fold" pose (the Birolho's limbs going back into his floating body, the user, 2026-11-19: "make
+      // the action of closing in as he stays floating in the same place") plays it once where he stopped, then his idle takes over.
+      if (unitFoldAt_.size() <= ui) unitFoldAt_.resize(ui + 1, -1.0f), unitWasWalking_.resize(ui + 1, 0);
+      if (walking) unitWasWalking_[ui] = 1, unitFoldAt_[ui] = -1.0f;
+      else if (unitWasWalking_[ui]) unitWasWalking_[ui] = 0, unitFoldAt_[ui] = entry && entry->find("fold") ? time : -1.0f;
       OneShot shotNow;  // this frame's (the stored one may move on to its next pose below)
       const OneShot* shot = nullptr;
       if (ui < unitShot_.size() && !unitShot_[ui].pose.empty()) shotNow = unitShot_[ui], shot = &shotNow;
@@ -4489,6 +4495,17 @@ class MapStage final : public Stage {
         }
       } else if (walking && entry) {
         p = walkPose(*entry, unitWalk_[ui].dir, unitFacing_[ui], u.sprite, shown);
+        // A sheet with an "unfold" pose (the Birolho's limbs coming out of his floating body, the user, 2026-11-19: "just before he walks")
+        // plays it once as the walk sets off, over at most two hexes' time, then the walk takes over
+        if (p)
+          if (const ember::HeroPose* uf = entry->find("unfold"); uf && !uf->pace.empty()) {
+            const float length = poseSeconds(ui, "unfold");
+            const float t = (time - unitWalk_[ui].start) * std::max(1.0f, length / (2.0f * stepSeconds()));
+            if (t >= 0.0f && t < length) p = uf, shown = "unfold", unfoldClock = t;
+          }
+      } else if (unitFoldAt_[ui] >= 0.0f && entry && entry->find("fold") && !entry->find("fold")->pace.empty() &&
+                 time - unitFoldAt_[ui] < poseSeconds(ui, "fold")) {
+        p = entry->find("fold"), shown = "fold", unfoldClock = time - unitFoldAt_[ui];
       } else if (chosen != kIdle && entry) {
         p = entry->find(chosen);
         if (p && p->pace.empty()) p = nullptr;
@@ -4501,7 +4518,9 @@ class MapStage final : public Stage {
         continue;
       }
       uint32_t frame = 0;
-      if (p) {
+      if (p && unfoldClock >= 0.0f) {
+        frame = static_cast<uint32_t>(p->pace[std::min(static_cast<size_t>(unfoldClock * 240.0f), p->pace.size() - 1)]);
+      } else if (p) {
         // A walk is timed by the ground covered, not by the clock, and the whole clip plays (nothing is cut): each
         // full stride (both legs) spans kWalkStride world units for every character, heroes and foes alike, and the clip
         // holds `strides` of them (walk-strides.json), so all step at one cadence (the user: everyone at the same pace;
@@ -8459,6 +8478,8 @@ class MapStage final : public Stage {
     if (pose == "attackShort" && striker >= 0 && !hasPose(static_cast<size_t>(striker), pose)) pose = "attack";  // no off-hand sheet: the main one
     if (ember::daggerStrikeKind(s.kind)) pose.clear();  // a Nuvem de Adagas dagger flies on its own: its caster plays no pose
     if (ember::arcaneMarkBurstKind(s.kind)) pose.clear();  // a Marca Arcana goes off on its own: Selene plays no pose
+    // The swipe all round the body plays the sheet's second attack when it has one (the BirolhoLegs' hands, the user, 2026-11-19: his ATT 2)
+    if (s.kind == "tendrilSwipe" && !pose.empty() && striker >= 0 && hasPose(static_cast<size_t>(striker), "attack2")) pose = "attack2";
     if (striker >= 0 && !pose.empty() && !hasPose(static_cast<size_t>(striker), pose)) pose = hasPose(static_cast<size_t>(striker), "cast") ? "cast" : "attack";
     // Neera's skill animation plays on every skill she uses, the bow skills too (the user, 2026-10-19); her plain attacks and
     // counters keep the shot. A skill is any step with a kind that is not a counter, a potion or a walk. Neera v2 plays her own
@@ -14322,6 +14343,8 @@ class MapStage final : public Stage {
     std::string fadeSound;          // its walk cue, faded out when it arrives (a monster's own)
   };
   std::vector<Walk> unitWalk_;
+  std::vector<float> unitFoldAt_;     // per scene unit: when its walk ended, if its sheet has a "fold" pose (-1 = not folding)
+  std::vector<char> unitWasWalking_;  // per scene unit: walking on the previous draw
   // On-map cutscene in play (playCutscene / updateCutscene).
   struct Cutscene {
     ember::CutsceneScript script;

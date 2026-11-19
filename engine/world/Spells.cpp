@@ -6627,7 +6627,49 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
     if (tierRemaining(u, "acidCloud") > 0)
       if (std::optional<AiCast> cc = cloudCast(1)) return cc;
   }
+  // The swipe all round the body (the Carnivorous Plant's tendrils; the BirolhoLegs' hands, the user, 2026-11-19: "an AOE that hits everyone
+  // directly on a hex near him"): the ring of hexes around the body (not the rows more than 2 above it), taken from the reach hex where it
+  // strikes the most foes, two or more; one step, "tendrilSwipe", whose pose the sprite sheet picks (the plant's attack, the Birolho's attack2).
+  auto ringSwipe = [&]() -> std::optional<AiCast> {
+    struct Swipe {
+      std::vector<BattleHex> tiles;
+      std::vector<size_t> ids;
+      BattleHex from;
+      int score = 0;
+    };
+    std::optional<Swipe> swipe;
+    for (const ReachCell& cell : reach) {
+      const std::vector<BattleHex> body = Battle::footprint(u, cell.x, cell.y);
+      Swipe s;
+      s.from = {cell.x, cell.y};
+      for (const BattleHex& bh : body)
+        for (const BattleHex& p : Battle::neighbors(bh.x, bh.y)) {
+          if (p.y < cell.y - 2 || !b.inBounds(p.x, p.y) || std::find(body.begin(), body.end(), p) != body.end()) continue;
+          if (std::find(s.tiles.begin(), s.tiles.end(), p) == s.tiles.end()) s.tiles.push_back(p);
+        }
+      for (const BattleHex& t : s.tiles) {
+        const int who = firstAt(b, t);
+        if (who < 0) continue;
+        const BattleUnit& v = b.units()[static_cast<size_t>(who)];
+        if (static_cast<size_t>(who) == unit || v.side == u.side || std::find(s.ids.begin(), s.ids.end(), static_cast<size_t>(who)) != s.ids.end()) continue;
+        s.ids.push_back(static_cast<size_t>(who));
+        s.score += 10 + (v.maxHp - v.hp) * 3 + (v.hp <= 8 ? 20 : 0);
+      }
+      if (s.ids.size() < 2) continue;
+      if (!swipe || s.score > swipe->score) swipe = std::move(s);
+    }
+    if (!swipe) return std::nullopt;
+    AiCast cast;
+    cast.path = walkTo(swipe->from);
+    BattleStep s;
+    s.att = unit, s.kind = "tendrilSwipe", s.tiles = swipe->tiles, s.ids = swipe->ids;
+    cast.steps.push_back(s);
+    return cast;
+  };
   const bool birolho = c == "birolho" || c == "birolho2" || c == "birolho3" || c == "birolhoLegs" || c == "birolhoLegs2";
+  // The BirolhoLegs opens with his hands whenever two foes or more stand round him (his ATT 2), before any spell.
+  if (c == "birolhoLegs")
+    if (std::optional<AiCast> sw = ringSwipe()) return sw;
   // Birolho: Relampago outranks Veneno Caustico outranks Choque outranks Missil Magico. (Ember tests its tier-4 uses and spends
   // the venom's own tier 5: kept as it is.)
   if (birolho && (u.spells[0] > 0 || u.spells[1] > 0 || u.spells[3] > 0 || u.shockCharges > 0 || tierRemaining(u, "acidCloud") > 0)) {
@@ -6775,42 +6817,7 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
   // own tier 3), Sopro Venenoso (tier 1), Veneno Menor (tier 4). The Sapling has only its one Sopro Venenoso.
   if (c == "carnivorousPlant" || c == "sapling") {
     if (c == "carnivorousPlant") {
-      // tryAiPlantSwipe: the ring of hexes around her body (not the rows more than 2 above it)
-      struct Swipe {
-        std::vector<BattleHex> tiles;
-        std::vector<size_t> ids;
-        BattleHex from;
-        int score = 0;
-      };
-      std::optional<Swipe> swipe;
-      for (const ReachCell& cell : reach) {
-        const std::vector<BattleHex> body = Battle::footprint(u, cell.x, cell.y);
-        Swipe s;
-        s.from = {cell.x, cell.y};
-        for (const BattleHex& bh : body)
-          for (const BattleHex& p : Battle::neighbors(bh.x, bh.y)) {
-            if (p.y < cell.y - 2 || !b.inBounds(p.x, p.y) || std::find(body.begin(), body.end(), p) != body.end()) continue;
-            if (std::find(s.tiles.begin(), s.tiles.end(), p) == s.tiles.end()) s.tiles.push_back(p);
-          }
-        for (const BattleHex& t : s.tiles) {
-          const int who = firstAt(b, t);
-          if (who < 0) continue;
-          const BattleUnit& v = b.units()[static_cast<size_t>(who)];
-          if (static_cast<size_t>(who) == unit || v.side == u.side || std::find(s.ids.begin(), s.ids.end(), static_cast<size_t>(who)) != s.ids.end()) continue;
-          s.ids.push_back(static_cast<size_t>(who));
-          s.score += 10 + (v.maxHp - v.hp) * 3 + (v.hp <= 8 ? 20 : 0);
-        }
-        if (s.ids.size() < 2) continue;
-        if (!swipe || s.score > swipe->score) swipe = std::move(s);
-      }
-      if (swipe) {
-        AiCast cast;
-        cast.path = walkTo(swipe->from);
-        BattleStep s;
-        s.att = unit, s.kind = "tendrilSwipe", s.tiles = swipe->tiles, s.ids = swipe->ids;
-        cast.steps.push_back(s);
-        return cast;
-      }
+      if (std::optional<AiCast> sw = ringSwipe()) return sw;
       if (u.spells[2] > 0)
         if (const auto p = bestSplash(kCausticVenom, "causticVenom")) {
           std::array<int, 10> kept{};

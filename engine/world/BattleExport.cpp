@@ -753,7 +753,10 @@ struct Cues {
   }
   json spell(const Unit& u, const std::string& kind) const {
     if (oneOf(kind, {"longShot", "bloodyShot", "multiShot", "piercing"})) return arrowAttack(u, true);
-    if (kind == "tendrilSwipe") return cue("carnivorousPlantAttack");
+    if (kind == "tendrilSwipe") {  // the sprite's own second attack when it has a sound for it (the BirolhoLegs' hands), else the plant's lash
+      if (const json* m = monster(u.sprite, "attack2")) return *m;
+      return cue("carnivorousPlantAttack");
+    }
     if (oneOf(kind, {"cleave", "sweep", "shoulderSmash", "stampede", "piercingThrust", "trip", "doubleStrike"})) return melee(u, kind, false);
     if (kind == "bless") return monsterOr(u.sprite, "heal", cue("heal"));
     const json& classes = r.all()["spellClass"];
