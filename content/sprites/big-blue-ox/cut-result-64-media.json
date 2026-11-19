@@ -1,0 +1,229 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Monsters/SwampBlueCalf/Swamp_Blue_Calf_heavy_idle_a58ef267_720p.mp4",
+   "first": 72,
+   "last": 136,
+   "bootRow": 679,
+   "bootRows": [
+    676,
+    679
+   ],
+   "frameCountFrom": 65,
+   "figurePx": 566.0,
+   "frames": 64,
+   "frameMs": 42.31770833333333,
+   "nat": [
+    982,
+    604
+   ],
+   "crop": [
+    6,
+    4,
+    972,
+    596
+   ],
+   "box": {
+    "w": 5.0488,
+    "h": 3.10537,
+    "foot": 0.03599
+   },
+   "pattern": "content/sprites/big-blue-ox/base-media64-v01/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Monsters/SwampBlueCalf/WalkATTV1.mp4",
+   "first": 124,
+   "last": 216,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/big-blue-ox/idle 72:136",
+   "bootRow": 667,
+   "bootRows": [
+    667,
+    667
+   ],
+   "frameCountFrom": 93,
+   "figurePx": 566.0,
+   "frames": 64,
+   "frameMs": 60.546875,
+   "nat": [
+    1058,
+    551
+   ],
+   "crop": [
+    6,
+    5,
+    1047,
+    541
+   ],
+   "box": {
+    "w": 5.43954,
+    "h": 2.83288,
+    "foot": 0.03599
+   },
+   "pattern": "content/sprites/big-blue-ox/atk-media64-v01/atk-{}.png",
+   "impact": 0.7527
+  },
+  "special": {
+   "video": "Attachments/Monsters/SwampBlueCalf/SpecialATT.mp4",
+   "first": 40,
+   "last": 136,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/big-blue-ox/idle 72:136",
+   "bootRow": 663,
+   "bootRows": [
+    663,
+    663
+   ],
+   "frameCountFrom": 97,
+   "figurePx": 566.0,
+   "frames": 64,
+   "frameMs": 63.151041666666664,
+   "nat": [
+    1125,
+    671
+   ],
+   "crop": [
+    4,
+    5,
+    1115,
+    661
+   ],
+   "box": {
+    "w": 5.78401,
+    "h": 3.44984,
+    "foot": 0.1491
+   },
+   "pattern": "content/sprites/big-blue-ox/special-media64-v01/special-{}.png",
+   "impact": 0.701
+  },
+  "hit": {
+   "video": "Attachments/Monsters/SwampBlueCalf/HitReactat3.mp4",
+   "first": 112,
+   "last": 184,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/big-blue-ox/idle 72:136",
+   "bootRow": 699,
+   "bootRows": [
+    699,
+    699
+   ],
+   "frameCountFrom": 73,
+   "figurePx": 566.0,
+   "frames": 64,
+   "frameMs": 47.526041666666664,
+   "nat": [
+    958,
+    706
+   ],
+   "crop": [
+    7,
+    0,
+    947,
+    702
+   ],
+   "box": {
+    "w": 4.92541,
+    "h": 3.62979,
+    "foot": 0.03085
+   },
+   "pattern": "content/sprites/big-blue-ox/hit-media64-v01/hit-{}.png",
+   "impact": 0.2192
+  },
+  "death": {
+   "video": "Attachments/Monsters/SwampBlueCalf/Creature_hit_and_death_animations_57d0f721_720p.mp4",
+   "first": 150,
+   "last": 239,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/big-blue-ox/idle 72:136",
+   "bootRow": 672,
+   "bootRows": [
+    672,
+    672
+   ],
+   "frameCountFrom": 90,
+   "figurePx": 566.0,
+   "frames": 64,
+   "frameMs": 58.59375,
+   "nat": [
+    1082,
+    573
+   ],
+   "crop": [
+    6,
+    4,
+    1072,
+    564
+   ],
+   "box": {
+    "w": 5.56293,
+    "h": 2.94599,
+    "foot": 0.03599
+   },
+   "pattern": "content/sprites/big-blue-ox/death-media64-v01/death-{}.png"
+  },
+  "move": {
+   "video": "Attachments/Monsters/SwampBlueCalf/WalkATTV1.mp4",
+   "first": 0,
+   "last": 96,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/big-blue-ox/idle 72:136",
+   "loopFirst": 24,
+   "loopLast": 90,
+   "seamSteps": 1.51,
+   "bootRow": 667,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "frameCountFrom": 67,
+   "figurePx": 566.0,
+   "frames": 64,
+   "frameMs": 43.619791666666664,
+   "nat": [
+    932,
+    565
+   ],
+   "crop": [
+    5,
+    5,
+    923,
+    556
+   ],
+   "box": {
+    "w": 4.79173,
+    "h": 2.90486,
+    "foot": 0.05655
+   },
+   "pattern": "content/sprites/big-blue-ox/move-media64-v01/move-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/Monsters/SwampBlueCalf/WalkATTV1.mp4",
+   "first": 0,
+   "last": 96,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/big-blue-ox/idle 72:136",
+   "loopFirst": 24,
+   "loopLast": 90,
+   "seamSteps": 1.51,
+   "bootRow": 667,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "frameCountFrom": 67,
+   "figurePx": 566.0,
+   "frames": 64,
+   "frameMs": 43.619791666666664,
+   "nat": [
+    932,
+    565
+   ],
+   "crop": [
+    4,
+    5,
+    923,
+    556
+   ],
+   "box": {
+    "w": 4.79173,
+    "h": 2.90486,
+    "foot": 0.05655
+   },
+   "pattern": "content/sprites/big-blue-ox/move-left-media64-v01/move-left-{}.png"
+  }
+ }
+}

@@ -1075,6 +1075,33 @@
    "why": "the Rocco the Bird's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "roccoTheBird", "set": "rocco"},
    "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}
+  },
+  {
+   "set": "big-blue-ox",
+   "version": "v01",
+   "hero": "bigBlueCalf",
+   "cut": "content/sprites/big-blue-ox/cut.json",
+   "why": "the user, 2026-11-18: the Big Blue Ox from five new 720p videos (heavy idle, walk and charge, special attack, hit, hit and death), light matched to the idle's blue; Alta + 64 + 36",
+   "poses": {"idle": "base", "attack": "atk", "attack2": "special", "walk": "move", "walkLeft": "move-left", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "attack2": "Atacar 2", "walk": "Andar", "walkLeft": "Andar (esquerda)", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
+  },
+  {
+   "set": "big-blue-ox-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/big-blue-ox/cut-64-media.json",
+   "why": "the Big Blue Ox's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "bigBlueCalf", "set": "big-blue-ox"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}
+  },
+  {
+   "set": "big-blue-ox-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/big-blue-ox/cut-36-media.json",
+   "why": "the Big Blue Ox's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "bigBlueCalf", "set": "big-blue-ox"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}
   }
  ],
  "clips": [
