@@ -1627,7 +1627,7 @@ class MapStage final : public Stage {
       cameraMoved_ = true;  // the camera log (frame)
     if (e.type == SDL_EVENT_MOUSE_MOTION && (e.motion.state & SDL_BUTTON_RMASK) && !flat_) {  // Tática never turns
       yaw_ -= e.motion.xrel * kTurnPerPixel;
-      pitch_ = std::clamp(pitch_ + e.motion.yrel * kTurnPerPixel, minPitch(), kMaxPitch);
+      pitch_ = std::clamp(pitch_ + e.motion.yrel * kTurnPerPixel, playerMinPitch(), kMaxPitch);
     }
     if (e.type == SDL_EVENT_MOUSE_MOTION && (e.motion.state & SDL_BUTTON_MMASK)) {
       // The ground point under the cursor stays under it (the board follows the hand).
@@ -1636,7 +1636,7 @@ class MapStage final : public Stage {
       if (a && b) target_ += glm::vec3{a->x - b->x, 0.0f, a->z - b->z}, cam_.target += glm::vec3{a->x - b->x, 0.0f, a->z - b->z};
     }
     if (e.type == SDL_EVENT_MOUSE_WHEEL && e.wheel.y != 0.0f) {
-      const float next = std::clamp(distance_ * std::pow(kZoomStep, e.wheel.y), kMinDistance, maxDistance_);
+      const float next = std::clamp(distance_ * std::pow(kZoomStep, e.wheel.y), kMinDistance, std::max(distance_, playerMaxDistance()));
       // Toward the cursor: the pivot moves to the cursor's ground point by the share of the distance zoomed.
       if (const std::optional<glm::vec3> p = groundUnder(e.wheel.windowID, e.wheel.mouse_x, e.wheel.mouse_y)) {
         const float share = 1.0f - next / distance_;
@@ -1886,7 +1886,7 @@ class MapStage final : public Stage {
         }))
       setFlat(!flat_);
     ImGui::SameLine();
-    if (plate("##down", {kPlate, kPlate}, barIcon("chevron-down"))) pitch_ = std::clamp(pitch_ - kTiltStep, minPitch(), kMaxPitch);
+    if (plate("##down", {kPlate, kPlate}, barIcon("chevron-down"))) pitch_ = std::clamp(pitch_ - kTiltStep, playerMinPitch(), kMaxPitch);
     ImGui::SameLine();
     if (plate("##up", {kPlate, kPlate}, barIcon("chevron-up"))) pitch_ = std::clamp(pitch_ + kTiltStep, minPitch(), kMaxPitch);
     ImGui::SameLine();
@@ -6171,6 +6171,25 @@ class MapStage final : public Stage {
     const glm::vec4 clip = lastCamera_.viewProjection() * glm::vec4(p, 1.0f);
     if (clip.w <= 1e-4f) return std::nullopt;
     return ImVec2{(clip.x / clip.w * 0.5f + 0.5f) * w, (clip.y / clip.w * 0.5f + 0.5f) * h};
+  }
+
+  // The map's elevations hide what stands behind them (the user, 2026-11-19, with captures of the bars floating over a cliff and
+  // over the ground the eye was inside): the segment from the eye to the point goes under the ground of some cell on the way
+  // (the same ground test the click's ray uses). The last stretch before the point is skipped, so a point on its own slope is not
+  // taken as hidden by the slope it stands on.
+  bool groundBlocksView(glm::vec3 to) const {
+    const glm::vec3 o = lastCamera_.position, d = to - o;
+    const float len = glm::length(d);
+    if (len < 1e-3f) return false;
+    const glm::vec3 dir = d / len;
+    const ember::Board::Bounds b = board_->bounds();
+    const double padX = ember::kSqrt3 * ember::kHexRadius * 0.5 + 0.02, padZ = ember::kHexRadius - 0.6 + 0.02;
+    for (float t = 0.0f; t < len - 0.3f; t += 0.15f) {
+      const glm::vec3 p = o + dir * t;
+      if (p.x < b.x0 - padX || p.x > b.x1 + padX || p.z < b.z0 - padZ || p.z > b.z1 + padZ) continue;
+      if (p.y <= static_cast<float>(board_->cellAt(p.x, p.z).groundY)) return true;
+    }
+    return false;
   }
 
   void updateHover() {
@@ -11300,6 +11319,7 @@ class MapStage final : public Stage {
       const glm::vec3 up = cardUp(c);
       const std::optional<ImVec2> at = screenOf(c.origin + up * (c.height + 0.6f * k), w, h);
       if (!at) continue;
+      if (groundBlocksView(c.origin + up * c.height)) continue;  // behind an elevation
       const float size = p.big ? 34.0f : 26.0f;
       ImGui::PushFont(nullptr, size);
       const ImVec2 t = ImGui::CalcTextSize(p.text.c_str());
@@ -12584,6 +12604,7 @@ class MapStage final : public Stage {
       const std::optional<ImVec2> side = screenOf(head + glm::vec3(1.0f, 0.0f, 0.0f), w, h);
       const std::optional<ImVec2> deep = screenOf(head + glm::vec3(0.0f, 0.0f, 1.0f), w, h);
       if (!at || !side || !deep) continue;
+      if (groundBlocksView(head)) continue;  // behind an elevation: the bar is hidden with the unit
       // Near the camera the bar and the number would block the view (the user, 2026-10-16): a unit whose card fills
       // more than kBarsFadeFrom of the screen's height fades them, gone at kBarsFadeTo; back as it moves away.
       float near = 1.0f;
@@ -14156,6 +14177,15 @@ class MapStage final : public Stage {
   // antes de agora e com vista para o céu só isso"); the eye still never goes under the ground (eyeView).
   float minPitch() const { return kSkyMinPitch; }
   static constexpr float kSkyMinPitch = -1.3963f;
+  // What the player's hand may reach (mouse turn and the bar's tilt buttons): the tilt under kMinEyePitch lifts the line of sight by
+  // the missing angle, and the lens is 30 deg, so past a few degrees the board left the screen and only the painting and the sky
+  // showed (the user, 2026-11-19: "esse tipo de ângulo não deveria ser permitido"). The same rule that keeps the pivot on the board
+  // (kPanInset: at most 60% of the view's half height from the centre): the lift is the angle of that offset, so the board stays
+  // on screen. Cutscenes and shots keep minPitch().
+  // The farthest the wheel zooms out: the opening zoom (the user, 2026-11-19, with a capture of it: "make this the max zoom out,
+  // characters are tiny"): past it the figures became specks. The fit-the-board framings (combat opening, shots) keep maxDistance_.
+  float playerMaxDistance() const { return std::min(maxDistance_, kStartDistance); }
+  static float playerMinPitch() { return kMinEyePitch - std::atan(kPanInset * std::tan(glm::radians(kFov * 0.5f))); }
   float gameHour_ = -1.0f;  // MapStageOptions::gameHour
   int dayCycle_ = 0;  // the panel's "Hora": 0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3.. a fixed hour (cycleHour; --hour N)
   static constexpr float kTiltStep = 0.0873f, kTurnStep = 0.2618f;  // Ember's bar: 5 deg; 15 deg
