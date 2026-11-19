@@ -96,6 +96,8 @@
  "plague-bearing-cattle/move": 2.0,
  "radiant-familiar/move": 1.69,
  "radiant-familiar/move-left": 1.69,
+ "rocco/move": 1.0,
+ "rocco/move-left": 1.0,
  "sahagin/move": 1.0,
  "sahagin/move-left": 1.0,
  "salazar-v3/move": 2.0,

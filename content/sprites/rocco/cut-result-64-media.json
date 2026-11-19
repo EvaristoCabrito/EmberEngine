@@ -1,0 +1,197 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Monsters/Rocco/Creature_hovering_in_place_af8aa02f_720p.mp4",
+   "first": 0,
+   "last": 71,
+   "bootRow": 633,
+   "bootRows": [
+    607,
+    663
+   ],
+   "loopFirst": 13,
+   "loopLast": 58,
+   "seamSteps": 0.78,
+   "figurePx": 566.5,
+   "frames": 46,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1154,
+    639
+   ],
+   "crop": [
+    0,
+    5,
+    1149,
+    630
+   ],
+   "box": {
+    "w": 10.73536,
+    "h": 5.94445,
+    "foot": 0.75352
+   },
+   "pattern": "content/sprites/rocco/base-media64-v01/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Monsters/Rocco/Creature_walking_and_attacking_a\u2026_3cb2cd21_720p.mp4",
+   "first": 154,
+   "last": 214,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/rocco/hover 0:71",
+   "bootRow": 680,
+   "bootRows": [
+    680,
+    680
+   ],
+   "figurePx": 566.5,
+   "frames": 61,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1168,
+    720
+   ],
+   "crop": [
+    6,
+    0,
+    1156,
+    720
+   ],
+   "box": {
+    "w": 10.8656,
+    "h": 6.69797,
+    "foot": 0.36281
+   },
+   "pattern": "content/sprites/rocco/atk-media64-v01/atk-{}.png",
+   "impact": 0.3934
+  },
+  "cast": {
+   "video": "Attachments/Monsters/Rocco/Creature_casting_spell_with_wings_820ab56c_720p.mp4",
+   "first": 0,
+   "last": 142,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/rocco/hover 0:71",
+   "bootRow": 627,
+   "bootRows": [
+    567,
+    719
+   ],
+   "frameCountFrom": 143,
+   "figurePx": 566.5,
+   "frames": 64,
+   "frameMs": 93.09895833333333,
+   "nat": [
+    1274,
+    720
+   ],
+   "crop": [
+    0,
+    0,
+    1269,
+    720
+   ],
+   "box": {
+    "w": 11.85169,
+    "h": 6.69797,
+    "foot": 0.85585
+   },
+   "pattern": "content/sprites/rocco/cast-media64-v01/cast-{}.png",
+   "impact": 0.6434
+  },
+  "move": {
+   "video": "Attachments/Monsters/Rocco/Creature_walking_and_attacking_a\u2026_3cb2cd21_720p.mp4",
+   "first": 40,
+   "last": 150,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/rocco/hover 0:71",
+   "loopFirst": 58,
+   "loopLast": 97,
+   "seamSteps": 1.69,
+   "bootRow": 680,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 566.5,
+   "frames": 40,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    945,
+    595
+   ],
+   "crop": [
+    4,
+    5,
+    935,
+    585
+   ],
+   "box": {
+    "w": 8.79109,
+    "h": 5.53513,
+    "foot": 0.12094
+   },
+   "pattern": "content/sprites/rocco/move-media64-v01/move-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/Monsters/Rocco/Creature_walking_and_attacking_a\u2026_3cb2cd21_720p.mp4",
+   "first": 40,
+   "last": 150,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/rocco/hover 0:71",
+   "loopFirst": 58,
+   "loopLast": 97,
+   "seamSteps": 1.69,
+   "bootRow": 680,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 566.5,
+   "frames": 40,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    945,
+    595
+   ],
+   "crop": [
+    6,
+    5,
+    935,
+    585
+   ],
+   "box": {
+    "w": 8.79109,
+    "h": 5.53513,
+    "foot": 0.12094
+   },
+   "pattern": "content/sprites/rocco/move-left-media64-v01/move-left-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/Monsters/Rocco/Creature_hit_reaction_animation_0af988fe_720p.mp4",
+   "first": 18,
+   "last": 92,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/rocco/hover 0:71",
+   "bootRow": 663,
+   "bootRows": [
+    663,
+    663
+   ],
+   "frameCountFrom": 75,
+   "figurePx": 566.5,
+   "frames": 64,
+   "frameMs": 48.828125,
+   "nat": [
+    1277,
+    720
+   ],
+   "crop": [
+    0,
+    0,
+    1272,
+    720
+   ],
+   "box": {
+    "w": 11.87959,
+    "h": 6.69797,
+    "foot": 0.52095
+   },
+   "pattern": "content/sprites/rocco/hit-media64-v01/hit-{}.png",
+   "impact": 0.1333
+  }
+ }
+}

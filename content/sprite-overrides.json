@@ -1048,6 +1048,33 @@
    "why": "the Cave Troll's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "troll", "set": "cave-troll"},
    "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}
+  },
+  {
+   "set": "rocco",
+   "version": "v01",
+   "hero": "roccoTheBird",
+   "cut": "content/sprites/rocco/cut.json",
+   "why": "the user, 2026-11-18: Rocco the Bird from four new 720p videos (hover, walk + peck, cast, hit); Alta + 64 + 36",
+   "poses": {"idle": "base", "attack": "atk", "cast": "cast", "walk": "move", "walkLeft": "move-left", "hit": "hit"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "cast": "Conjurar", "walk": "Andar", "walkLeft": "Andar (esquerda)", "hit": "Dano"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
+  },
+  {
+   "set": "rocco-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/rocco/cut-64-media.json",
+   "why": "the Rocco the Bird's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "roccoTheBird", "set": "rocco"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}
+  },
+  {
+   "set": "rocco-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/rocco/cut-36-media.json",
+   "why": "the Rocco the Bird's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "roccoTheBird", "set": "rocco"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}
   }
  ],
  "clips": [
