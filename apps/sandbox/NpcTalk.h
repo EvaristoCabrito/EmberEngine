@@ -207,6 +207,13 @@ struct NpcTalk {
       }
     }
     if (dialog) {
+      if (map.actionCameraOn()) {
+        const std::string speaker = dialog->currentSpeaker();
+        if (!speaker.empty()) {
+          const int ui = map.findUnitByNameOrId(speaker);
+          if (ui >= 0) map.frameSpeaker(static_cast<size_t>(ui));
+        }
+      }
       const bool closed = dialog->draw(size, [this, &map](const ember::Json& reply) {
         if (reply.contains("action") && reply["action"].is_string()) action = reply["action"].get<std::string>();
         if (!reply.contains("affinity") || !world) return;
@@ -217,6 +224,7 @@ struct NpcTalk {
       });
       if (closed) {
         dialog.reset();
+        if (map.actionCameraOn()) map.endShot(true);
         runAction(map);
       }
     }

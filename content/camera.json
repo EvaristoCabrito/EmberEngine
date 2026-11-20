@@ -1,0 +1,21 @@
+{
+  "limits": {
+    "minDistance": 3.0,
+    "fitDistanceMultiplier": 1.15,
+    "marginHexes": 2.0,
+    "maxLookUpAngleDegrees": 60.0
+  },
+  "framing": {
+    "meleePitch": 12.0,
+    "rangedPitch": 14.0,
+    "areaPitch": 30.0,
+    "casterPitch": 16.0,
+    "shoulderAngle": 35.0,
+    "pushInRatio": 0.92,
+    "deathHoldSeconds": 0.5,
+    "summonHoldSeconds": 1.6,
+    "enemyTurnLeadAhead": 1.5,
+    "impactShakeStrength": 0.25,
+    "impactShakeSeconds": 0.15
+  }
+}

@@ -4,6 +4,8 @@
 // Pirata One for marks and buttons; bundled in content/fonts, OFL) and its art, read at run time from Ember's public
 // folder (title backgrounds, panels, portraits) and shown through Dear ImGui.
 
+#include <cctype>
+#include <cstring>
 #include <filesystem>
 #include <mutex>
 #include <string>
@@ -108,7 +110,14 @@ inline const char* classicBriefArt(const std::string& id) {
       {"aldeia", "game/assets/brief-aldeia.jpg"}, {"muralha", "game/assets/brief-muralha.jpg"}, {"fortaleza", "game/assets/brief-fortaleza.jpg"},
       {"templo", "game/assets/brief-templo.jpg"}, {"cripta", "game/assets/brief-cripta.jpg"}, {"estalagem", "game/assets/brief-estalagem.jpg"},
       {"colina", "game/assets/brief-colina.jpg"}, {"passagem", "game/assets/brief-passagem.jpg"},
-      {"watchtower-gate-floor", "game/assets/brief-watchtower.jpg"}, {"vertente", "game/assets/brief-vertente.jpg"},
+      {"watchtower-gate-floor", "game/assets/brief-watchtower.jpg"},
+      {"watchtower-barracks", "game/assets/brief-watchtower.jpg"},
+      {"watchtower-command", "game/assets/brief-watchtower.jpg"},
+      {"watchtower-beacon", "game/assets/brief-watchtower.jpg"},
+      {"watchtower-undercroft", "game/assets/brief-watchtower-subsolos-v01.jpg"},
+      {"watchtower-prison", "game/assets/brief-watchtower-subsolos-v01.jpg"},
+      {"watchtower", "game/assets/brief-watchtower.jpg"},
+      {"vertente", "game/assets/brief-vertente.jpg"},
       {"portao", "game/assets/brief-portao.jpg"}, {"profundezas", "game/assets/profundezas-bg.jpg"}, {"thebridge", "game/assets/brief-thebridge.jpg"},
       {"wisp-forest", "game/assets/brief-wisp-forest.jpg"}, {"wisp-forest-2", "game/assets/brief-wisp-forest.jpg"},
       {"wisp-forest-crossing", "game/assets/brief-wisp-forest.jpg"}, {"wisp-forest-crossing-boss", "game/assets/brief-wisp-forest.jpg"},
@@ -119,8 +128,20 @@ inline const char* classicBriefArt(const std::string& id) {
       {"cemiterio-esquecidos-mausoleu", "game/assets/Andar 4Cemitério dos Esquecidos — Mausoléu✕.jpg"},
       {"cemiterio-esquecidos-ruinas", "game/assets/Andar 5Cemitério dos Esquecidos — Ruínas Submersas.jpg"},
       {"frozen-tundra-crossing", "game/assets/brief-frozen-tundra.jpg"}};
+  auto matchId = [&](const char* k) {
+    if (id == k) return true;
+    if (id.starts_with(k)) {
+      const size_t kl = std::strlen(k);
+      if (kl < id.size()) {
+        for (size_t i = kl; i < id.size(); ++i)
+          if (!std::isdigit(static_cast<unsigned char>(id[i]))) return false;
+        return true;
+      }
+    }
+    return false;
+  };
   for (const auto& [k, v] : kArt)
-    if (id == k) return v;
+    if (matchId(k)) return v;
   return "";
 }
 
@@ -139,6 +160,13 @@ inline std::filesystem::path briefArtFile(const std::string& id, const std::file
       {"farol-topo", "content/briefings/brief-farol-topo-v01.png"},
       {"farol-poroes", "content/briefings/brief-farol-poroes-v01.png"},
       {"farol-gruta", "content/briefings/brief-farol-gruta-v01.png"},
+      {"watchtower-gate-floor", "content/briefings/brief-watchtower.jpg"},
+      {"watchtower-barracks", "content/briefings/brief-watchtower.jpg"},
+      {"watchtower-command", "content/briefings/brief-watchtower.jpg"},
+      {"watchtower-beacon", "content/briefings/brief-watchtower.jpg"},
+      {"watchtower-undercroft", "content/briefings/brief-watchtower-subsolos-v01.jpg"},
+      {"watchtower-prison", "content/briefings/brief-watchtower-subsolos-v01.jpg"},
+      {"watchtower", "content/briefings/brief-watchtower.jpg"},
       {"ashen-forest-crossing", "content/briefings/ashen-forest-brief-v02.jpg"},
       {"deep-ashen-forest", "content/briefings/ashen-forest-brief-v02.jpg"},
       {"deep-ashen-ravine", "content/briefings/ashen-forest-brief-v02.jpg"},
@@ -209,8 +237,20 @@ inline std::filesystem::path briefArtFile(const std::string& id, const std::file
       {"random-photographic-grassland", "content/briefings/brief-random-plains-hill-patrol-v01.jpg"},
       {"random-photographic-meadow", "content/briefings/brief-random-plains-sunken-ford-v01.jpg"},
       {"random-photographic-prairie", "content/briefings/brief-random-plains-windgrass-v01.jpg"}};
+  auto matchOwn = [&](const char* k) {
+    if (id == k) return true;
+    if (id.starts_with(k)) {
+      const size_t kl = std::strlen(k);
+      if (kl < id.size()) {
+        for (size_t i = kl; i < id.size(); ++i)
+          if (!std::isdigit(static_cast<unsigned char>(id[i]))) return false;
+        return true;
+      }
+    }
+    return false;
+  };
   for (const auto& [k, v] : kOwn)
-    if (id == k) return std::filesystem::path(v);
+    if (matchOwn(k)) return std::filesystem::path(v);
   if (id.rfind("random-", 0) == 0) return std::filesystem::path("content/briefings/random-encounter-briefing.jpg");
   const char* art = classicBriefArt(id);
   if (!*art) return {};

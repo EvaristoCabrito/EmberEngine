@@ -370,6 +370,20 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
       const float3 color = sky > 0.0 ? lerp(painting, skyBackground(f, pixel), sky) : painting;
       return float4(volumeOverBackground(f, color, pixel), 1.0);
     }
+    if (f.atmosphere != 0) {
+      const AtmosphereFrame a = loadAtmosphere(f);
+      const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);
+      const float elevation = asin(clamp(dir.y, -1.0, 1.0));
+      // When looking up towards the sky (elevation > 0), the painted backdrop shifts downwards with elevation
+      // (so it doesn't stay glued to the viewport) and smoothly blends into the celestial sky with moon and stars.
+      const float skyBlend = smoothstep(-0.01, 0.12, elevation);
+      float2 skyUV = uv;
+      skyUV.y += max(elevation, 0.0) * 0.75;
+      const float3 painting = gTextures[NonUniformResourceIndex(push.background)].SampleLevel(gSamplers[f.materialSampler], skyUV, 0).rgb;
+      const float3 sky = skyWithAir(f, pixel);
+      const float3 color = lerp(painting, sky, skyBlend);
+      return float4(volumeOverBackground(f, color, pixel), 1.0);
+    }
     // Atmosfera volumétrica v1: the fog lies between the camera and the painting (nothing when it is off).
     return float4(volumeOverBackground(f, gTextures[NonUniformResourceIndex(push.background)].SampleLevel(gSamplers[f.materialSampler], uv, 0).rgb, pixel), 1.0);
   }

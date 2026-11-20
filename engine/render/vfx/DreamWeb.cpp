@@ -17,7 +17,7 @@ constexpr float kPi = std::numbers::pi_v<float>;
 constexpr float kTau = 2.0f * kPi;
 // DEFAULT_WEB_OF_DREAMS_VFX_SETTINGS (Ember's), the thread a third thicker: the board is seen from further than Ember's tile view.
 constexpr float kRadius = 1, kFilamentThickness = 0.027f * 1.35f, kCurvature = 0.42f, kVerticalSpread = 1.05f, kDisplacement = 0.055f;
-constexpr int kTargetFilamentCount = 7, kNodeCount = 12, kSecondaryLightCount = 2;
+constexpr int kNodeCount = 12, kSecondaryLightCount = 2;
 constexpr float kPulseSpeed = 1.25f, kPulseBrightness = 2.8f, kNodeSize = 0.075f, kTightening = 0.3f;
 constexpr float kCentralLight = 12, kCentralLightRadius = 5.5f, kSecondaryLight = 6, kSecondaryLightRadius = 4.2f, kBindingFlash = 20, kSustained = 2.2f;
 constexpr uint32_t kSeed = 50827;
@@ -132,7 +132,8 @@ std::vector<VfxVertex> wrapStrands(int key) {
   uint32_t sum = static_cast<uint32_t>(key) * 131u + 7u;
   three::Mulberry r{kSeed + sum};
   std::vector<DreamWeb::Strand> strands;
-  const int wraps = std::min(3, std::max(1, static_cast<int>(jsRound(kTargetFilamentCount / 3.0f))));
+  // Calm and fine (the user, 2026-11-19: "too messy and too thick"): two coils and three loose threads, no heavy ribbons.
+  const int wraps = 2;
   for (int wrap = 0; wrap < wraps; ++wrap) {
     DreamWeb::Strand s;
     const float offset = static_cast<float>(wrap) / static_cast<float>(wraps) * kTau + r.next() * 0.28f;
@@ -144,10 +145,10 @@ std::vector<VfxVertex> wrapStrands(int key) {
     }
     s.delay = 0.12f + static_cast<float>(wrap) * 0.08f;
     s.phase = r.next() * 6.28f;
-    s.width = 1.25f;
+    s.width = 0.8f;
     strands.push_back(s);
   }
-  const int n = std::max(3, std::min(12, kTargetFilamentCount));
+  const int n = 3;
   for (int i = 0; i < n; ++i) {
     const float angle = static_cast<float>(i) / static_cast<float>(n) * kTau + r.next() * 0.24f;
     const float radius = 0.22f + r.next() * 0.18f;
@@ -161,10 +162,10 @@ std::vector<VfxVertex> wrapStrands(int key) {
     s.points = {a, glm::mix(a, over, 0.6f), over, far, end};
     s.delay = 0.52f + r.next() * 0.42f;
     s.phase = r.next() * 6.28f;
-    s.width = 0.72f + r.next() * 0.62f;
+    s.width = 0.6f + r.next() * 0.3f;
     strands.push_back(s);
   }
-  return tubeBundle(strands, kFilamentThickness * 1.2f, kTubeSegments, kTubeSides);
+  return tubeBundle(strands, kFilamentThickness * 0.62f, kTubeSegments, kTubeSides);
 }
 
 }  // namespace
@@ -273,10 +274,10 @@ void DreamWeb::buildShot(float now, VfxFrame& frame, std::vector<VfxLight>& ligh
     return a + delta * t + up * (arc * std::sin(kPi * t));
   };
   const float seed = std::fmod(std::abs(centre_.x * 3.1f + centre_.z * 1.7f), 6.0f);
-  constexpr int kStrands = 9, kRows = 16;
+  constexpr int kStrands = 5, kRows = 16;
   std::vector<VfxVertex> tubes;
   for (int i = 0; i < kStrands; ++i) {
-    const float lane = static_cast<float>(i) / 8.0f * 2.0f - 1.0f;
+    const float lane = static_cast<float>(i) / static_cast<float>(kStrands - 1) * 2.0f - 1.0f;
     std::vector<glm::vec3> centres;
     for (int row = 0; row <= kRows; ++row) {
       const float s = static_cast<float>(row) / kRows, x = -1.0f + 2.0f * s;
@@ -286,7 +287,7 @@ void DreamWeb::buildShot(float now, VfxFrame& frame, std::vector<VfxLight>& ligh
       const float depth = std::cos(x * 5.0f + static_cast<float>(i) * 1.7f + seed) * 0.5f * spread * 0.3f;
       centres.push_back(pathAt(s) + side * lateral + lift * depth);
     }
-    polylineTube(tubes, centres, kFilamentThickness * 1.5f, static_cast<float>(i) * 0.7f + 0.3f, kTubeSides);
+    polylineTube(tubes, centres, kFilamentThickness * 0.8f, static_cast<float>(i) * 0.7f + 0.3f, kTubeSides);
   }
   const glm::vec3 head = pathAt(1.0f);
   auto draw = [&](VfxMaterial material, uint32_t first, size_t count, glm::vec4 p0, glm::vec4 p1, glm::vec4 color, VfxBlend blend,
@@ -420,7 +421,7 @@ void DreamWeb::build(float now, const Camera&, VfxFrame& frame, std::vector<VfxL
     const glm::mat4 model = glm::translate(glm::mat4(1.0f), w.at.feet + glm::vec3(0.0f, w.at.height * 0.46f, 0.0f)) * toWorld *
                             glm::scale(glm::mat4(1.0f), glm::vec3(scale));
     draw(VfxMaterial::WebThread, frame.addVertices(w.strands), w.strands.size(), model, w.at.feet, {e, kPulseSpeed, formation, tightening},
-         {kDisplacement, 1.1f * (1.0f + bind * kPulseBrightness * 0.5f), 0.98f * live, 0}, {}, VfxBlend::Additive);
+         {kDisplacement * 0.5f, 0.75f * (1.0f + bind * kPulseBrightness * 0.2f), 0.9f * live, 0}, {}, VfxBlend::Additive);
   }
 
   // --- Lights: the central one forming, flashing on the bind, sustained; two travelling with the pulses ---

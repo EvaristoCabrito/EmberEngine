@@ -41,83 +41,82 @@ struct SpellEntry {
   bool skill;        // a weapon skill (Habilidades), else a spell (Magias)
 };
 
-// Every SpellKind of Ember (spell-catalog.ts), in its order.
+// Every SpellKind of Ember (spell-catalog.ts) and EmberEngine, in alphabetical order.
 inline const std::vector<SpellEntry>& allSpells() {
   static const std::vector<SpellEntry> kAll = {
-      {"fireball", "Bola de Fogo", false},
-      {"iceStorm", "Tempestade de Gelo", false},
-      {"frost", "Frost", false},
+      {"auraOfProtection", "Aura de Proteção", false},     // [ours]
       {"bless", "Bênção", false},
-      {"cureMinor", "Cura Menor", false},
-      {"cureWounds", "Cura Média", false},
-      {"cureLight", "Mãos Curativas", false},  // [ours] Ember: "Healing Hands"
-      {"cureDisease", "Curar Doença", false},
-      {"longShot", "Tiro Longo", true},
-      {"bloodyShot", "Tiro Sangrento", true},
-      {"provoke", "Provocar", true},
-      {"piercing", "Tiro Perfurante", true},
-      {"lightning", "Relâmpago", false},
-      {"lightningTier3", "Relâmpago Maior", false},  // [ours]
-      {"magicMissile", "Míssil Mágico", false},
-      {"magicMissileV2", "Míssil Mágico V2", false},  // [ours] the same spell's second Ember version
-      {"causticVenom", "Veneno Cáustico", false},
-      {"divineBolt", "Raio Divino", false},
-      {"minorVenom", "Veneno Menor", false},
-      {"doubleStrike", "Golpe Duplo", true},
-      {"cleave", "Cleave", true},
-      {"piercingThrust", "Investida Perfurante", true},
-      {"sweep", "Varredura", true},
-      {"trip", "Rasteira", true},
-      {"summonFamiliar", "Invocar Familiar", false},
-      {"phantasmalForce", "Força Fantasmagórica", false},
-      {"fantomForce", "Força Fantasma", false},
-      {"summonFamiliar2", "Familiar Maior", false},
-      {"summonFamiliar3", "Invocar Numen", false},
-      {"summonFamiliar4", "Familiar Radiante", false},
+      {"fireball", "Bola de Fogo", false},
+      {"primordialEmber", "Brasa Primordial", false},
+      {"chainLightning", "Cadeia de Raios", false},
       {"summonZombieDog", "Cão Zumbi", false},
       {"summonSwampDeer", "Cervo Azul do Pântano", false},
-      {"summonTelesm", "Invocar Telesm", false},
-      {"summonHypostasis", "Invocar Hipóstase", false},
-      {"lifeDrain", "Dreno de Vida", false},  // [ours]
-      {"webOfDreams", "Teia dos Sonhos", false},
-      {"warp", "Portal", false},
-      {"multiShot", "Tiro Múltiplo", true},
-      {"secondWind", "Segundo Fôlego", true},              // [ours]
-      {"auraOfProtection", "Aura de Proteção", false},     // [ours]
-      {"divineWrath", "Ira Divina", false},                // [ours]
-      {"shoulderSmash", "Ombrada", true},                  // [ours]
-      {"intimidatingPresence", "Presença Intimidadora", true},  // [ours]
-      {"stampede", "Estouro", true},                       // [ours]
       {"shock", "Choque", false},
-      {"bullRush", "Investida", true},
-      {"executionerStrike", "Golpe do Carrasco", true},
-      {"shieldBash", "Golpe de Escudo", true},
-      {"poisonBreath", "Sopro Venenoso", false},
-      {"tendrilSwipe", "Golpe de Tentáculo", true},  // [ours]
-      {"burningHands", "Mãos Flamejantes", false},
-      {"ignite", "Ignite", false},  // [ours] the monsters' T2 fire, the Elementalista's extra spell (2026-11-17)
-      {"turnUndead", "Expulsar Mortos-Vivos", false},
-      {"createFoodAndWater", "Criar Comida e Água", false},
-      // EmberEngine's own: the Bruxo's and the Elementalista's T6-T10 (world/Spells.cpp kEmberSpells)
-      {"markOfRuin", "Marca da Ruína", false},
-      {"creepingPlague", "Praga Rastejante", false},
-      {"shroudOfShadows", "Mortalha de Sombras", false},
-      {"hemorrhage", "Hemorragia", false},
-      {"profaneSilence", "Silêncio Profano", false},
-      {"blackPestilence", "Peste Negra", false},
-      {"curseOfDecay", "Maldição da Decadência", false},
+      {"cleave", "Cleave", true},
       {"soulHarvest", "Colheita de Almas", false},
-      {"devouringVoid", "Vazio Devorador", false},
       {"pillarOfFlame", "Coluna de Fogo", false},
-      {"iceLance", "Lança de Gelo", false},
-      {"thunderstorm", "Tempestade Elétrica", false},
-      {"meteor", "Meteoro", false},
-      {"absoluteZero", "Zero Absoluto", false},
-      {"chainLightning", "Cadeia de Raios", false},
+      {"createFoodAndWater", "Criar Comida e Água", false},
+      {"cureWounds", "Cura Média", false},
+      {"cureMinor", "Cura Menor", false},
+      {"cureDisease", "Curar Doença", false},
+      {"lifeDrain", "Dreno de Vida", false},                // [ours]
       {"eruption", "Erupção", false},
-      {"glacialGale", "Vendaval Glacial", false},
+      {"stampede", "Estouro", true},                       // [ours]
+      {"turnUndead", "Expulsar Mortos-Vivos", false},
+      {"summonFamiliar2", "Familiar Maior", false},
+      {"summonFamiliar4", "Familiar Radiante", false},
+      {"fantomForce", "Força Fantasma", false},
+      {"phantasmalForce", "Força Fantasmagórica", false},
+      {"frost", "Frost", false},
       {"wrathOfTheSkies", "Fúria dos Céus", false},
-      {"primordialEmber", "Brasa Primordial", false},
+      {"shieldBash", "Golpe de Escudo", true},
+      {"tendrilSwipe", "Golpe de Tentáculo", true},        // [ours]
+      {"executionerStrike", "Golpe do Carrasco", true},
+      {"doubleStrike", "Golpe Duplo", true},
+      {"hemorrhage", "Hemorragia", false},
+      {"ignite", "Ignite", false},  // [ours] the monsters' T2 fire, the Elementalista's extra spell (2026-11-17)
+      {"bullRush", "Investida", true},
+      {"piercingThrust", "Investida Perfurante", true},
+      {"summonFamiliar", "Invocar Familiar", false},
+      {"summonHypostasis", "Invocar Hipóstase", false},
+      {"summonFamiliar3", "Invocar Numen", false},
+      {"summonTelesm", "Invocar Telesm", false},
+      {"divineWrath", "Ira Divina", false},                // [ours]
+      {"iceLance", "Lança de Gelo", false},
+      {"curseOfDecay", "Maldição da Decadência", false},
+      {"cureLight", "Mãos Curativas", false},              // [ours] Ember: "Healing Hands"
+      {"burningHands", "Mãos Flamejantes", false},
+      {"markOfRuin", "Marca da Ruína", false},
+      {"meteor", "Meteoro", false},
+      {"magicMissile", "Míssil Mágico", false},
+      {"magicMissileV2", "Míssil Mágico V2", false},        // [ours] the same spell's second Ember version
+      {"shroudOfShadows", "Mortalha de Sombras", false},
+      {"shoulderSmash", "Ombrada", true},                  // [ours]
+      {"blackPestilence", "Peste Negra", false},
+      {"warp", "Portal", false},
+      {"creepingPlague", "Praga Rastejante", false},
+      {"intimidatingPresence", "Presença Intimidadora", true},  // [ours]
+      {"provoke", "Provocar", true},
+      {"divineBolt", "Raio Divino", false},
+      {"trip", "Rasteira", true},
+      {"lightning", "Relâmpago", false},
+      {"lightningTier3", "Relâmpago Maior", false},        // [ours]
+      {"secondWind", "Segundo Fôlego", true},              // [ours]
+      {"profaneSilence", "Silêncio Profano", false},
+      {"poisonBreath", "Sopro Venenoso", false},
+      {"webOfDreams", "Teia dos Sonhos", false},
+      {"iceStorm", "Tempestade de Gelo", false},
+      {"thunderstorm", "Tempestade Elétrica", false},
+      {"longShot", "Tiro Longo", true},
+      {"multiShot", "Tiro Múltiplo", true},
+      {"piercing", "Tiro Perfurante", true},
+      {"bloodyShot", "Tiro Sangrento", true},
+      {"sweep", "Varredura", true},
+      {"devouringVoid", "Vazio Devorador", false},
+      {"glacialGale", "Vendaval Glacial", false},
+      {"causticVenom", "Veneno Cáustico", false},
+      {"minorVenom", "Veneno Menor", false},
+      {"absoluteZero", "Zero Absoluto", false},
   };
   return kAll;
 }

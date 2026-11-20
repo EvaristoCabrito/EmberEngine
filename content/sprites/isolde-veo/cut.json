@@ -402,9 +402,9 @@
    "video": "Attachments/Isolde/IsoldeStaffCounter.mp4",
    "first": 18,
    "last": 112,
-   "impactFrame": 42,
+   "impactFrame": 73,
    "mode": "once",
-   "why": "the user, 2026-10-24: her counter when the foe is beside her; she raises the staff at ~0.8 s, the thrust lands at frame 42 (the staff fully out), a spin, at rest by ~4.5 s",
+   "why": "the user, 2026-10-24: her counter when the foe is beside her; the staff swing lands at clip frame 55 (video frame 73), a spin, at rest by ~4.5 s",
    "bodyAt": -0.226
   },
   {

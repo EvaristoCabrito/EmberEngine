@@ -54,6 +54,8 @@ struct GamePrefs {
   // before). Read when a map opens; MeshScene streams within it, the characters' sprites served first. Saved as "meshTextures"; a
   // file with only the old "textures3d" keeps its look ("media" was the cooked size = Alta, "leve" one size under = Média).
   std::string textures3d = "alta";
+  // Opções > Gráficos / Jogo > Câmera cinematográfica (actionCamera): moves camera during combat actions and enemy turns.
+  bool cinematicCamera = true;
 
   static std::filesystem::path path() {
     const char* base = std::getenv("LOCALAPPDATA");
@@ -87,6 +89,7 @@ struct GamePrefs {
     if (enemyArt == "alta" || enemyArt == "media" || enemyArt == "leve" || enemyArt == "extra") p.enemies = enemyArt;
     else p.enemies = p.characters == "extra" ? "leve" : p.characters;
     p.partyLight = j.value("partyLight", p.partyLight);
+    p.cinematicCamera = j.value("cinematicCamera", p.cinematicCamera);
     const std::string tex = j.value("meshTextures", std::string());
     if (tex == "alta" || tex == "media" || tex == "leve" || tex == "extra") p.textures3d = tex;
     else if (j.value("textures3d", std::string()) == "leve") p.textures3d = "media";
@@ -97,7 +100,8 @@ struct GamePrefs {
                               {"sfx", sfx},               {"cutscene", cutscene},               {"uiLanguage", uiLanguage},
                               {"dialogueLanguage", dialogueLanguage}, {"subtitleLanguage", subtitleLanguage},
                               {"subtitles", subtitles},   {"dialogueScale", dialogueScale},     {"characterArt", characters},
-                              {"summonArt", summons},     {"enemyArt", enemies},                {"partyLight", partyLight}, {"meshTextures", textures3d}};
+                              {"summonArt", summons},     {"enemyArt", enemies},                {"partyLight", partyLight}, {"meshTextures", textures3d},
+                              {"cinematicCamera", cinematicCamera}};
     std::error_code ec;
     std::filesystem::create_directories(path().parent_path(), ec);
     const std::filesystem::path tmp = path().string() + ".tmp";

@@ -52,7 +52,8 @@
   "webOfDreams": 0
  },
  "heroes": {
-  "fireball": 1,
-  "iceStorm": 2
+  "fireball": 2,
+  "iceStorm": 2,
+  "shock": 3
  }
 }

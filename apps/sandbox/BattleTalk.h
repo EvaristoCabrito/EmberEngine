@@ -109,6 +109,13 @@ struct BattleTalk {
       open(map, "outro", "outroEnabled");
     }
     if (dialog) {
+      if (map.actionCameraOn()) {
+        const std::string speaker = dialog->currentSpeaker();
+        if (!speaker.empty()) {
+          const int ui = map.findUnitByNameOrId(speaker);
+          if (ui >= 0) map.frameSpeaker(static_cast<size_t>(ui));
+        }
+      }
       const bool closed = dialog->draw(size, [this, &map](const ember::Json& reply) {
         if (!reply.contains("affinity")) return;
         ember::Json save = record ? record->activeSave() : ember::Json::object();  // Modo teste records nothing, but the log tells
@@ -116,7 +123,10 @@ struct BattleTalk {
         if (!line.empty()) map.battleLog(line);
         if (record) record->saveActive(std::move(save));
       });
-      if (closed) dialog.reset();
+      if (closed) {
+        dialog.reset();
+        if (map.actionCameraOn()) map.endShot(true);
+      }
     } else if (won && !epilogueDone) {
       epilogueDone = true;
       if (mission == "templo" || mission == "portao")

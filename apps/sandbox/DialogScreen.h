@@ -35,6 +35,12 @@ class DialogScreen {
   // Cutscenes can advance with a click anywhere, without forcing the player to hit the small button.
   void requestAdvanceFromAnywhere() { advanceRequested_ = true; }
 
+  // The id/name of the unit currently speaking, if any.
+  std::string currentSpeaker() const {
+    const ember::Json* l = find(line_);
+    return l ? l->value("speaker", "") : "";
+  }
+
   // Draws it over everything; true once it closed. `onReply` gets each chosen reply (its affinity, if any).
   bool draw(ImVec2 size, const std::function<void(const ember::Json&)>& onReply = {}, std::optional<ImVec2> cutsceneSpeaker = {},
             const std::vector<ImVec2>& cutsceneHeads = {}) {

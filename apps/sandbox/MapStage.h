@@ -290,7 +290,58 @@ struct HeroOutcome {
   std::vector<std::pair<std::string, double>> skillGains;
 };
 
+struct CameraConfig {
+  float minDistance = 3.0f;
+  float fitDistanceMultiplier = 1.15f;
+  float marginHexes = 2.0f;
+  float maxLookUpAngleDegrees = 60.0f;
+
+  float meleePitch = 0.2094f;     // 12 deg
+  float rangedPitch = 0.2443f;    // 14 deg
+  float areaPitch = 0.5236f;      // 30 deg
+  float casterPitch = 0.2793f;    // 16 deg
+  float shoulderAngle = 0.6109f;  // 35 deg
+  float pushInRatio = 0.92f;
+  float deathHoldSeconds = 0.5f;
+  float summonHoldSeconds = 1.6f;
+  float enemyTurnLeadAhead = 1.5f;
+  float impactShakeStrength = 0.25f;
+  float impactShakeSeconds = 0.15f;
+
+  static CameraConfig load(const std::filesystem::path& path = "content/camera.json") {
+    CameraConfig cfg;
+    std::ifstream in(path, std::ios::binary);
+    if (!in) return cfg;
+    const nlohmann::json j = nlohmann::json::parse(in, nullptr, false);
+    if (!j.is_object()) return cfg;
+    if (j.contains("limits") && j["limits"].is_object()) {
+      const auto& lim = j["limits"];
+      cfg.minDistance = lim.value("minDistance", cfg.minDistance);
+      cfg.fitDistanceMultiplier = lim.value("fitDistanceMultiplier", cfg.fitDistanceMultiplier);
+      cfg.marginHexes = lim.value("marginHexes", cfg.marginHexes);
+      cfg.maxLookUpAngleDegrees = lim.value("maxLookUpAngleDegrees", cfg.maxLookUpAngleDegrees);
+    }
+    if (j.contains("framing") && j["framing"].is_object()) {
+      const auto& fr = j["framing"];
+      if (fr.contains("meleePitch")) cfg.meleePitch = glm::radians(fr.value("meleePitch", 12.0f));
+      if (fr.contains("rangedPitch")) cfg.rangedPitch = glm::radians(fr.value("rangedPitch", 14.0f));
+      if (fr.contains("areaPitch")) cfg.areaPitch = glm::radians(fr.value("areaPitch", 30.0f));
+      if (fr.contains("casterPitch")) cfg.casterPitch = glm::radians(fr.value("casterPitch", 16.0f));
+      if (fr.contains("shoulderAngle")) cfg.shoulderAngle = glm::radians(fr.value("shoulderAngle", 35.0f));
+      cfg.pushInRatio = fr.value("pushInRatio", cfg.pushInRatio);
+      cfg.deathHoldSeconds = fr.value("deathHoldSeconds", cfg.deathHoldSeconds);
+      cfg.summonHoldSeconds = fr.value("summonHoldSeconds", cfg.summonHoldSeconds);
+      cfg.enemyTurnLeadAhead = fr.value("enemyTurnLeadAhead", cfg.enemyTurnLeadAhead);
+      cfg.impactShakeStrength = fr.value("impactShakeStrength", cfg.impactShakeStrength);
+      cfg.impactShakeSeconds = fr.value("impactShakeSeconds", cfg.impactShakeSeconds);
+    }
+    return cfg;
+  }
+};
+
 class MapStage final : public Stage {
+  friend struct BattleTalk;
+  friend struct NpcTalk;
  public:
   MapStage(VulkanContext& context, Renderer& renderer, AssetManager& assets, JobSystem& jobs, const MapStageOptions& options)
       : renderer_(renderer),
@@ -586,14 +637,15 @@ class MapStage final : public Stage {
       // for a small board left it a dot on the screen. The farthest zoom is 2.2 x the distance that frames the whole board (aldeia's
       // 112.42), never beyond aldeia's.
       const float fitDistance = std::max(boardWidth_ / (2 * tanHalf * aspect), boardDepth_ * 1.35f) * 1.05f;
-      maxDistance_ = std::min(kMaxDistance, std::max(2.2f * fitDistance, kMinDistance * 4.0f));      distance_ = std::min(maxDistance_, fitDistance) / options_.zoom;
+      maxDistance_ = std::max(cameraConfig_.fitDistanceMultiplier * fitDistance, cameraConfig_.minDistance * 2.0f);
+      distance_ = std::min(maxDistance_, fitDistance) / options_.zoom;
       // Every map opens at the same zoom, over the party (the user, 2026-10-19: "esse deve ser o zoom padrão em que todos os mapas
       // se iniciam com a camera em cima do grupo, caso estiverem separados na maior concentração de membros"). Captures that frame
       // the board themselves (--offset) keep the whole-board view.
       if (options_.offset.x == 0.0f && options_.offset.y == 0.0f)
         if (const std::optional<glm::vec3> focus = partyFocus()) {
           target_ = *focus;
-          distance_ = std::clamp(kStartDistance / options_.zoom, kMinDistance, maxDistance_);
+          distance_ = std::clamp(kStartDistance / options_.zoom, cameraConfig_.minDistance, maxDistance_);
           clampGoal();
         }
     }
@@ -709,12 +761,22 @@ class MapStage final : public Stage {
     // The action camera's lift raises the eye and the look point together (the figures' chests at the centre of a close shot).
     const float flatDistance = cam_.distance * std::tan(glm::radians(kFov * 0.5f)) / std::tan(glm::radians(kFlatFov * 0.5f));
     const OrbitView shown = shakenView();  // a scene's "shake" pushes the drawn view about; the camera itself stays put
+    glm::vec3 eye = eyeOf(eyeView(shown)) + glm::vec3(0.0f, shotLift_, 0.0f);
+    float groundClr = clearanceAt(eye.x, eye.z);
+    for (const PieceBox& b : pieceBoxes_) {
+      if (std::abs(eye.x - b.x) <= b.radius && std::abs(eye.z - b.z) <= b.radius) {
+        groundClr = std::max(groundClr, b.top);
+      }
+    }
+    eye.y = std::max(eye.y, groundClr + kEyeClearance);
+    if (backdropFit_.ceilingHeight > 0.0f) {
+      eye.y = std::min(eye.y, backdropFit_.ceilingHeight - kEyeClearance);
+    }
     Camera camera = flat_ ? Camera::lookAt(shown.target + glm::vec3(0.0f, flatDistance, 0.0f), shown.target, glm::radians(kFlatFov), aspect,
                                            std::max(kNear, flatDistance - 200.0f), {0.0f, 0.0f, -1.0f})
                           // the camera goes down with the board the room lowered, by exactly as much (the user, 2026-10-25: "sempre perto
                           // do tabuleiro se o tabuleiro desceu ela desce exatamente na mesma proporção"): no roomDrop on the eye or the look
-                          : Camera::lookAt(eyeOf(eyeView(shown)) + glm::vec3(0.0f, shotLift_, 0.0f),
-                                           lookTarget(shown) + glm::vec3(0.0f, shotLift_, 0.0f), glm::radians(kFov), aspect, kNear);
+                          : Camera::lookAt(eye, lookTarget(shown) + glm::vec3(0.0f, shotLift_, 0.0f), glm::radians(kFov), aspect, kNear);
     lastCamera_ = camera;
     meshes_.setRegionView(camera.viewProjection());
     meshes_.setView(camera.position, static_cast<float>(size.height) / (2.0f * std::tan(glm::radians((flat_ ? kFlatFov : kFov) * 0.5f))));
@@ -1558,6 +1620,17 @@ class MapStage final : public Stage {
       else titleRequested_ = true;
       return;
     }
+    if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && (e.key.scancode == SDL_SCANCODE_SPACE || e.key.key == SDLK_SPACE)) {
+      if (shot_ && actionCameraOn()) {
+        skipActionShot();
+        return;
+      }
+    }
+    if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && (e.button.button == SDL_BUTTON_LEFT || e.button.button == SDL_BUTTON_RIGHT)) {
+      if (shot_ && actionCameraOn() && !shot_->keys.empty() && shot_->key < shot_->keys.size()) {
+        skipActionShot();
+      }
+    }
     if (e.type == SDL_EVENT_MOUSE_MOTION) mouse_ = {e.motion.x, e.motion.y}, mouseWindow_ = e.motion.windowID;
     if (leaveConfirmOpen_ && (e.type == SDL_EVENT_KEY_DOWN || e.type == SDL_EVENT_MOUSE_BUTTON_DOWN)) {  // only the panel's buttons
       leftDown_.reset(), endPan();
@@ -1635,7 +1708,7 @@ class MapStage final : public Stage {
       if (a && b) target_ += glm::vec3{a->x - b->x, 0.0f, a->z - b->z}, cam_.target += glm::vec3{a->x - b->x, 0.0f, a->z - b->z};
     }
     if (e.type == SDL_EVENT_MOUSE_WHEEL && e.wheel.y != 0.0f) {
-      const float next = std::clamp(distance_ * std::pow(kZoomStep, e.wheel.y), kMinDistance, maxDistance_);
+      const float next = std::clamp(distance_ * std::pow(kZoomStep, e.wheel.y), cameraConfig_.minDistance, maxDistance_);
       // Toward the cursor: the pivot moves to the cursor's ground point by the share of the distance zoomed.
       if (const std::optional<glm::vec3> p = groundUnder(e.wheel.windowID, e.wheel.mouse_x, e.wheel.mouse_y)) {
         const float share = 1.0f - next / distance_;
@@ -1678,10 +1751,9 @@ class MapStage final : public Stage {
   // it). Tilt and zoom stay in range.
   void clampGoal() {
     pitch_ = std::clamp(pitch_, minPitch(), kMaxPitch);
-    distance_ = std::clamp(distance_, kMinDistance, maxDistance_);
-    // The pivot stays over the board or at most kPivotMarginHexes past its edge (the user, 2026-10-25: "it has always been 3 to 5
-    // hexes away", "não pode existir nenhum canto do tabuleiro invisível"): every corner can still be brought to the screen's centre.
-    const float margin = kPivotMarginHexes * std::sqrt(3.0f);  // a hex column is sqrt(3) wide
+    distance_ = std::clamp(distance_, cameraConfig_.minDistance, maxDistance_);
+    // The pivot stays over the board or at most cameraConfig_.marginHexes past its edge
+    const float margin = cameraConfig_.marginHexes * std::sqrt(3.0f);  // a hex column is sqrt(3) wide
     target_.x = std::clamp(target_.x, boardCenter_.x - boardWidth_ * 0.5f - margin, boardCenter_.x + boardWidth_ * 0.5f + margin);
     target_.z = std::clamp(target_.z, boardCenter_.z - boardDepth_ * 0.5f - margin, boardCenter_.z + boardDepth_ * 0.5f + margin);
     distance_ = std::min(distance_, solidGroundDistance());
@@ -1721,8 +1793,8 @@ class MapStage final : public Stage {
       return std::atan2(e, h) >= minDepression && std::sqrt(e * e + h * h) <= maxRay;
     };
     if (solid(maxDistance_)) return maxDistance_;
-    if (!solid(kMinDistance)) return kMinDistance;
-    float lo = kMinDistance, hi = maxDistance_;
+    if (!solid(cameraConfig_.minDistance)) return cameraConfig_.minDistance;
+    float lo = cameraConfig_.minDistance, hi = maxDistance_;
     for (int i = 0; i < 24; ++i) {
       const float mid = 0.5f * (lo + hi);
       (solid(mid) ? lo : hi) = mid;
@@ -2586,8 +2658,7 @@ class MapStage final : public Stage {
   void previewMenu(const std::string& which) {
     if (which == "menu") pauseOpen_ = true;
     else if (which == "options") menuOptions_.open();
-    else if (which == "log") showLog_ = true, logJustOpened_ = true, logKeep_ = true;  // a capture: the turns the script plays do not close it
-    else if (which == "fulllog") logFull_ = true, logFullJustOpened_ = true;
+    else if (which == "log" || which == "fulllog") logFull_ = true, logFullJustOpened_ = true;
     else if (which == "quests") questLog_ = true;
     else if (which == "hotbar" && battle_) {  // the first hero's
       for (size_t i = 0; i < battle_->units().size() && !hotbarEdit_; ++i)
@@ -4578,12 +4649,14 @@ class MapStage final : public Stage {
       // Ember UnitActor.drawnReversed: Kael Final's idle is drawn turned left, but his walk and attacks face right
       // (and the old Kael's attacks), so those poses are not reversed: reading his idle for them walked him backwards.
       static const std::unordered_set<std::string> kAttackPoses = {"attack", "attackLeft", "attack2", "attack2Left", "attackShort",
-                                                                   "cast", "castLeft", "heal", "counter"};
+                                                                   "cast", "castLeft", "heal", "counter", "counterStaff"};
       const bool attackPose = kAttackPoses.contains(shown);
       const bool drawnRight = (u.sprite == "kaelFinal" && (walking || attackPose)) || (u.sprite == "defaultWarrior" && attackPose);
       // The Besteiro Salteador's shot (BrigandCrossbowman atk) is drawn aiming left while his idle stands as drawn right: read as his
       // idle, he shot away from his target (the user, 2026-10-28: "ele não está virando para o lado onde atira").
-      const bool drawnLeft = u.sprite == "BrigandCrossbowman" && shown == "attack";
+      // Isolde's counter-staff video strikes left while her idle faces right: read as her idle, she struck away from her target.
+      const bool isoldeStaff = (u.sprite == "isolde-veo" || (entry && entry->key == "isolde")) && shown == "counterStaff";
+      const bool drawnLeft = (u.sprite == "BrigandCrossbowman" && shown == "attack") || isoldeStaff;
       const bool reversed = drawnLeft || (unitReversed_[ui] != 0 && !drawnRight);
       const bool mirror = !leftCut && ((unitFacing_[ui] == -1) != reversed);
       // Tática (Ember UnitActor.update with flatTop): flat over its own row's cards by half a row step, no shadow.
@@ -6815,6 +6888,12 @@ class MapStage final : public Stage {
     result_ = battle_->result();
     resultAt_ = now_;
     select(-1);
+    if (actionCameraOn()) {
+      const glm::vec3 center = partyFocus().value_or(boardCenter_);
+      ActionShot& s = openShot();
+      s.keys.push_back({now_, center, yaw_ + 0.35f, cameraConfig_.meleePitch, std::clamp(distance_ * 0.9f, cameraConfig_.minDistance, maxDistance_), 0.5f});
+      s.holdUntil = now_ + kResultDelay;
+    }
     if (result_ == "victory") queueVictoryScenes();
   }
   void updateTurns() {
@@ -6885,6 +6964,12 @@ class MapStage final : public Stage {
     if (result_ = battle_->result(); !result_.empty()) {
       resultAt_ = now_;
       select(-1);
+      if (actionCameraOn()) {
+        const glm::vec3 center = partyFocus().value_or(boardCenter_);
+        ActionShot& s = openShot();
+        s.keys.push_back({now_, center, yaw_ + 0.35f, cameraConfig_.meleePitch, std::clamp(distance_ * 0.9f, cameraConfig_.minDistance, maxDistance_), 0.5f});
+        s.holdUntil = now_ + kResultDelay;
+      }
       if (result_ == "victory") queueVictoryScenes();  // triggers.json onVictory: played before the result screen
       return;
     }
@@ -6924,6 +7009,13 @@ class MapStage final : public Stage {
       // A Meteoro that fell: the rock takes 0.9 s to land; the numbers wait for it.
       const std::vector<ember::Battle::Zone> fallen = battle_->takeLanded();
       for (const ember::Battle::Zone& z : fallen) spellFx_.meteorFall(zoneSpots(z), now_, now_ + 0.9f);
+      if (!fallen.empty() && actionCameraOn()) {
+        std::vector<glm::vec3> pts;
+        for (const auto& sp : zoneSpots(fallen.front())) pts.push_back(sp.feet);
+        ActionShot& s = openShot();
+        areaShot(s, pts.empty() ? target_ : pts.front(), pts, now_ + 0.9f);
+        s.holdUntil = now_ + 1.2f / actionRate();
+      }
       if (fallen.empty()) showEffects(fx);
       else pendingFx_.push_back({now_ + 0.9f, fx});
       if (!battle_->units()[static_cast<size_t>(active)].alive) {
@@ -10661,15 +10753,13 @@ class MapStage final : public Stage {
     if (!exchange_) return;
     Exchange& x = *exchange_;
     const ember::BattleStep& s = x.steps[x.step];
-    // The action camera turns after the step began (planShot), which can swap which side of the screen the target is on: the
-    // striker (and the struck) keep facing each other at the camera as it is now (the user, 2026-10-30: "make sure Kael and
-    // Aldric face the enemy when they ATT").
-    if (stepFace_[0] >= 0 && stepFace_[1] >= 0) {
-      faceToward(static_cast<size_t>(stepFace_[0]), static_cast<size_t>(stepFace_[1]));
-      if (stepFace_[2]) faceToward(static_cast<size_t>(stepFace_[1]), static_cast<size_t>(stepFace_[0]));
-    }
     if (!x.landed && now_ >= x.impact) {
       x.landed = true;
+      if (actionCameraOn()) {
+        fx_.shakeAt = now_;
+        fx_.shakeSeconds = cameraConfig_.impactShakeSeconds;
+        fx_.shakeStrength = cameraConfig_.impactShakeStrength;
+      }
       // stepCombat's strike cue (Kael's long swing) and emitMissileFx's arrow release (Tiro Longo).
       if (s.type == ember::BattleStep::Type::Combat) playCues(sounds(x.counter ? s.def : s.att, "strike"));
       else if (s.kind == "longShot") playCues(sounds(s.att, "release"));
@@ -10882,6 +10972,7 @@ class MapStage final : public Stage {
   // kShotYawRange of the player's turn (never round the back of a figure), and the eye keeps its clearance over the ground
   // and the 3D pieces. Tática has no shots. An enemy on a hex the fog hides gets no shot (nothing of the fog changes).
   // Timings scale with the battle's Velocidade (actionRate).
+ public:
   struct ShotKey {
     float at = 0.0f;  // scene clock when this framing becomes the goal
     glm::vec3 target{0.0f};
@@ -10899,6 +10990,7 @@ class MapStage final : public Stage {
     float wroteYaw = 0.0f, wrotePitch = 0.0f, wroteDistance = 0.0f;
     bool written = false;
   };
+  CameraConfig cameraConfig_ = CameraConfig::load();
   std::optional<ActionShot> shot_;
   float shotLift_ = 0.0f, shotLiftGoal_ = 0.0f;  // the frame's lift (eye and look point together), gliding like the rest
   static constexpr float kShotShoulder = 0.6109f;   // 35 deg: over the shoulder, the eye this far off the line between the two
@@ -10906,10 +10998,14 @@ class MapStage final : public Stage {
   static constexpr float kShotMeleePitch = 0.2094f, kShotRangedPitch = 0.2443f, kShotAreaPitch = 0.5236f, kShotCasterPitch = 0.2793f;  // 12 / 14 / 30 / 16 deg
   static constexpr float kShotFill = 0.55f;      // a close shot: the taller card fills this share of the screen's height
   static constexpr float kShotPushIn = 0.92f;    // the impact's push-in (share of the distance)
-  static constexpr float kShotDeathHold = 1.5f;  // seconds held on the fallen, at the normal pace
+  static constexpr float kShotDeathHold = 0.5f;  // seconds held on the fallen, at the normal pace
   static constexpr float kShotSummonHold = 1.6f;  // seconds held on a familiar after it appears (its summon animation), at the normal pace
 
-  bool actionCameraOn() const { return actionCamera_ == 1 && !flat_ && scene_ && battle_ && board_; }
+  bool actionCameraOn() const {
+    if (measuring_ || !options_.battleScript.empty()) return false;
+    if (!gamePrefs().cinematicCamera || actionCamera_ != 1) return false;
+    return !flat_ && scene_ && battle_ && board_;
+  }
   // A unit standing on a hex the player sees (without fog of war: everyone).
   bool unitOnLitHex(size_t ui) const {
     if (!fog_ || noFog_) return true;
@@ -10945,7 +11041,7 @@ class MapStage final : public Stage {
     const float tanHalf = std::tan(glm::radians(kFov * 0.5f));
     const float byHeight = std::max(cardHeight, 1.2f) / (kShotFill * 2.0f * tanHalf);
     const float byWidth = separation / (0.6f * std::max(aspect_, 1.0f) * tanHalf);
-    return std::clamp(std::max(byHeight, byWidth), kMinDistance, maxDistance_);
+    return std::clamp(std::max(byHeight, byWidth), cameraConfig_.minDistance, maxDistance_);
   }
   // Over the striker's shoulder: the pivot between the two bodies, low, both filling the frame; the push-in at the impact.
   void twoShot(ActionShot& s, size_t striker, size_t target, float impactAt, float pitch) {
@@ -10953,9 +11049,9 @@ class MapStage final : public Stage {
     const float h = std::max(cardHeightOf(a), cardHeightOf(b));
     const glm::vec3 mid = (a.feet + b.feet) * 0.5f;
     const float d = closeDistance(h, glm::length(glm::vec2(a.feet.x - b.feet.x, a.feet.z - b.feet.z)));
-    const float yaw = shotYaw(a.feet, b.feet, kShotShoulder);
+    const float yaw = shotYaw(a.feet, b.feet, cameraConfig_.shoulderAngle);
     s.keys.push_back({now_, mid, yaw, pitch, d, h * 0.38f});
-    s.keys.push_back({impactAt, mid, yaw, pitch, d * kShotPushIn, h * 0.38f});
+    s.keys.push_back({impactAt, mid, yaw, pitch, d * cameraConfig_.pushInRatio, h * 0.38f});
   }
   // A shot at range: behind the shooter looking down the line, then the pivot on the target as the arrow / bolt lands.
   void rangedShot(ActionShot& s, size_t striker, size_t target, float impactAt) {
@@ -10965,8 +11061,8 @@ class MapStage final : public Stage {
     const glm::vec3 toward = b.feet - a.feet;
     const float len = glm::length(glm::vec2(toward.x, toward.z));
     const glm::vec3 start = a.feet + (len > 1e-3f ? toward * (std::min(1.5f, 0.25f * len) / len) : glm::vec3(0.0f));
-    s.keys.push_back({now_, start, yaw, kShotRangedPitch, closeDistance(ha, 0.0f) * 1.15f, ha * 0.4f});
-    s.keys.push_back({std::max(now_, impactAt - 0.2f / actionRate()), b.feet, yaw, kShotMeleePitch, closeDistance(hb, 0.0f), hb * 0.38f});
+    s.keys.push_back({now_, start, yaw, cameraConfig_.rangedPitch, closeDistance(ha, 0.0f) * 1.15f, ha * 0.4f});
+    s.keys.push_back({std::max(now_, impactAt - 0.2f / actionRate()), b.feet, yaw, cameraConfig_.meleePitch, closeDistance(hb, 0.0f), hb * 0.38f});
   }
   // Wider and higher, centred on the points (an area's hexes and the bodies in it), fitting their spread; the turn from the caster.
   void areaShot(ActionShot& s, glm::vec3 casterAt, std::vector<glm::vec3> pts, float impactAt) {
@@ -10978,19 +11074,19 @@ class MapStage final : public Stage {
     for (const glm::vec3& p : pts) r = std::max(r, glm::length(glm::vec2(p.x - c.x, p.z - c.z)));
     r += 1.0f;  // a hex's width round the edge
     const float tanHalf = std::tan(glm::radians(kFov * 0.5f));
-    const float d = std::clamp(std::max({(r * std::sin(kShotAreaPitch) + 2.5f) / (0.8f * tanHalf), r / (0.8f * std::max(aspect_, 1.0f) * tanHalf), 9.0f}),
-                               kMinDistance, maxDistance_);
+    const float d = std::clamp(std::max({(r * std::sin(cameraConfig_.areaPitch) + 2.5f) / (0.8f * tanHalf), r / (0.8f * std::max(aspect_, 1.0f) * tanHalf), 9.0f}),
+                               cameraConfig_.minDistance, maxDistance_);
     const float yaw = shotYaw(casterAt, c, 0.3491f);  // 20 deg
-    s.keys.push_back({now_, c, yaw, kShotAreaPitch, d, 0.8f});
-    s.keys.push_back({impactAt, c, yaw, kShotAreaPitch, d * 0.95f, 0.8f});
+    s.keys.push_back({now_, c, yaw, cameraConfig_.areaPitch, d, 0.8f});
+    s.keys.push_back({impactAt, c, yaw, cameraConfig_.areaPitch, d * 0.95f, 0.8f});
   }
   // Close on the caster (a spell on oneself), or the two of them when it is cast on an ally.
   void casterShot(ActionShot& s, size_t caster, int ally, float impactAt) {
-    if (ally >= 0 && static_cast<size_t>(ally) != caster) return twoShot(s, caster, static_cast<size_t>(ally), impactAt, kShotCasterPitch);
+    if (ally >= 0 && static_cast<size_t>(ally) != caster) return twoShot(s, caster, static_cast<size_t>(ally), impactAt, cameraConfig_.casterPitch);
     const SpellEffects::Spot a = unitSpot(caster);
     const float h = cardHeightOf(a), d = closeDistance(h, 0.0f), yaw = shotYaw(a.feet, a.feet, 0.0f);
-    s.keys.push_back({now_, a.feet, yaw, kShotCasterPitch, d, h * 0.4f});
-    s.keys.push_back({impactAt, a.feet, yaw, kShotCasterPitch, d * kShotPushIn, h * 0.4f});
+    s.keys.push_back({now_, a.feet, yaw, cameraConfig_.casterPitch, d, h * 0.4f});
+    s.keys.push_back({impactAt, a.feet, yaw, cameraConfig_.casterPitch, d * cameraConfig_.pushInRatio, h * 0.4f});
   }
   // Two battle units side by side (a weapon skill at the neighbour is a melee blow, not a shot down a line).
   bool besideEachOther(size_t ab, size_t db) const {
@@ -11021,7 +11117,7 @@ class MapStage final : public Stage {
       for (ShotKey& k : shot.keys) k.at = std::max(k.at, x.release);
       const SpellEffects::Spot a = unitSpot(su);
       const float h = cardHeightOf(a);
-      shot.keys.insert(shot.keys.begin(), ShotKey{now_, a.feet, shot.keys.front().yaw, kShotCasterPitch, closeDistance(h, 0.0f), h * 0.4f});
+      shot.keys.insert(shot.keys.begin(), ShotKey{now_, a.feet, shot.keys.front().yaw, cameraConfig_.casterPitch, closeDistance(h, 0.0f), h * 0.4f});
     }
   }
   void frameStep(ActionShot& shot, const Exchange& x, size_t su) {
@@ -11029,22 +11125,29 @@ class MapStage final : public Stage {
     using StepType = ember::BattleStep::Type;
     const int striker = static_cast<int>(su);
     const float impact = std::max(now_, x.impact);
-    // A summon (the user, 2026-10-26: "se for um familiar também e tem que dar tempo de ver a animação de summon"): the hex where
-    // the familiar appears, held after the action until its summon animation is over.
+    // A summon: the hex where the familiar appears, held after the action until its summon animation is over.
     if (s.kind.rfind("summon", 0) == 0 && !s.tiles.empty()) {
       const glm::vec3 casterAt = unitWorld(su), at = hexSpot(s.tiles.front()).feet;
-      shot.keys.push_back({now_, at, shotYaw(casterAt, at, 0.3491f), kShotCasterPitch, closeDistance(2.0f, 0.0f) * 1.1f, 0.8f});
-      shot.holdUntil = std::max(shot.holdUntil, impact + kShotSummonHold / actionRate());
+      shot.keys.push_back({now_, at, shotYaw(casterAt, at, 0.3491f), cameraConfig_.casterPitch, closeDistance(2.0f, 0.0f) * 1.1f, 0.8f});
+      shot.holdUntil = std::max(shot.holdUntil, impact + cameraConfig_.summonHoldSeconds / actionRate());
       return;
     }
     if (s.type == StepType::Combat) {
       const int target = sceneUnitOf(static_cast<int>(x.counter ? s.att : s.def));
       if (target < 0 || target == striker) return casterShot(shot, su, -1, impact);
       if (x.arrow || x.bolt) return rangedShot(shot, su, static_cast<size_t>(target), impact);
-      return twoShot(shot, su, static_cast<size_t>(target), impact, kShotMeleePitch);
+      return twoShot(shot, su, static_cast<size_t>(target), impact, cameraConfig_.meleePitch);
     }
     const glm::vec3 casterAt = unitWorld(su);
     if (s.type == StepType::Move) {  // a charge or a leap: the ground it crosses, from where it set off to where it lands
+      if ((s.kind == "leapingStrike" || s.kind == "poleVault") && !s.path.empty()) {
+        const glm::vec3 takeOff = hexSpot(s.path.front()).feet;
+        const glm::vec3 landing = hexSpot(s.path.back()).feet;
+        const float yaw = shotYaw(takeOff, landing, 0.35f);
+        shot.keys.push_back({now_, takeOff, yaw, cameraConfig_.meleePitch, closeDistance(2.0f, 0.0f) * 1.2f, 0.6f});
+        shot.keys.push_back({x.end, landing, yaw, cameraConfig_.meleePitch, closeDistance(2.0f, 0.0f), 0.5f});
+        return;
+      }
       std::vector<glm::vec3> pts;
       if (!s.path.empty()) pts.push_back(hexSpot(s.path.front()).feet), pts.push_back(hexSpot(s.path.back()).feet);
       return areaShot(shot, casterAt, std::move(pts), impact);
@@ -11059,7 +11162,7 @@ class MapStage final : public Stage {
       const int target = sceneUnitOf(static_cast<int>(s.ids[0]));
       if (target >= 0 && static_cast<size_t>(target) == su) return casterShot(shot, su, -1, impact);
       if (target >= 0) {
-        if (besideEachOther(s.att, s.ids[0])) return twoShot(shot, su, static_cast<size_t>(target), impact, kShotMeleePitch);
+        if (besideEachOther(s.att, s.ids[0])) return twoShot(shot, su, static_cast<size_t>(target), impact, cameraConfig_.meleePitch);
         return rangedShot(shot, su, static_cast<size_t>(target), impact);
       }
     }
@@ -11069,14 +11172,14 @@ class MapStage final : public Stage {
       if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0) pts.push_back(unitWorld(static_cast<size_t>(ui)));
     areaShot(shot, casterAt, std::move(pts), impact);
   }
-  // A body that fell under this step: the camera stays on it kShotDeathHold after the action.
+  // A body that fell under this step: the camera stays on it after the action.
   void deathShot(size_t fallen, float actionEnd) {
     if (!shot_ || !actionCameraOn() || shot_->follow >= 0) return;
     const SpellEffects::Spot a = unitSpot(fallen);
     const float h = cardHeightOf(a);
-    const ShotKey last = shot_->keys.empty() ? ShotKey{now_, a.feet, yaw_, kShotMeleePitch, closeDistance(h, 0.0f), h * 0.35f} : shot_->keys.back();
+    const ShotKey last = shot_->keys.empty() ? ShotKey{now_, a.feet, yaw_, cameraConfig_.meleePitch, closeDistance(h, 0.0f), h * 0.35f} : shot_->keys.back();
     shot_->keys.push_back({now_ + 0.25f / actionRate(), a.feet, last.yaw, 0.1745f, closeDistance(h, 0.0f) * 1.1f, h * 0.35f});  // 10 deg
-    shot_->holdUntil = std::max(shot_->holdUntil, actionEnd + kShotDeathHold / actionRate());
+    shot_->holdUntil = std::max(shot_->holdUntil, actionEnd + cameraConfig_.deathHoldSeconds / actionRate());
   }
   // Every frame, after the player's input and clampGoal: the shot's keys become the goal; an enemy's walk is followed; the
   // player's hand on the camera drops the shot; the player's view comes back when the action is over.
@@ -11092,7 +11195,7 @@ class MapStage final : public Stage {
       shot_.reset(), shotLiftGoal_ = 0.0f;
       return;
     }
-    // An enemy walking on seen ground: the pivot follows it (the player's own turn, zoom and tilt kept).
+    // An enemy walking on seen ground: the pivot follows it leading ahead smoothly.
     if (!exchange_ && enemyTurn_ && !enemyTurn_->struck && enemyTurn_->unit < unitWalk_.size() && !unitWalk_[enemyTurn_->unit].points.empty() &&
         unitOnLitHex(enemyTurn_->unit)) {
       const int eu = static_cast<int>(enemyTurn_->unit);
@@ -11101,8 +11204,20 @@ class MapStage final : public Stage {
     if (!s) return;
     if (s->follow >= 0) {
       const size_t fu = static_cast<size_t>(s->follow);
-      if (!unitWalk_[fu].points.empty()) target_ = unitWorld(fu), shotLiftGoal_ = 0.0f;
-      else if (!exchange_ && !enemyTurn_) return endShot(true);  // its turn ended with no blow
+      if (!unitWalk_[fu].points.empty()) {
+        glm::vec3 pos = unitWorld(fu);
+        const glm::vec2 dest = unitWalk_[fu].points.front();
+        const glm::vec2 leadDir = dest - glm::vec2(pos.x, pos.z);
+        if (glm::dot(leadDir, leadDir) > 1e-4f) {
+          const glm::vec2 n = glm::normalize(leadDir) * std::min(cameraConfig_.enemyTurnLeadAhead, glm::length(leadDir));
+          pos.x += n.x;
+          pos.z += n.y;
+        }
+        if (enemyTurn_ && enemyTurn_->target >= 0 && static_cast<size_t>(enemyTurn_->target) < unitPos_.size()) {
+          pos = (pos + unitWorld(static_cast<size_t>(enemyTurn_->target))) * 0.5f;
+        }
+        target_ = pos, shotLiftGoal_ = 0.0f;
+      } else if (!exchange_ && !enemyTurn_) return endShot(true);  // its turn ended with no blow
     } else {
       while (s->key < s->keys.size() && now_ >= s->keys[s->key].at) {
         const ShotKey& k = s->keys[s->key++];
@@ -11138,6 +11253,39 @@ class MapStage final : public Stage {
   void noteShotGoal() {
     if (!shot_) return;
     shot_->wroteTarget = target_, shot_->wroteYaw = yaw_, shot_->wrotePitch = pitch_, shot_->wroteDistance = distance_, shot_->written = true;
+  }
+  void skipActionShot() {
+    if (!shot_) return;
+    if (!shot_->keys.empty()) {
+      const ShotKey& k = shot_->keys.back();
+      target_ = k.target, yaw_ = k.yaw, pitch_ = k.pitch, distance_ = k.distance, shotLiftGoal_ = k.lift;
+      cam_ = {target_, yaw_, pitch_, distance_};
+      shotLift_ = shotLiftGoal_;
+      shot_->key = shot_->keys.size();
+    }
+    renderer_.volumetrics().invalidateHistory();
+  }
+  int findUnitByNameOrId(const std::string& nameOrId) const {
+    if (nameOrId.empty()) return -1;
+    if (scene_) {
+      for (size_t i = 0; i < scene_->units.size(); ++i)
+        if (scene_->units[i].name == nameOrId || scene_->units[i].key == nameOrId) return static_cast<int>(i);
+    }
+    if (battle_) {
+      for (size_t i = 0; i < battle_->units().size(); ++i)
+        if (battle_->units()[i].name == nameOrId || battle_->units()[i].id == nameOrId) return sceneUnitOf(static_cast<int>(i));
+    }
+    return -1;
+  }
+  void frameSpeaker(size_t ui) {
+    if (!actionCameraOn() || ui >= unitPos_.size() || !unitOnLitHex(ui)) return;
+    if (shot_ && shot_->follow == static_cast<int>(ui)) return;
+    ActionShot& s = openShot();
+    s.follow = static_cast<int>(ui);
+    const SpellEffects::Spot a = unitSpot(ui);
+    const float h = cardHeightOf(a);
+    s.keys.push_back({now_, a.feet, shotYaw(a.feet, a.feet, 0.0f), cameraConfig_.casterPitch, closeDistance(h, 0.0f) * 1.15f, h * 0.4f});
+    s.holdUntil = now_ + 3600.0f;
   }
 
   // The move is decided at once (the battle's state), the walk then plays it hex by hex.
@@ -11726,54 +11874,111 @@ class MapStage final : public Stage {
     return std::format("AT {} · MAG {} · DF {} · DEX {} · PA {}/{} · Alc {}", u.atk, u.mag, u.def, u.dex, u.ap, ember::apMax(*battle_, u), range);
   }
 
-  // The combat log inside the HUD bar: the newest line at the bottom, following new lines while the reader is at the bottom.
-  void drawHudLog(ImVec2 from, ImVec2 to) {
-    ImGui::SetCursorScreenPos(from);
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(0, 0, 0, 0));
-    ImGui::BeginChild("##hudlog", {to.x - from.x, to.y - from.y}, false);
-    const float maxY = ImGui::GetScrollMaxY();
-    if (!logJustOpened_) logPinned_ = maxY <= 0.0f || ImGui::GetScrollY() >= maxY - 8.0f;
-    const std::vector<std::string>& lines = battle_->log();
-    if (lines.empty()) {
-      ImGui::TextDisabled("Nada aconteceu ainda.");
-    } else {
-      for (const std::string& line : lines) {
-        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(180, 180, 180, 255));
-        ImGui::TextWrapped("%s", line.c_str());
-        ImGui::PopStyleColor();
-      }
-    }
-    if (logPinned_ || logJustOpened_) ImGui::SetScrollHereY(1.0f);
-    logJustOpened_ = false;
-    ImGui::EndChild();
-    ImGui::PopStyleColor();
-  }
 
-  // "Abrir log": the whole combat log full screen, opened at the newest line; a click anywhere (or Esc) closes it.
+  // Combat log panel: opened by the "Log" button; clean ember-styled modal with scrollable history.
   void drawFullLog() {
     if (!logFull_ || !battle_) return;
     const ImGuiIO& io = ImGui::GetIO();
+    const ImVec2 size = io.DisplaySize;
+
+    // The dark veil over the battlefield
     ImGui::SetNextWindowPos({0, 0});
-    ImGui::SetNextWindowSize(io.DisplaySize);
-    ImGui::SetNextWindowFocus();  // above the panels, every frame while it is open
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(8, 8, 8, 232));
-    ImGui::Begin("##fullog", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
-    ImGui::PushFont(uiFont(UiFont::Ui), 18.0f);
-    ImGui::TextColored(ImColor(240, 240, 240), "%s", tr("Log de combate", "Combat log").c_str());
-    ImGui::SameLine();
-    ImGui::TextDisabled("  %s", tr("Clique em qualquer lugar para fechar", "Click anywhere to close").c_str());
-    ImGui::Separator();
-    ImGui::BeginChild("##fullogbody", {0, 0}, false);
-    const std::vector<std::string>& lines = battle_->log();
-    if (lines.empty()) ImGui::TextDisabled("Nada aconteceu ainda.");
-    for (const std::string& line : lines) ImGui::TextWrapped("%s", line.c_str());
-    if (logFullJustOpened_) ImGui::SetScrollHereY(1.0f);
-    ImGui::EndChild();
-    if (!logFullJustOpened_ && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows)) logFull_ = false;
-    logFullJustOpened_ = false;
-    ImGui::PopFont();
+    ImGui::SetNextWindowSize(size);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 0));
+    ImGui::Begin("##logveil", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+    ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
+    verticalGradient(ImGui::GetWindowDrawList(), {0, 0}, size, {{0.0f, IM_COL32(0, 0, 0, 110)}, {1.0f, IM_COL32(0, 0, 0, 190)}});
+    const bool veilClicked = ImGui::InvisibleButton("##logveilbtn", size);
     ImGui::End();
     ImGui::PopStyleColor();
+    ImGui::PopStyleVar();
+
+    if (veilClicked && !logFullJustOpened_) {
+      logFull_ = false;
+      return;
+    }
+
+    // Centered Ember panel (like QuestLog)
+    const float width = std::min(760.0f, size.x - 32.0f);
+    const float maxHeight = std::floor(size.y * 0.82f);
+    const float inner = width - 40.0f;
+
+    ImGui::SetNextWindowPos({size.x * 0.5f, size.y * 0.5f}, ImGuiCond_Always, {0.5f, 0.5f});
+    ImGui::SetNextWindowSize({width, maxHeight});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {20.0f, 20.0f});
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 0));
+    ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(0, 0, 0, 0));
+    ImGui::Begin("##combatlog", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+    ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
+
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    {
+      const ImVec2 a = ImGui::GetWindowPos(), b{a.x + ImGui::GetWindowSize().x, a.y + ImGui::GetWindowSize().y};
+      dl->ChannelsSplit(2);
+      dl->ChannelsSetCurrent(0);
+      emberPanel(dl, a, b);
+      dl->ChannelsSetCurrent(1);
+    }
+
+    const ImVec2 head = ImGui::GetCursorScreenPos();
+    emberKicker(dl, head, 12.0f, upperUtf8(tr("Combate", "Combat")).c_str());
+    ImGui::Dummy({1, 14.0f});
+    emberTitle(dl, ImGui::GetCursorScreenPos(), 22.0f, tr("Log de combate", "Combat log").c_str());
+    ImGui::Dummy({1, 26.0f});
+
+    // Close button (X) in top right
+    ImGui::SetCursorScreenPos({head.x + inner - 36.0f, head.y});
+    if (emberPlate("##logclose", {36.0f, 36.0f}, [](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32) {
+          iconX(d, {(a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f}, 16.0f, IM_COL32(223, 191, 142, 255));
+        })) {
+      logFull_ = false;
+    }
+
+    // Scrollable combat log content
+    ImGui::SetCursorScreenPos({head.x, head.y + 54.0f});
+    const float bodyHeight = maxHeight - 128.0f;
+    ImGui::PushFont(uiFont(UiFont::Ui), 14.0f);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(14, 14, 14, 180));
+    ImGui::BeginChild("##fullogbody", {inner, bodyHeight}, true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+
+    const std::vector<std::string>& lines = battle_->log();
+    if (lines.empty()) {
+      ImGui::TextDisabled("%s", tr("Nada aconteceu ainda.", "Nothing has happened yet.").c_str());
+    } else {
+      for (size_t i = 0; i < lines.size(); ++i) {
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(220, 215, 205, 255));
+        ImGui::TextWrapped("%s", lines[i].c_str());
+        ImGui::PopStyleColor();
+        if (i + 1 < lines.size()) ImGui::Spacing();
+      }
+    }
+    if (logFullJustOpened_) {
+      ImGui::SetScrollHereY(1.0f);
+    }
+    ImGui::EndChild();
+    ImGui::PopStyleColor();
+    ImGui::PopFont();
+
+    // Footer: close button and hint
+    ImGui::SetCursorScreenPos({head.x, head.y + 54.0f + bodyHeight + 8.0f});
+    ImGui::PushFont(uiFont(UiFont::Ui), 12.0f);
+    ImGui::TextDisabled("%s", tr("Role para ver o histórico · Clique fora ou Esc para fechar", "Scroll to view history · Click outside or Esc to close").c_str());
+    ImGui::PopFont();
+
+    ImGui::SameLine(head.x + inner - 90.0f);
+    if (emberButton("##fullogdone", tr("Fechar", "Close").c_str(), true, true)) {
+      logFull_ = false;
+    }
+
+    if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+      logFull_ = false;
+    }
+
+    logFullJustOpened_ = false;
+    ImGui::End();
+    ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar();
   }
 
   // --- Ember's Inn quests in a fight (world/Quests.h): the pickups on the ground, collected by walking onto them, and the
@@ -12248,10 +12453,6 @@ class MapStage final : public Stage {
         x = q.x + 10.0f;
       }
       const float right = b.x - 10.0f;
-      // The info area is the combat log's switch (GameApp: a click on the stat sheet opens the log, a click on the log closes it).
-      ImGui::SetCursorScreenPos({x, rowY});
-      if (ImGui::InvisibleButton("##logtoggle", {right - x, 24.0f})) showLog_ = !showLog_, logPinned_ = true, logJustOpened_ = showLog_;
-      if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", showLog_ ? "Fechar o log e ver o status" : "Abrir o log de combate");
       ImGui::PushFont(text, 14.0f);
       const std::string name = std::format("{} · Nv {}", u.name, u.level);
       dl->AddText(text, 15.0f, {x, rowY + 2.0f}, IM_COL32(240, 240, 240, 255), name.c_str());
@@ -12263,9 +12464,6 @@ class MapStage final : public Stage {
       const std::string cls = u.className.empty() ? u.classId : u.className;
       const float cw = text->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, cls.c_str()).x;
       dl->AddText(text, 12.0f, {right - cw, rowY + 4.5f}, u.side == "enemy" ? IM_COL32(181, 74, 50, 255) : IM_COL32(180, 180, 180, 255), cls.c_str());
-      if (showLog_) {
-        drawHudLog({x, rowY + 26.0f}, {right, rowY + 80.0f});
-      } else {
       // HP bar (.hp-fill: accent for the party, danger for foes)
       const std::string hp = tr("Vida", "HP") + " " + std::format("{}/{}", u.hp, u.maxHp);  // named, so it is never mistaken for the PA
       const float hw = text->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, hp.c_str()).x;
@@ -12309,7 +12507,6 @@ class MapStage final : public Stage {
       if (!tip_.empty() && now_ - tipAt_ < 3.0f) dl->AddText(text, 12.0f, {x, barY + 30.0f}, IM_COL32(224, 189, 128, 255), tip_.c_str());
       else if (const std::string cond = ember::conditionsText(u); !cond.empty())  // what ails it (our spells' conditions)
         dl->AddText(text, 12.0f, {x, barY + 30.0f}, IM_COL32(196, 150, 232, 255), cond.c_str());
-      }
       ImGui::PopFont();
     } else {
       dl->AddText(text, 12.0f, {a.x + 10.0f, rowY + 4.0f}, IM_COL32(180, 180, 180, 255),
@@ -12326,17 +12523,13 @@ class MapStage final : public Stage {
     // (the user, 2026-10-25: "Botão de atacar e tudo mais na direita", "ONLY COMMAND not the icons").
     const auto labelW = [&](const std::string& s) { return spacedTextWidth(uiFont(UiFont::Mark), 16.0f, s.c_str(), 0.06f) + 28.0f; };
     const float gap = ImGui::GetStyle().ItemSpacing.x;
-    {  // the combat log: its switch, and (while it shows) the whole log full screen
-      const std::string openLabel = tr("Abrir log", "Open log");
-      const char* logLabel = showLog_ ? "Resumo" : "Log";
-      // (no "Status" here: the portrait opens the sheet; the user, 2026-10-18)
-      // the quest log (Ember's world-map "Missões", here in the fight too)
+    {  // the combat log and quest log buttons
+      const std::string logLabel = tr("Log", "Log");
       const std::string questLabel = tr("Missões", "Quests");
       const bool finishing = battle_->winAvailable() && result_.empty();
       const std::string finishLabel = battle_->activeExit() ? tr("Usar waypoint", "Use waypoint") : tr("Encerrar missão", "End mission");
       // what the trailing buttons take: the sockets stop short of it (next frame)
       float trailing = labelW(logLabel) + gap;
-      if (showLog_) trailing += labelW(openLabel) + gap;
       if (options_.world) trailing += labelW(questLabel) + gap;
       if (finishing) trailing += labelW(finishLabel) + gap;
       if (turns) trailing += labelW("Fim do turno") + gap;
@@ -12355,10 +12548,9 @@ class MapStage final : public Stage {
         if (emberButton("##questbtn", questLabel.c_str(), false, true)) questLog_ = true;
       }
       ImGui::SameLine();
-      if (emberButton("##logbtn", logLabel, false, true)) showLog_ = !showLog_, logPinned_ = true, logJustOpened_ = showLog_;
-      if (showLog_) {
-        ImGui::SameLine();
-        if (emberButton("##openlog", openLabel.c_str(), false, true)) logFull_ = true, logFullJustOpened_ = true;
+      if (emberButton("##logbtn", logLabel.c_str(), false, true)) {
+        logFull_ = true;
+        logFullJustOpened_ = true;
       }
     }
     if (!turns) {  // free roam: an explore mission's "Sair" (Ember onQuit) in place of Fim do turno; nothing on a fight's map
@@ -14197,16 +14389,9 @@ class MapStage final : public Stage {
     return clip.x < clip.z ? clip : all;
   }
   bool ashenForest() const { return board_ && board_->draft().id == "ashen-forest-crossing"; }
-  // The camera as before, on every map, only the tilt reaches 80 deg up into the sky (the user, 2026-10-19: "eu quero como estava
-  // antes de agora e com vista para o céu só isso"); the eye still never goes under the ground (eyeView).
-  float minPitch() const { return kSkyMinPitch; }
-  static constexpr float kSkyMinPitch = -1.3963f;
-  // What the player's hand may reach (mouse turn and the bar's tilt buttons): the tilt under kMinEyePitch lifts the line of sight by
-  // the missing angle, and the lens is 30 deg, so past a few degrees the board left the screen and only the painting and the sky
-  // showed (the user, 2026-11-19: "esse tipo de ângulo não deveria ser permitido"). The same rule that keeps the pivot on the board
-  // (kPanInset: at most 60% of the view's half height from the centre): the lift is the angle of that offset, so the board stays
-  // on screen. Cutscenes and shots keep minPitch().
-  static float playerMinPitch() { return kMinEyePitch - std::atan(kPanInset * std::tan(glm::radians(kFov * 0.5f))); }
+  // The tilt reaches maxLookUpAngleDegrees up into the sky; the eye still never goes under the ground (eyeView).
+  float minPitch() const { return kMinEyePitch - glm::radians(cameraConfig_.maxLookUpAngleDegrees); }
+  float playerMinPitch() const { return kMinEyePitch - glm::radians(cameraConfig_.maxLookUpAngleDegrees); }
   float gameHour_ = -1.0f;  // MapStageOptions::gameHour
   int dayCycle_ = 0;  // the panel's "Hora": 0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3.. a fixed hour (cycleHour; --hour N)
   static constexpr float kTiltStep = 0.0873f, kTurnStep = 0.2618f;  // Ember's bar: 5 deg; 15 deg

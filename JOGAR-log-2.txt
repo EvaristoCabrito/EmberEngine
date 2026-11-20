@@ -1,0 +1,843 @@
+[info] atmos2: state content/atmos2/state-v02.bin at step 144000 (day 300.0), origin lon -8.00 lat 46.00
+[info] mounted C:\EmberEngineB\build\sprites\battle.pak (4444 assets)
+[info] mounted C:\EmberEngineB\build\meshes\props-v51.pak (941 assets)
+[info] mounted C:\EmberEngineB\build\meshes\material-overhaul-v03.pak (130 assets)
+[info] mounted C:\EmberEngineB\build\meshes\architecture.pak (33 assets)
+[info] mounted C:\EmberEngineB\build\meshes\effects.pak (5 assets)
+[info] mounted C:\EmberEngineB\build\ground\ground-v81-torre-madeira-v01.pak (385 assets)
+[info] campaign: save bank C:\Users\evari\AppData\Local\Ember\ember-save-bank.json (4 of 6 slots used)
+[info] overworld: 490 cells, 18 locations, 31 missions
+[info] overworld: 13 road encounters field undead
+[info] startup: window at 246 ms
+[info] startup: data loaded at 267 ms
+[info] GPU: AMD Radeon(TM) RX 6400 (Vulkan 1.4.315, driver 0x800161)
+[info] transfer queue: dedicated (family 2)
+[info] pipeline cache: 28281356 bytes restored for this GPU/driver
+[info] bindless: 65536 textures, 16384 storage images, 256 samplers, 4096 storage buffers
+[info] bindless: creating descriptor set layout
+[info] bindless: descriptor set layout ready
+[info] bindless: creating descriptor pool
+[info] bindless: descriptor pool ready
+[info] bindless: allocating descriptor set
+[info] bindless: descriptor set ready
+[info] bindless: creating pipeline layout
+[info] bindless: ready
+[info] startup: GPU timer ready
+[info] startup: renderer resources begin
+[info] startup: renderer frame buffers ready
+[info] pipeline compute: volumetrics_v1.CSInject creating
+[info] pipeline compute: volumetrics_v1.CSInject ready in 0 ms
+[info] pipeline compute: volumetrics_v1.CSIntegrate creating
+[info] pipeline compute: volumetrics_v1.CSIntegrate ready in 0 ms
+[info] pipeline compute: volumetrics_clouds006.CSMaterial creating
+[info] pipeline compute: volumetrics_clouds006.CSMaterial ready in 0 ms
+[info] pipeline compute: volumetrics_clouds006.CSInject creating
+[info] pipeline compute: volumetrics_clouds006.CSInject ready in 0 ms
+[info] pipeline compute: volumetrics_clouds006.CSIntegrate creating
+[info] pipeline compute: volumetrics_clouds006.CSIntegrate ready in 0 ms
+[info] startup: renderer volumetrics ready
+[info] startup: renderer images and buffers ready
+[info] startup: renderer targets ready
+[info] pipeline graphics: triangle.VSMain + triangle.PSMain creating
+[info] pipeline graphics: triangle.VSMain + triangle.PSMain ready in 0 ms
+[info] pipeline graphics: tonemap.VSMain + tonemap.PSMain creating
+[info] pipeline graphics: tonemap.VSMain + tonemap.PSMain ready in 0 ms
+[info] pipeline graphics: ground.VSMain + ground.PSMain creating
+[info] pipeline graphics: ground.VSMain + ground.PSMain ready in 0 ms
+[info] pipeline graphics: terrain.VSMain + terrain.PSMain creating
+[info] pipeline graphics: terrain.VSMain + terrain.PSMain ready in 1 ms
+[info] pipeline graphics: terrain.VSShadow + terrain.PSShadow creating
+[info] pipeline graphics: terrain.VSShadow + terrain.PSShadow ready in 0 ms
+[info] pipeline graphics: water.VSMain + water.PSMain creating
+[info] pipeline graphics: water.VSMain + water.PSMain ready in 5 ms
+[info] pipeline graphics: sprites.VSMain + sprites.PSMain creating
+[info] pipeline graphics: sprites.VSMain + sprites.PSMain ready in 1 ms
+[info] pipeline graphics: sprites.VSMain + sprites.PSDepth creating
+[info] pipeline graphics: sprites.VSMain + sprites.PSDepth ready in 0 ms
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSDepth creating
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSDepth ready in 0 ms
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSMain creating
+[info] pipeline graphics: sprites_standing.VSMain + sprites_standing.PSMain ready in 1 ms
+[info] pipeline graphics: effects.VSMain + effects.PSMain creating
+[info] pipeline graphics: effects.VSMain + effects.PSMain ready in 0 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain creating
+[info] pipeline graphics: vfx.VSMain + vfx.PSMain ready in 1 ms
+[info] startup: renderer graphics pipelines ready
+[info] pipeline compute: cull.CSInstancesEarly creating
+[info] pipeline compute: cull.CSInstancesEarly ready in 0 ms
+[info] pipeline compute: cull.CSInstancesLate creating
+[info] pipeline compute: cull.CSInstancesLate ready in 0 ms
+[info] pipeline compute: hiz.CSDownsample creating
+[info] pipeline compute: hiz.CSDownsample ready in 0 ms
+[info] pipeline compute: bloom.CSDown creating
+[info] pipeline compute: bloom.CSDown ready in 0 ms
+[info] pipeline compute: bloom.CSUp creating
+[info] pipeline compute: bloom.CSUp ready in 0 ms
+[info] pipeline compute: cull.CSPrepare creating
+[info] pipeline compute: cull.CSPrepare ready in 0 ms
+[info] pipeline compute: cull.CSTraverse creating
+[info] pipeline compute: cull.CSTraverse ready in 0 ms
+[info] pipeline compute: cull.CSPrepareDraw creating
+[info] pipeline compute: cull.CSPrepareDraw ready in 0 ms
+[info] pipeline compute: resolve.CSResolve creating
+[info] pipeline compute: resolve.CSResolve ready in 2 ms
+[info] pipeline compute: resolve.CSSky creating
+[info] pipeline compute: resolve.CSSky ready in 1 ms
+[info] pipeline compute: resolve_panorama.CSResolve creating
+[info] pipeline compute: resolve_panorama.CSResolve ready in 1 ms
+[info] pipeline compute: resolve_panorama.CSSky creating
+[info] pipeline compute: resolve_panorama.CSSky ready in 1 ms
+[info] pipeline compute: lights.CSClusters creating
+[info] pipeline compute: lights.CSClusters ready in 0 ms
+[info] pipeline compute: volume.CSInject creating
+[info] pipeline compute: volume.CSInject ready in 0 ms
+[info] pipeline compute: atmosphere.CSTransmittance creating
+[info] pipeline compute: atmosphere.CSTransmittance ready in 0 ms
+[info] pipeline compute: atmosphere.CSMultiScattering creating
+[info] pipeline compute: atmosphere.CSMultiScattering ready in 0 ms
+[info] pipeline compute: atmosphere.CSSkyView creating
+[info] pipeline compute: atmosphere.CSSkyView ready in 0 ms
+[info] pipeline compute: atmosphere.CSAerial creating
+[info] pipeline compute: atmosphere.CSAerial ready in 0 ms
+[info] pipeline compute: atmosphere.CSAmbient creating
+[info] pipeline compute: atmosphere.CSAmbient ready in 0 ms
+[info] pipeline compute: skyreflect.CSBase creating
+[info] pipeline compute: skyreflect.CSBase ready in 0 ms
+[info] pipeline compute: skyreflect.CSFilter creating
+[info] pipeline compute: skyreflect.CSFilter ready in 0 ms
+[info] pipeline compute: skyreflect.CSCloudShadow creating
+[info] pipeline compute: skyreflect.CSCloudShadow ready in 0 ms
+[info] pipeline compute: cloudsvol.CSNoiseBase creating
+[info] pipeline compute: cloudsvol.CSNoiseBase ready in 0 ms
+[info] pipeline compute: cloudsvol.CSNoiseDetail creating
+[info] pipeline compute: cloudsvol.CSNoiseDetail ready in 0 ms
+[info] pipeline compute: cloudsvol.CSMarch creating
+[info] pipeline compute: cloudsvol.CSMarch ready in 0 ms
+[info] pipeline compute: sunglare.CSGlare creating
+[info] pipeline compute: sunglare.CSGlare ready in 0 ms
+[info] pipeline compute: probes.CSRelight creating
+[info] pipeline compute: probes.CSRelight ready in 0 ms
+[info] pipeline compute: volume.CSIntegrate creating
+[info] pipeline compute: volume.CSIntegrate ready in 0 ms
+[info] pipeline compute: fog_look001.CSMarch creating
+[info] pipeline compute: fog_look001.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look001.CSComposite creating
+[info] pipeline compute: fog_look001.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look002.CSMarch creating
+[info] pipeline compute: fog_look002.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look002.CSComposite creating
+[info] pipeline compute: fog_look002.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look003.CSMarch creating
+[info] pipeline compute: fog_look003.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look003.CSComposite creating
+[info] pipeline compute: fog_look003.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look004.CSMarch creating
+[info] pipeline compute: fog_look004.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look004.CSComposite creating
+[info] pipeline compute: fog_look004.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look005.CSMarch creating
+[info] pipeline compute: fog_look005.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look005.CSComposite creating
+[info] pipeline compute: fog_look005.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look006.CSMarch creating
+[info] pipeline compute: fog_look006.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look006.CSComposite creating
+[info] pipeline compute: fog_look006.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look007.CSMarch creating
+[info] pipeline compute: fog_look007.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look007.CSComposite creating
+[info] pipeline compute: fog_look007.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look008.CSMarch creating
+[info] pipeline compute: fog_look008.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look008.CSComposite creating
+[info] pipeline compute: fog_look008.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look009.CSMarch creating
+[info] pipeline compute: fog_look009.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look009.CSComposite creating
+[info] pipeline compute: fog_look009.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look011.CSMarch creating
+[info] pipeline compute: fog_look011.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look011.CSComposite creating
+[info] pipeline compute: fog_look011.CSComposite ready in 0 ms
+[info] pipeline compute: fog_look010.CSMarch creating
+[info] pipeline compute: fog_look010.CSMarch ready in 0 ms
+[info] pipeline compute: fog_look010.CSComposite creating
+[info] pipeline compute: fog_look010.CSComposite ready in 0 ms
+[info] startup: renderer compute pipelines ready
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSMain creating
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSMain ready in 0 ms
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSShadow creating
+[info] pipeline graphics: meshlet.MSMain + meshlet.PSShadow ready in 0 ms
+[info] pipeline graphics: sprites.VSShadow + sprites.PSShadow creating
+[info] pipeline graphics: sprites.VSShadow + sprites.PSShadow ready in 0 ms
+[info] startup: renderer ready
+[info] startup: GPU ready at 1629 ms
+[info] startup: first screen at 1866 ms
+[warn] slow ui record: 2893.4 ms = imgui render 0.0, refine images 0.0, textures + draw 2893.3 (86 textures changed, largest 4096x4096)
+[warn] slow frame: 3094.9 ms busy = assets 0.0, stage 0.0, ui 194.9, render 2900.1 (record 2898.1, submit 0.4, present 1.5; waits 0.2 not counted)
+[info] sprites: roster lists 1481 clips
+[info] sprites: 1481 clips measured in 24.0 ms (largest full clip 339.0 MB)
+[warn] slow frame: 274.1 ms busy = assets 0.0, stage 265.2, ui 8.1, render 1.0 (record 0.4, submit 0.1, present 0.2; waits 0.2 not counted)
+[info] bosque: making its game files from content/maps/ember/bosque015.json
+[info] weapons: 153 main-hand, 27 off-hand, 97 classes
+[info] ui: 67 images off the GPU (336 MB); each comes back when a screen draws it again
+[info] map bosque 'Bosque Morto': 18x16 hexes, smooth 94080 triangles, hard 6972 triangles, 3 baked layers, 14 textures, 5.6 MB geometry
+[info] volumetrics: 7 profiles from content/atmosphere/v1/profiles.json
+[info] world clock: this map has no campaign clock: it starts at 19:30:00 and runs from there
+[info] board heights: lowest ground 0.00, highest 1.00 (the floor image lies under the lowest)
+[info] scene build/campaign/scenes/bosque015.scene.json: built by SceneBuilder (EmberEngine props); 1 kinds left out
+[info] scene bosque: 0 cards, 16 models, 15 units, 0 architecture pieces (0 built)
+[info] poses: 12 of 12 map units in the catalog, 25 poses between them
+[info] progression: 8 heroes; enemies keep their class's own gains
+[info] enemy ranks: 10 ranks, 41 classes ranked (others F)
+[info] battle: 16 cells made solid under EmberEngine props
+[info] Kael (level 30, vanguard): every spell of the class: doubleStrike, measuredCut, longstepSlash, crossguard, pommelCheck, lowCut, partingCut, overheadHew, steadyFooting, challenge, breakGuard
+[info] Neera (level 30, archer): every spell of the class: longShot, piercing, bloodyShot, multiShot, venomArrow, arrowRain, explosiveArrow, cripplingShot, arrowStorm, deathShot
+[info] Voss (level 30, mage): every spell of the class: magicMissile, poisonBreath, frost, lightning, fireball, iceStorm, causticVenom, warp, dispelMagic, cloudOfDaggers, globeOfInvulnerability
+[info] Salazar (level 30, healer): every spell of the class: cureMinor, bless, cureWounds, burningHands, cureDisease, turnUndead, createFoodAndWater, divineBolt, circleOfHealing, resurrection, judgment
+[info] Aldric (level 30, aldric): every spell of the class: piercingThrust, sweep, trip, spearToss, hookPull, poleVault, disarm, swapPost, impaleDrag, sentinelVigil
+[info] Isolde (level 30, sorcerer): every spell of the class: summonFamiliar, phantasmalForce, webOfDreams, summonFamiliar2, summonFamiliar4, summonFamiliar3, placeSwap, arcaneReflection, mirrorImage, detonateSummon, sacrificeBond, nightmare, summonSwampDeer, summonTelesm, summonHypostasis, empowerSummons
+[info] cutscene: Lio waits off the board for its scene
+[info] cutscene: Vessa waits off the board for its scene
+[info] battle bosque: 12 of 12 units in play
+[info] formation: 6 heroes at the entry (8, 14), front turned 0 sixths toward the enemy at (4, 4); 0 moved to the nearest free ground
+[info] panoramas bosque: 3 (the newest opens: bosque-morto-panorama-v04-alpha-sol.png)
+[info] inn: 153 weapons, 292 gear, 7 potions
+[info] weapons: 153 main-hand, 27 off-hand, 97 classes
+[info] inn: 153 weapons, 292 gear, 7 potions
+[info] sprites: Personagens Leve: the cast 227 MB at half resolution, the others 0 MB (GPU 2145 MB free before the fight)
+[info] sprites: fight set up in 3065.3 ms: 68 clips pinned, 0 of them already held from the last fight, 0 let go; full-clip pool 2 x 338 MB
+[warn] stall: the main thread has not moved for 3.2 s, in the step 'the screen's frame'; where it stands (25 calls, the innermost first):
+[warn] stall:   win32u.dll+0x60e4 NtGdiDdDDIWaitForSynchronizationObjectFromCpu
+[warn] stall:   amdvlk64.dll+0x3adbd7 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x3ad3c0 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x243db6 IcdPresentBuffers
+[warn] stall:   amdvlk64.dll+0x243884 IcdPresentBuffers
+[warn] stall:   VkLayer_khronos_validation.dll+0x481ee6 vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x351591 vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x5b46d4 
+[warn] stall:   Sandbox.exe+0x5b667a 
+[warn] stall:   Sandbox.exe+0x5b44fc 
+[warn] stall:   Sandbox.exe+0x5b3fc0 
+[warn] stall:   Sandbox.exe+0x5b3abd 
+[warn] stall:   Sandbox.exe+0x5b6c64 
+[warn] stall:   Sandbox.exe+0x5bc375 
+[warn] stall:   Sandbox.exe+0x5bd198 
+[warn] stall:   Sandbox.exe+0x5bcb7d 
+[warn] stall:   Sandbox.exe+0x3090a4 
+[warn] stall:   Sandbox.exe+0x308a4c 
+[warn] stall:   Sandbox.exe+0x1f4170 
+[warn] stall:   Sandbox.exe+0x6357e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[info] stream request meshes/polyhaven/ornate_medieval_dagger-v02.mesh: 0.13 MB, distance 0.00
+[info] stream request meshes/ember/polyhaven/treasure_chest-v01.mesh: 3.52 MB, distance 0.00
+[info] stream request meshes/ember/defenses/stake-barricade-v01.mesh: 0.33 MB, distance 0.00
+[info] stream request meshes/ember/bosque-morto-v02/old-oak-v01.mesh: 0.79 MB, distance 0.00
+[info] stream request meshes/ember/bosque-morto-v02/broken-snag-v01.mesh: 0.27 MB, distance 0.00
+[info] stream request meshes/ember/bosque-morto-v02/forked-elm-v01.mesh: 0.79 MB, distance 0.00
+[info] stream request meshes/ember/bosque-morto-v02/tall-ash-v01.mesh: 0.82 MB, distance 0.00
+[info] stream request meshes/ember/bosque-morto-v02/wide-beech-v01.mesh: 0.68 MB, distance 0.00
+[warn] slow stage frame: 165.8 ms = ground 126.2, meshes 25.1, uploads 1.2, cards 8.2, rest 4.5
+[info] pipeline compute: cloud_legacy004.CSMarch creating
+[info] pipeline compute: cloud_legacy004.CSMarch ready in 0 ms
+[info] pipeline compute: cloud_legacy004_sky.CSCloudShadow creating
+[info] pipeline compute: cloud_legacy004_sky.CSCloudShadow ready in 0 ms
+[info] pipeline compute: cloud_legacy004_sky.CSBase creating
+[info] pipeline compute: cloud_legacy004_sky.CSBase ready in 0 ms
+[warn] slow ui record: 124.9 ms = imgui render 0.0, refine images 0.5, textures + draw 124.4 (136 textures changed, largest 4096x4096)
+[warn] slow frame: 3392.9 ms busy = assets 0.2, stage 3231.1, ui 21.6, render 140.1 (record 134.0, submit 5.0, present 0.6; waits 0.2 not counted)
+[info] stream instances: 0 of 16 on the GPU list, meshes 0 of 8 resident (built 0 of 0)
+[warn] stall: the main thread moved again after 3.4 s
+[warn] stall: the main thread has not moved for 3.0 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.5 s
+[info] stream resident meshes/polyhaven/ornate_medieval_dagger-v02.mesh: 0.13 MB
+[info] stream resident meshes/ember/polyhaven/treasure_chest-v01.mesh: 3.52 MB
+[info] stream resident meshes/ember/defenses/stake-barricade-v01.mesh: 0.33 MB
+[info] stream resident meshes/ember/bosque-morto-v02/old-oak-v01.mesh: 0.79 MB
+[info] stream instances: 0 of 16 on the GPU list, meshes 4 of 8 resident (built 0 of 0)
+[info] stream resident meshes/ember/bosque-morto-v02/broken-snag-v01.mesh: 0.27 MB
+[info] stream resident meshes/ember/bosque-morto-v02/forked-elm-v01.mesh: 0.79 MB
+[info] stream resident meshes/ember/bosque-morto-v02/tall-ash-v01.mesh: 0.82 MB
+[info] stream resident meshes/ember/bosque-morto-v02/wide-beech-v01.mesh: 0.68 MB
+[info] stream instances: 0 of 16 on the GPU list, meshes 8 of 8 resident (built 0 of 0)
+[info] stream texture meshes/textures/3cc8368719ec1879.tex: 0 -> 256 px, 85 KB resident
+[info] stream texture meshes/textures/bbd4811876f6913b.tex: 0 -> 256 px, 85 KB resident
+[info] stream texture meshes/textures/a0b41447d6d968b4.tex: 0 -> 256 px, 85 KB resident
+[info] stream texture meshes/textures/a950639e1111a2b3.tex: 0 -> 256 px, 85 KB resident
+[info] stream texture meshes/textures/b48dc5c3f124462d.tex: 0 -> 256 px, 85 KB resident
+[info] stream texture meshes/textures/a270a23fa9768979.tex: 0 -> 256 px, 85 KB resident
+[info] stream texture meshes/textures/f7023965183eb14c.tex: 0 -> 256 px, 85 KB resident
+[info] stream texture meshes/textures/e8589586dff0c8f2.tex: 0 -> 256 px, 85 KB resident
+[info] stream texture meshes/textures/deb389a511c1d4cc.tex: 0 -> 256 px, 85 KB resident
+[info] stream texture meshes/textures/7abdcefeb3a493fa.tex: 0 -> 256 px, 85 KB resident
+[info] stream texture meshes/textures/a97866d582c6ff86.tex: 0 -> 256 px, 85 KB resident
+[info] stream texture meshes/textures/226f2dd6e4d7a8ac.tex: 0 -> 256 px, 85 KB resident
+[info] stream texture meshes/textures/0238bdd784035eb7.tex: 0 -> 256 px, 85 KB resident
+[info] stream instances: 14 of 16 on the GPU list, meshes 8 of 8 resident (built 0 of 0)
+[info] stream texture meshes/textures/1358d240a2d46a3a.tex: 0 -> 256 px, 85 KB resident
+[info] stream texture meshes/textures/664dc15ac3dc7559.tex: 0 -> 256 px, 85 KB resident
+[info] stream texture meshes/textures/ac1e8f79c28d0ca6.tex: 0 -> 256 px, 85 KB resident
+[info] stream texture meshes/textures/9639d8189eabbfa1.tex: 0 -> 256 px, 85 KB resident
+[info] stream instances: 16 of 16 on the GPU list, meshes 8 of 8 resident (built 0 of 0)
+[info] stream texture meshes/textures/91e79f0d2e852538.tex: 0 -> 256 px, 85 KB resident
+[info] stream instances: 16 of 16 on the GPU list, meshes 8 of 8 resident (built 0 of 0)
+[info] sprites: the fight's 68 clips on the GPU 7.44 s after they were asked for
+[info] sprites:   kael-v3-36-media 48 MB (full 193 MB)
+[info] sprites:   voss-veo-leve-passo 36 MB (full 144 MB)
+[info] sprites:   isolde-veo-36-media 28 MB (full 112 MB)
+[info] sprites:   neera/neera-v2-001 27 MB (full 110 MB)
+[info] sprites:   giant-beetle-36-media 24 MB (full 97 MB)
+[info] sprites:   salazar-v3 20 MB (full 79 MB)
+[info] sprites:   aldric 19 MB (full 76 MB)
+[info] sprites:   BrigandCrossbowman 14 MB (full 56 MB)
+[info] sprites:   neera-hydra 4 MB (full 17 MB)
+[info] sprites:   neera 2 MB (full 8 MB)
+[info] sprites:   villagerF1 0 MB (full 1 MB)
+[info] sprites:   crazyLady 0 MB (full 0 MB)
+[info] sprites: GPU memory 1944 MB allocated by the game, 2052 MB used, budget 3227 MB, heap 3824 MB
+[info] meshes: textures 18 of 18 at the size the camera needs, 18 at full size (1 MB on the GPU, 1175 MB free)
+[warn] stall: the main thread has not moved for 3.0 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[info] camera trace: t 14.078 dt 0.1000 goal (-1.44, 7.50) pivot (-1.44, 0.00, 7.50) pitch 26.7 (goal 30.6) distance 25.0 eye y 11.23 drop 0.0
+[warn] stall: the main thread moved again after 3.4 s
+[warn] stall: the main thread has not moved for 3.1 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[info] camera trace: t 17.399 dt 0.1000 goal (-1.44, 7.50) pivot (-1.44, 0.00, 7.50) pitch 19.4 (goal 15.1) distance 25.0 eye y 8.30 drop 0.0
+[warn] stall: the main thread moved again after 3.3 s
+[warn] stall: the main thread has not moved for 3.0 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[info] camera trace: t 20.772 dt 0.1000 goal (-2.35, 7.13) pivot (-2.02, 0.00, 7.26) pitch 16.7 (goal 15.1) distance 22.6 eye y 6.48 drop 0.0
+[info] cutscene trigger: bosque opens with bosque-morto-01-a-menina-no-tronco
+[info] cutscene bosque-morto-01-a-menina-no-tronco: start (5 actors, 114 steps)
+[info] cutscene bosque-morto-01-a-menina-no-tronco: step 0 wait 1.00 s
+[info] camera: meter 2.895 lux, EV 0.21, darkening 2.00 stops, exposure 0.17989, key 5.13 lux at elevation 21.4 deg
+[info] sky: hour 19.50, moon full (default) (disc texture 1563, radius 2.70 deg, glow 5.56) at elevation 21.4 deg, azimuth -121.9 deg (the camera looks at azimuth -57.5, elevation -16.2), off screen
+[info] stream instances: 16 of 16 on the GPU list, meshes 8 of 8 resident (built 0 of 0)
+[warn] stall: the main thread moved again after 3.5 s
+[info] cutscene bosque-morto-01-a-menina-no-tronco: step 1 move kael (7, 12) -> (8, 13), 2 hexes
+[warn] stall: the main thread has not moved for 3.1 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.3 s
+[warn] stall: the main thread has not moved for 3.1 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.3 s
+[warn] stall: the main thread has not moved for 3.0 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[info] cutscene bosque-morto-01-a-menina-no-tronco: step 2 face kael nw
+[info] cutscene bosque-morto-01-a-menina-no-tronco: step 3 face voss nw
+[warn] stall: the main thread moved again after 3.5 s
+[info] cutscene bosque-morto-01-a-menina-no-tronco: step 4 wait 0.80 s
+[info] cutscene bosque-morto-01-a-menina-no-tronco: step 5 say voss: "Que silêncio é esse? Nem vento direito."
+[warn] stall: the main thread has not moved for 3.1 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.3 s
+[warn] stall: the main thread has not moved for 3.0 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[info] cutscene bosque-morto-01-a-menina-no-tronco: over (5 steps); controls back
+[warn] stall: the main thread moved again after 3.3 s
+[warn] stall: the main thread has not moved for 3.2 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[info] stream instances: 16 of 16 on the GPU list, meshes 8 of 8 resident (built 0 of 0)
+[warn] stall: the main thread moved again after 3.4 s
+[warn] stall: the main thread has not moved for 3.1 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.6 s
+[warn] stall: the main thread has not moved for 3.0 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.6 s
+[warn] stall: the main thread has not moved for 3.2 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.3 s
+[warn] stall: the main thread has not moved for 3.0 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.4 s
+[warn] stall: the main thread has not moved for 3.2 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.3 s
+[warn] stall: the main thread has not moved for 3.2 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.2 s
+[warn] stall: the main thread has not moved for 3.0 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.2 s
+[warn] stall: the main thread has not moved for 3.1 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.3 s
+[warn] stall: the main thread has not moved for 3.1 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.3 s
+[warn] stall: the main thread has not moved for 3.1 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.3 s
+[warn] stall: the main thread has not moved for 3.1 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.5 s
+[warn] stall: the main thread has not moved for 3.1 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.3 s
+[warn] stall: the main thread has not moved for 3.1 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.2 s
+[warn] stall: the main thread has not moved for 3.2 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.2 s
+[warn] stall: the main thread has not moved for 3.0 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.2 s
+[warn] stall: the main thread has not moved for 3.1 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.2 s
+[warn] stall: the main thread has not moved for 3.0 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.2 s
+[warn] stall: the main thread has not moved for 3.1 s, in the step 'waiting for the GPU to finish an earlier frame'; where it stands (16 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x166f34 ZwWaitForMultipleObjects
+[warn] stall:   KERNELBASE.dll+0x1ab53 WaitForMultipleObjectsEx
+[warn] stall:   KERNELBASE.dll+0x1aa21 WaitForMultipleObjects
+[warn] stall:   amdvlk64.dll+0x53270b vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x352846 vk_icdGetInstanceProcAddrSG
+[warn] stall:   amdvlk64.dll+0x20c907 
+[warn] stall:   VkLayer_khronos_validation.dll+0x48346c vkNegotiateLoaderLayerInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x354acb vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x326c55 
+[warn] stall:   Sandbox.exe+0x3307a0 
+[warn] stall:   Sandbox.exe+0x6366e 
+[warn] stall:   Sandbox.exe+0x276b46 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[warn] stall: the main thread moved again after 3.2 s
+[warn] stall: the main thread has not moved for 3.1 s, in the step 'between frames: the sound and a change of screen'; where it stands (17 calls, the innermost first):
+[warn] stall:   ntdll.dll+0x1667a4 NtFreeVirtualMemory
+[warn] stall:   ntdll.dll+0x68b9f RtlCharToInteger
+[warn] stall:   ntdll.dll+0xb375 RtlSetProcessPreferredUILanguages
+[warn] stall:   ntdll.dll+0x53e6a RtlSizeHeap
+[warn] stall:   ntdll.dll+0x27850 RtlFreeHeap
+[warn] stall:   amdvlk64.dll+0x2f0694c boost::serialization::singleton<std::set<boost::serialization::void_cast_detail::void_caster const * __ptr64,boost::serialization::void_cast_detail::void_caster_compare,std::allocator<boost::serialization::void_cast_detail::void_caster const * __ptr64> > >::is_destroyed
+[warn] stall:   amdvlk64.dll+0x2ee80b6 boost::serialization::singleton<std::set<boost::serialization::void_cast_detail::void_caster const * __ptr64,boost::serialization::void_cast_detail::void_caster_compare,std::allocator<boost::serialization::void_cast_detail::void_caster const * __ptr64> > >::is_destroyed
+[warn] stall:   amdvlk64.dll+0x23e3a3 vk_icdNegotiateLoaderICDInterfaceVersion
+[warn] stall:   VkLayer_khronos_validation.dll+0x3563fa vkEnumerateInstanceExtensionProperties
+[warn] stall:   Sandbox.exe+0x5bc48f 
+[warn] stall:   Sandbox.exe+0x5bcdf1 
+[warn] stall:   Sandbox.exe+0x3375f2 
+[warn] stall:   Sandbox.exe+0x27951c 
+[warn] stall:   Sandbox.exe+0x2d5e7b 
+[warn] stall:   Sandbox.exe+0x982b94 
+[warn] stall:   KERNEL32.DLL+0x2dda7 BaseThreadInitThunk
+[warn] stall:   ntdll.dll+0xc9c5c RtlUserThreadStart
+[info] pipeline cache: 28281356 bytes saved

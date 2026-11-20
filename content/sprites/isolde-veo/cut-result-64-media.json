@@ -196,7 +196,7 @@
     "foot": 0.03573
    },
    "pattern": "content/sprites/isolde-veo/counter-staff-media64-v01/counter-staff-{}.png",
-   "impact": 0.2526
+   "impact": 0.5789
   },
   "fall": {
    "video": "Attachments/Isolde/Fallat3sec.mp4",
