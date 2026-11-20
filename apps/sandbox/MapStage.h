@@ -586,8 +586,7 @@ class MapStage final : public Stage {
       // for a small board left it a dot on the screen. The farthest zoom is 2.2 x the distance that frames the whole board (aldeia's
       // 112.42), never beyond aldeia's.
       const float fitDistance = std::max(boardWidth_ / (2 * tanHalf * aspect), boardDepth_ * 1.35f) * 1.05f;
-      maxDistance_ = std::min(kMaxDistance, std::max(2.2f * fitDistance, kMinDistance * 4.0f));
-      distance_ = std::min(maxDistance_, fitDistance) / options_.zoom;
+      maxDistance_ = std::min(kMaxDistance, std::max(2.2f * fitDistance, kMinDistance * 4.0f));      distance_ = std::min(maxDistance_, fitDistance) / options_.zoom;
       // Every map opens at the same zoom, over the party (the user, 2026-10-19: "esse deve ser o zoom padrão em que todos os mapas
       // se iniciam com a camera em cima do grupo, caso estiverem separados na maior concentração de membros"). Captures that frame
       // the board themselves (--offset) keep the whole-board view.
@@ -1636,7 +1635,7 @@ class MapStage final : public Stage {
       if (a && b) target_ += glm::vec3{a->x - b->x, 0.0f, a->z - b->z}, cam_.target += glm::vec3{a->x - b->x, 0.0f, a->z - b->z};
     }
     if (e.type == SDL_EVENT_MOUSE_WHEEL && e.wheel.y != 0.0f) {
-      const float next = std::clamp(distance_ * std::pow(kZoomStep, e.wheel.y), kMinDistance, std::max(distance_, playerMaxDistance()));
+      const float next = std::clamp(distance_ * std::pow(kZoomStep, e.wheel.y), kMinDistance, maxDistance_);
       // Toward the cursor: the pivot moves to the cursor's ground point by the share of the distance zoomed.
       if (const std::optional<glm::vec3> p = groundUnder(e.wheel.windowID, e.wheel.mouse_x, e.wheel.mouse_y)) {
         const float share = 1.0f - next / distance_;
@@ -2934,6 +2933,10 @@ class MapStage final : public Stage {
   std::vector<float> fireFlicker_;                  // ... and each one's flicker this frame
   std::vector<glm::vec3> fireUpright_;              // ... and its flame with the card upright (the light probes' bake)
   static constexpr float kDecorLightPower = 2.0f;   // every other light-giving decoration's light x this (the user, 2026-10-21: "2X")
+  // Every waypoint glows (the user, 2026-11-19: "how do I find the waypoints in the dark? make these glow"): a cool light over each
+  // exit's hexes, unlike any flame, breathing slowly so it reads as a marker.
+  static constexpr std::array<float, 3> kWaypointGlowColor{0.55f, 0.85f, 1.0f};
+  static constexpr float kWaypointGlowPower = 14.0f, kWaypointGlowRadius = 4.5f, kWaypointGlowHeight = 1.2f;
   // One colour for the light of every torch, brazier, lamp / lantern and candle (the user, 2026-10-22: "normalize as cores das tochas,
   // braziers, lâmpadas e velas"; before, three: torches and braziers (1, 0.58, 0.26), lanterns (1, 0.70, 0.36), candles (1, 0.66,
   // 0.34)): the lanterns', the most yellow. Fireplaces, campfires, forges, burning houses and the magic lights keep their own.
@@ -4401,10 +4404,16 @@ class MapStage final : public Stage {
       // centred on it (the card's x, z = the footprint's middle), a hair above the floor, lit, no shadow. They were never drawn
       // (the user, 2026-10-21: the watchtower's stairs and its exit at the door could not be seen).
       if (d.onFloor) {
-        // A 3D stair piece (the watchtower's kit) stands over this waypoint: the piece is its look, the card stays for the rules.
-        if (std::any_of(stairPieces_.begin(), stairPieces_.end(), [&](const glm::vec2& s) { return glm::distance(s, glm::vec2(d.x, d.z)) < 0.9f; })) continue;
+        // Drawn under a 3D stair piece too (the watchtower's kit): every waypoint shows its glowing mark (the user, 2026-11-19: the
+        // floors' waypoints could not be found at all).
         const float y = flat_ ? flatY(d.z) - 0.5f * kFlatRowStep : groundOf(d.groundSmooth, d.groundHard) + 0.03f;
-        addCard(clip, {d.x, y, d.z}, {1.0f, 0.0f, 0.0f}, d.w, d.h, {0.0f, -0.5f * d.h, 0.0f}, d.mirror, 0, kSpriteLit | kSpriteFlat, nullptr);
+        // the waypoint's own art glows too (kWaypointGlowColor, breathing with its light in buildLights)
+        SpriteInstance glow{};
+        glow.emitColor = {kWaypointGlowColor[0], kWaypointGlowColor[1], kWaypointGlowColor[2]};
+        glow.emitLevel = kFlameEmit * (0.8f + 0.2f * std::sin(time * 2.2f));
+        if (lightingMode_ == 3) glow.emitLevel *= flameGlow() / std::max(exposure_, 1e-9f);
+        glow.emitAt = {0.5f, 0.5f, 0.0f};
+        addCard(clip, {d.x, y, d.z}, {1.0f, 0.0f, 0.0f}, d.w, d.h, {0.0f, -0.5f * d.h, 0.0f}, d.mirror, 0, kSpriteLit | kSpriteFlat, &glow);
         continue;
       }
       // Tática (Ember DecorLayer.face with flatTop): every card lies flat square to the screen, just over the highest
@@ -4791,6 +4800,20 @@ class MapStage final : public Stage {
       }
       lights_.push_back(l);
     }
+    // The waypoints' glow (kWaypointGlowColor): every exit of the map (stairs, floor connectors, the way out), over the middle of its hexes.
+    if (battle_ && board_)
+      for (const ember::Battle::Exit& x : battle_->exits()) {
+        if (x.cells.empty()) continue;
+        glm::vec3 at{0.0f};
+        for (const ember::BattleHex& c : x.cells)
+          at += glm::vec3(static_cast<float>(ember::hexX(board_->layout(), c.x, c.y)), 0.0f, static_cast<float>(ember::hexZ(board_->layout(), c.y)));
+        at /= static_cast<float>(x.cells.size());
+        at.y = groundAt(at.x, at.z) + kWaypointGlowHeight;
+        const float breathe = 0.8f + 0.2f * std::sin(time * 2.2f);
+        fireFlicker_.push_back(breathe);
+        fireUpright_.push_back(at);
+        lights_.push_back(carried(at, kWaypointGlowColor, kWaypointGlowPower, kWaypointGlowRadius, kWaypointGlowHeight, breathe));
+      }
     fireLightsTo_ = lights_.size();  // the decorations' and the walls' fire, above: never dimmed by the sun (frame, kFireExposure)
     // The openings' lights (the daylight coming in, as the player should see it: a bright pool at every window and door on the room's
     // side; their colour and strength follow the hour's outdoor light in frame()). The probes carry the physically right, faint share.
@@ -6557,13 +6580,9 @@ class MapStage final : public Stage {
       text = tr("Encontraram uma rota de fuga. Desejam tentar escapar? (" + chance + "% de chance)", "You found a way out. Try to escape? (" + chance + "% chance)");
       yes = tr("Tentar escapar", "Try to escape"), no = tr("Ficar", "Stay");
     } else if (exit && exit->kind == "connector" && !exit->targetMapId.empty()) {
-      // The stairs never lead anywhere in the middle of a fight (the user, 2026-10-30: "não seja possível usar escadas no meio do
-      // combate, apenas warp", "deve ter uma mensagem avisando"): with the turns running the prompt only says so; the free roam
-      // (battle_->roaming()) takes the stairs as before.
-      if (!battle_->roaming()) {
-        text = tr("Você não pode continuar em meio ao combate.", "You cannot go on in the middle of a fight.");
-        yes = tr("Ok", "Ok");
-      } else {
+      // The stairs are free in the middle of a fight too (the user, 2026-11-19: "stairs are free", replacing 2026-10-30's "apenas
+      // warp"): with the turns running the floor is simply left (no victory written), the linked floor opens.
+      {
         const bool up = connectorUp(*exit);
         text = up ? tr("Encontraram uma passagem para subir. Deseja subir?", "You found a way up. Go up?")
                   : tr("Encontraram uma passagem para descer. Deseja descer?", "You found a way down. Go down?");
@@ -6599,7 +6618,7 @@ class MapStage final : public Stage {
       // mission as Ember's confirmFinish does: victory, then the result screen's "Subir" / "Descer" / "Avançar" / "Voltar"
       // (GameApp startBattle(target, ..., preserveKnockouts, arrivedFrom)). The stairs' warning in a fight (no.empty()) only closes.
       if (no.empty()) winDismissed_ = true;
-      else if (!floorExit.empty() && explores_) floorRequest_ = floorExit, winDismissed_ = true;
+      else if (!floorExit.empty() && (explores_ || !battle_->roaming())) floorRequest_ = floorExit, winDismissed_ = true;
       else confirmFinishNow();
     }
     if (!no.empty()) {
@@ -8537,6 +8556,11 @@ class MapStage final : public Stage {
       else if (hasPose(su, "attack2")) pose = "attack2";
       else if (hasPose(su, "cast")) pose = "cast";
     }
+    // Kael's long run of slashes ("specialAttackHigh") is for the higher tiers (the user, 2026-11-19: the lightning one plays on the regular
+    // special attacks, the many slashes stay for the higher tier spells): from tier 6 up (the Mestre da Espada's and the Arauto da Guerra's)
+    if (striker >= 0 && pose == "specialAttack" && !x.counter && !s.kind.empty() && ember::spellTierNumber(s.kind) >= 6 &&
+        hasPose(static_cast<size_t>(striker), "specialAttackHigh"))
+      pose = "specialAttackHigh";
     // Golpe Duplo with its own clip (Kael's "doubleStrike", the overhead cut then the low sweep): the first blow starts the clip, the
     // next blows of the skill play on, each landing on its cut
     const bool comboStep = s.type == StepType::Combat && !x.counter && s.kind == "doubleStrike" && striker >= 0 && hasPose(static_cast<size_t>(striker), "doubleStrike");
@@ -14182,9 +14206,6 @@ class MapStage final : public Stage {
   // showed (the user, 2026-11-19: "esse tipo de ângulo não deveria ser permitido"). The same rule that keeps the pivot on the board
   // (kPanInset: at most 60% of the view's half height from the centre): the lift is the angle of that offset, so the board stays
   // on screen. Cutscenes and shots keep minPitch().
-  // The farthest the wheel zooms out: the opening zoom (the user, 2026-11-19, with a capture of it: "make this the max zoom out,
-  // characters are tiny"): past it the figures became specks. The fit-the-board framings (combat opening, shots) keep maxDistance_.
-  float playerMaxDistance() const { return std::min(maxDistance_, kStartDistance); }
   static float playerMinPitch() { return kMinEyePitch - std::atan(kPanInset * std::tan(glm::radians(kFov * 0.5f))); }
   float gameHour_ = -1.0f;  // MapStageOptions::gameHour
   int dayCycle_ = 0;  // the panel's "Hora": 0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3.. a fixed hour (cycleHour; --hour N)
