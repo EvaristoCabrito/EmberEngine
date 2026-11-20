@@ -1,185 +1,185 @@
 {
  "clips": {
   "base": {
-   "video": "Attachments/Monsters/Horse/DeepGroundBeetleMonster_performing_combat_animat\u2026_f0886517.mp4",
+   "video": "Attachments/Monsters/Beetle/DeepGroundBettleMonster_performing_combat_animat\u2026_f0886517_1080p.mp4",
    "first": 108,
    "last": 150,
-   "bootRow": 637,
+   "bootRow": 957,
    "bootRows": [
-    617,
-    648
+    929,
+    973
    ],
-   "figurePx": 516.0,
+   "figurePx": 775.0,
    "frames": 43,
    "frameMs": 41.666666666666664,
    "nat": [
-    849,
-    555
+    1269,
+    820
    ],
    "crop": [
     4,
     5,
-    839,
-    545
+    1260,
+    809
    ],
    "box": {
-    "w": 2.46802,
-    "h": 1.61337,
-    "foot": 0.09012
+    "w": 2.45613,
+    "h": 1.5871,
+    "foot": 0.07161
    },
-   "pattern": "content/sprites/deepground-beetle/base-v01/base-{}.png"
+   "pattern": "content/sprites/deepground-beetle/base-v02/base-{}.png"
   },
   "atk": {
-   "video": "Attachments/Monsters/Horse/DeepGroundBeetleMonster_performing_combat_animat\u2026_f0886517.mp4",
+   "video": "Attachments/Monsters/Beetle/DeepGroundBettleMonster_performing_combat_animat\u2026_f0886517_1080p.mp4",
    "first": 70,
    "last": 108,
-   "bootRow": 634,
+   "bootRow": 953,
    "bootRows": [
-    584,
-    648
+    898,
+    974
    ],
-   "figurePx": 516.0,
+   "figurePx": 775.0,
    "frames": 39,
    "frameMs": 41.666666666666664,
    "nat": [
-    842,
-    629
+    1259,
+    942
    ],
    "crop": [
-    5,
     4,
-    832,
-    620
+    6,
+    1248,
+    930
    ],
    "box": {
-    "w": 2.44767,
-    "h": 1.82849,
-    "foot": 0.125
+    "w": 2.43677,
+    "h": 1.82323,
+    "foot": 0.08323
    },
-   "pattern": "content/sprites/deepground-beetle/atk-v01/atk-{}.png",
+   "pattern": "content/sprites/deepground-beetle/atk-v02/atk-{}.png",
    "impact": 0.6154
   },
   "cast": {
-   "video": "Attachments/Monsters/Horse/DeepGroundBeetleMonster_performing_combat_animat\u2026_f0886517.mp4",
+   "video": "Attachments/Monsters/Beetle/DeepGroundBettleMonster_performing_combat_animat\u2026_f0886517_1080p.mp4",
    "first": 152,
    "last": 196,
-   "bootRow": 621,
+   "bootRow": 936,
    "bootRows": [
-    606,
-    641
+    908,
+    961
    ],
-   "figurePx": 516.0,
+   "figurePx": 775.0,
    "frames": 45,
    "frameMs": 41.666666666666664,
    "nat": [
-    844,
-    570
+    1263,
+    855
    ],
    "crop": [
     5,
     5,
-    834,
-    560
+    1252,
+    845
    ],
    "box": {
-    "w": 2.45349,
-    "h": 1.65698,
-    "foot": 0.09012
+    "w": 2.44452,
+    "h": 1.65484,
+    "foot": 0.0871
    },
-   "pattern": "content/sprites/deepground-beetle/cast-v01/cast-{}.png"
+   "pattern": "content/sprites/deepground-beetle/cast-v02/cast-{}.png"
   },
   "move": {
-   "video": "Attachments/Monsters/Horse/DeepGroundBeetle_walking_and_falling_an\u2026_6124444d.mp4",
+   "video": "Attachments/Monsters/Beetle/DeepGroundBeetleQuadruped_walking_and_falling_an\u2026_6124444d_1080p.mp4",
    "first": 2,
    "last": 96,
-   "colorMatch": "C:\\EmberEngineB\\build/video-cut/deepground-beetle/combat 108:150",
-   "loopFirst": 56,
-   "loopLast": 91,
-   "seamSteps": 2.22,
-   "bootRow": 648,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/deepground-beetle-1080/combat 108:150",
+   "loopFirst": 57,
+   "loopLast": 92,
+   "seamSteps": 2.17,
+   "bootRow": 974,
    "bodyDrift": [
     0,
     0
    ],
-   "figurePx": 526.0,
+   "figurePx": 789.0,
    "frames": 36,
    "frameMs": 41.666666666666664,
    "nat": [
-    893,
-    546
+    1335,
+    818
    ],
    "crop": [
+    6,
     5,
-    5,
-    883,
-    537
+    1323,
+    808
    ],
    "box": {
-    "w": 2.54658,
-    "h": 1.55703,
-    "foot": 0.05418
+    "w": 2.53802,
+    "h": 1.55513,
+    "foot": 0.04943
    },
-   "pattern": "content/sprites/deepground-beetle/move-v01/move-{}.png"
+   "pattern": "content/sprites/deepground-beetle/move-v02/move-{}.png"
   },
   "hit": {
-   "video": "Attachments/Monsters/Horse/DeepGroundBeetle_walking_and_falling_an\u2026_6124444d.mp4",
+   "video": "Attachments/Monsters/Beetle/DeepGroundBeetleQuadruped_walking_and_falling_an\u2026_6124444d_1080p.mp4",
    "first": 96,
    "last": 122,
-   "colorMatch": "C:\\EmberEngineB\\build/video-cut/deepground-beetle/combat 108:150",
-   "bootRow": 660,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/deepground-beetle-1080/combat 108:150",
+   "bootRow": 987,
    "bootRows": [
-    646,
-    661
+    971,
+    990
    ],
-   "figurePx": 526.0,
+   "figurePx": 789.0,
    "frames": 27,
    "frameMs": 41.666666666666664,
    "nat": [
-    879,
-    549
+    1314,
+    819
    ],
    "crop": [
     5,
     5,
-    869,
-    540
+    1304,
+    809
    ],
    "box": {
-    "w": 2.50665,
-    "h": 1.56559,
-    "foot": 0.05989
+    "w": 2.4981,
+    "h": 1.55703,
+    "foot": 0.05323
    },
-   "pattern": "content/sprites/deepground-beetle/hit-v01/hit-{}.png"
+   "pattern": "content/sprites/deepground-beetle/hit-v02/hit-{}.png"
   },
   "death": {
-   "video": "Attachments/Monsters/Horse/DeepGroundBeetle_walking_and_falling_an\u2026_6124444d.mp4",
+   "video": "Attachments/Monsters/Beetle/DeepGroundBeetleQuadruped_walking_and_falling_an\u2026_6124444d_1080p.mp4",
    "first": 148,
    "last": 239,
-   "colorMatch": "C:\\EmberEngineB\\build/video-cut/deepground-beetle/combat 108:150",
-   "bootRow": 660,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/deepground-beetle-1080/combat 108:150",
+   "bootRow": 990,
    "bootRows": [
-    660,
-    660
+    990,
+    990
    ],
-   "figurePx": 526.0,
+   "figurePx": 789.0,
    "frames": 92,
    "frameMs": 41.666666666666664,
    "nat": [
-    980,
-    540
+    1466,
+    801
    ],
    "crop": [
-    4,
     5,
-    971,
-    529
+    4,
+    1454,
+    792
    ],
    "box": {
-    "w": 2.79468,
-    "h": 1.53992,
-    "foot": 0.06559
+    "w": 2.78707,
+    "h": 1.52281,
+    "foot": 0.05703
    },
-   "pattern": "content/sprites/deepground-beetle/death-v01/death-{}.png"
+   "pattern": "content/sprites/deepground-beetle/death-v02/death-{}.png"
   }
  }
 }

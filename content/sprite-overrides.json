@@ -797,7 +797,7 @@
   },
   {
    "set": "deepground-beetle",
-   "version": "v01",
+   "version": "v02",
    "hero": "deepgroundBeetle",
    "newHero": {"name": "Besouro das Profundezas", "group": "monster", "sprite": "deepground-beetle", "reversed": true},
    "cut": "content/sprites/deepground-beetle/cut.json",
@@ -809,7 +809,7 @@
   },
   {
    "set": "deepground-beetle-64-media",
-   "version": "media64-v01",
+   "version": "media64-v02",
    "cut": "content/sprites/deepground-beetle/cut-64-media.json",
    "why": "the DeepGround Beetle's Personagens Média: 64 frames at ~610 px",
    "mediumOf": {"hero": "deepgroundBeetle", "set": "deepground-beetle"},
@@ -817,7 +817,7 @@
   },
   {
    "set": "deepground-beetle-36-media",
-   "version": "media36-v01",
+   "version": "media36-v02",
    "cut": "content/sprites/deepground-beetle/cut-36-media.json",
    "why": "the DeepGround Beetle's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "deepgroundBeetle", "set": "deepground-beetle"},
