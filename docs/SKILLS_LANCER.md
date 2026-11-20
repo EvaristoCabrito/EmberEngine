@@ -94,3 +94,14 @@ The element is in the effects only (the user): ember light on the hook's chain a
 See the commit message. Not verified: the look of each effect in the window (the user judges); the balance (the numbers are
 the design's); an enemy never uses them (no AI); the hit chance shown for the vault adds 10 on top of a forecast that may
 already count the rear when the foe happens to face away.
+
+## LancerZero (the original Lanceiro)
+
+The user, 2026-11-20: "there was a guy in silver armor that I want to keep as LancerZero, meanwhile the regular lancer will have access to all lancer
+skills for his level, same goes to the default classes in enemy units." LancerZero is a unit of its own (`lancerZero`, content/ember-classes.json
+`heroClasses`, a copy of Ember's `lancer` row: its stats, its tier uses and its old kit only, Investida Perfurante, Varredura, Rasteira), drawn with the
+original silver-plate art (the pack's set `lancer`; poses in `content/lancer-original-poses.json`, sprite `lancerZero`, the roster's `reuse` with `newHero`).
+Its class family is itself (`emberClassFamily`), so it never learns the skills above. The regular Lanceiro (`lancer`, the old Aldric's art) and the
+Sentinela / Templário are of the `aldric` family: `grantClassSpells` gives every unit on a battle, enemies too, all the skills of its class at its level
+(Arremesso 2, Gancho 4, Salto de Vara 8, Desarmar 11, Troca de Posto 13, Empalar e Arrastar 15, Vigília da Sentinela 17), and the default classes of the
+enemies (Guerreiro, Arqueiro, Mago Negro, Curandeiro, Conjurador, ...) get theirs the same way.

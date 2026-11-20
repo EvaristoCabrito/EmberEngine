@@ -185,7 +185,7 @@ bool equipFromSave(BattleUnit& u, const Loadouts& arms, const Json& save) {
     p.staffLifeStealPct = w->lifeStealPct, p.staffRegen = w->regeneration;
   }
   // isArrowAttack: reach weapons never shoot; a weapon shoots when it is ranged; without one the archer classes do
-  static const std::vector<std::string> kReach = {"pikeman", "basePikeman", "lancer", "aldric", "sandoval", "sentinel", "templar"};
+  static const std::vector<std::string> kReach = {"pikeman", "basePikeman", "lancer", "lancerZero", "aldric", "sandoval", "sentinel", "templar"};
   static const std::vector<std::string> kCrossbow = {"brigand", "baseCrossbowman", "brigandCrossbowman"};
   static const std::vector<std::string> kArchers = {"archer", "ranger", "assassin"};
   p.arrow = has(kReach, u.classId) ? false : has(kCrossbow, u.classId) ? true : !weaponId.empty() ? (w && w->ranged) : has(kArchers, u.classId);

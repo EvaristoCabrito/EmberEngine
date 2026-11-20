@@ -113,7 +113,7 @@
     "classWeapons": {
       "miliciaV2": "sword", "milicia": "sword", "theButcher": "sword", "captain": "sword", "brigand": "sword", "rogue": "sword", "assassin": "sword",
       "swordsman": "sword", "soldier": "sword", "punisher": "sword", "paladin": "sword", "heavyKnight": "sword", "vanguard": "sword", "swordmaster": "sword", "warbringer": "sword", "moonwarden": "sword",
-      "basePikeman": "polearm", "pikeman": "polearm", "lancer": "polearm", "sentinel": "polearm", "templar": "polearm", "sandoval": "polearm",
+      "basePikeman": "polearm", "pikeman": "polearm", "lancer": "polearm", "lancerZero": "polearm", "sentinel": "polearm", "templar": "polearm", "sandoval": "polearm",
       "baseCrossbowman": "bow", "brigandCrossbowman": "bow", "archer": "bow", "ranger": "bow",
       "cultist": "staff", "cultistV2": "staff", "blackCultist": "staff", "sorcerer": "staff", "necromancer": "staff", "warlock": "staff", "elementalist": "staff",
       "mage": "staff", "conjurer": "staff", "cleric": "blunt", "bishop": "blunt", "healer": "blunt"

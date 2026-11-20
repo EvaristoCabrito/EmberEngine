@@ -7697,6 +7697,14 @@
         "y": 34,
         "level": 15,
         "useClassSprite": true
+      },
+      {
+        "name": "LancerZero",
+        "classId": "lancerZero",
+        "x": 48,
+        "y": 29,
+        "level": 15,
+        "useClassSprite": true
       }
     ],
     "neutralSpawns": []

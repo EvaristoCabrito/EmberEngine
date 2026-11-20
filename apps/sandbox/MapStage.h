@@ -6156,7 +6156,7 @@ class MapStage final : public Stage {
       if (const ember::HeroPose* p = has("walkUp")) return p;
     if (dir == kWalkFront)
       if (const ember::HeroPose* p = has("walkDown")) return p;
-    const bool wantLeft = sprite == "lancer" ? facing == 1 : facing == -1;
+    const bool wantLeft = sprite == "lancer" || sprite == "lancerZero" ? facing == 1 : facing == -1;
     if (wantLeft)
       if (const ember::HeroPose* p = has("walkLeft")) return p;
     if (const ember::HeroPose* p = has("walk")) return p;
@@ -8391,7 +8391,7 @@ class MapStage final : public Stage {
     if (w == "spear" || w == "lance" || w == "pike" || w == "polearm" || w == "halberd") return WeaponStyle::Thrust;
     if (!w.empty()) return WeaponStyle::Blunt;
     static const char* kBlades[] = {"miliciaV2", "milicia", "theButcher", "captain", "brigand", "rogue", "assassin", "swordsman"};
-    static const char* kSpears[] = {"basePikeman", "pikeman", "lancer"};
+    static const char* kSpears[] = {"basePikeman", "pikeman", "lancer", "lancerZero"};
     for (const char* c : kBlades)
       if (u.classId == c) return WeaponStyle::Blade;
     for (const char* c : kSpears)
@@ -14892,7 +14892,7 @@ class MapStage final : public Stage {
   static constexpr float kBarsFadeFrom = 0.30f, kBarsFadeTo = 0.45f;  // the card's share of the screen's height
   static constexpr float kAirCardHeight = 2.0f;                         // world units: a unit's card, the yardstick of the particles' fade
   // Ember DIR_ACTION_WALK: sprites whose walks are drawn for each side, never mirrored while moving.
-  inline static const std::unordered_set<std::string> kDirectionalWalk = {"aldric", "defaultLancer", "lancer", "sandoval", "theButcher",
+  inline static const std::unordered_set<std::string> kDirectionalWalk = {"aldric", "defaultLancer", "lancer", "lancerZero", "sandoval", "theButcher",
       "familiar2", "familiar3", "cultist-v2", "militia-v2", "salazar", "cobalt-blue-deer", "neera"};
   float homeYaw_ = 0.0f, homePitch_ = 0.0f, homeDistance_ = 0.0f;
   glm::vec3 homeTarget_{0.0f};

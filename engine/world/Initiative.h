@@ -23,7 +23,7 @@ inline void applyEmberInitiative(BattleUnit& u) {
       // beasts (fast warriors)
       {"mordavianWolfFinal", 9}, {"wardog", 8}, {"wardog2", 8}, {"swampBlueCalf", 8},
       // warriors
-      {"captain", 8}, {"baseCrossbowman", 7}, {"miliciaV2", 7}, {"lancer", 7}, {"sandoval", 7}, {"swordsman", 7},
+      {"captain", 8}, {"baseCrossbowman", 7}, {"miliciaV2", 7}, {"lancer", 7}, {"lancerZero", 7}, {"sandoval", 7}, {"swordsman", 7},
       // heavy warriors
       {"basePikeman", 6}, {"punisher", 6}, {"theButcher", 6},
       // brutes

@@ -491,7 +491,7 @@ struct Spawner {
   }
   // engine.ts isArrowAttack / isArcaneCaster
   bool isArrowAttack(const Unit& u) const {
-    if (oneOf(u.classId, {"pikeman", "basePikeman", "lancer", "aldric", "sandoval", "sentinel", "templar"})) return false;
+    if (oneOf(u.classId, {"pikeman", "basePikeman", "lancer", "lancerZero", "aldric", "sandoval", "sentinel", "templar"})) return false;
     if (oneOf(u.classId, {"brigand", "baseCrossbowman", "brigandCrossbowman"})) return true;
     if (!u.weaponId.empty()) { const json* w = r.weapon(u.weaponId); return w && flag(*w, "ranged"); }
     return oneOf(u.classId, {"archer", "ranger", "assassin"});
