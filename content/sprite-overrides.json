@@ -44,7 +44,7 @@
    "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "cast": "cast", "attack": "atk", "counter": "counter-staff", "counterStaff": "counter-staff", "hit": "hit", "death": "death", "turnBack": "turn-back", "castBack": "cast-back", "emote01": "emote01", "walkUp": "move-up", "walkDown": "move-down"},
    "labels": {"counterStaff": "Contra-ataque (cajado)", "hit": "Dano", "death": "Morte", "turnBack": "De costas", "castBack": "De costas (parado)", "emote01": "VossEmote01", "walkUp": "Andar (costas)", "walkDown": "Andar (frente)"},
    "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene", "move-up": "field", "move-down": "field"},
-   "strides": {"move": 1.5, "move-left": 1.0, "move-down": 1.0}
+   "strides": {"move": 1.5, "move-left": 2.0, "move-down": 1.0}
   },
   {
    "set": "voss-veo-media",

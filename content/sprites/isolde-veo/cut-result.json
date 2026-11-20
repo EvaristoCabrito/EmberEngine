@@ -90,34 +90,34 @@
    "pattern": "content/sprites/isolde-veo/cast-v1080/cast-{}.png"
   },
   "fall": {
-   "video": "Attachments/TurnAround/IsoldeHit2FallAlta.mp4",
-   "first": 76,
-   "last": 159,
-   "bootRow": 1808,
+   "video": "Attachments/Isolde/IsoldeFall2.mp4",
+   "first": 54,
+   "last": 130,
+   "bootRow": 1003,
    "bootRows": [
-    1808,
-    1808
+    1003,
+    1003
    ],
-   "figurePx": 1531.0,
-   "bodyAt": -0.2259,
-   "frames": 84,
+   "figurePx": 881.0,
+   "bodyAt": -0.2264,
+   "frames": 77,
    "frameMs": 41.666666666666664,
    "nat": [
-    1084,
-    1596
+    1152,
+    947
    ],
    "crop": [
-    0,
     5,
-    1080,
-    1586
+    5,
+    1005,
+    937
    ],
    "box": {
-    "w": 1.88337,
-    "h": 2.77293,
-    "foot": 0.03822
+    "w": 3.47823,
+    "h": 2.85927,
+    "foot": 0.14795
    },
-   "pattern": "content/sprites/isolde-veo/fall-v1080/fall-{}.png"
+   "pattern": "content/sprites/isolde-veo/fall-v1081/fall-{}.png"
   },
   "move": {
    "video": "Attachments/TurnAround/IsoldeWalk2.mp4",
@@ -279,64 +279,64 @@
    "pattern": "content/sprites/isolde-veo/move-down-v01/move-down-{}.png"
   },
   "turn-back": {
-   "video": "Attachments/TurnAround/Character_turning_in_studio_47cd8c5d_1080p.mp4",
-   "first": 18,
+   "video": "Attachments/Isolde/IsoldeTurnAroundFinal.mp4",
+   "first": 24,
    "last": 112,
-   "bootRow": 1698,
+   "bootRow": 1026,
    "bootRows": [
-    1697,
-    1720
+    1013,
+    1029
    ],
-   "figurePx": 1372.0,
-   "bodyAt": -0.2259,
-   "frames": 95,
+   "figurePx": 926.0,
+   "bodyAt": -0.2255,
+   "frames": 89,
    "frameMs": 41.666666666666664,
    "nat": [
-    1105,
-    1443
+    918,
+    962
    ],
    "crop": [
-    0,
+    7,
     5,
-    968,
-    1430
+    782,
+    952
    ],
    "box": {
-    "w": 2.14235,
-    "h": 2.79765,
-    "foot": 0.05429
+    "w": 2.63702,
+    "h": 2.76341,
+    "foot": 0.04883
    },
-   "pattern": "content/sprites/isolde-veo/turn-back-v1080/turn-back-{}.png"
+   "pattern": "content/sprites/isolde-veo/turn-back-v1081/turn-back-{}.png"
   },
   "cast-back": {
-   "video": "Attachments/TurnAround/Character_turning_in_studio_47cd8c5d_1080p.mp4",
+   "video": "Attachments/Isolde/IsoldeTurnAroundFinal.mp4",
    "first": 135,
    "last": 135,
-   "bootRow": 1697,
+   "bootRow": 1026,
    "bootRows": [
-    1697,
-    1697
+    1026,
+    1026
    ],
-   "figurePx": 1371.0,
-   "bodyAt": -0.226,
+   "figurePx": 928.0,
+   "bodyAt": -0.2264,
    "frames": 1,
    "frameMs": 41.666666666666664,
    "nat": [
-    1063,
-    1403
+    704,
+    948
    ],
    "crop": [
-    4,
-    7,
-    649,
-    1391
+    5,
+    6,
+    425,
+    938
    ],
    "box": {
-    "w": 2.06242,
-    "h": 2.72209,
-    "foot": 0.01552
+    "w": 2.01793,
+    "h": 2.71733,
+    "foot": 0.0172
    },
-   "pattern": "content/sprites/isolde-veo/cast-back-v1080/cast-back-{}.png"
+   "pattern": "content/sprites/isolde-veo/cast-back-v1081/cast-back-{}.png"
   },
   "emote01": {
    "video": "Attachments/Isolde/IsoldeEmoteStartled.mp4",

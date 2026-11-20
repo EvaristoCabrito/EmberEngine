@@ -37,37 +37,26 @@
    "clip": "move-left",
    "pose": "walkLeft",
    "kind": "walk",
-   "src": "build/video-cut/voss-veo/walk-left",
-   "video": "Attachments/VeoVoss/Walk Left/Character_walking_left_with_staff_20261017230240.mp4",
-   "first": 30,
-   "last": 170,
+   "src": "build/video-cut/voss-1080/walkleft",
+   "video": "Attachments/Voss/Vosswalking_left_in_profile_51d7dffc_1080p.mp4",
+   "first": 0,
+   "last": 142,
    "loopMin": 40,
-   "loopMax": 110,
+   "loopMax": 142,
    "mode": "loop",
+   "version": "media64-v1081",
    "scaleTo": 610
   },
   {
    "clip": "cast",
    "pose": "cast",
    "kind": "stand",
-   "src": "build/video-cut/voss-veo/cast",
-   "video": "Attachments/VeoVoss/Casting/Voss_casting_purple_arcane_spell_20261017231306.mp4",
+   "src": "build/video-cut/voss-1080/cast",
+   "video": "Attachments/Voss/Voss_casting_purple_arcane_spell_788c716a_1080p.mp4",
    "first": 8,
-   "last": 120,
+   "last": 130,
    "mode": "once",
-   "wallKey": {
-    "region": [
-     330,
-     0,
-     660,
-     380
-    ],
-    "low": 30,
-    "high": 110,
-    "feather": 56,
-    "why": "the user, 2026-10-20: half of the staff vanished at the end of the cast (v01 frames 77-90: the model dropped the flash, the burst and the staff's head as background); v01 kept"
-   },
-   "bodyAt": -0.242,
+   "version": "media64-v1081",
    "scaleTo": 610
   },
   {
@@ -88,12 +77,14 @@
    "pose": "counterStaff",
    "label": "Contra-ataque (cajado)",
    "kind": "stand",
-   "src": "build/video-cut/voss-veo/counter-staff",
-   "video": "Attachments/VeoVoss/CounterStaff/CounterClseat4sec.mp4",
-   "first": 96,
-   "last": 220,
-   "impactFrame": 166,
+   "src": "build/video-cut/voss-1080/counter",
+   "video": "Attachments/Voss/VossStaffCounter.mp4",
+   "first": 16,
+   "last": 90,
+   "impactFrame": 36,
    "mode": "once",
+   "bodyAt": -0.242,
+   "version": "media64-v1081",
    "scaleTo": 610
   },
   {
@@ -451,30 +442,14 @@
    "pose": "death",
    "label": "Morte",
    "kind": "stand",
-   "src": "build/video-cut/voss-veo/death",
-   "video": "Attachments/VeoVoss/HitandDeath/VossHitDeath.mp4",
-   "first": 134,
-   "last": 212,
-   "standUntil": 150,
+   "src": "build/video-cut/voss-1080/hitfall",
+   "video": "Attachments/Voss/Mage_hit_and_fall_animations_a0ec26d6_1080p.mp4",
+   "first": 124,
+   "last": 214,
+   "standUntil": 132,
    "mode": "once",
    "bodyAt": -0.242,
-   "wallKey": {
-    "region": [
-     0,
-     0,
-     385,
-     650
-    ],
-    "frames": [
-     150,
-     161
-    ],
-    "low": 28,
-    "high": 210,
-    "feather": 30,
-    "why": "video 152-161: the falling staff is motion-blurred and the model took it for background (white head, the shaft gone, frame 160 almost empty); the region is the staff's sweep left of the body; only while it falls (before, the purple glow lit the wall; after, its shadow lies on the floor); low / high = a dark staff over the 230 wall, so alpha follows the blur; low 28: under it the wall's darker top corner leaked faint patches (alpha <= 23)"
-   },
-   "why": "the same video: struck at 136, the staff falls from 150, on his knees by 175, sitting still by 200; his feet line and height from the frames he still stands in (134-150); bodyAt keeps the body where the idle has it although the fallen staff widens the frame on the left",
+   "version": "media64-v1081",
    "scaleTo": 610
   },
   {
@@ -506,27 +481,15 @@
   {
    "clip": "emote01",
    "pose": "emote01",
-   "label": "Dano",
+   "label": "VossEmote01",
    "kind": "stand",
-   "src": "build/video-cut/voss-veo/hit",
-   "video": "Attachments/VeoVoss/HitandDeath/VossHitDeath.mp4",
-   "first": 28,
-   "last": 72,
+   "src": "build/video-cut/voss-1080/hitfall",
+   "video": "Attachments/Voss/Mage_hit_and_fall_animations_a0ec26d6_1080p.mp4",
+   "first": 26,
+   "last": 96,
    "mode": "once",
    "bodyAt": -0.242,
-   "wallKey": {
-    "region": [
-     220,
-     0,
-     560,
-     260
-    ],
-    "low": 25,
-    "high": 110,
-    "feather": 40,
-    "why": "the user, 2026-10-21: the staff was missing in the first frame (video 28-30: the model dropped the glowing staff head as background; the purple glow gone in the later frames too)"
-   },
-   "why": "the user, 2026-10-21: one video for both (VossHitDeath.mp4); the blow lands at frame 30, he is upright again by 72",
+   "version": "media64-v1081",
    "scaleTo": 610
   },
   {

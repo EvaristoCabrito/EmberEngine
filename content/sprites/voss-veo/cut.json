@@ -33,38 +33,27 @@
    "clip": "move-left",
    "pose": "walkLeft",
    "kind": "walk",
-   "src": "build/video-cut/voss-veo/walk-left",
-   "video": "Attachments/VeoVoss/Walk Left/Character_walking_left_with_staff_20261017230240.mp4",
+   "src": "build/video-cut/voss-1080/walkleft",
+   "video": "Attachments/Voss/Vosswalking_left_in_profile_51d7dffc_1080p.mp4",
    "first": 0,
-   "last": 148,
-   "loopMin": 101,
-   "loopMax": 146,
+   "last": 142,
+   "loopMin": 40,
+   "loopMax": 142,
    "mode": "loop",
-   "why": "the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (0..148, 149 frames), the seam trims at most 24; the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (0..148, 149 frames), the seam trims at most 48"
+   "why": "the user, 2026-11-20: his walk left in profile (6 s, 1920 x 1080, ~960 px tall, nothing touches an edge) instead of the old one (its body touched the left edge in 46 frames of the loop)",
+   "version": "v1081"
   },
   {
    "clip": "cast",
    "pose": "cast",
    "kind": "stand",
-   "src": "build/video-cut/voss-veo/cast",
-   "video": "Attachments/VeoVoss/Casting/Voss_casting_purple_arcane_spell_20261017231306.mp4",
+   "src": "build/video-cut/voss-1080/cast",
+   "video": "Attachments/Voss/Voss_casting_purple_arcane_spell_788c716a_1080p.mp4",
    "first": 8,
-   "last": 120,
+   "last": 130,
    "mode": "once",
-   "version": "v02",
-   "wallKey": {
-    "region": [
-     330,
-     0,
-     660,
-     380
-    ],
-    "low": 30,
-    "high": 110,
-    "feather": 56,
-    "why": "the user, 2026-10-20: half of the staff vanished at the end of the cast (v01 frames 77-90: the model dropped the flash, the burst and the staff's head as background); v01 kept"
-   },
-   "bodyAt": -0.242
+   "why": "the user, 2026-11-20: his cast at 1080p (1920 x 1080; ~1030 px tall instead of 657); a dark backdrop like the old one; the purple burst touches the top edge in 44-54, 64-70, 82-86",
+   "version": "v1081"
   },
   {
    "clip": "atk",
@@ -83,12 +72,15 @@
    "pose": "counterStaff",
    "label": "Contra-ataque (cajado)",
    "kind": "stand",
-   "src": "build/video-cut/voss-veo/counter-staff",
-   "video": "Attachments/VeoVoss/CounterStaff/CounterClseat4sec.mp4",
-   "first": 96,
-   "last": 220,
-   "impactFrame": 166,
-   "mode": "once"
+   "src": "build/video-cut/voss-1080/counter",
+   "video": "Attachments/Voss/VossStaffCounter.mp4",
+   "first": 16,
+   "last": 90,
+   "impactFrame": 36,
+   "mode": "once",
+   "bodyAt": -0.242,
+   "why": "the user, 2026-11-20: VossStaffCounter (1920 x 1080, light backdrop, ~820 px tall, nothing touches an edge) instead of the old one (720 x 1280, cut by the edges in 55 + 19 + 22 frames): he stands to ~18, strikes 20-60, settles by ~88",
+   "version": "v1081"
   },
   {
    "clip": "hit",
@@ -444,30 +436,15 @@
    "pose": "death",
    "label": "Morte",
    "kind": "stand",
-   "src": "build/video-cut/voss-veo/death",
-   "video": "Attachments/VeoVoss/HitandDeath/VossHitDeath.mp4",
-   "first": 134,
-   "last": 212,
-   "standUntil": 150,
+   "src": "build/video-cut/voss-1080/hitfall",
+   "video": "Attachments/Voss/Mage_hit_and_fall_animations_a0ec26d6_1080p.mp4",
+   "first": 124,
+   "last": 214,
+   "standUntil": 132,
    "mode": "once",
    "bodyAt": -0.242,
-   "wallKey": {
-    "region": [
-     0,
-     0,
-     385,
-     650
-    ],
-    "frames": [
-     150,
-     161
-    ],
-    "low": 28,
-    "high": 210,
-    "feather": 30,
-    "why": "video 152-161: the falling staff is motion-blurred and the model took it for background (white head, the shaft gone, frame 160 almost empty); the region is the staff's sweep left of the body; only while it falls (before, the purple glow lit the wall; after, its shadow lies on the floor); low / high = a dark staff over the 230 wall, so alpha follows the blur; low 28: under it the wall's darker top corner leaked faint patches (alpha <= 23)"
-   },
-   "why": "the same video: struck at 136, the staff falls from 150, on his knees by 175, sitting still by 200; his feet line and height from the frames he still stands in (134-150); bodyAt keeps the body where the idle has it although the fallen staff widens the frame on the left"
+   "why": "the same video: he stands to ~132, falls 136-184, lies still after (the old death was 485 px tall)",
+   "version": "v1081"
   },
   {
    "clip": "turn-back",
@@ -498,27 +475,16 @@
   {
    "clip": "emote01",
    "pose": "emote01",
-   "label": "Dano",
+   "label": "VossEmote01",
    "kind": "stand",
-   "src": "build/video-cut/voss-veo/hit",
-   "video": "Attachments/VeoVoss/HitandDeath/VossHitDeath.mp4",
-   "first": 28,
-   "last": 72,
+   "src": "build/video-cut/voss-1080/hitfall",
+   "video": "Attachments/Voss/Mage_hit_and_fall_animations_a0ec26d6_1080p.mp4",
+   "first": 26,
+   "last": 96,
    "mode": "once",
    "bodyAt": -0.242,
-   "wallKey": {
-    "region": [
-     220,
-     0,
-     560,
-     260
-    ],
-    "low": 25,
-    "high": 110,
-    "feather": 40,
-    "why": "the user, 2026-10-21: the staff was missing in the first frame (video 28-30: the model dropped the glowing staff head as background; the purple glow gone in the later frames too)"
-   },
-   "why": "the user, 2026-11-17: \"use the old react as a Emote for both Voss and Kael\": the hit before (VossHitDeath 28-72), cutscenes only"
+   "why": "the user, 2026-11-20: the hit in Mage_hit_and_fall_animations looks silly as a hit react (his proper hit stays the 1080p one already in the game): it is his emote01 now (cutscenes only), 1080p instead of the old 720p one (642 px)",
+   "version": "v1081"
   },
   {
    "clip": "move-up",

@@ -90,15 +90,15 @@
    "pose": "death",
    "label": "Queda",
    "kind": "stand",
-   "src": "build/video-cut/isolde-1080/hit2fall",
-   "video": "Attachments/TurnAround/IsoldeHit2FallAlta.mp4",
-   "first": 76,
-   "last": 159,
-   "standUntil": 82,
+   "src": "build/video-cut/isolde-1080/fall2",
+   "video": "Attachments/Isolde/IsoldeFall2.mp4",
+   "first": 54,
+   "last": 130,
+   "standUntil": 60,
    "mode": "once",
    "bodyAt": -0.226,
-   "why": "the user, 2026-11-19: IsoldeHit2FallAlta from the fall's start (she stands to 80), to her lying; the lying body runs off the video's left edge from 118 and its right edge from 137; the Hit2 reaction (frames 30-60) stays in storage",
-   "version": "v1080"
+   "why": "the user, 2026-11-20: IsoldeFall2 (a wide picture, she stays in the centre, nothing touches an edge): she stands to ~58, falls 60-108, lies still after; instead of IsoldeHit2FallAlta's fall (its lying body ran off the video's edges)",
+   "version": "v1081"
   },
   {
    "clip": "move-up",
@@ -130,27 +130,27 @@
    "clip": "turn-back",
    "pose": "turnBack",
    "kind": "stand",
-   "src": "build/video-cut/isolde-1080/turn",
-   "video": "Attachments/TurnAround/Character_turning_in_studio_47cd8c5d_1080p.mp4",
-   "first": 18,
+   "src": "build/video-cut/isolde-1080/turnfinal",
+   "video": "Attachments/Isolde/IsoldeTurnAroundFinal.mp4",
+   "first": 24,
    "last": 112,
    "mode": "once",
    "bodyAt": -0.226,
-   "why": "the user, 2026-11-19: her turn at 1080p, the same take as before (18-112)",
-   "version": "v1080"
+   "why": "the user, 2026-11-20: IsoldeTurnAroundFinal (1920 x 1080, she stays in the centre, nothing touches an edge: the cloak's tip no longer reaches the edge); she stands to ~28, turns 28-100, her back settles after",
+   "version": "v1081"
   },
   {
    "clip": "cast-back",
    "pose": "castBack",
    "kind": "stand",
-   "src": "build/video-cut/isolde-1080/turn",
-   "video": "Attachments/TurnAround/Character_turning_in_studio_47cd8c5d_1080p.mp4",
+   "src": "build/video-cut/isolde-1080/turnfinal",
+   "video": "Attachments/Isolde/IsoldeTurnAroundFinal.mp4",
    "first": 135,
    "last": 135,
    "mode": "once",
    "bodyAt": -0.226,
    "why": "the back still of the same turn",
-   "version": "v1080"
+   "version": "v1081"
   },
   {
    "clip": "emote01",

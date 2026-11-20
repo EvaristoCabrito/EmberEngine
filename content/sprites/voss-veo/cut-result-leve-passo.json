@@ -68,72 +68,71 @@
    "pattern": "content/sprites/voss-veo/move-leve-passo-v01/move-{}.png"
   },
   "move-left": {
-   "video": "Attachments/VeoVoss/Walk Left/Character_walking_left_with_staff_20261017230240.mp4",
+   "video": "Attachments/Voss/Vosswalking_left_in_profile_51d7dffc_1080p.mp4",
    "first": 0,
-   "last": 148,
-   "loopFirst": 41,
-   "loopLast": 145,
-   "seamSteps": 2.39,
-   "bootRow": 1220,
+   "last": 142,
+   "loopFirst": 44,
+   "loopLast": 116,
+   "seamSteps": 0.92,
+   "bootRow": 1035,
    "bodyDrift": [
-    -13,
-    26
+    32,
+    51
    ],
-   "frameStep": 3,
-   "frameStepFrom": 105,
-   "figurePx": 1124.0,
-   "scaledTo": 610.3,
-   "frames": 35,
-   "frameMs": 125.0,
+   "frameStep": 2,
+   "frameStepFrom": 73,
+   "figurePx": 944.0,
+   "scaledTo": 610.0,
+   "frames": 37,
+   "frameMs": 83.33333333333333,
    "nat": [
-    368,
-    657
+    374,
+    641
    ],
    "crop": [
-    1,
     4,
-    363,
-    650
+    3,
+    367,
+    635
    ],
    "box": {
-    "w": 1.6232,
-    "h": 2.89794,
-    "foot": 0.05887
+    "w": 1.64806,
+    "h": 2.82462,
+    "foot": 0.04763
    },
-   "pattern": "content/sprites/voss-veo/move-left-leve-passo-v01/move-left-{}.png"
+   "pattern": "content/sprites/voss-veo/move-left-leve-passo-v1081/move-left-{}.png"
   },
   "cast": {
-   "video": "Attachments/VeoVoss/Casting/Voss_casting_purple_arcane_spell_20261017231306.mp4",
+   "video": "Attachments/Voss/Voss_casting_purple_arcane_spell_788c716a_1080p.mp4",
    "first": 8,
-   "last": 120,
-   "bootRow": 687,
+   "last": 130,
+   "bootRow": 1031,
    "bootRows": [
-    686,
-    687
+    1031,
+    1031
    ],
    "frameStep": 3,
-   "frameStepFrom": 113,
-   "figurePx": 632.0,
-   "bodyAt": -0.2423,
-   "scaledTo": 610.2,
-   "frames": 38,
+   "frameStepFrom": 123,
+   "figurePx": 947.0,
+   "scaledTo": 610.3,
+   "frames": 41,
    "frameMs": 125.0,
    "nat": [
-    607,
-    671
+    406,
+    669
    ],
    "crop": [
-    15,
+    3,
     0,
-    484,
+    399,
     666
    ],
    "box": {
-    "w": 2.67425,
-    "h": 2.95621,
-    "foot": 0.0297
+    "w": 1.79039,
+    "h": 2.95017,
+    "foot": 0.01627
    },
-   "pattern": "content/sprites/voss-veo/cast-leve-passo-v01/cast-{}.png"
+   "pattern": "content/sprites/voss-veo/cast-leve-passo-v1081/cast-{}.png"
   },
   "atk": {
    "video": "Attachments/VeoVoss/CounterDistance/CounterDistanceat420sec.mp4",
@@ -169,37 +168,38 @@
    "impact": 0.3902
   },
   "counter-staff": {
-   "video": "Attachments/VeoVoss/CounterStaff/CounterClseat4sec.mp4",
-   "first": 96,
-   "last": 220,
-   "bootRow": 1224,
+   "video": "Attachments/Voss/VossStaffCounter.mp4",
+   "first": 16,
+   "last": 90,
+   "bootRow": 969,
    "bootRows": [
-    1221,
-    1243
+    969,
+    969
    ],
-   "frameStep": 3,
-   "frameStepFrom": 125,
-   "figurePx": 1124.0,
-   "scaledTo": 610.3,
-   "frames": 42,
-   "frameMs": 125.0,
+   "frameStep": 2,
+   "frameStepFrom": 75,
+   "figurePx": 801.0,
+   "bodyAt": -0.2415,
+   "scaledTo": 610.0,
+   "frames": 38,
+   "frameMs": 83.33333333333333,
    "nat": [
-    391,
-    670
+    661,
+    674
    ],
    "crop": [
-    0,
-    0,
-    391,
-    667
+    17,
+    5,
+    639,
+    666
    ],
    "box": {
-    "w": 1.72121,
-    "h": 2.94939,
-    "foot": 0.0205
+    "w": 2.91176,
+    "h": 2.96902,
+    "foot": 0.0196
    },
-   "pattern": "content/sprites/voss-veo/counter-staff-leve-passo-v01/counter-staff-{}.png",
-   "impact": 0.56
+   "pattern": "content/sprites/voss-veo/counter-staff-leve-passo-v1081/counter-staff-{}.png",
+   "impact": 0.2667
   },
   "hit": {
    "video": "Attachments/KaelV3/VossCharacter_taking_impact_jolt_3f33452d_1080p.mp4",
@@ -236,36 +236,37 @@
    "pattern": "content/sprites/voss-veo/hit-leve-passo-v02/hit-{}.png"
   },
   "death": {
-   "video": "Attachments/VeoVoss/HitandDeath/VossHitDeath.mp4",
-   "first": 134,
-   "last": 212,
-   "bootRow": 690,
+   "video": "Attachments/Voss/Mage_hit_and_fall_animations_a0ec26d6_1080p.mp4",
+   "first": 124,
+   "last": 214,
+   "bootRow": 1035,
    "bootRows": [
-    690,
-    690
+    1035,
+    1035
    ],
-   "frameStep": 2,
-   "frameStepFrom": 79,
-   "figurePx": 609.0,
-   "bodyAt": -0.2427,
-   "frames": 40,
-   "frameMs": 83.33333333333333,
+   "frameStep": 3,
+   "frameStepFrom": 91,
+   "figurePx": 931.0,
+   "bodyAt": -0.2424,
+   "scaledTo": 610.3,
+   "frames": 31,
+   "frameMs": 125.0,
    "nat": [
-    1204,
-    679
+    1101,
+    664
    ],
    "crop": [
-    9,
-    5,
-    830,
-    667
+    7,
+    4,
+    806,
+    657
    ],
    "box": {
-    "w": 5.31223,
-    "h": 2.99585,
-    "foot": 0.1103
+    "w": 4.84872,
+    "h": 2.92421,
+    "foot": 0.09739
    },
-   "pattern": "content/sprites/voss-veo/death-leve-passo-v01/death-{}.png"
+   "pattern": "content/sprites/voss-veo/death-leve-passo-v1081/death-{}.png"
   },
   "turn-back": {
    "video": "Attachments/TurnAround/Person_turning_180_degrees_3a633cfa_1080p.mp4",
@@ -334,37 +335,37 @@
    "pattern": "content/sprites/voss-veo/cast-back-leve-passo-v1080/cast-back-{}.png"
   },
   "emote01": {
-   "video": "Attachments/VeoVoss/HitandDeath/VossHitDeath.mp4",
-   "first": 28,
-   "last": 72,
-   "bootRow": 693,
+   "video": "Attachments/Voss/Mage_hit_and_fall_animations_a0ec26d6_1080p.mp4",
+   "first": 26,
+   "last": 96,
+   "bootRow": 1040,
    "bootRows": [
-    691,
-    693
+    1035,
+    1040
    ],
-   "frameStep": 1,
-   "frameStepFrom": 45,
-   "figurePx": 612.0,
+   "frameStep": 2,
+   "frameStepFrom": 71,
+   "figurePx": 918.0,
    "bodyAt": -0.2415,
-   "scaledTo": 610.3,
-   "frames": 45,
-   "frameMs": 41.666666666666664,
+   "scaledTo": 609.7,
+   "frames": 36,
+   "frameMs": 83.33333333333333,
    "nat": [
-    664,
-    698
+    821,
+    692
    ],
    "crop": [
-    8,
-    0,
-    631,
-    694
+    4,
+    4,
+    599,
+    685
    ],
    "box": {
-    "w": 2.92409,
-    "h": 3.07382,
-    "foot": 0.02634
+    "w": 3.61779,
+    "h": 3.04934,
+    "foot": 0.01974
    },
-   "pattern": "content/sprites/voss-veo/emote01-leve-passo-v01/emote01-{}.png"
+   "pattern": "content/sprites/voss-veo/emote01-leve-passo-v1081/emote01-{}.png"
   },
   "move-up": {
    "video": "Attachments/TurnAround/VossWalkuUpandDown.mp4",
