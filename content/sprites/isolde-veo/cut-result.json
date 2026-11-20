@@ -152,67 +152,67 @@
    "pattern": "content/sprites/isolde-veo/move-v1080/move-{}.png"
   },
   "move-left": {
-   "video": "Attachments/Isolde/IsoldeLeftWalk.mp4",
-   "first": 30,
-   "last": 143,
-   "loopFirst": 54,
-   "loopLast": 132,
-   "seamSteps": 2.46,
-   "bootRow": 1162,
+   "video": "Attachments/TurnAround/IsoldeWalk2.mp4",
+   "first": 7,
+   "last": 189,
+   "loopFirst": 45,
+   "loopLast": 150,
+   "seamSteps": 1.79,
+   "bootRow": 1841,
    "bodyDrift": [
-    31,
-    59
+    0,
+    31
    ],
-   "figurePx": 974.0,
+   "figurePx": 1733.5,
+   "frames": 106,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1005,
+    1792
+   ],
+   "crop": [
+    1,
+    8,
+    997,
+    1778
+   ],
+   "box": {
+    "w": 1.54214,
+    "h": 2.74977,
+    "foot": 0.01995
+   },
+   "pattern": "content/sprites/isolde-veo/move-left-v1082/move-left-{}.png"
+  },
+  "counter-staff": {
+   "video": "Attachments/Isolde/IsoldeStaffCounterFinal.mp4",
+   "first": 10,
+   "last": 88,
+   "bootRow": 965,
+   "bootRows": [
+    965,
+    966
+   ],
+   "figurePx": 821.0,
+   "bodyAt": -0.2268,
    "frames": 79,
    "frameMs": 41.666666666666664,
    "nat": [
-    545,
-    1021
+    1080,
+    908
    ],
    "crop": [
-    5,
-    5,
-    535,
-    1009
+    6,
+    6,
+    783,
+    897
    ],
    "box": {
-    "w": 1.4884,
-    "h": 2.78836,
-    "foot": 0.06828
+    "w": 3.49915,
+    "h": 2.94188,
+    "foot": 0.02268
    },
-   "pattern": "content/sprites/isolde-veo/move-left-v01/move-left-{}.png"
-  },
-  "counter-staff": {
-   "video": "Attachments/Isolde/IsoldeStaffCounter.mp4",
-   "first": 18,
-   "last": 112,
-   "bootRow": 1220,
-   "bootRows": [
-    1187,
-    1255
-   ],
-   "figurePx": 1018.0,
-   "bodyAt": -0.226,
-   "frames": 95,
-   "frameMs": 41.666666666666664,
-   "nat": [
-    735,
-    1235
-   ],
-   "crop": [
-    15,
-    1,
-    720,
-    1228
-   ],
-   "box": {
-    "w": 1.92053,
-    "h": 3.22701,
-    "foot": 0.03658
-   },
-   "pattern": "content/sprites/isolde-veo/counter-staff-v01/counter-staff-{}.png",
-   "impact": 0.5789
+   "pattern": "content/sprites/isolde-veo/counter-staff-v1082/counter-staff-{}.png",
+   "impact": 0.3038
   },
   "move-up": {
    "video": "Attachments/Isolde/IsoldeUPandDown.mp4",

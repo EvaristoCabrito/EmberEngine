@@ -68,37 +68,37 @@
    "impact": 0.2892
   },
   "turn-back": {
-   "video": "Attachments/TurnAround/Person_turning_180_degrees_ee490aa8_1080p.mp4",
-   "first": 0,
-   "last": 127,
+   "video": "Attachments/KaelV3/KaelTurnAroundFinal.mp4",
+   "first": 26,
+   "last": 112,
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
-   "bootRow": 1819,
+   "bootRow": 1045,
    "bootRows": [
-    1751,
-    1851
+    1036,
+    1059
    ],
-   "frameCountFrom": 128,
-   "figurePx": 1676.0,
-   "bodyAt": -0.1901,
-   "scaledTo": 610.1,
+   "frameCountFrom": 87,
+   "figurePx": 965.0,
+   "bodyAt": -0.1898,
+   "scaledTo": 609.6,
    "frames": 36,
-   "frameMs": 148.14814814814815,
+   "frameMs": 100.69444444444444,
    "nat": [
-    484,
-    640
+    678,
+    633
    ],
    "crop": [
-    0,
-    2,
-    394,
-    636
+    5,
+    3,
+    531,
+    626
    ],
    "box": {
-    "w": 2.04584,
-    "h": 2.70524,
-    "foot": 0.02328
+    "w": 2.86607,
+    "h": 2.67585,
+    "foot": 0.03394
    },
-   "pattern": "content/sprites/kael-v3/turn-back-media36-v1080/turn-back-{}.png"
+   "pattern": "content/sprites/kael-v3/turn-back-media36-v1082/turn-back-{}.png"
   },
   "cast-back": {
    "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",
@@ -504,39 +504,39 @@
    "pattern": "content/sprites/kael-v3/move-up-media36-v05/move-up-{}.png"
   },
   "move-down": {
-   "video": "Attachments/KaelV3/supersize/KaelWalkFront.mp4",
-   "first": 17,
-   "last": 142,
+   "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",
+   "first": 121,
+   "last": 239,
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
-   "loopFirst": 70,
-   "loopLast": 113,
-   "seamSteps": 1.27,
-   "bootRow": 1863,
+   "loopFirst": 157,
+   "loopLast": 196,
+   "seamSteps": 3.2,
+   "bootRow": 1049,
    "bodyDrift": [
-    28,
-    102
+    -44,
+    5
    ],
-   "frameCountFrom": 44,
-   "figurePx": 1770.0,
-   "scaledTo": 609.6,
+   "frameCountFrom": 40,
+   "figurePx": 992.0,
+   "scaledTo": 610.3,
    "frames": 36,
-   "frameMs": 50.925925925925924,
+   "frameMs": 46.29629629629629,
    "nat": [
-    315,
-    631
+    333,
+    630
    ],
    "crop": [
-    1,
     2,
-    314,
-    627
+    3,
+    328,
+    624
    ],
    "box": {
-    "w": 1.33227,
-    "h": 2.66877,
-    "foot": 0.01609
+    "w": 1.40964,
+    "h": 2.66688,
+    "foot": 0.02783
    },
-   "pattern": "content/sprites/kael-v3/move-down-media36-v05/move-down-{}.png"
+   "pattern": "content/sprites/kael-v3/move-down-media36-v1082/move-down-{}.png"
   },
   "emote05": {
    "video": "Attachments/KaelV3/supersize/HitReactUltimate.mp4",

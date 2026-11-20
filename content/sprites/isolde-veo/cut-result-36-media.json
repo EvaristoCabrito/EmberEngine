@@ -66,38 +66,38 @@
    "pattern": "content/sprites/isolde-veo/move-media36-v1080/move-{}.png"
   },
   "move-left": {
-   "video": "Attachments/Isolde/IsoldeLeftWalk.mp4",
-   "first": 36,
-   "last": 143,
+   "video": "Attachments/TurnAround/IsoldeWalk2.mp4",
+   "first": 7,
+   "last": 189,
    "loopFirst": 45,
-   "loopLast": 96,
-   "seamSteps": 1.9,
-   "bootRow": 1162,
+   "loopLast": 150,
+   "seamSteps": 1.79,
+   "bootRow": 1841,
    "bodyDrift": [
-    22,
-    54
+    0,
+    31
    ],
-   "frameCountFrom": 52,
-   "figurePx": 976.0,
-   "scaledTo": 609.9,
+   "frameCountFrom": 106,
+   "figurePx": 1733.5,
+   "scaledTo": 609.8,
    "frames": 36,
-   "frameMs": 60.18518518518518,
+   "frameMs": 122.68518518518516,
    "nat": [
-    341,
-    638
-   ],
-   "crop": [
-    3,
-    4,
-    335,
+    352,
     630
    ],
+   "crop": [
+    0,
+    3,
+    350,
+    625
+   ],
    "box": {
-    "w": 1.48535,
-    "h": 2.77904,
-    "foot": 0.06723
+    "w": 1.536,
+    "h": 2.7491,
+    "foot": 0.01701
    },
-   "pattern": "content/sprites/isolde-veo/move-left-media36-v01/move-left-{}.png"
+   "pattern": "content/sprites/isolde-veo/move-left-media36-v1082/move-left-{}.png"
   },
   "cast": {
    "video": "Attachments/TurnAround/IsoldeIdleCastAlta.mp4",
@@ -164,37 +164,37 @@
    "pattern": "content/sprites/isolde-veo/hit-media36-v1080/hit-{}.png"
   },
   "counter-staff": {
-   "video": "Attachments/Isolde/IsoldeStaffCounter.mp4",
-   "first": 18,
-   "last": 112,
-   "bootRow": 1220,
+   "video": "Attachments/Isolde/IsoldeStaffCounterFinal.mp4",
+   "first": 10,
+   "last": 88,
+   "bootRow": 965,
    "bootRows": [
-    1187,
-    1255
+    965,
+    966
    ],
-   "frameCountFrom": 95,
-   "figurePx": 1018.0,
-   "bodyAt": -0.226,
-   "scaledTo": 610.1,
+   "frameCountFrom": 79,
+   "figurePx": 821.0,
+   "bodyAt": -0.2268,
+   "scaledTo": 609.6,
    "frames": 36,
-   "frameMs": 109.9537037037037,
+   "frameMs": 91.43518518518518,
    "nat": [
-    440,
-    736
+    802,
+    672
    ],
    "crop": [
-    9,
-    4,
-    431,
-    729
+    5,
+    5,
+    581,
+    663
    ],
    "box": {
-    "w": 1.92053,
-    "h": 3.21252,
-    "foot": 0.03575
+    "w": 3.49915,
+    "h": 2.93195,
+    "foot": 0.02212
    },
-   "pattern": "content/sprites/isolde-veo/counter-staff-media36-v01/counter-staff-{}.png",
-   "impact": 0.5789
+   "pattern": "content/sprites/isolde-veo/counter-staff-media36-v1082/counter-staff-{}.png",
+   "impact": 0.3038
   },
   "fall": {
    "video": "Attachments/Isolde/IsoldeFall2.mp4",

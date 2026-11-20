@@ -64,35 +64,35 @@
    "impact": 0.2892
   },
   "turn-back": {
-   "video": "Attachments/TurnAround/Person_turning_180_degrees_ee490aa8_1080p.mp4",
-   "first": 0,
-   "last": 127,
+   "video": "Attachments/KaelV3/KaelTurnAroundFinal.mp4",
+   "first": 26,
+   "last": 112,
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
-   "bootRow": 1819,
+   "bootRow": 1045,
    "bootRows": [
-    1751,
-    1851
+    1036,
+    1059
    ],
-   "figurePx": 1676.0,
-   "bodyAt": -0.1901,
-   "frames": 128,
+   "figurePx": 965.0,
+   "bodyAt": -0.1898,
+   "frames": 87,
    "frameMs": 41.666666666666664,
    "nat": [
-    1329,
-    1758
+    1072,
+    1009
    ],
    "crop": [
-    0,
-    5,
-    1080,
-    1748
+    8,
+    4,
+    840,
+    1001
    ],
    "box": {
-    "w": 2.04584,
-    "h": 2.70623,
-    "foot": 0.02463
+    "w": 2.86607,
+    "h": 2.69764,
+    "foot": 0.05347
    },
-   "pattern": "content/sprites/kael-v3/turn-back-v1080/turn-back-{}.png"
+   "pattern": "content/sprites/kael-v3/turn-back-v1082/turn-back-{}.png"
   },
   "cast-back": {
    "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",
@@ -475,37 +475,37 @@
    "pattern": "content/sprites/kael-v3/move-up-v05/move-up-{}.png"
   },
   "move-down": {
-   "video": "Attachments/KaelV3/supersize/KaelWalkFront.mp4",
-   "first": 17,
-   "last": 142,
+   "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",
+   "first": 121,
+   "last": 239,
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
-   "loopFirst": 70,
-   "loopLast": 113,
-   "seamSteps": 1.27,
-   "bootRow": 1863,
+   "loopFirst": 157,
+   "loopLast": 196,
+   "seamSteps": 3.2,
+   "bootRow": 1049,
    "bodyDrift": [
-    28,
-    102
+    -44,
+    5
    ],
-   "figurePx": 1770.0,
-   "frames": 44,
+   "figurePx": 992.0,
+   "frames": 40,
    "frameMs": 41.666666666666664,
    "nat": [
-    914,
-    1832
+    545,
+    1030
    ],
    "crop": [
     4,
     5,
-    910,
-    1821
+    534,
+    1019
    ],
    "box": {
-    "w": 1.33227,
-    "h": 2.67037,
-    "foot": 0.01749
+    "w": 1.41744,
+    "h": 2.67883,
+    "foot": 0.04161
    },
-   "pattern": "content/sprites/kael-v3/move-down-v05/move-down-{}.png"
+   "pattern": "content/sprites/kael-v3/move-down-v1082/move-down-{}.png"
   },
   "emote05": {
    "video": "Attachments/KaelV3/supersize/HitReactUltimate.mp4",
