@@ -8407,7 +8407,7 @@ class MapStage final : public Stage {
     const ember::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
     if (!entry || entry->key != "neera") return false;
     const ember::HeroPose* p = entry->find("attack");
-    return p && p->set == "neera-hydra";
+    return p && (p->set == "neera-hydra" || p->set == "neera-veo");  // her video remake too (the user, 2026-11-20)
   }
   std::optional<float> arrowRelease(size_t ui, const std::string& pose) const {
     const ember::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
@@ -8415,6 +8415,9 @@ class MapStage final : public Stage {
     const ember::HeroPose* left = unitFacing_[ui] == -1 ? entry->find(pose + "Left") : nullptr;
     const ember::HeroPose* p = left && !left->pace.empty() ? left : entry->find(pose);
     if (!p || p->pace.empty()) return std::nullopt;
+    // Art cut from video carries its own release (cut.json releaseFrame: the first frame the arrow is off the bow; Neera's remake,
+    // the user 2026-11-20: the video's own flying arrow is taken out of the frames from there and the game's arrow flies instead).
+    if (p->release >= 0) return p->release * static_cast<float>(p->pace.size()) / 240.0f;
     // Neera's Hydra+ attack (neera-hydra atk, the user 2026-10-22): the arrow on the string in 17-26, gone from 27.
     static const std::pair<const char*, int> kRelease[] = {{"neera/neera-v2-001:atk", 27}, {"neera/neera-v2-001:atk-left", 27}, {"neera-hydra:atk", 27},
                                                            {"BaseCrossbowman:atk", 21},    {"BrigandCrossbowman:atk", 18},

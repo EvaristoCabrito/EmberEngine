@@ -182,12 +182,15 @@ def main():
                           doneAt=-1)
             if "impact" in r:
                 fields["impact"] = r["impact"]
+            if "release" in r:  # a bow pose's own release (video_sprite.py releaseFrame): the game's arrow leaves there
+                fields["release"] = r["release"]
             p = next((p for p in hero["poses"] if p["pose"] == pose), None)
             if p is None:
                 p = {"pose": pose, "label": st.get("labels", {}).get(pose, pose)}
                 hero["poses"].append(p)
             p.pop("bodyShift", None)  # Ember's per-frame shift belonged to its own art
             p.pop("impact", None)
+            p.pop("release", None)
             # the copies' marks are made again by their own entries, listed after this set (a copy no longer in use leaves none)
             p.pop("medium", None)
             p.pop("light", None)
@@ -216,6 +219,12 @@ def main():
         src = load(os.path.join(ROOT, ru["poses"]))["poses"]
         for key in ru["heroes"]:
             hero = next((h for h in roster["heroes"] if h.get("key") == key), None)
+            if hero is None and "newHero" in ru:
+                # a hero of its own drawn with a file's poses (OldNeera, the user 2026-11-20: "leave the old sprites saved as OldNeera")
+                nh = ru["newHero"]
+                hero = {"name": nh["name"], "key": key, "group": nh.get("group", "hero"), "sprite": nh.get("sprite", key),
+                        "reversed": bool(nh.get("reversed", False)), "poses": []}
+                roster["heroes"].append(hero)
             if hero is None:
                 raise SystemExit(f"reuse: {key} not in {roster_path}")
             hero["poses"] = copy.deepcopy(src)

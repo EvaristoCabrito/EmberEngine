@@ -191,6 +191,7 @@ std::optional<std::vector<Hero>> loadHeroes(const std::filesystem::path& heroesJ
       if (p.contains("pace") && p["pace"].is_array()) q.pace = p["pace"].get<std::vector<int>>();
       q.doneAt = static_cast<int>(num(p, "doneAt", -1));
       q.impact = static_cast<float>(num(p, "impact", -1));
+      q.release = static_cast<float>(num(p, "release", -1));
       if (p.contains("medium") && p["medium"].is_string()) q.medium = p["medium"].get<std::string>();
       if (p.contains("light") && p["light"].is_string()) q.light = p["light"].get<std::string>();
       q.lightStep = static_cast<int>(num(p, "lightStep", 0));

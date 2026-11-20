@@ -60,7 +60,10 @@ def main():
     # EmberEngine's own heroes (content/sprite-overrides.json sets whose newHero is a "hero" with a classId; Isolde, 2026-10-24): placed
     # by name as a player spawn (the editor's hero list), drawn with their idle, playing by their class's rules
     overrides = json.load(open(os.path.join(ROOT, "content", "sprite-overrides.json"), encoding="utf-8"))
-    for st in overrides.get("sets", []):
+    # a reuse entry's own hero (OldNeera, 2026-11-20: the old Neera's poses kept as a hero of their own) is listed the same way
+    own = overrides.get("sets", []) + [{"hero": ru["heroes"][0], "set": ru["newHero"].get("sprite"), "newHero": ru["newHero"]}
+                                       for ru in overrides.get("reuse", []) if "newHero" in ru]
+    for st in own:
         nh = st.get("newHero")
         if not nh or nh.get("group") != "hero" or "classId" not in nh:
             continue

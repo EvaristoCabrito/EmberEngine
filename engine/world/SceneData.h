@@ -109,6 +109,7 @@ struct HeroPose {
   int doneAt = -1;           // one-shot poses: the 1/240 s tick it finishes (-1 = loops)
   float strides = 2.0f;      // walk clips: full strides (both legs) the whole clip holds (content/data/walk-strides.json)
   float impact = -1;         // strike poses: share of the pose at which the blow lands (art cut from video); -1 = the default
+  float release = -1;        // bow poses: share of the pose at which the arrow leaves the bow (art cut from video); -1 = none
   std::string medium;        // the same clip at ~610 px of figure in this sprite set (Personagens Média); empty = none
   std::string light;         // the clip's own Leve copy in this sprite set (fewer frames, e.g. Voss's 36); empty = Leve halves `medium`
   int lightStep = 0;         // the Leve copy holds every Nth frame of the clip (video_sprite.py frameStepNear); 0 = picked evenly

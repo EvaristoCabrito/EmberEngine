@@ -51,6 +51,25 @@ def despeck(px, max_area, min_gap):
         out[halo] = 0
     return out
 
+def drop_loose(f, gap):
+    """`dropLoose` (the user, 2026-11-20, Neera's remake: "make sure the arrow doesn't fluke in the end"): from the frame the arrow leaves
+    the bow, only the body is kept (the largest piece of the matte and the pieces within `gap` px of it, with their soft edges); the
+    video's own arrow flying off is cleared, the game's arrow flies in its place (the pose's `release`). Straight RGBA float."""
+    from scipy import ndimage
+    solid = f[..., 3] > 20
+    lab, n = ndimage.label(solid)
+    if n < 2:
+        return f
+    sizes = ndimage.sum(solid, lab, range(1, n + 1))
+    body = lab == (int(np.argmax(sizes)) + 1)
+    near = ndimage.distance_transform_edt(~body) <= gap
+    keep = np.isin(lab, np.unique(lab[near & solid]))
+    soft = ndimage.binary_dilation(keep, iterations=3)
+    out = f.copy()
+    out[~soft] = 0
+    return out
+
+
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 FPS = 24.0
 
@@ -316,6 +335,11 @@ def main():
             frames = [edge_key(rgb[i], alpha[i], plate) for i in range(len(rgb))]
         else:
             frames = [unmix(rgb[i], alpha[i], plate) for i in range(len(rgb))]
+        if "dropLoose" in c:
+            # {"from": video frame, "gap": px}: from that frame on, the body only (drop_loose); before the boot rows and the clip's box
+            dl = c["dropLoose"]
+            k = dl["from"] - c["first"]
+            frames = [drop_loose(f, dl.get("gap", 6)) if i >= k else f for i, f in enumerate(frames)]
         if "mirrorFrom" in c:
             # `mirrorFrom` (the user, 2026-10-28, the Giant Beetle's fall: "no final quando ele morre ele vira para o lado errado"):
             # the video's frames from this one on (video numbering) are turned left for right, before anything else, about the
@@ -557,6 +581,8 @@ def main():
                     pattern=os.path.relpath(os.path.join(out_dir, f"{c['clip']}-{{}}.png"), ROOT).replace("\\", "/"))
         if "impactFrame" in c:
             info["impact"] = round((c["impactFrame"] - c["first"]) / n_full, 4)
+        if "releaseFrame" in c:  # a bow pose: the share at which the arrow leaves the bow (the game's arrow flies from there)
+            info["release"] = round((c["releaseFrame"] - c["first"]) / n_full, 4)
         result["clips"][c["clip"]] = info
         print(f"{c['clip']}: {len(frames)} frames {nat[0]} x {nat[1]}, box {info['box']}")
     text = json.dumps(result, indent=1) + "\n"  # whole before the file is touched
