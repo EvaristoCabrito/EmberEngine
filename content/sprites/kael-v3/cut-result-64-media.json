@@ -68,37 +68,37 @@
    "impact": 0.2892
   },
   "turn-back": {
-   "video": "Attachments/KaelV3/supersize/Kael_turning_180_degrees_ee490aa8.mp4",
+   "video": "Attachments/TurnAround/Person_turning_180_degrees_ee490aa8_1080p.mp4",
    "first": 0,
    "last": 127,
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
-   "bootRow": 1212,
+   "bootRow": 1819,
    "bootRows": [
-    1167,
-    1233
+    1751,
+    1851
    ],
    "frameCountFrom": 128,
-   "figurePx": 1117.0,
-   "bodyAt": -0.1906,
-   "scaledTo": 610.0,
+   "figurePx": 1676.0,
+   "bodyAt": -0.1901,
+   "scaledTo": 610.2,
    "frames": 64,
    "frameMs": 83.33333333333333,
    "nat": [
-    485,
-    640
+    484,
+    639
    ],
    "crop": [
     0,
-    3,
-    393,
-    634
+    2,
+    394,
+    635
    ],
    "box": {
-    "w": 2.05338,
-    "h": 2.70961,
-    "foot": 0.01985
+    "w": 2.04584,
+    "h": 2.70101,
+    "foot": 0.01866
    },
-   "pattern": "content/sprites/kael-v3/turn-back-media64-v05/turn-back-{}.png"
+   "pattern": "content/sprites/kael-v3/turn-back-media64-v1080/turn-back-{}.png"
   },
   "cast-back": {
    "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",
@@ -632,6 +632,40 @@
     "foot": 0.03516
    },
    "pattern": "content/sprites/kael-v3/emote07-media64-v05/emote07-{}.png"
+  },
+  "special-lightning": {
+   "video": "Attachments/KaelV3/KaelLightingSpecialATT.mp4",
+   "first": 2,
+   "last": 76,
+   "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
+   "bootRow": 1045,
+   "bootRows": [
+    1034,
+    1050
+   ],
+   "frameCountFrom": 75,
+   "figurePx": 951.0,
+   "bodyAt": -0.1899,
+   "scaledTo": 610.1,
+   "frames": 64,
+   "frameMs": 48.828125,
+   "nat": [
+    669,
+    630
+   ],
+   "crop": [
+    80,
+    3,
+    584,
+    624
+   ],
+   "box": {
+    "w": 2.82959,
+    "h": 2.66464,
+    "foot": 0.02366
+   },
+   "pattern": "content/sprites/kael-v3/special-lightning-media64-v1080/special-lightning-{}.png",
+   "impact": 0.4533
   }
  }
 }

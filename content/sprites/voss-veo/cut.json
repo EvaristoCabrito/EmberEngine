@@ -473,25 +473,27 @@
    "clip": "turn-back",
    "pose": "turnBack",
    "kind": "stand",
-   "src": "build/video-cut/voss-veo/turn",
-   "video": "Attachments/KaelV3/supersize/Voss_turning_180_degrees_3a633cfa (2).mp4",
+   "src": "build/video-cut/voss-1080/turn",
+   "video": "Attachments/TurnAround/Person_turning_180_degrees_3a633cfa_1080p.mp4",
    "first": 6,
    "last": 108,
    "mode": "once",
    "bodyAt": -0.242,
-   "why": "the user, 2026-11-13: his 180 degree turn (1080 x 1920, light backdrop, final), from his stance to his back settled"
+   "why": "the user, 2026-11-19: his turn at 1080p, the same take as before (6-108)",
+   "version": "v1080"
   },
   {
    "clip": "cast-back",
    "pose": "castBack",
    "kind": "stand",
-   "src": "build/video-cut/voss-veo/turn",
-   "video": "Attachments/KaelV3/supersize/Voss_turning_180_degrees_3a633cfa (2).mp4",
+   "src": "build/video-cut/voss-1080/turn",
+   "video": "Attachments/TurnAround/Person_turning_180_degrees_3a633cfa_1080p.mp4",
    "first": 140,
    "last": 140,
    "mode": "once",
    "bodyAt": -0.242,
-   "why": "the back still from the turn's settled end, in place of voss-final's (the user: \"use only a frame from this video\")"
+   "why": "the back still of the same turn",
+   "version": "v1080"
   },
   {
    "clip": "emote01",
@@ -517,6 +519,34 @@
     "why": "the user, 2026-10-21: the staff was missing in the first frame (video 28-30: the model dropped the glowing staff head as background; the purple glow gone in the later frames too)"
    },
    "why": "the user, 2026-11-17: \"use the old react as a Emote for both Voss and Kael\": the hit before (VossHitDeath 28-72), cutscenes only"
+  },
+  {
+   "clip": "move-up",
+   "pose": "walkUp",
+   "kind": "walk",
+   "src": "build/video-cut/voss-1080/updown",
+   "video": "Attachments/TurnAround/VossWalkuUpandDown.mp4",
+   "first": 0,
+   "last": 119,
+   "loopMin": 40,
+   "loopMax": 110,
+   "mode": "loop",
+   "why": "the user, 2026-11-19: VossWalkuUpandDown, walking away from the camera in place (0-119; the video cuts to his front at 120)",
+   "version": "v1080"
+  },
+  {
+   "clip": "move-down",
+   "pose": "walkDown",
+   "kind": "walk",
+   "src": "build/video-cut/voss-1080/updown",
+   "video": "Attachments/TurnAround/VossWalkuUpandDown.mp4",
+   "first": 121,
+   "last": 239,
+   "loopMin": 40,
+   "loopMax": 110,
+   "mode": "loop",
+   "why": "the same video, walking toward the camera in place (121-239)",
+   "version": "v1080"
   }
  ]
 }

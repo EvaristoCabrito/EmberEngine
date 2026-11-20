@@ -9,26 +9,27 @@
    "clip": "base",
    "pose": "idle",
    "kind": "stand",
-   "src": "build/video-cut/isolde-veo/all",
-   "video": "Attachments/Isolde/IsoldeIdleandCasting.mp4",
+   "src": "build/video-cut/isolde-1080/idlecast",
+   "video": "Attachments/TurnAround/IsoldeIdleCastAlta.mp4",
    "first": 0,
    "last": 109,
    "mode": "pingpong",
-   "why": "the user, 2026-10-25: the idle jumped where its loop restarted (the video never comes back to its first pose): played back and forth (\"try 1\"), the whole stretch, no seam"
+   "why": "the user, 2026-11-19: IsoldeIdleCastAlta (1080 x 1920), the idle half, 0-109 as the old video's",
+   "version": "v1080"
   },
   {
    "clip": "move",
    "pose": "walk",
    "kind": "walk",
-   "src": "build/video-cut/isolde-veo/walk-right-v2",
-   "video": "Attachments/IsoldeWalkHighLong.mp4",
+   "src": "build/video-cut/isolde-1080/walk",
+   "video": "Attachments/TurnAround/IsoldeWalk2.mp4",
    "first": 7,
-   "last": 191,
-   "loopMin": 130,
+   "last": 189,
+   "loopMin": 96,
    "loopMax": 183,
    "mode": "loop",
-   "why": "the user's new walk right (2026-10-26, Attachments/IsoldeWalkHighLong.mp4: the staff in her right hand, in front of her body; \"we dont need that wall frame\"): frames 7-191 (0-6 are a stone-wall shot), the loop searched among the longest lengths",
-   "version": "v02"
+   "why": "the user, 2026-11-19: IsoldeWalk2 instead of her old walk (the only one of the three that is the same woman)",
+   "version": "v1080"
   },
   {
    "clip": "move-left",
@@ -47,351 +48,28 @@
    "clip": "cast",
    "pose": "cast",
    "kind": "stand",
-   "src": "build/video-cut/isolde-veo/all",
-   "video": "Attachments/Isolde/IsoldeIdleandCasting.mp4",
+   "src": "build/video-cut/isolde-1080/idlecast",
+   "video": "Attachments/TurnAround/IsoldeIdleCastAlta.mp4",
    "first": 116,
    "last": 214,
    "mode": "once",
-   "bodyAt": -0.226
+   "bodyAt": -0.226,
+   "why": "IsoldeIdleCastAlta, the cast half (the red glow is on from 124 to 190), 116-214 as the old video's",
+   "version": "v1080"
   },
   {
    "clip": "hit",
    "pose": "hit",
    "label": "Dano",
    "kind": "stand",
-   "src": "build/video-cut/isolde-veo/hit",
-   "video": "Attachments/Isolde/IsoldeHitReact.mp4",
-   "first": 12,
-   "last": 56,
+   "src": "build/video-cut/isolde-1080/hitv4",
+   "video": "build/video-cut/isolde-1080/src/IsoldeHitReacV4-crop.mp4",
+   "first": 10,
+   "last": 80,
    "mode": "once",
-   "why": "the user, 2026-10-24: the video generator kept the stone wall on a second try, \"make her a shade lighter to match the other light\" (measured: 0.50 stops darker than the studio idle, her shadows ~1 stop), then \"you can match it all if possible\": colorMatch, written by tools/scripts/sprites/match_light.py from her standing frames against the idle",
-   "colorMatch": {
-    "reference": "build/video-cut/isolde-veo/all 0:94",
-    "frames": "0:11,56:95",
-    "r": [
-     [
-      0.0,
-      0.000759
-     ],
-     [
-      0.000304,
-      0.001315
-     ],
-     [
-      0.000607,
-      0.002125
-     ],
-     [
-      0.000911,
-      0.002884
-     ],
-     [
-      0.001518,
-      0.004025
-     ],
-     [
-      0.002428,
-      0.005182
-     ],
-     [
-      0.003035,
-      0.006512
-     ],
-     [
-      0.004025,
-      0.008023
-     ],
-     [
-      0.005182,
-      0.009721
-     ],
-     [
-      0.006049,
-      0.011612
-     ],
-     [
-      0.007499,
-      0.014444
-     ],
-     [
-      0.009134,
-      0.016807
-     ],
-     [
-      0.011612,
-      0.020289
-     ],
-     [
-      0.013702,
-      0.024158
-     ],
-     [
-      0.015996,
-      0.028426
-     ],
-     [
-      0.019382,
-      0.033105
-     ],
-     [
-      0.024158,
-      0.039546
-     ],
-     [
-      0.029557,
-      0.048172
-     ],
-     [
-      0.038204,
-      0.059511
-     ],
-     [
-      0.05448,
-      0.084376
-     ],
-     [
-      0.078187,
-      0.122139
-     ],
-     [
-      0.114435,
-      0.171441
-     ],
-     [
-      0.212231,
-      0.270498
-     ],
-     [
-      0.300544,
-      0.371238
-     ],
-     [
-      0.428691,
-      0.533276
-     ],
-     [
-      0.520996,
-      0.630757
-     ],
-     [
-      0.630757,
-      0.737911
-     ]
-    ],
-    "g": [
-     [
-      0.0,
-      0.000683
-     ],
-     [
-      0.000304,
-      0.001366
-     ],
-     [
-      0.000607,
-      0.002125
-     ],
-     [
-      0.000911,
-      0.002732
-     ],
-     [
-      0.001518,
-      0.003677
-     ],
-     [
-      0.002125,
-      0.004391
-     ],
-     [
-      0.002732,
-      0.005182
-     ],
-     [
-      0.003347,
-      0.006512
-     ],
-     [
-      0.004391,
-      0.008023
-     ],
-     [
-      0.005182,
-      0.009134
-     ],
-     [
-      0.006512,
-      0.01096
-     ],
-     [
-      0.008023,
-      0.012983
-     ],
-     [
-      0.009134,
-      0.015209
-     ],
-     [
-      0.01096,
-      0.017642
-     ],
-     [
-      0.012983,
-      0.020289
-     ],
-     [
-      0.015209,
-      0.024158
-     ],
-     [
-      0.0185,
-      0.028426
-     ],
-     [
-      0.024158,
-      0.036889
-     ],
-     [
-      0.035601,
-      0.05448
-     ],
-     [
-      0.05448,
-      0.078187
-     ],
-     [
-      0.082283,
-      0.111932
-     ],
-     [
-      0.144128,
-      0.177888
-     ],
-     [
-      0.201556,
-      0.242281
-     ],
-     [
-      0.300544,
-      0.346704
-     ],
-     [
-      0.381326,
-      0.434154
-     ],
-     [
-      0.520996,
-      0.564712
-     ]
-    ],
-    "b": [
-     [
-      0.0,
-      0.000364
-     ],
-     [
-      0.000304,
-      0.001366
-     ],
-     [
-      0.000607,
-      0.001821
-     ],
-     [
-      0.000911,
-      0.002428
-     ],
-     [
-      0.001518,
-      0.003035
-     ],
-     [
-      0.001821,
-      0.003677
-     ],
-     [
-      0.002428,
-      0.004777
-     ],
-     [
-      0.003347,
-      0.005605
-     ],
-     [
-      0.004025,
-      0.006512
-     ],
-     [
-      0.004777,
-      0.008023
-     ],
-     [
-      0.006049,
-      0.009721
-     ],
-     [
-      0.006995,
-      0.01096
-     ],
-     [
-      0.009134,
-      0.012983
-     ],
-     [
-      0.01033,
-      0.015209
-     ],
-     [
-      0.012286,
-      0.0185
-     ],
-     [
-      0.015209,
-      0.021219
-     ],
-     [
-      0.017642,
-      0.026241
-     ],
-     [
-      0.022174,
-      0.031896
-     ],
-     [
-      0.031896,
-      0.045186
-     ],
-     [
-      0.048172,
-      0.066626
-     ],
-     [
-      0.072272,
-      0.093059
-     ],
-     [
-      0.122139,
-      0.14996
-     ],
-     [
-      0.174647,
-      0.201556
-     ],
-     [
-      0.266356,
-      0.287441
-     ],
-     [
-      0.341914,
-      0.361307
-     ],
-     [
-      0.502887,
-      0.520996
-     ]
-    ]
-   },
-   "bodyAt": -0.226
+   "bodyAt": -0.226,
+   "why": "the user, 2026-11-19: IsoldeHitReacV4, the cleanest way in and out of the idle; its 804 x 1080 centre panel (the video has the shot inset)",
+   "version": "v1080"
   },
   {
    "clip": "counter-staff",
@@ -412,14 +90,15 @@
    "pose": "death",
    "label": "Queda",
    "kind": "stand",
-   "src": "build/video-cut/isolde-veo/fall",
-   "video": "Attachments/Isolde/Fallat3sec.mp4",
-   "first": 72,
-   "last": 170,
-   "standUntil": 92,
+   "src": "build/video-cut/isolde-1080/hit2fall",
+   "video": "Attachments/TurnAround/IsoldeHit2FallAlta.mp4",
+   "first": 76,
+   "last": 159,
+   "standUntil": 82,
    "mode": "once",
    "bodyAt": -0.226,
-   "why": "the user, 2026-10-24: \"there is only fall no death\": her fall (Fallat3sec.mp4 from 3 s), played when her HP reaches 0"
+   "why": "the user, 2026-11-19: IsoldeHit2FallAlta from the fall's start (she stands to 80), to her lying; the lying body runs off the video's left edge from 118 and its right edge from 137; the Hit2 reaction (frames 30-60) stays in storage",
+   "version": "v1080"
   },
   {
    "clip": "move-up",
@@ -451,25 +130,347 @@
    "clip": "turn-back",
    "pose": "turnBack",
    "kind": "stand",
-   "src": "build/video-cut/isolde-veo/turn",
-   "video": "Attachments/KaelV3/supersize/Isolde_turning_in_studio_47cd8c5d.mp4",
+   "src": "build/video-cut/isolde-1080/turn",
+   "video": "Attachments/TurnAround/Character_turning_in_studio_47cd8c5d_1080p.mp4",
    "first": 18,
    "last": 112,
    "mode": "once",
    "bodyAt": -0.226,
-   "why": "the user, 2026-11-13: her 180 degree turn in the studio (a test at 720 x 1280), from her stance to her back settled"
+   "why": "the user, 2026-11-19: her turn at 1080p, the same take as before (18-112)",
+   "version": "v1080"
   },
   {
    "clip": "cast-back",
    "pose": "castBack",
    "kind": "stand",
-   "src": "build/video-cut/isolde-veo/turn",
-   "video": "Attachments/KaelV3/supersize/Isolde_turning_in_studio_47cd8c5d.mp4",
+   "src": "build/video-cut/isolde-1080/turn",
+   "video": "Attachments/TurnAround/Character_turning_in_studio_47cd8c5d_1080p.mp4",
    "first": 135,
    "last": 135,
    "mode": "once",
    "bodyAt": -0.226,
-   "why": "the back still: the turn's settled end"
+   "why": "the back still of the same turn",
+   "version": "v1080"
+  },
+  {
+   "clip": "emote01",
+   "pose": "emote01",
+   "label": "IsoldeEmoteStartled",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-1080/startled",
+   "video": "Attachments/Isolde/IsoldeEmoteStartled.mp4",
+   "first": 0,
+   "last": 72,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "why": "the user, 2026-11-19: IsoldeEmoteStartled (the action ends around 3 s), a cutscene-only pose; filmed against a dungeon wall: light matched to the idle",
+   "version": "v1080",
+   "colorMatch": {
+    "reference": "C:\\EmberEngineB\\build/video-cut\\isolde-1080\\idlecast 0:109",
+    "frames": "0:24",
+    "r": [
+     [
+      0.0,
+      0.000835
+     ],
+     [
+      0.000304,
+      0.001821
+     ],
+     [
+      0.000607,
+      0.002732
+     ],
+     [
+      0.000911,
+      0.003677
+     ],
+     [
+      0.001518,
+      0.004777
+     ],
+     [
+      0.001821,
+      0.006049
+     ],
+     [
+      0.002732,
+      0.007499
+     ],
+     [
+      0.003347,
+      0.009134
+     ],
+     [
+      0.004777,
+      0.01096
+     ],
+     [
+      0.006049,
+      0.012983
+     ],
+     [
+      0.007499,
+      0.015996
+     ],
+     [
+      0.009721,
+      0.019382
+     ],
+     [
+      0.012286,
+      0.023153
+     ],
+     [
+      0.015996,
+      0.027321
+     ],
+     [
+      0.020289,
+      0.031896
+     ],
+     [
+      0.025187,
+      0.038204
+     ],
+     [
+      0.033105,
+      0.046665
+     ],
+     [
+      0.045186,
+      0.059511
+     ],
+     [
+      0.068478,
+      0.088656
+     ],
+     [
+      0.109462,
+      0.135633
+     ],
+     [
+      0.174647,
+      0.198069
+     ],
+     [
+      0.318547,
+      0.323143
+     ],
+     [
+      0.434154,
+      0.428691
+     ],
+     [
+      0.590619,
+      0.577581
+     ],
+     [
+      0.737911,
+      0.665387
+     ],
+     [
+      1.0,
+      0.806952
+     ]
+    ],
+    "g": [
+     [
+      0.0,
+      0.00078
+     ],
+     [
+      0.000304,
+      0.002125
+     ],
+     [
+      0.000607,
+      0.003035
+     ],
+     [
+      0.000911,
+      0.003677
+     ],
+     [
+      0.001518,
+      0.004777
+     ],
+     [
+      0.002125,
+      0.005605
+     ],
+     [
+      0.002732,
+      0.006995
+     ],
+     [
+      0.003677,
+      0.008023
+     ],
+     [
+      0.004777,
+      0.009721
+     ],
+     [
+      0.006049,
+      0.011612
+     ],
+     [
+      0.008023,
+      0.013702
+     ],
+     [
+      0.009721,
+      0.015996
+     ],
+     [
+      0.012286,
+      0.0185
+     ],
+     [
+      0.015209,
+      0.022174
+     ],
+     [
+      0.020289,
+      0.027321
+     ],
+     [
+      0.028426,
+      0.035601
+     ],
+     [
+      0.046665,
+      0.05448
+     ],
+     [
+      0.078187,
+      0.084376
+     ],
+     [
+      0.124772,
+      0.127438
+     ],
+     [
+      0.223228,
+      0.212231
+     ],
+     [
+      0.313989,
+      0.287441
+     ],
+     [
+      0.462077,
+      0.401978
+     ],
+     [
+      0.665387,
+      0.48515
+     ],
+     [
+      0.991102,
+      0.730461
+     ]
+    ],
+    "b": [
+     [
+      0.0,
+      0.000569
+     ],
+     [
+      0.000304,
+      0.002125
+     ],
+     [
+      0.000607,
+      0.002732
+     ],
+     [
+      0.000911,
+      0.003347
+     ],
+     [
+      0.001214,
+      0.004025
+     ],
+     [
+      0.001821,
+      0.004777
+     ],
+     [
+      0.002428,
+      0.006049
+     ],
+     [
+      0.003347,
+      0.006995
+     ],
+     [
+      0.004391,
+      0.008568
+     ],
+     [
+      0.006049,
+      0.01033
+     ],
+     [
+      0.007499,
+      0.012286
+     ],
+     [
+      0.009721,
+      0.014444
+     ],
+     [
+      0.012286,
+      0.017642
+     ],
+     [
+      0.015209,
+      0.020289
+     ],
+     [
+      0.019382,
+      0.025187
+     ],
+     [
+      0.026241,
+      0.031896
+     ],
+     [
+      0.043735,
+      0.046665
+     ],
+     [
+      0.07036,
+      0.072272
+     ],
+     [
+      0.109462,
+      0.109462
+     ],
+     [
+      0.198069,
+      0.181164
+     ],
+     [
+      0.278894,
+      0.242281
+     ],
+     [
+      0.428691,
+      0.341914
+     ],
+     [
+      0.658375,
+      0.434154
+     ],
+     [
+      0.973445,
+      0.715694
+     ]
+    ]
+   }
   }
  ],
  "bodyNote": "bodyAt -0.226 on every standing clip but the idle: the head where the idle has it (measured on its first frame), so she never slides sideways when a pose starts"

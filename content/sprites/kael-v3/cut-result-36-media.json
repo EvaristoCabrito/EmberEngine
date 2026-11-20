@@ -68,37 +68,37 @@
    "impact": 0.2892
   },
   "turn-back": {
-   "video": "Attachments/KaelV3/supersize/Kael_turning_180_degrees_ee490aa8.mp4",
+   "video": "Attachments/TurnAround/Person_turning_180_degrees_ee490aa8_1080p.mp4",
    "first": 0,
    "last": 127,
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
-   "bootRow": 1212,
+   "bootRow": 1819,
    "bootRows": [
-    1167,
-    1233
+    1751,
+    1851
    ],
    "frameCountFrom": 128,
-   "figurePx": 1117.0,
-   "bodyAt": -0.1906,
+   "figurePx": 1676.0,
+   "bodyAt": -0.1901,
    "scaledTo": 610.1,
    "frames": 36,
    "frameMs": 148.14814814814815,
    "nat": [
-    485,
-    644
+    484,
+    640
    ],
    "crop": [
     0,
-    3,
-    393,
-    638
+    2,
+    394,
+    636
    ],
    "box": {
-    "w": 2.05338,
-    "h": 2.72654,
-    "foot": 0.03604
+    "w": 2.04584,
+    "h": 2.70524,
+    "foot": 0.02328
    },
-   "pattern": "content/sprites/kael-v3/turn-back-media36-v05/turn-back-{}.png"
+   "pattern": "content/sprites/kael-v3/turn-back-media36-v1080/turn-back-{}.png"
   },
   "cast-back": {
    "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",
@@ -636,6 +636,40 @@
     "foot": 0.03769
    },
    "pattern": "content/sprites/kael-v3/emote07-media36-v05/emote07-{}.png"
+  },
+  "special-lightning": {
+   "video": "Attachments/KaelV3/KaelLightingSpecialATT.mp4",
+   "first": 2,
+   "last": 76,
+   "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
+   "bootRow": 1045,
+   "bootRows": [
+    1034,
+    1050
+   ],
+   "frameCountFrom": 75,
+   "figurePx": 951.0,
+   "bodyAt": -0.1899,
+   "scaledTo": 610.5,
+   "frames": 36,
+   "frameMs": 86.80555555555556,
+   "nat": [
+    669,
+    631
+   ],
+   "crop": [
+    80,
+    3,
+    584,
+    625
+   ],
+   "box": {
+    "w": 2.82959,
+    "h": 2.66887,
+    "foot": 0.02639
+   },
+   "pattern": "content/sprites/kael-v3/special-lightning-media36-v1080/special-lightning-{}.png",
+   "impact": 0.4533
   }
  }
 }

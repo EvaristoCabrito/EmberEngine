@@ -481,24 +481,26 @@
    "clip": "turn-back",
    "pose": "turnBack",
    "kind": "stand",
-   "src": "build/video-cut/voss-veo/turn",
-   "video": "Attachments/KaelV3/supersize/Voss_turning_180_degrees_3a633cfa (2).mp4",
+   "src": "build/video-cut/voss-1080/turn",
+   "video": "Attachments/TurnAround/Person_turning_180_degrees_3a633cfa_1080p.mp4",
    "first": 6,
    "last": 108,
    "mode": "once",
    "bodyAt": -0.242,
+   "version": "media64-v1080",
    "scaleTo": 610
   },
   {
    "clip": "cast-back",
    "pose": "castBack",
    "kind": "stand",
-   "src": "build/video-cut/voss-veo/turn",
-   "video": "Attachments/KaelV3/supersize/Voss_turning_180_degrees_3a633cfa (2).mp4",
+   "src": "build/video-cut/voss-1080/turn",
+   "video": "Attachments/TurnAround/Person_turning_180_degrees_3a633cfa_1080p.mp4",
    "first": 140,
    "last": 140,
    "mode": "once",
    "bodyAt": -0.242,
+   "version": "media64-v1080",
    "scaleTo": 610
   },
   {
@@ -525,6 +527,34 @@
     "why": "the user, 2026-10-21: the staff was missing in the first frame (video 28-30: the model dropped the glowing staff head as background; the purple glow gone in the later frames too)"
    },
    "why": "the user, 2026-10-21: one video for both (VossHitDeath.mp4); the blow lands at frame 30, he is upright again by 72",
+   "scaleTo": 610
+  },
+  {
+   "clip": "move-up",
+   "pose": "walkUp",
+   "kind": "walk",
+   "src": "build/video-cut/voss-1080/updown",
+   "video": "Attachments/TurnAround/VossWalkuUpandDown.mp4",
+   "first": 0,
+   "last": 119,
+   "loopMin": 40,
+   "loopMax": 110,
+   "mode": "loop",
+   "version": "media64-v1080",
+   "scaleTo": 610
+  },
+  {
+   "clip": "move-down",
+   "pose": "walkDown",
+   "kind": "walk",
+   "src": "build/video-cut/voss-1080/updown",
+   "video": "Attachments/TurnAround/VossWalkuUpandDown.mp4",
+   "first": 121,
+   "last": 239,
+   "loopMin": 40,
+   "loopMax": 110,
+   "mode": "loop",
+   "version": "media64-v1080",
    "scaleTo": 610
   }
  ]

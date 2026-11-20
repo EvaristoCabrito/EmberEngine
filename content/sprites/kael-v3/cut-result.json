@@ -64,35 +64,35 @@
    "impact": 0.2892
   },
   "turn-back": {
-   "video": "Attachments/KaelV3/supersize/Kael_turning_180_degrees_ee490aa8.mp4",
+   "video": "Attachments/TurnAround/Person_turning_180_degrees_ee490aa8_1080p.mp4",
    "first": 0,
    "last": 127,
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
-   "bootRow": 1212,
+   "bootRow": 1819,
    "bootRows": [
-    1167,
-    1233
+    1751,
+    1851
    ],
-   "figurePx": 1117.0,
-   "bodyAt": -0.1906,
+   "figurePx": 1676.0,
+   "bodyAt": -0.1901,
    "frames": 128,
    "frameMs": 41.666666666666664,
    "nat": [
-    889,
-    1179
+    1329,
+    1758
    ],
    "crop": [
     0,
-    6,
-    720,
-    1168
+    5,
+    1080,
+    1748
    ],
    "box": {
-    "w": 2.05338,
-    "h": 2.72321,
-    "foot": 0.03696
+    "w": 2.04584,
+    "h": 2.70623,
+    "foot": 0.02463
    },
-   "pattern": "content/sprites/kael-v3/turn-back-v05/turn-back-{}.png"
+   "pattern": "content/sprites/kael-v3/turn-back-v1080/turn-back-{}.png"
   },
   "cast-back": {
    "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",
@@ -599,6 +599,38 @@
     "foot": 0.03855
    },
    "pattern": "content/sprites/kael-v3/emote07-v05/emote07-{}.png"
+  },
+  "special-lightning": {
+   "video": "Attachments/KaelV3/KaelLightingSpecialATT.mp4",
+   "first": 2,
+   "last": 76,
+   "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
+   "bootRow": 1045,
+   "bootRows": [
+    1034,
+    1050
+   ],
+   "figurePx": 951.0,
+   "bodyAt": -0.1899,
+   "frames": 75,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1043,
+    983
+   ],
+   "crop": [
+    124,
+    5,
+    912,
+    973
+   ],
+   "box": {
+    "w": 2.82959,
+    "h": 2.66681,
+    "foot": 0.02713
+   },
+   "pattern": "content/sprites/kael-v3/special-lightning-v1080/special-lightning-{}.png",
+   "impact": 0.4533
   }
  }
 }
