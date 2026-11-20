@@ -163,9 +163,16 @@ void IceSpell::build(float now, const Camera& camera, VfxFrame& frame, std::vect
   for (size_t i = 0; i < hexes_.size(); ++i) {
     const float t = since - delay_[i];
     if (t < 0.0f) continue;
-    const float mark = style_ == Style::Lance && i + 1 != hexes_.size() ? spec_.mark * 0.5f : spec_.mark;
-    draw(frame, t, kGround, discFirst, discGeometry().size(), glm::translate(glm::mat4(1.0f), hexes_[i] + glm::vec3(0, 0.04f, 0)) * glm::scale(glm::mat4(1.0f), glm::vec3(spec_.frost)),
-         ease(0.0f, 0.06f, t), {0.1f + 1.25f * easeOut(0.0f, 0.7f, t), ease(exitAt, exitAt + kExit, t), mark, hash01(seed_, static_cast<uint32_t>(i) + 10)}, hexes_[i], nullptr);
+    // The Lança's trail is its own: not Frost's round patch with its crack on every hex, but one narrow straight scar of rime the
+    // lance cuts along the line (each hex's piece long down the line, thin across it, so they run together); only the line's last
+    // hex keeps the round patch and the crack.
+    const bool scar = style_ == Style::Lance && i + 1 != hexes_.size();
+    glm::mat4 lie = glm::translate(glm::mat4(1.0f), hexes_[i] + glm::vec3(0, 0.04f, 0));
+    if (scar) lie = lie * glm::mat4(glm::vec4(-side, 0.0f), glm::vec4(kUp, 0.0f), glm::vec4(direction_, 0.0f), glm::vec4(0, 0, 0, 1)) * glm::scale(glm::mat4(1.0f), {0.32f, 1.0f, 1.05f});
+    else lie = lie * glm::scale(glm::mat4(1.0f), glm::vec3(spec_.frost));
+    draw(frame, t, kGround, discFirst, discGeometry().size(), lie, ease(0.0f, 0.06f, t) * (scar ? 0.8f : 1.0f),
+         {0.1f + 1.25f * easeOut(0.0f, scar ? 0.35f : 0.7f, t), ease(exitAt, exitAt + kExit, t), scar ? 0.0f : spec_.mark, hash01(seed_, static_cast<uint32_t>(i) + 10)}, hexes_[i],
+         nullptr);
   }
 
   // ---- the build-up at the caster's hand: mist drawn in, small crystals forming, the blue glow growing; gone just after the release.
@@ -243,13 +250,14 @@ void IceSpell::build(float now, const Camera& camera, VfxFrame& frame, std::vect
       const glm::vec3 to = landing + kUp * 0.9f;
       const glm::vec3 axis = glm::normalize(to - held), at = glm::mix(held, to, gone / far);
       ice.push_back(chip(at, axis, kLength, kRadius, since * 14.0f, 1.0f, hash01(seed_, 170), 0.0f, 1.0f));
-      const float tail = std::min(gone + 0.5f, 7.0f);
-      streak(streaks, at - axis * tail, at + axis * 1.2f, 1.2f, camera.position);
-      streak(streaks, at - axis * tail * 0.6f, at + axis * 0.8f, 2.2f, camera.position);
-      for (uint32_t i = 0; i < 12; ++i) {
+      // a thin, tight trail behind it (the lance's own wake, not a wide band of frost)
+      const float tail = std::min(gone + 0.5f, 4.5f);
+      streak(streaks, at - axis * tail, at + axis * 1.2f, 0.5f, camera.position);
+      streak(streaks, at - axis * tail * 0.55f, at + axis * 0.8f, 0.9f, camera.position);
+      for (uint32_t i = 0; i < 8; ++i) {
         const float back = tail * hash01(seed_, i + 180), a = hash01(seed_, i + 190) * kTau + since * 9.0f + back * 2.0f;
-        glints.push_back(card(at - axis * back + (side * std::cos(a) + kUp * std::sin(a)) * (0.2f + 0.35f * hash01(seed_, i + 200)), 0.0f, 0.0f, 1.0f - back / 7.0f,
-                              glm::vec2(0.2f + 0.2f * hash01(seed_, i + 210)), hash01(seed_, i + 220)));
+        glints.push_back(card(at - axis * back + (side * std::cos(a) + kUp * std::sin(a)) * (0.1f + 0.2f * hash01(seed_, i + 200)), 0.0f, 0.0f, 1.0f - back / 4.5f,
+                              glm::vec2(0.16f + 0.14f * hash01(seed_, i + 210)), hash01(seed_, i + 220)));
       }
       lights.push_back({at, kIceLight, 9.0f, 4.5f});
     } else {
@@ -279,12 +287,12 @@ void IceSpell::build(float now, const Camera& camera, VfxFrame& frame, std::vect
       lights.push_back({landing + kUp * 1.0f, kIceLight, 12.0f * std::exp(-s * 7.0f) + 2.2f * (1.0f - out), 4.5f});
     }
     for (uint32_t i = 0; i < 10; ++i) {
-      // mist left behind along the whole flight, sinking to the ground and spreading
-      const float where = (static_cast<float>(i) + 0.5f) / 10.0f * far, born = where / kLanceSpeed, life = 1.6f, t = since - born;
+      // a thin breath of mist left behind along the flight, sinking onto the scar
+      const float where = (static_cast<float>(i) + 0.5f) / 10.0f * far, born = where / kLanceSpeed, life = 1.1f, t = since - born;
       if (t < 0.0f || t > life) continue;
       const float p = t / life;
-      mist.push_back(card(feet_ + direction_ * where + glm::vec3(0, 0.14f + 0.8f * (1.0f - easeOut(0.0f, 1.0f, p)), 0), hash01(seed_, i + 230) * kTau, p, 0.8f,
-                          glm::vec2(1.5f + 1.6f * p, 0.9f + 0.4f * p), hash01(seed_, i + 240) * 13.0f));
+      mist.push_back(card(feet_ + direction_ * where + glm::vec3(0, 0.12f + 0.5f * (1.0f - easeOut(0.0f, 1.0f, p)), 0), hash01(seed_, i + 230) * kTau, p, 0.5f,
+                          glm::vec2(0.8f + 0.6f * p, 0.45f + 0.2f * p), hash01(seed_, i + 240) * 13.0f));
     }
   }
 
@@ -398,19 +406,19 @@ void IceSpell::build(float now, const Camera& camera, VfxFrame& frame, std::vect
                             0.75f * (1.0f - exit)));
       }
     } else if (style_ == Style::Lance) {
-      // LANÇA: the furrow the lance ploughs as it passes: ice thrown up on both sides of the line, raked forward and outward like a
-      // wake, the pair of each hex taller than the last one's was.
-      top = 1.6f;
-      for (int k = 0; k < 4; ++k) {
+      // LANÇA: the lance's own wake, kept tight to its scar: a short row of low ice needles (the same 3D crystal as every ice body)
+      // raked hard down the line, as if combed flat by the lance going by, alternating side to side just off the middle.
+      top = 0.6f;
+      for (int k = 0; k < 3; ++k) {
         const uint32_t n = static_cast<uint32_t>(k);
-        const float sgn = k % 2 == 0 ? 1.0f : -1.0f, row = k < 2 ? 0.0f : 0.55f;
-        const float length = (k < 2 ? 1.9f : 1.2f) * (0.85f + 0.3f * hash01(salt, n + 30));
-        const float grow = easeBack((t - 0.03f * static_cast<float>(k)) / 0.14f);
+        const float sgn = k % 2 == 0 ? 1.0f : -1.0f, row = (static_cast<float>(k) - 1.0f) * 0.55f;
+        const float length = (k == 1 ? 0.85f : 0.65f) * (0.85f + 0.3f * hash01(salt, n + 30));
+        const float grow = easeBack((t - 0.03f * static_cast<float>(k)) / 0.12f);
         if (grow <= 0.0f) continue;
-        const glm::vec3 dir = glm::normalize(kUp * 0.5f + direction_ * 0.62f + side * (sgn * 0.6f));
-        const glm::vec3 base = hex + side * (sgn * (0.5f + 0.2f * hash01(salt, n + 10))) + direction_ * (row - 0.3f) - kUp * (0.1f * exit * length);
-        ice.push_back(shard(base, dir, length * grow, 0.24f * (0.55f + 0.45f * std::min(grow, 1.0f)), hash01(salt, n + 60) * kTau, 1.0f, hash01(salt, n + 70), exit,
-                            0.6f * (1.0f - exit)));
+        const glm::vec3 dir = glm::normalize(kUp * 0.38f + direction_ * 0.9f + side * (sgn * 0.22f));
+        const glm::vec3 base = hex + side * (sgn * (0.16f + 0.08f * hash01(salt, n + 10))) + direction_ * (row - 0.2f) - kUp * (0.1f * exit * length);
+        ice.push_back(shard(base, dir, length * grow, 0.12f * (0.55f + 0.45f * std::min(grow, 1.0f)), hash01(salt, n + 60) * kTau, 1.0f, hash01(salt, n + 70), exit,
+                            0.7f * (1.0f - exit)));
       }
     } else if (style_ == Style::AbsoluteZero) {
       // ZERO ABSOLUTO: nothing rises: the air itself turns to ice, all at once, through the noise (its dissolve run backwards). The
@@ -470,10 +478,11 @@ void IceSpell::build(float now, const Camera& camera, VfxFrame& frame, std::vect
         }
     }
 
-    // glints on the ice while it stands
+    // glints on the ice while it stands (the Lança's few, close on its needles)
+    const bool lance = style_ == Style::Lance;
     if (t > kErupt)
-      for (uint32_t g = 0; g < 5; ++g) {
-        const float a = hash01(salt, g + 400) * kTau, r = 0.7f * hash01(salt, g + 405);
+      for (uint32_t g = 0; g < (lance ? 2u : 5u); ++g) {
+        const float a = hash01(salt, g + 400) * kTau, r = (lance ? 0.3f : 0.7f) * hash01(salt, g + 405);
         const float blink = std::fmod(t * (0.7f + hash01(salt, g + 410)) + hash01(salt, g + 420), 1.0f);
         glints.push_back(card(hex + glm::vec3(std::cos(a) * r, top * (0.2f + 0.75f * hash01(salt, g + 415)), std::sin(a) * r), 0.0f, 0.0f,
                               held * ease(0.0f, 0.2f, blink) * (1.0f - ease(0.5f, 1.0f, blink)), glm::vec2(0.24f + 0.22f * hash01(salt, g + 430)), hash01(salt, g + 440)));
@@ -494,22 +503,33 @@ void IceSpell::build(float now, const Camera& camera, VfxFrame& frame, std::vect
                            (0.2f + 0.16f * hash01(salt, channel + j + 60)) * size, 0.045f * size, a * 3.0f + s * 10.0f, 1.0f - ease(0.6f, 1.0f, s / life), hash01(salt, channel + j + 70)));
       }
     };
-    const float size = style_ == Style::AbsoluteZero ? 2.2f : style_ == Style::Frost ? 1.0f : 1.4f;
-    if (style_ != Style::AbsoluteZero) flung(0.0f, 4, 100, 0.2f, 1.6f, 0.65f, size);
-    flung(exitAt + 0.05f, style_ == Style::AbsoluteZero ? 9u : 6u, 200, top * 0.7f, style_ == Style::AbsoluteZero ? 1.6f : 0.4f, 0.8f, size);
+    const float size = style_ == Style::AbsoluteZero ? 2.2f : style_ == Style::Frost ? 1.0f : 0.7f;
+    if (style_ != Style::AbsoluteZero) flung(0.0f, lance ? 2u : 4u, 100, 0.2f, lance ? 1.0f : 1.6f, 0.65f, size);
+    flung(exitAt + 0.05f, style_ == Style::AbsoluteZero ? 9u : lance ? 3u : 6u, 200, top * 0.7f, style_ == Style::AbsoluteZero ? 1.6f : 0.4f, 0.8f, size);
 
-    // The white flash of the impact (the Zero Absoluto has its one great flash instead).
+    // The white flash of the impact (the Zero Absoluto has its one great flash instead; the Lança's only a spark as it passes).
     if (style_ != Style::AbsoluteZero && t < 0.14f) {
       const float k = t / 0.14f;
-      flashes.push_back(card(hex + glm::vec3(0, 0.5f, 0), 0.0f, 0.0f, (1.0f - k) * (1.0f - k), glm::vec2(1.4f + 1.8f * k), 0.0f));
+      flashes.push_back(card(hex + glm::vec3(0, lance ? 0.25f : 0.5f, 0), 0.0f, 0.0f, (1.0f - k) * (1.0f - k) * (lance ? 0.6f : 1.0f),
+                             lance ? glm::vec2(0.6f + 0.7f * k) : glm::vec2(1.4f + 1.8f * k), 0.0f));
     }
-    // Cold mist: a puff at the impact; while the ice stands, heavy mist that sinks and spreads over the ground (it never rises).
+    // Cold mist: a puff at the impact; while the ice stands, heavy mist that sinks and spreads over the ground (it never rises). The
+    // Lança's is a thin one, lying along its scar.
     if (style_ != Style::Gale) {
       if (t < 0.6f) {
         const float k = t / 0.6f;
-        mist.push_back(card(hex + glm::vec3(0, 0.35f - 0.15f * k, 0), hash01(salt, 500) * kTau, k, 1.0f, glm::vec2(1.3f + 2.0f * k, 1.0f + 0.7f * k), hash01(salt, 501) * 13.0f));
+        mist.push_back(card(hex + glm::vec3(0, (lance ? 0.22f : 0.35f) - 0.15f * k, 0), hash01(salt, 500) * kTau, k, lance ? 0.6f : 1.0f,
+                            lance ? glm::vec2(0.7f + 0.7f * k, 0.45f + 0.3f * k) : glm::vec2(1.3f + 2.0f * k, 1.0f + 0.7f * k), hash01(salt, 501) * 13.0f));
       }
-      if (t > 0.12f)
+      if (t > 0.12f && lance)
+        for (uint32_t j = 0; j < 2; ++j) {
+          const float life = 1.2f + 0.4f * hash01(salt, 510 + j);
+          const float p = std::fmod((t - 0.12f) / life + hash01(salt, 520 + j), 1.0f);
+          const float along = (hash01(salt, 530 + j) - 0.5f) * 1.4f;
+          mist.push_back(card(hex + direction_ * along + glm::vec3(0, 0.12f + 0.25f * (1.0f - easeOut(0.0f, 0.8f, p)), 0), 0.0f, p, 0.6f * ease(0.12f, 0.4f, t) * (1.0f - exit),
+                              glm::vec2(0.8f + 0.5f * p, 0.4f + 0.15f * p), hash01(salt, 550 + j) * 13.0f));
+        }
+      if (t > 0.12f && !lance)
         for (uint32_t j = 0; j < 6; ++j) {
           const float life = 1.5f + 0.5f * hash01(salt, 510 + j);
           const float p = std::fmod((t - 0.12f) / life + hash01(salt, 520 + j), 1.0f);
@@ -521,7 +541,7 @@ void IceSpell::build(float now, const Camera& camera, VfxFrame& frame, std::vect
 
     // The cold light: a flash at the impact settling into a glow that goes as the ice does (not on every hex of a wide area).
     if (i < 4 || i % 3 == 0) {
-      const float flash = 8.0f * std::exp(-t * 9.0f), glow = 1.5f * held;
+      const float flash = (lance ? 3.0f : 8.0f) * std::exp(-t * 9.0f), glow = (lance ? 0.6f : 1.5f) * held;
       const float burst = t > exitAt ? 2.5f * std::exp(-(t - exitAt) * 8.0f) : 0.0f;
       lights.push_back({hex + glm::vec3(0, 0.9f, 0), kIceLight, flash + glow + burst, 3.4f});
     }
