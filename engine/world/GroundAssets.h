@@ -219,6 +219,13 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"farol-gruta-v01", "plains", "ember-farol-gruta-chao-v01", "content/ground/farol-gruta-chao-v01.png", 4.5f, true},
     {"farol-gruta-v01", "snow", "ember-farol-gruta-margem-v01", "content/ground/farol-gruta-margem-v01.png", 4.0f, true},
     {"farol-gruta-v01", "side", "ember-farol-gruta-parede-v01", "content/ground/farol-gruta-parede-v01.png", 3.0f},
+    // O Farol 004 (ground floor, Andar 2, Topo; the user, 2026-11-20: "all upper floors of the lighthouse with the same ground image"):
+    // one ground on every land hex, the user's LighHouseGroundFloor photo (its sea-foam edge cut off) made seamless by make_tile.py
+    // --flatten. The older versions keep farol-v01.
+    {"farol-v02", "plains", "ember-farol-chao-v02-plains", "content/ground/farol-chao-v02.png", 4.5f, true},
+    {"farol-v02", "ruins", "ember-farol-chao-v02-ruins", "content/ground/farol-chao-v02.png", 4.5f, true},
+    {"farol-v02", "hill", "ember-farol-chao-v02-hill", "content/ground/farol-chao-v02.png", 4.5f, true},
+    {"farol-v02", "nave", "ember-farol-chao-v02-nave", "content/ground/farol-chao-v02.png", 4.5f, true},
     // A Estalagem's plank floor, a test (the user, 2026-10-30, with the Inn's word): ambientCG Planks037A (CC0, already seamless, its
     // 2K colour map; ~16 boards, ~2.2 m across) on the salão's plains and the Andar II's nave, over their baked art.
     {"inn-planks-v01", "plains", "ember-inn-planks-plains-v01", "content/ground/inn-planks-037a-v01.png", 3.4f, true},

@@ -155,7 +155,7 @@ inline std::filesystem::path briefArtFile(const std::string& id, const std::file
       {"mordavian-woods", "content/briefings/brief-mordavian-woods-v01.png"},
       {"mordavian-woods-floor-1", "content/briefings/brief-mordavian-woods-floor-1-v01.png"},
       {"misty-root-descent", "content/briefings/brief-misty-root-descent-v01.png"},
-      {"farol", "content/briefings/brief-farol-v01.png"},
+      {"farol", "content/briefings/brief-farol-v02.jpg"},  // the user's Lighthouse painting (Attachments, 2026-11-20); v01 kept
       {"farol-andar-2", "content/briefings/brief-farol-andar-2-v01.png"},
       {"farol-topo", "content/briefings/brief-farol-topo-v01.png"},
       {"farol-poroes", "content/briefings/brief-farol-poroes-v01.png"},

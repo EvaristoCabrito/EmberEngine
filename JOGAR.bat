@@ -12,7 +12,8 @@ if not exist "%EXE%" (
   goto :fim
 )
 
-set "GROUND=%ART%\ground\ground-v81-torre-madeira-v01.pak"
+set "GROUND=%ART%\ground\ground-v82-farol-chao-v02.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v81-torre-madeira-v01.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v80-farol-panorama-alpha-v01.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v77-random-encounters-v01.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v78-cemetery-makeover-v01.pak"
