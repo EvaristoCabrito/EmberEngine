@@ -1156,6 +1156,34 @@
    "why": "the Birolho1's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "birolhoLegs2", "set": "birolho-1"},
    "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}
+  },
+  {
+   "set": "embered-vanguard",
+   "version": "v01",
+   "hero": "emberedVanguard",
+   "newHero": {"name": "Vanguarda de Brasa", "group": "monster", "sprite": "embered-vanguard", "reversed": false},
+   "cut": "content/sprites/embered-vanguard/cut.json",
+   "why": "the user, 2026-11-19: the Embered Vanguard, a new rank C+ armoured swordsman from four videos (Attachments/Monsters/EmbredVanguard): idle and sword sweep, walk in profile, hit and fall; Alta + 64 + 36; an enemy on Todas as Unidades",
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "embered-vanguard-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/embered-vanguard/cut-64-media.json",
+   "why": "the Embered Vanguard's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "emberedVanguard", "set": "embered-vanguard"},
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "embered-vanguard-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/embered-vanguard/cut-36-media.json",
+   "why": "the Embered Vanguard's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "emberedVanguard", "set": "embered-vanguard"},
+   "packs": {"base": "field", "move": "field"}
   }
  ],
  "clips": [

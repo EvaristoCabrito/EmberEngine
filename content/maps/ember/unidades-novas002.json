@@ -7419,6 +7419,14 @@
         "useClassSprite": true
       },
       {
+        "name": "Embered Vanguard",
+        "classId": "emberedVanguard",
+        "x": 13,
+        "y": 33,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
         "name": "Vampire Mosquito",
         "classId": "vampireMosquito",
         "x": 43,

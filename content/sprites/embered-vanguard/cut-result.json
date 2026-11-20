@@ -1,0 +1,156 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Monsters/EmbredVanguard/EmberVanguardIdleATT.mp4",
+   "first": 0,
+   "last": 36,
+   "bootRow": 693,
+   "bootRows": [
+    693,
+    693
+   ],
+   "figurePx": 651.0,
+   "frames": 37,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    520,
+    670
+   ],
+   "crop": [
+    6,
+    5,
+    509,
+    660
+   ],
+   "box": {
+    "w": 2.23656,
+    "h": 2.88172,
+    "foot": 0.05161
+   },
+   "pattern": "content/sprites/embered-vanguard/base-v01/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Monsters/EmbredVanguard/EmberVanguardIdleATT.mp4",
+   "first": 40,
+   "last": 78,
+   "bootRow": 693,
+   "bootRows": [
+    693,
+    693
+   ],
+   "figurePx": 651.0,
+   "frames": 39,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    649,
+    661
+   ],
+   "crop": [
+    5,
+    4,
+    639,
+    652
+   ],
+   "box": {
+    "w": 2.7914,
+    "h": 2.84301,
+    "foot": 0.02581
+   },
+   "pattern": "content/sprites/embered-vanguard/atk-v01/atk-{}.png",
+   "impact": 0.4615
+  },
+  "move": {
+   "video": "Attachments/Monsters/EmbredVanguard/EmberedVanguardWalk.mp4",
+   "first": 0,
+   "last": 71,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/embered-vanguard/ima 0:36",
+   "loopFirst": 5,
+   "loopLast": 67,
+   "seamSteps": 1.66,
+   "bootRow": 1225,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 1178.0,
+   "frames": 63,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    645,
+    1214
+   ],
+   "crop": [
+    4,
+    6,
+    641,
+    1203
+   ],
+   "box": {
+    "w": 1.53311,
+    "h": 2.88557,
+    "foot": 0.02139
+   },
+   "pattern": "content/sprites/embered-vanguard/move-v01/move-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/Monsters/EmbredVanguard/EmberVanguardHitReactFall.mp4",
+   "first": 106,
+   "last": 136,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/embered-vanguard/ima 0:36",
+   "bootRow": 698,
+   "bootRows": [
+    698,
+    698
+   ],
+   "figurePx": 657.0,
+   "frames": 31,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    651,
+    677
+   ],
+   "crop": [
+    4,
+    5,
+    642,
+    668
+   ],
+   "box": {
+    "w": 2.77443,
+    "h": 2.88524,
+    "foot": 0.02557
+   },
+   "pattern": "content/sprites/embered-vanguard/hit-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Monsters/EmbredVanguard/EmberVanguardHitReactFall.mp4",
+   "first": 148,
+   "last": 214,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/embered-vanguard/ima 0:36",
+   "bootRow": 697,
+   "bootRows": [
+    697,
+    697
+   ],
+   "figurePx": 657.0,
+   "frames": 67,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    742,
+    682
+   ],
+   "crop": [
+    4,
+    5,
+    734,
+    677
+   ],
+   "box": {
+    "w": 3.16225,
+    "h": 2.90654,
+    "foot": 0.09376
+   },
+   "pattern": "content/sprites/embered-vanguard/death-v01/death-{}.png"
+  }
+ }
+}

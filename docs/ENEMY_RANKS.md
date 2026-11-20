@@ -26,6 +26,7 @@ Esquiva / 2). Escape: min(100, 60 + DEX / 3).
 | D+ | 1.75 | 17.5 | 35 | 52.5 |
 | C- | 1.875 | 18.75 | 37.5 | 56.25 |
 | C | 2.0 | 20 | 40 | 60 |
+| C+ | 2.25 | 22.5 | 45 | 67.5 |
 | B | 2.5 | 25 | 50 | 75 |
 | A | 3.0 | 30 | 60 | 90 |
 | S | 3.5 | 35 | 70 | 100 |
@@ -45,6 +46,7 @@ Esquiva / 2). Escape: min(100, 60 + DEX / 3).
   a little stronger than The Butcher (its stats x1.10, content/data/class-stats.json) with strong magic resistance (50 % to arcane,
   darkness, ember, fire, holy, ice, lightning); first values.
 - **C-** (the user, 2026-11-18: "its a C- type"; halfway between D+ and C): Vampire Mosquito (vampireMosquito), a flier; first values.
+- **C+** (the user, 2026-11-19: "New Unit Type C+"; halfway between C and B): Embered Vanguard (emberedVanguard), an armoured swordsman; first values.
 - **B**: Carnivorous Plant (carnivorousPlant).
 - **A**: Birolho (birolho, birolho2, birolho3, birolhoLegs, birolhoLegs2).
 - **S**: Asherah.

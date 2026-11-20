@@ -84355,6 +84355,35 @@
       "arrowRelease:neera": []
     },
     "monster": {
+      "embered-vanguard": {
+        "walk": [
+          {
+            "file": "EmberedVanguardWalk001.mp3",
+            "volume": 0.45,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "hit": [
+          {
+            "file": "EmberedVanguardHit001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "death": [
+          {
+            "file": "EmberedVanguardDeath001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ]
+      },
       "BirolhoLegs2": {
         "cast": [
           {
@@ -85507,7 +85536,7 @@
         ],
         "cast": [
           {
-            "file": "VossCast001.mp3",
+            "file": "Casting03.mp3",
             "volume": 0.55,
             "offset": 0,
             "delay": 0,

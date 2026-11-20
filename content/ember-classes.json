@@ -67,6 +67,14 @@
     "walkFade": true
    }
   },
+  "emberedVanguard": {
+   "name": "Vanguarda de Brasa", "nameEn": "Embered Vanguard", "role": "Cavaleiro", "sprite": "embered-vanguard", "size": 1, "mov": 4, "strikesWith": "atk",
+   "weapon": {"dice": 2, "faces": 6, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "A new unit from the user's videos (2026-11-19, Attachments/Monsters/EmbredVanguard: \"New Unit Type C+\"). Working numbers, the user's to set: 1 hex, mov 4, a 2D6 sword blow, the Chain-Bound Penitent's stats row, rank C+ (2.25 a level, between C and B), no spells, no resistances."
+  },
   "giantBeetle": {
    "name": "Besouro Gigante", "nameEn": "Giant Beetle", "role": "Fera",
    "sprite": "giant-beetle", "size": 1, "mov": 4, "strikesWith": "atk",
