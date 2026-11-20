@@ -1,5 +1,30 @@
 # Veo prompts for character sprites
 
+## THE PROMPT FORMAT (the user's own, 2026-11-19: "this is a prompt, not what you're shitting out")
+
+Every prompt for a character move is written in THIS format, as plain text, one prompt only, no options and no explanation around it.
+It is the user's working template; the long generic block further down (written by Claude on 2026-11-19, never asked for) does NOT apply any more.
+
+```
+ZOOM OUT <Move> — <N> seconds: <One short paragraph of the body mechanics of the move, in the order it happens: the torso, the head, the face, the arms, the feet, the cloak or the weapon. It ends by returning to the exact opening stance (or holding the final pose still). "One single <move>, with no additional movements.">
+
+CRITICAL CAMERA AND FRAMING — ABSOLUTE PRIORITY: The camera must remain COMPLETELY STATIONARY throughout the entire animation. ABSOLUTELY NO ZOOM IN, NO ZOOM OUT, NO CAMERA PUSH, NO CAMERA PULLBACK, NO TRACKING, NO CROPPING, AND NO REFRAMING. Maintain exactly the same camera distance, character size, and composition from the first frame to the last. The character must NEVER appear larger or smaller in the frame.
+
+The ENTIRE character, including <head, both feet, hands, full cloak, the whole weapon from tip to end>, must remain COMPLETELY INSIDE THE FRAME AT ALL TIMES. Leave GENEROUS empty space on all four sides, including above the <weapon> and below the boots. Nothing may touch or cross the frame boundaries.
+
+Preserve <his/her> exact design, anatomy, proportions, <armor, cloak, weapon, colors, textures> and original <left-facing profile / front-facing opening stance>. Plain, evenly lit LIGHT NEUTRAL-GRAY background with a matching floor. Fixed studio lighting.
+
+Audio: <the move's sound effects only>. No music or voices.
+```
+
+Adapt per character and move (the weapon, the hand, the facing, the costume list). For a fall the wide picture is set in the generator (not in the text) and the
+frame paragraph adds: the character stays at the exact CENTER of the picture the whole time, standing, falling and lying down, with generous empty space left and
+right of the fallen body (Isolde's fall, 2026-11-20: a vertical picture does not work for a fall).
+
+---
+
+(Older notes below. Written 2026-10-25 from what went wrong with Voss's and Isolde's videos; where they disagree with the format above, the format above wins.)
+
 How to ask Veo for a character's moves so the video → sprite pipeline (`tools/scripts/sprites/video_matte.py` →
 `video_sprite.py`) uses every second of them. Written 2026-10-25 from what went wrong with Voss's and Isolde's videos; each
 rule says which problem it prevents.
