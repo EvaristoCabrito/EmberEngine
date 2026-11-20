@@ -29,7 +29,8 @@ namespace ember {
 // 2026-10-30: all eight in the party, these two on the reserve): the fresh test save's active party is everyone else
 // (TestModeStage freshTestSession, "partyActive"); the Party screen moves heroes between the two.
 // Garran Holt starts on the reserve too, for the user to pick on the Party screen (2026-11-13: "coloca na party para eu escolher").
-inline constexpr const char* kTestReserve[] = {"Malrec", "Selene", "Garran Holt"};
+// Vespera too (2026-11-20), as Garran: the Party screen puts her in.
+inline constexpr const char* kTestReserve[] = {"Malrec", "Selene", "Garran Holt", "Vespera"};
 
 // Modo teste's party is the player's, as the campaign save's is (the user, 2026-11-13: "the party size is 6 only 6 why each map keeps
 // changing and ignoring the party setup"): what the Party screen chose (the six, the formation, the leader, the class paths) is kept in

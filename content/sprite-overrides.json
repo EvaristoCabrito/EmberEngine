@@ -830,10 +830,10 @@
    "newHero": {"name": "Screeching Bat", "group": "monster", "sprite": "screeching-bat", "reversed": true},
    "cut": "content/sprites/screeching-bat/cut.json",
    "why": "the user, 2026-11-14: the Screeching Bat, a new unit from their videos (Attachments/Monsters/Bat); the last video's size and colours matched to the others; Alta + 64 + 36; a rank D enemy on Todas as Unidades",
-   "poses": {"idle": "base", "attack": "atk", "walk": "move", "hit": "hit", "hit2": "hit2", "death": "death", "hoverSide": "hover-side", "fallSide": "fall-side"},
-   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Voar", "hit": "Dano", "hit2": "Dano (lado)", "death": "Morte", "hoverSide": "Pairar (lado)", "fallSide": "Queda (lado)"},
-   "packs": {"base": "field", "move": "field", "hover-side": "cutscene", "fall-side": "cutscene"},
-   "strides": {"move": 1.0}
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkUp": "move-up", "walkDown": "move-down", "hit": "hit", "hit2": "hit2", "death": "death", "hoverSide": "hover-side", "fallSide": "fall-side"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Voar", "walkUp": "Voar (costas)", "walkDown": "Voar (frente)", "hit": "Dano", "hit2": "Dano (lado)", "death": "Morte", "hoverSide": "Pairar (lado)", "fallSide": "Queda (lado)"},
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field", "hover-side": "cutscene", "fall-side": "cutscene"},
+   "strides": {"move": 1.0, "move-up": 1.0, "move-down": 1.0}
   },
   {
    "set": "screeching-bat-64-media",
@@ -841,7 +841,7 @@
    "cut": "content/sprites/screeching-bat/cut-64-media.json",
    "why": "the Screeching Bat's Personagens Média: 64 frames at ~610 px",
    "mediumOf": {"hero": "screechingBat", "set": "screeching-bat"},
-   "packs": {"base": "field", "move": "field", "hover-side": "cutscene", "fall-side": "cutscene"}
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field", "hover-side": "cutscene", "fall-side": "cutscene"}
   },
   {
    "set": "screeching-bat-36-media",
@@ -849,7 +849,7 @@
    "cut": "content/sprites/screeching-bat/cut-36-media.json",
    "why": "the Screeching Bat's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "screechingBat", "set": "screeching-bat"},
-   "packs": {"base": "field", "move": "field", "hover-side": "cutscene", "fall-side": "cutscene"}
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field", "hover-side": "cutscene", "fall-side": "cutscene"}
   },
   {
    "set": "horse",
@@ -1164,10 +1164,10 @@
    "newHero": {"name": "Vanguarda de Brasa", "group": "monster", "sprite": "embered-vanguard", "reversed": false},
    "cut": "content/sprites/embered-vanguard/cut.json",
    "why": "the user, 2026-11-19: the Embered Vanguard, a new rank C+ armoured swordsman from four videos (Attachments/Monsters/EmbredVanguard): idle and sword sweep, walk in profile, hit and fall; Alta + 64 + 36; an enemy on Todas as Unidades",
-   "poses": {"idle": "base", "attack": "atk", "walk": "move", "hit": "hit", "death": "death"},
-   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
-   "packs": {"base": "field", "move": "field"},
-   "strides": {"move": 1.0}
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkUp": "move-up", "walkDown": "move-down", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "walkUp": "Andar (costas)", "walkDown": "Andar (frente)", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"},
+   "strides": {"move": 1.0, "move-up": 1.0, "move-down": 1.0}
   },
   {
    "set": "embered-vanguard-64-media",
@@ -1175,7 +1175,7 @@
    "cut": "content/sprites/embered-vanguard/cut-64-media.json",
    "why": "the Embered Vanguard's Personagens Média: 64 frames at ~610 px",
    "mediumOf": {"hero": "emberedVanguard", "set": "embered-vanguard"},
-   "packs": {"base": "field", "move": "field"}
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
   {
    "set": "embered-vanguard-36-media",
@@ -1183,7 +1183,7 @@
    "cut": "content/sprites/embered-vanguard/cut-36-media.json",
    "why": "the Embered Vanguard's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "emberedVanguard", "set": "embered-vanguard"},
-   "packs": {"base": "field", "move": "field"}
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   }
  ],
  "clips": [

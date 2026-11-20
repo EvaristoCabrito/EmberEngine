@@ -15,7 +15,7 @@ inline void applyEmberInitiative(BattleUnit& u) {
     int bonus;
   };
   static constexpr Entry kHeroes[] = {
-      {"Neera", 10}, {"Aldric", 8}, {"Kael", 7}, {"Salazar", 5}, {"Voss", 4}, {"Malrec", 4},
+      {"Neera", 10}, {"Aldric", 8}, {"Kael", 7}, {"Vespera", 7}, {"Salazar", 5}, {"Voss", 4}, {"Malrec", 4},
   };
   static constexpr Entry kEnemies[] = {
       // rogues

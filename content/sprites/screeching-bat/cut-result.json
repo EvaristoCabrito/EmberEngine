@@ -246,6 +246,71 @@
     "foot": 0.05536
    },
    "pattern": "content/sprites/screeching-bat/fall-side-v01/fall-side-{}.png"
+  },
+  "move-up": {
+   "video": "Attachments/Monsters/Bat/ScreetchinBat_flying_in_placeBackgoingUP.mp4",
+   "first": 0,
+   "last": 95,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/screeching-bat\\idle 0:52",
+   "loopFirst": 29,
+   "loopLast": 76,
+   "seamSteps": 0.93,
+   "bootRow": 898,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 537.5,
+   "frames": 48,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1247,
+    638
+   ],
+   "crop": [
+    0,
+    5,
+    1242,
+    633
+   ],
+   "box": {
+    "w": 3.248,
+    "h": 1.66177,
+    "foot": -0.46623
+   },
+   "pattern": "content/sprites/screeching-bat/move-up-v01/move-up-{}.png"
+  },
+  "move-down": {
+   "video": "Attachments/Monsters/Bat/Screeching Bat Idle.mp4",
+   "first": 0,
+   "last": 52,
+   "loopFirst": 17,
+   "loopLast": 39,
+   "seamSteps": 0.63,
+   "bootRow": 824,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 467.5,
+   "frames": 23,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1280,
+    645
+   ],
+   "crop": [
+    0,
+    5,
+    1280,
+    597
+   ],
+   "box": {
+    "w": 3.83316,
+    "h": 1.93155,
+    "foot": -0.31444
+   },
+   "pattern": "content/sprites/screeching-bat/move-down-v01/move-down-{}.png"
   }
  }
 }

@@ -66,7 +66,7 @@ inline TestSession freshTestSession(const ember::Campaign& campaign) {
   s.save = campaign.emptySave();
   ember::Json levels = ember::Json::object();
   // the six and EmberEngine's own heroes (content/ember-classes.json heroes: Isolde), every one at the test level with its spells
-  for (const char* h : {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec", "Isolde", "Garran Holt"}) levels[h] = kDefaultTestLevel;
+  for (const char* h : ember::Overworld::kPartyHeroes) levels[h] = kDefaultTestLevel;
   levels["Selene"] = std::min(kDefaultTestLevel, ember::heroLevelCap("Selene", "conjurer"));  // her cap: 10 (the user, 2026-10-25)
   s.save["levels"] = levels;
   s.save["ember"] = kTestEmber;

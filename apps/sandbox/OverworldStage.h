@@ -457,11 +457,12 @@ class OverworldStage : public Stage {
   // 2026-10-25: "precisa adicionar Isolde a party no mapa mundi do debug"); the campaign keeps only the recruited (heroRecruited:
   // "recruited:Isolde" flag).
   // Selene too (the user, 2026-10-25: "make her available in debug mode as stress test"; never recruited in the campaign yet).
-  // Garran Holt too (the user, 2026-11-13: "coloca na party para eu escolher"; docs/SKILLS_MOONWARDEN.md).
-  static constexpr const char* kHeroes[9] = {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec", "Isolde", "Selene", "Garran Holt"};
+  // Garran Holt too (the user, 2026-11-13: "coloca na party para eu escolher"; docs/SKILLS_MOONWARDEN.md); Vespera (2026-11-20).
+  // The list itself is ember::Overworld::kPartyHeroes, the one every screen reads (this file kept a copy of it until 2026-11-20).
   // EmberEngine's own heroes have no row in the world tables (baseClass, portraits): their class and bust from here.
   static const char* ownHeroClass(const std::string& hero) {
     if (hero == "Garran Holt") return "moonwarden";
+    if (hero == "Vespera") return "swordsman";  // the Guerreira: mace and shield
     return hero == "Isolde" || hero == "Selene" ? "conjurer" : nullptr;
   }
   int baseMaxHp(const std::string& hero) const {
@@ -484,7 +485,7 @@ class OverworldStage : public Stage {
   std::vector<std::string> reserveHeroes() const {
     const std::vector<std::string> active = partyHeroes();
     std::vector<std::string> out;
-    for (const char* h : kHeroes)
+    for (const char* h : ember::Overworld::kPartyHeroes)
       if (recruited(h) && std::ranges::find(active, h) == active.end()) out.push_back(h);
     return out;
   }

@@ -94,7 +94,9 @@ class Overworld {
   // --- rules -------------------------------------------------------------------------------------------------------
   // Every hero who can be in the party: the six, then EmberEngine's own (content/ember-classes.json heroes).
   // Garran Holt, the Guardião da Lua (docs/SKILLS_MOONWARDEN.md, the user 2026-11-13: "coloca na party para eu escolher")
-  static constexpr const char* kPartyHeroes[9] = {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec", "Isolde", "Selene", "Garran Holt"};
+  // Vespera, the Guerreira with mace and shield (the user, 2026-11-20: "Vespera new Warrior MC", Attachments/Vespera)
+  static constexpr const char* kPartyHeroes[10] = {"Kael",   "Neera",  "Voss",        "Salazar", "Aldric",
+                                                   "Malrec", "Isolde", "Selene", "Garran Holt", "Vespera"};
   bool heroRecruited(const std::string& hero, const Json& save) const;
   // In the party (active or reserve): recruited, or anyone in Modo teste (`test`). Every screen asks here.
   bool inParty(const std::string& hero, const Json& save, bool test) const;

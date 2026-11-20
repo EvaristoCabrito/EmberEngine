@@ -160,6 +160,76 @@
     "foot": 0.09355
    },
    "pattern": "content/sprites/embered-vanguard/death-media36-v01/death-{}.png"
+  },
+  "move-up": {
+   "video": "Attachments/Monsters/EmbredVanguard/Embered Vanguard Commander_walking_in_place_09bf3edb.mp4",
+   "first": 0,
+   "last": 119,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/embered-vanguard/ima 0:36",
+   "loopFirst": 21,
+   "loopLast": 57,
+   "seamSteps": 0.91,
+   "bootRow": 1187,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "frameCountFrom": 37,
+   "figurePx": 1079.5,
+   "scaledTo": 609.6,
+   "frames": 36,
+   "frameMs": 42.82407407407407,
+   "nat": [
+    280,
+    628
+   ],
+   "crop": [
+    3,
+    4,
+    275,
+    621
+   ],
+   "box": {
+    "w": 1.28393,
+    "h": 2.87967,
+    "foot": 0.03267
+   },
+   "pattern": "content/sprites/embered-vanguard/move-up-media36-v01/move-up-{}.png"
+  },
+  "move-down": {
+   "video": "Attachments/Monsters/EmbredVanguard/Embered Vanguard Commander_walking_in_place_09bf3edb.mp4",
+   "first": 120,
+   "last": 239,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/embered-vanguard/ima 0:36",
+   "loopFirst": 142,
+   "loopLast": 186,
+   "seamSteps": 0.91,
+   "bootRow": 1207,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "frameCountFrom": 45,
+   "figurePx": 1107.5,
+   "scaledTo": 610.4,
+   "frames": 36,
+   "frameMs": 52.083333333333336,
+   "nat": [
+    295,
+    630
+   ],
+   "crop": [
+    2,
+    4,
+    291,
+    622
+   ],
+   "box": {
+    "w": 1.35512,
+    "h": 2.89399,
+    "foot": 0.03188
+   },
+   "pattern": "content/sprites/embered-vanguard/move-down-media36-v01/move-down-{}.png"
   }
  }
 }
