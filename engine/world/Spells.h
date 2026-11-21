@@ -140,7 +140,7 @@ struct BattleStep {
   double parriedAccBonus = 0;     // Segunda Intenção's second hit: when the first was parried, these points to hit ...
   int parriedIgnorePct = 0;       // ... and this % of armor ignored
   bool martialMove = false;       // Type::Move of a technique: the destination is checked again as it resolves (taken: the chain aborts)
-  // Garran's techniques (Guardião da Lua, docs/SKILLS_MOONWARDEN.md)
+  // Garam's techniques (Guardião da Lua, docs/SKILLS_MOONWARDEN.md)
   int braceHits = 0;              // Firmar o Pé (Type::Effect, `bonus` its %): this many hits ...
   bool bracePush = false;         // ... and the first push on him one hex shorter
 };
@@ -195,7 +195,7 @@ std::string conditionsText(const BattleUnit& u);
 // Each condition as a detailed explanation string with full mechanics and numbers.
 std::vector<std::string> conditionsDetailedList(const BattleUnit& u);
 // The spell's description for the window's tooltip (its numbers at the caster's level).
-// moon (Garran's techniques, docs/SKILLS_MOONWARDEN.md): tonight's moonForm(battle) to say what it does to them now, -1 to list every moon
+// moon (Garam's techniques, docs/SKILLS_MOONWARDEN.md): tonight's moonForm(battle) to say what it does to them now, -1 to list every moon
 std::string spellTooltip(const BattleUnit& caster, const std::string& kind, int moon = -1);
 // A first spell's line for the status sheet (after its name) from its numbers at the caster's level (its track: reach, area, dice ...), in
 // Portuguese or English; empty for a kind it does not cover (the sheet keeps its own line then).

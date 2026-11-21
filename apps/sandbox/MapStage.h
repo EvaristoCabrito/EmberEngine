@@ -724,7 +724,7 @@ class MapStage final : public Stage {
     laps.lap("camera");
     updateUnits(dt);
     laps.lap("units");
-    // The moon the map shows is the battle's (Garran's techniques read it as they commit, docs/SKILLS_MOONWARDEN.md)
+    // The moon the map shows is the battle's (Garam's techniques read it as they commit, docs/SKILLS_MOONWARDEN.md)
     if (battle_ && battle_->moonPhase() != tonightsMoon()) battle_->setMoonPhase(tonightsMoon());
     if (!levelUpMoment_) updateExchange();
     laps.lap("exchange");
@@ -9048,7 +9048,7 @@ class MapStage final : public Stage {
           const float height = cardHeightOf(unitSpot(ui));
           spellFx_.combat().impact(CombatFx::Kind::HeavySlash, hit.feet, height, unitWorld(vs), lands);
           const SpellEffects::Spot kael = unitSpot(vs);
-          if (battle_->units()[v].classId == "moonwarden")  // Garran's Vigiar a Brecha: his own moonlight
+          if (battle_->units()[v].classId == "moonwarden")  // Garam's Vigiar a Brecha: his own moonlight
             spellFx_.moonwarden().strike("watchTheGap", {hit.feet, height}, {kael.feet, kael.cardHeight}, lands, true);
           else
             spellFx_.vanguard().reaction(measured[v] ? "deadMeasure" : "plantTheLine", {kael.feet, kael.cardHeight}, {hit.feet, height}, lands);
@@ -9444,7 +9444,7 @@ class MapStage final : public Stage {
       }
       if (x.special && hasPose(su, "specialAttack")) pose = "specialAttack";
     }
-    // Garran's (docs/SKILLS_MOONWARDEN.md): his blows and his guards play his special (specialAttack, else his Especial attack2, else his
+    // Garam's (docs/SKILLS_MOONWARDEN.md): his blows and his guards play his special (specialAttack, else his Especial attack2, else his
     // cast), never the plain swing
     if (striker >= 0 && !x.counter && wardenTechnique(s.kind) && (s.type == StepType::Combat || s.type == StepType::Effect)) {
       const size_t su = static_cast<size_t>(striker);
@@ -11587,7 +11587,7 @@ class MapStage final : public Stage {
     const std::string cls = ember::emberSpellClass(kind);
     return cls == "vanguard" || cls == "swordmaster" || cls == "warbringer";
   }
-  // Garran's (the Guardião da Lua, docs/SKILLS_MOONWARDEN.md): specials too, in the moon's palette
+  // Garam's (the Guardião da Lua, docs/SKILLS_MOONWARDEN.md): specials too, in the moon's palette
   static bool wardenTechnique(const std::string& kind) { return ember::emberSpellClass(kind) == "moonwarden"; }
   static bool weaponStrikeKind(const std::string& kind) {
     return kind == "longShot" || kind == "piercing" || kind == "piercingThrust";
@@ -11794,7 +11794,7 @@ class MapStage final : public Stage {
       const bool bowSkill = archerKind(s.kind) || s.kind == "longShot" || s.kind == "piercing";  // the Arqueiro's and archery shots: arrows, so the arrow's hit lands on each struck body
       const bool magic = s.type == ember::BattleStep::Type::Spell && s.kind != "longShot" && s.kind != "piercing" && s.kind != "piercingThrust" && !bowSkill;
       const int striker = sceneUnitOf(static_cast<int>(x.counter ? s.def : s.att));
-      // Garran's techniques (the Guardião da Lua): their own moonlight, once a step (MoonwardenFx): his blows on the struck foe (the swing
+      // Garam's techniques (the Guardião da Lua): their own moonlight, once a step (MoonwardenFx): his blows on the struck foe (the swing
       // alone on a miss), his guards on whoever they mark
       if (!x.counter && striker >= 0 && wardenTechnique(s.kind)) {
         const SpellEffects::Spot me = unitSpot(static_cast<size_t>(striker));
@@ -11856,7 +11856,7 @@ class MapStage final : public Stage {
           // the skill's cut across the chest (62 % of the card), not its middle (CombatFx's contact: half the card, the hips)
           const glm::vec3 cutAt = skillSlash ? struck.feet + glm::vec3(0.0f, std::clamp(cardHeightOf(struck), 1.0f, 4.0f) * 0.12f, 0.0f) : struck.feet;
           if (!doubleStrikeVfx) spellFx_.combat().impact(kind, cutAt, cardHeightOf(struck), from, now_);
-          // Garran's techniques carry their own look (MoonwardenFx, above), Kael's theirs (VanguardFx, started with the step; the Riposta's
+          // Garam's techniques carry their own look (MoonwardenFx, above), Kael's theirs (VanguardFx, started with the step; the Riposta's
           // from startStep)
         }
         // The Cruzado's holy on a blow that landed: Golpe Consagrado's flash, the Manto's spark on any blow of its bearer

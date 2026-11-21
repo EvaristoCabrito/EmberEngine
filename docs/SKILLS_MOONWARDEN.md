@@ -1,6 +1,6 @@
-# Garran Holt: Guardião da Lua (Moonwarden)
+# Garam Holt: Guardião da Lua (Moonwarden)
 
-The user, 2026-11-13: "Garran Holt — Moonwarden", "Guardião da Lua em Português", then the design "Moonwarden — Permanent Skills,
+The user, 2026-11-13: "Garam Holt — Moonwarden", "Guardião da Lua em Português", then the design "Moonwarden — Permanent Skills,
 T1–T10", which replaced the first moon-phase draft (ten skills over T1-T5, three changed by the moon): one class from level 1 to 30,
 one permanent skill a tier. The skills work in every form (human, intermediate, werewolf, full wolf); only the human form is in the
 game. His loop: guard an ally, take part of the hit, punish the foe responsible.
@@ -9,7 +9,7 @@ game. His loop: guard an ally, take part of the hit, punish the foe responsible.
 
 - Data: `content/ember-classes.json` `heroClasses.moonwarden` (the Guerreiro's stats, the casters' tier table - T1-T10 open at 1, 3,
   6, 8, 11, 13, 16, 18, 21, 23 - one-handed swords, a shield in the off hand), `content/data/weapons.json` / `inn.json`,
-  `overworld.json`, `class-stats.json`, `classes.json`, `action-points.json` (`spells.byKind`), `content/progression.json` (Garran
+  `overworld.json`, `class-stats.json`, `classes.json`, `action-points.json` (`spells.byKind`), `content/progression.json` (Garam
   Holt: the Guerreiro's gains). Written by `tools/scripts/data/add_moonwarden_class.py` (running it again changes nothing).
 - Rules: `engine/world/SpellsMoonwarden.inc` (aims, casts, the guards, Assumir o Peso's transfer, Vigiar a Brecha's reaction, the
   words), included by `SpellsVanguard.inc`: the same technique system as Kael's (`kTechniques`, ranks, cooldowns, one use of the
@@ -36,7 +36,7 @@ game. His loop: guard an ally, take part of the hit, punish the foe responsible.
 | T6 · 13 | Vigiar a Brecha (`watchTheGap`) | 4 (+6 na reação) | 2 | vigia um hex ao lado; o primeiro inimigo que entrar nele andando leva 75 → 105 % (6 PA); acertou: o movimento acaba |
 | T7 · 16 | Golpe Seguido (`followThrough`) | 9 | 2 | dois inimigos diferentes ao lado: 100 → 125 % e 55 → 80 %, cada um rola sozinho |
 | T8 · 18 | Puxar para Longe (`pullClear`) | 5 | 2 | um aliado ao lado vai 1 hex para um hex livre também ao lado dele; o próximo ataque de arma do aliado +15 → +25 de acerto |
-| T9 · 21 | Assumir o Peso (`takeTheWeight`) | 6 | 3 | aliado ao lado: no primeiro golpe de arma de alvo único que ele levar, ainda ao lado, 30 → 45 % do dano (depois da mitigação) vai para Garran, direto |
+| T9 · 21 | Assumir o Peso (`takeTheWeight`) | 6 | 3 | aliado ao lado: no primeiro golpe de arma de alvo único que ele levar, ainda ao lado, 30 → 45 % do dano (depois da mitigação) vai para Garam, direto |
 | T10 · 23 | Acerto de Contas (`reckoning`) | 9 | 3 | 125 → 155 %; +35 → +50 pontos se Cerrar Fileiras ou Assumir o Peso protegeu um aliado desse inimigo desde o início do turno anterior; máx. 205 % |
 
 ## How a pick works on screen
@@ -50,7 +50,7 @@ game. His loop: guard an ally, take part of the hit, punish the foe responsible.
 - Golpe Seguido's two blows draw no counter (as every multi-target weapon skill of the game).
 - Cerrar Fileiras' "direct weapon hit": any weapon hit on the ally, melee or ranged.
 - Firmar o Pé's push or pull: the first hostile push (the techniques', Empurrão de Escudo, Investida), the Lanceiro's Gancho pull or
-  his Empalar e Arrastar drag on Garran goes 1 hex shorter (the Lanceiro following the drag stops 1 hex shorter too); a 1-hex pull or
+  his Empalar e Arrastar drag on Garam goes 1 hex shorter (the Lanceiro following the drag stops 1 hex shorter too); a 1-hex pull or
   drag does not move him.
 - Quebrar o Passo's tax and Puxar para Longe's aim last through the end of the foe's / ally's next turn.
 - In the campaign nobody recruits him yet; Modo teste has him.

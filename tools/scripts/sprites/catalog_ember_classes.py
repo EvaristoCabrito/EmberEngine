@@ -41,7 +41,7 @@ def main():
         hero = next((h for h in roster["heroes"] if h.get("key") == c["sprite"]), None)
         idle = next((p for p in (hero or {}).get("poses", []) if p["pose"] == "idle"), None)
         if idle is None:
-            # Kael's and Garran's classes (2026-11-13) stand on the stand-in "defaultWarrior", which has no roster art: their heroes are
+            # Kael's and Garam's classes (2026-11-13) stand on the stand-in "defaultWarrior", which has no roster art: their heroes are
             # drawn with their own. Left out of the editor's class list (said here), never stopping the units behind them (2026-11-17)
             print(f"{key}: no idle pose for its sprite {c['sprite']} in the roster; hero class left out of the editor's class list")
             continue

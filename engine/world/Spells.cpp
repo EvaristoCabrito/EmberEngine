@@ -169,7 +169,7 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"reapTheFlanks", "Ceifar os Flancos", 8, "", true}, "warbringer", 23},
     {{"rollingAdvance", "Avanço Rolante", 8, "", true}, "warbringer", 25},
     {{"shatterTheLine", "Estilhaçar a Linha", 8, "", true}, "warbringer", 27},
-    // Garran Holt, the Guardião da Lua (docs/SKILLS_MOONWARDEN.md, the user 2026-11-13: "Moonwarden — Permanent Skills, T1–T10"): one
+    // Garam Holt, the Guardião da Lua (docs/SKILLS_MOONWARDEN.md, the user 2026-11-13: "Moonwarden — Permanent Skills, T1–T10"): one
     // class from 1 to 30, one permanent skill a tier, on the casters' table (T1-T10 open at 1, 3, 6, 8, 11, 13, 16, 18, 21, 23)
     {{"steadyStrike", "Golpe Firme", 1, "", true}, "moonwarden", 1},
     {{"digIn", "Firmar o Pé", 2, "", true}, "moonwarden", 3},
@@ -2927,7 +2927,7 @@ std::vector<std::string> conditionsDetailedList(const BattleUnit& u) {
     add(std::format("{}: amedrontado, tenta fugir ({} rodadas)", pick("Com Medo", "Afraid"), u.fearTurns));
   if (u.blessedRoundsLeft > 0)
     add(std::format("{}: +{}% de chance de acerto nos ataques ({} rodadas)", pick("Abençoado", "Blessed"), static_cast<int>(jsRound(u.blessedHitBonusPct * 100)), u.blessedRoundsLeft));
-  techniqueConditions(u, add);  // Kael's guards and stances, Garran's wards, the marks on foes
+  techniqueConditions(u, add);  // Kael's guards and stances, Garam's wards, the marks on foes
   if (u.cond.twinResonancePercent > 0)
     add(std::format("{}: transfere {}% do dano de choque ao aliado vinculado", pick("Ressonância Geminada", "Twin Resonance"), u.cond.twinResonancePercent));
   return list;
@@ -3302,7 +3302,7 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind, int moon)
                          ap, mana, power, lightingSpellDisplayName(kind), m.healerRadiusHex, m.durationMinutes);
     }
   }
-  if (techniqueKind(kind)) return techniqueTooltip(c, kind, moon);  // Kael's and Garran's techniques: their numbers at the rank (Garran's: the moon)
+  if (techniqueKind(kind)) return techniqueTooltip(c, kind, moon);  // Kael's and Garam's techniques: their numbers at the rank (Garam's: the moon)
   const EmberSpell* e = emberSpell(kind);
   if (!e) return {};
   const EmberNumbers n = emberNumbers(kind, c.level);
@@ -3734,7 +3734,7 @@ std::vector<ArcaneBanquetOption> arcaneBanquetOptions(const Battle& b, size_t ca
 
 int spellTargetCount(const Battle& b, size_t unit, const std::string& kind) {
   if (kind == "twinResonance") return 2;
-  if (techniqueKind(kind)) return techniqueTargetCount(b, unit, kind);  // Kael's step techniques: a hex and a foe (Garran's: by the moon)
+  if (techniqueKind(kind)) return techniqueTargetCount(b, unit, kind);  // Kael's step techniques: a hex and a foe (Garam's: by the moon)
   if (kind == "wrathOfTheSkies") return emberNumbers(kind, b.units()[unit].level).count;
   if (kind == "multiShot") return multiShotTargets(b.units()[unit].level);
   return kind == "magicMissile" || kind == "magicMissileV2" ? magicMissileCount(b.units()[unit].level) : 1;
@@ -4522,7 +4522,7 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
   // Kael's techniques: the blow's points to hit and the armor it ignores (its own, Exposto, an open guard: the strongest)
   StrikeMods mods;
   const TechniqueStrike martial = techniqueBeforeRoll(b, step, counter, riposte, firstParried, ai, ti, usesArcane || usesStaff, mods);
-  wardAccuracy(b, counter, ai, mods);  // Garran's Puxar para Longe: the ally's next weapon attack, its points to hit
+  wardAccuracy(b, counter, ai, mods);  // Garam's Puxar para Longe: the ally's next weapon attack, its points to hit
   Hit hit = rollDamage(b, A, T, rng, !bash, useCustom ? &custom : nullptr, &mods);
   if (!bash) techniqueSpendAccuracy(b, ai, ti);  // Golpe de Pomo's / Desafio's points off: this weapon roll spent them
   if (target.side == "enemy" && !bash) trainWeapon(actor, target.level, rng, useCustom);  // the off-hand weapon on an off-hand strike
@@ -4562,7 +4562,7 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
   bool parried = false;
   int parryExpose = 0;
   if (!(usesArcane || usesStaff)) dmg = techniqueGuard(b, ai, ti, arrowShot, dmg, parried, parryExpose);
-  // Garran's on a physical weapon hit (docs/SKILLS_MOONWARDEN.md): the strongest of his reductions, its charge alone spent
+  // Garam's on a physical weapon hit (docs/SKILLS_MOONWARDEN.md): the strongest of his reductions, its charge alone spent
   std::vector<BattleEffect> wardAfter;
   if (!(usesArcane || usesStaff)) dmg = wardReduce(b, step, counter, ai, ti, arrowShot, dmg, wardAfter);
   if (usesArcane || usesStaff) {
@@ -4580,7 +4580,7 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
     if (holy > 0) dmg += static_cast<int>(std::floor(elementalDamage(holy, target.combat.resistance("holy"), A.mag)));
   }
   dmg = marked(target, dmg);  // Marca da Ruína
-  dmg = wardWeight(b, step, counter, ai, ti, dmg, wardAfter, rng);  // Garran's Assumir o Peso: his share of the covered ally's hit
+  dmg = wardWeight(b, step, counter, ai, ti, dmg, wardAfter, rng);  // Garam's Assumir o Peso: his share of the covered ally's hit
   if (hitStage && !step.kind.empty() && dmg > 0) affinityDelta(b, ai, ti, -1);  // a skill that hurts a friend costs affinity
   const bool bonded = target.side != actor.side && bondRedirects(b, ti, dmg, rng, out);  // Elo de Sacrifício: its summon takes it
   if (bonded) dmg = 0;
@@ -4594,7 +4594,7 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
     else gainCounterExp(actor);
   }
   BattleEffect e{ti, dmg, hit.crit, false, false, false, counter};
-  std::vector<BattleEffect> martialAfter = std::move(wardAfter);  // Kael's and Garran's words and impacts, shown after the blow's number
+  std::vector<BattleEffect> martialAfter = std::move(wardAfter);  // Kael's and Garam's words and impacts, shown after the blow's number
   if (parried) {
     martialAfter.push_back(statusEffect(ti, pick("Aparado", "Parried")));
     if (parryExpose > 0 && actor.alive) {  // Ler a Lâmina: the attacker left Exposto to him
@@ -5834,7 +5834,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     if (foe.alive && step.throwTo && (oneHex(foe) || (step.kind == "hookPull" && pullable(foe)))) {
       BattleHex to = *step.throwTo;
       const BattleHex stood{foe.x, foe.y};
-      // Firmar o Pé (Garran's, docs/SKILLS_MOONWARDEN.md): the first hostile pull (Gancho) or drag (Empalar e Arrastar) on him one hex
+      // Firmar o Pé (Garam's, docs/SKILLS_MOONWARDEN.md): the first hostile pull (Gancho) or drag (Empalar e Arrastar) on him one hex
       // shorter; a pull of one hex, or a drag of one, does not move him at all (nor the caster after him)
       if ((step.kind == "hookPull" || step.kind == "impaleDrag") && foe.side != att.side && foe.cond.martial.bracePush) {
         foe.cond.martial.bracePush = false;

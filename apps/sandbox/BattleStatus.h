@@ -483,7 +483,7 @@ class BattleStatusSheet {
 
   // The class's rows of spells and skills for the unit's level (status-rows.json), then the ones this port has that the sheet of the
   // class does not list, by tier.
-  // moon: tonight's (ember::moonForm), for Garran's techniques' words
+  // moon: tonight's (ember::moonForm), for Garam's techniques' words
   static std::vector<SpellRow> spellRows(const ember::BattleUnit& u, bool en, int moon = -1) {
     std::string key = ember::FieldSpells::rulesClass(u.classId);
     if (key == "aldric") key = "lancer";

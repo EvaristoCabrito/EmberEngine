@@ -310,7 +310,7 @@ struct BattleUnit {
       int challengePct = 0, challengeBy = -1, challengeTurns = 0;
       int lowCutHexes = 0, lowCutTurns = 0;
       int severTurns = 0;
-      // Garran's (the Guardião da Lua, T1-T10, docs/SKILLS_MOONWARDEN.md). On him, until his next turn begins: Firmar o Pé (bracePct
+      // Garam's (the Guardião da Lua, T1-T10, docs/SKILLS_MOONWARDEN.md). On him, until his next turn begins: Firmar o Pé (bracePct
       // off the first physical hit while braceHits; bracePush: the first push on him one hex shorter, its own charge), Vigiar a Brecha
       // (the hex watchX / watchY; watchPct: the reaction blow's weight, 0 = none). On an ally, until its Guardião's (`...By`) next turn:
       // Cerrar Fileiras (holdPct off its first direct weapon hit while beside holdBy), Assumir o Peso (weightPct of its first landed

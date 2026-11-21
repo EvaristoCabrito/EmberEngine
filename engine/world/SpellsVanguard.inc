@@ -58,7 +58,7 @@ constexpr TechniqueDef kTechniques[] = {
     {"reapTheFlanks", "Reap the Flanks", 1, TechAim::Arc},
     {"rollingAdvance", "Rolling Advance", 2, TechAim::Line},
     {"shatterTheLine", "Shatter the Line", 3, TechAim::Arc},
-    // Guardião da Lua (Garran's T1-T10, docs/SKILLS_MOONWARDEN.md: SpellsMoonwarden.inc aims and casts them; the aims here unused)
+    // Guardião da Lua (Garam's T1-T10, docs/SKILLS_MOONWARDEN.md: SpellsMoonwarden.inc aims and casts them; the aims here unused)
     {"steadyStrike", "Steady Strike", 0, TechAim::Foe},
     {"digIn", "Dig In", 1, TechAim::Self},
     {"flankStep", "Flank Step", 0, TechAim::StepFoe},
@@ -130,7 +130,7 @@ TechNumbers techniqueNumbersAt(const std::string& k, int s) {
   else if (k == "reapTheFlanks") n.dmg = v(80, 105);
   else if (k == "rollingAdvance") n.dmg = v(90, 115), n.dmg2 = v(70, 95);
   else if (k == "shatterTheLine") n.dmg = v(130, 160), n.dmg2 = v(85, 110), n.pct = v(10, 20);  // pct: the flanks' next attack points off
-  // Guardião da Lua (Garran's T1-T10, docs/SKILLS_MOONWARDEN.md)
+  // Guardião da Lua (Garam's T1-T10, docs/SKILLS_MOONWARDEN.md)
   else if (k == "steadyStrike") n.dmg = v(100, 115), n.pct = v(5, 15);       // pct: points to hit
   else if (k == "digIn") n.pct = v(20, 35);                                  // pct: the first physical hit, % off
   else if (k == "flankStep") n.dmg = v(85, 115);
@@ -219,7 +219,7 @@ BattleStep techniqueEffectStep(size_t caster, const std::string& kind, BattleHex
   return s;
 }
 
-#include "SpellsMoonwarden.inc"  // Garran's techniques (docs/SKILLS_MOONWARDEN.md): their aims, casts, covers and the moon
+#include "SpellsMoonwarden.inc"  // Garam's techniques (docs/SKILLS_MOONWARDEN.md): their aims, casts, covers and the moon
 
 std::optional<std::vector<BattleStep>> castTechnique(Battle& b, size_t caster, const std::string& kind, const std::vector<BattleHex>& cells, std::string* error) {
   BattleUnit& u = b.units()[caster];
@@ -229,7 +229,7 @@ std::optional<std::vector<BattleStep>> castTechnique(Battle& b, size_t caster, c
   };
   const TechniqueDef* d = techniqueDef(kind);
   if (!d) return fail("Esta técnica não existe.");
-  if (wardKind(kind)) return castWarden(b, caster, kind, cells, error);  // Garran's
+  if (wardKind(kind)) return castWarden(b, caster, kind, cells, error);  // Garam's
   if (d->aim == TechAim::Passive) return fail(pick("Funciona sozinha.", "It works by itself."));
   if (cells.empty()) return fail("Escolha um alvo.");
   const BattleHex from{u.x, u.y}, cell = cells[0];
@@ -436,7 +436,7 @@ std::optional<std::vector<BattleStep>> castTechnique(Battle& b, size_t caster, c
 
 // --- The aim (spellZone / spellAimValid / spellArea / spellTargetCount) -------------------------------------------------------------
 int techniqueTargetCount(const Battle& b, size_t unit, const std::string& kind) {
-  if (wardKind(kind)) return wardTargetCount(b, unit, kind);  // Garran's: the moon's steps, Segurar a Linha's allies
+  if (wardKind(kind)) return wardTargetCount(b, unit, kind);  // Garam's: the moon's steps, Segurar a Linha's allies
   const TechniqueDef* d = techniqueDef(kind);
   return d && (d->aim == TechAim::StepFoe || d->aim == TechAim::FoeStep) ? 2 : 1;
 }
@@ -455,7 +455,7 @@ bool techniqueAimValid(const Battle& b, size_t caster, const std::string& kind, 
   };
   const TechniqueDef* d = techniqueDef(kind);
   if (!d || d->aim == TechAim::Passive) return fail("Funciona sozinha.");
-  if (wardKind(kind)) return wardAimValid(b, caster, kind, cell, error);  // Garran's
+  if (wardKind(kind)) return wardAimValid(b, caster, kind, cell, error);  // Garam's
   switch (d->aim) {
     case TechAim::Self: return cell == from ? true : fail("Esta técnica é em si mesmo.");
     case TechAim::Foe:
@@ -619,7 +619,7 @@ void techniqueOnHit(Battle& b, const BattleStep& step, bool counter, bool ripost
 void techniqueEffect(Battle& b, const BattleStep& step, std::vector<BattleEffect>& out) {
   BattleUnit& k = b.units()[step.att];
   if (!k.alive) return;
-  if (wardEffect(b, step, out)) {  // Garran's
+  if (wardEffect(b, step, out)) {  // Garam's
     b.noteAware(step.att, kSupportCe, kSupportVe);
     return;
   }
@@ -668,7 +668,7 @@ void techniqueTurnStart(Battle& b, size_t unit) {
   tick(m.lowCutTurns, [&] { m.lowCutHexes = 0; });
   if (m.severTurns < 0) m.severTurns = 0;
   else if (m.severTurns > 0) --m.severTurns;
-  wardTurnStart(b, unit);  // Garran's guards, covers and memory; Golpe Esmagador on a foe
+  wardTurnStart(b, unit);  // Garam's guards, covers and memory; Golpe Esmagador on a foe
 }
 
 // --- Movement reactions (Medida Mortal before a step, Firmar a Linha after it): the ordinary movement reaction window, at most one
@@ -716,7 +716,7 @@ bool techniqueAfterStep(Battle& b, size_t walker, BattleHex from, BattleHex to, 
     k.cond.martial.plantPct = 0;  // the stance's one event
     if (techniqueReactionBlow(b, i, walker, "plantTheLine", pct, rng, out) && b.units()[walker].alive && techniqueDisplaceable(b.units()[walker])) stop = true;
   }
-  if (b.units()[walker].alive && wardAfterStep(b, walker, from, to, rng, out)) stop = true;  // Garran's Vigiar a Brecha
+  if (b.units()[walker].alive && wardAfterStep(b, walker, from, to, rng, out)) stop = true;  // Garam's Vigiar a Brecha
   return stop;
 }
 
@@ -737,9 +737,9 @@ void techniqueConditions(const BattleUnit& u, const std::function<void(const std
   if (m.challengePct > 0) add(std::format("{}: forçado a focar o desafiante (-{}% de acerto se atacar aliados)", pick("Desafiado", "Challenged"), m.challengePct));
   if (m.lowCutHexes > 0) add(std::format("{}: próximos passos custam +{} PA", pick("Corte Baixo", "Low Cut"), m.lowCutHexes));
   if (m.severTurns != 0) add(pick("Ritmo Quebrado: postura desfeita, sem contra-ataque", "Rhythm Severed: posture broken, cannot counter"));
-  wardConditions(u, add);  // Garran's
+  wardConditions(u, add);  // Garam's
 }
-// moon: tonight's (WardMoon) for Garran's techniques, -1 to list every moon that changes one
+// moon: tonight's (WardMoon) for Garam's techniques, -1 to list every moon that changes one
 std::string techniqueTooltip(const BattleUnit& c, const std::string& kind, int moon) {
   const EmberSpell* e = emberSpell(kind);
   const TechniqueDef* d = techniqueDef(kind);
@@ -753,7 +753,7 @@ std::string techniqueTooltip(const BattleUnit& c, const std::string& kind, int m
   if (d->cooldown > 0) s += std::format(" · recarga {}", d->cooldown);
   const auto pct = [](int v) { return std::format("{}%", v); };
   std::string t;
-  if (wardKind(kind)) t = wardTooltipText(kind, n, moon);  // Garran's, with the moon
+  if (wardKind(kind)) t = wardTooltipText(kind, n, moon);  // Garam's, with the moon
   else if (kind == "measuredCut") t = std::format("inimigo ao lado · {} do golpe · +{} de acerto", pct(n.dmg), n.pct);
   else if (kind == "longstepSlash") t = std::format("um passo para um hex livre ao lado, depois golpeia um inimigo ao lado dele · {}", pct(n.dmg));
   else if (kind == "crossguard") t = std::format("o próximo golpe corpo a corpo que acertar você é aparado: -{} de dano · até o seu próximo turno", pct(n.pct));

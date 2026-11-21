@@ -1,4 +1,4 @@
-// Garran Holt's techniques: the Guardião da Lua (Moonwarden; docs/SKILLS_MOONWARDEN.md). Included by SpellsVanguard.inc right after
+// Garam Holt's techniques: the Guardião da Lua (Moonwarden; docs/SKILLS_MOONWARDEN.md). Included by SpellsVanguard.inc right after
 // its step builders: the same technique system as Kael's (kTechniques, the ranks, the cooldowns, one use of the tier, the one strike).
 //
 // The user, 2026-11-13 (the design "Moonwarden — Permanent Skills, T1–T10", replacing the first moon-phase draft): one class from level

@@ -1,4 +1,4 @@
-"""Garran Holt's temporary sprites (the user's own quick sheets, content/sprites/moonwarden-v01/human: 4 frames a clip, 384 px, alpha
+"""Garam Holt's temporary sprites (the user's own quick sheets, content/sprites/moonwarden-v01/human: 4 frames a clip, 384 px, alpha
 as drawn) into a sprite set the game draws: writes content/sprites/moonwarden-v01/cut.json (the clips, their poses and modes) and
 cut-result.json (per clip: frames, frame time, size, crop, box, impact) in the format tools/scripts/sprites/video_sprite.py writes, the
 frames used where they are (no copy, no resampling). Then content/sprite-overrides.json's "moonwarden-v01" set makes them the hero's.
@@ -46,7 +46,7 @@ def main():
         frames[clip] = files
     idle = [solid_box(f)[1] for f in frames["base"]]
     figure_px = statistics.median(b[3] - b[1] for b in idle)
-    spec = {"about": "Garran Holt's temporary sprites (the user, 2026-11-13: quick temp sheets, 4 frames a clip; tools/scripts/sprites/"
+    spec = {"about": "Garam Holt's temporary sprites (the user, 2026-11-13: quick temp sheets, 4 frames a clip; tools/scripts/sprites/"
                      "moonwarden_temp_set.py). Human form only.",
             "set": "moonwarden-v01", "version": "v01", "figureUnits": FIGURE_UNITS, "clips": []}
     result = {"clips": {}}

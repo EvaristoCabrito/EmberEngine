@@ -187,7 +187,7 @@ class SpellEffects {
   // The Cruzado's (vfx/CrusaderFx, ours, 3D): cast() plays the casts; the stage times the holy flash and the mantle's sparks on the blows
   // that land and keeps the standing Juramento / Manto (MapStage syncCrusader).
   CrusaderFx& crusader() { return crusader_; }
-  MoonwardenFx& moonwarden() { return moonwarden_; }  // Garran's techniques (the Guardião da Lua, ours, 3D)
+  MoonwardenFx& moonwarden() { return moonwarden_; }  // Garam's techniques (the Guardião da Lua, ours, 3D)
   VanguardFx& vanguard() { return vanguard_; }  // Kael's techniques: the Riposta, the movement reactions, the stone's impact, timed by the stage
   // Selene's Lâmina Arcana (vfx/SeleneFx, ours, 3D): cast() plays the blade's glow and the mark's burst; the stage times the mark laid on
   // a landed blow and keeps the standing mark (MapStage syncArcaneMarks).
@@ -361,7 +361,7 @@ class SpellEffects {
   TurnUndead turnUndead_;  // Expulsar Mortos-Vivos 01 (ours, 3D)
   HealerFx healer_;        // the Curandeiro's Círculo de Cura / Ressurreição / Julgamento (ours, 3D)
   static bool isHealer(const std::string& kind) { return kind == "circleOfHealing" || kind == "resurrection" || kind == "judgment"; }
-  MoonwardenFx moonwarden_;  // Garran's techniques: moonlight crescents, shield shells, threads, barriers (ours, 3D)
+  MoonwardenFx moonwarden_;  // Garam's techniques: moonlight crescents, shield shells, threads, barriers (ours, 3D)
   CrusaderFx crusader_;    // the Cruzado's Golpe Consagrado / Toque Sagrado / Juramento / Manto do Cruzado (ours, 3D)
   static bool isCrusader(const std::string& kind) { return kind == "holyStrike" || kind == "holyTouch" || kind == "crusaderMantle"; }
   SeleneFx selene_;        // Selene's Lâmina Arcana and its mark (ours, 3D)

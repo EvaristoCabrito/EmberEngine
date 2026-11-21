@@ -109,7 +109,7 @@ nlohmann::json Battle::snapshot() const {
                       {"openTurns", m.openTurns},       {"accDownPct", m.accDownPct},     {"accDownTurns", m.accDownTurns},     {"challengePct", m.challengePct},
                       {"challengeBy", m.challengeBy},   {"challengeTurns", m.challengeTurns}, {"lowCutHexes", m.lowCutHexes}, {"lowCutTurns", m.lowCutTurns},
                       {"severTurns", m.severTurns}};
-      // Garran's (docs/SKILLS_MOONWARDEN.md)
+      // Garam's (docs/SKILLS_MOONWARDEN.md)
       if (m.wardAny() || m.wardMemory())
         s["martial"]["ward"] = {{"bracePct", m.bracePct}, {"braceHits", m.braceHits}, {"bracePush", m.bracePush}, {"watchX", m.watchX},
                                 {"watchY", m.watchY},     {"watchPct", m.watchPct},   {"holdPct", m.holdPct},     {"holdBy", m.holdBy},
@@ -344,7 +344,7 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       m.accDownPct = c.value("accDownPct", 0), m.accDownTurns = c.value("accDownTurns", 0);
       m.challengePct = c.value("challengePct", 0), m.challengeBy = c.value("challengeBy", -1), m.challengeTurns = c.value("challengeTurns", 0);
       m.lowCutHexes = c.value("lowCutHexes", 0), m.lowCutTurns = c.value("lowCutTurns", 0), m.severTurns = c.value("severTurns", 0);
-      if (c.contains("ward") && c["ward"].is_object()) {  // Garran's (docs/SKILLS_MOONWARDEN.md)
+      if (c.contains("ward") && c["ward"].is_object()) {  // Garam's (docs/SKILLS_MOONWARDEN.md)
         const nlohmann::json& w = c["ward"];
         auto ids = [&](const char* key) {
           std::vector<int> v;
