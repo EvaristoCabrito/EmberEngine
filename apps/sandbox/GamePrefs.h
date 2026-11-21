@@ -57,6 +57,20 @@ struct GamePrefs {
   // Opções > Gráficos / Jogo > Câmera cinematográfica (actionCamera): moves camera during combat actions and enemy turns.
   bool cinematicCamera = true;
 
+  // Personagens / Invocações / Inimigos, in the menu's order (EmberMenus): "cine-media" / "cine-leve" = Cinemática Média / Leve
+  // (the user, 2026-11-21): every frame at ~610 px of figure, Leve that held at half (MapStage ArtTier).
+  static constexpr const char* kArtChoices[6] = {"alta", "cine-media", "media", "leve", "cine-leve", "extra"};
+  static bool artChoice(const std::string& v) {
+    for (const char* c : kArtChoices)
+      if (v == c) return true;
+    return false;
+  }
+  static int artIndex(const std::string& v) {
+    for (int i = 0; i < 6; ++i)
+      if (v == kArtChoices[i]) return i;
+    return 2;  // Média, the default
+  }
+
   static std::filesystem::path path() {
     const char* base = std::getenv("LOCALAPPDATA");
     return std::filesystem::path(base ? base : ".") / "Ember" / "game-preferences.json";
@@ -80,13 +94,13 @@ struct GamePrefs {
     const float scale = j.value("dialogueScale", p.dialogueScale);
     if (scale == 1.0f || std::abs(scale - 1.15f) < 1e-3f || std::abs(scale - 1.3f) < 1e-3f) p.dialogueScale = scale;
     const std::string art = j.value("characterArt", std::string());
-    if (art == "alta" || art == "media" || art == "leve" || art == "extra") p.characters = art;
+    if (artChoice(art)) p.characters = art;
     else if (j.value("characters", std::string()) == "leve") p.characters = "leve";
     const std::string summonArt = j.value("summonArt", std::string());
-    if (summonArt == "alta" || summonArt == "media" || summonArt == "leve" || summonArt == "extra") p.summons = summonArt;
+    if (artChoice(summonArt)) p.summons = summonArt;
     else p.summons = p.characters == "extra" ? "leve" : p.characters;
     const std::string enemyArt = j.value("enemyArt", std::string());
-    if (enemyArt == "alta" || enemyArt == "media" || enemyArt == "leve" || enemyArt == "extra") p.enemies = enemyArt;
+    if (artChoice(enemyArt)) p.enemies = enemyArt;
     else p.enemies = p.characters == "extra" ? "leve" : p.characters;
     p.partyLight = j.value("partyLight", p.partyLight);
     p.cinematicCamera = j.value("cinematicCamera", p.cinematicCamera);

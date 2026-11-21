@@ -1,37 +1,50 @@
-"""A hero's Média and Leve copies from their Alta cut spec, by the game's one rule (the user, 2026-10-25: "make them all like this
-for medium, and low get 610, anything less is just nasty looking"; frame counts are only ever 36 or 64):
+"""A hero's Média, Leve and Cinemática copies from their Alta cut spec, by the game's one rule (the user, 2026-10-25: "make them all like
+this for medium, and low get 610, anything less is just nasty looking"; frame counts are only ever 36 or 64, or every frame):
 
-    Alta   every frame, the video's own size (the cut spec itself)
-    Média  at most 64 frames, the figure ~610 px tall (the user, 2026-11-12: Isolde's Média is the standard; was ~916 px)
-    Leve   at most 36 frames, the figure ~610 px tall (never drawn smaller: MapStage pins a copy without halving it)
+    Alta        every frame, the video's own size (the cut spec itself)
+    Média       at most 64 frames, the figure ~610 px tall (the user, 2026-11-12: Isolde's Média is the standard; was ~916 px)
+    Leve        at most 36 frames, the figure ~610 px tall (never drawn smaller: MapStage pins a copy without halving it)
+    Cinemática  every frame (24 fps, as Alta), the figure ~610 px tall (the user, 2026-11-21: "Cinematic Média and Cinematic Leve":
+                Cinemática Média draws it, Cinemática Leve holds it at half)
 
-Writes <spec dir>/cut-64-media.json and cut-36-media.json (sets <set>-64-media / <set>-36-media, results cut-result-64-media.json /
-cut-result-36-media.json) as copies of every clip of the Alta spec (the same frames, keys, colour match, bodyAt), with `scaleTo` and
-`frameCount`. A new `version` puts the frames in new folders, so the copies cut before stay on disk.
+Writes <spec dir>/cut-64-media.json, cut-36-media.json and cut-cine-media.json (sets <set>-64-media / <set>-36-media /
+<set>-cine-media, results cut-result-<tag>.json) as copies of every clip of the Alta spec (the same frames, keys, colour match,
+bodyAt), with `scaleTo` and `frameCount` (none for Cinemática: every frame). A new `version` puts the frames in new folders, so the
+copies cut before stay on disk. `--tags cine-media` writes only the listed copies (the others are left as they are).
 
-    python -I tools/scripts/sprites/quality_copies.py content/sprites/<set>/cut.json <version suffix, e.g. v02>
+    python -I tools/scripts/sprites/quality_copies.py content/sprites/<set>/cut.json <version suffix, e.g. v02> [--tags a,b]
 """
+import argparse
 import copy
 import json
 import os
-import sys
 
-RULE = (("64-media", "Média", 64, 610), ("36-media", "Leve", 36, 610))
+RULE = (("64-media", "Média", 64, 610, "media64"), ("36-media", "Leve", 36, 610, "media36"), ("cine-media", "Cinemática", None, 610, "cine"))
 
 
 def main():
-    spec_path, suffix = sys.argv[1], sys.argv[2]
-    here = os.path.dirname(spec_path)
-    alta = json.load(open(spec_path, encoding="utf-8"))
-    for tag, quality, frames, height in RULE:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("spec")
+    ap.add_argument("suffix")
+    ap.add_argument("--tags", default=",".join(r[0] for r in RULE))
+    a = ap.parse_args()
+    tags = set(a.tags.split(","))
+    here = os.path.dirname(a.spec)
+    alta = json.load(open(a.spec, encoding="utf-8"))
+    for tag, quality, frames, height, prefix in RULE:
+        if tag not in tags:
+            continue
         s = copy.deepcopy(alta)
+        count = f"at most {frames} frames picked evenly (no blend, the clip's timing kept)" if frames else "every frame (the clip's own timing)"
         s["about"] = (f"{alta['set']}'s Personagens {quality} (tools/scripts/sprites/quality_copies.py, the rule of 2026-10-25): every clip of "
-                      f"cut.json from the same matted frames, at most {frames} frames picked evenly (no blend, the clip's timing kept), the "
-                      f"figure ~{height} px tall (a clip already shorter keeps its own size).")
+                      f"cut.json from the same matted frames, {count}, the figure ~{height} px tall (a clip already shorter keeps its own size).")
         s["set"] = f"{alta['set']}-{tag}"
-        s["version"] = f"media{frames}-{suffix}"
+        s["version"] = f"{prefix}-{a.suffix}"
         s["result"] = f"cut-result-{tag}.json"
-        s["frameCount"] = frames
+        if frames:
+            s["frameCount"] = frames
+        else:
+            s.pop("frameCount", None)
         for c in s["clips"]:
             c["scaleTo"] = height
             c.pop("why", None)
@@ -40,7 +53,7 @@ def main():
         with open(out, "w", encoding="utf-8") as f:
             json.dump(s, f, indent=1, ensure_ascii=False)
             f.write("\n")
-        print(f"{out}: set {s['set']} version {s['version']}, {len(s['clips'])} clips, {frames} frames, ~{height} px")
+        print(f"{out}: set {s['set']} version {s['version']}, {len(s['clips'])} clips, {frames or 'every'} frames, ~{height} px")
 
 
 if __name__ == "__main__":

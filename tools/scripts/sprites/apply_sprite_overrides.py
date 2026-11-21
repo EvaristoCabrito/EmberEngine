@@ -117,6 +117,11 @@ def main():
     # listed poses; poses the set does not list keep their old art (e.g. Voss's back pose).
     for st in over.get("sets", []):
         cut_dir = os.path.dirname(os.path.join(ROOT, st["cut"]))
+        if "cinemaOf" in st and not os.path.exists(os.path.join(cut_dir, "cut-result-cine-media.json")):
+            # a Cinemática copy (every frame at ~610 px; the user, 2026-11-21) whose set is not cut yet: its spec is written and cut with
+            # the set's next cut (build/video-cut/redo-sonnet.py cut, cine-chain.py); until then the game draws the Média copy
+            print(f"{st['set']}: not cut yet, skipped")
+            continue
         cut_spec = load(os.path.join(ROOT, st["cut"]))
         cut = load(os.path.join(cut_dir, cut_spec.get("result", "cut-result.json")))["clips"]
         spec = {c["clip"]: c for c in cut_spec["clips"]}
@@ -133,12 +138,12 @@ def main():
             # kept in the pack, drawn by nobody (the user: nothing is thrown away), e.g. voss-veo-media after the 64-frame Média
             print(f"{st['set']} {st['version']}: {len(clips)} clips, kept, not in use")
             continue
-        for key, field in (("mediumOf", "medium"), ("lightOf", "light")):
+        for key, field in (("mediumOf", "medium"), ("lightOf", "light"), ("cinemaOf", "cinema")):
             if key not in st:
                 continue
             # a copy of a hero's clips: the roster keeps pointing at the hero's own set and each pose whose clip has a copy names
-            # it in "medium" (Personagens: Média draws it; voss-veo-64-media, 64 frames at ~610 px) or "light" (Personagens: Leve,
-            # halved like every Leve; voss-veo-36-media, 36 frames)
+            # it in "medium" (Personagens: Média draws it; voss-veo-64-media, 64 frames at ~610 px), "light" (Personagens: Leve,
+            # halved like every Leve; voss-veo-36-media, 36 frames) or "cinema" (Cinemática Média / Leve: every frame at ~610 px)
             of = st[key]
             hero = next((h for h in roster["heroes"] if h.get("key") == of["hero"]), None)
             if hero is None:
@@ -158,7 +163,7 @@ def main():
                     if field == "light":
                         p.pop("lightStep", None)
             print(f"{st['set']} {st['version']}: {len(clips)} clips, the {field} copy of {of['hero']}'s {', '.join(marked)}")
-        if "mediumOf" in st or "lightOf" in st:
+        if "mediumOf" in st or "lightOf" in st or "cinemaOf" in st:
             continue
         hero = next((h for h in roster["heroes"] if h.get("key") == st["hero"]), None)
         if hero is None and "newHero" in st:
@@ -195,6 +200,7 @@ def main():
             p.pop("medium", None)
             p.pop("light", None)
             p.pop("lightStep", None)
+            p.pop("cinema", None)
             # a clip in the "cutscene" pack (an emote; the user, 2026-11-12: "This emote will not load during combat, only during
             # cutscenes"): the pose is marked so a fight never pins it and a cutscene streams it in (MapStage requestScenePoses)
             if st["packs"].get(name) == "cutscene":

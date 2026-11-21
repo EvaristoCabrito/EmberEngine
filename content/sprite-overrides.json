@@ -64,6 +64,7 @@
    "why": "the user, 2026-10-22: \"36 is on with LEVE setup and 64 is on with Medium. High plays the full version\": every clip at ~610 px of figure with 64 frames (picked evenly, the clip's timing kept); Personagens Média",
    "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene", "move-up": "field", "move-down": "field"}
   },
+  {"set": "voss-veo-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "voss", "set": "voss-veo"}, "cut": "content/sprites/voss-veo/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-left": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene", "move-up": "field", "move-down": "field"}},
   {
    "set": "voss-veo-36-media",
    "version": "media36-v01",
@@ -102,6 +103,7 @@
    "why": "Isolde's Personagens Média, as Voss's: every clip at ~610 px of figure with 64 frames (picked evenly, the clip's timing kept)",
    "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene"}
   },
+  {"set": "isolde-veo-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "isolde", "set": "isolde-veo"}, "cut": "content/sprites/isolde-veo/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene"}},
   {
    "set": "isolde-veo-36-media",
    "version": "media36-v01",
@@ -144,6 +146,7 @@
    "why": "Kael's Personagens Média, as Voss's and Isolde's: every clip with at most 64 frames (picked evenly, the clip's timing kept); v05 (2026-11-13): from the 1080p recut at ~610 px, the standard",
    "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene", "emote02": "cutscene", "emote03": "cutscene", "emote04": "cutscene", "emote05": "cutscene", "emote06": "cutscene", "emote07": "cutscene"}
   },
+  {"set": "kael-v3-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "kael", "set": "kael-v3"}, "cut": "content/sprites/kael-v3/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field", "emote01": "cutscene", "emote02": "cutscene", "emote03": "cutscene", "emote04": "cutscene", "emote05": "cutscene", "emote06": "cutscene", "emote07": "cutscene"}},
   {
    "set": "kael-v3-36-media",
    "version": "media36-v05",
@@ -265,6 +268,7 @@
     "move": "field"
    }
   },
+  {"set": "giant-spider-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "giantSpider", "set": "giant-spider"}, "cut": "content/sprites/giant-spider/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field"}},
   {
    "set": "giant-spider-36-media",
    "version": "media36-v01",
@@ -299,6 +303,7 @@
    "mediumOf": {"hero": "swampBlueDeer", "set": "swamp-blue-deer"},
    "packs": {"base": "field", "move": "field"}
   },
+  {"set": "swamp-blue-deer-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "swampBlueDeer", "set": "swamp-blue-deer"}, "cut": "content/sprites/swamp-blue-deer/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field"}},
   {
    "set": "swamp-blue-deer-36-media",
    "version": "media36-v02",
@@ -333,6 +338,7 @@
    "mediumOf": {"hero": "giantBeetle", "set": "giant-beetle"},
    "packs": {"base": "field", "move": "field"}
   },
+  {"set": "giant-beetle-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "giantBeetle", "set": "giant-beetle"}, "cut": "content/sprites/giant-beetle/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field"}},
   {
    "set": "giant-beetle-36-media",
    "version": "media36-v02",
@@ -411,6 +417,7 @@
    "why": "Slime64's medium copy (Personagens: Média, the default; Leve halves it): every clip at 0.555 of the video's size",
    "packs": {"base": "field", "move": "field"}
   },
+  {"set": "corrosive-slime-64-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "corrosiveSlime64", "set": "corrosive-slime-64"}, "cut": "content/sprites/corrosive-slime-64/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field"}},
   {
    "set": "cultist-v2-ember",
    "version": "v01",
@@ -441,6 +448,7 @@
    "mediumOf": {"hero": "hypostasis", "set": "hypostasis"},
    "packs": {"base": "field", "move": "field", "movefront": "field"}
   },
+  {"set": "hypostasis-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "hypostasis", "set": "hypostasis"}, "cut": "content/sprites/hypostasis/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "movefront": "field"}},
   {
    "set": "hypostasis-36-media",
    "version": "media36-v03",
@@ -470,6 +478,7 @@
    "mediumOf": {"hero": "ashesCrawler", "set": "ashes-crawler"},
    "packs": {"base": "field", "move": "field"}
   },
+  {"set": "ashes-crawler-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "ashesCrawler", "set": "ashes-crawler"}, "cut": "content/sprites/ashes-crawler/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field"}},
   {
    "set": "ashes-crawler-36-media",
    "version": "media36-v01",
@@ -498,6 +507,7 @@
    "mediumOf": {"hero": "stagWolf", "set": "stagwolf-v2"},
    "packs": {"move": "field", "move-left": "field", "movefront": "field"}
   },
+  {"set": "stagwolf-v2-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "stagWolf", "set": "stagwolf-v2"}, "cut": "content/sprites/stagwolf-v2/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"move": "field", "move-left": "field", "movefront": "field"}},
   {
    "set": "stagwolf-v2-36-media",
    "version": "media36-v01",
@@ -524,6 +534,7 @@
    "mediumOf": {"hero": "zombieDog", "set": "zombie-dog"},
    "packs": {"base": "field", "move": "field"}
   },
+  {"set": "zombie-dog-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "zombieDog", "set": "zombie-dog"}, "cut": "content/sprites/zombie-dog/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field"}},
   {
    "set": "zombie-dog-36-media",
    "version": "media36-v01",
@@ -552,6 +563,7 @@
    "mediumOf": {"hero": "mushroomMan", "set": "mush"},
    "packs": {"base": "field", "move": "field", "move-left": "field"}
   },
+  {"set": "mush-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "mushroomMan", "set": "mush"}, "cut": "content/sprites/mush/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-left": "field"}},
   {
    "set": "mush-36-media",
    "version": "media36-v01",
@@ -580,6 +592,7 @@
    "mediumOf": {"hero": "sahagin", "set": "sahagin"},
    "packs": {"base": "field", "move": "field", "move-left": "field"}
   },
+  {"set": "sahagin-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "sahagin", "set": "sahagin"}, "cut": "content/sprites/sahagin/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-left": "field"}},
   {
    "set": "sahagin-36-media",
    "version": "media36-v01",
@@ -620,6 +633,7 @@
    "mediumOf": {"hero": "emberedZombie", "set": "embered-zombie"},
    "packs": {"base": "field", "move": "field", "move-left": "field"}
   },
+  {"set": "embered-zombie-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "emberedZombie", "set": "embered-zombie"}, "cut": "content/sprites/embered-zombie/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-left": "field"}},
   {
    "set": "embered-zombie-36-media",
    "version": "media36-v01",
@@ -636,6 +650,7 @@
    "mediumOf": {"hero": "nekomata", "set": "nekomata"},
    "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}
   },
+  {"set": "nekomata-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "nekomata", "set": "nekomata"}, "cut": "content/sprites/nekomata/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}},
   {
    "set": "nekomata-36-media",
    "version": "media36-v01",
@@ -664,6 +679,7 @@
    "mediumOf": {"hero": "telesm", "set": "telesm"},
    "packs": {"base": "field", "move": "field"}
   },
+  {"set": "telesm-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "telesm", "set": "telesm"}, "cut": "content/sprites/telesm/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field"}},
   {
    "set": "telesm-36-media",
    "version": "media36-v01",
@@ -691,6 +707,7 @@
    "mediumOf": {"hero": "familiar4", "set": "radiant-familiar"},
    "packs": {"base": "field", "move": "field", "move-left": "field", "emote": "cutscene"}
   },
+  {"set": "radiant-familiar-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "familiar4", "set": "radiant-familiar"}, "cut": "content/sprites/radiant-familiar/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-left": "field", "emote": "cutscene"}},
   {
    "set": "radiant-familiar-36-media",
    "version": "media36-v01",
@@ -731,6 +748,7 @@
    "mediumOf": {"hero": "stag", "set": "classic-stag"},
    "packs": {"base": "field", "move": "field"}
   },
+  {"set": "classic-stag-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "stag", "set": "classic-stag"}, "cut": "content/sprites/classic-stag/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field"}},
   {
    "set": "classic-stag-36-media",
    "version": "media36-v01",
@@ -759,6 +777,7 @@
    "mediumOf": {"hero": "boar", "set": "classic-boar"},
    "packs": {"base": "field", "move": "field"}
   },
+  {"set": "classic-boar-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "boar", "set": "classic-boar"}, "cut": "content/sprites/classic-boar/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field"}},
   {
    "set": "classic-boar-36-media",
    "version": "media36-v01",
@@ -787,6 +806,7 @@
    "mediumOf": {"hero": "omnieye", "set": "omnieye"},
    "packs": {"base": "field", "move": "field", "move-left": "field"}
   },
+  {"set": "omnieye-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "omnieye", "set": "omnieye"}, "cut": "content/sprites/omnieye/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-left": "field"}},
   {
    "set": "omnieye-36-media",
    "version": "media36-v01",
@@ -815,6 +835,7 @@
    "mediumOf": {"hero": "deepgroundBeetle", "set": "deepground-beetle"},
    "packs": {"base": "field", "move": "field"}
   },
+  {"set": "deepground-beetle-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "deepgroundBeetle", "set": "deepground-beetle"}, "cut": "content/sprites/deepground-beetle/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field"}},
   {
    "set": "deepground-beetle-36-media",
    "version": "media36-v02",
@@ -843,6 +864,7 @@
    "mediumOf": {"hero": "screechingBat", "set": "screeching-bat"},
    "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field", "hover-side": "cutscene", "fall-side": "cutscene"}
   },
+  {"set": "screeching-bat-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "screechingBat", "set": "screeching-bat"}, "cut": "content/sprites/screeching-bat/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field", "hover-side": "cutscene", "fall-side": "cutscene"}},
   {
    "set": "screeching-bat-36-media",
    "version": "media36-v01",
@@ -871,6 +893,7 @@
    "mediumOf": {"hero": "horse", "set": "horse"},
    "packs": {"base": "field", "move": "field"}
   },
+  {"set": "horse-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "horse", "set": "horse"}, "cut": "content/sprites/horse/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field"}},
   {
    "set": "horse-36-media",
    "version": "media36-v01",
@@ -899,6 +922,7 @@
    "mediumOf": {"hero": "banditHorseman", "set": "bandit-horseman"},
    "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
+  {"set": "bandit-horseman-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "banditHorseman", "set": "bandit-horseman"}, "cut": "content/sprites/bandit-horseman/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}},
   {
    "set": "bandit-horseman-36-media",
    "version": "media36-v01",
@@ -927,6 +951,7 @@
    "mediumOf": {"hero": "sickRat", "set": "sick-rat"},
    "packs": {"base": "field", "move": "field"}
   },
+  {"set": "sick-rat-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "sickRat", "set": "sick-rat"}, "cut": "content/sprites/sick-rat/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field"}},
   {
    "set": "sick-rat-36-media",
    "version": "media36-v01",
@@ -955,6 +980,7 @@
    "mediumOf": {"hero": "emberMushroom", "set": "ember-mushroom"},
    "packs": {"base": "field", "move": "field"}
   },
+  {"set": "ember-mushroom-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "emberMushroom", "set": "ember-mushroom"}, "cut": "content/sprites/ember-mushroom/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field"}},
   {
    "set": "ember-mushroom-36-media",
    "version": "media36-v01",
@@ -983,6 +1009,7 @@
    "mediumOf": {"hero": "witch", "set": "witch"},
    "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
+  {"set": "witch-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "witch", "set": "witch"}, "cut": "content/sprites/witch/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}},
   {
    "set": "witch-36-media",
    "version": "media36-v01",
@@ -1011,6 +1038,7 @@
    "mediumOf": {"hero": "vampireMosquito", "set": "vampire-mosquito"},
    "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
+  {"set": "vampire-mosquito-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "vampireMosquito", "set": "vampire-mosquito"}, "cut": "content/sprites/vampire-mosquito/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}},
   {
    "set": "vampire-mosquito-36-media",
    "version": "media36-v01",
@@ -1021,6 +1049,7 @@
   },
   {"set": "aldric-veo", "version": "v01", "hero": "aldric", "cut": "content/sprites/aldric-veo/cut.json", "why": "the user, 2026-11-18: Aldric's complete new set from their videos (Attachments/Aldric): the idle and the spear thrust (AldricIdleATT), the special as his cast and the fall (AldricSpecialAndFall), the walk to each side, the walk away and toward the camera, the hit (AldricHitReactFinal), the turn away and the back still; Alta + 64 + 36. The old Aldric's attackLeft and castLeft are dropped: the new attack and cast face right and the game mirrors them for the left. The old art is the enemy Lanceiro's now (the 'reuse' entry)", "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkLeft": "move-left", "walkUp": "move-up", "walkDown": "move-down", "turnBack": "turn-back", "castBack": "cast-back", "cast": "cast", "specialAttack": "cast", "hit": "hit", "death": "death"}, "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "walkLeft": "Andar (esquerda)", "walkUp": "Andar (costas)", "walkDown": "Andar (frente)", "turnBack": "De costas", "castBack": "De costas (parado)", "cast": "Conjurar", "specialAttack": "Ataque especial", "hit": "Dano", "death": "Queda"}, "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field"}, "strides": {"move": 1.0, "move-left": 1.0, "move-up": null, "move-down": null}, "drop": ["attackLeft", "castLeft"]},
   {"set": "aldric-veo-64-media", "version": "media64-v01", "mediumOf": {"hero": "aldric", "set": "aldric-veo"}, "cut": "content/sprites/aldric-veo/cut-64-media.json", "why": "Aldric's Personagens M\u00e9dia, as Isolde's: every clip at ~610 px of figure with 64 frames (picked evenly, the clip's timing kept)", "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field"}},
+  {"set": "aldric-veo-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "aldric", "set": "aldric-veo"}, "cut": "content/sprites/aldric-veo/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field"}},
   {"set": "aldric-veo-36-media", "version": "media36-v01", "lightOf": {"hero": "aldric", "set": "aldric-veo"}, "cut": "content/sprites/aldric-veo/cut-36-media.json", "why": "Aldric's Personagens Leve, as Isolde's: every clip at ~610 px of figure with 36 frames; Leve draws it halved", "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field"}},
   {
    "set": "cave-troll",
@@ -1041,6 +1070,7 @@
    "mediumOf": {"hero": "troll", "set": "cave-troll"},
    "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}
   },
+  {"set": "cave-troll-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "troll", "set": "cave-troll"}, "cut": "content/sprites/cave-troll/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}},
   {
    "set": "cave-troll-36-media",
    "version": "media36-v01",
@@ -1068,6 +1098,7 @@
    "mediumOf": {"hero": "roccoTheBird", "set": "rocco"},
    "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}
   },
+  {"set": "rocco-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "roccoTheBird", "set": "rocco"}, "cut": "content/sprites/rocco/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}},
   {
    "set": "rocco-36-media",
    "version": "media36-v01",
@@ -1095,6 +1126,7 @@
    "mediumOf": {"hero": "bigBlueCalf", "set": "big-blue-ox"},
    "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}
   },
+  {"set": "big-blue-ox-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "bigBlueCalf", "set": "big-blue-ox"}, "cut": "content/sprites/big-blue-ox/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}},
   {
    "set": "big-blue-ox-36-media",
    "version": "media36-v01",
@@ -1122,6 +1154,7 @@
    "mediumOf": {"hero": "birolhoLegs", "set": "birolho-legs"},
    "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}
   },
+  {"set": "birolho-legs-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "birolhoLegs", "set": "birolho-legs"}, "cut": "content/sprites/birolho-legs/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}},
   {
    "set": "birolho-legs-36-media",
    "version": "media36-v01",
@@ -1149,6 +1182,7 @@
    "mediumOf": {"hero": "birolhoLegs2", "set": "birolho-1"},
    "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}
   },
+  {"set": "birolho-1-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "birolhoLegs2", "set": "birolho-1"}, "cut": "content/sprites/birolho-1/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}},
   {
    "set": "birolho-1-36-media",
    "version": "media36-v01",
@@ -1177,6 +1211,7 @@
    "mediumOf": {"hero": "emberedVanguard", "set": "embered-vanguard"},
    "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
+  {"set": "embered-vanguard-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "emberedVanguard", "set": "embered-vanguard"}, "cut": "content/sprites/embered-vanguard/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}},
   {
    "set": "embered-vanguard-36-media",
    "version": "media36-v01",
@@ -1205,6 +1240,7 @@
    "mediumOf": {"hero": "vespera", "set": "vespera"},
    "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}
   },
+  {"set": "vespera-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "vespera", "set": "vespera"}, "cut": "content/sprites/vespera/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}},
   {
    "set": "vespera-36-media",
    "version": "media36-v01",

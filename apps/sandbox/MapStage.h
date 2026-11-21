@@ -5539,8 +5539,11 @@ class MapStage final : public Stage {
   // pixelate: "anything less is just nasty looking"); only Alta's fallback when the GPU is short halves full clips, for everyone.
   // Each choice taken when the fight loads (pinUnitArt): Média or Leve draws a pose's 64-frame copy, Leve its 36-frame one (which
   // wins over the Média one), halve = Extra baixa (Leve's copies, every clip held at half resolution).
+  // Cinemática Média / Leve (the user, 2026-11-21: "Cinematic Média and Cinematic Leve"): every frame of the clip (24 fps, as Alta) at
+  // Média's ~610 px of figure (the pose's `cinema` copy, cut from the same mattes), Leve = that copy held at half (~305 px). A pose
+  // without a cinema copy yet draws its Média copy (its frames mapped as Média's are).
   struct ArtTier {
-    bool medium = false, light = false, halve = false;
+    bool medium = false, light = false, halve = false, cinema = false;
   };
   static constexpr size_t kArtParty = 0, kArtSummon = 1, kArtEnemy = 2;
   void pinUnitArt() {
@@ -5549,7 +5552,8 @@ class MapStage final : public Stage {
     // Leve's resolution, the same frames.
     // (2026-11-18, the user: "o extra Leve que eu já pedi diversas vezes"): Invocações and Inimigos have it too. The sprite system's
     // half resolution is one choice for the whole fight (SpriteSystem::setLight): any of the three asking for it asks for it.
-    extraLowArt_ = gamePrefs().characters == "extra" || gamePrefs().summons == "extra" || gamePrefs().enemies == "extra";
+    const auto halved = [](const std::string& v) { return v == "extra" || v == "cine-leve"; };
+    extraLowArt_ = halved(gamePrefs().characters) || halved(gamePrefs().summons) || halved(gamePrefs().enemies);
     sprites_.setLight(extraLowArt_);
     // A pose with a Leve copy of its own (HeroPose::light: Voss's 36-frame cut, the user 2026-10-22: "36 is on with LEVE, 64 is
     // on with Medium, High plays the full version") draws it in Leve.
@@ -5557,8 +5561,8 @@ class MapStage final : public Stage {
     // split the Enemy Units graphical quailty"): Personagens for the party and the neutrals, Invocações for the summons, Inimigos
     // for the enemy side; each has Extra baixa's halving ("extra": Leve's copies, held at half resolution).
     const auto tier = [](const std::string& v) {
-      const bool extra = v == "extra";
-      return ArtTier{v == "media" || v == "leve" || extra, v == "leve" || extra, extra};
+      const bool extra = v == "extra", cinema = v == "cine-media" || v == "cine-leve";
+      return ArtTier{v == "media" || v == "leve" || extra || cinema, v == "leve" || extra, extra || v == "cine-leve", cinema};
     };
     artTiers_[kArtParty] = tier(gamePrefs().characters);
     artTiers_[kArtSummon] = tier(gamePrefs().summons);
@@ -5637,6 +5641,7 @@ class MapStage final : public Stage {
   }
   static constexpr float kScenePoseLoadSeconds = 2.0f;
   static const std::string& artSet(const ember::HeroPose& p, const ArtTier& t) {
+    if (t.cinema && !p.cinema.empty()) return p.cinema;
     if (t.light && !p.light.empty()) return p.light;
     return t.medium && !p.medium.empty() ? p.medium : p.set;
   }
@@ -5645,7 +5650,8 @@ class MapStage final : public Stage {
     const ArtTier& t = artTier(u, entry);
     if (t.medium && entry)
       for (const ember::HeroPose& p : entry->poses)
-        if (p.set == u.set && p.clip == u.clip && (!p.medium.empty() || (t.light && !p.light.empty()))) return artSet(p, t);
+        if (p.set == u.set && p.clip == u.clip && (!p.medium.empty() || (t.light && !p.light.empty()) || (t.cinema && !p.cinema.empty())))
+          return artSet(p, t);
     return u.set;
   }
   // The catalog pose a scene unit's own clip (its idle) is, if any.

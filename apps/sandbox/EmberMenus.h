@@ -747,25 +747,21 @@ class OptionsDialog {
       s.rows.push_back(toggle("##gfxshadows", tr("Sombras"), g.realShadows, !actions.gfx, &gfxChanged));
       s.rows.push_back(toggle("##gfxlights", tr("Luzes locais"), g.localLights, !actions.gfx, &gfxChanged));
       s.rows.push_back(toggle("##gfxatmo", tr("FX atmosféricos"), g.atmosphericFx, !actions.gfx, &gfxChanged));
-      s.rows.push_back(select("##gfxcast", tr("Personagens", "Characters"),
-                              prefs.characters == "alta" ? 0 : prefs.characters == "leve" ? 2 : prefs.characters == "extra" ? 3 : 1,
-                              {{tr("Alta", "High"), true}, {tr("Média", "Medium"), true}, {tr("Leve", "Light"), true},
-                               {tr("Extra baixa", "Extra low"), true}},
-                              [&](int v) {
-                                prefs.characters = v == 0 ? "alta" : v == 2 ? "leve" : v == 3 ? "extra" : "media", prefsChanged = true;
-                              }));
+      // Personagens / Invocações / Inimigos: GamePrefs::kArtChoices in this order (Cinemática Média / Leve, the user 2026-11-21: every
+      // frame at ~610 px, Leve that at half).
+      const auto artOptions = [&] {
+        return std::vector<std::pair<std::string, bool>>{
+            {tr("Alta", "High"), true},  {tr("Cinemática Média", "Cinematic Medium"), true}, {tr("Média", "Medium"), true},
+            {tr("Leve", "Light"), true}, {tr("Cinemática Leve", "Cinematic Light"), true},   {tr("Extra baixa", "Extra low"), true}};
+      };
+      s.rows.push_back(select("##gfxcast", tr("Personagens", "Characters"), GamePrefs::artIndex(prefs.characters), artOptions(),
+                              [&](int v) { prefs.characters = GamePrefs::kArtChoices[v], prefsChanged = true; }));
       // Invocações (the user, 2026-11-12: "Summon Resolution should have its own toggle"): the summons' own Alta / Média / Leve.
-      s.rows.push_back(select("##gfxsummons", tr("Invocações", "Summons"),
-                              prefs.summons == "alta" ? 0 : prefs.summons == "leve" ? 2 : prefs.summons == "extra" ? 3 : 1,
-                              {{tr("Alta", "High"), true}, {tr("Média", "Medium"), true}, {tr("Leve", "Light"), true},
-                               {tr("Extra baixa", "Extra low"), true}},
-                              [&](int v) { prefs.summons = v == 0 ? "alta" : v == 2 ? "leve" : v == 3 ? "extra" : "media", prefsChanged = true; }));
+      s.rows.push_back(select("##gfxsummons", tr("Invocações", "Summons"), GamePrefs::artIndex(prefs.summons), artOptions(),
+                              [&](int v) { prefs.summons = GamePrefs::kArtChoices[v], prefsChanged = true; }));
       // Inimigos (the user, 2026-11-12: "we should also split the Enemy Units graphical quailty"): the enemy side's own choice.
-      s.rows.push_back(select("##gfxenemies", tr("Inimigos", "Enemies"),
-                              prefs.enemies == "alta" ? 0 : prefs.enemies == "leve" ? 2 : prefs.enemies == "extra" ? 3 : 1,
-                              {{tr("Alta", "High"), true}, {tr("Média", "Medium"), true}, {tr("Leve", "Light"), true},
-                               {tr("Extra baixa", "Extra low"), true}},
-                              [&](int v) { prefs.enemies = v == 0 ? "alta" : v == 2 ? "leve" : v == 3 ? "extra" : "media", prefsChanged = true; }));
+      s.rows.push_back(select("##gfxenemies", tr("Inimigos", "Enemies"), GamePrefs::artIndex(prefs.enemies), artOptions(),
+                              [&](int v) { prefs.enemies = GamePrefs::kArtChoices[v], prefsChanged = true; }));
       // Texturas 3D (the user, 2026-10-29): Alta 2K, Média 1K, Leve 512, Extra baixa 256 (2026-11-18); taken when a map opens.
       s.rows.push_back(select("##gfxtex3d", tr("Texturas 3D", "3D textures"),
                               prefs.textures3d == "media" ? 1 : prefs.textures3d == "leve" ? 2 : prefs.textures3d == "extra" ? 3 : 0,
