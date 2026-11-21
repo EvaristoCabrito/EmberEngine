@@ -9,6 +9,7 @@
   "Malrec": {"file": "game/portraits/conjurer-002.png"},
   "Isolde": {"file": "game/portraits/isolde-portrait-v05.jpg", "face": [0.5049, 0.1042, 0.0943]},
   "Selene": {"file": "game/portraits/selene-portrait-v04.jpg", "face": [0.4992, 0.1452, 0.1588]},
-  "Salazar Jovem": {"file": "game/portraits/salazar-jovem-portrait-v04.jpg", "face": [0.5052, 0.1322, 0.0895]}
+  "Salazar Jovem": {"file": "game/portraits/salazar-jovem-portrait-v04.jpg", "face": [0.5052, 0.1322, 0.0895]},
+  "Vespera": {"file": "game/portraits/vespera-portrait-v02.jpg", "face": [0.511, 0.195, 0.09]}
  }
 }

@@ -110,6 +110,14 @@
    "spellList": [],
    "about": "The T10 summon (the user, 2026-11-06 / 2026-11-10). It had no class, so no battle could place it (the map Todas as Unidades, 2026-11-11). Working numbers, the user's to set: the Giant Spider's (3 hexes, mov 4, a 2D6 blow, its stats rows), no resistances, no spells."
   },
+    "telesm": {
+     "name": "Telesm", "nameEn": "Telesm", "role": "Invocação", "sprite": "telesm", "size": 2, "mov": 3, "strikesWith": "atk",
+     "weapon": {"dice": 1, "faces": 6, "bonus": 0, "minRange": 1, "maxRange": 1},
+     "resistances": {},
+     "spells": {},
+     "spellList": [],
+     "about": "The Conjuradores' shell defender, a summon (the user, 2026-11-20: on the map Sprites Fable as an ally). It had no class, so no battle could place it, as the Hypostasis. Working numbers, the user's to set: its summon's (2 hexes, mov 3), the Familiar Maior's stats rows, a 1D6 blow, no resistances, no spells."
+    },
   "mushroomMan": {
    "name": "MushroomMan", "nameEn": "MushroomMan", "role": "Fera",
    "sprite": "mush", "size": 1, "mov": 3, "strikesWith": "atk",
