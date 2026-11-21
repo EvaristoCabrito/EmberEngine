@@ -5640,8 +5640,9 @@ class MapStage final : public Stage {
     return clip != kNoSpriteClip && !sprites_.texture(clip).full;
   }
   static constexpr float kScenePoseLoadSeconds = 2.0f;
-  static const std::string& artSet(const ember::HeroPose& p, const ArtTier& t) {
-    if (t.cinema && !p.cinema.empty()) return p.cinema;
+  // The Cinemática copy only once it is cooked (the copies are cut as the sets are cut again, the user 2026-11-21): else the Média one.
+  const std::string& artSet(const ember::HeroPose& p, const ArtTier& t) const {
+    if (t.cinema && !p.cinema.empty() && sprites_.find(p.cinema, p.clip) != kNoSpriteClip) return p.cinema;
     if (t.light && !p.light.empty()) return p.light;
     return t.medium && !p.medium.empty() ? p.medium : p.set;
   }

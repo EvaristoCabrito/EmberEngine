@@ -590,6 +590,17 @@ def main():
         f.write(text)
     os.replace(result_path + ".tmp", result_path)
 
+    # The Cinemática copy (the user, 2026-11-21: "this chain should be applied to the new cuts im doing as they go"): after a set's Alta
+    # cut (its cut.json, with Média / Leve copies beside it), the same clips again at every frame and ~610 px, from the same mattes
+    # (quality_copies.py --tags cine-media writes the spec from cut.json as it is now; the Lanczos step above is the only resampling).
+    if os.path.basename(spec_path) == "cut.json" and os.path.exists(os.path.join(here, "cut-64-media.json")):
+        import subprocess
+        import sys
+        tools = os.path.dirname(os.path.abspath(__file__))
+        subprocess.run([sys.executable, "-I", os.path.join(tools, "quality_copies.py"), spec_path, "cine", "--tags", "cine-media"], check=True)
+        subprocess.run([sys.executable, "-I", os.path.abspath(__file__), os.path.join(here, "cut-cine-media.json")] + (["--only", a.only] if a.only else []),
+                       check=True)
+
 
 if __name__ == "__main__":
     main()

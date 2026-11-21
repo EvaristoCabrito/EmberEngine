@@ -39,7 +39,9 @@ def main():
         s["about"] = (f"{alta['set']}'s Personagens {quality} (tools/scripts/sprites/quality_copies.py, the rule of 2026-10-25): every clip of "
                       f"cut.json from the same matted frames, {count}, the figure ~{height} px tall (a clip already shorter keeps its own size).")
         s["set"] = f"{alta['set']}-{tag}"
-        s["version"] = f"{prefix}-{a.suffix}"
+        # the Cinemática copy follows each clip's Alta version (video_sprite.py makes it after every Alta cut: a clip cut again at a new
+        # version gets new folders, the copy cut before stays on disk); the others take the suffix given
+        s["version"] = f"{prefix}-{alta['version']}" if not frames else f"{prefix}-{a.suffix}"
         s["result"] = f"cut-result-{tag}.json"
         if frames:
             s["frameCount"] = frames
@@ -48,7 +50,9 @@ def main():
         for c in s["clips"]:
             c["scaleTo"] = height
             c.pop("why", None)
-            c.pop("version", None)  # a clip's own Alta version (e.g. Voss's cast v02) is not the copy's
+            v = c.pop("version", None)  # a clip's own Alta version (e.g. Voss's cast v02) is not the Média / Leve copy's
+            if not frames and v:
+                c["version"] = f"{prefix}-{v}"
         out = os.path.join(here, f"cut-{tag}.json")
         with open(out, "w", encoding="utf-8") as f:
             json.dump(s, f, indent=1, ensure_ascii=False)
