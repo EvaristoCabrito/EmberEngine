@@ -65088,7 +65088,7 @@
     "Vespera": "vespera"
   },
   "campaignHeroClasses": {
-    "Kael": "swordsman",
+    "Kael": "vanguard",
     "Neera": "archer",
     "Voss": "mage",
     "Salazar": "healer",
@@ -73125,24 +73125,326 @@
     }
   },
   "weapons": {
-    "vanguard-espadao-t01-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 1, "faces": 6, "bonus": 0, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
-    "vanguard-espadao-t02-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
-    "vanguard-espadao-t03-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 1, "faces": 10, "bonus": 0, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
-    "vanguard-espadao-t04-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 1, "faces": 10, "bonus": 1, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
-    "vanguard-espadao-t05-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 1, "faces": 12, "bonus": 1, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
-    "vanguard-espadao-t06-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 6, "bonus": 1, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
-    "vanguard-espadao-t07-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
-    "vanguard-espadao-t08-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 8, "bonus": 1, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
-    "vanguard-espadao-t09-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 8, "bonus": 2, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
-    "vanguard-espadao-t10-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 10, "bonus": 1, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
-    "vanguard-espadao-t11-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 10, "bonus": 2, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
-    "vanguard-espadao-t12-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 12, "bonus": 1, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
-    "vanguard-espadao-t13-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 12, "bonus": 2, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": null},
-    "vanguard-magica-t03-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 1, "faces": 10, "bonus": 0, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": {"attackElement": "fire", "elementalBonusPct": {"fire": 10}, "lifeStealPct": 0, "regeneration": 0, "magBonus": 0, "dexBonus": 0, "resistances": {}}},
-    "vanguard-magica-t06-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 6, "bonus": 1, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": {"attackElement": "ice", "elementalBonusPct": {"ice": 15}, "lifeStealPct": 0, "regeneration": 0, "magBonus": 0, "dexBonus": 0, "resistances": {}}},
-    "vanguard-magica-t09-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 8, "bonus": 2, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": {"attackElement": "lightning", "elementalBonusPct": {"lightning": 20}, "lifeStealPct": 0, "regeneration": 0, "magBonus": 0, "dexBonus": 0, "resistances": {}}},
-    "vanguard-magica-t11-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 10, "bonus": 2, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": {"attackElement": "darkness", "elementalBonusPct": {"darkness": 25}, "lifeStealPct": 0, "regeneration": 0, "magBonus": 0, "dexBonus": 0, "resistances": {}}},
-    "vanguard-magica-t13-v01": {"weaponType": "sword", "usableBy": ["vanguard"], "dice": 2, "faces": 12, "bonus": 5, "minRange": 1, "maxRange": 1, "ranged": false, "twoHanded": true, "bonusClass": null, "magic": {"attackElement": "ember", "elementalBonusPct": {"ember": 35}, "lifeStealPct": 0, "regeneration": 0, "magBonus": 0, "dexBonus": 0, "resistances": {}}},
+    "vanguard-espadao-t01-v01": {
+      "weaponType": "sword",
+      "usableBy": [
+        "vanguard"
+      ],
+      "dice": 1,
+      "faces": 6,
+      "bonus": 0,
+      "minRange": 1,
+      "maxRange": 1,
+      "ranged": false,
+      "twoHanded": true,
+      "bonusClass": null,
+      "magic": null
+    },
+    "vanguard-espadao-t02-v01": {
+      "weaponType": "sword",
+      "usableBy": [
+        "vanguard"
+      ],
+      "dice": 1,
+      "faces": 8,
+      "bonus": 0,
+      "minRange": 1,
+      "maxRange": 1,
+      "ranged": false,
+      "twoHanded": true,
+      "bonusClass": null,
+      "magic": null
+    },
+    "vanguard-espadao-t03-v01": {
+      "weaponType": "sword",
+      "usableBy": [
+        "vanguard"
+      ],
+      "dice": 1,
+      "faces": 10,
+      "bonus": 0,
+      "minRange": 1,
+      "maxRange": 1,
+      "ranged": false,
+      "twoHanded": true,
+      "bonusClass": null,
+      "magic": null
+    },
+    "vanguard-espadao-t04-v01": {
+      "weaponType": "sword",
+      "usableBy": [
+        "vanguard"
+      ],
+      "dice": 1,
+      "faces": 10,
+      "bonus": 1,
+      "minRange": 1,
+      "maxRange": 1,
+      "ranged": false,
+      "twoHanded": true,
+      "bonusClass": null,
+      "magic": null
+    },
+    "vanguard-espadao-t05-v01": {
+      "weaponType": "sword",
+      "usableBy": [
+        "vanguard"
+      ],
+      "dice": 1,
+      "faces": 12,
+      "bonus": 1,
+      "minRange": 1,
+      "maxRange": 1,
+      "ranged": false,
+      "twoHanded": true,
+      "bonusClass": null,
+      "magic": null
+    },
+    "vanguard-espadao-t06-v01": {
+      "weaponType": "sword",
+      "usableBy": [
+        "vanguard"
+      ],
+      "dice": 2,
+      "faces": 6,
+      "bonus": 1,
+      "minRange": 1,
+      "maxRange": 1,
+      "ranged": false,
+      "twoHanded": true,
+      "bonusClass": null,
+      "magic": null
+    },
+    "vanguard-espadao-t07-v01": {
+      "weaponType": "sword",
+      "usableBy": [
+        "vanguard"
+      ],
+      "dice": 2,
+      "faces": 8,
+      "bonus": 0,
+      "minRange": 1,
+      "maxRange": 1,
+      "ranged": false,
+      "twoHanded": true,
+      "bonusClass": null,
+      "magic": null
+    },
+    "vanguard-espadao-t08-v01": {
+      "weaponType": "sword",
+      "usableBy": [
+        "vanguard"
+      ],
+      "dice": 2,
+      "faces": 8,
+      "bonus": 1,
+      "minRange": 1,
+      "maxRange": 1,
+      "ranged": false,
+      "twoHanded": true,
+      "bonusClass": null,
+      "magic": null
+    },
+    "vanguard-espadao-t09-v01": {
+      "weaponType": "sword",
+      "usableBy": [
+        "vanguard"
+      ],
+      "dice": 2,
+      "faces": 8,
+      "bonus": 2,
+      "minRange": 1,
+      "maxRange": 1,
+      "ranged": false,
+      "twoHanded": true,
+      "bonusClass": null,
+      "magic": null
+    },
+    "vanguard-espadao-t10-v01": {
+      "weaponType": "sword",
+      "usableBy": [
+        "vanguard"
+      ],
+      "dice": 2,
+      "faces": 10,
+      "bonus": 1,
+      "minRange": 1,
+      "maxRange": 1,
+      "ranged": false,
+      "twoHanded": true,
+      "bonusClass": null,
+      "magic": null
+    },
+    "vanguard-espadao-t11-v01": {
+      "weaponType": "sword",
+      "usableBy": [
+        "vanguard"
+      ],
+      "dice": 2,
+      "faces": 10,
+      "bonus": 2,
+      "minRange": 1,
+      "maxRange": 1,
+      "ranged": false,
+      "twoHanded": true,
+      "bonusClass": null,
+      "magic": null
+    },
+    "vanguard-espadao-t12-v01": {
+      "weaponType": "sword",
+      "usableBy": [
+        "vanguard"
+      ],
+      "dice": 2,
+      "faces": 12,
+      "bonus": 1,
+      "minRange": 1,
+      "maxRange": 1,
+      "ranged": false,
+      "twoHanded": true,
+      "bonusClass": null,
+      "magic": null
+    },
+    "vanguard-espadao-t13-v01": {
+      "weaponType": "sword",
+      "usableBy": [
+        "vanguard"
+      ],
+      "dice": 2,
+      "faces": 12,
+      "bonus": 2,
+      "minRange": 1,
+      "maxRange": 1,
+      "ranged": false,
+      "twoHanded": true,
+      "bonusClass": null,
+      "magic": null
+    },
+    "vanguard-magica-t03-v01": {
+      "weaponType": "sword",
+      "usableBy": [
+        "vanguard"
+      ],
+      "dice": 1,
+      "faces": 10,
+      "bonus": 0,
+      "minRange": 1,
+      "maxRange": 1,
+      "ranged": false,
+      "twoHanded": true,
+      "bonusClass": null,
+      "magic": {
+        "attackElement": "fire",
+        "elementalBonusPct": {
+          "fire": 10
+        },
+        "lifeStealPct": 0,
+        "regeneration": 0,
+        "magBonus": 0,
+        "dexBonus": 0,
+        "resistances": {}
+      }
+    },
+    "vanguard-magica-t06-v01": {
+      "weaponType": "sword",
+      "usableBy": [
+        "vanguard"
+      ],
+      "dice": 2,
+      "faces": 6,
+      "bonus": 1,
+      "minRange": 1,
+      "maxRange": 1,
+      "ranged": false,
+      "twoHanded": true,
+      "bonusClass": null,
+      "magic": {
+        "attackElement": "ice",
+        "elementalBonusPct": {
+          "ice": 15
+        },
+        "lifeStealPct": 0,
+        "regeneration": 0,
+        "magBonus": 0,
+        "dexBonus": 0,
+        "resistances": {}
+      }
+    },
+    "vanguard-magica-t09-v01": {
+      "weaponType": "sword",
+      "usableBy": [
+        "vanguard"
+      ],
+      "dice": 2,
+      "faces": 8,
+      "bonus": 2,
+      "minRange": 1,
+      "maxRange": 1,
+      "ranged": false,
+      "twoHanded": true,
+      "bonusClass": null,
+      "magic": {
+        "attackElement": "lightning",
+        "elementalBonusPct": {
+          "lightning": 20
+        },
+        "lifeStealPct": 0,
+        "regeneration": 0,
+        "magBonus": 0,
+        "dexBonus": 0,
+        "resistances": {}
+      }
+    },
+    "vanguard-magica-t11-v01": {
+      "weaponType": "sword",
+      "usableBy": [
+        "vanguard"
+      ],
+      "dice": 2,
+      "faces": 10,
+      "bonus": 2,
+      "minRange": 1,
+      "maxRange": 1,
+      "ranged": false,
+      "twoHanded": true,
+      "bonusClass": null,
+      "magic": {
+        "attackElement": "darkness",
+        "elementalBonusPct": {
+          "darkness": 25
+        },
+        "lifeStealPct": 0,
+        "regeneration": 0,
+        "magBonus": 0,
+        "dexBonus": 0,
+        "resistances": {}
+      }
+    },
+    "vanguard-magica-t13-v01": {
+      "weaponType": "sword",
+      "usableBy": [
+        "vanguard"
+      ],
+      "dice": 2,
+      "faces": 12,
+      "bonus": 5,
+      "minRange": 1,
+      "maxRange": 1,
+      "ranged": false,
+      "twoHanded": true,
+      "bonusClass": null,
+      "magic": {
+        "attackElement": "ember",
+        "elementalBonusPct": {
+          "ember": 35
+        },
+        "lifeStealPct": 0,
+        "regeneration": 0,
+        "magBonus": 0,
+        "dexBonus": 0,
+        "resistances": {}
+      }
+    },
     "cajado-de-osso": {
       "weaponType": "staff",
       "usableBy": [
@@ -84356,7 +84658,44 @@
       "arrowRelease:neera": []
     },
     "monster": {
-     "vespera": {"attack": [{"file": "VesperaATT001.mp3", "volume": 0.55, "offset": 0, "delay": 0, "exclusive": true}], "walk": [{"file": "VesperaWalk001.mp3", "volume": 0.45, "offset": 0, "delay": 0, "exclusive": true}], "hit": [{"file": "VesperaHit001.mp3", "volume": 0.55, "offset": 0, "delay": 0, "exclusive": true}], "death": [{"file": "VesperaDeath001.mp3", "volume": 0.55, "offset": 0, "delay": 0, "exclusive": true}]},
+      "vespera": {
+        "attack": [
+          {
+            "file": "VesperaATT001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "walk": [
+          {
+            "file": "VesperaWalk001.mp3",
+            "volume": 0.45,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "hit": [
+          {
+            "file": "VesperaHit001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
+        "death": [
+          {
+            "file": "VesperaDeath001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ]
+      },
       "embered-vanguard": {
         "walk": [
           {
@@ -87726,6 +88065,18 @@
       "watchtower": [
         "OldTowwerDrone  trax 4 Persona 884-Balanced-High.mp3",
         0.4
+      ]
+    }
+  },
+  "heroBaseClasses": {
+    "Kael": {
+      "class": "vanguard",
+      "replaces": [
+        "swordsman",
+        "kaelFinal",
+        "kaelEarly",
+        "paladin",
+        "heavyKnight"
       ]
     }
   }

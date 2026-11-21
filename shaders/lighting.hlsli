@@ -151,6 +151,7 @@ float localShadow(float4x4 lightMatrix, uint mapIndex, uint samplerIndex, float 
 
 // Local lights through the cluster this point falls in. Ember's falloff (three.js punctual lights):
 // 1 / max(d^decay, 0.01), windowed to zero at the range by (1 - (d / range)^4)^2.
+float probeRoom(MeshFrame f, float3 p);
 static const float kLightSourceRadius = 0.5;  // world units (~35 cm: a flame with its glow and bracket)
 float3 localLights(MeshFrame f, Surface s, float3 view, float3 diffuseColor, float3 f0, float a, float nv) {
   if ((f.lightingLayers & kLayerLocal) == 0 || f.lightCount == 0) return 0.0;
@@ -167,24 +168,40 @@ float3 localLights(MeshFrame f, Surface s, float3 view, float3 diffuseColor, flo
   const bool spellShadow = f.localShadowMap != kNoTexture && s.receivesCardShadow > 0.0 && (f.lightingLayers & kLayerShadows) != 0;
   const float spellLit = spellShadow ? localShadow(f.localShadowMatrix, f.localShadowMap, f.shadowSampler, f.localShadowSize, s.position,
                                                    s.geometricNormal, spellLight) : 1.0;
+  const bool hasProbes = probesAddress(f) != 0;
+  const float surfaceRoom = hasProbes ? probeRoom(f, s.position) : 1.0;
   float3 color = 0.0;
   for (uint k = 0; k < count; ++k) {
     const LocalLight light = loadLight(f, vk::RawBufferLoad<uint>(list + 4 + k * 4));
     const float3 toLight = light.position - s.position;
     const float d = length(toLight);
     if (d >= light.range) continue;
-    const float3 l = toLight / max(d, 1e-4);
+    const bool isAreaSpellLight = light.decay < 1.0;
+    const float3 l = isAreaSpellLight ? normalize(toLight + float3(0.0, 0.65 * d, 0.0)) : toLight / max(d, 1e-4);
     const float ratio = d / light.range;
     const float window = saturate(1.0 - ratio * ratio * ratio * ratio);
     // A physical light (decay 2) is a small sphere, not a point (Karis 2013, Frostbite 2014): 1 / (d^2 + r^2), so the wall beside a
     // flame takes no white hot spot (the user, 2026-10-25: "muito bloom, pouco radius"); from a unit away it is the inverse square.
-    float falloff = window * window / (light.decay == 2.0 ? d * d + kLightSourceRadius * kLightSourceRadius : max(pow(d, light.decay), 0.01)) *
-                    lightFacing(light, s.position);
-    if (spellShadow && distance(light.position, spellLight) < 1e-3) falloff *= spellLit;
+    float falloff;
+    if (isAreaSpellLight) {
+      const float isSpotlight = light.behind <= -100.0 ? 1.0 : 0.0;
+      const float smoothWindow = smoothstep(1.0, 0.12, ratio);
+      const float coreSpan = lerp(0.38, 0.34, isSpotlight) * light.range;
+      const float normD = d / max(coreSpan, 1.0);
+      falloff = (smoothWindow * window) / (1.0 + normD * normD * light.decay) * lightFacing(light, s.position);
+    } else {
+      falloff = window * window / (light.decay == 2.0 ? d * d + kLightSourceRadius * kLightSourceRadius : max(pow(d, light.decay), 0.01)) *
+                lightFacing(light, s.position);
+    }
+    if (hasProbes) falloff *= 1.0 - abs(surfaceRoom - probeRoom(f, light.position));
+    if (spellShadow && distance(light.position, spellLight) < 1e-3)
+      falloff *= isAreaSpellLight ? lerp(0.45, 1.0, spellLit) : spellLit;
     float3 n = s.normal;
     if (s.twoSidedLocal > 0.0 && dot(n, l) < 0.0) n = -n;
     const float nlRaw = dot(n, l);
-    const float nl = saturate(nlRaw), nlDiffuse = saturate((nlRaw + s.wrap) / (1.0 + s.wrap));
+    const float nl = saturate(nlRaw);
+    const float wrapped = saturate((nlRaw + s.wrap) / (1.0 + s.wrap));
+    const float nlDiffuse = s.twoSidedLocal > 0.0 ? max(wrapped, 0.68) : wrapped;
     if (nlDiffuse <= 0.0) continue;
     const float3 h = normalize(l + view);
     const float3 F = fresnelSchlick(f0, saturate(dot(view, h))) * s.specular;

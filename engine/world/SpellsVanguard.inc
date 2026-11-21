@@ -257,12 +257,30 @@ std::optional<std::vector<BattleStep>> castTechnique(Battle& b, size_t caster, c
       steps.push_back(s);
       return steps;
     }
-    case TechAim::StepFoe: {  // Passo Longo: the hex, then the foe beside it
-      if (cells.size() < 2) return fail("Escolha o hex e depois o inimigo.");
-      const BattleHex to = cells[0];
-      if (hexDist(from, to) != 1 || !techniqueStandable(b, to)) return fail("Escolha primeiro um hex livre ao lado.");
-      const int foe = techniqueFoe(b, to, cells[1], 1);
-      if (foe < 0) return fail("Escolha um inimigo ao lado do hex escolhido.");
+    case TechAim::StepFoe: {  // Passo Longo: the hex, then the foe beside it (supports both click orders)
+      BattleHex to{-1, -1}, target{-1, -1};
+      int foe = -1;
+      if (cells.size() >= 2) {
+        to = cells[0]; target = cells[1];
+        foe = techniqueFoe(b, to, target, 1);
+        if ((hexDist(from, to) != 1 || !techniqueStandable(b, to) || foe < 0) &&
+            (hexDist(from, target) == 1 && techniqueStandable(b, target) && techniqueFoe(b, target, to, 1) >= 0)) {
+          std::swap(to, target);
+          foe = techniqueFoe(b, to, target, 1);
+        }
+      } else if (cells.size() == 1) {
+        target = cells[0];
+        foe = techniqueFoe(b, from, target, 2);
+        if (foe >= 0) {
+          for (const BattleHex& h : Battle::neighbors(from.x, from.y)) {
+            if (hexDist(from, h) == 1 && techniqueStandable(b, h) && hexDist(h, target) == 1) {
+              to = h; break;
+            }
+          }
+        }
+      }
+      if (hexDist(from, to) != 1 || !techniqueStandable(b, to)) return fail("Escolha um hex livre ao lado para avançar.");
+      if (foe < 0) return fail("Escolha um inimigo ao alcance do golpe a partir do hex.");
       commit();
       steps.push_back(techniqueMove(caster, kind, from, to));
       BattleStep c = techniqueBlow(caster, static_cast<size_t>(foe), kind, n.dmg);
@@ -270,12 +288,16 @@ std::optional<std::vector<BattleStep>> castTechnique(Battle& b, size_t caster, c
       steps.push_back(c);
       return steps;
     }
-    case TechAim::FoeStep: {  // the foe, then the hex
+    case TechAim::FoeStep: {  // the foe, then the hex (supports both click orders)
       if (cells.size() < 2) return fail("Escolha o inimigo e depois o hex.");
-      const int foe = techniqueFoe(b, from, cells[0], 1);
+      BattleHex target = cells[0], to = cells[1];
+      int foe = techniqueFoe(b, from, target, 1);
+      if (foe < 0 && techniqueFoe(b, from, to, 1) >= 0 && techniqueStandable(b, target)) {
+        std::swap(target, to);
+        foe = techniqueFoe(b, from, target, 1);
+      }
       if (foe < 0) return fail(noFoe);
       const BattleUnit& f = b.units()[static_cast<size_t>(foe)];
-      const BattleHex to = cells[1];
       if (!techniqueStandable(b, to)) return fail("Escolha um hex livre.");
       if (kind == "partingCut") {  // a hex beside Kael, out of the foe's reach
         if (hexDist(from, to) != 1 || besideUnit(b, to, static_cast<size_t>(foe), 1)) return fail("Escolha um hex ao seu lado e longe do inimigo.");
@@ -605,13 +627,13 @@ void techniqueEffect(Battle& b, const BattleStep& step, std::vector<BattleEffect
   const int foe = step.ids.empty() ? -1 : static_cast<int>(step.ids.front());
   if (step.kind == "crossguard") {
     m.guardPct = step.bonus, m.guardFrom = -1, m.guardExposePct = 0;  // a new guard replaces the one before
-    out.push_back(statusEffect(step.att, std::format("{} {}%", pick("Guarda Cruzada", "Crossguard"), step.bonus)));
+    out.push_back(statusEffect(step.att, std::format("{}: aparar -{}% de dano", pick("Guarda Cruzada", "Crossguard"), step.bonus)));
   } else if (step.kind == "readTheBlade" && foe >= 0) {
     m.guardPct = step.bonus, m.guardFrom = foe, m.guardExposePct = step.exposePct;
-    out.push_back(statusEffect(step.att, std::format("{} {}%", pick("Ler a Lâmina", "Read the Blade"), step.bonus)));
+    out.push_back(statusEffect(step.att, std::format("{}: aparar -{}% de dano", pick("Ler a Lâmina", "Read the Blade"), step.bonus)));
   } else if (step.kind == "steadyFooting") {
     m.footingPct = step.bonus;
-    out.push_back(statusEffect(step.att, std::format("{} {}%", pick("Pé Firme", "Steady Footing"), step.bonus)));
+    out.push_back(statusEffect(step.att, std::format("{}: -{}% de dano físico", pick("Pé Firme", "Steady Footing"), step.bonus)));
   } else if (step.kind == "plantTheLine") {
     m.plantPct = step.bonus;
     out.push_back(statusEffect(step.att, pick("Firmar a Linha", "Plant the Line")));
@@ -701,16 +723,20 @@ bool techniqueAfterStep(Battle& b, size_t walker, BattleHex from, BattleHex to, 
 // --- Words ----------------------------------------------------------------------------------------------------------------------------
 void techniqueConditions(const BattleUnit& u, const std::function<void(const std::string&)>& add) {
   const BattleUnit::Conditions::Martial& m = u.cond.martial;
-  if (m.guardPct > 0) add(std::format("{} {}%", m.guardFrom >= 0 ? pick("Ler a Lâmina", "Read the Blade") : pick("Guarda Cruzada", "Crossguard"), m.guardPct));
-  if (m.footingPct > 0) add(std::format("{} -{}%", pick("Pé Firme", "Steady Footing"), m.footingPct));
-  if (m.plantPct > 0) add(pick("Firmar a Linha", "Plant the Line"));
-  if (m.measureTarget >= 0) add(pick("Medida Mortal armada", "Dead Measure set"));
-  if (m.exposedPct > 0) add(std::format("{} {}%", pick("Exposto", "Exposed"), m.exposedPct));
-  if (m.openPct > 0) add(std::format("{} {}%", pick("Guarda aberta", "Guard open"), m.openPct));
-  if (m.accDownPct > 0) add(std::format("-{} {}", m.accDownPct, pick("no próximo ataque", "on its next attack")));
-  if (m.challengePct > 0) add(std::format("{} -{}", pick("Desafiado", "Challenged"), m.challengePct));
-  if (m.lowCutHexes > 0) add(std::format("{} +{} PA", pick("Corte Baixo", "Low Cut"), m.lowCutHexes));
-  if (m.severTurns != 0) add(pick("Ritmo quebrado", "Rhythm severed"));
+  if (m.guardPct > 0) {
+    add(std::format("{}: apara o próximo ataque corpo a corpo (-{}% de dano)",
+                    m.guardFrom >= 0 ? pick("Ler a Lâmina", "Read the Blade") : pick("Guarda Cruzada", "Crossguard"),
+                    m.guardPct));
+  }
+  if (m.footingPct > 0) add(std::format("{}: -{}% de dano do próximo golpe físico", pick("Pé Firme", "Steady Footing"), m.footingPct));
+  if (m.plantPct > 0) add(std::format("{}: golpe de reação ({:.0f}% ATK) e interrompe movimento se inimigo andar ao lado", pick("Firmar a Linha", "Plant the Line"), static_cast<double>(m.plantPct)));
+  if (m.measureTarget >= 0) add(pick("Medida Mortal: golpe de reação se o alvo marcado se mover", "Dead Measure: reaction strike if marked target steps"));
+  if (m.exposedPct > 0) add(std::format("{}: ataques contra este alvo ignoram {}% de armadura", pick("Exposto", "Exposed"), m.exposedPct));
+  if (m.openPct > 0) add(std::format("{}: defesas vulneráveis, ignora {}% de armadura", pick("Guarda Aberta", "Guard Open"), m.openPct));
+  if (m.accDownPct > 0) add(std::format("-{}% de chance de acerto no próximo ataque", m.accDownPct));
+  if (m.challengePct > 0) add(std::format("{}: forçado a focar o desafiante (-{}% de acerto se atacar aliados)", pick("Desafiado", "Challenged"), m.challengePct));
+  if (m.lowCutHexes > 0) add(std::format("{}: próximos passos custam +{} PA", pick("Corte Baixo", "Low Cut"), m.lowCutHexes));
+  if (m.severTurns != 0) add(pick("Ritmo Quebrado: postura desfeita, sem contra-ataque", "Rhythm Severed: posture broken, cannot counter"));
   wardConditions(u, add);  // Garran's
 }
 // moon: tonight's (WardMoon) for Garran's techniques, -1 to list every moon that changes one

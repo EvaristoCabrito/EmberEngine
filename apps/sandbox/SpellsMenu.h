@@ -63,6 +63,7 @@ inline const std::vector<SpellEntry>& allSpells() {
       {"eruption", "Erupção", false},
       {"stampede", "Estouro", true},                       // [ours]
       {"turnUndead", "Expulsar Mortos-Vivos", false},
+      {"arcaneBeam", "Feixe de Luz", false},
       {"summonFamiliar2", "Familiar Maior", false},
       {"summonFamiliar4", "Familiar Radiante", false},
       {"fantomForce", "Força Fantasma", false},
@@ -70,9 +71,10 @@ inline const std::vector<SpellEntry>& allSpells() {
       {"frost", "Frost", false},
       {"wrathOfTheSkies", "Fúria dos Céus", false},
       {"shieldBash", "Golpe de Escudo", true},
-      {"tendrilSwipe", "Golpe de Tentáculo", true},        // [ours]
+      {"tendrilSwipe", "Golpe do Tentáculo", true},        // [ours]
       {"executionerStrike", "Golpe do Carrasco", true},
       {"doubleStrike", "Golpe Duplo", true},
+      {"luminousHalo", "Halo Luminoso", false},
       {"hemorrhage", "Hemorragia", false},
       {"ignite", "Ignite", false},  // [ours] the monsters' T2 fire, the Elementalista's extra spell (2026-11-17)
       {"bullRush", "Investida", true},
@@ -83,6 +85,7 @@ inline const std::vector<SpellEntry>& allSpells() {
       {"summonTelesm", "Invocar Telesm", false},
       {"divineWrath", "Ira Divina", false},                // [ours]
       {"iceLance", "Lança de Gelo", false},
+      {"anchoredLight", "Luz Ancorada", false},
       {"curseOfDecay", "Maldição da Decadência", false},
       {"cureLight", "Mãos Curativas", false},              // [ours] Ember: "Healing Hands"
       {"burningHands", "Mãos Flamejantes", false},

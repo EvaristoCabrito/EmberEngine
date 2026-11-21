@@ -122,6 +122,19 @@ const std::vector<VfxVertex>& haloGeometry() {
   }();
   return g;
 }
+// A thin half-ring of radius 1 lying flat (u around, from 0 to pi), curving in +z.
+const std::vector<VfxVertex>& halfHaloGeometry() {
+  static const std::vector<VfxVertex> g = [] {
+    std::vector<VfxVertex> ring = vfxgeo::torus(1.0f, 0.035f, 8, 32, std::numbers::pi_v<float>);
+    const glm::mat4 flat = glm::rotate(glm::mat4(1.0f), -std::numbers::pi_v<float> * 0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+    for (VfxVertex& v : ring) {
+      v.position = glm::vec3(flat * glm::vec4(v.position, 1.0f));
+      v.normal = glm::vec3(flat * glm::vec4(v.normal, 0.0f));
+    }
+    return ring;
+  }();
+  return g;
+}
 // A unit quad (-0.5..0.5, uv 0..1): each mote, turned to the camera by the shader.
 const std::vector<VfxVertex>& quadGeometry() {
   static const std::vector<VfxVertex> g = {
@@ -170,13 +183,14 @@ void HolyLight::build(float now, const Camera& camera, VfxFrame& frame, std::vec
   const uint32_t shaftFirst = s.shaft ? frame.addVertices(shaftGeometry()) : 0;
   const uint32_t discFirst = s.ground > 0.0f ? frame.addVertices(discGeometry()) : 0;
   const uint32_t quadFirst = frame.addVertices(quadGeometry());
-  const uint32_t haloFirst = style_ == Style::Medium ? frame.addVertices(haloGeometry()) : 0;
+  const uint32_t halfHaloFirst = (style_ == Style::Medium || isPotion(style_)) ? frame.addVertices(halfHaloGeometry()) : 0;
 
-  // The camera's side and the way toward it, on the ground (the hands face the eye).
+  // The camera's side and forward on the ground plane (card billboard coordinates).
   glm::vec3 side{camera.right.x, 0.0f, camera.right.z};
   side = glm::dot(side, side) > 1e-8f ? glm::normalize(side) : glm::vec3(1.0f, 0.0f, 0.0f);
+  glm::vec3 fwd{camera.forward.x, 0.0f, camera.forward.z};
+  fwd = glm::dot(fwd, fwd) > 1e-8f ? glm::normalize(fwd) : glm::vec3(0.0f, 0.0f, 1.0f);
 
-  std::vector<VfxInstance> glow, dark;
   int lit = 0;
   for (size_t ti = 0; ti < targets_.size(); ++ti) {
     const Target& target = targets_[ti];
@@ -185,6 +199,29 @@ void HolyLight::build(float now, const Camera& camera, VfxFrame& frame, std::vec
     const glm::vec3 feet = target.feet;
     const glm::vec3 chest = feet + glm::vec3(0.0f, height * 0.5f, 0.0f);
     const uint32_t seed = seed_ + static_cast<uint32_t>(ti) * 7919u;
+    std::vector<VfxInstance> targetBackGlow, targetFrontGlow, targetDark;
+
+    auto drawHalo = [&](glm::vec3 center, float r, float opacity) {
+      if (opacity <= 0.002f || halfHaloFirst == 0) return;
+      // The back half (curves in +fwd, behind the card):
+      glm::mat4 mBack(1.0f);
+      mBack[0] = glm::vec4(side * r, 0.0f);
+      mBack[1] = glm::vec4(0.0f, r, 0.0f, 0.0f);
+      mBack[2] = glm::vec4(fwd * r, 0.0f);
+      mBack[3] = glm::vec4(center, 1.0f);
+      draw(halfHaloFirst, halfHaloGeometry().size(), mBack, 4.0f, s.intensity * kLineGain, opacity, s.color, s.core, 0.0f, feet, VfxBlend::Additive);
+      frame.draws.back().behindCard = true;
+      frame.draws.back().cardAt = feet;
+
+      // The front half (curves in -fwd, in front of the card):
+      glm::mat4 mFront(1.0f);
+      mFront[0] = glm::vec4(-side * r, 0.0f);
+      mFront[1] = glm::vec4(0.0f, r, 0.0f, 0.0f);
+      mFront[2] = glm::vec4(-fwd * r, 0.0f);
+      mFront[3] = glm::vec4(center, 1.0f);
+      draw(halfHaloFirst, halfHaloGeometry().size(), mFront, 4.0f, s.intensity * kLineGain, opacity, s.color, s.core, 0.0f, feet, VfxBlend::Additive);
+      frame.draws.back().behindCard = false;
+    };
 
     // --- The shaft: it comes down from above onto the unit, then holds and fades. An inner, hotter core inside it. ---
     if (s.shaft) {
@@ -199,7 +236,7 @@ void HolyLight::build(float now, const Camera& camera, VfxFrame& frame, std::vec
            VfxBlend::Additive);
     }
 
-    // --- The ground glows: a pool and a ring spreading out from the feet. ---
+    // --- The ground glows: a pool and a ring spreading out from the feet (under the cards). ---
     if (s.ground > 0.0f) {
       const float grow = ease(impact_ - 0.1f, impact_ + (style_ == Style::Disease ? 0.7f : 0.35f), now);
       const float radius = s.ground * scale * (style_ == Style::Disease ? 0.6f + 0.9f * grow : 0.6f + 0.4f * grow);
@@ -207,15 +244,23 @@ void HolyLight::build(float now, const Camera& camera, VfxFrame& frame, std::vec
       const glm::mat4 m = glm::translate(glm::mat4(1.0f), feet + glm::vec3(0.0f, 0.03f, 0.0f)) * glm::scale(glm::mat4(1.0f), {radius, 1.0f, radius});
       draw(discFirst, discGeometry().size(), m, 1.0f, s.intensity * kGroundGain, ease(begin, impact_ - 0.05f, now) * out, s.color, s.core, ring, feet,
            VfxBlend::Additive);
+      frame.draws.back().underCards = true;
     }
 
-    // --- Cura Média: a halo settles from above the head to the feet. ---
+    // --- Cura Média: a halo settles from above the head to the feet, correctly encircling the card. ---
     if (style_ == Style::Medium) {
       const float k = ease(begin, impact_ + 0.3f, now);
       const float y = glm::mix(height * 1.15f, 0.08f, k), radius = glm::mix(0.55f, 0.75f, k) * scale;
-      const glm::mat4 m = glm::translate(glm::mat4(1.0f), feet + glm::vec3(0.0f, y, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(radius));
-      draw(haloFirst, haloGeometry().size(), m, 4.0f, s.intensity * kLineGain, out * ease(begin, begin + 0.15f, now), s.color, s.core, 0.0f, feet,
-           VfxBlend::Additive);
+      drawHalo(feet + glm::vec3(0.0f, y, 0.0f), radius, out * ease(begin, begin + 0.15f, now));
+    }
+
+    // --- A potion: an expanding halo ring cleanly circling in front and behind the card. ---
+    if (isPotion(style_)) {
+      const float haloGrow = ease(impact_ - 0.08f, impact_ + 0.38f, now);
+      const float haloRadius = glm::mix(0.20f, 0.82f, haloGrow) * scale;
+      const float haloY = glm::mix(height * 0.30f, height * 0.52f, haloGrow);
+      const float haloEnv = ease(begin, impact_, now) * (1.0f - ease(impact_ + 0.06f, impact_ + 0.42f, now));
+      drawHalo(feet + glm::vec3(0.0f, haloY, 0.0f), haloRadius, haloEnv);
     }
 
     // --- Mãos Curativas: two cupped arcs of warm light close around the body. ---
@@ -232,11 +277,14 @@ void HolyLight::build(float now, const Camera& camera, VfxFrame& frame, std::vec
       }
     }
 
-    // --- A potion: a burst at the chest. ---
+    // --- A potion: a burst at the chest (backlight aura behind the card, soft accent in front). ---
     if (isPotion(style_)) {
       const float size = height * 0.9f * (0.4f + 0.6f * ease(impact_ - 0.08f, impact_ + 0.15f, now));
       const float alpha = ease(begin, impact_, now) * (1.0f - ease(impact_, impact_ + 0.55f, now));
-      if (alpha > 0.0f) glow.push_back({glm::mat4(1.0f), glm::vec4(chest, size), {0.0f, 0.0f, alpha, 1.6f}, glm::vec4(s.color, 0.0f)});
+      if (alpha > 0.0f) {
+        targetBackGlow.push_back({glm::mat4(1.0f), glm::vec4(chest, size), {0.0f, 0.0f, alpha * 0.85f, 1.6f}, glm::vec4(s.color, 0.0f)});
+        targetFrontGlow.push_back({glm::mat4(1.0f), glm::vec4(chest, size * 0.45f), {0.0f, 0.0f, alpha * 0.30f, 1.3f}, glm::vec4(s.color, 0.0f)});
+      }
     }
 
     // --- Motes: rising round the unit, drawn into it, or bubbling up from a potion. ---
@@ -270,7 +318,12 @@ void HolyLight::build(float now, const Camera& camera, VfxFrame& frame, std::vec
       }
       alpha *= moteEnv;
       if (alpha <= 0.002f) continue;
-      glow.push_back({glm::mat4(1.0f), glm::vec4(p, size), {0.0f, 0.0f, alpha, 1.4f}, glm::vec4((i & 1) ? s.moteColor2 : s.moteColor, 0.0f)});
+      const bool behind = glm::dot(p - feet, fwd) > 0.0f;
+      if (behind) {
+        targetBackGlow.push_back({glm::mat4(1.0f), glm::vec4(p, size), {0.0f, 0.0f, alpha, 1.4f}, glm::vec4((i & 1) ? s.moteColor2 : s.moteColor, 0.0f)});
+      } else {
+        targetFrontGlow.push_back({glm::mat4(1.0f), glm::vec4(p, size), {0.0f, 0.0f, alpha, 1.4f}, glm::vec4((i & 1) ? s.moteColor2 : s.moteColor, 0.0f)});
+      }
     }
 
     // --- Curar Doença: the sickness leaves the body as dark motes, drifting up and away. ---
@@ -283,8 +336,31 @@ void HolyLight::build(float now, const Camera& camera, VfxFrame& frame, std::vec
         const float radius = (0.12f + phase * 0.55f) * scale;
         const glm::vec3 p = feet + glm::vec3(std::cos(angle) * radius, height * (0.35f + phase * 0.8f), std::sin(angle) * radius);
         const float alpha = (1.0f - phase) * std::min(1.0f, phase * 6.0f) * darkEnv * 0.85f;
-        if (alpha > 0.002f) dark.push_back({glm::mat4(1.0f), glm::vec4(p, 0.11f * scale * (1.0f + phase)), {0.0f, 0.0f, alpha, 1.0f}, glm::vec4(0.05f, 0.09f, 0.04f, 0.0f)});
+        if (alpha > 0.002f) targetDark.push_back({glm::mat4(1.0f), glm::vec4(p, 0.11f * scale * (1.0f + phase)), {0.0f, 0.0f, alpha, 1.0f}, glm::vec4(0.05f, 0.09f, 0.04f, 0.0f)});
       }
+    }
+
+    // Emit this target's glowing motes/bursts: far half behind the card, near half in front.
+    if (!targetBackGlow.empty()) {
+      const uint32_t firstInstance = static_cast<uint32_t>(frame.instances.size());
+      frame.instances.insert(frame.instances.end(), targetBackGlow.begin(), targetBackGlow.end());
+      draw(quadFirst, quadGeometry().size(), glm::mat4(1.0f), 2.0f, s.intensity * kMoteGain, 1.0f, s.color, s.core, 0.0f, feet, VfxBlend::Additive,
+           firstInstance, static_cast<uint32_t>(targetBackGlow.size()));
+      frame.draws.back().behindCard = true;
+      frame.draws.back().cardAt = feet;
+    }
+    if (!targetFrontGlow.empty()) {
+      const uint32_t firstInstance = static_cast<uint32_t>(frame.instances.size());
+      frame.instances.insert(frame.instances.end(), targetFrontGlow.begin(), targetFrontGlow.end());
+      draw(quadFirst, quadGeometry().size(), glm::mat4(1.0f), 2.0f, s.intensity * kMoteGain, 1.0f, s.color, s.core, 0.0f, feet, VfxBlend::Additive,
+           firstInstance, static_cast<uint32_t>(targetFrontGlow.size()));
+      frame.draws.back().behindCard = false;
+    }
+    if (!targetDark.empty()) {
+      const uint32_t firstInstance = static_cast<uint32_t>(frame.instances.size());
+      frame.instances.insert(frame.instances.end(), targetDark.begin(), targetDark.end());
+      draw(quadFirst, quadGeometry().size(), glm::mat4(1.0f), 2.0f, 1.0f, 1.0f, glm::vec3(0.05f, 0.09f, 0.04f), glm::vec3(0.03f, 0.05f, 0.02f), 0.0f,
+           feet, VfxBlend::Alpha, firstInstance, static_cast<uint32_t>(targetDark.size()));
     }
 
     // --- Its light on the board and the units nearby (at most four per cast). ---
@@ -293,20 +369,6 @@ void HolyLight::build(float now, const Camera& camera, VfxFrame& frame, std::vec
       const float flare = 1.0f + 0.6f * (1.0f - ease(impact_, impact_ + 0.3f, now)) * ease(begin, impact_, now);
       lights.push_back({chest, s.lightColor, s.light * env * flare, 3.2f * scale});
     }
-  }
-
-  // The motes, all in one draw each (light; and the sickness, darkening what is behind it).
-  if (!glow.empty()) {
-    const uint32_t firstInstance = static_cast<uint32_t>(frame.instances.size());
-    frame.instances.insert(frame.instances.end(), glow.begin(), glow.end());
-    draw(quadFirst, quadGeometry().size(), glm::mat4(1.0f), 2.0f, s.intensity * kMoteGain, 1.0f, s.color, s.core, 0.0f, targets_.front().feet, VfxBlend::Additive,
-         firstInstance, static_cast<uint32_t>(glow.size()));
-  }
-  if (!dark.empty()) {
-    const uint32_t firstInstance = static_cast<uint32_t>(frame.instances.size());
-    frame.instances.insert(frame.instances.end(), dark.begin(), dark.end());
-    draw(quadFirst, quadGeometry().size(), glm::mat4(1.0f), 2.0f, 1.0f, 1.0f, glm::vec3(0.05f, 0.09f, 0.04f), glm::vec3(0.03f, 0.05f, 0.02f), 0.0f,
-         targets_.front().feet, VfxBlend::Alpha, firstInstance, static_cast<uint32_t>(dark.size()));
   }
 }
 

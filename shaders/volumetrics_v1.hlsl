@@ -198,8 +198,8 @@ float3 airLocalLights(MeshFrame f, VolumetricsFrame v, float3 p, float3 toCamera
     const float window = saturate(1.0 - ratio * ratio * ratio * ratio);
     const float width = spread * max(tc, 0.0);
     const float h = sqrt(h2 + width * width + 0.01);  // 0.01: the falloff's own floor, 1 / max(d^2, 0.01)
-    float falloff = window * window * (atan((t1 - tc) / h) - atan((t0 - tc) / h)) / (h * length01);
-    if (light.decay != 2.0) falloff *= pow(max(d, 0.1), 2.0 - light.decay);
+    float falloff = window * window * (atan((t1 - tc) / h) - atan((t0 - tc) / h)) / (h * length01) * lightFacing(light, q);
+    if (light.decay != 2.0) falloff *= (light.decay < 1.5 ? pow(max(d, 0.5), 0.45) * 0.45 : pow(max(d, 0.1), 2.0 - light.decay));
     const float visible = reliefVisibility(f, v, q, light.position);
     if (visible <= 0.0) continue;
     color += light.color * f.exposure * falloff * visible * phase2(dot(toLight / max(d, 1e-4), -toCamera), v.anisotropy, v.backLobe);

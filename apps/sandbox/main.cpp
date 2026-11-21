@@ -667,7 +667,12 @@ void applyTestHeroes(MapStageOptions& options, const ember::Json& tsave) {
   const ember::Json promotions = tsave.value("promotions", ember::Json::object());
   if (promotions.is_object())
     for (const auto& [name, cls] : promotions.items())
-      if (cls.is_string()) options.heroClass[name] = cls.get<std::string>();
+      if (cls.is_string()) {
+        const std::string s = cls.get<std::string>();
+        if (name == "Kael" && (s == "swordsman" || s == "paladin" || s == "heavyKnight")) continue;
+        options.heroClass[name] = s;
+      }
+  if (!options.heroClass.contains("Kael")) options.heroClass["Kael"] = "vanguard";
 }
 
 std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Renderer& renderer, AssetManager& assets, JobSystem& jobs) {
@@ -776,7 +781,12 @@ void applySaveHeroes(MapStageOptions& options, const ember::Json& save) {
   const ember::Json promotions = save.value("promotions", ember::Json::object());
   if (promotions.is_object())
     for (const auto& [name, cls] : promotions.items())
-      if (cls.is_string()) options.heroClass[name] = cls.get<std::string>();
+      if (cls.is_string()) {
+        const std::string s = cls.get<std::string>();
+        if (name == "Kael" && (s == "swordsman" || s == "paladin" || s == "heavyKnight")) continue;
+        options.heroClass[name] = s;
+      }
+  if (!options.heroClass.contains("Kael")) options.heroClass["Kael"] = "vanguard";
   options.heroState = heroStatesFromSave(save);
   options.campaignMinute = ember::campaignMinute(save);
   options.campaignSubMinuteMs = save.value("gameSubMinuteMs", std::int64_t(0));
@@ -1686,6 +1696,7 @@ int runWindow(const Options& o) {
       }
     }
     if (retry) {
+      ember::LightingSpellRegistry::get().clear();
       vkDeviceWaitIdle(context.device);
       stage.reset();
       curtainBeforeBattle();
@@ -1737,6 +1748,8 @@ int runWindow(const Options& o) {
     }
     if (preparing.valid()) continue;  // still making them: the curtain stays up
     if (pending || backToTitle || openMap || openTest || openTestRpg || openSpells || openEditor) {
+      if (backToTitle || openMap || openTest || openTestRpg || openSpells || openEditor)
+        ember::LightingSpellRegistry::get().clear();
       vkDeviceWaitIdle(context.device);
       stage.reset();
       inSpells = false;

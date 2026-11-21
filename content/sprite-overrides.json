@@ -886,10 +886,10 @@
    "newHero": {"name": "Bandit Horseman", "group": "monster", "sprite": "bandit-horseman", "reversed": true},
    "cut": "content/sprites/bandit-horseman/cut.json",
    "why": "the user, 2026-11-14: the Bandit Horseman, a new unit from their videos (Attachments/Monsters/Horse); Alta + 64 + 36; a rank D+ enemy on Todas as Unidades (the user: \"Horse is a Rank F bandid is D+\")",
-   "poses": {"idle": "base", "attack": "atk", "walk": "move", "hit": "hit", "death": "death"},
-   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
-   "packs": {"base": "field", "move": "field"},
-   "strides": {"move": 1.0}
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkUp": "move-up", "walkDown": "move-down", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "walkUp": "Andar (costas)", "walkDown": "Andar (frente)", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"},
+   "strides": {"move": 1.0, "move-up": 1.0, "move-down": 1.0}
   },
   {
    "set": "bandit-horseman-64-media",
@@ -897,7 +897,7 @@
    "cut": "content/sprites/bandit-horseman/cut-64-media.json",
    "why": "the Bandit Horseman's Personagens Média: 64 frames at ~610 px",
    "mediumOf": {"hero": "banditHorseman", "set": "bandit-horseman"},
-   "packs": {"base": "field", "move": "field"}
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
   {
    "set": "bandit-horseman-36-media",
@@ -905,7 +905,7 @@
    "cut": "content/sprites/bandit-horseman/cut-36-media.json",
    "why": "the Bandit Horseman's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "banditHorseman", "set": "bandit-horseman"},
-   "packs": {"base": "field", "move": "field"}
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
   {
    "set": "sick-rat",
@@ -970,10 +970,10 @@
    "newHero": {"name": "Bruxa", "group": "monster", "sprite": "witch", "reversed": false},
    "cut": "content/sprites/witch/cut.json",
    "why": "the user, 2026-11-18: the Witch, a new rank C fire caster from five videos (Attachments/Witch): idle, ember-smoke blow and fireball cast, walk, hit and fall; Alta + 64 + 36; an enemy on Todas as Unidades",
-   "poses": {"idle": "base", "attack": "atk", "cast": "cast", "walk": "move", "hit": "hit", "death": "death"},
-   "labels": {"idle": "Parado", "attack": "Atacar", "cast": "Conjurar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
-   "packs": {"base": "field", "move": "field"},
-   "strides": {"move": 1.0}
+   "poses": {"idle": "base", "attack": "atk", "cast": "cast", "walk": "move", "walkUp": "move-up", "walkDown": "move-down", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "cast": "Conjurar", "walk": "Andar", "walkUp": "Andar (costas)", "walkDown": "Andar (frente)", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"},
+   "strides": {"move": 1.0, "move-up": 1.0, "move-down": 1.0}
   },
   {
    "set": "witch-64-media",
@@ -981,7 +981,7 @@
    "cut": "content/sprites/witch/cut-64-media.json",
    "why": "the Witch's Personagens Média: 64 frames at ~610 px",
    "mediumOf": {"hero": "witch", "set": "witch"},
-   "packs": {"base": "field", "move": "field"}
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
   {
    "set": "witch-36-media",
@@ -989,7 +989,7 @@
    "cut": "content/sprites/witch/cut-36-media.json",
    "why": "the Witch's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "witch", "set": "witch"},
-   "packs": {"base": "field", "move": "field"}
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
   {
    "set": "vampire-mosquito",
@@ -1019,7 +1019,7 @@
    "lightOf": {"hero": "vampireMosquito", "set": "vampire-mosquito"},
    "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
-  {"set": "aldric-veo", "version": "v01", "hero": "aldric", "cut": "content/sprites/aldric-veo/cut.json", "why": "the user, 2026-11-18: Aldric's complete new set from their videos (Attachments/Aldric): the idle and the spear thrust (AldricIdleATT), the special as his cast and the fall (AldricSpecialAndFall), the walk to each side, the walk away and toward the camera, the hit (AldricHitReactFinal), the turn away and the back still; Alta + 64 + 36. The old Aldric's attackLeft and castLeft are dropped: the new attack and cast face right and the game mirrors them for the left. The old art is the enemy Lanceiro's now (the 'reuse' entry)", "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkLeft": "move-left", "walkUp": "move-up", "walkDown": "move-down", "turnBack": "turn-back", "castBack": "cast-back", "cast": "cast", "hit": "hit", "death": "death"}, "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "walkLeft": "Andar (esquerda)", "walkUp": "Andar (costas)", "walkDown": "Andar (frente)", "turnBack": "De costas", "castBack": "De costas (parado)", "cast": "Conjurar", "hit": "Dano", "death": "Queda"}, "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field"}, "strides": {"move": 1.0, "move-left": 1.0, "move-up": null, "move-down": null}, "drop": ["attackLeft", "castLeft"]},
+  {"set": "aldric-veo", "version": "v01", "hero": "aldric", "cut": "content/sprites/aldric-veo/cut.json", "why": "the user, 2026-11-18: Aldric's complete new set from their videos (Attachments/Aldric): the idle and the spear thrust (AldricIdleATT), the special as his cast and the fall (AldricSpecialAndFall), the walk to each side, the walk away and toward the camera, the hit (AldricHitReactFinal), the turn away and the back still; Alta + 64 + 36. The old Aldric's attackLeft and castLeft are dropped: the new attack and cast face right and the game mirrors them for the left. The old art is the enemy Lanceiro's now (the 'reuse' entry)", "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkLeft": "move-left", "walkUp": "move-up", "walkDown": "move-down", "turnBack": "turn-back", "castBack": "cast-back", "cast": "cast", "specialAttack": "cast", "hit": "hit", "death": "death"}, "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "walkLeft": "Andar (esquerda)", "walkUp": "Andar (costas)", "walkDown": "Andar (frente)", "turnBack": "De costas", "castBack": "De costas (parado)", "cast": "Conjurar", "specialAttack": "Ataque especial", "hit": "Dano", "death": "Queda"}, "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field"}, "strides": {"move": 1.0, "move-left": 1.0, "move-up": null, "move-down": null}, "drop": ["attackLeft", "castLeft"]},
   {"set": "aldric-veo-64-media", "version": "media64-v01", "mediumOf": {"hero": "aldric", "set": "aldric-veo"}, "cut": "content/sprites/aldric-veo/cut-64-media.json", "why": "Aldric's Personagens M\u00e9dia, as Isolde's: every clip at ~610 px of figure with 64 frames (picked evenly, the clip's timing kept)", "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field"}},
   {"set": "aldric-veo-36-media", "version": "media36-v01", "lightOf": {"hero": "aldric", "set": "aldric-veo"}, "cut": "content/sprites/aldric-veo/cut-36-media.json", "why": "Aldric's Personagens Leve, as Isolde's: every clip at ~610 px of figure with 36 frames; Leve draws it halved", "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field", "turn-back": "field", "cast-back": "field"}},
   {

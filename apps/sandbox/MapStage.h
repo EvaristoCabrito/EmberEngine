@@ -93,6 +93,8 @@
 #include "world/Loadout.h"
 #include "world/Quests.h"
 #include "world/Spells.h"
+#include "world/LightingSpells.h"
+#include "render/vfx/LightingSpellFx.h"
 #include "render/UiArt.h"
 #include "world/Board.h"
 #include "world/FogOfWar.h"
@@ -409,6 +411,11 @@ class MapStage final : public Stage {
       return;
     }
     board_ = std::make_unique<ember::Board>(*data_, std::move(*draft));
+    {
+      const std::string floorId = board_->draft().id;
+      const std::string logMap = ember::logicalMapOfScreen(floorId);
+      ember::LightingSpellRegistry::get().setLogicalMap(logMap, campaignMinuteNow());
+    }
     setEditorWeather(board_->draft());
     if(options.cloudLook>=0)selectCloudLook(options.cloudLook);
     if (!board_->loadRelief(options.artRoot) || !ground_.build(*board_)) {
@@ -856,6 +863,13 @@ class MapStage final : public Stage {
         const float flux = 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b;
         if (flux > bestFlux) best = k, bestFlux = flux;
       }
+      if (best >= lights_.size() && persistentSpellLightsTo_ <= lights_.size()) {
+        for (size_t k = persistentSpellLightsFrom_; k < persistentSpellLightsTo_; ++k) {
+          const glm::vec3& c = lights_[k].color;
+          const float flux = 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b;
+          if (flux > bestFlux) best = k, bestFlux = flux;
+        }
+      }
       if (best < lights_.size() && board_ && !flat_) {
         const glm::vec3 at = lights_[best].position;
         renderer.setLocalShadow(at, lights_[best].range, static_cast<float>(ember::groundHeightAt(*board_, look_, at.x, at.z)));
@@ -968,6 +982,14 @@ class MapStage final : public Stage {
     if (tempoActive && board_ && !interiorMap() && (board_->draft().emberTiles == "ashen-crossing004-pale-v02" || board_->draft().emberTiles == "ashen-white-v03") && weatherKind_ == "ash") {
       WeatherFx::append(ownFrame(), "ash", weatherIntensity_, weatherWind_, time, camera, cam_.target,
           [this](float x, float z) { return static_cast<float>(ember::groundHeightAt(*board_, look_, x, z)); });
+    }
+    {
+      const std::string currentFloor = board_ ? board_->draft().id : "";
+      const std::string logMap = ember::logicalMapOfScreen(currentFloor);
+      if (!ember::LightingSpellRegistry::get().instances().empty()) {
+        auto getCasterPos = [this](const std::string& casterId) { return resolveLightCasterFeet(casterId); };
+        ember::appendLightingSpellVfx(ownFrame(), time, camera, currentFloor, logMap, campaignMinuteNow(), getCasterPos);
+      }
     }
     renderer.setVfx(ownVfx ? weatherFrame_ : spellFx_.vfx());
     renderer.setLights(lights_);
@@ -1185,6 +1207,14 @@ class MapStage final : public Stage {
         for (size_t i = fireLightsFrom_; i < fireLightsTo_; ++i) lights_[i].color *= k;
         renderer.setLights(lights_);
       }
+    }
+    if (lightingMode_ == 3 && persistentSpellLightsTo_ > persistentSpellLightsFrom_ && persistentSpellLightsTo_ <= lights_.size()) {
+      const float k = 1.0f / std::max(lighting.exposure, 1e-9f);
+      for (size_t i = persistentSpellLightsFrom_; i < persistentSpellLightsTo_; ++i) {
+        const float shimmer = 1.0f + 0.02f * std::sin(time * 1.8f + static_cast<float>(i));
+        lights_[i].color *= k * shimmer;
+      }
+      renderer.setLights(lights_);
     }
     if (options_.sunElevation >= 0.0f) {
       const float az = glm::radians(options_.sunAzimuth), el = glm::radians(options_.sunElevation);
@@ -1684,6 +1714,15 @@ class MapStage final : public Stage {
       if (leftDown_ && !wasPanning && std::hypot(e.button.x - leftDown_->x, e.button.y - leftDown_->y) <= kClickSlop)
         click(e.button.windowID, e.button.x, e.button.y);
       leftDown_.reset();
+    }
+    if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && e.button.button == SDL_BUTTON_RIGHT)
+      rightDown_ = LeftPress{e.button.x, e.button.y, std::chrono::steady_clock::now()};
+    if (e.type == SDL_EVENT_MOUSE_BUTTON_UP && e.button.button == SDL_BUTTON_RIGHT) {
+      if (rightDown_ && std::hypot(e.button.x - rightDown_->x, e.button.y - rightDown_->y) <= kClickSlop) {
+        if (!spellMode_.empty() || attackMode_ || offHandMode_ || examineMode_ || pendingFoe_ >= 0)
+          cancelAction();
+      }
+      rightDown_.reset();
     }
     if (e.type == SDL_EVENT_MOUSE_MOTION && panning_ && (e.motion.state & SDL_BUTTON_LMASK)) {
       const std::optional<glm::vec3> a = groundUnder(e.motion.windowID, e.motion.x - e.motion.xrel, e.motion.y - e.motion.yrel);
@@ -2515,6 +2554,11 @@ class MapStage final : public Stage {
   void setCampaign(ember::Campaign* campaign, std::string missionId, std::string mapKey, bool testMode, const ember::Json* testSave = nullptr) {
     campaign_ = campaign, missionId_ = std::move(missionId), mapKey_ = std::move(mapKey), testMode_ = testMode;
     questSessionSave_ = testMode ? testSave : nullptr;
+    {
+      const std::string floorId = board_ ? board_->draft().id : missionId_;
+      const std::string logMap = ember::logicalMapOfScreen(floorId);
+      ember::LightingSpellRegistry::get().setLogicalMap(logMap, campaignMinuteNow());
+    }
     // The Inn quests' pickups lying on this mission's map (GameApp startBattle: quests.ts activePickupsFor; never in Modo teste).
     if (battle_ && campaign_ && !playtest_ && options_.world)
       refreshQuestPickups(testMode_ && testSave ? *testSave : campaign_->activeSave());
@@ -2998,6 +3042,7 @@ class MapStage final : public Stage {
   static constexpr float kFireExposure = 0.05f;     // every fire's light is shown at exactly this exposure, on every map (universal: the user, 2026-10-23)
   size_t fireLightsFrom_ = 0, fireLightsTo_ = 0;    // this frame's fire lights in lights_ (buildLights)
   size_t openingLightsFrom_ = 0, openingLightsTo_ = 0;  // this frame's window / door lights in lights_ (buildLights; set in frame())
+  size_t persistentSpellLightsFrom_ = 0, persistentSpellLightsTo_ = 0;  // active 3D lighting spells (exposure-scaled in frame())
   static constexpr float kWindowLightRange = 7.0f;  // an opening's light: its reach (units) ...
   static constexpr float kWindowLightDisplay = 90.0f;  // ... and its strength on screen (candela x the frame's exposure) by full day
   static constexpr float kWindowMoonShare = 0.3f;   // ... and the night's share of it (the moon's light through the opening)
@@ -4366,7 +4411,11 @@ class MapStage final : public Stage {
     for (const auto& [element, value] : f.combat.resistances)
       if (value != 0) resist += (resist.empty() ? "" : " · ") + std::format("{} {:+.0f}%", element, value);
     if (!resist.empty()) r.lines.push_back({tr("Resistências: ", "Resistances: ") + resist, muted});
-    if (const std::string cond = ember::conditionsText(f); !cond.empty()) r.lines.push_back({cond, IM_COL32(196, 150, 232, 255)});
+    if (const auto list = ember::conditionsDetailedList(f); !list.empty()) {
+      for (const auto& item : list) {
+        r.lines.push_back({item, IM_COL32(196, 150, 232, 255)});
+      }
+    }
     examine_ = std::move(r);
     if (rules.examine.spendsAction) {
       u.acted = true;
@@ -4649,7 +4698,8 @@ class MapStage final : public Stage {
       // Ember UnitActor.drawnReversed: Kael Final's idle is drawn turned left, but his walk and attacks face right
       // (and the old Kael's attacks), so those poses are not reversed: reading his idle for them walked him backwards.
       static const std::unordered_set<std::string> kAttackPoses = {"attack", "attackLeft", "attack2", "attack2Left", "attackShort",
-                                                                   "cast", "castLeft", "heal", "counter", "counterStaff"};
+                                                                   "cast", "castLeft", "heal", "counter", "counterStaff",
+                                                                   "specialAttack", "specialAttackHigh"};
       const bool attackPose = kAttackPoses.contains(shown);
       const bool drawnRight = (u.sprite == "kaelFinal" && (walking || attackPose)) || (u.sprite == "defaultWarrior" && attackPose);
       // The Besteiro Salteador's shot (BrigandCrossbowman atk) is drawn aiming left while his idle stands as drawn right: read as his
@@ -4903,6 +4953,16 @@ class MapStage final : public Stage {
         lights_.push_back(l);
       }
     openingLightsTo_ = lights_.size();
+    persistentSpellLightsFrom_ = persistentSpellLightsTo_ = lights_.size();
+    {
+      auto getCasterPos = [this](const std::string& casterId) { return resolveLightCasterFeet(casterId); };
+      const std::string currentFloor = board_ ? board_->draft().id : "";
+      const std::string logMap = ember::logicalMapOfScreen(currentFloor);
+      std::vector<LocalLight> spellLights = ember::LightingSpellRegistry::get().activeLightsForFloor(
+          currentFloor, logMap, campaignMinuteNow(), getCasterPos);
+      lights_.insert(lights_.end(), spellLights.begin(), spellLights.end());
+    }
+    persistentSpellLightsTo_ = lights_.size();
     // (The daylight that comes in through the openings, the sky's and the bounced sun's, is the room's light probes': startProbeBake.)
     if (hero_ < 0) return;
     const ember::SceneUnit* hero = &scene_->units[static_cast<size_t>(hero_)];
@@ -5850,10 +5910,14 @@ class MapStage final : public Stage {
     // Promotions (the save's, or --promote): the hero's class, class name and spell list; every unit of a promoted class
     // (Ember's own Bruxo enemies too) knows our spells of its level.
     for (ember::BattleUnit& u : battle_->units()) {
-      if (const auto it = options_.heroClass.find(u.name); it != options_.heroClass.end() && u.side == "player") ember::setPromotion(u, it->second);
-      // a hero whose battle file still names a class it replaced plays as its own (Kael: Vanguarda; content/ember-classes.json heroBaseClasses)
-      else if (u.side == "player" && !u.summoned)
+      if (const auto it = options_.heroClass.find(u.name); it != options_.heroClass.end() && u.side == "player") {
+        std::string cls = it->second;
+        if (u.name == "Kael" && (cls == "swordsman" || cls == "paladin" || cls == "heavyKnight")) cls = "vanguard";
+        ember::setPromotion(u, cls);
+      } else if (u.side == "player" && !u.summoned) {
         if (const std::string base = ember::heroBaseClass(u.name, u.classId); !base.empty()) ember::setPromotion(u, base);
+        else if (u.name == "Kael") ember::setPromotion(u, "vanguard");
+      }
       if (u.side == "player" && options_.fullSpells.contains(u.name)) {  // the class's row first, in its order, then what it already knew
         std::vector<std::string> all = ember::classSpellsAt(u.classId, u.level, u.name);
         for (const std::string& k : u.spellList)
@@ -5931,6 +5995,27 @@ class MapStage final : public Stage {
     const glm::vec2 p = unitPos_[i];
     const float y = unitMoved_[i] ? static_cast<float>(ember::groundHeightAt(*board_, look_, p.x, p.y)) : groundOf(u.groundSmooth, u.groundHard);
     return {p.x, y, p.y};
+  }
+
+  std::optional<glm::vec3> resolveLightCasterFeet(const std::string& casterId) const {
+    if (!scene_) return std::nullopt;
+    for (size_t ui = 0; ui < scene_->units.size(); ++ui) {
+      bool match = scene_->units[ui].name == casterId;
+      if (!match && battle_ && ui < unitBattle_.size() && unitBattle_[ui] >= 0 &&
+          static_cast<size_t>(unitBattle_[ui]) < battle_->units().size()) {
+        match = battle_->units()[static_cast<size_t>(unitBattle_[ui])].id == casterId;
+      }
+      if (match) return static_cast<int>(ui) == hero_ && path_.size() > 1 ? heroAt_ : unitWorld(ui);
+    }
+    if (battle_ && board_) {
+      for (const ember::BattleUnit& bu : battle_->units()) {
+        if (bu.id == casterId && battle_->inBounds(bu.x, bu.y)) {
+          const glm::vec2 w = anchorWorld(bu, {bu.x, bu.y});
+          return glm::vec3(w.x, groundAt(w.x, w.y), w.y);
+        }
+      }
+    }
+    return std::nullopt;
   }
 
   // Where a battle unit's feet stand with its anchor on a hex: the middle of its body's front row (Ember's footprint
@@ -6319,7 +6404,13 @@ class MapStage final : public Stage {
     if (card && selected_ >= 0) {
       const int who = battle_->unitAt(card->x, card->y);
       const ember::BattleUnit& me = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
-      if (who >= 0 && battle_->units()[static_cast<size_t>(who)].side != me.side) return card;
+      if (ember::spellTargetsAlly(spellMode_)) {
+        if (who >= 0 && battle_->units()[static_cast<size_t>(who)].side == me.side) return card;
+      } else if (spellMode_ == "spearToss" || spellMode_ == "impaleDrag") {
+        if (who >= 0 && battle_->units()[static_cast<size_t>(who)].side != me.side) return card;
+      } else if (!ember::spellTargetsGroundOrFreeHex(spellMode_)) {
+        if (who >= 0 && battle_->units()[static_cast<size_t>(who)].side != me.side) return card;
+      }
     }
     const std::optional<ember::BattleHex> ground = pickAt(w, h, mx, my, false);
     return ground ? ground : card;
@@ -6346,8 +6437,40 @@ class MapStage final : public Stage {
     // exactly as the bar's Cancelar does, and does nothing else (no walk, no other unit picked). A walk is never taken back here.
     if (!spellMode_.empty()) {
       if (!myTurn()) return;
-      const std::optional<ember::BattleHex> aim = aimPickAt(w, h, mx, my);
-      if (!aim || !aimValid(static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), *aim)) return cancelAction();
+      std::optional<ember::BattleHex> aim = aimPickAt(w, h, mx, my);
+      if (ember::spellAimsDirection(spellMode_)) {
+        const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
+        const ember::BattleUnit& u = battle_->units()[b];
+        const ember::BattleHex from{u.x, u.y};
+        if (aim && !(*aim == from)) {
+          int bestDist = 1 << 30;
+          ember::BattleHex bestAim = *aim;
+          for (const ember::BattleHex& n : ember::Battle::neighbors(from.x, from.y)) {
+            if (battle_->inBounds(n.x, n.y)) {
+              int d = ember::Battle::distance(n, *aim);
+              if (d < bestDist) {
+                bestDist = d;
+                bestAim = n;
+              }
+            }
+          }
+          aimSpell(bestAim);
+          return;
+        }
+      }
+      if (!aim || !aimValid(static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), *aim)) {
+        if (aim) {
+          tip_ = spellHoverFeedback(*battle_, static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), spellMode_, *aim, uiEnglish(), spellCells_);
+          tipAt_ = now_;
+          return;
+        }
+        if (!spellCells_.empty()) {
+          tip_ = tr("Alvo inválido para esta etapa. Continue ou cancele na barra.", "Invalid target for this stage. Continue or cancel on bar.");
+          tipAt_ = now_;
+          return;
+        }
+        return cancelAction();
+      }
       aimSpell(*aim);
       return;
     }
@@ -6454,12 +6577,31 @@ class MapStage final : public Stage {
     // Varredura, Expulsar Mortos-Vivos: its area around the caster is shown at once and waits for Confirmar (Ember
     // startSweep / startTurnUndead arm the spell on the caster's own hex).
     if (ember::spellSelfArea(kind)) {
-      spellAim_.push_back({u.x, u.y});
-      spellZone_ = ember::spellArea(*battle_, b, kind, {u.x, u.y});
+      spellAim_.clear();
+      const std::vector<ember::BattleHex> area = ember::spellArea(*battle_, b, kind, {u.x, u.y});
+      const bool ally = ember::spellTargetsAlly(kind) || kind == "sentinelVigil" || kind == "warCry";
+      for (const ember::BattleHex& c : area) {
+        const int who = battle_->unitAt(c.x, c.y);
+        if (who >= 0 && who != static_cast<int>(b)) {
+          const ember::BattleUnit& t = battle_->units()[static_cast<size_t>(who)];
+          if (t.alive && !t.hidden && ((ally && t.side == u.side) || (!ally && t.side != u.side)))
+            spellAim_.push_back(c);
+        }
+      }
+      spellZone_ = area;
       spellArmed_ = ember::BattleHex{u.x, u.y};
       return;
     }
     spellPreviewAim_.reset(), hitsKey_.clear();
+    // The zone the grid shows: where the spell reaches (a potion: the caster and the hexes around it), whether or not
+    // something stands there (the user: "how do I even know where to target?").
+    if (potionOf(kind)) {
+      spellZone_.push_back({u.x, u.y});
+      for (const ember::BattleHex& h : ember::Battle::neighbors(u.x, u.y))
+        if (battle_->inBounds(h.x, h.y)) spellZone_.push_back(h);
+    } else {
+      spellZone_ = ember::spellZone(*battle_, b, kind);
+    }
     std::vector<ember::BattleHex> valid;
     for (int y = 0; y < battle_->rows(); ++y)
       for (int x = 0; x < battle_->cols(); ++x)
@@ -6477,8 +6619,6 @@ class MapStage final : public Stage {
       return battle_->inBounds(c.x, c.y) ? standing[static_cast<size_t>(c.y) * static_cast<size_t>(battle_->cols()) + static_cast<size_t>(c.x)] : -1;
     };
     if (ember::spellAimsDirection(kind)) {
-      // A line or a cone through any hex: no zone. The locks = the foes some aim reaches; the grid draws the line under the
-      // cursor, and toward the nearest of those foes while the cursor is off the board.
       std::vector<std::pair<int, ember::BattleHex>> foes;  // unit, the aim that reaches it (its own hex when that does)
       for (const ember::BattleHex& aim : valid)
         for (const ember::BattleHex& c : aimArea(b, aim)) {
@@ -6496,19 +6636,397 @@ class MapStage final : public Stage {
         if (!n || ember::Battle::distance({u.x, u.y}, {f.x, f.y}) < ember::Battle::distance({u.x, u.y}, {n->x, n->y})) nearest = static_cast<int>(i);
       }
       if (nearest >= 0) spellPreviewAim_ = foes[static_cast<size_t>(nearest)].second;
-      return;
-    }
-    for (const ember::BattleHex& c : valid)
-      if (unitOn(c) >= 0) spellAim_.push_back(c);
-    // The zone the grid shows: where the spell reaches (a potion: the caster and the hexes around it), whether or not
-    // something stands there (the user: "how do I even know where to target?").
-    if (potionOf(kind)) {
-      spellZone_.push_back({u.x, u.y});
-      for (const ember::BattleHex& h : ember::Battle::neighbors(u.x, u.y))
-        if (battle_->inBounds(h.x, h.y)) spellZone_.push_back(h);
+    } else if (ember::spellTargetsAlly(kind)) {
+      for (const ember::BattleHex& c : valid) {
+        const int who = unitOn(c);
+        if (who >= 0 && battle_->units()[static_cast<size_t>(who)].side == u.side) spellAim_.push_back(c);
+      }
+    } else if (kind == "spearToss" || kind == "impaleDrag") {
+      // Adjacent enemies that can be thrown or dragged are selectable targets;
+      // valid destination/landing hexes are displayed via spellZone_
+      for (const ember::BattleHex& h : ember::Battle::neighbors(u.x, u.y)) {
+        const int who = unitOn(h);
+        if (who >= 0 && battle_->units()[static_cast<size_t>(who)].side != u.side) spellAim_.push_back(h);
+      }
+    } else if (kind == "poleVault") {
+      // Adjacent enemies that can be vaulted over are marked in spellAim_
+      // Their landing destination hexes behind them are highlighted via spellZone_
+      for (const ember::BattleHex& h : ember::Battle::neighbors(u.x, u.y)) {
+        const int who = unitOn(h);
+        if (who >= 0 && battle_->units()[static_cast<size_t>(who)].side != u.side) {
+          const ember::SpellMovementPreview mv = ember::spellMovementPreview(*battle_, b, "poleVault", h);
+          if (mv.valid) {
+            spellAim_.push_back(h);
+            if (mv.casterDestination) spellZone_.push_back(*mv.casterDestination);
+          }
+        }
+      }
+    } else if (kind == "longstepSlash" || kind == "longStep") {
+      auto isStandable = [&](ember::BattleHex h) {
+        if (!battle_->inBounds(h.x, h.y)) return false;
+        const ember::BattleCell& cell = battle_->cell(h.x, h.y);
+        return cell.passable && !cell.blocked && cell.terrain != "void" && cell.terrain != "water" && cell.terrain != "barricade" && battle_->unitAt(h.x, h.y) < 0;
+      };
+      for (const ember::BattleHex& h : ember::Battle::neighbors(u.x, u.y)) {
+        if (isStandable(h)) spellZone_.push_back(h);
+      }
+      for (size_t i = 0; i < battle_->units().size(); ++i) {
+        const ember::BattleUnit& t = battle_->units()[i];
+        if (i == b || !t.alive || t.hidden || t.side == u.side) continue;
+        const ember::BattleHex th{t.x, t.y};
+        if (ember::Battle::distance({u.x, u.y}, th) <= 2) {
+          for (const ember::BattleHex& h : ember::Battle::neighbors(u.x, u.y)) {
+            if (isStandable(h) && ember::Battle::distance(h, th) == 1) {
+              spellAim_.push_back(th);
+              break;
+            }
+          }
+        }
+      }
+    } else if (ember::spellTargetsGroundOrFreeHex(kind)) {
+      // Mark all enemies within reach or splash area as valid targets
+      for (size_t i = 0; i < battle_->units().size(); ++i) {
+        const ember::BattleUnit& t = battle_->units()[i];
+        if (i == b || !t.alive || t.hidden || t.side == u.side) continue;
+        if (std::any_of(spellZone_.begin(), spellZone_.end(), [&](const ember::BattleHex& zh) { return ember::Battle::distance({t.x, t.y}, zh) <= 1; })) {
+          spellAim_.push_back({t.x, t.y});
+        }
+      }
     } else {
-      spellZone_ = ember::spellZone(*battle_, b, kind);
+      for (const ember::BattleHex& c : valid) {
+        const int who = unitOn(c);
+        if (who >= 0 && battle_->units()[static_cast<size_t>(who)].side != u.side) spellAim_.push_back(c);
+      }
     }
+    if (kind == "poleVault" && spellAim_.empty()) {
+      tip_ = tr("Nenhum inimigo vizinho para saltar. Aproxime-se a 1 hex de um inimigo com espaço livre atrás.", "No adjacent enemies to vault over. Move adjacent (1 hex) to an enemy with free space behind.");
+      tipAt_ = now_;
+    } else if (kind == "disarm" && spellAim_.empty()) {
+      tip_ = tr("Nenhum inimigo ao alcance da lança. Aproxime-se a 1–2 hexes de um inimigo para desarmar.", "No enemies in weapon reach. Move closer (1–2 hexes) to an enemy to disarm.");
+      tipAt_ = now_;
+    } else if ((kind == "longstepSlash" || kind == "longStep") && spellAim_.empty()) {
+      tip_ = tr("Nenhum inimigo ao alcance de 1 passo (máx 2 hexes). Aproxime-se para usar Passo Longo.", "No enemies reachable within 1 step (max 2 hexes). Move closer to use Longstep Slash.");
+      tipAt_ = now_;
+    }
+  }
+
+  // Human-readable targeting breakdown (type, range, shape) for tooltips and HUD banners
+  static std::string spellTargetingLabel(const ember::Battle& b, size_t caster, const std::string& kind, bool en) {
+    if (kind.empty() || caster >= b.units().size()) return {};
+    const ember::BattleUnit& u = b.units()[caster];
+    const std::vector<ember::BattleHex> zone = ember::spellZone(b, caster, kind);
+    int maxDist = 0;
+    for (const auto& zh : zone) maxDist = std::max(maxDist, ember::Battle::distance({u.x, u.y}, zh));
+
+    if (ember::spellSelfArea(kind)) {
+      const int rad = maxDist > 0 ? maxDist : 1;
+      return en ? std::format("Target: Around self · Radius {} hex{}", rad, rad > 1 ? "es" : "")
+                : std::format("Alvo: Em volta de si · Raio {} hex{}", rad, rad > 1 ? "es" : "");
+    }
+    if (ember::spellAimsDirection(kind)) {
+      const int reach = maxDist > 0 ? maxDist : (u.maxRange + 1);
+      return en ? std::format("Target: Directional in front · Reach {} hexes", reach)
+                : std::format("Alvo: Reta à frente · Alcance {} hexes", reach);
+    }
+    if (kind == "spearToss") {
+      const int dist = maxDist > 0 ? maxDist : 4;
+      return en ? std::format("Target: Adjacent enemy · Toss up to {} hexes", dist)
+                : std::format("Alvo: Inimigo vizinho · Lança até {} hexes", dist);
+    }
+    if (kind == "impaleDrag") {
+      const int len = maxDist > 0 ? maxDist : 4;
+      return en ? std::format("Target: Adjacent enemy · Drag line up to {} hexes", len)
+                : std::format("Alvo: Inimigo vizinho · Arrasta até {} hexes", len);
+    }
+    if (kind == "hookPull") {
+      const int reach = maxDist > 0 ? maxDist : 4;
+      return en ? std::format("Target: Enemy at 2–{} hexes (pulls to caster)", reach)
+                : std::format("Alvo: Inimigo a 2–{} hexes (puxa para junto de si)", reach);
+    }
+    if (kind == "poleVault") {
+      return en ? "Target: Adjacent enemy (1 hex) · Vaults over to attack rear"
+                : "Alvo: Inimigo vizinho (1 hex) · Salta por cima e ataca pelas costas";
+    }
+    if (kind == "disarm") {
+      const int minR = u.minRange > 0 ? u.minRange : 1;
+      const int maxR = u.maxRange > 0 ? u.maxRange : 2;
+      return en ? std::format("Target: Enemy in weapon reach ({}–{} hexes) · Disarm", minR, maxR)
+                : std::format("Alvo: Inimigo no alcance da arma ({}–{} hexes) · Desarma", minR, maxR);
+    }
+    if (kind == "longstepSlash" || kind == "longStep") {
+      return en ? "Target: Step into adjacent free hex (1 hex) and strike enemy (up to 2 hexes)"
+                : "Alvo: Passo em hex livre (1 hex) e golpe no inimigo (até 2 hexes)";
+    }
+    if (kind == "swapPost" || kind == "placeSwap") {
+      const int reach = maxDist > 0 ? maxDist : 5;
+      return en ? std::format("Target: Ally within {} hexes · Swap places", reach)
+                : std::format("Alvo: Aliado a até {} hexes · Troca de lugar", reach);
+    }
+    if (ember::spellTargetsGroundOrFreeHex(kind)) {
+      const int r = maxDist > 0 ? maxDist : 5;
+      return en ? std::format("Target: Ground area · Reach {} hexes", r)
+                : std::format("Alvo: Área no chão · Alcance {} hexes", r);
+    }
+    if (ember::spellTargetsAlly(kind)) {
+      const int r = maxDist > 0 ? maxDist : 1;
+      return en ? std::format("Target: Ally · Reach {} hex{}", r, r > 1 ? "es" : "")
+                : std::format("Alvo: Aliado · Alcance {} hex{}", r, r > 1 ? "es" : "");
+    }
+    const int r = maxDist > 0 ? maxDist : u.maxRange;
+    return en ? std::format("Target: Enemy · Reach {} hex{}", r, r > 1 ? "es" : "")
+              : std::format("Alvo: Inimigo · Alcance {} hex{}", r, r > 1 ? "es" : "");
+  }
+
+  // Dynamic targeting and positioning diagnosis for hovered battlefield hex/unit
+  static std::string spellHoverFeedback(const ember::Battle& b, size_t caster, const std::string& kind, ember::BattleHex hover, bool en,
+                                         const std::vector<ember::BattleHex>& cells = {}) {
+    if (kind.empty() || caster >= b.units().size()) return {};
+    const ember::BattleUnit& u = b.units()[caster];
+    const ember::BattleHex from{u.x, u.y};
+    const int dist = ember::Battle::distance(from, hover);
+    const int occ = b.unitAt(hover.x, hover.y);
+    const int stage = static_cast<int>(cells.size());
+
+    if (hover == from) {
+      if (ember::spellSelfArea(kind)) {
+        return en ? "Click to trigger ability in area around caster."
+                  : "Clique para ativar a habilidade em volta de si.";
+      }
+      return en ? "Caster position (select a target on the battlefield)."
+                : "Posição do próprio personagem (selecione um alvo no mapa).";
+    }
+
+    if (occ >= 0) {
+      const ember::BattleUnit& target = b.units()[static_cast<size_t>(occ)];
+      const bool isAlly = target.side == u.side;
+      if (isAlly) {
+        if (kind == "swapPost" || kind == "placeSwap") {
+          const std::vector<ember::BattleHex> z = ember::spellZone(b, caster, kind);
+          int maxR = 0;
+          for (const auto& zh : z) maxR = std::max(maxR, ember::Battle::distance(from, zh));
+          if (maxR <= 0) maxR = 5;
+          if (dist <= maxR) {
+            return en ? "Valid ally! Click to swap places."
+                      : "Aliado válido! Clique para trocar de lugar.";
+          }
+          return en ? std::format("Ally is {} hexes away — out of swap reach (max: {} hexes).", dist, maxR)
+                    : std::format("Aliado a {} hexes — fora do alcance de troca (máx: {} hexes).", dist, maxR);
+        }
+        if (ember::spellTargetsAlly(kind)) {
+          const std::vector<ember::BattleHex> z = ember::spellZone(b, caster, kind);
+          int maxR = 0;
+          for (const auto& zh : z) maxR = std::max(maxR, ember::Battle::distance(from, zh));
+          if (maxR <= 0) maxR = 1;
+          if (dist <= maxR) {
+            return en ? "Valid ally! Click to apply on ally."
+                      : "Aliado válido! Clique para aplicar no aliado.";
+          }
+          return en ? std::format("Ally is {} hexes away — out of reach (max: {} hexes).", dist, maxR)
+                    : std::format("Aliado a {} hexes — fora de alcance (máx: {} hexes).", dist, maxR);
+        }
+        return en ? "Friendly unit: This offensive ability cannot target allies."
+                  : "Aliado: Esta habilidade ofensiva não pode mirar em aliados.";
+      }
+
+      // ENEMY TARGET
+      if (kind == "poleVault") {
+        if (dist == 1) {
+          std::string why;
+          if (ember::spellAimValid(b, caster, kind, hover, &why)) {
+            const ember::SpellMovementPreview mv = ember::spellMovementPreview(b, caster, kind, hover);
+            if (mv.valid && mv.casterDestination) {
+              return en ? std::format("Valid target! Jump over enemy to strike rear (lands at cyan hex {},{}).", mv.casterDestination->x, mv.casterDestination->y)
+                        : std::format("Alvo válido! Salta por cima do inimigo e ataca pelas costas (pousa no hex ciano {},{}).", mv.casterDestination->x, mv.casterDestination->y);
+            }
+            return en ? "Valid target! Jump over enemy to strike rear."
+                      : "Alvo válido! Salta por cima do inimigo e ataca pelas costas.";
+          }
+          return en ? std::format("Adjacent enemy, but landing hex behind them is blocked: {} Reposition to another angle.", why)
+                    : std::format("Inimigo vizinho, mas o hex de pouso atrás dele está bloqueado: {} Mude de ângulo.", why);
+        }
+        return en ? std::format("Enemy is {} hexes away. Pole Vault requires being strictly adjacent (1 hex) with free space behind to land. Move next to the enemy first.", dist)
+                  : std::format("Inimigo a {} hexes. Salto de Vara requer estar colado ao inimigo (1 hex) com espaço livre atrás para pousar. Aproxime-se primeiro.", dist);
+      }
+
+      if (kind == "disarm") {
+        const int maxR = u.maxRange > 0 ? u.maxRange : 2;
+        const int minR = u.minRange > 0 ? u.minRange : 1;
+        if (dist > maxR) {
+          return en ? std::format("Enemy is {} hexes away — out of weapon reach (reach: {} hex{}). Move closer to disarm.", dist, maxR, maxR > 1 ? "es" : "")
+                    : std::format("Inimigo a {} hexes — fora do alcance da arma (alcance: {} hex{}). Aproxime-se para desarmar.", dist, maxR, maxR > 1 ? "es" : "");
+        }
+        if (dist < minR) {
+          return en ? std::format("Enemy is {} hexes away — too close for weapon (min reach: {} hexes).", dist, minR)
+                    : std::format("Inimigo a {} hexes — perto demais para a arma (alcance mínimo: {} hexes).", dist, minR);
+        }
+        std::string why;
+        if (!ember::spellAimValid(b, caster, kind, hover, &why)) {
+          return en ? "Enemy is in reach, but line of attack is obstructed by obstacle or wall. Reposition."
+                    : "Inimigo ao alcance, mas linha de ataque bloqueada por obstáculo. Reposicione-se.";
+        }
+        return en ? "Valid target! Click to disarm enemy (reduces ATK and prevents counter-attacks)."
+                  : "Alvo válido! Clique para desarmar o inimigo (reduz ATK e impede contra-ataque).";
+      }
+
+      if (kind == "spearToss" || kind == "impaleDrag") {
+        if (dist == 1) {
+          return en ? "Valid adjacent target! Click to grab this enemy, then select destination hex."
+                    : "Alvo adjacente válido! Clique para agarrar o inimigo, depois escolha o destino.";
+        }
+        return en ? std::format("Enemy is {} hexes away. Requires being adjacent (1 hex) to grab. Move closer first.", dist)
+                  : std::format("Inimigo a {} hexes. Requer estar adjacente (1 hex) para agarrar. Aproxime-se primeiro.", dist);
+      }
+
+      if (kind == "hookPull") {
+        if (dist < 2) {
+          return en ? "Enemy is already adjacent (hook requires 2–4 hexes distance)."
+                    : "Inimigo já está colado a você (gancho requer distância de 2–4 hexes).";
+        }
+        const std::vector<ember::BattleHex> z = ember::spellZone(b, caster, kind);
+        int maxR = 0;
+        for (const auto& zh : z) maxR = std::max(maxR, ember::Battle::distance(from, zh));
+        if (maxR <= 0) maxR = 4;
+        if (dist > maxR) {
+          return en ? std::format("Enemy is {} hexes away — out of hook reach (max: {} hexes).", dist, maxR)
+                    : std::format("Inimigo a {} hexes — fora de alcance do gancho (máx: {} hexes).", dist, maxR);
+        }
+        std::string why;
+        if (!ember::spellAimValid(b, caster, kind, hover, &why)) {
+          return en ? "Line of pull is obstructed by obstacle or unit."
+                    : "Linha de puxão obstruída por obstáculo ou outra unidade.";
+        }
+        return en ? "Valid target! Click to hook and pull enemy adjacent to you."
+                  : "Alvo válido! Clique para puxar o inimigo para junto de si.";
+      }
+
+      if (kind == "longstepSlash" || kind == "longStep") {
+        if (stage == 1) {
+          const ember::BattleHex first = cells.front();
+          const int firstFoe = b.unitAt(first.x, first.y);
+          if (firstFoe >= 0 && b.units()[static_cast<size_t>(firstFoe)].side != u.side) {
+            return en ? "Enemy already selected! Now select an adjacent free hex to step into."
+                      : "Inimigo já selecionado! Escolha agora um hex livre adjacente para avançar.";
+          } else {
+            if (ember::Battle::distance(first, hover) == 1) {
+              return en ? "Valid target! Click to strike this enemy from the selected step hex."
+                        : "Alvo válido! Clique para golpear este inimigo a partir do hex de avanço.";
+            }
+            return en ? "Enemy is not adjacent to the selected step hex. Choose an enemy next to that hex."
+                      : "Inimigo não está adjacente ao hex de avanço. Escolha um inimigo ao lado daquele hex.";
+          }
+        } else {
+          if (dist == 1) {
+            return en ? "Valid target (1 hex)! Click directly to step and strike, or pick step hex first."
+                      : "Alvo válido (1 hex)! Clique direto para avançar e golpear, ou escolha o hex de avanço.";
+          }
+          if (dist == 2) {
+            bool hasStep = false;
+            for (const ember::BattleHex& h : ember::Battle::neighbors(from.x, from.y)) {
+              if (b.inBounds(h.x, h.y) && b.cell(h.x, h.y).passable && !b.cell(h.x, h.y).blocked && b.unitAt(h.x, h.y) < 0 && ember::Battle::distance(h, hover) == 1) {
+                hasStep = true; break;
+              }
+            }
+            if (hasStep) {
+              return en ? "Valid target (2 hexes)! Click to advance and strike, or pick step hex first."
+                        : "Alvo válido (2 hexes)! Clique para avançar e golpear, ou escolha o hex de avanço primeiro.";
+            }
+            return en ? "Enemy is 2 hexes away, but connecting step hexes are blocked. Reposition."
+                      : "Inimigo a 2 hexes, mas os hexes de avanço para alcançá-lo estão bloqueados. Reposicione-se.";
+          }
+          return en ? std::format("Enemy is {} hexes away — out of Longstep reach (max 2 hexes with 1 step). Move closer.", dist)
+                    : std::format("Inimigo a {} hexes — fora de alcance do Passo Longo (máximo 2 hexes com 1 passo). Aproxime-se.", dist);
+        }
+      }
+
+      if (ember::spellAimsDirection(kind)) {
+        return en ? "Directional attack: Aim the ray in this direction to strike."
+                  : "Ataque direcional: Aponte a reta nesta direção para atingir o inimigo.";
+      }
+
+      // General weapon attack / single-target enemy skill
+      const std::vector<ember::BattleHex> z = ember::spellZone(b, caster, kind);
+      int maxR = 0;
+      for (const auto& zh : z) maxR = std::max(maxR, ember::Battle::distance(from, zh));
+      if (maxR <= 0) maxR = u.maxRange > 0 ? u.maxRange : 1;
+      if (dist > maxR) {
+        return en ? std::format("Enemy is {} hexes away — out of reach (max: {} hex{}). Move closer.", dist, maxR, maxR > 1 ? "es" : "")
+                  : std::format("Inimigo a {} hexes — fora de alcance (máx: {} hex{}). Aproxime-se para atacar.", dist, maxR, maxR > 1 ? "es" : "");
+      }
+      std::string why;
+      if (!ember::spellAimValid(b, caster, kind, hover, &why)) {
+        return en ? "Enemy is within reach, but line of attack is obstructed. Reposition."
+                  : "Inimigo ao alcance, mas linha de ataque obstruída. Reposicione-se.";
+      }
+      return en ? "Valid target! Click to attack."
+                : "Alvo válido! Clique para atacar.";
+    }
+
+    // EMPTY HEX (occ < 0)
+    if (kind == "poleVault") {
+      // Check if this empty hex is a landing spot for any adjacent enemy
+      for (const ember::BattleHex& n : ember::Battle::neighbors(from.x, from.y)) {
+        const int foe = b.unitAt(n.x, n.y);
+        if (foe >= 0 && b.units()[static_cast<size_t>(foe)].side != u.side) {
+          const ember::SpellMovementPreview mv = ember::spellMovementPreview(b, caster, kind, n);
+          if (mv.valid && mv.casterDestination && *mv.casterDestination == hover) {
+            return en ? std::format("Valid landing hex! Jump over {} and land here. Click to execute vault.", b.units()[static_cast<size_t>(foe)].name)
+                      : std::format("Hex de pouso válido! Salta sobre {} e aterrissa aqui. Clique para executar o salto.", b.units()[static_cast<size_t>(foe)].name);
+          }
+        }
+      }
+      return en ? "Empty hex. Pole Vault requires selecting an adjacent enemy (1 hex) to jump over them."
+                : "Hex vazio. Salto de Vara requer clicar em um inimigo vizinho (1 hex) para saltar por cima dele.";
+    }
+
+    if (kind == "disarm") {
+      return en ? "Empty ground. Click on an enemy within weapon reach (1–2 hexes) to disarm."
+                : "Chão vazio. Clique em um inimigo ao alcance da arma (1–2 hexes) para desarmar.";
+    }
+
+    if (kind == "longstepSlash" || kind == "longStep") {
+      auto isStandable = [&](ember::BattleHex h) {
+        if (!b.inBounds(h.x, h.y)) return false;
+        const ember::BattleCell& c = b.cell(h.x, h.y);
+        return c.passable && !c.blocked && c.terrain != "void" && c.terrain != "water" && c.terrain != "barricade" && b.unitAt(h.x, h.y) < 0;
+      };
+      if (stage == 1) {
+        const ember::BattleHex first = cells.front();
+        const int firstFoe = b.unitAt(first.x, first.y);
+        if (firstFoe >= 0 && b.units()[static_cast<size_t>(firstFoe)].side != u.side) {
+          if (dist == 1 && isStandable(hover) && ember::Battle::distance(hover, first) == 1) {
+            return en ? "Valid step hex! Click here to step and strike the selected enemy."
+                      : "Hex de avanço válido! Clique aqui para avançar e golpear o inimigo selecionado.";
+          }
+          return en ? "Invalid step hex: must be adjacent to you (1 hex) and adjacent to the selected enemy."
+                    : "Hex de avanço inválido: deve ser livre, vizinho a você (1 hex) e ao lado do inimigo.";
+        }
+      } else {
+        if (dist == 1 && isStandable(hover)) {
+          return en ? "Valid step hex! Click here to step into this position, then choose an enemy to strike."
+                    : "Hex livre adjacente! Clique aqui para avançar para esta posição e depois golpear um inimigo.";
+        }
+        return en ? "Invalid step hex: Longstep Slash requires stepping into a free adjacent hex (1 hex)."
+                  : "Hex inválido para avanço: Passo Longo requer avançar para um hex livre adjacente (1 hex).";
+      }
+    }
+
+    if (kind == "spearToss" || kind == "impaleDrag") {
+      return en ? "Empty ground. Select an adjacent enemy (1 hex) to grab them first."
+                : "Chão vazio. Selecione um inimigo vizinho (1 hex) para agarrá-lo primeiro.";
+    }
+
+    if (ember::spellTargetsGroundOrFreeHex(kind)) {
+      const std::vector<ember::BattleHex> z = ember::spellZone(b, caster, kind);
+      if (std::any_of(z.begin(), z.end(), [&](const ember::BattleHex& zh) { return zh == hover; })) {
+        return en ? "Valid ground area! Click to cast."
+                  : "Área no chão válida! Clique para conjurar.";
+      }
+      return en ? "Ground hex is out of casting reach."
+                : "Hex de chão fora do alcance de conjuração.";
+    }
+
+    return en ? std::format("Empty ground ({} hex{} away). Select a valid enemy.", dist, dist > 1 ? "es" : "")
+              : std::format("Chão vazio (a {} hex{}). Selecione um inimigo.", dist, dist > 1 ? "es" : "");
   }
 
   // A potion being aimed is spellMode_ "potion:<id>" (Ember usePotion: the actor itself or an adjacent ally).
@@ -6517,10 +7035,63 @@ class MapStage final : public Stage {
   }
   bool aimValid(size_t b, ember::BattleHex hex, std::string* why = nullptr) const {
     if (potionOf(spellMode_)) return ember::potionTargetValid(*battle_, b, hex, why);
+    const ember::BattleUnit& u = battle_->units()[b];
+    const ember::BattleHex from{u.x, u.y};
+    auto isStandable = [&](ember::BattleHex h) {
+      if (!battle_->inBounds(h.x, h.y)) return false;
+      const ember::BattleCell& c = battle_->cell(h.x, h.y);
+      return c.passable && !c.blocked && c.terrain != "void" && c.terrain != "water" && c.terrain != "barricade" && battle_->unitAt(h.x, h.y) < 0;
+    };
+    if (spellMode_ == "poleVault") {
+      if (ember::spellAimValid(*battle_, b, spellMode_, hex, why)) return true;
+      if (ember::Battle::distance(from, hex) == 2) {
+        for (const ember::BattleHex& n : ember::Battle::neighbors(from.x, from.y)) {
+          if (ember::hexBeyond(from, n) == hex) {
+            const int foe = battle_->unitAt(n.x, n.y);
+            if (foe >= 0 && battle_->units()[static_cast<size_t>(foe)].side != u.side) {
+              if (ember::spellAimValid(*battle_, b, spellMode_, n, why)) return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+    if (spellMode_ == "twinResonance" && spellCells_.size() == 1) {
+      if (!ember::spellAimValid(*battle_, b, spellMode_, hex, why)) return false;
+      const int first = battle_->unitAt(spellCells_.front().x, spellCells_.front().y);
+      const int second = battle_->unitAt(hex.x, hex.y);
+      if (first < 0 || second < 0 || first == second) {
+        if (why) *why = tr("Escolha dois inimigos distintos.", "Choose two distinct enemies.");
+        return false;
+      }
+      if (ember::Battle::distance(spellCells_.front(), hex) > ember::twinResonanceTargetGap(battle_->units()[b])) {
+        if (why) *why = tr("Os alvos estão distantes demais entre si.", "The targets are too far apart.");
+        return false;
+      }
+      return true;
+    }
+    if ((spellMode_ == "longstepSlash" || spellMode_ == "longStep") && spellCells_.size() == 1) {
+      const ember::BattleHex first = spellCells_.front();
+      const int firstFoe = battle_->unitAt(first.x, first.y);
+      if (firstFoe >= 0 && battle_->units()[static_cast<size_t>(firstFoe)].side != u.side) {
+        if (ember::Battle::distance(from, hex) == 1 && isStandable(hex) && ember::Battle::distance(hex, first) == 1) return true;
+        if (why) *why = tr("Escolha um hex livre adjacente a você e ao lado do inimigo.", "Choose a free hex adjacent to you and next to the enemy.");
+        return false;
+      } else {
+        const int foe = battle_->unitAt(hex.x, hex.y);
+        if (foe >= 0 && battle_->units()[static_cast<size_t>(foe)].side != u.side && ember::Battle::distance(first, hex) == 1) return true;
+        if (why) *why = tr("Escolha um inimigo adjacente ao hex de avanço escolhido.", "Choose an enemy adjacent to the chosen step hex.");
+        return false;
+      }
+    }
     return ember::spellAimValid(*battle_, b, spellMode_, hex, why);
   }
   std::vector<ember::BattleHex> aimArea(size_t b, ember::BattleHex hex) const {
-    return potionOf(spellMode_) ? std::vector<ember::BattleHex>{hex} : ember::spellArea(*battle_, b, spellMode_, hex);
+    if (potionOf(spellMode_)) return std::vector<ember::BattleHex>{hex};
+    if (spellMode_ == "twinResonance" && spellCells_.size() == 1) {
+      return ember::hexLine(spellCells_.front(), hex);
+    }
+    return ember::spellArea(*battle_, b, spellMode_, hex);
   }
   // Who the spell aimed at `hex` would hit, friends included (the cast itself run on a copy of the battle, so its own
   // rules decide; the Tiro Perfurante's line hits the party too). Kept while the aim stays on the same hex.
@@ -6528,13 +7099,26 @@ class MapStage final : public Stage {
     const std::string key = std::format("{}:{}:{}:{}", spellMode_, b, hex.x, hex.y);
     if (key == hitsKey_) return hits_;
     hitsKey_ = key, hits_.clear(), harms_.clear();
-    if (potionOf(spellMode_) || ember::spellTargetCount(*battle_, b, spellMode_) != 1) return hits_;
+    if (potionOf(spellMode_)) return hits_;
+    std::vector<ember::BattleHex> probe = spellCells_;
+    probe.push_back(hex);
+    if (static_cast<int>(probe.size()) < ember::spellTargetCount(*battle_, b, spellMode_)) {
+      for (const ember::BattleHex& h : probe) {
+        const int who = battle_->unitAt(h.x, h.y);
+        if (who >= 0 && who != static_cast<int>(b)) {
+          if (std::find(hits_.begin(), hits_.end(), static_cast<size_t>(who)) == hits_.end())
+            hits_.push_back(static_cast<size_t>(who));
+        }
+      }
+      return hits_;
+    }
     ember::Battle copy = *battle_;
     using StepType = ember::BattleStep::Type;
-    if (const std::optional<std::vector<ember::BattleStep>> steps = ember::castSpell(copy, b, spellMode_, {hex}, nullptr, false))
+    if (const std::optional<std::vector<ember::BattleStep>> steps = ember::castSpell(copy, b, spellMode_, probe, nullptr, false))
       for (const ember::BattleStep& s : *steps) {
         std::vector<size_t> ids = s.ids;
         if (s.type == StepType::Combat) ids.push_back(s.def);
+        if (s.collideWith) ids.push_back(*s.collideWith);
         const bool support = s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food || s.type == StepType::Potion;
         for (size_t id : ids) {
           if (id == b || id >= battle_->units().size()) continue;
@@ -6557,6 +7141,42 @@ class MapStage final : public Stage {
     if (!aimValid(b, hex, &why)) {
       tip_ = why, tipAt_ = now_;
       return;
+    }
+    if (spellMode_ == "poleVault") {
+      const ember::BattleUnit& u = battle_->units()[b];
+      const ember::BattleHex from{u.x, u.y};
+      if (ember::Battle::distance(from, hex) == 2) {
+        for (const ember::BattleHex& n : ember::Battle::neighbors(from.x, from.y)) {
+          if (ember::hexBeyond(from, n) == hex) {
+            const int foe = battle_->unitAt(n.x, n.y);
+            if (foe >= 0 && battle_->units()[static_cast<size_t>(foe)].side != u.side) {
+              hex = n;  // Redirect landing click to vaulting over the foe!
+              break;
+            }
+          }
+        }
+      }
+    }
+    if ((spellMode_ == "longstepSlash" || spellMode_ == "longStep") && spellCells_.empty()) {
+      const ember::BattleUnit& u = battle_->units()[b];
+      const ember::BattleHex from{u.x, u.y};
+      const int foe = battle_->unitAt(hex.x, hex.y);
+      if (foe >= 0 && battle_->units()[static_cast<size_t>(foe)].side != u.side) {
+        auto isStandable = [&](ember::BattleHex h) {
+          if (!battle_->inBounds(h.x, h.y)) return false;
+          const ember::BattleCell& c = battle_->cell(h.x, h.y);
+          return c.passable && !c.blocked && c.terrain != "void" && c.terrain != "water" && c.terrain != "barricade" && battle_->unitAt(h.x, h.y) < 0;
+        };
+        std::vector<ember::BattleHex> steps;
+        for (const ember::BattleHex& h : ember::Battle::neighbors(from.x, from.y)) {
+          if (isStandable(h) && ember::Battle::distance(h, hex) == 1) steps.push_back(h);
+        }
+        if (steps.size() == 1) {
+          // Unambiguous 1-click execution: auto-select the single step hex and commit!
+          spellCells_.push_back(steps.front());
+          return commitSpell(hex);
+        }
+      }
     }
     if (spellMode_ == "twinResonance" && spellCells_.size() == 1) {
       const int first = battle_->unitAt(spellCells_.front().x, spellCells_.front().y);
@@ -6591,20 +7211,108 @@ class MapStage final : public Stage {
     commitSpell(hex);
   }
 
+  void refreshSpellAimForStage(size_t b) {
+    if (spellCells_.empty()) return;
+    const ember::BattleUnit& u = battle_->units()[b];
+    const ember::BattleHex from{u.x, u.y};
+    auto isStandable = [&](ember::BattleHex h) {
+      if (!battle_->inBounds(h.x, h.y)) return false;
+      const ember::BattleCell& c = battle_->cell(h.x, h.y);
+      return c.passable && !c.blocked && c.terrain != "void" && c.terrain != "water" && c.terrain != "barricade" && battle_->unitAt(h.x, h.y) < 0;
+    };
+    if (spellMode_ == "longstepSlash" || spellMode_ == "longStep") {
+      spellAim_.clear();
+      spellZone_.clear();
+      const ember::BattleHex first = spellCells_.front();
+      const int firstFoe = battle_->unitAt(first.x, first.y);
+      if (firstFoe >= 0 && battle_->units()[static_cast<size_t>(firstFoe)].side != u.side) {
+        for (const ember::BattleHex& h : ember::Battle::neighbors(from.x, from.y)) {
+          if (isStandable(h) && ember::Battle::distance(h, first) == 1) {
+            spellAim_.push_back(h);
+            spellZone_.push_back(h);
+          }
+        }
+        tip_ = tr("Inimigo selecionado. Escolha agora o hex livre para avançar.", "Enemy selected. Now select the adjacent free hex to step into.");
+      } else {
+        spellZone_.push_back(first);
+        for (const ember::BattleHex& n : ember::Battle::neighbors(first.x, first.y)) {
+          const int foe = battle_->unitAt(n.x, n.y);
+          if (foe >= 0 && battle_->units()[static_cast<size_t>(foe)].side != u.side) {
+            spellAim_.push_back(n);
+          }
+        }
+        tip_ = tr("Hex selecionado. Escolha o inimigo adjacente para golpear.", "Step hex selected. Now select an adjacent enemy to strike.");
+      }
+      tipAt_ = now_;
+    } else if (spellMode_ == "partingCut" || spellMode_ == "passingStep" || spellMode_ == "lateralShift") {
+      spellAim_.clear();
+      spellZone_.clear();
+      const ember::BattleHex first = spellCells_.front();
+      const int firstFoe = battle_->unitAt(first.x, first.y);
+      if (firstFoe >= 0 && battle_->units()[static_cast<size_t>(firstFoe)].side != u.side) {
+        for (const ember::BattleHex& h : ember::Battle::neighbors(from.x, from.y)) {
+          if (isStandable(h)) {
+            spellAim_.push_back(h);
+            spellZone_.push_back(h);
+          }
+        }
+        tip_ = tr("Inimigo selecionado. Escolha o hex de deslocamento.", "Enemy selected. Select destination hex.");
+      } else {
+        spellZone_.push_back(first);
+        for (const ember::BattleHex& n : ember::Battle::neighbors(first.x, first.y)) {
+          const int foe = battle_->unitAt(n.x, n.y);
+          if (foe >= 0 && battle_->units()[static_cast<size_t>(foe)].side != u.side) {
+            spellAim_.push_back(n);
+          }
+        }
+        tip_ = tr("Hex selecionado. Escolha o inimigo adjacente para golpear.", "Hex selected. Select adjacent enemy to strike.");
+      }
+      tipAt_ = now_;
+    }
+  }
+
   // The aimed hex is confirmed: the spell is cast (Ember confirmSpell).
   void commitSpell(ember::BattleHex hex) {
     const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
     std::string why;
     spellArmed_.reset();
     spellCells_.push_back(hex);
-    if (static_cast<int>(spellCells_.size()) < ember::spellTargetCount(*battle_, b, spellMode_)) return;
+    if (static_cast<int>(spellCells_.size()) < ember::spellTargetCount(*battle_, b, spellMode_)) {
+      refreshSpellAimForStage(b);
+      return;
+    }
     std::optional<std::vector<ember::BattleStep>> steps = ember::castSpell(*battle_, b, spellMode_, spellCells_, &why, true, banquetChoice_);
+    if (!steps) {
+      spellCells_.pop_back();
+      tip_ = why, tipAt_ = now_;
+      return;
+    }
     const std::string kind = spellMode_;
     spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
     banquetChoice_.clear();
-    if (!steps) {
-      tip_ = why, tipAt_ = now_;
-      return;
+    if (ember::isLightingSpell(kind)) {
+      const ember::BattleUnit& u = battle_->units()[b];
+      const std::string floorId = board_ ? board_->draft().id : "";
+      const std::string logMap = ember::logicalMapOfScreen(floorId);
+      const glm::vec3 casterFeet = unitWorld(static_cast<size_t>(selected_));
+      const glm::vec2 aimW = anchorWorld(u, hex);
+      glm::vec3 originPos = casterFeet;
+      glm::vec3 facingDir{0.0f, 0.0f, 1.0f};
+
+      if (kind == "arcaneBeam") {
+        glm::vec2 d = aimW - glm::vec2(casterFeet.x, casterFeet.z);
+        if (glm::dot(d, d) > 1e-4f) {
+          d = glm::normalize(d);
+          facingDir = glm::vec3(d.x, 0.0f, d.y);
+        } else if (u.faceDx && u.faceDy) {
+          facingDir = glm::normalize(glm::vec3(static_cast<float>(*u.faceDx), 0.0f, static_cast<float>(*u.faceDy)));
+        }
+        originPos = casterFeet + glm::vec3(facingDir.x * 0.35f, 1.25f, facingDir.z * 0.35f);
+      } else if (kind == "anchoredLight") {
+        originPos = glm::vec3(aimW.x, groundAt(aimW.x, aimW.y) + 0.85f, aimW.y);
+      }
+
+      ember::LightingSpellRegistry::get().cast(kind, u.id, logMap, floorId, u.level, originPos, facingDir, campaignMinuteNow(), &why);
     }
     play(std::move(*steps), static_cast<size_t>(selected_));
   }
@@ -6788,6 +7496,10 @@ class MapStage final : public Stage {
       std::string pt = std::format("{:.2f}", *hit);
       std::replace(pt.begin(), pt.end(), '.', ',');
       centred(tr(pt + " % de acerto", std::format("{:.2f} % to hit", *hit)).c_str(), uiFont(UiFont::Mark), 34.0f, IM_COL32(244, 232, 214, 255));
+    } else if (!spellMode_.empty() && spellArmed_ && ready) {
+      const ember::BattleUnit& a = battle_->units()[ab];
+      const std::string scale = ember::spellScaleText(a, spellMode_, uiEnglish());
+      if (!scale.empty()) centred(scale.c_str(), uiFont(UiFont::Mark), 22.0f, IM_COL32(244, 214, 150, 255));
     }
     // Fogo amigo: the aimed spell would hit friends too (allowed; it costs their affinity with the caster).
     if (pendingFoe_ < 0 && spellArmed_ && ready) {
@@ -8600,8 +9312,23 @@ class MapStage final : public Stage {
     else if (s.type != StepType::Spell) target = sceneUnitOf(static_cast<int>(x.counter ? s.att : s.def));
     else if (!s.ids.empty()) target = sceneUnitOf(static_cast<int>(s.ids[0]));
     stepFace_ = {-1, -1, 0};
+    const bool isMissile = (s.kind == "magicMissile" || s.kind == "magicMissileV2") && !x.counter;
+    size_t missileIndex = 0, missileCount = 0;
+    size_t firstMissileStep = x.step, lastMissileStep = x.step;
+    if (isMissile) {
+      for (size_t k = 0; k < x.steps.size(); ++k) {
+        if ((x.steps[k].kind == "magicMissile" || x.steps[k].kind == "magicMissileV2") && x.steps[k].att == s.att) {
+          if (missileCount == 0) firstMissileStep = k;
+          if (k < x.step) ++missileIndex;
+          ++missileCount;
+          lastMissileStep = k;
+        }
+      }
+    }
     if (striker >= 0 && target >= 0 && striker != target) {
-      faceToward(static_cast<size_t>(striker), static_cast<size_t>(target));
+      if (!isMissile || missileIndex == 0) {
+        faceToward(static_cast<size_t>(striker), static_cast<size_t>(target));
+      }
       if (!support && !s.rearSure) faceToward(static_cast<size_t>(target), static_cast<size_t>(striker));  // Salto de Vara: struck from behind, unseen
       stepFace_ = {striker, target, !support && !s.rearSure ? 1 : 0};
     }
@@ -8621,6 +9348,9 @@ class MapStage final : public Stage {
       const size_t su = static_cast<size_t>(striker);
       if (su < unitCatalog_.size() && unitCatalog_[su] && unitCatalog_[su]->key == "neera") {
         if (hasPose(su, "attack2")) pose = "attack2";
+        else if (hasPose(su, "cast")) pose = "cast";
+      } else if (su < unitCatalog_.size() && unitCatalog_[su] && unitCatalog_[su]->key == "aldric") {
+        if (hasPose(su, "specialAttack")) pose = "specialAttack";
         else if (hasPose(su, "cast")) pose = "cast";
       }
       // A unit with a special attack of its own (Kael v3's, the purple sword, 2026-11-09) plays it on every skill but the Golpe
@@ -8658,13 +9388,14 @@ class MapStage final : public Stage {
       pose = "specialAttackHigh";
     // Golpe Duplo with its own clip (Kael's "doubleStrike", the overhead cut then the low sweep): the first blow starts the clip, the
     // next blows of the skill play on, each landing on its cut
-    const bool comboStep = s.type == StepType::Combat && !x.counter && s.kind == "doubleStrike" && striker >= 0 && hasPose(static_cast<size_t>(striker), "doubleStrike");
+    const bool doubleStrikeStep = s.type == StepType::Combat && !x.counter && s.kind == "doubleStrike" && striker >= 0;
+    const bool comboStep = doubleStrikeStep && hasPose(static_cast<size_t>(striker), "doubleStrike");
     size_t comboIndex = 0, comboCount = 0;
-    if (comboStep) {
+    if (doubleStrikeStep) {
       for (size_t k = 0; k < x.steps.size(); ++k)
         if (x.steps[k].type == StepType::Combat && x.steps[k].kind == "doubleStrike" && x.steps[k].att == s.att) comboIndex += k < x.step ? 1 : 0, ++comboCount;
-      pose = comboIndex == 0 ? "doubleStrike" : "";
     }
+    if (comboStep) pose = comboIndex == 0 ? "doubleStrike" : "";
     // A counter on a foe beside it: the unit's staff blow when it has one (Voss; the user, 2026-10-17: "he will counter with
     // his staff when the enemy is close ranged, and ... the regular mage ATT when in distance"). No bolt flies from it.
     // Isolde also strikes with it when she attacks a foe beside her (the user, 2026-10-25: "when she is too close for a bolt, them
@@ -8700,6 +9431,16 @@ class MapStage final : public Stage {
     // spell aimed into the board, by a caster with a turn of its own (turnBack, from the turn-around videos) and a back still, plays the
     // turn in place of its cast pose, quick (kTurnCastSeconds); the spell then leaves its hands with its back to us and flies into the
     // depth of the board, its back still held, drawn over the effect, until the spell is over (shot.then below).
+    bool missileAimedAway = false;
+    if (isMissile && striker >= 0) {
+      const ember::BattleStep& s0 = x.steps[firstMissileStep];
+      std::vector<SpellEffects::Spot> aim0;
+      for (const ember::BattleHex& h : s0.tiles) aim0.push_back(hexSpot(h));
+      if (aim0.empty() && !s0.ids.empty()) {
+        if (const int t0 = sceneUnitOf(static_cast<int>(s0.ids[0])); t0 >= 0) aim0.push_back(unitSpot(static_cast<size_t>(t0)));
+      }
+      missileAimedAway = !flat_ && hasPose(static_cast<size_t>(striker), "turnBack") && hasPose(static_cast<size_t>(striker), "castBack") && aimedAway(aim0);
+    }
     bool turnToCast = false;
     float poseRate = actionRate();
     if (striker >= 0 && !x.counter && fromHands && !flat_ && s.type != StepType::Combat && !pose.empty() &&
@@ -8707,13 +9448,26 @@ class MapStage final : public Stage {
       std::vector<SpellEffects::Spot> aim;
       for (const ember::BattleHex& h : s.tiles) aim.push_back(hexSpot(h));
       if (aim.empty() && target >= 0) aim.push_back(unitSpot(static_cast<size_t>(target)));
-      if (aimedAway(aim)) {
+      if (isMissile) {
+        if (missileAimedAway) {
+          if (missileIndex == 0) {
+            turnToCast = true;
+            pose = "turnBack";
+            poseRate = actionRate() * std::max(1.0f, poseSeconds(static_cast<size_t>(striker), pose) / kTurnCastSeconds);
+          } else {
+            turnToCast = false;
+            pose = "castBack";
+          }
+        }
+      } else if (aimedAway(aim)) {
         turnToCast = true;
         pose = "turnBack";
         poseRate = actionRate() * std::max(1.0f, poseSeconds(static_cast<size_t>(striker), pose) / kTurnCastSeconds);
       }
     }
-    const float length = (striker >= 0 && !pose.empty() ? poseSeconds(static_cast<size_t>(striker), pose) : 0.6f) / poseRate;
+    const float length = (isMissile && missileAimedAway && missileIndex > 0)
+                             ? (0.12f / actionRate())
+                             : ((striker >= 0 && !pose.empty() ? poseSeconds(static_cast<size_t>(striker), pose) : 0.6f) / poseRate);
     x.impact = now_ + length * (striker >= 0 && !pose.empty() ? poseImpact(static_cast<size_t>(striker), pose) : kImpactShare);
     x.end = now_ + length + kExchangeGap / actionRate();
     if (comboStep) {
@@ -8778,7 +9532,15 @@ class MapStage final : public Stage {
       x.end = now_ + dash + kExchangeGap / actionRate();
       return;
     }
-    if (striker >= 0 && !pose.empty()) unitShot_[static_cast<size_t>(striker)] = {pose, now_, false, poseRate};
+    if (striker >= 0 && !pose.empty()) {
+      if (isMissile && missileAimedAway && missileIndex > 0) {
+        OneShot& shot = unitShot_[static_cast<size_t>(striker)];
+        shot.pose = "castBack";
+        shot.then = "castBack";
+      } else {
+        unitShot_[static_cast<size_t>(striker)] = {pose, now_, false, poseRate};
+      }
+    }
     // The casting light (Ember Battle3D syncCastLight): every caster while its cast pose plays, in its spell's colour (Malrec,
     // Salazar and Voss in their own); swings, shoves and arrow shots are not casts (NOT_CASTS). Malrec alone also lights his attacks
     // and counters, in yellow.
@@ -8885,6 +9647,9 @@ class MapStage final : public Stage {
       else if (s.type == StepType::Potion) playCues(cue("Healing01-Balanced-High.mp3"));  // every potion (the user, 2026-10-20)
       else if (key == "voss" && (s.kind == "magicMissile" || s.kind == "magicMissileV2")) playCues(afterPose(cue("Spellcast01.mp3")));  // the default cast
       else if (s.kind == "twinResonance") playCues(afterPose(cue("Spellcast01.mp3")));
+      else if (ember::isLightingSpell(s.kind)) playCues(afterPose(cue("Spellcast01.mp3")));
+      else if (s.kind == "tendrilSwipe") playCues(cue("BladeSlash1Dagger.mp3"));
+      else if (s.kind == "secondWind") playCues(afterPose(cue("Healing01-Balanced-High.mp3")));
       else if (s.type == StepType::Combat) {
         if (!(x.arrow && neeraBow(static_cast<size_t>(striker)))) playCues(sounds(sb, x.counter ? "counter" : "attack"));  // hers plays at the release
       }
@@ -8956,7 +9721,7 @@ class MapStage final : public Stage {
         }
       } else if (s.kind == "circleOfHealing" || s.kind == "judgment" || s.kind == "boneLance" || s.kind == "detonateSummon" || s.kind == "nightmare" ||
                  s.kind == "shoulderSmash" || s.kind == "stampede" || s.kind == "divineWrath" || s.kind == "spectralBolt" || s.kind == "piercingThrust" ||
-                 s.kind == "dispelMagic") {
+                 s.kind == "piercing" || s.kind == "dispelMagic") {
         // the Curandeiro's and the Conjurador's areas: the hexes; only the units it reaches (`ids`, and the summon that blows up) keep their card height
         for (const ember::BattleHex& h : s.tiles) {
           SpellEffects::Spot spot = hexSpot(h);
@@ -8969,13 +9734,33 @@ class MapStage final : public Stage {
           spots.push_back(spot);
         }
       } else if (s.type == StepType::Spell || s.type == StepType::Effect) {
-        for (const ember::BattleHex& h : s.tiles) spots.push_back(hexSpot(h));
+        if (!s.ids.empty()) {
+          for (size_t id : s.ids)
+            if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0)
+              spots.push_back(unitSpot(static_cast<size_t>(ui)));
+        }
+        if (spots.empty()) {
+          for (const ember::BattleHex& h : s.tiles) spots.push_back(hexSpot(h));
+        } else {
+          for (const ember::BattleHex& h : s.tiles) {
+            SpellEffects::Spot sp = hexSpot(h);
+            bool dup = false;
+            for (const auto& existing : spots) {
+              if (glm::length(glm::vec2(existing.feet.x - sp.feet.x, existing.feet.z - sp.feet.z)) < 0.2f) {
+                dup = true;
+                break;
+              }
+            }
+            if (!dup) spots.push_back(sp);
+          }
+        }
       } else if (s.type == StepType::Food) {
         for (size_t id : s.ids)  // everyone it feeds
           if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0) spots.push_back(unitSpot(static_cast<size_t>(ui)));
       } else if (target >= 0) {
         spots.push_back(unitSpot(static_cast<size_t>(target)));
       }
+      if (spots.empty() && target >= 0) spots.push_back(unitSpot(static_cast<size_t>(target)));
       // A version with Ember's own timeline (Míssil Mágico 02) lands when it hits, as Ember's rules wait for it.
       const SpellEffects::Spot casterSpot = unitSpot(static_cast<size_t>(striker));
       const std::string fxKind = s.kind == "witchStitchRupture" ? "witchStitch" : s.kind;
@@ -9013,7 +9798,7 @@ class MapStage final : public Stage {
         // its colour by what it does (Ember POTIONS effect)
         const std::string effect = s.potion == "disease" ? "disease" : s.potion.starts_with("mana") ? "mana" : "heal";
         spellFx_.potion(effect, look, spots.front(), now_, x.impact, striker);
-      } else if (spellFx_.cast(fxKind, look, casterSpot, spots, fxStart, x.impact, striker) && storm) {
+      } else if (!(doubleStrikeStep && comboIndex > 0) && spellFx_.cast(fxKind, look, casterSpot, spots, fxStart, x.impact, striker) && storm) {
         iceFx_.push_back({storm->center, storm->casterId, spellFx_.newestStorm()});
         spellFx_.stormStand(spellFx_.newestStorm());
       }
@@ -9031,10 +9816,15 @@ class MapStage final : public Stage {
       // the caster has its back to us (its "castBack" still, the user's own picture) and the spell leaves its hands into the board,
       // held until the effect is over. Aimed toward the camera it stays as it is.
       if (magic && fromHands && !spots.empty() && !flat_ && hasPose(static_cast<size_t>(striker), "castBack")) {
-        if (turnToCast || aimedAway(spots)) {
+        if (turnToCast || aimedAway(spots) || (isMissile && missileAimedAway)) {
           OneShot& shot = unitShot_[static_cast<size_t>(striker)];
           shot.then = "castBack";
-          shot.thenUntil = std::max(spellFx_.castEnd(static_cast<int>(striker)), x.impact + 0.5f);
+          const float endUntil = std::max(spellFx_.castEnd(static_cast<int>(striker)), x.impact + 0.5f);
+          shot.thenUntil = std::max(shot.thenUntil, endUntil);
+          if (isMissile && missileIndex > 0) {
+            shot.pose = "castBack";
+            shot.until = std::max(shot.until, shot.thenUntil);
+          }
           logInfo("{}: {} not at the camera, back turned after the cast pose ({:.2f} s)", scene_->units[static_cast<size_t>(striker)].name, s.kind, length);
         }
       }
@@ -9503,8 +10293,14 @@ class MapStage final : public Stage {
   SpellEffects::Spot unitSpot(size_t ui) const {
     const glm::vec3 feet = unitWorld(ui);
     const CardRect& c = unitCard_[ui];
-    const float body = c.drawn && !c.flat ? std::clamp(c.height * 0.45f, 0.5f, 1.4f) : 0.9f;
-    return {feet, feet + glm::vec3(0.0f, body, 0.0f), c.drawn && !c.flat ? c.height : 0.0f};
+    float h = (c.drawn && !c.flat && c.height > 0.1f) ? c.height : 0.0f;
+    if (h <= 0.0f && ui < unitBattle_.size() && unitBattle_[ui] >= 0) {
+      const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[ui])];
+      h = u.size >= 4 ? 3.0f : 1.8f;
+    }
+    if (h <= 0.0f) h = 1.8f;
+    const float body = std::clamp(h * 0.45f, 0.5f, 2.0f);
+    return {feet, feet + glm::vec3(0.0f, body, 0.0f), h};
   }
   // content/fx/hand-bolts.json: the pose of a unit (catalog key) whose art throws a bolt from its hands, and where its glow is on each
   // frame (HandBoltFx). Null for every other unit and pose.
@@ -9550,11 +10346,16 @@ class MapStage final : public Stage {
   static float cardHeightOf(const SpellEffects::Spot& s) { return s.cardHeight > 0.0f ? s.cardHeight : std::max(1.2f, (s.body.y - s.feet.y) / 0.45f); }
   // ... and a hex: the unit standing on it, else its ground.
   SpellEffects::Spot hexSpot(ember::BattleHex h) const {
+    int deadMatch = -1;
     for (size_t i = 0; i < unitBattle_.size(); ++i) {
       if (unitBattle_[i] < 0) continue;
       const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[i])];
-      if (u.alive && u.x == h.x && u.y == h.y) return unitSpot(i);
+      if (u.x == h.x && u.y == h.y) {
+        if (u.alive) return unitSpot(i);
+        if (deadMatch < 0) deadMatch = static_cast<int>(i);
+      }
     }
+    if (deadMatch >= 0) return unitSpot(static_cast<size_t>(deadMatch));
     const ember::Cell& c = board_->cell(h.x, h.y);
     const float x = static_cast<float>(c.x), z = static_cast<float>(c.z);
     const glm::vec3 feet{x, static_cast<float>(ember::groundHeightAt(*board_, look_, x, z)), z};
@@ -10631,9 +11432,59 @@ class MapStage final : public Stage {
         spots.push_back({{p.x, groundAt(p.x, p.z), p.z}, {p.x, groundAt(p.x, p.z) + 0.9f, p.z}});
       }
     }
+    if (ember::isLightingSpell(kind) && look > 0) {
+      const SpellEffects::Spot fromSpot = unitSpot(hero);
+      const SpellEffects::Spot toSpot = unitSpot(target);
+      const glm::vec3 d = toSpot.feet - fromSpot.feet;
+      const glm::vec3 flat{d.x, 0.0f, d.z};
+      const glm::vec3 facing = glm::dot(flat, flat) > 1e-4f ? glm::normalize(flat) : glm::vec3(0.0f, 0.0f, 1.0f);
+      std::string casterId = scene_->units[hero].name;
+      int casterLevel = 1;
+      if (battle_ && unitBattle_[hero] >= 0 && static_cast<size_t>(unitBattle_[hero]) < battle_->units().size()) {
+        const ember::BattleUnit& bu = battle_->units()[static_cast<size_t>(unitBattle_[hero])];
+        casterId = bu.id;
+        casterLevel = bu.level;
+      }
+      const std::string floorId = board_ ? board_->draft().id : "";
+      const std::string logMap = ember::logicalMapOfScreen(floorId);
+      const glm::vec3 origin = kind == "arcaneBeam"     ? fromSpot.feet + glm::vec3(facing.x * 0.35f, 1.25f, facing.z * 0.35f)
+                               : kind == "anchoredLight" ? toSpot.feet + glm::vec3(0.0f, 0.85f, 0.0f)
+                                                         : fromSpot.feet;
+      ember::LightingSpellRegistry::get().cast(kind, casterId, logMap, floorId, casterLevel, origin, facing, campaignMinuteNow());
+    }
     spellFx_.cast(kind, look, unitSpot(hero), spots, start, start + 0.6f, static_cast<int>(hero));
-    if (weaponStrikeKind(kind))
-      spellFx_.combat().impact(CombatFx::Kind::Physical, spots.front().feet, cardHeightOf(spots.front()), unitWorld(hero), start + 0.6f);
+    if (weaponStrikeKind(kind)) {
+      const bool isArrow = (kind == "longShot" || kind == "piercing");
+      const CombatFx::Kind hitKind = isArrow ? CombatFx::Kind::ArrowHit : (kind == "piercingThrust" ? CombatFx::Kind::Thrust : CombatFx::Kind::Physical);
+      const glm::vec3 heroPos = unitWorld(hero);
+      bool struckAny = false;
+      for (const auto& sp : spots) {
+        if (sp.cardHeight > 0.0f && glm::length(sp.feet - heroPos) > 0.3f) {
+          spellFx_.combat().impact(hitKind, sp.feet, cardHeightOf(sp), heroPos, start + 0.6f);
+          struckAny = true;
+        }
+      }
+      if (!struckAny) {
+        const SpellEffects::Spot strikeSpot = unitSpot(target);
+        spellFx_.combat().impact(hitKind, strikeSpot.feet, cardHeightOf(strikeSpot), heroPos, start + 0.6f);
+      }
+      for (size_t i = 0; i < scene_->units.size(); ++i) {
+        if (i == hero || i >= unitRecoil_.size()) continue;
+        const glm::vec3 p = unitWorld(i);
+        for (const auto& sp : spots) {
+          if (sp.cardHeight > 0.0f && glm::length(sp.feet - p) < 0.2f && glm::length(p - heroPos) > 0.3f) {
+            glm::vec3 dir = p - heroPos;
+            dir.y = 0.0f;
+            unitRecoil_[i] = {start + 0.6f, glm::dot(dir, dir) > 1e-6f ? glm::normalize(dir) : glm::vec3(0.0f), false};
+          }
+        }
+      }
+      if (target < unitRecoil_.size() && target != hero) {
+        glm::vec3 dir = unitWorld(target) - heroPos;
+        dir.y = 0.0f;
+        unitRecoil_[target] = {start + 0.6f, glm::dot(dir, dir) > 1e-6f ? glm::normalize(dir) : glm::vec3(0.0f), false};
+      }
+    }
   }
   // --fx-test hit | hitHeavy | slash | thrust | arrowHit | arcaneAttack: the combat's own effects alone (no rules): a weapon blow, a heavy one, the
   // Arcano attack (conjure 0.45 s, the bolt, the impact), each with the struck card's recoil.
@@ -10667,7 +11518,7 @@ class MapStage final : public Stage {
   // Garran's (the Guardião da Lua, docs/SKILLS_MOONWARDEN.md): specials too, in the moon's palette
   static bool wardenTechnique(const std::string& kind) { return ember::emberSpellClass(kind) == "moonwarden"; }
   static bool weaponStrikeKind(const std::string& kind) {
-    return kind == "doubleStrike" || kind == "longShot" || kind == "piercing" || kind == "piercingThrust";
+    return kind == "longShot" || kind == "piercing" || kind == "piercingThrust";
   }
   // The Arqueiro's skills (ours, docs/SKILLS_ARCHER.md): arrows (RangerFx), the arrow's hit on each struck body.
   static bool archerKind(const std::string& kind) {
@@ -10687,7 +11538,7 @@ class MapStage final : public Stage {
   }
 
   // What a step did, on screen: numbers, misses, heals, the struck unit's hit or death pose.
-  void showEffects(const std::vector<ember::BattleEffect>& fx) {
+  void showEffects(const std::vector<ember::BattleEffect>& fx, const std::string& spellKind = "", const std::string& element = "") {
     for (const ember::BattleEffect& e : fx) {
       const int ui = sceneUnitOf(static_cast<int>(e.unit));
       if (ui < 0) continue;
@@ -10720,7 +11571,28 @@ class MapStage final : public Stage {
         popups_.push_back({u, e.text, IM_COL32(196, 150, 232, 255), now_, false});
         continue;
       }
-      popups_.push_back({u, e.text.empty() ? std::to_string(e.amount) : e.text, e.crit || !e.text.empty() ? IM_COL32(255, 214, 102, 255) : IM_COL32(255, 255, 255, 255), now_,
+      ImU32 numColor = e.crit || !e.text.empty() ? IM_COL32(255, 214, 102, 255) : IM_COL32(255, 255, 255, 255);
+      if (!e.crit && e.text.empty()) {
+        std::string el = !element.empty() ? element : ember::elementOf(spellKind);
+        if (el.empty() && !e.cause.empty()) {
+          std::string lc = e.cause;
+          for (char& ch : lc) ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+          if (lc.find("relâmpago") != std::string::npos || lc.find("lightning") != std::string::npos || lc.find("choque") != std::string::npos) el = "lightning";
+          else if (lc.find("fogo") != std::string::npos || lc.find("fire") != std::string::npos || lc.find("brasa") != std::string::npos) el = "fire";
+          else if (lc.find("gelo") != std::string::npos || lc.find("ice") != std::string::npos || lc.find("frost") != std::string::npos) el = "ice";
+          else if (lc.find("veneno") != std::string::npos || lc.find("poison") != std::string::npos) el = "poison";
+          else if (lc.find("arcano") != std::string::npos || lc.find("arcana") != std::string::npos || lc.find("arcane") != std::string::npos || lc.find("míssil") != std::string::npos || lc.find("missile") != std::string::npos) el = "arcane";
+        }
+        if (el == "arcane") numColor = IM_COL32(215, 150, 255, 255);
+        else if (el == "fire" || el == "ember") numColor = IM_COL32(255, 130, 50, 255);
+        else if (el == "ice") numColor = IM_COL32(115, 220, 255, 255);
+        else if (el == "lightning") numColor = IM_COL32(255, 245, 90, 255);
+        else if (el == "poison") numColor = IM_COL32(130, 240, 95, 255);
+        else if (el == "holy") numColor = IM_COL32(255, 230, 110, 255);
+        else if (el == "darkness") numColor = IM_COL32(195, 130, 250, 255);
+        else if (!spellKind.empty() || !element.empty()) numColor = IM_COL32(220, 175, 255, 255);
+      }
+      popups_.push_back({u, e.text.empty() ? std::to_string(e.amount) : e.text, numColor, now_,
                          e.crit || !e.text.empty()});
       // The struck unit's own hit / death cues (the engine's per-frame watch of hitAt / diedAt).
       if (!e.died || sounds(e.unit, "hitOnDeath") != ember::Json(false)) playCues(sounds(e.unit, "hit"));
@@ -10801,7 +11673,7 @@ class MapStage final : public Stage {
         }
         if (!later.empty()) pendingFx_.push_back({std::max(flightEnd, now_ + later.front().delay / actionRate()), later});
       }
-      showEffects(fx);
+      showEffects(fx, s.kind, !x.element.empty() ? x.element : ember::elementOf(s.kind));
       // Esmagar na Pedra (Kael's): the push stopped by the stone, its impact landed: grit and a crack behind the foe
       for (const ember::BattleEffect& e : fx)
         if (!e.text.empty() && (e.text.find("pedra") != std::string::npos || e.text.find("stone") != std::string::npos))
@@ -10847,7 +11719,7 @@ class MapStage final : public Stage {
       // a blade skill: the physical impact (heavy on a critical, a kill or a third of the body's life); the Arcano bolt:
       // the magical one (its energy comes apart on a miss). Spells bring their own burst; every blow that hurts knocks
       // the card back.
-      const bool bowSkill = archerKind(s.kind);  // the Arqueiro's (ours): arrows, so the arrow's hit lands on each struck body
+      const bool bowSkill = archerKind(s.kind) || s.kind == "longShot" || s.kind == "piercing";  // the Arqueiro's and archery shots: arrows, so the arrow's hit lands on each struck body
       const bool magic = s.type == ember::BattleStep::Type::Spell && s.kind != "longShot" && s.kind != "piercing" && s.kind != "piercingThrust" && !bowSkill;
       const int striker = sceneUnitOf(static_cast<int>(x.counter ? s.def : s.att));
       // Garran's techniques (the Guardião da Lua): their own moonlight, once a step (MoonwardenFx): his blows on the struck foe (the swing
@@ -10894,7 +11766,15 @@ class MapStage final : public Stage {
           if (enchantedSword)
             spellFx_.combat().impact(CombatFx::Kind::Magical, struck.feet, cardHeightOf(struck), from, now_,
                                      CombatPalette::of(attacker->combat.staffElement.c_str()), 0.55f);
-          // Golpe Duplo: every blow is the strong slash, read as the skill's (the user, 2026-10-28: "não tem o Slash")
+          bool firstDoubleStrike = true;
+          for (size_t k = 0; k < x.step; ++k)
+            if (x.steps[k].type == ember::BattleStep::Type::Combat && x.steps[k].kind == "doubleStrike" && x.steps[k].att == s.att) {
+              firstDoubleStrike = false;
+              break;
+            }
+          const bool doubleStrikeVfx = !x.counter && s.kind == "doubleStrike" && spellLook("doubleStrike", static_cast<size_t>(striker)) > 0 &&
+                                       (firstDoubleStrike || hasPose(static_cast<size_t>(striker), "doubleStrike"));
+          // Golpe Duplo: fallback HeavySlash when its dedicated double-slash VFX is off (or a follow-up step on a unit without the clip).
           const bool skillSlash = (!x.counter && s.kind == "doubleStrike") || x.special;
           const CombatFx::Kind kind = skillSlash                    ? CombatFx::Kind::HeavySlash
                                       : style == WeaponStyle::Blade ? (heavy ? CombatFx::Kind::HeavySlash : CombatFx::Kind::Slash)
@@ -10903,7 +11783,7 @@ class MapStage final : public Stage {
                                                                      : CombatFx::Kind::Physical;
           // the skill's cut across the chest (62 % of the card), not its middle (CombatFx's contact: half the card, the hips)
           const glm::vec3 cutAt = skillSlash ? struck.feet + glm::vec3(0.0f, std::clamp(cardHeightOf(struck), 1.0f, 4.0f) * 0.12f, 0.0f) : struck.feet;
-          spellFx_.combat().impact(kind, cutAt, cardHeightOf(struck), from, now_);
+          if (!doubleStrikeVfx) spellFx_.combat().impact(kind, cutAt, cardHeightOf(struck), from, now_);
           // Garran's techniques carry their own look (MoonwardenFx, above), Kael's theirs (VanguardFx, started with the step; the Riposta's
           // from startStep)
         }
@@ -11321,15 +12201,60 @@ class MapStage final : public Stage {
     if (selected_ >= 0 && !walking && !spellMode_.empty()) {
       // Ember's spell aim: every hex it may be aimed at washed, the hovered aim's area bright, chosen targets ringed.
       const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
-      for (const ember::BattleHex& c : spellAim_) add(c, IM_COL32(176, 124, 232, 34), 1.0f), add(c, IM_COL32(176, 124, 232, 110), 0.94f, border(0.94f));
+      const bool allySpell = ember::spellTargetsAlly(spellMode_);
+      const ImU32 aimColor = allySpell ? IM_COL32(70, 200, 130, 45) : IM_COL32(176, 124, 232, 45);
+      const ImU32 aimBorder = allySpell ? IM_COL32(70, 200, 130, 180) : IM_COL32(196, 144, 255, 180);
+      for (const ember::BattleHex& c : spellZone_) {
+        add(c, IM_COL32(160, 110, 240, 50), 1.0f);
+        add(c, IM_COL32(190, 140, 255, 140), 0.94f, border(0.94f));
+      }
+      for (const ember::BattleHex& c : spellAim_) add(c, aimColor, 1.0f), add(c, aimBorder, 0.94f, border(0.94f));
+      if (spellMode_ == "poleVault") {
+        for (const ember::BattleHex& c : spellAim_) {
+          const ember::SpellMovementPreview mv = ember::spellMovementPreview(*battle_, b, "poleVault", c);
+          if (mv.valid && mv.casterDestination) add(*mv.casterDestination, IM_COL32(80, 220, 240, 180), 0.94f, border(0.94f));
+        }
+      }
+      std::optional<ember::BattleHex> aimed;
+      const bool direction = ember::spellAimsDirection(spellMode_);
+      const ember::BattleUnit& u = battle_->units()[b];
+      const ember::BattleHex from{u.x, u.y};
+      if (direction) {
+        if (hover_ && !(*hover_ == from)) {
+          int bestDist = 1 << 30;
+          ember::BattleHex bestAim = *hover_;
+          for (const ember::BattleHex& n : ember::Battle::neighbors(from.x, from.y)) {
+            if (battle_->inBounds(n.x, n.y)) {
+              int d = ember::Battle::distance(n, *hover_);
+              if (d < bestDist) { bestDist = d; bestAim = n; }
+            }
+          }
+          aimed = bestAim;
+        } else if (spellArmed_) aimed = spellArmed_;
+        else if (spellPreviewAim_) aimed = spellPreviewAim_;
+      } else if (ember::spellTargetsGroundOrFreeHex(spellMode_)) {
+        if (hover_ && std::any_of(spellZone_.begin(), spellZone_.end(), [&](const ember::BattleHex& zh) { return zh == *hover_; })) aimed = hover_;
+        else if (spellArmed_) aimed = spellArmed_;
+      } else {
+        if (hover_ && aimValid(b, *hover_)) aimed = hover_;
+        else if (spellArmed_ && aimValid(b, *spellArmed_)) aimed = spellArmed_;
+      }
+      if (aimed) {
+        for (const ember::BattleHex& c : aimArea(b, *aimed)) {
+          add(c, IM_COL32(255, 185, 60, 140), 1.0f);
+          add(c, IM_COL32(255, 230, 120, 240), 0.95f, border(0.95f));
+        }
+      }
       if (hover_) {
-        if (aimValid(b, *hover_))
-          for (const ember::BattleHex& c : aimArea(b, *hover_)) add(c, IM_COL32(214, 168, 255, 96), 1.0f);
+        bool validHover = aimValid(b, *hover_) || (ember::spellSelfArea(spellMode_) && spellArmed_);
+        if (direction && !(*hover_ == from)) validHover = true;
+        if (ember::spellTargetsGroundOrFreeHex(spellMode_)) {
+          validHover = std::any_of(spellZone_.begin(), spellZone_.end(), [&](const ember::BattleHex& zh) { return zh == *hover_; });
+        }
         add(*hover_, IM_COL32(8, 12, 16, 242), 0.985f, border(0.985f));
-        add(*hover_, aimValid(b, *hover_) ? IM_COL32(236, 214, 255, 255) : IM_COL32(231, 133, 115, 242), 0.94f, border(0.94f));
+        add(*hover_, validHover ? IM_COL32(255, 230, 140, 255) : IM_COL32(231, 133, 115, 242), 0.94f, border(0.94f));
       }
       for (const ember::BattleHex& c : spellCells_) add(c, IM_COL32(255, 214, 102, 255), 0.7f, border(0.7f));
-      const ember::BattleUnit& u = battle_->units()[b];
       add({u.x, u.y}, IM_COL32(220, 226, 235, 71), 0.94f, border(0.94f));
     } else if (selected_ >= 0 && !walking) {
       const bool player = scene_->units[static_cast<size_t>(selected_)].side == "player";
@@ -11408,23 +12333,93 @@ class MapStage final : public Stage {
       const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
       for (const ember::BattleHex& c : spellZone_) flag(c, Renderer::kGridSpellAim);
       const bool direction = ember::spellAimsDirection(spellMode_);
-      for (const ember::BattleHex& c : spellAim_) flag(c, (direction ? 0u : Renderer::kGridSpellAim) | Renderer::kGridSpellTarget);
+      const bool allySpell = ember::spellTargetsAlly(spellMode_);
+      for (const ember::BattleHex& c : spellAim_)
+        flag(c, (direction ? 0u : Renderer::kGridSpellAim) | (allySpell ? Renderer::kGridAllyTarget : Renderer::kGridSpellTarget));
+      if (spellMode_ == "poleVault") {
+        for (const ember::BattleHex& c : spellAim_) {
+          const ember::SpellMovementPreview mv = ember::spellMovementPreview(*battle_, b, "poleVault", c);
+          if (mv.valid && mv.casterDestination) flag(*mv.casterDestination, Renderer::kGridRouteEnd);
+        }
+      }
       // The line / cone: under the cursor; else the one aimed and waiting for Confirmar (the cursor went to the button);
       // else toward the nearest foe it reaches while the cursor is off the board. Everyone it would hit is locked: foes in
       // violet, friends in red (a line or a cone that crosses the party hurts it).
       std::optional<ember::BattleHex> aimed;
-      if (hover_ && aimValid(b, *hover_)) aimed = hover_;
-      else if (spellArmed_ && aimValid(b, *spellArmed_)) aimed = spellArmed_;
-      else if (direction && !hover_ && spellPreviewAim_) aimed = spellPreviewAim_;
+      const ember::BattleUnit& u = battle_->units()[b];
+      const ember::BattleHex from{u.x, u.y};
+      if (direction) {
+        if (hover_ && !(*hover_ == from)) {
+          int bestDist = 1 << 30;
+          ember::BattleHex bestAim = *hover_;
+          for (const ember::BattleHex& n : ember::Battle::neighbors(from.x, from.y)) {
+            if (battle_->inBounds(n.x, n.y)) {
+              int d = ember::Battle::distance(n, *hover_);
+              if (d < bestDist) {
+                bestDist = d;
+                bestAim = n;
+              }
+            }
+          }
+          aimed = bestAim;
+        } else if (spellArmed_) {
+          aimed = spellArmed_;
+        } else if (spellPreviewAim_) {
+          aimed = spellPreviewAim_;
+        }
+      } else if (ember::spellTargetsGroundOrFreeHex(spellMode_)) {
+        if (hover_ && std::any_of(spellZone_.begin(), spellZone_.end(), [&](const ember::BattleHex& zh) { return zh == *hover_; })) aimed = hover_;
+        else if (spellArmed_) aimed = spellArmed_;
+      } else {
+        if (hover_ && aimValid(b, *hover_)) aimed = hover_;
+        else if (spellArmed_ && aimValid(b, *spellArmed_)) aimed = spellArmed_;
+      }
       if (aimed) {
         for (const ember::BattleHex& c : aimArea(b, *aimed)) flag(c, Renderer::kGridSpellArea);
+        const ember::SpellMovementPreview mv = ember::spellMovementPreview(*battle_, b, spellMode_, *aimed);
+        if (mv.valid) {
+          for (const ember::BattleHex& tr : mv.trajectory) flag(tr, Renderer::kGridSpellArea);
+          if (mv.casterDestination) flag(*mv.casterDestination, Renderer::kGridRouteEnd);
+          if (mv.targetDestination) flag(*mv.targetDestination, Renderer::kGridRouteEnd);
+          if (mv.targetUnit) {
+            const ember::BattleUnit& tu = battle_->units()[*mv.targetUnit];
+            if (tu.alive && !tu.hidden && unitOnShow(tu)) {
+              flag({tu.x, tu.y}, tu.side == battle_->units()[b].side ? (allySpell ? Renderer::kGridAllyTarget : Renderer::kGridFriendlyFire) : Renderer::kGridSpellTarget);
+            }
+          }
+          if (mv.collidedUnit) {
+            const ember::BattleUnit& cu = battle_->units()[*mv.collidedUnit];
+            if (cu.alive && !cu.hidden && unitOnShow(cu)) {
+              flag({cu.x, cu.y}, cu.side == battle_->units()[b].side ? Renderer::kGridFriendlyFire : Renderer::kGridSpellTarget);
+            }
+          }
+        }
         for (size_t id : aimHits(b, *aimed)) {
           const ember::BattleUnit& t = battle_->units()[id];
-          if (t.alive && !t.hidden && unitOnShow(t)) flag({t.x, t.y}, t.side == battle_->units()[b].side ? Renderer::kGridTarget : Renderer::kGridSpellTarget);
+          if (t.alive && !t.hidden && unitOnShow(t)) {
+            if (t.side == battle_->units()[b].side) {
+              flag({t.x, t.y}, allySpell ? Renderer::kGridAllyTarget : Renderer::kGridFriendlyFire);
+            } else {
+              flag({t.x, t.y}, Renderer::kGridSpellTarget);
+            }
+          }
         }
       }
-      if (hover_) flag(*hover_, Renderer::kGridHover | (aimValid(b, *hover_) ? 0u : Renderer::kGridHoverBlocked));
+      if (hover_) {
+        const bool selfArea = ember::spellSelfArea(spellMode_);
+        bool validHover = aimValid(b, *hover_) || (selfArea && spellArmed_);
+        if (direction && !(*hover_ == from)) validHover = true;
+        if (ember::spellTargetsGroundOrFreeHex(spellMode_)) {
+          validHover = std::any_of(spellZone_.begin(), spellZone_.end(), [&](const ember::BattleHex& zh) { return zh == *hover_; });
+        }
+        flag(*hover_, Renderer::kGridHover | (validHover ? 0u : Renderer::kGridHoverBlocked));
+      }
       for (const ember::BattleHex& c : spellCells_) flag(c, Renderer::kGridSpellChosen);
+      flag({u.x, u.y}, Renderer::kGridActive);
+    } else if (selected_ >= 0 && !walking && spellMode_.empty() && !hoveredHotbarSpell_.empty()) {
+      const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
+      const std::vector<ember::BattleHex> zone = ember::spellZone(*battle_, b, hoveredHotbarSpell_);
+      for (const ember::BattleHex& c : zone) flag(c, Renderer::kGridSpellAim);
       const ember::BattleUnit& u = battle_->units()[b];
       flag({u.x, u.y}, Renderer::kGridActive);
     } else if (selected_ >= 0 && !walking) {
@@ -11488,19 +12483,46 @@ class MapStage final : public Stage {
   // The numbers over a struck unit: up 0.6 units over 1.2 s while they fade (crits larger and gold; "Errou" for a miss).
   void drawPopups(ImDrawList* dl, float w, float h) {
     std::erase_if(popups_, [&](const Popup& p) { return now_ - p.start > kPopupSeconds; });
-    for (const Popup& p : popups_) {
+    for (size_t pi = 0; pi < popups_.size(); ++pi) {
+      const Popup& p = popups_[pi];
+      if (p.unit >= unitCard_.size()) continue;
       const CardRect& c = unitCard_[p.unit];
       const float k = (now_ - p.start) / kPopupSeconds;
       const glm::vec3 up = cardUp(c);
-      const std::optional<ImVec2> at = screenOf(c.origin + up * (c.height + 0.6f * k), w, h);
+      const glm::vec3 origin = (c.drawn && c.origin != glm::vec3(0.0f))
+                                   ? c.origin
+                                   : unitSpot(p.unit).feet;
+      const float cardH = (c.drawn && !c.flat && c.height > 0.1f)
+                              ? c.height
+                              : (p.unit < unitBattle_.size() && unitBattle_[p.unit] >= 0 &&
+                                         battle_->units()[static_cast<size_t>(unitBattle_[p.unit])].size >= 4
+                                     ? 3.0f
+                                     : 1.8f);
+      const std::optional<ImVec2> at = screenOf(origin + up * (cardH + 0.6f * k), w, h);
       if (!at) continue;
-      if (groundBlocksView(c.origin + up * c.height)) continue;  // behind an elevation
+
+      int unitPopupIndex = 0, unitPopupCount = 0;
+      for (size_t pj = 0; pj < popups_.size(); ++pj) {
+        if (popups_[pj].unit == p.unit) {
+          if (pj < pi) ++unitPopupIndex;
+          ++unitPopupCount;
+        }
+      }
+      const float xOffset = unitPopupCount > 1
+                                ? (static_cast<float>(unitPopupIndex) - static_cast<float>(unitPopupCount - 1) * 0.5f) * 32.0f
+                                : 0.0f;
+
       const float size = p.big ? 34.0f : 26.0f;
       ImGui::PushFont(nullptr, size);
       const ImVec2 t = ImGui::CalcTextSize(p.text.c_str());
       const ImU32 alpha = static_cast<ImU32>(255.0f * std::clamp(1.5f - 1.5f * k, 0.0f, 1.0f));
-      const ImVec2 pos{at->x - t.x * 0.5f, at->y - t.y};
-      dl->AddText(nullptr, size, {pos.x + 2, pos.y + 2}, (alpha << IM_COL32_A_SHIFT), p.text.c_str());
+      const ImVec2 pos{at->x + xOffset - t.x * 0.5f, at->y - t.y};
+      const ImU32 shadow = alpha << IM_COL32_A_SHIFT;
+      dl->AddText(nullptr, size, {pos.x + 1, pos.y + 1}, shadow, p.text.c_str());
+      dl->AddText(nullptr, size, {pos.x - 1, pos.y - 1}, shadow, p.text.c_str());
+      dl->AddText(nullptr, size, {pos.x + 1, pos.y - 1}, shadow, p.text.c_str());
+      dl->AddText(nullptr, size, {pos.x - 1, pos.y + 1}, shadow, p.text.c_str());
+      dl->AddText(nullptr, size, {pos.x + 2, pos.y + 2}, shadow, p.text.c_str());
       dl->AddText(nullptr, size, pos, (p.color & ~IM_COL32_A_MASK) | (alpha << IM_COL32_A_SHIFT), p.text.c_str());
       ImGui::PopFont();
     }
@@ -11509,13 +12531,59 @@ class MapStage final : public Stage {
   // Ember's forecast for the hovered target: the strike and the counter, as an ember plate by the cursor.
   void drawForecast() {
     if (!hover_ || selected_ < 0 || exchange_) return;
+    const size_t ab = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
+    const ember::BattleUnit& a = battle_->units()[ab];
+    const ImVec2 cursor = ImGui::GetIO().MousePos;  // canvas units (mouse_ is in window pixels)
+
+    if (!spellMode_.empty()) {
+      const int target = battle_->unitAt(hover_->x, hover_->y);
+      if (target < 0) return;
+      const size_t db = static_cast<size_t>(target);
+      const ember::BattleUnit& d = battle_->units()[db];
+      const bool allySpell = ember::spellTargetsAlly(spellMode_);
+      if (!allySpell && d.side == a.side) return;
+      if (allySpell && d.side != a.side) return;
+
+      const bool valid = aimValid(ab, *hover_);
+      ImGui::SetNextWindowPos({cursor.x + 18.0f, cursor.y + 18.0f}, ImGuiCond_Always);
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {12.0f, 10.0f});
+      ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(14, 14, 14, 240));
+      ImGui::PushStyleColor(ImGuiCol_Border, valid ? IM_COL32(190, 150, 95, 115) : IM_COL32(180, 60, 60, 140));
+      ImGui::Begin("##forecast", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoInputs |
+                                              ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoSavedSettings);
+      ImGui::PushFont(nullptr, 20.0f);
+      ImGui::TextColored(ImVec4(1.0f, 0.88f, 0.7f, 1.0f), "%s  ->  %s", a.name.c_str(), d.name.c_str());
+      ImGui::Text("Vida %d / %d", d.hp, d.maxHp);
+      const std::string spName = potionOf(spellMode_) ? ember::potionName(*potionOf(spellMode_)) : ember::spellName(spellMode_);
+      const int cost = potionOf(spellMode_) ? ember::apCost(*battle_, a, ember::ApAction::potion()) : ember::apCost(*battle_, a, ember::ApAction::cast(spellMode_));
+      ImGui::TextColored(ImVec4(0.85f, 0.75f, 1.0f, 1.0f), "%s  ·  %s", spName.c_str(), apLabel(cost).c_str());
+      const std::string scale = ember::spellScaleText(a, spellMode_, uiEnglish());
+      if (!scale.empty()) {
+        ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.45f, 1.0f), "%s", scale.c_str());
+      }
+      const std::string el = ember::elementOf(spellMode_);
+      if (!el.empty() && d.side != a.side) {
+        const double res = d.combat.resistance(el);
+        if (res != 0.0) {
+          ImGui::TextColored(ImVec4(0.75f, 0.85f, 1.0f, 1.0f), "%s %s: %+.0f%%", tr("Resistência", "Resistance").c_str(), ember::elementLabelPt(el).c_str(), res);
+        }
+      }
+      if (!valid) {
+        ImGui::TextColored(ImVec4(0.9f, 0.45f, 0.45f, 1.0f), "%s", tr("Alvo fora de alcance ou inválido", "Target out of range or invalid").c_str());
+      }
+      ImGui::PopFont();
+      ImGui::End();
+      ImGui::PopStyleColor(2);
+      ImGui::PopStyleVar();
+      return;
+    }
+
     const int foe = sceneUnitOf(battle_->unitAt(hover_->x, hover_->y));
     const auto target = std::find_if(targets_.begin(), targets_.end(), [&](const auto& t) { return t.first == foe; });
     if (foe < 0 || target == targets_.end()) return;
-    const size_t ab = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), db = static_cast<size_t>(unitBattle_[static_cast<size_t>(foe)]);
-    const ember::BattleUnit &a = battle_->units()[ab], &d = battle_->units()[db];
+    const size_t db = static_cast<size_t>(unitBattle_[static_cast<size_t>(foe)]);
+    const ember::BattleUnit &d = battle_->units()[db];
     const ember::Forecast f = forecastFor(ab, db, target->second);  // from the hex it would strike from
-    const ImVec2 cursor = ImGui::GetIO().MousePos;  // canvas units (mouse_ is in window pixels)
     ImGui::SetNextWindowPos({cursor.x + 18.0f, cursor.y + 18.0f}, ImGuiCond_Always);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {12.0f, 10.0f});
     ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(14, 14, 14, 240));
@@ -11658,6 +12726,9 @@ class MapStage final : public Stage {
     if (kind == "abyssalSwap") return std::filesystem::path("content/ui/spells/abyssal-swap-v01.png");
     if (kind == "arcaneBanquet") return std::filesystem::path("content/ui/spells/arcane-banquet-v01.png");
     if (kind == "twinResonance") return std::filesystem::path("content/ui/spells/twin-resonance-v01.png");
+    if (kind == "arcaneBeam") return std::filesystem::path("content/ui/spells/arcaneBeam.jpg");
+    if (kind == "anchoredLight") return std::filesystem::path("content/ui/spells/anchoredLight.jpg");
+    if (kind == "luminousHalo") return std::filesystem::path("content/ui/spells/luminousHalo.jpg");
     if (!ember::emberSpellClass(kind).empty()) {  // ours: the user's art when there is one (none yet for some: the initials)
       const std::filesystem::path own = std::filesystem::path("content/ui/spells") / (kind + ".jpg");
       std::error_code ec;
@@ -11690,12 +12761,12 @@ class MapStage final : public Stage {
 
   // .ember-btn.ember-btn-sm: Pirata One, primary (the ember gradient) or ghost (dark iron, an ember underline on hover).
   // `icon` (a file under Ember's game/icons, e.g. "lockpick.png") is drawn before the label.
-  bool emberButton(const char* id, const char* label, bool primary, bool enabled, float height = 32.0f, const char* icon = nullptr) {
+  bool emberButton(const char* id, const char* label, bool primary, bool enabled, float height = 32.0f, const char* icon = nullptr, float minWidth = 0.0f) {
     ImFont* font = uiFont(UiFont::Mark);
     const float size = 16.0f;
     const UiImage* iconImage = icon ? uiImage(options_.artRoot / "game/icons" / icon) : nullptr;
     const float iconSide = iconImage ? std::round(height * 0.66f) : 0.0f, iconGap = iconImage ? 6.0f : 0.0f;
-    const float w = spacedTextWidth(font, size, label, 0.06f) + 28.0f + iconSide + iconGap;
+    const float w = std::max(minWidth, spacedTextWidth(font, size, label, 0.06f) + 28.0f + iconSide + iconGap);
     ImGui::BeginDisabled(!enabled);
     const bool clicked = ImGui::InvisibleButton(id, {w, height});
     const bool hover = enabled && ImGui::IsItemHovered();
@@ -11740,7 +12811,7 @@ class MapStage final : public Stage {
   bool emberIconButton(const char* id, const char* icon, bool active, bool enabled, float side = 32.0f) {
     ImGui::BeginDisabled(!enabled);
     const bool clicked = ImGui::InvisibleButton(id, {side, side});
-    const bool hover = enabled && ImGui::IsItemHovered();
+    const bool hover = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled);
     ImGui::EndDisabled();
     const ImVec2 a = ImGui::GetItemRectMin(), b = ImGui::GetItemRectMax();
     ImDrawList* dl = ImGui::GetWindowDrawList();
@@ -11768,7 +12839,7 @@ class MapStage final : public Stage {
   bool spellSocket(const char* id, const std::string& kind, int uses, bool enabled, bool active, float side = 36.0f, int key = -1, int cost = -1) {
     ImGui::BeginDisabled(!enabled);
     const bool clicked = ImGui::InvisibleButton(id, {side, side});
-    const bool hover = enabled && ImGui::IsItemHovered();
+    const bool hover = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled);
     ImGui::EndDisabled();
     const ImVec2 a = ImGui::GetItemRectMin(), b = ImGui::GetItemRectMax();
     ImDrawList* dl = ImGui::GetWindowDrawList();
@@ -11843,12 +12914,43 @@ class MapStage final : public Stage {
       dl->AddText(font, 11.0f, {p.x, p.y + 0.5f}, IM_COL32(255, 214, 140, fade), ap.c_str());
     }
     if (hover) {
+      hoveredHotbarSpell_ = kind;
       ImGui::BeginTooltip();
       ImGui::PushFont(uiFont(UiFont::Ui), 15.0f);
-      // the name only (the user, 2026-10-20): what it does is in the sheet's Skills
+      // the name and targeting breakdown
       if (const std::optional<std::string> potion = potionOf(kind)) ImGui::TextUnformatted(ember::potionName(*potion).c_str());
       else ImGui::TextUnformatted(tr(ember::spellName(kind)).c_str());
       if (cost >= 0) ImGui::TextColored(ImColor(255, 214, 140), "%s", (tr("Custo: ", "Cost: ") + apLabel(cost)).c_str());
+      if (battle_ && selected_ >= 0 && static_cast<size_t>(selected_) < unitBattle_.size() && unitBattle_[static_cast<size_t>(selected_)] >= 0) {
+        const size_t sb = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
+        const ember::BattleUnit& su = battle_->units()[sb];
+        const std::string targeting = spellTargetingLabel(*battle_, sb, kind, uiEnglish());
+        if (!targeting.empty()) {
+          ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(160, 220, 255, 255));
+          ImGui::TextUnformatted(targeting.c_str());
+          ImGui::PopStyleColor();
+        }
+        const std::string desc = ember::spellTooltip(su, kind);
+        if (!desc.empty()) {
+          ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(230, 225, 210, 240));
+          ImGui::TextWrapped("%s", desc.c_str());
+          ImGui::PopStyleColor();
+        } else if (const std::string exp = ember::spellExplain(kind, uiEnglish()); !exp.empty()) {
+          ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(230, 225, 210, 240));
+          ImGui::TextWrapped("%s", exp.c_str());
+          ImGui::PopStyleColor();
+        }
+      }
+      if (!enabled) {
+        if (uses <= 0) ImGui::TextColored(ImColor(231, 115, 115), "%s", tr("Sem cargas", "No uses left").c_str());
+        else if (battle_ && selected_ >= 0 && static_cast<size_t>(selected_) < unitBattle_.size() && unitBattle_[static_cast<size_t>(selected_)] >= 0) {
+          const size_t sb = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
+          const ember::BattleUnit& su = battle_->units()[sb];
+          if (!ember::apCanAfford(su, cost)) ImGui::TextColored(ImColor(231, 115, 115), "%s", tr("PA insuficiente", "Insufficient AP").c_str());
+          else if (su.acted) ImGui::TextColored(ImColor(231, 115, 115), "%s", tr("Já agiu neste turno", "Already acted this turn").c_str());
+          else if (!ember::spellHasValidTargets(*battle_, sb, kind)) ImGui::TextColored(ImColor(231, 115, 115), "%s", tr("Sem alvos válidos", "No valid targets").c_str());
+        }
+      }
       // Kael's techniques: the turns of his its cooldown still blocks
       if (battle_ && selected_ >= 0 && static_cast<size_t>(selected_) < unitBattle_.size() && unitBattle_[static_cast<size_t>(selected_)] >= 0)
         if (const size_t sb = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]); ember::spellCoolingDown(*battle_, sb, kind)) {
@@ -11877,6 +12979,31 @@ class MapStage final : public Stage {
     return std::format("AT {} · MAG {} · DF {} · DEX {} · PA {}/{} · Alc {}", u.atk, u.mag, u.def, u.dex, u.ap, ember::apMax(*battle_, u), range);
   }
 
+  // The combat log embedded inside the status bar area of the HUD
+  void drawHudLog(ImVec2 from, ImVec2 to) {
+    ImGui::SetCursorScreenPos(from);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(0, 0, 0, 0));
+    ImGui::BeginChild("##hudlog", {to.x - from.x, to.y - from.y}, false);
+    const float maxY = ImGui::GetScrollMaxY();
+    if (!logJustOpened_) logPinned_ = maxY <= 0.0f || ImGui::GetScrollY() >= maxY - 8.0f;
+    const std::vector<std::string>& lines = battle_->log();
+    if (lines.empty()) {
+      ImGui::TextDisabled("%s", tr("Nada aconteceu ainda.", "Nothing has happened yet.").c_str());
+    } else {
+      for (const std::string& line : lines) {
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(180, 180, 180, 255));
+        ImGui::TextWrapped("%s", line.c_str());
+        ImGui::PopStyleColor();
+      }
+    }
+    if (logPinned_ || logJustOpened_) ImGui::SetScrollHereY(1.0f);
+    logJustOpened_ = false;
+    if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+      showLog_ = false;
+    }
+    ImGui::EndChild();
+    ImGui::PopStyleColor();
+  }
 
   // Combat log panel: opened by the "Log" button; clean ember-styled modal with scrollable history.
   void drawFullLog() {
@@ -12292,15 +13419,17 @@ class MapStage final : public Stage {
     const int cost = ember::apCost(*battle_, u, ember::ApAction::cast(kind));
     const bool paid = ember::apCanAfford(u, cost);  // Action Points
     const bool ready = !ember::spellCoolingDown(*battle_, b, kind);  // Kael's techniques: not in cooldown
-    return SocketState{uses, canAct && ember::spellPorted(kind) && uses > 0 && paid && ready, cost};
+    const bool hasTargets = ember::spellHasValidTargets(*battle_, b, kind);
+    return SocketState{uses, canAct && ember::spellPorted(kind) && uses > 0 && paid && ready && hasTargets, cost};
   }
   // F1..F12: the socket's spell / potion, as a click on it.
   void pressHotbar(int slot) {
-    if (hotbarEdit_ || pauseOpen_ || leaveConfirmOpen_ || battleInventory_ || statusSheet_.isOpen() || !battle_ || battle_->roaming() || !myTurn() || busy()) return;
+    if (hotbarEdit_ || pauseOpen_ || leaveConfirmOpen_ || battleInventory_ || statusSheet_.isOpen() || !battle_ || !myTurn() || busy()) return;
     const size_t me = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
     const ember::BattleUnit& u = battle_->units()[me];
     const std::string kind = hotbarOf(me)[static_cast<size_t>(slot)];
-    if (const std::optional<SocketState> s = socketState(me, kind, !u.acted); s && s->usable) startSpell(kind);
+    const bool canAct = battle_->roaming() ? true : !u.acted;
+    if (const std::optional<SocketState> s = socketState(me, kind, canAct); s && s->usable) startSpell(kind);
   }
 
   // "Atalhos": the hero's 12 sockets on top, everything it can put in them below; drag one into a socket (a socket dragged
@@ -12456,6 +13585,18 @@ class MapStage final : public Stage {
         x = q.x + 10.0f;
       }
       const float right = b.x - 10.0f;
+      // The info area is the combat log's switch (GameApp: a click on the stat sheet opens the log, a click on the log closes it).
+      ImGui::SetCursorScreenPos({x, rowY});
+      if (ImGui::InvisibleButton("##logtoggle", {right - x, showLog_ ? 24.0f : 76.0f})) {
+        showLog_ = !showLog_;
+        logPinned_ = true;
+        logJustOpened_ = showLog_;
+      }
+      if (ImGui::IsItemHovered()) {
+        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+        ImGui::SetTooltip("%s", showLog_ ? tr("Fechar o log e ver o status", "Close log and view status").c_str()
+                                         : tr("Abrir o log de combate", "Open combat log").c_str());
+      }
       ImGui::PushFont(text, 14.0f);
       const std::string name = std::format("{} · Nv {}", u.name, u.level);
       dl->AddText(text, 15.0f, {x, rowY + 2.0f}, IM_COL32(240, 240, 240, 255), name.c_str());
@@ -12467,55 +13608,118 @@ class MapStage final : public Stage {
       const std::string cls = u.className.empty() ? u.classId : u.className;
       const float cw = text->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, cls.c_str()).x;
       dl->AddText(text, 12.0f, {right - cw, rowY + 4.5f}, u.side == "enemy" ? IM_COL32(181, 74, 50, 255) : IM_COL32(180, 180, 180, 255), cls.c_str());
-      // HP bar (.hp-fill: accent for the party, danger for foes)
+
+      if (showLog_) {
+        drawHudLog({x, rowY + 26.0f}, {right, rowY + 80.0f});
+      } else {
+        // HP bar (.hp-fill: accent for the party, danger for foes)
       const std::string hp = tr("Vida", "HP") + " " + std::format("{}/{}", u.hp, u.maxHp);  // named, so it is never mistaken for the PA
       const float hw = text->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, hp.c_str()).x;
       const float barY = rowY + 28.0f, barR = right;
-      // Action Points (the user, 2026-11-06: "uma forma visual de ver quantos PA restam e quanto cada ação custa antes de confirmar"):
-      // the HP bar keeps the left of the row, the AP pips take the right: one pip per point of the maximum, lit while it is in the
-      // reserve, and the pips the pending action would spend (the foe or route under the cursor, the armed spell or potion, Atacar /
-      // Examinar open) glow ember, or red when they are more than it has (drawApPips).
-      // Vida on the left (its bar, then its own number), PA on the right (the user, 2026-11-06: "separa, põe um de cada lado").
-      const float hpR = std::round(x + (barR - x) * 0.48f);
-      dl->AddRectFilled({x, barY}, {hpR, barY + 6.0f}, IM_COL32(74, 74, 74, 255), 3.0f);
-      const float f = u.maxHp > 0 ? std::clamp(static_cast<float>(u.hp) / static_cast<float>(u.maxHp), 0.0f, 1.0f) : 0.0f;
-      if (f > 0.0f) dl->AddRectFilled({x, barY}, {x + (hpR - x) * f, barY + 6.0f}, u.side == "enemy" ? IM_COL32(181, 74, 50, 255) : IM_COL32(216, 216, 216, 255), 3.0f);
-      dl->AddText(text, 12.0f, {hpR + 8.0f, barY - 4.0f}, IM_COL32(240, 240, 240, 255), hp.c_str());
-      drawApPips(dl, text, u, hpR + 8.0f + hw + 28.0f, barR, barY, pendingApCost(u));
-      // the sheet line, or the strike's forecast while a marked foe is under the cursor
-      // Action Points first: what it has of its maximum (the user's HUD line keeps the sheet's stats after it)
-      // the pip row shows the PA once; the line only names what the pending action takes
-      std::string apText;
-      if (const std::optional<int> pending = pendingApCost(u)) apText = std::format("−{} {}", *pending, tr("PA", "AP"));
-      std::string line = (apText.empty() ? std::string() : apText + " · ") + sheetLine(u);
-      if (selected_ >= 0 && hover_ && !targets_.empty()) {
-        const int foe = sceneUnitOf(battle_->unitAt(hover_->x, hover_->y));
-        const auto t = std::find_if(targets_.begin(), targets_.end(), [&](const auto& q) { return q.first == foe; });
-        if (foe >= 0 && t != targets_.end()) {
-          const size_t ab = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), db = static_cast<size_t>(unitBattle_[static_cast<size_t>(foe)]);
-          const ember::Forecast fc = forecastFor(ab, db, t->second);
-          const bool off = offHandFrom(ab, db, t->second);
-          const int cost = ember::apCost(*battle_, battle_->units()[ab], off ? ember::ApAction::offHand() : ember::ApAction::attack());
-          line = (apText.empty() ? std::string() : apText + " · ") + (fc.canCounter ? std::format("{:.0f}% em {} · contra {:.0f}%", fc.hitOut, battle_->units()[db].name, fc.hitBack)
-                                                 : std::format("{:.0f}% em {} · sem contra", fc.hitOut, battle_->units()[db].name)) + " · " + apLabel(cost);
+        // Action Points (the user, 2026-11-06: "uma forma visual de ver quantos PA restam e quanto cada ação custa antes de confirmar"):
+        // the HP bar keeps the left of the row, the AP pips take the right: one pip per point of the maximum, lit while it is in the
+        // reserve, and the pips the pending action would spend (the foe or route under the cursor, the armed spell or potion, Atacar /
+        // Examinar open) glow ember, or red when they are more than it has (drawApPips).
+        // Vida on the left (its bar, then its own number), PA on the right (the user, 2026-11-06: "separa, põe um de cada lado").
+        const float hpR = std::round(x + (barR - x) * 0.48f);
+        dl->AddRectFilled({x, barY}, {hpR, barY + 6.0f}, IM_COL32(74, 74, 74, 255), 3.0f);
+        const float f = u.maxHp > 0 ? std::clamp(static_cast<float>(u.hp) / static_cast<float>(u.maxHp), 0.0f, 1.0f) : 0.0f;
+        if (f > 0.0f) dl->AddRectFilled({x, barY}, {x + (hpR - x) * f, barY + 6.0f}, u.side == "enemy" ? IM_COL32(181, 74, 50, 255) : IM_COL32(216, 216, 216, 255), 3.0f);
+        dl->AddText(text, 12.0f, {hpR + 8.0f, barY - 4.0f}, IM_COL32(240, 240, 240, 255), hp.c_str());
+        drawApPips(dl, text, u, hpR + 8.0f + hw + 28.0f, barR, barY, pendingApCost(u));
+        // the sheet line, or the strike's forecast while a marked foe is under the cursor
+        // Action Points first: what it has of its maximum (the user's HUD line keeps the sheet's stats after it)
+        // the pip row shows the PA once; the line only names what the pending action takes
+        std::string apText;
+        if (const std::optional<int> pending = pendingApCost(u)) apText = std::format("−{} {}", *pending, tr("PA", "AP"));
+        std::string line = (apText.empty() ? std::string() : apText + " · ") + sheetLine(u);
+        if (selected_ >= 0 && hover_ && !targets_.empty()) {
+          const int foe = sceneUnitOf(battle_->unitAt(hover_->x, hover_->y));
+          const auto t = std::find_if(targets_.begin(), targets_.end(), [&](const auto& q) { return q.first == foe; });
+          if (foe >= 0 && t != targets_.end()) {
+            const size_t ab = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), db = static_cast<size_t>(unitBattle_[static_cast<size_t>(foe)]);
+            const ember::Forecast fc = forecastFor(ab, db, t->second);
+            const bool off = offHandFrom(ab, db, t->second);
+            const int cost = ember::apCost(*battle_, battle_->units()[ab], off ? ember::ApAction::offHand() : ember::ApAction::attack());
+            line = (apText.empty() ? std::string() : apText + " · ") + (fc.canCounter ? std::format("{:.0f}% em {} · contra {:.0f}%", fc.hitOut, battle_->units()[db].name, fc.hitBack)
+                                                   : std::format("{:.0f}% em {} · sem contra", fc.hitOut, battle_->units()[db].name)) + " · " + apLabel(cost);
+          }
+        } else if (selected_ >= 0 && hover_ && !spellMode_.empty()) {
+          const int target = battle_->unitAt(hover_->x, hover_->y);
+          if (target >= 0) {
+            const size_t ab = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
+            const ember::BattleUnit& caster = battle_->units()[ab];
+            const ember::BattleUnit& t = battle_->units()[static_cast<size_t>(target)];
+            const std::string spName = potionOf(spellMode_) ? ember::potionName(*potionOf(spellMode_)) : ember::spellName(spellMode_);
+            const std::string scale = ember::spellScaleText(caster, spellMode_, uiEnglish());
+            line = (apText.empty() ? std::string() : apText + " · ") + spName + " em " + t.name + (scale.empty() ? "" : " · " + scale);
+          }
+        } else if (selected_ >= 0 && hover_ && myTurn() && !battle_->roaming() && !(hover_->x == u.x && hover_->y == u.y)) {
+          // the route under the cursor: what the walk there costs (ReachCell::ap of the hex, summed hex by hex)
+          for (const ember::ReachCell& c : reach_)
+            if (c.x == hover_->x && c.y == hover_->y)
+              line = std::format("{} −{} {} · {} {}/{}", tr("Mover", "Move"), c.ap, tr("PA", "AP"), tr("Restam", "Left"),
+                                 std::max(0, u.ap - c.ap), ember::apMax(*battle_, u));
         }
-      } else if (selected_ >= 0 && hover_ && myTurn() && !battle_->roaming() && !(hover_->x == u.x && hover_->y == u.y)) {
-        // the route under the cursor: what the walk there costs (ReachCell::ap of the hex, summed hex by hex)
-        for (const ember::ReachCell& c : reach_)
-          if (c.x == hover_->x && c.y == hover_->y)
-            line = std::format("{} −{} {} · {} {}/{}", tr("Mover", "Move"), c.ap, tr("PA", "AP"), tr("Restam", "Left"),
-                               std::max(0, u.ap - c.ap), ember::apMax(*battle_, u));
+        dl->AddText(text, 13.0f, {x, barY + 12.0f}, IM_COL32(180, 180, 180, 255), line.c_str());
+        if (!tip_.empty() && now_ - tipAt_ < 3.0f) dl->AddText(text, 12.0f, {x, barY + 30.0f}, IM_COL32(224, 189, 128, 255), tip_.c_str());
+        else if (!spellMode_.empty() && selected_ >= 0) {
+          const size_t sb = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
+          const int stage = spellArmed_ ? -1 : static_cast<int>(spellCells_.size());
+          const std::string targeting = spellTargetingLabel(*battle_, sb, spellMode_, uiEnglish());
+          std::string detail;
+          bool isGood = false;
+          if (hover_) {
+            detail = spellHoverFeedback(*battle_, sb, spellMode_, *hover_, uiEnglish(), spellCells_);
+            isGood = detail.rfind(uiEnglish() ? "Valid" : "Alvo válido", 0) == 0 || detail.rfind(uiEnglish() ? "Click" : "Clique", 0) == 0;
+          }
+          if (detail.empty()) {
+            detail = ember::spellContextInstruction(*battle_, sb, spellMode_, stage, uiEnglish());
+          }
+          const std::string banner = targeting.empty() ? detail : std::format("{}  ·  {}", targeting, detail);
+          const ImU32 col = isGood ? IM_COL32(140, 255, 170, 255) : IM_COL32(255, 215, 130, 255);
+          dl->AddText(text, 12.0f, {x, barY + 30.0f}, col, banner.c_str());
+          if (hover_ && !ImGui::GetIO().WantCaptureMouse && !detail.empty()) {
+            ImGui::SetTooltip("%s", detail.c_str());
+          }
+        } else if (const std::string cond = ember::conditionsText(u); !cond.empty()) {  // what ails it (our spells' conditions)
+          const ImVec2 cPos{x, barY + 30.0f};
+          dl->PushClipRect(cPos, {barR, barY + 46.0f}, true);
+          dl->AddText(text, 12.0f, cPos, IM_COL32(196, 150, 232, 255), cond.c_str());
+          dl->PopClipRect();
+          const ImVec2 mouse = ImGui::GetIO().MousePos;
+          if (mouse.x >= x && mouse.x <= barR && mouse.y >= barY + 24.0f && mouse.y <= barY + 46.0f) {
+            const auto list = ember::conditionsDetailedList(u);
+            if (!list.empty()) {
+              std::string tip = tr("Efeitos ativos:", "Active effects:");
+              for (const auto& item : list) {
+                tip += "\n• " + item;
+              }
+              ImGui::SetTooltip("%s", tip.c_str());
+            }
+          }
+        }
       }
-      dl->AddText(text, 13.0f, {x, barY + 12.0f}, IM_COL32(180, 180, 180, 255), line.c_str());
-      if (!tip_.empty() && now_ - tipAt_ < 3.0f) dl->AddText(text, 12.0f, {x, barY + 30.0f}, IM_COL32(224, 189, 128, 255), tip_.c_str());
-      else if (const std::string cond = ember::conditionsText(u); !cond.empty())  // what ails it (our spells' conditions)
-        dl->AddText(text, 12.0f, {x, barY + 30.0f}, IM_COL32(196, 150, 232, 255), cond.c_str());
       ImGui::PopFont();
     } else {
-      dl->AddText(text, 12.0f, {a.x + 10.0f, rowY + 4.0f}, IM_COL32(180, 180, 180, 255),
-                  battle_->activeUnit() >= 0 && battle_->units()[static_cast<size_t>(battle_->activeUnit())].side == "enemy"
-                      ? "O inimigo age…"
-                      : "Clique num aliado ou num inimigo para ver o status.");
+      ImGui::SetCursorScreenPos({a.x + 10.0f, rowY});
+      if (ImGui::InvisibleButton("##logtogglenone", {b.x - 20.0f - a.x, 76.0f})) {
+        showLog_ = !showLog_;
+        logPinned_ = true;
+        logJustOpened_ = showLog_;
+      }
+      if (ImGui::IsItemHovered()) {
+        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+        ImGui::SetTooltip("%s", showLog_ ? tr("Fechar o log", "Close log").c_str() : tr("Abrir o log de combate", "Open combat log").c_str());
+      }
+      if (showLog_) {
+        drawHudLog({a.x + 10.0f, rowY + 4.0f}, {b.x - 10.0f, rowY + 80.0f});
+      } else {
+        dl->AddText(text, 12.0f, {a.x + 10.0f, rowY + 4.0f}, IM_COL32(180, 180, 180, 255),
+                    battle_->activeUnit() >= 0 && battle_->units()[static_cast<size_t>(battle_->activeUnit())].side == "enemy"
+                        ? "O inimigo age…"
+                        : "Clique num aliado ou num inimigo para ver o status.");
+      }
     }
     // the actions row; free roam (Ember's explore missions) shows how to play it instead
     if (battle_->roaming()) drawExploreRow(a, b);
@@ -12527,7 +13731,7 @@ class MapStage final : public Stage {
     const auto labelW = [&](const std::string& s) { return spacedTextWidth(uiFont(UiFont::Mark), 16.0f, s.c_str(), 0.06f) + 28.0f; };
     const float gap = ImGui::GetStyle().ItemSpacing.x;
     {  // the combat log and quest log buttons
-      const std::string logLabel = tr("Log", "Log");
+      const std::string logLabel = tr("Abrir log", "Open log");
       const std::string questLabel = tr("Missões", "Quests");
       const bool finishing = battle_->winAvailable() && result_.empty();
       const std::string finishLabel = battle_->activeExit() ? tr("Usar waypoint", "Use waypoint") : tr("Encerrar missão", "End mission");
@@ -12574,6 +13778,7 @@ class MapStage final : public Stage {
 
   // The battle bar's actions: Atacar, the off-hand, Arrombar, Esperar, Cancelar, Fugir combate, the spells and potions.
   void drawActionsRow(ImVec2 a, ImVec2 b) {
+    hoveredHotbarSpell_.clear();
     // The icons (F1..F12 sockets + Atalhos) on the left; every command button in one group ending at the screen's right edge
     // (its width measured last frame). The user, 2026-10-25: "Botão de atacar e tudo mais na direita", "ONLY COMMAND not the icons".
     const float rowY = b.y - 32.0f - 10.0f;
@@ -12590,7 +13795,11 @@ class MapStage final : public Stage {
       const float spacing = ImGui::GetStyle().ItemSpacing.x;
       const float editW = 32.0f;  // the "Atalhos" icon button (square)
       const float room = barRowX_ - 24.0f - (a.x + 10.0f) - editW - spacing;
-      const float side = std::clamp(std::floor(room / kHotbarSlots - spacing), 24.0f, 36.0f);
+      const float side = std::clamp(std::floor((room - (kHotbarSlots - 1) * spacing) / kHotbarSlots), 20.0f, 36.0f);
+      const float actualSpacing = (room > 0.0f && room < kHotbarSlots * (side + spacing))
+                                      ? std::max(1.0f, (room - kHotbarSlots * side) / (kHotbarSlots - 1))
+                                      : spacing;
+      ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {actualSpacing, 4.0f});
       const Hotbar& bar = hotbarOf(me);
       for (int i = 0; i < kHotbarSlots; ++i) {
         if (i > 0) ImGui::SameLine();
@@ -12600,7 +13809,8 @@ class MapStage final : public Stage {
           startSpell(kind);
       }
       ImGui::SameLine();
-      if (emberIconButton("##hotbaredit", "keyboard",hotbarEdit_, true)) hotbarEdit_ = !hotbarEdit_, hotbarHero_ = static_cast<int>(me);
+      if (emberIconButton("##hotbaredit", "keyboard", hotbarEdit_, true)) hotbarEdit_ = !hotbarEdit_, hotbarHero_ = static_cast<int>(me);
+      ImGui::PopStyleVar();
       ImGui::SameLine();
     }
     ImGui::SetCursorScreenPos({barRowX_, rowY});
@@ -12661,19 +13871,41 @@ class MapStage final : public Stage {
 
   // Free roam (GameApp's explore row): how to play it; a Gazua still opens a chest or door beside the leader (Arrombar).
   void drawExploreRow(ImVec2 a, ImVec2 b) {
-    // the hint on the left, the commands (Arrombar, then the caller's Missões / Log / Sair) on the right, like the fight's row
     const float rowY = b.y - 32.0f - 10.0f;
     barRowX_ = std::max(a.x + 10.0f, std::round(ImGui::GetIO().DisplaySize.x - 20.0f - barRowW_));
-    const std::string hint = tr("Clique no chão para andar · clique em alguém para conversar.", "Click the ground to walk · click someone to talk.");
-    ImGui::GetWindowDrawList()->AddText(uiFont(UiFont::Ui), 13.0f, {a.x + 10.0f, rowY + 9.0f}, IM_COL32(180, 180, 180, 255), hint.c_str());
+    const bool mine = myTurn() && !busy();
+    const size_t me = mine ? static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]) : 0;
+    const ember::BattleUnit* actor = mine ? &battle_->units()[me] : nullptr;
+    if (actor) {
+      ImGui::SetCursorScreenPos({a.x + 10.0f, rowY});
+      const float spacing = ImGui::GetStyle().ItemSpacing.x;
+      const float editW = 32.0f;
+      const float room = barRowX_ - 24.0f - (a.x + 10.0f) - editW - spacing;
+      const float side = std::clamp(std::floor((room - (kHotbarSlots - 1) * spacing) / kHotbarSlots), 20.0f, 36.0f);
+      const float actualSpacing = (room > 0.0f && room < kHotbarSlots * (side + spacing))
+                                      ? std::max(1.0f, (room - kHotbarSlots * side) / (kHotbarSlots - 1))
+                                      : spacing;
+      ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {actualSpacing, 4.0f});
+      const Hotbar& bar = hotbarOf(me);
+      for (int i = 0; i < kHotbarSlots; ++i) {
+        if (i > 0) ImGui::SameLine();
+        const std::string& kind = bar[static_cast<size_t>(i)];
+        const std::optional<SocketState> s = socketState(me, kind, true);
+        if (spellSocket(std::format("##exp_slot{}", i).c_str(), s ? kind : std::string(), s ? s->uses : 0, s && s->usable, s && spellMode_ == kind, side, i, s ? s->cost : -1))
+          startSpell(kind);
+      }
+      ImGui::SameLine();
+      if (emberIconButton("##exp_hotbaredit", "keyboard", hotbarEdit_, true)) hotbarEdit_ = !hotbarEdit_, hotbarHero_ = static_cast<int>(me);
+      ImGui::PopStyleVar();
+    } else {
+      const std::string hint = tr("Clique no chão para andar · clique em alguém para conversar.", "Click the ground to walk · click someone to talk.");
+      ImGui::GetWindowDrawList()->AddText(uiFont(UiFont::Ui), 13.0f, {a.x + 10.0f, rowY + 9.0f}, IM_COL32(180, 180, 180, 255), hint.c_str());
+    }
     ImGui::SetCursorScreenPos({barRowX_, rowY});
     bool drew = false;
-    if (myTurn() && !busy()) {
-      const size_t me = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
-      if (battle_->units()[me].lockpick > 0 && battle_->adjacentLock(me) >= 0) {
-        if (emberButton("##lockpick", tr("Arrombar", "Pick lock").c_str(), false, true, 32.0f, "lockpick.png")) openLock();
-        drew = true;
-      }
+    if (actor && actor->lockpick > 0 && battle_->adjacentLock(me) >= 0) {
+      if (emberButton("##lockpick", tr("Arrombar", "Pick lock").c_str(), false, true, 32.0f, "lockpick.png")) openLock();
+      drew = true;
     }
     if (!drew) ImGui::Dummy({0.0f, 32.0f});  // the anchor the caller's buttons follow
   }
@@ -13737,6 +14969,18 @@ class MapStage final : public Stage {
       const auto [c, r] = ember::hexAt(board_->layout(), unitPos_[i].x, unitPos_[i].y);
       party.push_back({c, r});
     }
+    {
+      const std::string floorId = board_->draft().id;
+      const std::string logMap = ember::logicalMapOfScreen(floorId);
+      const int64_t minute = campaignMinuteNow();
+      const ember::HexLayout& lay = board_->layout();
+      for (const ember::LightSpellInstance& inst : ember::LightingSpellRegistry::get().instances()) {
+        if (inst.isExpired(minute) || inst.logicalMapId != logMap) continue;
+        if (inst.bindType == ember::LightBindType::CasterEntity || inst.floorId != floorId) continue;
+        const auto [lc, lr] = ember::hexAt(lay, inst.position.x, inst.position.z);
+        if (lc >= 0 && lr >= 0 && lc < lay.cols && lr < lay.rows) party.push_back({lc, lr});
+      }
+    }
     if (changed || party != lastParty_) {
       // Every hex walked since the last relight sees in turn (a pinned clock replays the whole walk).
       if (hero_ >= 0 && path_.size() > 1 && options_.sceneTime >= 0.0f && !replayed_) {
@@ -14444,6 +15688,7 @@ class MapStage final : public Stage {
     std::chrono::steady_clock::time_point at;
   };
   std::optional<LeftPress> leftDown_;
+  std::optional<LeftPress> rightDown_;
   // The map editor's held unit / decoration (editorGrab): which button, where it went down, whether it travelled.
   struct EditorHold {
     uint8_t button = 0;
@@ -14797,6 +16042,7 @@ class MapStage final : public Stage {
   static constexpr float kResultDelay = 1.8f;
   std::vector<std::pair<int, int>> startLevel_;  // per battle unit: level and XP when the battle began
   std::string spellMode_;                 // the spell being aimed (battle bar), empty = none
+  std::string hoveredHotbarSpell_;        // hovered skill on the action bar (shows reach)
   std::vector<ember::BattleHex> spellCells_; // its targets chosen so far
   std::string banquetChoice_; // selected buff id for Banquete Arcano
   std::optional<ember::BattleHex> spellArmed_;  // the hex aimed, waiting for Confirmar / Cancelar (Ember spellArmed)

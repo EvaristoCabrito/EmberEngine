@@ -111,6 +111,9 @@ ApRules readRules() {
     if (s.contains("byKind") && s["byKind"].is_object())
       for (const auto& [k, v] : s["byKind"].items())
         if (v.is_number()) r.spells.byKind[k] = v.get<int>();
+    if (!r.spells.byKind.contains("arcaneBeam")) r.spells.byKind["arcaneBeam"] = 4;
+    if (!r.spells.byKind.contains("anchoredLight")) r.spells.byKind["anchoredLight"] = 4;
+    if (!r.spells.byKind.contains("luminousHalo")) r.spells.byKind["luminousHalo"] = 4;
   }
   if (const Json& c = j.value("counters", Json::object()); c.is_object()) {
     r.counters.byType.clear();
@@ -310,6 +313,7 @@ std::string apOffHandCategory(const BattleUnit& u) {
 }
 
 int apCost(const Battle& b, const BattleUnit& u, const ApAction& a) {
+  if (b.roaming()) return 0;
   const ApRules& r = apRules();
   const std::string category = apWeaponCategory(u);
   double v = 0;
@@ -423,6 +427,7 @@ bool apTrySpend(BattleUnit& u, int cost) {
 }
 
 int apStepsCost(const Battle& b, size_t owner, const std::vector<BattleStep>& steps) {
+  if (b.roaming()) return 0;
   if (steps.empty() || owner >= b.units().size()) return 0;
   const BattleUnit& u = b.units()[owner];
   const BattleStep& s = steps.front();

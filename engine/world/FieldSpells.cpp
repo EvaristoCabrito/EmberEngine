@@ -41,14 +41,15 @@ std::string FieldSpells::rulesClass(const std::string& classId) {
   static const std::pair<const char*, const char*> kBase[] = {
       {"elementalist", "mage"}, {"warlock", "mage"},   {"sorcerer", "conjurer"},   {"necromancer", "conjurer"},
       {"bishop", "healer"},     {"cleric", "healer"},  {"paladin", "swordsman"},   {"heavyKnight", "swordsman"},
-      {"ranger", "archer"},     {"assassin", "archer"}, {"sentinel", "lancer"},    {"templar", "lancer"},    {"lancerZero", "lancer"}};
+      {"ranger", "archer"},     {"assassin", "archer"}, {"sentinel", "lancer"},    {"templar", "lancer"},    {"lancerZero", "lancer"},
+      {"swordmaster", "vanguard"}, {"warbringer", "vanguard"}};
   std::string base = classId;
   for (const auto& [from, to] : kBase)
     if (classId == from) base = to;
   if (base == "voss") return "mage";
   if (base == "salazar") return "healer";
   if (base == "neera") return "archer";
-  if (base == "kaelFinal" || base == "kaelEarly") return "swordsman";
+  if (base == "kaelFinal" || base == "kaelEarly") return "vanguard";
   return base;
 }
 

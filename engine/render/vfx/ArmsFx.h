@@ -68,6 +68,7 @@ class ArmsFx {
   void bullRush(const Target& foe, glm::vec3 from, float impact);
   void executioner(const Target& foe, glm::vec3 from, float impact);
   void trip(const Target& foe, glm::vec3 from, float impact);
+  void doubleStrike(const Target& foe, glm::vec3 from, float impact);
   // Over `hexes` (their ground points) from the striker at `from`; `bodies` = the units struck.
   void shoulderSmash(glm::vec3 from, float height, const std::vector<glm::vec3>& hexes, const std::vector<Target>& bodies, float impact);
   // Down the line `hexes` (in order from the striker), the first hex reached at `impact`.
@@ -86,13 +87,40 @@ class ArmsFx {
   void reflectHit(glm::vec3 from, float fromHeight, glm::vec3 to, float toHeight, float start, float impact);
   // The circle on the hex at `at`; the familiar comes at `impact`.
   void summon(Summon style, glm::vec3 at, float impact);
+  // Tendril swipe all around the caster at `feet` (its card `height`) over `hexes` hitting `bodies`.
+  void tendrilSwipe(glm::vec3 feet, float height, const std::vector<glm::vec3>& hexes, const std::vector<Target>& bodies, float impact);
+  // Segundo Fôlego: surge of vigor and recovery on the warrior at `feet`.
+  void secondWind(glm::vec3 feet, float height, float impact);
 
   bool active(float now) const;
+  float latestEnd() const {
+    float end = 0.0f;
+    for (const Effect& e : effects_) end = std::max(end, e.end());
+    return end;
+  }
   void clear() { effects_.clear(); }
   void build(float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
 
  private:
-  enum class Kind { Provoke, ShieldBash, BullRush, Executioner, Trip, ShoulderSmash, Stampede, DivineWrath, Aura, Summon, ReflectWard, ReflectHit, Phantom, Spectral };
+  enum class Kind {
+    Provoke,
+    ShieldBash,
+    BullRush,
+    Executioner,
+    Trip,
+    DoubleStrike,
+    ShoulderSmash,
+    Stampede,
+    DivineWrath,
+    Aura,
+    Summon,
+    ReflectWard,
+    ReflectHit,
+    Phantom,
+    Spectral,
+    TendrilSwipe,
+    SecondWind
+  };
   struct Effect {
     Kind kind;
     bool protection = false;
@@ -113,6 +141,7 @@ class ArmsFx {
   void buildBullRush(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   void buildExecutioner(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   void buildTrip(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
+  void buildDoubleStrike(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   void buildShoulderSmash(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   void buildStampede(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   void buildDivineWrath(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
@@ -122,6 +151,8 @@ class ArmsFx {
   void buildReflectHit(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   void buildPhantom(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   void buildSpectral(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
+  void buildTendrilSwipe(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
+  void buildSecondWind(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   // Shared pieces: a flash with a cross glint, a ring on the ground, sparks, dust rolling out, stones / chips on arcs.
   void flash(glm::vec3 at, glm::vec3 across, float size, glm::vec3 colour, float age, float life, glm::vec3 eye, float pull);
   void groundRing(glm::vec3 feet, float from, float to, float grow, float life, float intensity, float opacity, glm::vec3 colour, glm::vec3 core, float age,
@@ -133,8 +164,8 @@ class ArmsFx {
 
   std::vector<Effect> effects_;
   uint32_t serial_ = 0;
-  uint32_t quadFirst_ = 0, sphereFirst_ = 0, discFirst_ = 0, rockFirst_ = 0, chipFirst_ = 0, columnFirst_ = 0, runeFirst_ = 0;
-  uint32_t quadCount_ = 0, sphereCount_ = 0, discCount_ = 0, rockCount_ = 0, chipCount_ = 0, columnCount_ = 0, runeCount_ = 0;
+  uint32_t quadFirst_ = 0, sphereFirst_ = 0, discFirst_ = 0, rockFirst_ = 0, chipFirst_ = 0, columnFirst_ = 0, runeFirst_ = 0, halfHaloFirst_ = 0;
+  uint32_t quadCount_ = 0, sphereCount_ = 0, discCount_ = 0, rockCount_ = 0, chipCount_ = 0, columnCount_ = 0, runeCount_ = 0, halfHaloCount_ = 0;
   std::vector<VfxInstance> streaks_, puffs_, rocks_, chips_;
 };
 

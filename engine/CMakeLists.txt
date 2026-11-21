@@ -39,6 +39,8 @@ add_library(EmberEngine STATIC
   render/vfx/IceStorm.cpp
   render/vfx/SpellBolts.cpp
   render/vfx/Lightning.cpp
+  render/vfx/ChainLightning.cpp
+  render/vfx/PrimordialEmber.cpp
   render/vfx/CombatFx.cpp
   render/vfx/CausticVenom.cpp
   render/vfx/AcidCloud.cpp
@@ -64,6 +66,7 @@ add_library(EmberEngine STATIC
   render/vfx/DaggerFx.cpp
   render/vfx/MageFx.cpp
   render/vfx/TurnUndead.cpp
+  render/vfx/LightingSpellFx.cpp
   render/MeshScene.cpp
   render/MeshBuild.cpp
   render/BoardGround.cpp
@@ -100,6 +103,7 @@ add_library(EmberEngine STATIC
   world/Companions.cpp
   world/FieldSpells.cpp
   world/Loadout.cpp
+  world/LightingSpells.cpp
   media/VideoPlayer.cpp
   media/AudioMixer.cpp
   debug/PerfOverlay.cpp

@@ -192,6 +192,8 @@ void setPromotion(BattleUnit& u, const std::string& classId);
 std::string promotionName(const std::string& classId);
 // A unit's conditions in words, for the window ("Marcado +20% · Veneno Maior · Silenciado 2"), empty when none.
 std::string conditionsText(const BattleUnit& u);
+// Each condition as a detailed explanation string with full mechanics and numbers.
+std::vector<std::string> conditionsDetailedList(const BattleUnit& u);
 // The spell's description for the window's tooltip (its numbers at the caster's level).
 // moon (Garran's techniques, docs/SKILLS_MOONWARDEN.md): tonight's moonForm(battle) to say what it does to them now, -1 to list every moon
 std::string spellTooltip(const BattleUnit& caster, const std::string& kind, int moon = -1);
@@ -202,6 +204,26 @@ std::string spellScaleText(const BattleUnit& caster, const std::string& kind, bo
 std::string spellExplain(const std::string& kind, bool en);
 // Where the spell stands on its scaling track at this level: "Escala do 1 ao 15 · próximo: nível 4, +1 míssil" (empty: no track).
 std::string spellTrackNote(const std::string& kind, int level, bool en);
+// The element a spell belongs to ("arcane", "fire", "ice", "lightning", "poison", "holy", "darkness", "ember", ""), PT/EN label.
+std::string elementOf(const std::string& kind);
+std::string elementLabelPt(const std::string& element);
+BattleHex hexBeyond(BattleHex from, BattleHex through);
+
+struct EmberNumbers {
+  int range = 0, radius = 0;
+  double mul = 0;
+  int dice = 0, faces = 0, bonus = 0;
+  int pct = 0, turns = 0, rounds = 0, spread = 0, jumps = 0, length = 0, push = 0, count = 0;
+  double tickMul = 0;
+  int tickDice = 0, tickFaces = 0;
+  int hazardDice = 0, hazardFaces = 8;
+  double ringMul = 0;
+  int ringDice = 0, ringFaces = 0;
+  const char* tier = "";
+  int durDice = 0, durFaces = 0;
+  double decay = 0;
+};
+EmberNumbers emberNumbers(const std::string& kind, int level);
 
 // The Lanceiro's Vigília da Sentinela (docs/SKILLS_LANCER.md): the thrusts that land on `attacker` before its blow, one per
 // sentinel of the other side whose stance covers one of `targets` (itself, or an ally within its radius) and whose lance
@@ -270,6 +292,27 @@ bool spellSelfArea(const std::string& kind);
 // A spell aimed by direction from the caster (a line or a cone through any hex): every hex is a valid aim, so the window
 // shows the line / cone under the cursor and the foes it can reach, not a zone.
 bool spellAimsDirection(const std::string& kind);
+
+// Target categorization for intuitive targeting UI
+bool spellTargetsAlly(const std::string& kind);
+bool spellTargetsGroundOrFreeHex(const std::string& kind);
+
+// Movement & repositioning preview for movement-based abilities (vault, bullRush, toss, drag, hook, swap)
+struct SpellMovementPreview {
+  bool valid = false;
+  std::optional<BattleHex> casterDestination;
+  std::optional<BattleHex> targetDestination;
+  std::optional<size_t> targetUnit;
+  std::optional<size_t> collidedUnit;
+  std::vector<BattleHex> trajectory;
+};
+SpellMovementPreview spellMovementPreview(const Battle& b, size_t caster, const std::string& kind, BattleHex cell);
+
+// Unobtrusive contextual instruction for targeting
+std::string spellContextInstruction(const Battle& b, size_t caster, const std::string& kind, int stage = 0, bool en = false);
+
+// Whether there is at least one valid target on the battlefield for this ability
+bool spellHasValidTargets(const Battle& b, size_t caster, const std::string& kind);
 
 // Potions (data.ts POTIONS; their ids in the bag's order: kPotionIds, Battle.h).
 int potionIndex(const std::string& id);  // -1 when unknown

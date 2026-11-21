@@ -60,8 +60,7 @@ set the aspect ratio (vertical, 9:16) in the generator's own setting, never in t
 | Audio line: sound effects only, no narration (the user, 2026-11-19) | The game's unit sounds are cut from the videos' own audio; a narrated video can't be used for them. |
 | The same description in every video | The costume and the staff must not change between moves. |
 
-Settings (in the generator, not in the prompt): vertical 9:16, 1080 × 1920 when offered (720 × 1280 otherwise), 24 fps, 8 s for loops (the
-longest clip Veo gives; more seconds = more frames to pick the best loop from), 4 s is enough for a hit.
+Settings (in the generator, not in the prompt): vertical 9:16, 1080 × 1920 when offered (720 × 1280 otherwise), 24 fps, walks 6 s (the user, 2026-11-20: "a walk is never more than 6"; never write 8 s for a walk), idles 8 s, 4 s is enough for a hit.
 
 ## Each move
 

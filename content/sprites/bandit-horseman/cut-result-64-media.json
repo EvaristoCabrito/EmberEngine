@@ -159,6 +159,74 @@
     "foot": 0.17496
    },
    "pattern": "content/sprites/bandit-horseman/death-media64-v01/death-{}.png"
+  },
+  "move-up": {
+   "video": "Attachments/BanditHorseman_walking_in_placeUPandDown.mp4",
+   "first": 0,
+   "last": 119,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/bandit-horseman/idle-walk 0:96",
+   "loopFirst": 26,
+   "loopLast": 59,
+   "seamSteps": 1.17,
+   "bootRow": 693,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 641.5,
+   "scaledTo": 610.0,
+   "frames": 34,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    269,
+    639
+   ],
+   "crop": [
+    5,
+    5,
+    260,
+    629
+   ],
+   "box": {
+    "w": 1.58815,
+    "h": 3.7726,
+    "foot": 0.06161
+   },
+   "pattern": "content/sprites/bandit-horseman/move-up-media64-v01/move-up-{}.png"
+  },
+  "move-down": {
+   "video": "Attachments/BanditHorseman_walking_in_placeUPandDown.mp4",
+   "first": 120,
+   "last": 239,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/bandit-horseman/idle-walk 0:96",
+   "loopFirst": 177,
+   "loopLast": 204,
+   "seamSteps": 1.15,
+   "bootRow": 696,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 643.0,
+   "scaledTo": 609.6,
+   "frames": 28,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    259,
+    638
+   ],
+   "crop": [
+    4,
+    4,
+    250,
+    629
+   ],
+   "box": {
+    "w": 1.52846,
+    "h": 3.76509,
+    "foot": 0.06698
+   },
+   "pattern": "content/sprites/bandit-horseman/move-down-media64-v01/move-down-{}.png"
   }
  }
 }

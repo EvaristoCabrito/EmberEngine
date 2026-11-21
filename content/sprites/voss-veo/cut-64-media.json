@@ -37,26 +37,37 @@
    "clip": "move-left",
    "pose": "walkLeft",
    "kind": "walk",
-   "src": "build/video-cut/voss-1080/walkleft",
-   "video": "Attachments/Voss/Vosswalking_left_in_profile_51d7dffc_1080p.mp4",
-   "first": 0,
-   "last": 142,
+   "src": "build/video-cut/voss-veo/walk-left",
+   "video": "Attachments/VeoVoss/Walk Left/Character_walking_left_with_staff_20261017230240.mp4",
+   "first": 30,
+   "last": 170,
    "loopMin": 40,
-   "loopMax": 142,
+   "loopMax": 110,
    "mode": "loop",
-   "version": "media64-v1081",
    "scaleTo": 610
   },
   {
    "clip": "cast",
    "pose": "cast",
    "kind": "stand",
-   "src": "build/video-cut/voss-1080/cast",
-   "video": "Attachments/Voss/Voss_casting_purple_arcane_spell_788c716a_1080p.mp4",
+   "src": "build/video-cut/voss-veo/cast",
+   "video": "Attachments/VeoVoss/Casting/Voss_casting_purple_arcane_spell_20261017231306.mp4",
    "first": 8,
-   "last": 130,
+   "last": 120,
    "mode": "once",
-   "version": "media64-v1081",
+   "wallKey": {
+    "region": [
+     330,
+     0,
+     660,
+     380
+    ],
+    "low": 30,
+    "high": 110,
+    "feather": 56,
+    "why": "the user, 2026-10-20: half of the staff vanished at the end of the cast (v01 frames 77-90: the model dropped the flash, the burst and the staff's head as background); v01 kept"
+   },
+   "bodyAt": -0.242,
    "scaleTo": 610
   },
   {

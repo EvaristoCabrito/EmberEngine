@@ -3,6 +3,7 @@
 
 #include "world/ActionPoints.h"
 #include "world/Battle.h"
+#include "world/LightingSpells.h"
 #include "world/Spells.h"
 
 #include <algorithm>
@@ -28,6 +29,7 @@ nlohmann::json Battle::snapshot() const {
     nlohmann::json s = {
         {"id", u.id},       {"name", u.name},       {"classId", u.classId},     {"side", u.side},
         {"x", u.x},         {"y", u.y},             {"hp", u.hp},               {"maxHp", u.maxHp},
+        {"mana", u.mana},   {"maxMana", u.maxMana},
         {"atk", u.atk},     {"mag", u.mag},         {"def", u.def},             {"dex", u.dex},
         {"mov", u.mov},     {"minRange", u.minRange}, {"maxRange", u.maxRange}, {"moved", u.moved},
         {"acted", u.acted}, {"facing", u.facing},   {"alive", u.alive},         {"level", u.level},
@@ -182,6 +184,7 @@ nlohmann::json Battle::snapshot() const {
           {"turn", round_}, {"units", units}, {"turnOrder", order}, {"enmity", enmity}, {"lootRations", lootRations_}, {"roaming", roaming_},
           {"zones", zones}, {"zoneSerial", zoneSerial_}, {"log", log_}, {"webZones", webs}, {"iceStormZones", ices}, {"auraZones", auras},
           {"warpGates", gates}, {"turnRestrained", turnRestrained_}, {"questFound", questFound_},
+          {"lightSpells", LightingSpellRegistry::get().toJson()},
           {"examined", std::vector<std::string>(examined_.begin(), examined_.end())}};
 }
 
@@ -210,6 +213,11 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
     BattleUnit& u = units_[static_cast<size_t>(find(s.value("id", std::string())))];
     u.x = s.value("x", u.x), u.y = s.value("y", u.y);
     u.hp = s.value("hp", u.hp), u.maxHp = s.value("maxHp", u.maxHp);
+    u.mana = s.value("mana", u.mana), u.maxMana = s.value("maxMana", u.maxMana > 0 ? u.maxMana : u.mana);
+    if (u.maxMana <= 0) {
+      u.maxMana = std::max(20, u.mag > 0 ? u.mag * 3 + u.level * 2 : 20);
+      u.mana = u.maxMana;
+    }
     u.atk = s.value("atk", u.atk), u.mag = s.value("mag", u.mag), u.def = s.value("def", u.def), u.dex = s.value("dex", u.dex);
     u.mov = s.value("mov", u.mov), u.minRange = s.value("minRange", u.minRange), u.maxRange = s.value("maxRange", u.maxRange);
     u.moved = s.value("moved", u.moved), u.acted = s.value("acted", u.acted);
@@ -487,6 +495,7 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
     for (const nlohmann::json& line : snap["log"])
       if (line.is_string()) log_.push_back(line.get<std::string>());
   roaming_ = roaming_ && snap.value("roaming", true);
+  if (snap.contains("lightSpells")) LightingSpellRegistry::get().fromJson(snap["lightSpells"], 0);
   if (snap.contains("turnOrder") && snap["turnOrder"].is_array()) {
     turnOrder_.clear();
     for (const nlohmann::json& id : snap["turnOrder"])

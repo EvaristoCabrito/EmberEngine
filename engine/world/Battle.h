@@ -193,6 +193,7 @@ struct BattleUnit {
   std::vector<ApModifier> apMods;      // its modifiers (talents, buffs, debuffs ...), expiring or not
 
   // --- Spells, training, experience (Ember spell-source / BattleEngine) ---
+  int mana = 0, maxMana = 0;
   int spells[10] = {};  // uses left per tier (Ember Unit.spells tier1..tier10)
   std::vector<std::string> spellList;  // what it may cast (classSpells for its class, level and name)
   int shockCharges = 0, frostCharges = 0, fantomForceCharges = 0;

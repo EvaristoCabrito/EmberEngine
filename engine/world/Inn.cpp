@@ -148,7 +148,10 @@ int InnRules::ember(const Json& save) const { return static_cast<int>(num(save, 
 
 std::string InnRules::heroClass(const Json& save, const std::string& hero) const {
   const Json& promo = child(child(save, "promotions"), hero);
-  if (promo.is_string()) return promo.get<std::string>();
+  if (promo.is_string()) {
+    const std::string s = promo.get<std::string>();
+    if (!(hero == "Kael" && (s == "swordsman" || s == "paladin" || s == "heavyKnight"))) return s;
+  }
   // Kael is a Vanguarda (docs/SKILLS_VANGUARD.md, the user 2026-11-13; content/ember-classes.json heroBaseClasses)
   static const std::map<std::string, std::string> kBase = {{"Kael", "vanguard"}, {"Neera", "neera"}, {"Voss", "voss"},
                                                            {"Salazar", "salazar"}, {"Aldric", "aldric"}, {"Malrec", "conjurer"}};

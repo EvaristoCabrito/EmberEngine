@@ -104,8 +104,8 @@ class ConjurerFx {
 
   std::vector<Effect> effects_;
   uint32_t serial_ = 0;
-  uint32_t quadFirst_ = 0, sphereFirst_ = 0, discFirst_ = 0, columnFirst_ = 0, haloFirst_ = 0, lanceFirst_ = 0, phantomFirst_ = 0;
-  uint32_t quadCount_ = 0, sphereCount_ = 0, discCount_ = 0, columnCount_ = 0, haloCount_ = 0, lanceCount_ = 0, phantomCount_ = 0;
+  uint32_t quadFirst_ = 0, sphereFirst_ = 0, discFirst_ = 0, columnFirst_ = 0, haloFirst_ = 0, lanceFirst_ = 0, phantomFirst_ = 0, halfHaloFirst_ = 0;
+  uint32_t quadCount_ = 0, sphereCount_ = 0, discCount_ = 0, columnCount_ = 0, haloCount_ = 0, lanceCount_ = 0, phantomCount_ = 0, halfHaloCount_ = 0;
   std::vector<VfxInstance> streaks_, puffs_, motes_, shards_;
 };
 

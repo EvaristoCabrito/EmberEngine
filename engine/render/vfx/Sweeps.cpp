@@ -62,6 +62,30 @@ const std::vector<VfxVertex>& spearGeometry() { static const auto g = vfxgeo::ic
 const std::vector<VfxVertex>& stoneGeometry() { static const auto g = vfxgeo::box(0.065f, 0.075f, 0.065f); return g; }
 const std::vector<VfxVertex>& outerRing() { static const auto g = vfxgeo::torus(3.2f, 0.085f, 8, 96, 2.0f * kPi); return g; }
 const std::vector<VfxVertex>& innerRing() { static const auto g = vfxgeo::torus(3.2f * 0.78f, 0.045f, 10, 96, 2.0f * kPi); return g; }
+const std::vector<VfxVertex>& halfOuterRing() {
+  static const auto g = [] {
+    std::vector<VfxVertex> ring = vfxgeo::torus(3.2f, 0.085f, 8, 48, kPi);
+    const glm::mat4 flat = glm::rotate(glm::mat4(1.0f), -kPi * 0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+    for (VfxVertex& v : ring) {
+      v.position = glm::vec3(flat * glm::vec4(v.position, 1.0f));
+      v.normal = glm::vec3(flat * glm::vec4(v.normal, 0.0f));
+    }
+    return ring;
+  }();
+  return g;
+}
+const std::vector<VfxVertex>& halfInnerRing() {
+  static const auto g = [] {
+    std::vector<VfxVertex> ring = vfxgeo::torus(3.2f * 0.78f, 0.045f, 10, 48, kPi);
+    const glm::mat4 flat = glm::rotate(glm::mat4(1.0f), -kPi * 0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+    for (VfxVertex& v : ring) {
+      v.position = glm::vec3(flat * glm::vec4(v.position, 1.0f));
+      v.normal = glm::vec3(flat * glm::vec4(v.normal, 0.0f));
+    }
+    return ring;
+  }();
+  return g;
+}
 const std::vector<VfxVertex>& shardGeometry() { static const auto g = vfxgeo::icosahedron(0.035f, 0); return g; }
 
 struct Drawer {
@@ -202,7 +226,7 @@ Varredura::Varredura(glm::vec3 origin, const std::vector<glm::vec3>& targets, fl
   for (const glm::vec3& w : targets) offsets_.push_back(vfxToEmber(w) - origin_);
 }
 
-void Varredura::build(float now, const Camera&, VfxFrame& frame, std::vector<VfxLight>& lights) {
+void Varredura::build(float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) {
   const float t = now - start_;
   if (t < 0.0f || done(now)) return;
   constexpr float kRingRadius = 3.2f;
@@ -210,32 +234,82 @@ void Varredura::build(float now, const Camera&, VfxFrame& frame, std::vector<Vfx
   const float radius = kRingRadius * three::smoothstep(progress, 0.0f, 1.0f);
   const float fade = 1.0f - three::smoothstep(t, 0.72f, 1.12f);
   const glm::mat4 root = vfxEmberToWorld() * glm::translate(glm::mat4(1.0f), origin_) * glm::rotate(glm::mat4(1.0f), std::sin(t * 5.5f) * 0.035f, glm::vec3(0, 0, 1));
-  const Drawer draw{frame, vfxFromEmber(origin_)};
+  const glm::vec3 feet = vfxFromEmber(origin_);
+  const Drawer draw{frame, feet};
 
-  // Shards riding the wave (opaque, first).
+  glm::vec3 side{camera.right.x, 0.0f, camera.right.z};
+  side = glm::dot(side, side) > 1e-8f ? glm::normalize(side) : glm::vec3(1.0f, 0.0f, 0.0f);
+  glm::vec3 fwd{camera.forward.x, 0.0f, camera.forward.z};
+  fwd = glm::dot(fwd, fwd) > 1e-8f ? glm::normalize(fwd) : glm::vec3(0.0f, 0.0f, 1.0f);
+
+  // Shards riding the wave: partitioned so shards behind the card plane draw behind it.
   {
-    std::vector<VfxInstance> shards;
+    std::vector<VfxInstance> shardsBack, shardsFront;
     constexpr int count = 42;
     for (int i = 0; i < count; ++i) {
       const float angle = static_cast<float>(i) / count * kPi * 2.0f + std::sin(t * 6.0f + i * 1.7f) * 0.07f;
       const float travel = radius * (0.72f + (i % 5) * 0.07f);
       const glm::vec3 p{std::cos(angle) * travel, std::sin(angle) * travel, 0.1f + std::abs(std::sin(t * 12.0f + i * 2.3f)) * 0.36f};
       const float scale = (0.35f + (i % 4) * 0.16f) * fade;
-      shards.push_back({glm::translate(glm::mat4(1.0f), p) * three::eulerXYZ(t * 6.0f + i, t * 4.0f - i, t * 7.0f + i * 0.3f) *
-                        glm::scale(glm::mat4(1.0f), glm::vec3(std::max(0.001f, scale)))});
+      const glm::mat4 inst = glm::translate(glm::mat4(1.0f), p) * three::eulerXYZ(t * 6.0f + i, t * 4.0f - i, t * 7.0f + i * 0.3f) *
+                             glm::scale(glm::mat4(1.0f), glm::vec3(std::max(0.001f, scale)));
+      const glm::vec3 shardWorld = glm::vec3(root * glm::vec4(p, 1.0f));
+      if (glm::dot(shardWorld - feet, fwd) > 0.0f) {
+        shardsBack.push_back({inst});
+      } else {
+        shardsFront.push_back({inst});
+      }
     }
-    const uint32_t firstInstance = static_cast<uint32_t>(frame.instances.size());
-    frame.instances.insert(frame.instances.end(), shards.begin(), shards.end());
-    draw(VfxMaterial::Standard, frame.addVertices(shardGeometry()), shardGeometry().size(), root, {0.9f, 0.0f, 0, 0}, glm::vec4(0.0f),
-         glm::vec4(three::hex(0xcbdce0), 1.0f), VfxBlend::Alpha, firstInstance, count);
+    if (!shardsBack.empty()) {
+      const uint32_t first = static_cast<uint32_t>(frame.instances.size());
+      frame.instances.insert(frame.instances.end(), shardsBack.begin(), shardsBack.end());
+      draw(VfxMaterial::Standard, frame.addVertices(shardGeometry()), shardGeometry().size(), root, {0.9f, 0.0f, 0, 0}, glm::vec4(0.0f),
+           glm::vec4(three::hex(0xcbdce0), 1.0f), VfxBlend::Alpha, first, static_cast<uint32_t>(shardsBack.size()));
+      frame.draws.back().behindCard = true;
+      frame.draws.back().cardAt = feet;
+    }
+    if (!shardsFront.empty()) {
+      const uint32_t first = static_cast<uint32_t>(frame.instances.size());
+      frame.instances.insert(frame.instances.end(), shardsFront.begin(), shardsFront.end());
+      draw(VfxMaterial::Standard, frame.addVertices(shardGeometry()), shardGeometry().size(), root, {0.9f, 0.0f, 0, 0}, glm::vec4(0.0f),
+           glm::vec4(three::hex(0xcbdce0), 1.0f), VfxBlend::Alpha, first, static_cast<uint32_t>(shardsFront.size()));
+      frame.draws.back().behindCard = false;
+    }
   }
-  const glm::mat4 scaled = glm::scale(glm::mat4(1.0f), {progress, progress, 1.0f});
-  if (t >= 0.12f && fade > 0.01f)
-    draw(VfxMaterial::Basic, frame.addVertices(outerRing()), outerRing().size(), root * glm::translate(glm::mat4(1.0f), {0, 0, 0.12f}) * scaled, {}, {},
-         glm::vec4(three::hex(0xe7fbff), 0.9f * fade), VfxBlend::Alpha);
-  if (t >= 0.18f && fade > 0.01f)
-    draw(VfxMaterial::Standard, frame.addVertices(innerRing()), innerRing().size(), root * glm::translate(glm::mat4(1.0f), {0, 0, 0.16f}) * scaled,
-         {1.0f, 0.0f, 0, 0}, glm::vec4(three::hex(0x7ac8dc), 1.25f), glm::vec4(three::hex(0xa8d5e1), 0.58f * fade), VfxBlend::Alpha);
+
+  // The expanding shockwave rings (outer and inner):
+  // Split into back half (behind card) and front half (in front of card) so they cleanly encircle the card.
+  auto drawRing = [&](uint32_t firstVert, size_t vertCount, glm::vec3 centerPos, VfxMaterial mat, glm::vec4 p0, glm::vec4 p1, glm::vec4 color) {
+    // Back half (curves along +fwd into screen, behind the card):
+    glm::mat4 mBack(1.0f);
+    mBack[0] = glm::vec4(side * progress, 0.0f);
+    mBack[1] = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+    mBack[2] = glm::vec4(fwd * progress, 0.0f);
+    mBack[3] = glm::vec4(centerPos, 1.0f);
+    draw(mat, firstVert, vertCount, mBack, p0, p1, color, VfxBlend::Alpha);
+    frame.draws.back().behindCard = true;
+    frame.draws.back().cardAt = feet;
+
+    // Front half (curves along -fwd toward camera, in front of the card):
+    glm::mat4 mFront(1.0f);
+    mFront[0] = glm::vec4(-side * progress, 0.0f);
+    mFront[1] = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+    mFront[2] = glm::vec4(-fwd * progress, 0.0f);
+    mFront[3] = glm::vec4(centerPos, 1.0f);
+    draw(mat, firstVert, vertCount, mFront, p0, p1, color, VfxBlend::Alpha);
+    frame.draws.back().behindCard = false;
+  };
+
+  if (t >= 0.12f && fade > 0.01f) {
+    const glm::vec3 ringCenter = feet + glm::vec3(0.0f, 0.12f, 0.0f);
+    drawRing(frame.addVertices(halfOuterRing()), halfOuterRing().size(), ringCenter, VfxMaterial::Basic, {}, {},
+             glm::vec4(three::hex(0xe7fbff), 0.9f * fade));
+  }
+  if (t >= 0.18f && fade > 0.01f) {
+    const glm::vec3 ringCenter = feet + glm::vec3(0.0f, 0.16f, 0.0f);
+    drawRing(frame.addVertices(halfInnerRing()), halfInnerRing().size(), ringCenter, VfxMaterial::Standard,
+             {1.0f, 0.0f, 0, 0}, glm::vec4(three::hex(0x7ac8dc), 1.25f), glm::vec4(three::hex(0xa8d5e1), 0.58f * fade));
+  }
 
   // Lights: one orbiting the wave's edge, a flash on each target as the wave arrives.
   const float orbit = t * 9.5f;

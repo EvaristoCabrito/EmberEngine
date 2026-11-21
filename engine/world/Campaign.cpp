@@ -112,7 +112,15 @@ bool Campaign::open(const std::filesystem::path& data, const std::filesystem::pa
     bank_.muted = raw.value("muted", false) == true;
     const Json slots = raw.value("slots", Json::array());
     for (size_t i = 0; i < bank_.slots.size() && i < slots.size(); ++i)
-      if (slots[i].is_object() && occupied(slots[i])) { bank_.slots[i] = slots[i]; syncAilmentDeadlines(*bank_.slots[i]); ensureTempoSave(*bank_.slots[i]); }
+      if (slots[i].is_object() && occupied(slots[i])) {
+        bank_.slots[i] = slots[i];
+        if (bank_.slots[i]->contains("promotions") && (*bank_.slots[i])["promotions"].is_object()) {
+          const std::string kp = (*bank_.slots[i])["promotions"].value("Kael", "");
+          if (kp == "swordsman" || kp == "paladin" || kp == "heavyKnight") (*bank_.slots[i])["promotions"].erase("Kael");
+        }
+        syncAilmentDeadlines(*bank_.slots[i]);
+        ensureTempoSave(*bank_.slots[i]);
+      }
     int last = raw.value("lastSlot", 0);
     last = std::clamp(last, 0, data_.slotCount - 1);
     if (!bank_.slots[static_cast<size_t>(last)]) {

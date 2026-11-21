@@ -59,6 +59,7 @@ glm::vec3 SpellEffects::position(const Element& e, float now) const {
 }
 
 int SpellEffects::looks(const std::string& kind) {
+  if (kind == "arcaneBeam" || kind == "anchoredLight" || kind == "luminousHalo" || kind == "tendrilSwipe" || kind == "secondWind") return 1;
   if (kind == "witchStitch") return 1;
   if (kind == "burialWeight") return 1;
   if (kind == "abyssalSwap") return 1;
@@ -90,20 +91,20 @@ int SpellEffects::looks(const std::string& kind) {
   if (kind == "acidCloud") return 2;  // 02 the blanket of gas (vfx/PoisonFx); 01 vfx/AcidCloud, the enemies
   if (kind == "frost") return 3;  // 01 the flipbook cards, 02 ours in 3D (vfx/FrostLine), 03 the ice look (vfx/IceFx)
   // The Elementalista's ice: 01 the flipbook cards (SpellEffectsEmber.cpp), 02 the ice look (vfx/IceFx).
-  if (kind == "iceLance" || kind == "absoluteZero" || kind == "glacialGale") return 2;
+  if (kind == "iceLance" || kind == "absoluteZero" || kind == "glacialGale" || kind == "chainLightning" || kind == "primordialEmber") return 2;
   // Teia dos Sonhos: 01 Ember's WebOfDreamsVFX as ported (the net alone), 02 ours in 3D with the whole spell (vfx/DreamWeb).
   if (kind == "webOfDreams") return 2;
   // 01 of a spell with no flipbook-card version: Ember's own effect, ported.
   if (kind == "causticVenom") return 3;  // 01 Ember's CausticVenomVFX, 02 its impact in 3D (vfx/CausticVenom), 03 ours, gas (vfx/PoisonFx)
   if (kind == "fireball") return 2;  // 01 Ember's FireballVFX (the enemies'), 02 ours: a real volume of fire (vfx/Fireball, volume)
   if (kind == "ignite") return 1;    // 01 ours: the air over the area catches fire, no projectile (vfx/Ignite)
-  if (kind == "bless" ||
-      kind == "webOfDreams" || kind == "burningHands" || kind == "poisonBreath" || kind == "cleave" || kind == "sweep")
+  if (kind == "bless") return 2;  // 01 BlessVFX (the enemies'), 02 modern holy remake (heroes)
+  if (kind == "webOfDreams" || kind == "burningHands" || kind == "poisonBreath" || kind == "cleave" || kind == "sweep")
     return 1;
   if (kind == "longShot" || kind == "piercing") return 2;  // 01 the arrow card, 02 RangerFx's 3D arrow (the enemies')
   if (kind == "plainShot") return 2;                       // the plain shot: 01 the arrow card, 02 the crossbow's quarrel (RangerFx Bolt)
   if (kind == "piercingThrust") return 2;  // 01 the flipbook burst, 02 ours in 3D (vfx/LancerFx: the thrust down the line)
-  static const char* kVersion01[] = {"lightning", "lightningTier3", "shock", "cureMinor", "doubleStrike"};
+  static const char* kVersion01[] = {"lightning", "lightningTier3", "shock", "cureMinor", "doubleStrike", "warp"};
   for (const char* k : kVersion01)
     if (kind == k) return 1;
   // EmberEngine's own spells (SpellEffectsEmber.cpp): version 01, flipbook cards.
@@ -129,7 +130,7 @@ int SpellEffects::looks(const std::string& kind) {
                                  // the ones that had none (vfx/ArmsFx, the two new arrows of vfx/RangerFx; ours, 3D, 2026-10-20)
                                  "provoke", "shieldBash", "bullRush", "executionerStrike", "trip", "shoulderSmash", "stampede", "divineWrath",
                                  "auraOfProtection", "intimidatingPresence", "bloodyShot", "multiShot", "summonFamiliar", "summonFamiliar2",
-                                 "summonFamiliar3", "summonFamiliar4", "summonZombieDog", "summonSwampDeer", "summonTelesm", "summonHypostasis", "arcaneReflection", "fantomForce", "spectralBolt",
+                                 "summonFamiliar3", "summonFamiliar4", "summonZombieDog", "summonSwampDeer", "summonTelesm", "summonHypostasis", "arcaneReflection", "fantomForce", "spectralBolt", "tendrilSwipe", "secondWind",
                                  // the Mago Negro's (vfx/DaggerFx, ours, 3D)
                                  "cloudOfDaggers", "daggerStrike", "dispelMagic", "globeOfInvulnerability"};
   for (const char* k : kEmber)
@@ -139,6 +140,7 @@ int SpellEffects::looks(const std::string& kind) {
 }
 
 int SpellEffects::classicLook(const std::string& kind) {
+  if (kind == "arcaneBeam" || kind == "anchoredLight" || kind == "luminousHalo") return 1;
   // The holy light (vfx/HolyFx) is the heroes'; the enemies keep each spell's first version.
   if (kind == "cureMinor") return 3;
   if (kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease") return 2;
@@ -150,7 +152,7 @@ int SpellEffects::classicLook(const std::string& kind) {
   if (isLightning(kind, 2)) return 2;                                // Raio, ours in 3D (vfx/Lightning; 01 = the cards, the enemies')
   if (kind == "fireball") return 2;                                  // ours, a volume of fire (01 = FireballVFX, the enemies')
   if (kind == "ignite") return 1;                                    // ours, the air catching fire (vfx/Ignite)
-  if (kind == "bless") return 1;                                     // BlessVFX
+  if (kind == "bless") return 2;                                     // modern holy remake (01 BlessVFX, the enemies')
   // The poison gas (vfx/PoisonFx) is the heroes'; the enemies keep each spell's first version (the user, 2026-11-13: "os inimigos
   // novamente podem continuar com as versões antigas para termos variação de efeitos").
   if (kind == "causticVenom" || kind == "poisonBreath") return 3;
@@ -165,7 +167,7 @@ int SpellEffects::classicLook(const std::string& kind) {
   // The ice look (vfx/IceFx) is the heroes'; the enemies keep each spell's first version (the user, 2026-11-12: "deixar as
   // originais para os inimigos fazer as melhores para os herois").
   if (kind == "iceStorm") return 3;  // ours in 3D, a storm of great shards in the ice look (01 Ember's Blizzard2D, the enemies')
-  if (kind == "iceLance" || kind == "absoluteZero" || kind == "glacialGale") return 2;  // the ice look (01 = the cards, the enemies')
+  if (kind == "iceLance" || kind == "absoluteZero" || kind == "glacialGale" || kind == "chainLightning" || kind == "primordialEmber") return 2;  // the ice look (01 = the cards, the enemies')
   if (kind == "acidCloud") return 2;  // 02 the blanket of gas (vfx/PoisonFx); 01 vfx/AcidCloud, the enemies
   if (kind == "frost") return 3;     // Frost, the ice look (vfx/IceFx; 02 = vfx/FrostLine; 01 = the cards, the enemies')
   return 0;
@@ -229,6 +231,9 @@ float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& c
 }
 
 float SpellEffects::leadIn(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const {
+  if (kind == "tendrilSwipe") return 0.35f;
+  if (kind == "secondWind") return 0.30f;
+  if (kind == "arcaneBeam" || kind == "anchoredLight" || kind == "luminousHalo") return 0.45f;
   if (const float delay = impactDelay(kind, look, caster, targets); delay > 0.0f) return delay;
   if (isHolyLight(kind, look)) return HolySpell::leadIn(holyStyle(kind));  // the light gathers, then lands
   if (isHoly(kind, look)) return HolyLight::leadIn(HolyLight::Style::Minor);
@@ -298,23 +303,71 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     if (kind == "iceStorm" && !storms_.empty()) end = std::max(end, storms_.back().start() + 1.0f);  // its first second, not the whole storm
     if (isBolt(kind, look) && !bolts_.empty()) end = std::max(end, bolts_.back().end());
     if (isLightning(kind, look) && !lightnings_.empty()) end = std::max(end, lightnings_.back().end());
+    if (kind == "chainLightning" && look == 2 && !chainLightnings_.empty()) end = std::max(end, chainLightnings_.back().end());
+    if (kind == "primordialEmber" && look == 2 && !primordialEmbers_.empty()) end = std::max(end, primordialEmbers_.back().end());
     if (isFrost(kind, look) && !frosts_.empty()) end = std::max(end, frosts_.back().end());
     if (isIce(kind, look) && !ices_.empty()) end = std::max(end, ices_.back().end());
     if (isPoison(kind, look) && !poisons_.empty()) end = std::max(end, poisons_.back().end());
     if (isHolyLight(kind, look) && !holySpells_.empty()) end = std::max(end, holySpells_.back().end());
     if (isArcane(kind, look) && !arcanes_.empty()) end = std::max(end, arcanes_.back().end());
+    end = std::max(end, arms_.latestEnd());
     std::erase_if(casts_, [&](const Cast& c) { return c.end <= start; });
     casts_.push_back({owner, end});
   }
   return made;
 }
 
+void SpellEffects::lightingSpellCast(const std::string& kind, const Spot& caster, const std::vector<Spot>& targets, float start, float impact) {
+  if (kind == "arcaneBeam") {
+    // Feixe de Luz: clean 3D cast ignition pulse (no flat sprite blobs; persistent 3D cone light drives illumination)
+    Element& flash = add(nullptr, start, std::max(0.45f, impact - start + 0.25f));
+    flash.from = flash.to = caster.body;
+    flash.lightColor = {0.88f, 0.94f, 1.0f};
+    flash.lightIntensity = 8.0f;
+    flash.lightRadius = 3.5f;
+    flash.lightDecay = 1.4f;
+  } else if (kind == "anchoredLight") {
+    // Luz Ancorada: subtle traveling 3D ignition pulse to the anchor (no 2D sprite flare)
+    const Spot& target = targets.empty() ? caster : targets.front();
+    const glm::vec3 anchorPos = target.feet + glm::vec3(0.0f, 0.85f, 0.0f);
+    Element& carrier = add(nullptr, start, std::max(0.35f, impact - start + 0.1f));
+    carrier.from = caster.body;
+    carrier.to = anchorPos;
+    carrier.moveStart = start;
+    carrier.moveEnd = impact;
+    carrier.arc = 0.65f;
+    carrier.lightColor = {0.96f, 0.91f, 1.0f};
+    carrier.lightIntensity = 7.5f;
+    carrier.lightRadius = 3.2f;
+    carrier.lightDecay = 1.4f;
+
+    Element& settle = add(nullptr, impact, 0.55f);
+    settle.from = settle.to = anchorPos;
+    settle.lightColor = {0.96f, 0.91f, 1.0f};
+    settle.lightIntensity = 9.0f;
+    settle.lightRadius = 3.8f;
+    settle.lightDecay = 1.3f;
+  } else if (kind == "luminousHalo") {
+    // Halo Luminoso: warm-neutral ignition pulse around the caster (no 2D halo ring or sprites)
+    Element& flare = add(nullptr, start, std::max(0.45f, impact - start + 0.35f));
+    flare.from = flare.to = caster.body;
+    flare.lightColor = {1.0f, 0.95f, 0.84f};
+    flare.lightIntensity = 9.0f;
+    flare.lightRadius = 3.8f;
+    flare.lightDecay = 1.3f;
+  }
+}
+
 bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact) {
   if (look < 1 || look > looks(kind)) return false;
   impact = std::max(impact, start + 0.05f);
   if (targets.empty() && kind != "piercingThrust" && kind != "doubleStrike" && kind != "steelWhirlwind" && kind != "warCry" && kind != "sentinelVigil" &&
-      kind != "provoke")
+      kind != "provoke" && kind != "luminousHalo" && kind != "warp")
     return false;
+  if (kind == "arcaneBeam" || kind == "anchoredLight" || kind == "luminousHalo") {
+    lightingSpellCast(kind, caster, targets, start, impact);
+    return true;
+  }
   if (kind == "witchStitch") {
     witchStitch_.cast(targets.front().feet, targets.front().cardHeight, impact);
     return true;
@@ -397,11 +450,12 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     arms_.provoke(caster.feet, caster.cardHeight, bodiesOf(targets), impact);
     return true;
   }
-  if (kind == "shieldBash" || kind == "bullRush" || kind == "executionerStrike" || kind == "trip") {
-    const ArmsFx::Target foe = armsTarget(targets.front());
+  if (kind == "shieldBash" || kind == "bullRush" || kind == "executionerStrike" || kind == "trip" || kind == "doubleStrike") {
+    const ArmsFx::Target foe = armsTarget(targets.empty() ? caster : targets.front());
     if (kind == "shieldBash") arms_.shieldBash(foe, caster.feet, impact);
     else if (kind == "bullRush") arms_.bullRush(foe, caster.feet, impact);
     else if (kind == "executionerStrike") arms_.executioner(foe, caster.feet, impact);
+    else if (kind == "doubleStrike") arms_.doubleStrike(foe, caster.feet, impact);
     else arms_.trip(foe, caster.feet, impact);
     return true;
   }
@@ -433,6 +487,16 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     arms_.phantom(armsTarget(targets.front()), impact);
     return true;
   }
+  if (kind == "tendrilSwipe") {
+    std::vector<glm::vec3> hexes;
+    for (const Spot& s : targets) hexes.push_back(s.feet);
+    arms_.tendrilSwipe(caster.feet, caster.cardHeight, hexes, bodiesOf(targets), impact);
+    return true;
+  }
+  if (kind == "secondWind") {
+    arms_.secondWind(caster.feet, caster.cardHeight, impact);
+    return true;
+  }
   if (kind == "arcaneReflection") {  // the ward on the caster (its bounce comes from the stage: reflectHit)
     arms_.reflectWard(caster.feet, caster.cardHeight, impact);
     return true;
@@ -460,10 +524,12 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     return true;
   }
   if ((kind == "longShot" || kind == "piercing") && look == 2) {
-    const Spot* foe = &targets.front();
-    if (kind == "piercing")
+    const Spot* foe = nullptr;
+    if (kind == "piercing") {
       for (const Spot& s : targets)
         if (s.cardHeight > 0.0f && glm::length(s.feet - caster.feet) > 0.3f) foe = &s;
+    }
+    if (!foe) foe = (kind == "piercing" && !targets.empty()) ? &targets.back() : (targets.empty() ? &caster : &targets.front());
     const float release = std::max(start, impact - RangerFx::flightSeconds(caster.feet, foe->feet));
     ranger_.shot(RangerFx::Shot::Swift, caster.feet, caster.cardHeight, {foe->feet, foe->cardHeight}, release, impact);
     return true;
@@ -687,6 +753,15 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     for (const Spot& s : targets) cells.push_back(s.feet);
     ignites_.emplace_back(std::move(cells), areaCentre(targets).feet, impact, static_cast<uint32_t>(random() * 4294967295.0f));
   }
+  else if (kind == "chainLightning" && look == 2) {
+    std::vector<ChainLightning::Target> struck;
+    for (const Spot& s : targets) struck.push_back({s.feet, s.body, heightOf(s)});
+    chainLightnings_.emplace_back(caster.feet, caster.body, heightOf(caster), std::move(struck), start, impact, 0x47e1cu);
+  } else if (kind == "primordialEmber" && look == 2) {
+    std::vector<PrimordialEmber::HexSpot> hexes;
+    for (const Spot& s : targets) hexes.push_back({s.feet, s.body, s.cardHeight});
+    primordialEmbers_.emplace_back(caster.feet, caster.body, heightOf(caster), std::move(hexes), start, impact, 0x93b72u);
+  }
   else if (kind == "phantasmalForce") phantasms_.emplace_back(targets.front().body, start);
   else if (kind == "cleave" || kind == "sweep") {
     // BattleSpells3D: Cleave's blade swings at weapon height (0.7) through its targets, Varredura's wave runs on the
@@ -744,7 +819,7 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     // 01 Ember's CausticVenomVFX (the heroes' default); 02 the same flight, the impact in 3D (green smoke lit by the scene, a green
     // light, droplets).
     venoms_.emplace_back(look >= 2 ? 2 : 1, classicOrigin(caster), aimedHex(targets), hexes, start);
-  } else if (kind == "bless") blesses_.emplace_back(caster.feet + glm::vec3(0.0f, 0.04f, 0.0f), 3.0f * std::sqrt(3.0f), blessAllies(caster, targets), start);
+  } else if (kind == "bless") blesses_.emplace_back(caster.feet + glm::vec3(0.0f, 0.04f, 0.0f), 3.0f * std::sqrt(3.0f), blessAllies(caster, targets), start, look == 2);
   else if (kind == "magicMissile" || kind == "magicMissileV2") magicMissile(caster, targets.front(), start, impact);
   else if (kind == "lightning" || kind == "lightningTier3") lightning(caster, targets, start, impact, false);
   else if (kind == "shock") lightning(caster, targets, start, impact, true);
@@ -752,6 +827,10 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
   else if (kind == "cureMinor") cure(caster, targets, start, impact);
   else if (kind == "longShot") arrow(caster, targets, start, impact, false);
   else if (kind == "piercing") arrow(caster, targets, start, impact, true);
+  else if (kind == "warp") {
+    warp(caster, targets, start, impact);
+    return true;
+  }
   else if (kind == "piercingThrust" && look == 2) {
     // Investida Perfurante 02 (the user, 2026-10-21: the old one "is not compatible with 3D"): the thrust down the whole line, a flash
     // on every body it runs through (targets: the line's hexes; the bodies struck keep their card height).
@@ -760,9 +839,6 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
       if (s.cardHeight > 0.0f) bodies.push_back({s.feet, s.cardHeight});
     lancer_.pierce(caster.feet, caster.cardHeight, targets.empty() ? caster.feet : targets.back().feet, std::move(bodies), std::max(start, impact - 0.1f), impact);
   } else if (kind == "piercingThrust") bladeSkill(caster, start, impact);
-  // Golpe Duplo: nothing on the caster (the user, 2026-10-28: the burst of embers on the swing sat at the body's middle, "chega de colocar
-  // efeitos nas genitálias"); its slash is each blow's own on the struck body (MapStage: CombatFx HeavySlash).
-  else if (kind == "doubleStrike") {}
   else if (emberCast(kind, caster, targets, start, impact)) return true;
   else return false;
   return true;
@@ -947,15 +1023,16 @@ void SpellEffects::cure(const Spot& caster, const std::vector<Spot>& targets, fl
 // the line's every hex to the board's edge: the bodies on it are the ones with a card; the user, 2026-10-20: "it doesnt end
 // at his target and just bounces off all the way out of the screen").
 void SpellEffects::arrow(const Spot& caster, const std::vector<Spot>& targets, float start, float impact, bool piercing) {
-  const Spot* firstBody = &targets.front();
+  if (targets.empty()) return;
+  const Spot* firstBody = nullptr;
   const Spot* lastBody = nullptr;
   for (const Spot& s : targets)
     if (s.cardHeight > 0.0f && glm::length(s.feet - caster.feet) > 0.3f) {
       if (!lastBody) firstBody = &s;
       lastBody = &s;
     }
-  const glm::vec3 first = (piercing ? *firstBody : targets.front()).body;
-  const glm::vec3 last = piercing ? (lastBody ? lastBody->body : first) : first;
+  const glm::vec3 first = piercing ? (firstBody ? firstBody->body : targets.back().body) : targets.front().body;
+  const glm::vec3 last = piercing ? (lastBody ? lastBody->body : targets.back().body) : first;
   const float firstDist = glm::length(first - caster.body), lastDist = glm::length(last - caster.body);
   const glm::vec3 dir = firstDist > 1e-3f ? (first - caster.body) / firstDist : glm::vec3(1, 0, 0);
   const float travel = std::clamp(firstDist / 22.0f, 0.12f, 0.4f);
@@ -979,6 +1056,16 @@ void SpellEffects::arrow(const Spot& caster, const std::vector<Spot>& targets, f
 // strike() when each one lands.
 void SpellEffects::bladeSkill(const Spot& caster, float start, float impact) {
   burst("ember-v3-particles-flipbook-4x4", caster.body, std::max(start, impact - 0.2f), 0.35f, 1.0f, glm::vec3(0.9f), 0.8f);
+}
+
+// Portal: uses the loose effect Portal 01 (warp-v2-main-flipbook-4x4)
+void SpellEffects::warp(const Spot& caster, const std::vector<Spot>& targets, float start, float /*impact*/) {
+  if (targets.empty()) {
+    play("warp-v2-main-flipbook-4x4", caster, start);
+    return;
+  }
+  for (const Spot& s : targets)
+    play("warp-v2-main-flipbook-4x4", s, start);
 }
 
 void SpellEffects::play(const std::string& clipName, const Spot& at, float start) {
@@ -1029,8 +1116,8 @@ void SpellEffects::strike(const Spot& target, float at, bool crit) {
   static const char* kImpacts[4] = {"impact-1", "impact-2", "impact-3", "impact-4"};
   const glm::vec3 jitter{(random() - 0.5f) * 0.3f, (random() - 0.5f) * 0.3f, 0.0f};
   burst(kImpacts[static_cast<int>(random() * 4.0f) & 3], target.body + jitter, at, 0.24f, crit ? 1.6f : 1.05f, glm::vec3(crit ? 1.6f : 1.25f),
-        1.4f);
-  if (crit) burst("ember-v3-particles-flipbook-4x4", target.body, at, 0.5f, 1.8f, glm::vec3(1.3f), 1.3f);
+        0.05f);
+  if (crit) burst("ember-v3-particles-flipbook-4x4", target.body, at, 0.5f, 1.8f, glm::vec3(1.3f), 0.05f);
   Element& flash = add(nullptr, at, 0.25f);
   flash.from = flash.to = target.body;
   flash.lightColor = kSpark, flash.lightIntensity = crit ? 14.0f : 6.0f, flash.lightRadius = 2.5f, flash.lightDecay = 2.0f;
@@ -1186,6 +1273,10 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   for (const SpellBolt& b : bolts_) b.build(now, camera, vfx_, vfxLights);
   std::erase_if(lightnings_, [&](const Lightning& l) { return l.done(now); });
   for (const Lightning& l : lightnings_) l.build(now, camera, vfx_, vfxLights);
+  std::erase_if(chainLightnings_, [&](const ChainLightning& c) { return c.done(now); });
+  for (const ChainLightning& c : chainLightnings_) c.build(now, camera, vfx_, vfxLights);
+  std::erase_if(primordialEmbers_, [&](const PrimordialEmber& e) { return e.done(now); });
+  for (const PrimordialEmber& e : primordialEmbers_) e.build(now, camera, vfx_, vfxLights);
   std::erase_if(frosts_, [&](const FrostLine& f) { return f.done(now); });
   for (const FrostLine& f : frosts_) f.build(now, vfx_, vfxLights);
   std::erase_if(ices_, [&](const IceSpell& s) { return s.done(now); });
@@ -1230,7 +1321,7 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
     const float mode = d.gpu.params0.y;
     const bool combatRing = d.gpu.material == static_cast<uint32_t>(VfxMaterial::Combat) && mode == 3.0f;
     const bool holyPool = d.gpu.material == static_cast<uint32_t>(VfxMaterial::Holy) && mode == 1.0f;
-    if ((!combatRing && !holyPool) || d.gpu.firstInstance != 0xFFFFFFFFu || d.solid || d.behindCard) continue;
+    if ((!combatRing && !holyPool) || d.gpu.firstInstance != 0xFFFFFFFFu || d.solid || d.behindCard || d.underCards) continue;
     const glm::vec3 up = glm::vec3(d.gpu.model[1]);
     if (glm::dot(up, up) < 1e-10f || glm::normalize(up).y < 0.99f) continue;  // a ring standing up (round a blow) is not on the ground
     const glm::vec3 p = glm::vec3(d.gpu.model[3]);
@@ -1239,7 +1330,7 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
     const float groundY = d.gpu.sightAt.y + 0.04f;
     if (std::abs(ray.y) < 1e-4f) continue;
     const float t = (groundY - from.y) / ray.y;
-    if (t < 1.0f) continue;  // already at or below the ground
+    if (t < 0.95f) continue;  // already at or below the ground
     const glm::vec3 q = from + ray * t;
     if (glm::length(q - p) > 0.9f) continue;  // farther than the pull: a ring up on a body, left as it is
     d.gpu.model[3] = glm::vec4(q, 1.0f);

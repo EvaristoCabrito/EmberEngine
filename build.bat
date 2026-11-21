@@ -41,7 +41,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-set "PATH=%PATH%;C:\Program Files\CMake\bin;%LOCALAPPDATA%\Microsoft\WinGet\Links"
+set "PATH=%VCINSTALLDIR%Tools\MSVC\%VCToolsVersion%\bin\Hostx64\x64;%PATH%;C:\Program Files\CMake\bin;%LOCALAPPDATA%\Microsoft\WinGet\Links"
 where cmake >nul 2>&1 || (echo [ERRO] Nao achei o cmake. & exit /b 1)
 where ninja >nul 2>&1 || (echo [ERRO] Nao achei o ninja ^(vem com o componente CMake do Visual Studio^). & exit /b 1)
 

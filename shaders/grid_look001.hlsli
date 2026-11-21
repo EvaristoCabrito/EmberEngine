@@ -9,7 +9,8 @@
 
 static const uint kGridReach = 1u, kGridReachFoe = 2u, kGridTarget = 4u, kGridSpellAim = 8u, kGridSpellArea = 16u,
                   kGridSpellChosen = 32u, kGridHover = 64u, kGridHoverBlocked = 128u, kGridActive = 256u,
-                  kGridActiveFoe = 512u, kGridRouteEnd = 1024u, kGridSpellTarget = 2048u, kGridStrikeZone = 4096u;
+                  kGridActiveFoe = 512u, kGridRouteEnd = 1024u, kGridSpellTarget = 2048u, kGridStrikeZone = 4096u,
+                  kGridAllyTarget = 8192u, kGridFriendlyFire = 16384u;
 static const float kApothem = 0.8660254;
 static const float kTwoPi = 6.2831853;
 static const float kNoEdge = 9.0;
@@ -266,20 +267,22 @@ bool gridLook001(inout float3 display, float2 xz, float flat, float t) {
   {
     const GridRegion r = gridRegion(flags, nbFlags, kGridSpellAim, p);
     if (r.inside || r.edge < kNoEdge) {
-      const float pulse = 0.8 + 0.25 * sin(t * 2.2 + 2.0);
-      gridPaintRegion(display, any, r, float3(0.72, 0.52, 1.0), 0.12, float3(0.84, 0.7, 1.0), 0.9, 0.25, pulse, 0.18, d, pix, flat);
+      const float pulse = 0.85 + 0.2 * sin(t * 2.5 + 2.0);
+      gridPaintRegion(display, any, r, float3(0.62, 0.42, 0.98), 0.22, float3(0.88, 0.75, 1.0), 0.98, 0.32, pulse, 0.25, d, pix, flat);
     }
     const GridRegion a = gridRegion(flags, nbFlags, kGridSpellArea, p);
     if (a.inside || a.edge < kNoEdge) {
-      const float breath = 0.5 + 0.5 * sin(t * 4.0);
-      gridPaintRegion(display, any, a, float3(0.86, 0.7, 1.0), 0.22 + 0.08 * breath, float3(0.95, 0.88, 1.0), 0.95, 0.2, 1.0, 0.0, d, pix, flat);
+      const float breath = 0.5 + 0.5 * sin(t * 4.5);
+      gridPaintRegion(display, any, a, float3(1.0, 0.72, 0.28), 0.45 + 0.12 * breath, float3(1.0, 0.92, 0.65), 1.0, 0.35, 1.0, 0.35, d, pix, flat);
     }
   }
   if (flags & kGridTarget) gridPaintTarget(display, any, (flags & kGridHover) != 0, float3(1.0, 0.24, 0.18), float3(1.0, 0.6, 0.5), p, xz, d, t, pix, flat);
   if (flags & kGridSpellTarget) gridPaintTarget(display, any, (flags & kGridHover) != 0, float3(0.72, 0.45, 1.0), float3(0.9, 0.78, 1.0), p, xz, d, t, pix, flat);
+  if (flags & kGridAllyTarget) gridPaintTarget(display, any, (flags & kGridHover) != 0, float3(0.18, 0.75, 0.45), float3(0.4, 0.95, 0.65), p, xz, d, t, pix, flat);
+  if (flags & kGridFriendlyFire) gridPaintTarget(display, any, (flags & kGridHover) != 0, float3(1.0, 0.5, 0.1), float3(1.0, 0.8, 0.25), p, xz, d, t, pix, flat);
   gridPaintRoute(display, any, flags, cell.y | 0u, nbSteps, p, d, t, pix, flat);
   if (flags & kGridSpellChosen) gridPaintChosen(display, any, p, d, t, pix, flat);
   if (flags & (kGridActive | kGridActiveFoe)) gridPaintActive(display, any, (flags & kGridActiveFoe) != 0, p, d, t, pix, flat);
-  if ((flags & kGridHover) && !(flags & (kGridTarget | kGridSpellTarget))) gridPaintHover(display, any, (flags & kGridHoverBlocked) != 0, p, d, t, pix, flat);
+  if ((flags & kGridHover) && !(flags & (kGridTarget | kGridSpellTarget | kGridAllyTarget | kGridFriendlyFire))) gridPaintHover(display, any, (flags & kGridHoverBlocked) != 0, p, d, t, pix, flat);
   return any;
 }

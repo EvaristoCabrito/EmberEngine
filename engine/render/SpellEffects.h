@@ -37,6 +37,8 @@
 #include "render/vfx/ArcaneFx.h"
 #include "render/vfx/IceStorm.h"
 #include "render/vfx/Lightning.h"
+#include "render/vfx/ChainLightning.h"
+#include "render/vfx/PrimordialEmber.h"
 #include "render/vfx/SpellBolts.h"
 #include "render/vfx/MagicMissileV2.h"
 #include "render/vfx/PhantasmalForce.h"
@@ -239,7 +241,7 @@ class SpellEffects {
   SpriteClipId clip(const char* name) const { return sprites_.find("fx", name); }
   Element& add(const char* clipName, float start, float duration);
   glm::vec3 position(const Element& e, float now) const;
-  void burst(const char* clipName, glm::vec3 at, float start, float duration, float height, glm::vec3 color, float pull = 1.2f);
+  void burst(const char* clipName, glm::vec3 at, float start, float duration, float height, glm::vec3 color, float pull = 0.05f);
 
   void magicMissile(const Spot& caster, const Spot& target, float start, float impact);
   void lightning(const Spot& caster, const std::vector<Spot>& targets, float start, float impact, bool shock);
@@ -248,6 +250,7 @@ class SpellEffects {
   void cure(const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
   void arrow(const Spot& caster, const std::vector<Spot>& targets, float start, float impact, bool piercing);
   void bladeSkill(const Spot& caster, float start, float impact);
+  void lightingSpellCast(const std::string& kind, const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
   // Ours (SpellEffectsEmber.cpp). True when `kind` is one of them.
   bool emberCast(const std::string& kind, const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
   void markOfRuin(const Spot& caster, const Spot& target, float start, float impact);
@@ -270,6 +273,7 @@ class SpellEffects {
   void glacialGale(const Spot& caster, const std::vector<Spot>& cone, float start, float impact);
   void wrathOfTheSkies(const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
   void primordialEmber(const Spot& caster, const std::vector<Spot>& hexes, float start, float impact);
+  void warp(const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
   // A streak of sparks flowing from one point to another (drains, harvested souls), `count` of them over the flight.
   void stream(const char* clipName, glm::vec3 from, glm::vec3 to, float start, float duration, int count, glm::vec3 color, float size);
   int zoneSerial_ = 0;
@@ -298,7 +302,9 @@ class SpellEffects {
   std::vector<HolyLight> holies_;     // the cures', the meal's and the potions' light (ours, 3D)
   std::vector<IceStorm> storms_;      // Tempestade de Gelo 01 (Ember's Blizzard2D) / 02 (ours, 3D)
   std::vector<SpellBolt> bolts_;      // Míssil Mágico 03, Raio Divino 01 (ours, 3D)
-  std::vector<Lightning> lightnings_; // Relâmpago / Relâmpago Maior / Choque 02 (ours, 3D)
+  std::vector<Lightning> lightnings_;
+  std::vector<ChainLightning> chainLightnings_; // Cadeia de Raios 02 (ours, 3D)
+  std::vector<PrimordialEmber> primordialEmbers_; // Brasa Primordial 02 (ours, 3D) // Relâmpago / Relâmpago Maior / Choque 02 (ours, 3D)
   std::vector<FrostLine> frosts_;     // Frost 02 (ours, 3D)
   std::vector<ArcaneSpell> arcanes_;   // the arcane energy of 2026-11-13 (vfx/ArcaneFx): Míssil Mágico 05, Força Fantasmagórica 02
   std::vector<HolySpell> holySpells_;  // the holy light of 2026-11-13 (vfx/HolyFx): Cura Menor 03, Cura Média / Mãos Curativas / Curar

@@ -41,6 +41,10 @@ inline void keepTestParty(const Json& save) {
   Json kept = Json::object();
   for (const char* k : kTestPartyKeys)
     if (save.contains(k)) kept[k] = save[k];
+  if (kept.contains("promotions") && kept["promotions"].is_object()) {
+    const std::string kp = kept["promotions"].value("Kael", "");
+    if (kp == "swordsman" || kp == "paladin" || kp == "heavyKnight") kept["promotions"].erase("Kael");
+  }
   std::error_code ec;
   std::filesystem::create_directories(testPartyPath().parent_path(), ec);
   std::ofstream out(testPartyPath(), std::ios::binary | std::ios::trunc);
@@ -61,7 +65,10 @@ inline void restoreTestParty(Json& save, const std::vector<std::string>& heroes)
   if (kept.contains("partyLeader") && known(kept["partyLeader"])) save["partyLeader"] = kept["partyLeader"];
   if (kept.contains("promotions") && kept["promotions"].is_object())
     for (const auto& [hero, cls] : kept["promotions"].items())
-      if (cls.is_string()) save["promotions"][hero] = cls;
+      if (cls.is_string()) {
+        if (hero == "Kael" && (cls == "swordsman" || cls == "paladin" || cls == "heavyKnight")) continue;
+        save["promotions"][hero] = cls;
+      }
 }
 
 // What a screen knows how to start: a map with its imported scene and (when exported) its battle.

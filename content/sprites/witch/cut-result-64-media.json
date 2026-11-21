@@ -196,6 +196,74 @@
     "foot": 0.13461
    },
    "pattern": "content/sprites/witch/death-media64-v01/death-{}.png"
+  },
+  "move-up": {
+   "video": "Attachments/Witch/WitchUpandDown.mp4",
+   "first": 0,
+   "last": 119,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/witch/idle 0:119",
+   "loopFirst": 75,
+   "loopLast": 115,
+   "seamSteps": 1.26,
+   "bootRow": 1179,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 1076.0,
+   "scaledTo": 610.1,
+   "frames": 41,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    247,
+    639
+   ],
+   "crop": [
+    3,
+    7,
+    242,
+    629
+   ],
+   "box": {
+    "w": 1.07784,
+    "h": 2.78843,
+    "foot": 0.08565
+   },
+   "pattern": "content/sprites/witch/move-up-media64-v01/move-up-{}.png"
+  },
+  "move-down": {
+   "video": "Attachments/Witch/WitchUpandDown.mp4",
+   "first": 120,
+   "last": 239,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/witch/idle 0:119",
+   "loopFirst": 156,
+   "loopLast": 189,
+   "seamSteps": 1.42,
+   "bootRow": 1181,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 1074.5,
+   "scaledTo": 610.0,
+   "frames": 34,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    238,
+    633
+   ],
+   "crop": [
+    3,
+    4,
+    233,
+    626
+   ],
+   "box": {
+    "w": 1.03974,
+    "h": 2.76536,
+    "foot": 0.05858
+   },
+   "pattern": "content/sprites/witch/move-down-media64-v01/move-down-{}.png"
   }
  }
 }

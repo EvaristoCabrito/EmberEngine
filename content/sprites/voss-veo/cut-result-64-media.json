@@ -68,69 +68,70 @@
    "pattern": "content/sprites/voss-veo/move-media64-v01/move-{}.png"
   },
   "move-left": {
-   "video": "Attachments/Voss/Vosswalking_left_in_profile_51d7dffc_1080p.mp4",
-   "first": 0,
-   "last": 142,
-   "loopFirst": 44,
-   "loopLast": 116,
-   "seamSteps": 0.92,
-   "bootRow": 1035,
+   "video": "Attachments/VeoVoss/Walk Left/Character_walking_left_with_staff_20261017230240.mp4",
+   "first": 30,
+   "last": 170,
+   "loopFirst": 42,
+   "loopLast": 147,
+   "seamSteps": 1.89,
+   "bootRow": 1221,
    "bodyDrift": [
-    32,
-    51
+    -39,
+    0
    ],
-   "frameCountFrom": 73,
-   "figurePx": 944.0,
-   "scaledTo": 610.4,
+   "frameCountFrom": 106,
+   "figurePx": 1124.5,
+   "scaledTo": 609.6,
    "frames": 64,
-   "frameMs": 47.526041666666664,
+   "frameMs": 69.01041666666666,
    "nat": [
-    374,
-    646
+    354,
+    656
    ],
    "crop": [
+    0,
     4,
-    4,
-    367,
-    639
+    350,
+    649
    ],
    "box": {
-    "w": 1.64806,
-    "h": 2.84666,
-    "foot": 0.05621
+    "w": 1.55796,
+    "h": 2.88706,
+    "foot": 0.05864
    },
-   "pattern": "content/sprites/voss-veo/move-left-media64-v1081/move-left-{}.png"
+   "pattern": "content/sprites/voss-veo/move-left-media64-v01/move-left-{}.png"
   },
   "cast": {
-   "video": "Attachments/Voss/Voss_casting_purple_arcane_spell_788c716a_1080p.mp4",
+   "video": "Attachments/VeoVoss/Casting/Voss_casting_purple_arcane_spell_20261017231306.mp4",
    "first": 8,
-   "last": 130,
-   "bootRow": 1031,
+   "last": 120,
+   "bootRow": 687,
    "bootRows": [
-    1031,
-    1031
+    686,
+    687
    ],
-   "frameCountFrom": 123,
-   "figurePx": 947.0,
-   "scaledTo": 610.3,
+   "frameCountFrom": 113,
+   "figurePx": 632.0,
+   "bodyAt": -0.2423,
+   "scaledTo": 610.2,
    "frames": 64,
-   "frameMs": 80.078125,
+   "frameMs": 73.56770833333333,
    "nat": [
-    405,
-    669
+    607,
+    671
    ],
    "crop": [
-    3,
+    15,
     0,
-    399,
+    487,
     666
    ],
    "box": {
-    "w": 1.78471,
-    "h": 2.94808,
-    "foot": 0.01626
+    "w": 2.67425,
+    "h": 2.95621,
+    "foot": 0.0297
    },
-   "pattern": "content/sprites/voss-veo/cast-media64-v1081/cast-{}.png"
+   "pattern": "content/sprites/voss-veo/cast-media64-v01/cast-{}.png"
   },
   "atk": {
    "video": "Attachments/VeoVoss/CounterDistance/CounterDistanceat420sec.mp4",

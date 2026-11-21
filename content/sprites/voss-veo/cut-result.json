@@ -62,65 +62,66 @@
    "pattern": "content/sprites/voss-veo/move-v01/move-{}.png"
   },
   "move-left": {
-   "video": "Attachments/Voss/Vosswalking_left_in_profile_51d7dffc_1080p.mp4",
+   "video": "Attachments/VeoVoss/Walk Left/Character_walking_left_with_staff_20261017230240.mp4",
    "first": 0,
-   "last": 142,
-   "loopFirst": 44,
-   "loopLast": 116,
-   "seamSteps": 0.92,
-   "bootRow": 1035,
+   "last": 148,
+   "loopFirst": 41,
+   "loopLast": 145,
+   "seamSteps": 2.39,
+   "bootRow": 1220,
    "bodyDrift": [
-    32,
-    51
+    -13,
+    26
    ],
-   "figurePx": 944.0,
-   "frames": 73,
+   "figurePx": 1124.0,
+   "frames": 105,
    "frameMs": 41.666666666666664,
    "nat": [
-    579,
-    999
+    680,
+    1210
    ],
    "crop": [
+    0,
     6,
-    6,
-    568,
-    989
+    673,
+    1199
    ],
    "box": {
-    "w": 1.64806,
-    "h": 2.84355,
-    "foot": 0.05693
+    "w": 1.62559,
+    "h": 2.89259,
+    "foot": 0.05976
    },
-   "pattern": "content/sprites/voss-veo/move-left-v1081/move-left-{}.png"
+   "pattern": "content/sprites/voss-veo/move-left-v01/move-left-{}.png"
   },
   "cast": {
-   "video": "Attachments/Voss/Voss_casting_purple_arcane_spell_788c716a_1080p.mp4",
+   "video": "Attachments/VeoVoss/Casting/Voss_casting_purple_arcane_spell_20261017231306.mp4",
    "first": 8,
-   "last": 130,
-   "bootRow": 1031,
+   "last": 120,
+   "bootRow": 687,
    "bootRows": [
-    1031,
-    1031
+    686,
+    687
    ],
-   "figurePx": 947.0,
-   "frames": 123,
+   "figurePx": 632.0,
+   "bodyAt": -0.2423,
+   "frames": 113,
    "frameMs": 41.666666666666664,
    "nat": [
-    631,
-    1038
+    629,
+    695
    ],
    "crop": [
-    5,
+    15,
     0,
-    620,
-    1034
+    506,
+    690
    ],
    "box": {
-    "w": 1.79039,
-    "h": 2.9452,
-    "foot": 0.01702
+    "w": 2.67425,
+    "h": 2.95485,
+    "foot": 0.02976
    },
-   "pattern": "content/sprites/voss-veo/cast-v1081/cast-{}.png"
+   "pattern": "content/sprites/voss-veo/cast-v02/cast-{}.png"
   },
   "atk": {
    "video": "Attachments/VeoVoss/CounterDistance/CounterDistanceat420sec.mp4",

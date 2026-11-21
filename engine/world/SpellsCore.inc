@@ -1442,6 +1442,13 @@ std::vector<BattleHex> areaE2(const Battle& b, size_t caster, const std::string&
   if (kind == "bullRush") {
     std::vector<BattleHex> t = hexLine(from, cell);
     if (!t.empty()) t.erase(t.begin());
+    if (const std::optional<std::vector<RushLeg>> legs = bullRushCharge(b, caster, cell)) {
+      if (!legs->empty()) {
+        for (const BattleHex& p : legs->back().push.path) {
+          if (std::find(t.begin(), t.end(), p) == t.end()) t.push_back(p);
+        }
+      }
+    }
     return t;
   }
   if (kind == "auraOfProtection" || kind == "intimidatingPresence") return areaTiles(b, from, areaRadius(kind, auraPower(kind, u.level).radius, u.level));

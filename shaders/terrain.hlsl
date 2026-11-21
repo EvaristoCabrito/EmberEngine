@@ -242,7 +242,7 @@ float3 applyGroundMarks(float3 hdr, float3 wp, float flatness) {
     const float before = dot(lin0, float3(0.2126, 0.7152, 0.0722));
     if (gridLook001(display, wp.xz, flatness, push.gridSeconds)) {
       const float3 lin = fromSrgb(display);
-      const float cap = max(0.72, before);
+      const float cap = max(0.95, before);
       const float l = dot(lin, float3(0.2126, 0.7152, 0.0722));
       if (l > cap) display = toSrgb(lin * (cap / l));
       any = true;

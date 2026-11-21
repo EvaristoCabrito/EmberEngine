@@ -297,12 +297,12 @@ bool wardAfterStep(Battle& b, size_t walker, BattleHex, BattleHex to, Mulberry32
 // --- Words --------------------------------------------------------------------------------------------------------------------------------
 void wardConditions(const BattleUnit& u, const std::function<void(const std::string&)>& add) {
   const BattleUnit::Conditions::Martial& m = u.cond.martial;
-  if (m.braceHits > 0) add(std::format("{} -{}%", pick("Firmar o Pé", "Dig In"), m.bracePct));
-  if (m.bracePush) add(pick("Firme contra empurrões e puxões", "Braced against pushes and pulls"));
-  if (m.watchPct > 0) add(pick("Vigiando a brecha", "Watching the gap"));
-  if (m.holdPct > 0) add(std::format("{} -{}%", pick("Fileiras cerradas", "Ranks closed"), m.holdPct));
-  if (m.weightPct > 0) add(std::format("{} {}%", pick("Peso dividido", "Weight shared"), m.weightPct));
-  if (m.accUpPct > 0) add(std::format("+{} {}", m.accUpPct, pick("no próximo ataque", "on the next attack")));
+  if (m.braceHits > 0) add(std::format("{}: -{}% de dano físico no 1º golpe sofrido", pick("Firmar o Pé", "Dig In"), m.bracePct));
+  if (m.bracePush) add(pick("Firmeza da Sentinela: imune a empurrões, puxões e arrastões", "Sentinel's Stance: immune to pushes, pulls and drags"));
+  if (m.watchPct > 0) add(std::format("{}: golpe de reação ({}% ATK) e interrompe movimento do 1º inimigo que entrar no hex vigiado", pick("Vigiar a Brecha", "Watch the Gap"), m.watchPct));
+  if (m.holdPct > 0) add(std::format("{}: aliado adjacente sofre -{}% de dano no 1º ataque de arma", pick("Fileiras Cerradas", "Close Ranks"), m.holdPct));
+  if (m.weightPct > 0) add(std::format("{}: absorve {}% do dano de alvo único sofrido por aliado", pick("Assumir o Peso", "Take the Weight"), m.weightPct));
+  if (m.accUpPct > 0) add(std::format("+{}% de chance de acerto no próximo ataque", m.accUpPct));
 }
 std::string wardTooltipText(const std::string& k, const TechNumbers& n, int) {
   const auto pct = [](int v) { return std::format("{}%", v); };

@@ -127,6 +127,19 @@ const std::vector<VfxVertex>& runeGeometry() {
   }();
   return g;
 }
+// A thin half-ring of radius 1 lying flat (u around, from 0 to pi), curving in +z.
+const std::vector<VfxVertex>& halfHaloGeometry() {
+  static const std::vector<VfxVertex> g = [] {
+    std::vector<VfxVertex> ring = vfxgeo::torus(1.0f, 0.05f, 8, 32, std::numbers::pi_v<float>);
+    const glm::mat4 flat = glm::rotate(glm::mat4(1.0f), -kPi * 0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+    for (VfxVertex& v : ring) {
+      v.position = glm::vec3(flat * glm::vec4(v.position, 1.0f));
+      v.normal = glm::vec3(flat * glm::vec4(v.normal, 0.0f));
+    }
+    return ring;
+  }();
+  return g;
+}
 
 struct Draw {
   VfxFrame& frame;
@@ -193,6 +206,7 @@ float ArmsFx::Effect::end() const {
     case Kind::BullRush: return impact + 1.7f;
     case Kind::Executioner: return impact + 1.6f;
     case Kind::Trip: return impact + 1.4f;
+    case Kind::DoubleStrike: return impact + 1.1f;
     case Kind::ShoulderSmash: return impact + 1.6f;
     case Kind::Stampede: return impact + 0.09f * static_cast<float>(hexes.size()) + 1.6f;
     case Kind::DivineWrath: return impact + 0.06f * static_cast<float>(hexes.size()) + 1.4f;
@@ -202,6 +216,8 @@ float ArmsFx::Effect::end() const {
     case Kind::ReflectHit: return impact + 0.9f;
     case Kind::Phantom: return impact + 0.5f;
     case Kind::Spectral: return impact + 1.3f;
+    case Kind::TendrilSwipe: return impact + 1.6f;
+    case Kind::SecondWind: return impact + 1.8f;
   }
   return impact + 1.0f;
 }
@@ -238,6 +254,13 @@ void ArmsFx::trip(const Target& foe, glm::vec3 from, float impact) {
   e.kind = Kind::Trip, e.feet = foe.feet, e.from = from, e.height = bodyHeight(foe.height), e.impact = impact, e.start = impact - 0.14f;
   e.dir = flatDir(foe.feet - from, glm::vec3(0.0f, 0.0f, 1.0f));
   e.seed = 0x7419u + 7919u * ++serial_;
+  effects_.push_back(std::move(e));
+}
+void ArmsFx::doubleStrike(const Target& foe, glm::vec3 from, float impact) {
+  Effect e;
+  e.kind = Kind::DoubleStrike, e.feet = foe.feet, e.from = from, e.height = bodyHeight(foe.height), e.impact = impact, e.start = impact - 0.12f;
+  e.dir = flatDir(foe.feet - from, glm::vec3(0.0f, 0.0f, 1.0f));
+  e.seed = 0xd257u + 7919u * ++serial_;
   effects_.push_back(std::move(e));
 }
 void ArmsFx::shoulderSmash(glm::vec3 from, float height, const std::vector<glm::vec3>& hexes, const std::vector<Target>& bodies, float impact) {
@@ -324,6 +347,21 @@ void ArmsFx::phantom(const Target& foe, float impact) {
   effects_.push_back(std::move(e));
 }
 
+void ArmsFx::tendrilSwipe(glm::vec3 feet, float height, const std::vector<glm::vec3>& hexes, const std::vector<Target>& bodies, float impact) {
+  Effect e;
+  e.kind = Kind::TendrilSwipe, e.feet = feet, e.height = bodyHeight(height), e.impact = impact, e.start = impact - 0.35f;
+  e.hexes = hexes, e.targets = bodies;
+  e.seed = 0x7a31u + 7919u * ++serial_;
+  effects_.push_back(std::move(e));
+}
+
+void ArmsFx::secondWind(glm::vec3 feet, float height, float impact) {
+  Effect e;
+  e.kind = Kind::SecondWind, e.feet = feet, e.height = bodyHeight(height), e.impact = impact, e.start = impact - 0.30f;
+  e.seed = 0x93e1u + 7919u * ++serial_;
+  effects_.push_back(std::move(e));
+}
+
 bool ArmsFx::active(float now) const {
   return std::any_of(effects_.begin(), effects_.end(), [&](const Effect& e) { return e.end() > now; });
 }
@@ -338,6 +376,7 @@ void ArmsFx::build(float now, const Camera& camera, VfxFrame& frame, std::vector
   chipFirst_ = frame.addVertices(chipGeometry()), chipCount_ = static_cast<uint32_t>(chipGeometry().size());
   columnFirst_ = frame.addVertices(columnGeometry()), columnCount_ = static_cast<uint32_t>(columnGeometry().size());
   runeFirst_ = frame.addVertices(runeGeometry()), runeCount_ = static_cast<uint32_t>(runeGeometry().size());
+  halfHaloFirst_ = frame.addVertices(halfHaloGeometry()), halfHaloCount_ = static_cast<uint32_t>(halfHaloGeometry().size());
   streaks_.clear(), puffs_.clear(), rocks_.clear(), chips_.clear();
   for (const Effect& e : effects_) {
     if (now < e.start) continue;
@@ -347,6 +386,7 @@ void ArmsFx::build(float now, const Camera& camera, VfxFrame& frame, std::vector
       case Kind::BullRush: buildBullRush(e, now, camera, frame, lights); break;
       case Kind::Executioner: buildExecutioner(e, now, camera, frame, lights); break;
       case Kind::Trip: buildTrip(e, now, camera, frame, lights); break;
+      case Kind::DoubleStrike: buildDoubleStrike(e, now, camera, frame, lights); break;
       case Kind::ShoulderSmash: buildShoulderSmash(e, now, camera, frame, lights); break;
       case Kind::Stampede: buildStampede(e, now, camera, frame, lights); break;
       case Kind::DivineWrath: buildDivineWrath(e, now, camera, frame, lights); break;
@@ -356,6 +396,8 @@ void ArmsFx::build(float now, const Camera& camera, VfxFrame& frame, std::vector
       case Kind::ReflectHit: buildReflectHit(e, now, camera, frame, lights); break;
       case Kind::Phantom: buildPhantom(e, now, camera, frame, lights); break;
       case Kind::Spectral: buildSpectral(e, now, camera, frame, lights); break;
+      case Kind::TendrilSwipe: buildTendrilSwipe(e, now, camera, frame, lights); break;
+      case Kind::SecondWind: buildSecondWind(e, now, camera, frame, lights); break;
     }
   }
   // The particles of everything in play, one draw each: the dust first (it covers), the thrown pieces, then the light.
@@ -735,6 +777,93 @@ void ArmsFx::buildExecutioner(const Effect& e, float now, const Camera& camera, 
   if (age < 1.2f) lights.push_back({chest, {1.0f, 0.2f, 0.12f}, 16.0f * std::exp(-age * 3.2f), 3.4f * k});
 }
 
+// --- Golpe Duplo -------------------------------------------------------------------------------------------------------------
+
+void ArmsFx::buildDoubleStrike(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) {
+  const Draw draw{frame};
+  const glm::vec3 eye = camera.position;
+  const float k = scaleOf(e.height);
+  const glm::vec3 side = glm::normalize(glm::cross(kUp, e.dir));
+
+  struct Cut {
+    float hitAt, hand, tilt, reach, width, centerY, depthOff, intensity;
+    uint32_t salt;
+  };
+  const Cut cuts[2] = {
+      {e.impact, 1.0f, glm::radians(42.0f), 0.92f * k, 0.24f * k, e.height * 0.56f, 0.16f, 1.85f, 100u},
+      {e.impact + 0.18f, -1.0f, glm::radians(36.0f), 1.00f * k, 0.27f * k, e.height * 0.52f, 0.20f, 2.1f, 300u},
+  };
+
+  for (int i = 0; i < 2; ++i) {
+    const Cut& c = cuts[i];
+    constexpr float kSweep = 0.08f, kHold = 0.10f, kFade = 0.34f;
+    const float cutAge = now - (c.hitAt - kSweep * 0.65f);
+    if (cutAge < 0.0f) continue;
+
+    const glm::vec3 centre = e.feet + kUp * c.centerY - e.dir * c.depthOff;
+    const glm::vec3 e1 = glm::normalize(side * std::cos(c.tilt) * c.hand + kUp * std::sin(c.tilt));
+    const glm::vec3 e2 = glm::normalize(-side * std::sin(c.tilt) * c.hand + kUp * std::cos(c.tilt));
+    auto pointAt = [&](float s) {
+      const float a = glm::radians(glm::mix(66.0f, -66.0f, s));
+      const float camber = std::cos(a) - std::cos(glm::radians(66.0f));
+      const glm::vec3 p = centre + e1 * (std::sin(a) * c.reach) + e2 * (camber * 0.28f * c.reach) - e.dir * (camber * 0.42f * c.reach);
+      const glm::vec3 out = glm::normalize(e2 * 0.78f - e.dir * 0.62f + e1 * (0.22f * std::sin(a)));
+      return std::pair{p, out};
+    };
+    const glm::vec3 pStart = pointAt(0.0f).first;
+    const glm::vec3 pEnd = pointAt(1.0f).first;
+    const glm::vec3 hitPos = pointAt(0.5f).first;
+
+    const float head = easeOut(0.0f, kSweep, cutAge);
+    const float tail = ease(kSweep * 0.4f, kSweep + kHold + kFade, cutAge);
+    const float opacity = 1.0f - ease(kSweep + kHold, kSweep + kHold + kFade, cutAge);
+    if (opacity > 0.0f && head > tail) {
+      constexpr int kSegments = 28;
+      std::vector<VfxVertex> sheet;
+      sheet.reserve(kSegments * 6);
+      std::vector<glm::vec3> edge(kSegments + 1), inner(kSegments + 1);
+      for (int j = 0; j <= kSegments; ++j) {
+        const float s = static_cast<float>(j) / kSegments;
+        const float w = c.width * std::pow(std::sin(kPi * s), 0.6f) + 0.005f;
+        const auto [p, out] = pointAt(s);
+        edge[j] = pulled(p, eye, kPull);
+        inner[j] = pulled(p - out * w, eye, kPull);
+      }
+      for (int j = 0; j < kSegments; ++j) {
+        const float s0 = static_cast<float>(j) / kSegments, s1 = static_cast<float>(j + 1) / kSegments;
+        const VfxVertex a0{inner[j], s0, e.dir, 0.0f}, a1{edge[j], s0, e.dir, 1.0f}, b0{inner[j + 1], s1, e.dir, 0.0f}, b1{edge[j + 1], s1, e.dir, 1.0f};
+        sheet.insert(sheet.end(), {a0, a1, b0, a1, b1, b0});
+      }
+      draw(frame.addVertices(sheet), static_cast<uint32_t>(sheet.size()), glm::mat4(1.0f), kModeSlash, cutAge, c.intensity, opacity, kSteel, tail,
+           glm::vec4(kWhite, head), e.feet, VfxBlend::Additive);
+
+      if (cutAge < kSweep) {
+        const glm::vec3 tip = pointAt(head).first;
+        const glm::vec3 delta = pointAt(std::min(1.0f, head + 0.02f)).first - pointAt(std::max(0.0f, head - 0.02f)).first;
+        const glm::vec3 tangent = glm::dot(delta, delta) > 1e-8f ? glm::normalize(delta) : -e1;
+        streaks_.push_back(streak(pulled(tip, eye, kPull), tangent * (0.24f * k), 0.055f * k, 1.0f - 0.3f * (cutAge / kSweep), kWhite, 2.8f));
+      }
+      const glm::vec3 chord = (pEnd - pStart) * 0.45f;
+      streaks_.push_back(streak(pulled(0.5f * (pStart + pEnd), eye, kPull), chord, 0.030f * k * opacity, 0.75f * opacity, kSteel, 2.2f));
+    }
+
+    const float hitAge = now - c.hitAt;
+    if (hitAge < 0.0f) continue;
+
+    flash(hitPos, (pEnd - pStart) * 0.45f, (i == 0 ? 0.52f : 0.64f) * k, kWhite, hitAge, 0.14f, eye, kPull);
+    if (hitAge < 0.11f) {
+      const float gf = 1.0f - ease(0.0f, 0.11f, hitAge);
+      streaks_.push_back(streak(pulled(hitPos, eye, kPull), e2 * ((i == 0 ? 0.30f : 0.38f) * k * gf), 0.022f * k, gf, kWhite, 2.5f));
+    }
+    const glm::vec3 sparkBias = glm::normalize(-e1 * 0.75f + e.dir * 0.7f + kUp * 0.25f);
+    sparks(e, hitPos, sparkBias, i == 0 ? 12 : 16, (i == 0 ? 3.2f : 3.8f) * k, 0.030f * k, kWhite, {1.0f, 0.58f, 0.22f}, hitAge, eye, c.salt);
+    dustRing(e, e.feet, -e.dir * 0.3f, i == 0 ? 6 : 9, (i == 0 ? 0.55f : 0.78f) * k, (i == 0 ? 0.18f : 0.24f) * k, hitAge, i == 0 ? 0.45f : 0.65f,
+             i == 0 ? 0.28f : 0.36f, eye, c.salt + 50u);
+    if (i == 1) groundRing(e.feet, 0.22f * k, 0.95f * k, 0.28f, 0.48f, 0.45f, 0.6f, kSteel, kWhite, hitAge, eye, frame, e.feet);
+    if (hitAge < 0.18f) lights.push_back({hitPos, {0.88f, 0.93f, 1.0f}, (i == 0 ? 8.0f : 11.0f) * (1.0f - ease(0.0f, 0.18f, hitAge)), 2.5f * k});
+  }
+}
+
 // --- Rasteira ----------------------------------------------------------------------------------------------------------------
 
 void ArmsFx::buildTrip(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) {
@@ -953,8 +1082,32 @@ void ArmsFx::buildAura(const Effect& e, float now, const Camera& camera, VfxFram
   const glm::vec3 energy = e.protection ? kGold : glm::vec3(0.55f, 0.05f, 0.08f);
   const glm::vec3 core = e.protection ? kGoldCore : glm::vec3(0.9f, 0.3f, 0.25f);
   const glm::vec3 chest = e.feet + kUp * (e.height * 0.55f);
+
+  // Find the rearmost card position along camera forward so full-area effects draw behind all affected cards
+  glm::vec3 rearmost = e.feet;
+  float maxKey = glm::dot(e.feet - eye, camera.forward);
+  for (const Target& b : e.targets) {
+    const float key = glm::dot(b.feet - eye, camera.forward);
+    if (key > maxKey) {
+      maxKey = key;
+      rearmost = b.feet;
+    }
+  }
+
   // --- The call: light gathers at the chest just before. ---
-  if (now >= e.start && age < 0.15f) streaks_.push_back(streak(pulled(chest, eye, kPull), glm::vec3(0.0f), (0.3f + 0.5f * ease(e.start, e.impact, now)) * k, 0.8f, core, 2.0f));
+  if (now >= e.start && age < 0.15f) {
+    if (e.protection) {
+      const VfxInstance inst = streak(chest, glm::vec3(0.0f), (0.3f + 0.5f * ease(e.start, e.impact, now)) * k, 0.8f, core, 2.0f);
+      const uint32_t first = static_cast<uint32_t>(frame.instances.size());
+      frame.instances.push_back(inst);
+      draw(quadFirst_, quadCount_, glm::mat4(1.0f), kModeStreak, now, 1.0f, 1.0f, glm::vec3(1.0f), 1.0f, glm::vec4(1.0f, 0.97f, 0.9f, 0.0f), e.feet,
+           VfxBlend::Additive, first, 1);
+      frame.draws.back().behindCard = true;
+      frame.draws.back().cardAt = e.feet;
+    } else {
+      streaks_.push_back(streak(pulled(chest, eye, kPull), glm::vec3(0.0f), (0.3f + 0.5f * ease(e.start, e.impact, now)) * k, 0.8f, core, 2.0f));
+    }
+  }
   if (age < 0.0f) return;
   constexpr float kSpread = 0.55f;
   if (e.protection) {
@@ -963,6 +1116,8 @@ void ArmsFx::buildAura(const Effect& e, float now, const Camera& camera, VfxFram
     const float env = (1.0f - ease(0.9f, 1.8f, age));
     const glm::mat4 m = glm::translate(glm::mat4(1.0f), e.feet) * glm::scale(glm::mat4(1.0f), {r, 0.55f * r, r});
     draw(sphereFirst_, sphereCount_, m, kModeEnergy, age, 0.6f, 0.5f * env, energy, 0.0f, glm::vec4(core, 0.0f), e.feet, VfxBlend::Additive);
+    frame.draws.back().behindCard = true;
+    frame.draws.back().cardAt = rearmost;
   } else {
     // --- A dark crimson wave rolls out over the area: a darkening shell (alpha), thinning as it goes. ---
     if (age < kSpread + 0.4f) {
@@ -976,16 +1131,39 @@ void ArmsFx::buildAura(const Effect& e, float now, const Camera& camera, VfxFram
   // --- The ring on the ground at the area's edge: it grows out, then glows there a while. ---
   groundRing(e.feet, 0.4f * k, e.radius, kSpread, 1.9f, 0.5f, 0.75f, energy, core, age, eye, frame, e.feet);
   // --- Motes rising inside the area (gold sparks, or dark red embers). ---
-  for (int i = 0; i < 26; ++i) {
-    const uint32_t n = static_cast<uint32_t>(i) + 700u;
-    const float born = hash01(e.seed, n, 1) * 1.0f;
-    const float tau = age - born;
-    const float life = 0.8f + 0.5f * hash01(e.seed, n, 2);
-    if (tau < 0.0f || tau > life) continue;
-    const float u = tau / life;
-    const float ang = hash01(e.seed, n, 3) * kTau, rr = std::sqrt(hash01(e.seed, n, 4)) * e.radius * 0.9f;
-    const glm::vec3 p = e.feet + glm::vec3(std::cos(ang) * rr, (0.1f + 1.6f * u) * k, std::sin(ang) * rr);
-    streaks_.push_back(streak(pulled(p, eye, kPull * 0.6f), kUp * 0.1f * k, 0.035f * k, std::sin(kPi * u) * 0.85f, e.protection ? kGoldCore : core, 2.0f));
+  if (e.protection) {
+    std::vector<VfxInstance> protMotes;
+    for (int i = 0; i < 26; ++i) {
+      const uint32_t n = static_cast<uint32_t>(i) + 700u;
+      const float born = hash01(e.seed, n, 1) * 1.0f;
+      const float tau = age - born;
+      const float life = 0.8f + 0.5f * hash01(e.seed, n, 2);
+      if (tau < 0.0f || tau > life) continue;
+      const float u = tau / life;
+      const float ang = hash01(e.seed, n, 3) * kTau, rr = std::sqrt(hash01(e.seed, n, 4)) * e.radius * 0.9f;
+      const glm::vec3 p = e.feet + glm::vec3(std::cos(ang) * rr, (0.1f + 1.6f * u) * k, std::sin(ang) * rr);
+      protMotes.push_back(streak(p, kUp * 0.1f * k, 0.035f * k, std::sin(kPi * u) * 0.85f, kGoldCore, 2.0f));
+    }
+    if (!protMotes.empty()) {
+      const uint32_t first = static_cast<uint32_t>(frame.instances.size());
+      frame.instances.insert(frame.instances.end(), protMotes.begin(), protMotes.end());
+      draw(quadFirst_, quadCount_, glm::mat4(1.0f), kModeStreak, now, 1.0f, 1.0f, glm::vec3(1.0f), 1.0f, glm::vec4(1.0f, 0.97f, 0.9f, 0.0f), e.feet,
+           VfxBlend::Additive, first, static_cast<uint32_t>(protMotes.size()));
+      frame.draws.back().behindCard = true;
+      frame.draws.back().cardAt = rearmost;
+    }
+  } else {
+    for (int i = 0; i < 26; ++i) {
+      const uint32_t n = static_cast<uint32_t>(i) + 700u;
+      const float born = hash01(e.seed, n, 1) * 1.0f;
+      const float tau = age - born;
+      const float life = 0.8f + 0.5f * hash01(e.seed, n, 2);
+      if (tau < 0.0f || tau > life) continue;
+      const float u = tau / life;
+      const float ang = hash01(e.seed, n, 3) * kTau, rr = std::sqrt(hash01(e.seed, n, 4)) * e.radius * 0.9f;
+      const glm::vec3 p = e.feet + glm::vec3(std::cos(ang) * rr, (0.1f + 1.6f * u) * k, std::sin(ang) * rr);
+      streaks_.push_back(streak(pulled(p, eye, kPull * 0.6f), kUp * 0.1f * k, 0.035f * k, std::sin(kPi * u) * 0.85f, core, 2.0f));
+    }
   }
   // --- Every body under it: allies get a column of gold light; the cowed foes a dark pulse. ---
   int lit = 0;
@@ -997,9 +1175,11 @@ void ArmsFx::buildAura(const Effect& e, float now, const Camera& camera, VfxFram
     if (e.protection) {
       const float env = ease(0.0f, 0.18f, tau) * (1.0f - ease(0.6f, 1.2f, tau));
       if (env <= 0.0f) continue;
-      const glm::mat4 m = glm::translate(glm::mat4(1.0f), pulled(b.feet, eye, kPull * 0.6f)) *
+      const glm::mat4 m = glm::translate(glm::mat4(1.0f), b.feet) *
                           glm::scale(glm::mat4(1.0f), {0.32f * kb, h * 1.1f * easeOut(0.0f, 0.3f, tau) + 1e-3f, 0.32f * kb});
       draw(columnFirst_, columnCount_, m, kModeEnergy, tau, 0.5f, 0.55f * env, kGold, 0.0f, glm::vec4(kGoldCore, 0.2f), b.feet, VfxBlend::Additive);
+      frame.draws.back().behindCard = true;
+      frame.draws.back().cardAt = b.feet;
       if (lit < 4) ++lit, lights.push_back({b.feet + kUp * (h * 0.5f), {1.0f, 0.85f, 0.5f}, 5.0f * env, 2.4f * kb});
     } else {
       if (tau > 0.6f) continue;
@@ -1025,11 +1205,35 @@ void ArmsFx::buildSummon(const Effect& e, float now, const Camera& camera, VfxFr
   const float env = ease(0.0f, 0.25f, t) * (1.0f - ease(lead + 0.2f, lead + 0.8f, t));
   if (env > 0.0f) {
     const float r = (0.95f + 0.05f * std::sin(t * 9.0f)) * big;
-    const glm::mat4 ring = glm::translate(glm::mat4(1.0f), pulled(e.feet + glm::vec3(0.0f, 0.04f, 0.0f), eye, kGroundPull)) * glm::scale(glm::mat4(1.0f), {r, 1.0f, r});
+    const glm::mat4 ring = glm::translate(glm::mat4(1.0f), e.feet + glm::vec3(0.0f, 0.04f, 0.0f)) * glm::scale(glm::mat4(1.0f), {r, 1.0f, r});
     draw(discFirst_, discCount_, ring, kModeRing, t, 0.7f, 0.85f * env, pal.energy, 0.0f, glm::vec4(pal.core, 0.86f), e.feet, VfxBlend::Additive);
-    const glm::mat4 rune = glm::translate(glm::mat4(1.0f), pulled(e.feet + glm::vec3(0.0f, 0.12f, 0.0f), eye, kGroundPull)) * glm::rotate(glm::mat4(1.0f), t * 1.8f, kUp) *
-                           glm::scale(glm::mat4(1.0f), glm::vec3(0.7f * big));
-    draw(runeFirst_, runeCount_, rune, kModeTrail, t, 1.6f, 0.9f * env, pal.energy, 0.0f, glm::vec4(pal.core, 0.0f), e.feet, VfxBlend::Additive);
+    frame.draws.back().underCards = true;
+
+    // The summon halo: encircles the summon's feet/card, properly split into back half (behind card) and front half (in front of card)
+    const glm::vec3 side = flatDir(glm::vec3(camera.right.x, 0.0f, camera.right.z), glm::vec3(1.0f, 0.0f, 0.0f));
+    const glm::vec3 fwd = flatDir(glm::vec3(camera.forward.x, 0.0f, camera.forward.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    const float haloR = 0.7f * big;
+    const glm::vec3 haloCenter = e.feet + glm::vec3(0.0f, 0.12f, 0.0f);
+
+    // Back half: curves in +forward (away from camera, behind card)
+    glm::mat4 mBack(1.0f);
+    mBack[0] = glm::vec4(side * haloR, 0.0f);
+    mBack[1] = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+    mBack[2] = glm::vec4(fwd * haloR, 0.0f);
+    mBack[3] = glm::vec4(haloCenter, 1.0f);
+    draw(halfHaloFirst_, halfHaloCount_, mBack, kModeTrail, t * 1.8f, 1.6f, 0.9f * env, pal.energy, 0.0f, glm::vec4(pal.core, 0.0f), e.feet, VfxBlend::Additive);
+    frame.draws.back().behindCard = true;
+    frame.draws.back().cardAt = e.feet;
+
+    // Front half: curves in -forward (towards camera, in front of card)
+    glm::mat4 mFront(1.0f);
+    mFront[0] = glm::vec4(side * haloR, 0.0f);
+    mFront[1] = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+    mFront[2] = glm::vec4(-fwd * haloR, 0.0f);
+    mFront[3] = glm::vec4(haloCenter, 1.0f);
+    draw(halfHaloFirst_, halfHaloCount_, mFront, kModeTrail, t * 1.8f, 1.6f, 0.9f * env, pal.energy, 0.0f, glm::vec4(pal.core, 0.0f), e.feet, VfxBlend::Additive);
+    frame.draws.back().behindCard = false;
+
     lights.push_back({e.feet + kUp * 0.4f, pal.light, 5.0f * env, 2.4f * big});
   }
   // --- Motes drawn in from round the circle, spiralling to its middle. ---
@@ -1049,8 +1253,10 @@ void ArmsFx::buildSummon(const Effect& e, float now, const Camera& camera, VfxFr
   // --- The familiar comes: a column of light, a flash, a shell bursting out. ---
   if (age < 0.6f) {
     const float rise = easeOut(0.0f, 0.18f, age), out = 1.0f - ease(0.2f, 0.6f, age);
-    const glm::mat4 m = glm::translate(glm::mat4(1.0f), pulled(e.feet, eye, kGroundPull)) * glm::scale(glm::mat4(1.0f), {0.45f * big, 2.4f * big * rise + 1e-3f, 0.45f * big});
+    const glm::mat4 m = glm::translate(glm::mat4(1.0f), e.feet) * glm::scale(glm::mat4(1.0f), {0.45f * big, 2.4f * big * rise + 1e-3f, 0.45f * big});
     draw(columnFirst_, columnCount_, m, kModeEnergy, age, 0.9f, 0.7f * out, pal.energy, 0.0f, glm::vec4(pal.core, 0.3f), e.feet, VfxBlend::Additive);
+    frame.draws.back().behindCard = true;
+    frame.draws.back().cardAt = e.feet;
   }
   flash(e.feet + kUp * (0.8f * big), glm::vec3(0.0f), 1.0f * big, pal.core, age, 0.2f, eye, kPull);
   if (age < 0.35f) {
@@ -1325,6 +1531,207 @@ void ArmsFx::buildSpectral(const Effect& e, float now, const Camera& camera, Vfx
   // --- A pale flash on every body struck. ---
   for (const Target& body : e.targets) flash(body.feet + kUp * (bodyHeight(body.height) * 0.5f), glm::vec3(0.0f), 0.5f * scaleOf(body.height), kPale, age - 0.04f, 0.16f, eye, kPull);
   if (age < 0.6f) lights.push_back({e.feet + kUp * 0.8f, {0.35f, 1.0f, 0.75f}, 15.0f * (1.0f - ease(0.0f, 0.6f, age)), 4.0f * k});
+}
+
+// --- Golpe do Tentáculo ------------------------------------------------------------------------------------------------------
+
+void ArmsFx::buildTendrilSwipe(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) {
+  const Draw draw{frame};
+  const glm::vec3 eye = camera.position;
+  const float k = scaleOf(e.height);
+  constexpr float kSweepTurn = 0.32f;  // duration of the 360-degree sweep
+  const float t = now - e.start;       // runs from 0 .. kSweepTurn
+  const float age = now - e.impact;
+
+  constexpr glm::vec3 kTendrilDark{0.12f, 0.32f, 0.10f};      // deep vine green
+  constexpr glm::vec3 kTendrilLash{0.25f, 0.58f, 0.18f};      // thorny vine body
+  constexpr glm::vec3 kVenomTip{0.75f, 0.98f, 0.25f};         // caustic/toxic chartreuse tip
+  constexpr glm::vec3 kVenomCore{0.92f, 1.0f, 0.60f};         // bright hot venom core
+  constexpr glm::vec3 kShadowWake{0.30f, 0.12f, 0.35f};       // eldritch shadow/purple wake
+
+  // Tendrils spin around the caster
+  const glm::vec3 first = e.targets.empty() ? flatDir(e.feet - eye, glm::vec3(0.0f, 0.0f, 1.0f))
+                                            : flatDir(e.targets.front().feet - e.feet, glm::vec3(0.0f, 0.0f, 1.0f));
+  const glm::vec3 side0 = glm::normalize(glm::cross(kUp, first));
+  auto around = [&](float u) { return first * std::cos(u * kTau) + side0 * std::sin(u * kTau); };
+
+  const float head = std::clamp(t / kSweepTurn, 0.0f, 1.0f);
+  const float tail = std::clamp((t - 0.22f) / kSweepTurn, 0.0f, 1.0f);
+  const float opacity = 1.0f - ease(kSweepTurn + 0.02f, kSweepTurn + 0.35f, t);
+
+  // Dual interleaved sweeping tendril ribbons
+  if (opacity > 0.0f && head > tail) {
+    constexpr int kSegments = 64;
+    auto makeTendrilRibbon = [&](float phaseOffset, float baseRadius, float yOffset, float width, float waveFreq, float waveAmp) {
+      std::vector<VfxVertex> sheet;
+      sheet.reserve(kSegments * 6);
+      std::vector<glm::vec3> edge(kSegments + 1), inner(kSegments + 1);
+      for (int j = 0; j <= kSegments; ++j) {
+        const float u = static_cast<float>(j) / kSegments;
+        const glm::vec3 r = around(u + phaseOffset);
+        const float lift = waveAmp * k * std::sin(u * kTau * waveFreq + phaseOffset * 3.0f);
+        const float rad = baseRadius * (0.55f + 0.45f * u);
+        const glm::vec3 p = e.feet + r * rad + kUp * (yOffset + lift);
+        edge[j] = pulled(p, eye, kPull);
+        const float w = width * (1.0f - 0.7f * u);
+        inner[j] = pulled(p - r * w - kUp * (0.04f * k), eye, kPull);
+      }
+      for (int j = 0; j < kSegments; ++j) {
+        const float s0 = static_cast<float>(j) / kSegments, s1 = static_cast<float>(j + 1) / kSegments;
+        const VfxVertex a0{inner[j], s0, kUp, 0.0f}, a1{edge[j], s0, kUp, 1.0f},
+                        b0{inner[j + 1], s1, kUp, 0.0f}, b1{edge[j + 1], s1, kUp, 1.0f};
+        sheet.insert(sheet.end(), {a0, a1, b0, a1, b1, b0});
+      }
+      return sheet;
+    };
+
+    const std::vector<VfxVertex> tendril1 = makeTendrilRibbon(0.0f, 2.0f * k, 0.45f * e.height, 0.55f * k, 2.5f, 0.12f);
+    const std::vector<VfxVertex> tendril2 = makeTendrilRibbon(0.5f, 1.75f * k, 0.35f * e.height, 0.45f * k, 3.0f, 0.10f);
+    const std::vector<VfxVertex> wake = makeTendrilRibbon(0.0f, 2.15f * k, 0.40f * e.height, 0.75f * k, 2.0f, 0.08f);
+
+    draw(frame.addVertices(wake), static_cast<uint32_t>(wake.size()), glm::mat4(1.0f), kModeSlash, t, 0.9f, opacity * 0.5f,
+         kShadowWake, std::max(0.0f, tail - 0.08f), glm::vec4(kTendrilDark, head), e.feet, VfxBlend::Additive);
+    draw(frame.addVertices(tendril1), static_cast<uint32_t>(tendril1.size()), glm::mat4(1.0f), kModeSlash, t, 1.8f, opacity,
+         kTendrilLash, tail, glm::vec4(kVenomTip, head), e.feet, VfxBlend::Additive);
+    draw(frame.addVertices(tendril2), static_cast<uint32_t>(tendril2.size()), glm::mat4(1.0f), kModeSlash, t, 1.6f, opacity * 0.85f,
+         kTendrilDark, tail, glm::vec4(kVenomCore, head), e.feet, VfxBlend::Additive);
+  }
+
+  // Glint / streak and dynamic light riding the leading tip of the whip
+  if (t >= 0.0f && t < kSweepTurn) {
+    const glm::vec3 r = around(head);
+    const glm::vec3 tip = e.feet + r * (2.1f * k) + kUp * (0.45f * e.height);
+    streaks_.push_back(streak(pulled(tip, eye, kPull), glm::vec3(0.0f), 0.25f * k, 0.95f, kVenomCore, 2.6f));
+    streaks_.push_back(streak(pulled(tip, eye, kPull), glm::cross(kUp, r) * (0.6f * k), 0.04f * k, 0.9f, kVenomTip, 2.8f));
+    lights.push_back({tip, {0.65f, 0.95f, 0.25f}, 12.0f, 3.0f * k});
+  }
+
+  // Droplets of venom and flying thorn chips flung out tangent to the sweep
+  for (int i = 0; i < 24; ++i) {
+    const uint32_t n = static_cast<uint32_t>(i) + 120u;
+    const float born = hash01(e.seed, n, 1) * kSweepTurn;
+    const float life = 0.25f + 0.35f * hash01(e.seed, n, 2);
+    const float tau = t - born;
+    if (tau < 0.0f || tau > life) continue;
+    const glm::vec3 r = around(born / kSweepTurn);
+    const glm::vec3 tangent = glm::cross(kUp, r);
+    const glm::vec3 d = glm::normalize(tangent * 0.85f + r * (0.4f + 0.5f * hash01(e.seed, n, 3)) + kUp * (0.1f + 0.4f * hash01(e.seed, n, 4)));
+    const glm::vec3 v0 = d * (3.5f + 3.5f * hash01(e.seed, n, 5)) * k;
+    const glm::vec3 p = e.feet + r * (1.8f * k) + kUp * (0.45f * e.height) + v0 * tau + glm::vec3(0.0f, -0.5f * kGravity * tau * tau, 0.0f);
+    if (p.y < e.feet.y + 0.02f) continue;
+    const float u = tau / life;
+    streaks_.push_back(streak(pulled(p, eye, kPull), (v0 + glm::vec3(0.0f, -kGravity * tau, 0.0f)) * 0.04f, 0.035f * k,
+                              1.0f - u * u, glm::mix(kVenomCore, kTendrilLash, u), 2.8f));
+  }
+
+  // Ground lash ring expanding at feet
+  groundRing(e.feet, 0.4f * k, 2.3f * k, 0.28f, 0.75f, 0.6f, 0.75f, kTendrilLash, kVenomTip, age, eye, frame, e.feet);
+  // Dust ring thrown outward by the violent whip lash
+  dustRing(e, e.feet, glm::vec3(0.0f), 14, 1.8f * k, 0.45f * k, age, 0.85f, 0.55f, eye, 300u);
+  // Splinters and thorn chips torn from the lash
+  debris(e, e.feet + kUp * (0.2f * k), glm::vec3(0.0f), 10, 2.8f * k, 0.08f * k, kTendrilDark, true, age, eye, 400u);
+
+  // Targets struck: thorn splinters, venom impact flash, and wound slash
+  const glm::vec3 toEye = flatDir(eye - e.feet, glm::vec3(0.0f, 0.0f, 1.0f));
+  const glm::vec3 side = glm::normalize(glm::cross(kUp, toEye));
+  for (const Target& b : e.targets) {
+    const float h = bodyHeight(b.height), kb = scaleOf(h);
+    const glm::vec3 targetBody = b.feet + kUp * (h * 0.5f);
+    flash(targetBody, side * 1.0f * kb, 0.65f * kb, kVenomCore, age, 0.18f, eye, kPull);
+    sparks(e, targetBody, side * 0.3f, 12, 3.2f * kb, 0.03f * kb, kVenomCore, kTendrilLash, age, eye, 500u);
+    debris(e, targetBody, side * 0.4f, 6, 2.2f * kb, 0.07f * kb, kTendrilDark, true, age, eye, 600u);
+  }
+}
+
+// --- Segundo Fôlego ---------------------------------------------------------------------------------------------------------
+
+void ArmsFx::buildSecondWind(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) {
+  const Draw draw{frame};
+  const glm::vec3 eye = camera.position;
+  const float k = scaleOf(e.height);
+  const float age = now - e.impact;
+  const float run = now - e.start;
+
+  constexpr glm::vec3 kVitalGreen{0.22f, 0.88f, 0.42f};       // rich vital emerald
+  constexpr glm::vec3 kGoldWarm{1.0f, 0.85f, 0.45f};          // radiant golden vitality
+  constexpr glm::vec3 kWhiteGold{1.0f, 0.98f, 0.78f};         // hot vital core
+  const glm::vec3 chest = e.feet + kUp * (e.height * 0.55f);
+  const glm::vec3 toEye = flatDir(eye - e.feet, glm::vec3(0.0f, 0.0f, 1.0f));
+  const glm::vec3 side = glm::normalize(glm::cross(kUp, toEye));
+
+  // 1. Inward gather before impact (deep breath / surge of stamina gathering in the chest)
+  if (now >= e.start && age < 0.10f) {
+    const float inT = std::clamp(run / std::max(e.impact - e.start, 1e-3f), 0.0f, 1.0f);
+    const float envIn = ease(0.0f, 1.0f, inT);
+    for (int i = 0; i < 12; ++i) {
+      const uint32_t n = static_cast<uint32_t>(i) + 700u;
+      const float a = hash01(e.seed, n, 1) * kTau;
+      const float rIn = (1.2f * k) * (1.0f - 0.75f * inT);
+      const glm::vec3 p = chest + glm::vec3(std::cos(a) * rIn, (hash01(e.seed, n, 2) - 0.5f) * 0.8f * k, std::sin(a) * rIn);
+      const glm::vec3 toward = glm::normalize(chest - p);
+      streaks_.push_back(streak(pulled(p, eye, kPull), toward * (0.12f * k), 0.035f * k, envIn * 0.85f, kGoldWarm, 2.4f));
+    }
+  }
+
+  if (age < 0.0f) return;
+
+  // 2. Chest heart pulse / vitality release flash
+  flash(chest, side * (1.2f * k), 0.75f * k, kWhiteGold, age, 0.22f, eye, kPull);
+  if (age < 0.55f) {
+    const float rSphere = (0.25f + 0.95f * easeOut(0.0f, 0.45f, age)) * k;
+    const float sphereEnv = 1.0f - ease(0.12f, 0.55f, age);
+    const glm::mat4 mSphere = glm::translate(glm::mat4(1.0f), chest) * glm::scale(glm::mat4(1.0f), glm::vec3(rSphere));
+    draw(sphereFirst_, sphereCount_, mSphere, kModeEnergy, age, 0.8f, 0.65f * sphereEnv, kVitalGreen, 0.0f,
+         glm::vec4(kWhiteGold, 0.0f), e.feet, VfxBlend::Additive);
+  }
+
+  // 3. Ascending column / pillar of revitalizing energy through the warrior
+  if (age < 1.1f) {
+    const float colEnv = ease(0.0f, 0.12f, age) * (1.0f - ease(0.35f, 1.1f, age));
+    const float rise = easeOut(0.0f, 0.25f, age);
+    const glm::mat4 mCol = glm::translate(glm::mat4(1.0f), pulled(e.feet, eye, kGroundPull)) *
+                           glm::scale(glm::mat4(1.0f), {0.55f * k, (e.height * 1.5f) * rise + 1e-3f, 0.55f * k});
+    draw(columnFirst_, columnCount_, mCol, kModeEnergy, age, 0.85f, 0.65f * colEnv, kVitalGreen, 0.0f,
+         glm::vec4(kGoldWarm, 0.35f), e.feet, VfxBlend::Additive);
+  }
+
+  // 4. Ascending vitality ring climbing from feet to over head
+  if (age < 0.85f) {
+    const float ringProg = easeOut(0.0f, 0.65f, age);
+    const float ringY = e.feet.y + (e.height * 1.25f) * ringProg;
+    const float ringRad = (0.6f + 0.6f * ringProg) * k;
+    const float ringEnv = ease(0.0f, 0.08f, age) * (1.0f - ease(0.55f, 0.85f, age));
+    const glm::mat4 mRing = glm::translate(glm::mat4(1.0f), pulled(glm::vec3(e.feet.x, ringY, e.feet.z), eye, kPull * 0.7f)) *
+                            glm::scale(glm::mat4(1.0f), {ringRad, 1.0f, ringRad});
+    draw(discFirst_, discCount_, mRing, kModeRing, age, 0.9f, 0.85f * ringEnv, kGoldWarm, 0.0f,
+         glm::vec4(kWhiteGold, 0.88f), e.feet, VfxBlend::Additive);
+  }
+
+  // 5. Expanding ground ring
+  groundRing(e.feet, 0.35f * k, 1.75f * k, 0.35f, 0.9f, 0.6f, 0.8f, kVitalGreen, kGoldWarm, age, eye, frame, e.feet);
+
+  // 6. Upward spiraling vitality motes
+  for (int i = 0; i < 20; ++i) {
+    const uint32_t n = static_cast<uint32_t>(i) + 800u;
+    const float born = hash01(e.seed, n, 1) * 0.35f;
+    const float life = 0.6f + 0.5f * hash01(e.seed, n, 2);
+    const float tau = age - born;
+    if (tau < 0.0f || tau > life) continue;
+    const float u = tau / life;
+    const float phase = hash01(e.seed, n, 3) * kTau;
+    const float ang = phase + tau * 4.5f;
+    const float rMote = (0.35f + 0.3f * std::sin(u * kPi)) * k;
+    const glm::vec3 p = e.feet + glm::vec3(std::cos(ang) * rMote, u * (e.height * 1.6f), std::sin(ang) * rMote);
+    const float alpha = std::sin(u * kPi) * 0.9f;
+    const glm::vec3 col = glm::mix(kVitalGreen, kWhiteGold, hash01(e.seed, n, 4) * 0.7f);
+    streaks_.push_back(streak(pulled(p, eye, kPull * 0.6f), kUp * (0.08f * k), 0.038f * k, alpha, col, 2.5f));
+  }
+
+  // 7. Dynamic golden-emerald revitalizing light
+  if (age < 0.9f) {
+    const float lightEnv = (1.0f - ease(0.15f, 0.9f, age));
+    lights.push_back({chest, {0.35f, 0.95f, 0.50f}, 14.0f * lightEnv, 3.8f * k});
+  }
 }
 
 }  // namespace ember

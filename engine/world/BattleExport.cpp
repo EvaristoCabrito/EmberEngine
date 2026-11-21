@@ -528,7 +528,9 @@ struct Spawner {
   std::optional<Unit> spawn(const json& s, const std::string& side, int i, int enemyLevel, std::string* error) const {
     Unit u;
     u.name = str(s, "name");
-    u.classId = u.name == "Kael" ? "swordsman" : str(s, "classId");
+    std::string cid = str(s, "classId");
+    if (u.name == "Kael" && (cid == "swordsman" || cid == "kaelFinal" || cid == "kaelEarly" || cid.empty())) cid = "vanguard";
+    u.classId = cid;
     const json* cls = r.cls(u.classId);
     if (!cls) {
       if (error) *error = "unknown " + side + " class \"" + u.classId + "\" for \"" + u.name + "\" at " + std::to_string(integer(s, "x")) + "," + std::to_string(integer(s, "y"));
@@ -916,7 +918,9 @@ bool prepareCampaignMap(const std::filesystem::path& mapFile, const std::filesys
   if (draft.contains("playerSpawns") && draft["playerSpawns"].is_array())
     for (json& s : draft["playerSpawns"]) {
       const std::string name = str(s, "name");
-      if (!r->cls(str(s, "classId")) && heroClasses.contains(name)) s["classId"] = heroClasses[name];
+      if (const std::string base = heroBaseClass(name, str(s, "classId")); !base.empty()) s["classId"] = base;
+      else if (!r->cls(str(s, "classId")) && heroClasses.contains(name)) s["classId"] = heroClasses[name];
+      else if (name == "Kael" && (str(s, "classId") == "swordsman" || str(s, "classId") == "kaelFinal" || str(s, "classId") == "kaelEarly" || str(s, "classId") == "paladin" || str(s, "classId") == "heavyKnight" || str(s, "classId").empty())) s["classId"] = "vanguard";
     }
   json mission = draft;
   legacyClassIds(*r, mission);

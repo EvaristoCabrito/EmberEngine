@@ -146,7 +146,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
     if (openSky) surface.minSunDiffuse = kCardSun;
     // Shadows from the ground and 3D pieces, not from the cards' own map (a flat card would shadow itself).
     surface.receivesCardShadow = 0.0;
-    if (s.flags & 4u) surface.twoSidedLocal = 1.0;  // units (Ember: pointLightsOnBothSides)
+    surface.twoSidedLocal = 1.0;  // 2.75D cards receive dynamic 3D scene light from any angle
     // The whole card takes the fog of war where it stands (Ember's DecorLayer.shade).
     const Sight sight = tacticalSight(f, s.origin);
     if (f.debugView == kDebugFog) return float4(float3(1.0 - sight.color, sight.local, 1.0) * c.a, c.a);
@@ -226,8 +226,9 @@ ShadowOut VSShadow(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
   }
   const float3 world = s.origin + right * ((c.x - 0.5) * s.width) + ((s.flags & 16u) ? float3(0, 0, -1) : float3(0, 1, 0)) * (c.y * s.height);
   ShadowOut o;
+  const float2 toLocal = (f.localShadowPosition - s.origin).xz;
   // Non-casters fall off the map; so does a card standing on never-seen ground (R7: it reveals nothing).
-  const bool casts = (s.flags & 8u) && !neverSeen(f, s.origin);
+  const bool casts = (s.flags & 8u) && !neverSeen(f, s.origin) && (!local || dot(toLocal, toLocal) > 0.09);
   o.position = casts ? mul(float4(world, 1.0), local ? f.localShadowMatrix : f.shadowMatrix) : float4(0, 0, -1, 1);
   const float u = (s.flags & 1u) ? 1.0 - c.x : c.x;
   o.uv = float2(u, 1.0 - c.y) * s.uvScale;

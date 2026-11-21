@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "render/VfxGeometry.h"
+#include "render/vfx/IceParts.h"
 
 namespace ember {
 
@@ -15,7 +16,11 @@ namespace {
 constexpr float kPi = std::numbers::pi_v<float>;
 // BattleSpells3D: fx.pixel = 1 / ZOOM_RADII[1] (one hex is Ember's 34 px); Fireball's pixel-sized constants scale by it.
 constexpr float kPixel = 1.0f / 34.0f;
-constexpr float kBurstSeconds = 0.7f;  // Bola de Fogo 02: how long its dome of fire lasts
+
+float easeOut(float edge0, float edge1, float x) {
+  const float t = std::clamp((x - edge0) / std::max(edge1 - edge0, 1e-5f), 0.0f, 1.0f);
+  return 1.0f - (1.0f - t) * (1.0f - t) * (1.0f - t);
+}
 
 const std::vector<VfxVertex>& ballGeometry() { static const auto g = vfxgeo::icosahedron(1.0f, 24); return g; }
 
@@ -161,18 +166,50 @@ void Fireball::build(float now, const Camera& camera, const VfxFlipbook& fire, V
   const float ti = t - travel_;
   const float ws = impactScale_;
   const glm::vec3 worldOrigin = vfxFromEmber(origin_);
-  if (volume_ && ti < kBurstSeconds) {
-    // 02: the dome of fire, out to the area's edge in a blink, then hollowing and tearing apart as it cools.
-    const float age = ti / kBurstSeconds;
-    const float grown = 1.0f - std::pow(1.0f - age, 3.0f);
-    draw(VfxMaterial::FireVolume, frame.addVertices(quadGeometry()), quadGeometry().size(), glm::mat4(0.0f),
-         {ti, 3.4f * std::pow(1.0f - age, 1.3f), 0.0f, std::max(0.3f, aoe_ * (0.3f + 0.7f * grown))}, {worldOrigin, 4.1f}, {1.0f, 0.0f, 2.0f, age},
-         worldOrigin, VfxBlend::Alpha);
+
+  if (volume_) {
+    constexpr float kGroundBurstDuration = 1.05f;
+    constexpr float kPlumeDuration = 1.35f;
+
+    // 1. Initial fiery ground shockwave ring (underCards = true)
+    if (ti >= 0.0f && ti < 0.65f) {
+      const float ringAge = ti / 0.65f;
+      const float ringRadius = aoe_ * (0.25f + 0.95f * easeOut(0.0f, 1.0f, ringAge));
+      const float ringFade = 1.0f - ringAge;
+      const glm::mat4 ringMat = glm::translate(glm::mat4(1.0f), worldOrigin + glm::vec3(0.0f, 0.04f, 0.0f)) *
+                                glm::scale(glm::mat4(1.0f), {ringRadius, 1.0f, ringRadius});
+      draw(VfxMaterial::Combat, frame.addVertices(icefx::discGeometry()), icefx::discGeometry().size(), ringMat,
+           {ti, 3.0f /* kModeRing */, 1.8f, ringFade * 0.9f}, {0.0f, 0.0f, 0.0f, 0.85f},
+           glm::vec4(1.0f, 0.42f, 0.1f, 0.85f), worldOrigin, VfxBlend::Additive);
+      frame.draws.back().underCards = true;
+    }
+
+    // 2. Stage A: Ground explosive burst dome (FireVolume body 2.0)
+    if (ti < kGroundBurstDuration) {
+      const float age = ti / kGroundBurstDuration;
+      const float grown = 1.0f - std::pow(1.0f - age, 3.0f);
+      const float r = std::max(0.4f, aoe_ * (0.35f + 0.8f * grown));
+      const float strength = 4.5f * std::pow(1.0f - age, 1.2f);
+      draw(VfxMaterial::FireVolume, frame.addVertices(quadGeometry()), quadGeometry().size(), glm::mat4(0.0f),
+           {ti, strength, 0.0f, r}, {worldOrigin, 5.7f}, {1.3f, 0.0f, 2.0f, age},
+           worldOrigin, VfxBlend::Alpha);
+    }
+
+    // 3. Stage B: Rising Fireball Mushroom Plume
+    if (ti >= 0.08f && ti < kPlumeDuration) {
+      const float plumeAge = (ti - 0.08f) / (kPlumeDuration - 0.08f);
+      const float rise = aoe_ * 1.55f * std::pow(plumeAge, 0.65f);
+      const float plumeR = aoe_ * (0.45f + 0.85f * std::sin(plumeAge * 2.3f));
+      const glm::vec3 plumeCenter = worldOrigin + glm::vec3(0.0f, rise, 0.0f);
+      const float plumeStrength = 3.8f * std::pow(1.0f - plumeAge, 1.1f);
+      draw(VfxMaterial::FireVolume, frame.addVertices(quadGeometry()), quadGeometry().size(), glm::mat4(0.0f),
+           {ti, plumeStrength, 0.0f, plumeR}, {plumeCenter, 8.3f}, {1.5f, 0.0f, 2.0f, plumeAge},
+           plumeCenter, VfxBlend::Alpha);
+    }
   }
+
   std::vector<VfxInstance> live;
   for (const Particle& p : particles_) {
-    // (02: its fire is the dome; the sparks, the embers and the smoke are 01's)
-    if (volume_ && (p.kind == Kind::Primary || p.kind == Kind::Secondary || p.kind == Kind::Radial)) continue;
     const float age = ti - p.delay;
     const bool active = age >= 0.0f && age < p.life;
     if (!active) continue;  // alpha 0: nothing drawn
@@ -188,29 +225,47 @@ void Fireball::build(float now, const Camera& camera, const VfxFlipbook& fire, V
     float kind = 0.0f;
     switch (p.kind) {
       case Kind::Primary:
-        kind = 1, scale *= 0.68f + std::sin(kPi * tt) * 0.92f, emission = s_.primaryEmission * (1.35f - tt * 0.62f), color = {1, 0.9f - tt * 0.58f, 0.48f - tt * 0.38f};
+        kind = 1;
+        scale *= (volume_ ? 1.35f : 1.0f) * (0.68f + std::sin(kPi * tt) * 0.92f);
+        emission = (volume_ ? 4.5f : s_.primaryEmission) * (1.35f - tt * 0.62f);
+        color = {1, 0.9f - tt * 0.58f, 0.48f - tt * 0.38f};
         break;
       case Kind::Secondary:
-        kind = 1, scale *= 0.72f + tt * 0.7f, emission = 1.25f * (1.0f - tt * 0.5f), color = {1, 0.72f - tt * 0.46f, 0.24f - tt * 0.17f};
+        kind = 1;
+        scale *= (volume_ ? 1.45f : 1.0f) * (0.72f + tt * 0.7f);
+        emission = (volume_ ? 3.0f : 1.25f) * (1.0f - tt * 0.5f);
+        color = {1, 0.72f - tt * 0.46f, 0.24f - tt * 0.17f};
         break;
       case Kind::Radial:
-        kind = 0, scale *= 0.58f + std::sin(kPi * tt) * 0.45f, emission = 1.8f * (1.0f - tt), color = {1, 0.66f - tt * 0.42f, 0.16f};
+        kind = 0;
+        scale *= (volume_ ? 1.35f : 1.0f) * (0.58f + std::sin(kPi * tt) * 0.45f);
+        emission = (volume_ ? 3.2f : 1.8f) * (1.0f - tt);
+        color = {1, 0.66f - tt * 0.42f, 0.16f};
         break;
       case Kind::Spark:
-        kind = 1, scale *= 0.7f + (1.0f - tt) * 0.45f, emission = 5.2f * (1.0f - tt), color = {1, 0.97f - tt * 0.68f, 0.74f - tt * 0.58f};
+        kind = 1;
+        scale *= (volume_ ? 1.3f : 1.0f) * (0.7f + (1.0f - tt) * 0.45f);
+        emission = (volume_ ? 7.5f : 5.2f) * (1.0f - tt);
+        color = {1, 0.97f - tt * 0.68f, 0.74f - tt * 0.58f};
         break;
       case Kind::Ember:
-        kind = 1, scale *= 0.7f + std::sin(kPi * tt) * 0.25f, emission = 2.4f * (1.0f - tt), color = {1, 0.56f - tt * 0.38f, 0.12f + (1.0f - tt) * 0.1f};
+        kind = 1;
+        scale *= (volume_ ? 1.3f : 1.0f) * (0.7f + std::sin(kPi * tt) * 0.25f);
+        emission = (volume_ ? 3.8f : 2.4f) * (1.0f - tt);
+        color = {1, 0.56f - tt * 0.38f, 0.12f + (1.0f - tt) * 0.1f};
         break;
       case Kind::Smoke:
-        kind = 2, scale *= 0.65f + tt * s_.smokeExpansion * 2.2f, alpha *= s_.smokeOpacity * std::pow(1.0f - tt, 0.65f), emission = 0.42f,
-        color = {0.24f, 0.22f, 0.2f};
+        kind = 2;
+        scale *= (volume_ ? 1.5f : 1.0f) * (0.65f + tt * s_.smokeExpansion * 2.4f);
+        alpha *= (volume_ ? 1.4f : 1.0f) * s_.smokeOpacity * std::pow(1.0f - tt, 0.65f);
+        emission = 0.42f;
+        color = {0.20f, 0.18f, 0.16f};
         break;
     }
     // Every visible particle kept inside the spell's area (the damage cells' radius).
     const float centerDistance = std::hypot(offsetX, offsetY);
     const float halfExtent = scale * 0.7072f;
-    const float available = std::max(0.0f, aoe_ - halfExtent);
+    const float available = std::max(0.0f, aoe_ * (volume_ ? 1.25f : 1.0f) - halfExtent);
     if (centerDistance > available && centerDistance > 0.0f) {
       const float fit = available / centerDistance;
       offsetX *= fit;
@@ -233,15 +288,17 @@ void Fireball::build(float now, const Camera& camera, const VfxFlipbook& fire, V
   }
 
   // The opening flash: a camera-facing glow 0.08 above the impact, growing as it fades.
-  const float flashT = (ti - s_.flashOffset) / std::max(0.015f, s_.flashDuration);
+  const float flashDur = volume_ ? 0.12f : s_.flashDuration;
+  const float flashT = (ti - s_.flashOffset) / std::max(0.015f, flashDur);
   const float flashPulse = ti - s_.flashOffset >= 0.0f && flashT < 1.0f ? std::pow(1.0f - flashT, 2.4f) : 0.0f;
   if (flashPulse > 0.003f) {
-    const float size = s_.flashSize * (0.35f + std::max(0.0f, flashT) * 3.2f) * ws;
+    const float size = (volume_ ? 1.9f : 1.0f) * s_.flashSize * (0.35f + std::max(0.0f, flashT) * 3.4f) * ws;
     const glm::vec3 centre = vfxFromEmber(origin_ + glm::vec3(0.0f, 0.08f, 0.0f));
     const glm::vec3 up = glm::cross(camera.right, camera.forward);
     std::vector<VfxVertex> quad = quadGeometry();
     for (VfxVertex& v : quad) v.position = centre + camera.right * (v.position.x * size) + up * (v.position.y * size);
-    draw(VfxMaterial::ImpactFlash, frame.addVertices(quad), quad.size(), glm::mat4(1.0f), {flashPulse * std::min(1.0f, s_.flashIntensity / 18.0f), s_.flashIntensity, 0, 0},
+    const float flashInt = volume_ ? 36.0f : s_.flashIntensity;
+    draw(VfxMaterial::ImpactFlash, frame.addVertices(quad), quad.size(), glm::mat4(1.0f), {flashPulse * std::min(1.0f, flashInt / 18.0f), flashInt, 0, 0},
          {}, glm::vec4(three::hex(0xfff2c1), 1.0f), worldOrigin, VfxBlend::Additive);
   }
 
@@ -249,9 +306,15 @@ void Fireball::build(float now, const Camera& camera, const VfxFlipbook& fire, V
   const float lightAttack = smooth(0.0f, 0.045f, ti) * (1.0f - smooth(0.1f, std::max(0.12f, s_.lightDecay), ti));
   const float residual =
       ti > 0.36f && ti < s_.lightDecay ? 0.13f * (0.65f + 0.35f * std::sin(ti * 49.0f)) * (1.0f - smooth(0.55f, s_.lightDecay, ti)) : 0.0f;
-  const float intensity = s_.peakLight * ws * ws * (lightAttack + residual) * 1.5f;  // FireballVFX: impact light x 1.5
-  const float distance = std::min(aoe_, s_.lightRadius * ws * (0.62f + 0.58f * smooth(0.0f, 0.09f, ti) * (1.0f - smooth(0.18f, 0.62f, ti))));
+  const float peak = (volume_ ? 1.7f : 1.5f) * s_.peakLight;
+  const float intensity = peak * ws * ws * (lightAttack + residual);
+  const float distance = std::min(aoe_ * (volume_ ? 1.35f : 1.0f), s_.lightRadius * ws * (0.62f + 0.58f * smooth(0.0f, 0.09f, ti) * (1.0f - smooth(0.18f, 0.62f, ti))));
   if (intensity > 0.0f) lights.push_back({worldOrigin, three::hex(0xff7624), intensity, distance});
+  if (volume_ && ti >= 0.1f && ti < 1.2f) {
+    const float plumeAge = (ti - 0.1f) / 1.1f;
+    const float rise = aoe_ * 1.55f * std::pow(plumeAge, 0.65f);
+    lights.push_back({worldOrigin + glm::vec3(0.0f, rise, 0.0f), three::hex(0xff6015), 16.0f * (1.0f - plumeAge), aoe_ * 1.4f});
+  }
 }
 
 }  // namespace ember

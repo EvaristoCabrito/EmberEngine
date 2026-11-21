@@ -33,27 +33,38 @@
    "clip": "move-left",
    "pose": "walkLeft",
    "kind": "walk",
-   "src": "build/video-cut/voss-1080/walkleft",
-   "video": "Attachments/Voss/Vosswalking_left_in_profile_51d7dffc_1080p.mp4",
+   "src": "build/video-cut/voss-veo/walk-left",
+   "video": "Attachments/VeoVoss/Walk Left/Character_walking_left_with_staff_20261017230240.mp4",
    "first": 0,
-   "last": 142,
-   "loopMin": 40,
-   "loopMax": 142,
+   "last": 148,
+   "loopMin": 101,
+   "loopMax": 146,
    "mode": "loop",
-   "why": "the user, 2026-11-20: his walk left in profile (6 s, 1920 x 1080, ~960 px tall, nothing touches an edge) instead of the old one (its body touched the left edge in 46 frames of the loop)",
-   "version": "v1081"
+   "why": "the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (0..148, 149 frames), the seam trims at most 24; the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (0..148, 149 frames), the seam trims at most 48"
   },
   {
    "clip": "cast",
    "pose": "cast",
    "kind": "stand",
-   "src": "build/video-cut/voss-1080/cast",
-   "video": "Attachments/Voss/Voss_casting_purple_arcane_spell_788c716a_1080p.mp4",
+   "src": "build/video-cut/voss-veo/cast",
+   "video": "Attachments/VeoVoss/Casting/Voss_casting_purple_arcane_spell_20261017231306.mp4",
    "first": 8,
-   "last": 130,
+   "last": 120,
    "mode": "once",
-   "why": "the user, 2026-11-20: his cast at 1080p (1920 x 1080; ~1030 px tall instead of 657); a dark backdrop like the old one; the purple burst touches the top edge in 44-54, 64-70, 82-86",
-   "version": "v1081"
+   "version": "v02",
+   "wallKey": {
+    "region": [
+     330,
+     0,
+     660,
+     380
+    ],
+    "low": 30,
+    "high": 110,
+    "feather": 56,
+    "why": "the user, 2026-10-20: half of the staff vanished at the end of the cast (v01 frames 77-90: the model dropped the flash, the burst and the staff's head as background); v01 kept"
+   },
+   "bodyAt": -0.242
   },
   {
    "clip": "atk",

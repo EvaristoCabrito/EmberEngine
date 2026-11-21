@@ -32,6 +32,25 @@ O código do jogo não deve conter "teste"/"test" em nenhuma condicional. A úni
 
 Se encontrar código existente que viole esta regra: não copie o padrão nem acrescente outro ramo. Una as cópias numa função só que o jogo e o teste usam, e avise o usuário.
 
+## REGRA PERMANENTE: o pipeline de sprites que funciona — não mudar
+Vale para todo agente (Claude Opus/Sonnet/Haiku, Codex, qualquer outro). É o caminho com que todos os sprites bons do jogo foram feitos.
+Ninguém troca, "melhora" ou substitui uma ferramenta desta lista sem o usuário pedir com todas as letras.
+
+1. **Matte:** `python -I tools/scripts/sprites/video_matte.py <vídeo> <pasta> <primeiro> <último> --threads 12 --device cpu [--crop x0,y0,x1,y1]`
+   (BiRefNet general 1024, ONNX na CPU). Um matte por vez, 12 núcleos, nunca a placa de vídeo. Grava `src-NNNN.png` e `alpha-NNNN.png`.
+   **NUNCA `hr_matte.py`** (BiRefNet HR 2048): apaga cabeça de cajado, brilho e luz de magia (Voss, cast, quadro 48, 2026-11-20:
+   a antiga mantém o cajado e o brilho, a HR some com os dois). Ela é 8x mais lenta (99 s por quadro contra 12 s).
+2. **Spec e luz:** o `cut.json` do conjunto (clipes, quadros, `figurePx` por vídeo) e `match_light.py` para igualar a luz dos vídeos.
+3. **Corte:** `tools/scripts/sprites/video_sprite.py <cut.json>` para Alta (todos os quadros, tamanho do vídeo), `cut-64-media.json` (64 quadros
+   a ~610 px) e `cut-36-media.json` (36 a ~610 px): sempre os três.
+4. **No jogo:** entradas em `content/sprite-overrides.json`, `apply_sprite_overrides.py` (pelo passo apply dos scripts `build/video-cut/*-after-matte.py`,
+   guardando só os conjuntos mudados), cozinha (`Cooker.exe sprites`), prévia.
+5. **Janela de progresso (parte do procedimento, sempre):** toda fila de sprites tem a sua janela PowerShell aberta na tela do usuário com a lista
+   inteira (cada vídeo com barra, quadros feitos / total, o que roda agora, previsão só com o tempo medido), como
+   `build/video-cut/progresso-refazer.ps1` (abrir com o `.cmd` do lado). Fila nova = janela nova ou a mesma atualizada, antes de começar.
+6. **Conferir antes de dizer pronto:** para cada clipe, o quadro com arma, cajado, mão e efeito, em tamanho grande, sobre verde forte:
+   vídeo | matte | sprite do jogo, lado a lado. O usuário não consegue achar esses momentos no jogo: quem confere é o agente.
+
 ## Bosque Morto ground lock
 - Keep the approved ground mask `content/ground/bosque-morto-ground-mask-v02.png` and the `bosque-morto-v04` ground mapping unchanged.
 - Do not recolor, replace, regenerate, or remap that mask or tile. Preserve the active map version and all non-ground content when making ground-only fixes.

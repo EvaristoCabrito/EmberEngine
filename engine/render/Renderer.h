@@ -235,6 +235,8 @@ class Renderer {
     kGridRouteEnd = 1u << 10,     // the route's destination
     kGridSpellTarget = 1u << 11,  // a hex the spell may be aimed at right now (a target in its zone)
     kGridStrikeZone = 1u << 12,   // "Atacar": the hexes the unit's weapon reaches from where it stands
+    kGridAllyTarget = 1u << 13,   // a friendly unit that is an eligible target (heals, buffs, swap)
+    kGridFriendlyFire = 1u << 14, // a friendly unit caught in harmful AoE or line of fire
   };
   void setGrid(std::span<const GridCell> cells, int cols, int rows, uint32_t look, float seconds) {
     grid_.assign(cells.begin(), cells.end());

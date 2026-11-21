@@ -9,6 +9,7 @@
 #include "world/ActionPoints.h"
 #include "world/Battle.h"
 #include "world/Combat.h"
+#include "world/LightingSpells.h"
 
 namespace ember {
 
@@ -41,6 +42,7 @@ int Battle::activeUnit() const {
 
 void Battle::advanceConditionMinutes(int minutes) {
   if (minutes <= 0) return;
+  LightingSpellRegistry::get().advanceMinutes(minutes);
   for (BattleUnit& u : units_) {
     if (u.poisoned) {
       if (u.poisonMinutesLeft < 0) u.poisonMinutesLeft = ailmentDays(u.poisonTier) * kMinutesPerDay;

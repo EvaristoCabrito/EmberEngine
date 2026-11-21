@@ -102,6 +102,19 @@ const std::vector<VfxVertex>& haloGeometry() {
   }();
   return g;
 }
+// A thin half-ring of radius 1 lying flat (u around, from 0 to pi), curving in +z.
+const std::vector<VfxVertex>& halfHaloGeometry() {
+  static const std::vector<VfxVertex> g = [] {
+    std::vector<VfxVertex> ring = vfxgeo::torus(1.0f, 0.05f, 8, 32, kPi);
+    const glm::mat4 flat = glm::rotate(glm::mat4(1.0f), -kPi * 0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+    for (VfxVertex& v : ring) {
+      v.position = glm::vec3(flat * glm::vec4(v.position, 1.0f));
+      v.normal = glm::vec3(flat * glm::vec4(v.normal, 0.0f));
+    }
+    return ring;
+  }();
+  return g;
+}
 // The bone lance along +z, length 1: a tapered shaft with a jagged point and a knobbed butt (a lit solid: the Standard material).
 const std::vector<VfxVertex>& lanceGeometry() {
   static const std::vector<VfxVertex> g = [] {
@@ -387,6 +400,7 @@ void ConjurerFx::build(float now, const Camera& camera, VfxFrame& frame, std::ve
   discFirst_ = frame.addVertices(discGeometry()), discCount_ = static_cast<uint32_t>(discGeometry().size());
   columnFirst_ = frame.addVertices(columnGeometry()), columnCount_ = static_cast<uint32_t>(columnGeometry().size());
   haloFirst_ = frame.addVertices(haloGeometry()), haloCount_ = static_cast<uint32_t>(haloGeometry().size());
+  halfHaloFirst_ = frame.addVertices(halfHaloGeometry()), halfHaloCount_ = static_cast<uint32_t>(halfHaloGeometry().size());
   lanceFirst_ = frame.addVertices(lanceGeometry()), lanceCount_ = static_cast<uint32_t>(lanceGeometry().size());
   phantomFirst_ = frame.addVertices(phantomGeometry()), phantomCount_ = static_cast<uint32_t>(phantomGeometry().size());
   streaks_.clear(), puffs_.clear(), motes_.clear(), shards_.clear();
@@ -819,8 +833,27 @@ void ConjurerFx::buildBond(const Effect& e, float now, const Camera& camera, Vfx
   // the halo closing round the caster, dark motes drawn to its chest
   if (env > 0.002f) {
     const float r = glm::mix(1.1f, 0.45f, ease(begin, e.impact + 0.2f, now)) * k;
-    holy(haloFirst_, haloCount_, at(pulled(chest, eye, kPull)) * glm::rotate(glm::mat4(1.0f), t * 1.5f, kUp) * glm::scale(glm::mat4(1.0f), glm::vec3(r)), kHolyLine, t, 1.0f, env,
-         kIndigo, kViolet, 0.0f, e.from);
+    const glm::vec3 side = flatDir(glm::vec3(camera.right.x, 0.0f, camera.right.z), glm::vec3(1.0f, 0.0f, 0.0f));
+    const glm::vec3 fwd = flatDir(glm::vec3(camera.forward.x, 0.0f, camera.forward.z), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    // Back half: behind card
+    glm::mat4 mBack(1.0f);
+    mBack[0] = glm::vec4(side * r, 0.0f);
+    mBack[1] = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+    mBack[2] = glm::vec4(fwd * r, 0.0f);
+    mBack[3] = glm::vec4(chest, 1.0f);
+    holy(halfHaloFirst_, halfHaloCount_, mBack, kHolyLine, t * 1.5f, 1.0f, env, kIndigo, kViolet, 0.0f, e.from);
+    frame.draws.back().behindCard = true;
+    frame.draws.back().cardAt = e.from;
+
+    // Front half: in front of card
+    glm::mat4 mFront(1.0f);
+    mFront[0] = glm::vec4(side * r, 0.0f);
+    mFront[1] = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+    mFront[2] = glm::vec4(-fwd * r, 0.0f);
+    mFront[3] = glm::vec4(chest, 1.0f);
+    holy(halfHaloFirst_, halfHaloCount_, mFront, kHolyLine, t * 1.5f, 1.0f, env, kIndigo, kViolet, 0.0f, e.from);
+    frame.draws.back().behindCard = false;
   }
   for (int i = 0; i < 20; ++i) {
     const uint32_t n = static_cast<uint32_t>(i);
@@ -1013,16 +1046,43 @@ void ConjurerFx::buildEmpower(const Effect& e, float now, const Camera& camera, 
     const float env = ease(0.0f, 0.12f, tau) * (1.0f - ease(1.0f, 1.8f, tau));
     if (env > 0.002f) {
       const float rise = easeOut(0.0f, 0.3f, tau), r = 0.34f * ku * (1.0f + 0.04f * std::sin(tau * 6.0f));
-      holy(columnFirst_, columnCount_, scaled(pulled(u.feet, eye, kPull * 0.5f), {r, hu * 1.5f * rise + 1e-3f, r}), kHolyShaft, tau, 0.35f, env, kViolet, kCore, 0.0f, u.feet);
-      holy(columnFirst_, columnCount_, scaled(pulled(u.feet, eye, kPull * 0.5f), {r * 0.45f, hu * 1.35f * rise + 1e-3f, r * 0.45f}), kHolyShaft, tau, 0.3f, env * 0.8f, kCore,
+      holy(columnFirst_, columnCount_, scaled(u.feet, {r, hu * 1.5f * rise + 1e-3f, r}), kHolyShaft, tau, 0.35f, env, kViolet, kCore, 0.0f, u.feet);
+      frame.draws.back().behindCard = true;
+      frame.draws.back().cardAt = u.feet;
+      holy(columnFirst_, columnCount_, scaled(u.feet, {r * 0.45f, hu * 1.35f * rise + 1e-3f, r * 0.45f}), kHolyShaft, tau, 0.3f, env * 0.8f, kCore,
            kCore, 0.0f, u.feet);
+      frame.draws.back().behindCard = true;
+      frame.draws.back().cardAt = u.feet;
+
       const float climb = ease(0.1f, 1.0f, tau);
-      holy(haloFirst_, haloCount_, at(pulled(u.feet + kUp * glm::mix(0.08f, hu * 1.1f, climb), eye, kPull)) * glm::rotate(glm::mat4(1.0f), tau * 2.5f, kUp) *
-                                       glm::scale(glm::mat4(1.0f), glm::vec3(glm::mix(0.7f, 0.4f, climb) * ku)),
-           kHolyLine, tau, 1.0f, env, kViolet, kCore, 0.0f, u.feet);
+      const float haloR = glm::mix(0.7f, 0.4f, climb) * ku;
+      const glm::vec3 haloCenter = u.feet + kUp * glm::mix(0.08f, hu * 1.1f, climb);
+      const glm::vec3 side = flatDir(glm::vec3(camera.right.x, 0.0f, camera.right.z), glm::vec3(1.0f, 0.0f, 0.0f));
+      const glm::vec3 fwd = flatDir(glm::vec3(camera.forward.x, 0.0f, camera.forward.z), glm::vec3(0.0f, 0.0f, 1.0f));
+
+      // Back half: curves away from camera, behind summon card
+      glm::mat4 mBack(1.0f);
+      mBack[0] = glm::vec4(side * haloR, 0.0f);
+      mBack[1] = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+      mBack[2] = glm::vec4(fwd * haloR, 0.0f);
+      mBack[3] = glm::vec4(haloCenter, 1.0f);
+      holy(halfHaloFirst_, halfHaloCount_, mBack, kHolyLine, tau * 2.5f, 1.0f, env, kViolet, kCore, 0.0f, u.feet);
+      frame.draws.back().behindCard = true;
+      frame.draws.back().cardAt = u.feet;
+
+      // Front half: curves towards camera, in front of summon card
+      glm::mat4 mFront(1.0f);
+      mFront[0] = glm::vec4(side * haloR, 0.0f);
+      mFront[1] = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+      mFront[2] = glm::vec4(-fwd * haloR, 0.0f);
+      mFront[3] = glm::vec4(haloCenter, 1.0f);
+      holy(halfHaloFirst_, halfHaloCount_, mFront, kHolyLine, tau * 2.5f, 1.0f, env, kViolet, kCore, 0.0f, u.feet);
+      frame.draws.back().behindCard = false;
+
       const float grow = ease(0.0f, 0.4f, tau), radius = 0.7f * ku * (0.6f + 0.4f * grow);
-      holy(discFirst_, discCount_, scaled(pulled(u.feet + kUp * 0.035f, eye, kGroundPull), {radius, 1.0f, radius}), kHolyPool, tau, 0.4f, env, kViolet, kCore, 0.25f + 0.6f * grow,
+      holy(discFirst_, discCount_, scaled(u.feet + kUp * 0.035f, {radius, 1.0f, radius}), kHolyPool, tau, 0.4f, env, kViolet, kCore, 0.25f + 0.6f * grow,
            u.feet);
+      frame.draws.back().underCards = true;
     }
     if (tau < 0.25f) streaks_.push_back(streak(pulled(body, eye, kPull), glm::vec3(0.0f), 1.0f * ku * (1.0f - tau), 1.0f - ease(0.0f, 0.25f, tau), kCore, 2.4f));
     for (int i = 0; i < 16; ++i) {

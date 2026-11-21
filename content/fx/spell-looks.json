@@ -48,12 +48,28 @@
   "tendrilSwipe": 0,
   "trip": 0,
   "turnUndead": 0,
-  "warp": 0,
+  "warp": 1,
   "webOfDreams": 0
  },
  "heroes": {
+  "blackPestilence": 2,
+  "bless": 2,
+  "burningHands": 2,
+  "creepingPlague": 2,
+  "cureLight": 2,
+  "divineBolt": 2,
   "fireball": 2,
+  "glacialGale": 2,
+  "iceLance": 2,
   "iceStorm": 2,
-  "shock": 3
+  "lightning": 3,
+  "lightningTier3": 2,
+  "magicMissile": 4,
+  "magicMissileV2": 4,
+  "phantasmalForce": 1,
+  "poisonBreath": 3,
+  "shock": 3,
+  "warp": 1,
+  "webOfDreams": 2
  }
 }

@@ -24,22 +24,29 @@ class Bless {
     float distanceHexes;  // from the caster
   };
   // center: the caster's hex, 0.04 above the ground; radiusWorld: the wave's reach (BLESS.radius x sqrt 3).
-  Bless(glm::vec3 center, float radiusWorld, std::vector<Ally> allies, float start);
+  // modern: false for look 1 (legacy), true for look 2 (modern holy remake)
+  Bless(glm::vec3 center, float radiusWorld, std::vector<Ally> allies, float start, bool modern = false);
 
-  static constexpr float kWaveRelease = 0.3f, kDuration = 1.5f;
+  static constexpr float kWaveRelease = 0.3f, kDuration = 1.6f;
   // When the wave reaches an ally this far away (Ember applies the blessing then).
   static float reachSeconds(float distanceHexes);
-  bool done(float now) const { return now - start_ >= kDuration + 0.25f; }
-  float end() const { return start_ + kDuration + 0.25f; }
+  bool done(float now) const { return now - start_ >= kDuration + 0.3f; }
+  float end() const { return start_ + kDuration + 0.3f; }
 
   void build(float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
 
  private:
-  glm::vec3 center_;  // Ember frame
+  void buildModern(float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
+  void buildLegacy(float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
+
+  glm::vec3 center_{0.0f};       // world coordinates
+  glm::vec3 emberCenter_{0.0f};  // Ember frame (for legacy look 1)
   float radius_ = 1.0f, start_ = 0.0f;
+  bool modern_ = false;
   struct Reception {
-    glm::vec3 position;  // Ember frame
-    float reachAt;
+    glm::vec3 worldPosition{0.0f};  // world coordinates
+    glm::vec3 emberPosition{0.0f};  // Ember frame (for legacy look 1)
+    float reachAt = 0.0f;
   };
   std::vector<Reception> receptions_;
   std::vector<float> seeds_;  // particleSeeds

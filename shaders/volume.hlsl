@@ -108,7 +108,7 @@ float3 airLocalLights(MeshFrame f, float3 p, float3 toCamera, float g) {
     if (d >= light.range) continue;
     const float ratio = d / light.range;
     const float window = saturate(1.0 - ratio * ratio * ratio * ratio);
-    const float falloff = window * window / max(pow(d, light.decay), 0.01);
+    const float falloff = window * window / max(pow(d, light.decay), 0.01) * lightFacing(light, p);
     color += light.color * f.exposure * falloff * phaseHG(dot(toLight / max(d, 1e-4), -toCamera), g);
   }
   return color;

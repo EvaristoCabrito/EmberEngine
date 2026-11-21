@@ -322,6 +322,20 @@ LocalLight loadLight(MeshFrame f, uint i) { return vk::RawBufferLoad<LocalLight>
 // The share of a light a point gets from its facing (1 for a light that shines every way).
 float lightFacing(LocalLight light, float3 p) {
   if (all(light.facing == 0.0)) return 1.0;
+  if (light.behind <= -100.0) {
+    const float3 d = p - light.position;
+    const float3 dCone = float3(d.x, d.y * 0.35, d.z);
+    const float len = length(dCone);
+    if (len < 1e-4) return 0.0;
+    const float3 axis = normalize(float3(light.facing.x, light.facing.y * 0.35, light.facing.z));
+    const float c = dot(axis, dCone / len);
+    const float halfRad = radians(-light.behind - 100.0);
+    const float cosOuter = cos(halfRad + radians(5.0));
+    const float cosInner = cos(max(halfRad - radians(7.0), radians(4.0)));
+    const float spot = smoothstep(cosOuter, cosInner, c);
+    const float forwardDist = dot(float2(light.facing.x, light.facing.z), d.xz);
+    return spot * smoothstep(-0.08, 0.38, forwardDist);
+  }
   if (light.behind < 0.0) {
     // A flat emitter lying in the plane through the light (a window's or a door's light, 2026-10-23 night: the user, "a física da luz
     // está toda mal feita": a point light in front of its wall lit that wall round the window): a cosine lobe about its normal,

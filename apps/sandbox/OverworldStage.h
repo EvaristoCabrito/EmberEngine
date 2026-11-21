@@ -1014,8 +1014,12 @@ class OverworldStage : public Stage {
       ember::BattleUnit& u = sheetBattle_->units()[i];
       if (u.side != "player") continue;
       if (levels.contains(u.name) && levels[u.name].is_number_integer()) ember::raiseToLevel(u, levels[u.name].get<int>(), xp.value(u.name, 0));
-      if (promotions.contains(u.name) && promotions[u.name].is_string()) ember::setPromotion(u, promotions[u.name].get<std::string>());
-      else if (const std::string base = ember::heroBaseClass(u.name, u.classId); !base.empty()) ember::setPromotion(u, base);  // Kael: Vanguarda
+      if (promotions.contains(u.name) && promotions[u.name].is_string()) {
+        std::string promo = promotions[u.name].get<std::string>();
+        if (u.name == "Kael" && (promo == "swordsman" || promo == "paladin" || promo == "heavyKnight")) promo = "vanguard";
+        ember::setPromotion(u, promo);
+      } else if (const std::string base = ember::heroBaseClass(u.name, u.classId); !base.empty()) ember::setPromotion(u, base);  // Kael: Vanguarda
+      else if (u.name == "Kael") ember::setPromotion(u, "vanguard");
       ember::grantClassSpells(u);
       if (const auto it = states.find(u.name); it != states.end()) MapStage::applyHeroState(u, it->second);
       if (hasInn_) MapStage::wearFromSave(u, save_, innRules_);
@@ -1914,8 +1918,8 @@ class OverworldStage : public Stage {
     beginPanel("##partymenu", size, 768, size.y * 0.82f);
     const float inner = 728;
     const ImVec2 head = ImGui::GetCursorScreenPos();
-    kicker(std::format("Grupo · {} {} · Líder: {}", heroes.size(), heroes.size() == 1 ? "membro" : "membros", leader()), 12.0f);
-    title("Party", 24.0f);
+    kicker(std::format("Grupo · {} {} · Líder: {}", heroes.size(), heroes.size() == 1 ? "membro" : "membros", leader()), 13.0f);
+    title("Party", 26.0f);
     const double played=testSave_?testSave_->value("realPlaySeconds",0.0):campaign_.realPlaySeconds();
     const auto hours=static_cast<long long>(played/3600.0);
     const int minutes=static_cast<int>(played/60.0)%60;
@@ -1928,9 +1932,9 @@ class OverworldStage : public Stage {
     ImGui::SetCursorScreenPos({head.x, head.y + 64});
     {
       const ImVec2 at = ImGui::GetCursorScreenPos();
-      if (emberBigButton("##tabgroup", "GRUPO", at, {120, 32}, partyTab_ == 0, 12.0f)) partyTab_ = 0;
-      if (emberBigButton("##tabskills", "SKILLS", {at.x + 128, at.y}, {120, 32}, partyTab_ == 1, 12.0f)) partyTab_ = 1;
-      if (hasCompanions_ && emberBigButton("##tabtalk", upperUtf8(tr("Conversas", "Conversations")).c_str(), {at.x + 256, at.y}, {150, 32}, partyTab_ == 2, 12.0f)) partyTab_ = 2;
+      if (emberBigButton("##tabgroup", "GRUPO", at, {120, 32}, partyTab_ == 0, 13.0f)) partyTab_ = 0;
+      if (emberBigButton("##tabskills", "SKILLS", {at.x + 128, at.y}, {120, 32}, partyTab_ == 1, 13.0f)) partyTab_ = 1;
+      if (hasCompanions_ && emberBigButton("##tabtalk", upperUtf8(tr("Conversas", "Conversations")).c_str(), {at.x + 256, at.y}, {150, 32}, partyTab_ == 2, 13.0f)) partyTab_ = 2;
       ImGui::SetCursorScreenPos({at.x, at.y + 44});
     }
     ImGui::BeginChild("##partybody", {inner, std::min(size.y * 0.82f - 200, 640.0f)}, 0, ImGuiWindowFlags_NoBackground);
@@ -1960,7 +1964,7 @@ class OverworldStage : public Stage {
     };
     std::vector<Row> rows;
     for (const std::string& hero : heroes) {
-      std::string base = world_.tables()["baseClass"].value(hero, "");
+      std::string base = hero == "Kael" ? "vanguard" : world_.tables()["baseClass"].value(hero, "");
       if (base.empty())
         if (const char* own = ownHeroClass(hero)) base = own;
       for (const Path& p : kPaths)
@@ -1972,7 +1976,7 @@ class OverworldStage : public Stage {
     if (rows.empty()) return;
     ImDrawList* dl = ImGui::GetWindowDrawList();
     ImFont* ui = uiFont(UiFont::Ui);
-    kicker(tr("Caminho de classe", "Class path"), 14.0f);
+    kicker(tr("Caminho de classe", "Class path"), 15.0f);
     const ImVec2 a = ImGui::GetCursorScreenPos();
     const float rowH = 64.0f;
     slot(a, {a.x + inner, a.y + 16 + rowH * static_cast<float>(rows.size())});
@@ -1982,6 +1986,11 @@ class OverworldStage : public Stage {
       const int level = static_cast<int>(num(save_.value("levels", ember::Json::object()), hero, 1));
       std::string promo;
       if (save_.contains("promotions") && save_["promotions"].contains(hero) && save_["promotions"][hero].is_string()) promo = save_["promotions"][hero].get<std::string>();
+      if (hero == "Kael" && (promo == "paladin" || promo == "heavyKnight" || promo == "swordsman")) {
+        promo.clear();
+        save_["promotions"].erase(hero);
+        write();
+      }
       portrait(dl, hero, {a.x + 12, y}, {a.x + 52, y + 48});
       const std::string cls = promo.empty() ? ember::promotionName(row.path->base) : ember::promotionName(promo);
       const std::string head = std::format("{} · {} {} · {}", hero, tr("Nv", "Lv"), level, cls);
@@ -1995,11 +2004,11 @@ class OverworldStage : public Stage {
       } else {
         dl->AddText(ui, 12.0f, {a.x + 62, y + 24}, kMuted, tr("Escolha a classe de prestígio (fica para o resto da campanha):", "Choose the prestige class (it stays for the rest of the campaign):").c_str());
         ImGui::PushID(hero.c_str());
-        if (emberBigButton("##first", upperUtf8(firstName).c_str(), {a.x + inner - 300, y + 8}, {140, 30}, false, 11.0f)) {
+        if (emberBigButton("##first", upperUtf8(firstName).c_str(), {a.x + inner - 300, y + 8}, {140, 30}, false, 12.0f)) {
           save_["promotions"][hero] = row.path->first;
           write();
         }
-        if (emberBigButton("##second", upperUtf8(secondName).c_str(), {a.x + inner - 150, y + 8}, {140, 30}, false, 11.0f)) {
+        if (emberBigButton("##second", upperUtf8(secondName).c_str(), {a.x + inner - 150, y + 8}, {140, 30}, false, 12.0f)) {
           save_["promotions"][hero] = row.path->second;
           write();
         }
@@ -2017,18 +2026,18 @@ class OverworldStage : public Stage {
     ImFont* ui = uiFont(UiFont::Ui);
     const bool en = uiEnglish();
     const std::string lead = leader();
-    kicker(tr("Conversas de companheiros", "Companion conversations"), 14.0f);
+    kicker(tr("Conversas de companheiros", "Companion conversations"), 15.0f);
     text(en ? std::format("Speak as {}. Each companion has a different relationship with every leader.", lead)
             : std::format("Fale como {}. Cada companheiro tem uma relação diferente com cada líder.", lead),
          14.0f, kMuted, UiFont::Ui, inner - 8);
     ImGui::Dummy({1, 8});
-    kicker(tr("Líder do grupo", "Party leader"), 12.0f);
+    kicker(tr("Líder do grupo", "Party leader"), 13.0f);
     {
       const ImVec2 a = ImGui::GetCursorScreenPos();
       float x = a.x;
       ImGui::PushID("convleader");
       for (const std::string& hero : heroes) {
-        if (emberBigButton(hero.c_str(), upperUtf8(hero).c_str(), {x, a.y}, {108, 32}, hero == lead, 12.0f)) {
+        if (emberBigButton(hero.c_str(), upperUtf8(hero).c_str(), {x, a.y}, {108, 32}, hero == lead, 13.0f)) {
           save_["partyLeader"] = hero;
           write();
           convCompanion_.clear();
@@ -2047,13 +2056,13 @@ class OverworldStage : public Stage {
       return;
     }
     if (std::find(others.begin(), others.end(), convCompanion_) == others.end()) convCompanion_ = others.front();
-    kicker(tr("Escolha um companheiro", "Choose a companion"), 12.0f);
+    kicker(tr("Escolha um companheiro", "Choose a companion"), 13.0f);
     {
       const ImVec2 a = ImGui::GetCursorScreenPos();
       float x = a.x;
       ImGui::PushID("convcompanion");
       for (const std::string& hero : others) {
-        if (emberBigButton(hero.c_str(), upperUtf8(hero).c_str(), {x, a.y}, {108, 32}, hero == convCompanion_, 12.0f)) convCompanion_ = hero;
+        if (emberBigButton(hero.c_str(), upperUtf8(hero).c_str(), {x, a.y}, {108, 32}, hero == convCompanion_, 13.0f)) convCompanion_ = hero;
         x += 114;
       }
       ImGui::PopID();
@@ -2498,7 +2507,7 @@ class OverworldStage : public Stage {
     ImFont* ui = uiFont(UiFont::Ui);
     // Grupo ativo e reserva (the user, 2026-10-30: "active party and reserve party, we can switch which members we are going to use to a
     // max of 6"): a click on a hero moves it to the other row; the maps seat the active row (save "partyActive", Overworld::activeParty).
-    kicker("Grupo ativo e reserva", 14.0f);
+    kicker("Grupo ativo e reserva", 15.0f);
     {
       const std::vector<std::string> reserve = reserveHeroes();
       const ImVec2 a = ImGui::GetCursorScreenPos();
@@ -2545,7 +2554,7 @@ class OverworldStage : public Stage {
       ImGui::SetCursorScreenPos({a.x, a.y + 244});
     }
     // Líder do grupo
-    kicker("Líder do grupo", 14.0f);
+    kicker("Líder do grupo", 15.0f);
     {
       const ImVec2 a = ImGui::GetCursorScreenPos();
       slot(a, {a.x + inner, a.y + 120});
@@ -2571,7 +2580,7 @@ class OverworldStage : public Stage {
     }
     drawPromotions(heroes, inner);
     // Formação inicial: the radius-2 board (rows 3-4-5-4-3), two clicks swap two cells.
-    kicker("Formação inicial", 14.0f);
+    kicker("Formação inicial", 15.0f);
     {
       if (formation_.empty()) {
         std::vector<std::string> saved;
@@ -2591,7 +2600,7 @@ class OverworldStage : public Stage {
                   "A linha de frente começa nas posições mais próximas do inimigo; a retaguarda, nas mais distantes. Clique em duas casas para "
                   "trocá-las de lugar (vale a casa vazia). Mapas com aberturas perigosas ou posições especiais preservam sua formação própria.",
                   nullptr, inner - 24);
-      if (emberBigButton("##saveformation", "SALVAR FORMAÇÃO", {a.x + 12, a.y + 72}, {180, 44}, true, 12.0f)) {
+      if (emberBigButton("##saveformation", "SALVAR FORMAÇÃO", {a.x + 12, a.y + 72}, {180, 44}, true, 13.0f)) {
         // cleanPartyFormation: heroes once each, empty cells kept up to the board's size, trailing empties dropped.
         ember::Json out = ember::Json::array();
         std::set<std::string> seen;
@@ -2615,7 +2624,7 @@ class OverworldStage : public Stage {
       if (formationSaved_ == "failed") dl->AddText(ui, 14.0f, {a.x + 204, a.y + 86}, kDanger, "Não foi possível salvar a formação. Tente de novo.");
       const float cx = a.x + inner / 2;
       float y = a.y + 124;
-      emberKicker(dl, {cx - 36, y}, 12.0f, "INIMIGO");
+      emberKicker(dl, {cx - 36, y}, 13.0f, "INIMIGO");
       {
         const float tx = cx + 34, ty = y + 2;
         dl->AddTriangleFilled({tx, ty + 9}, {tx + 9, ty + 9}, {tx + 4.5f, ty}, IM_COL32(223, 191, 142, 255));
@@ -2627,7 +2636,7 @@ class OverworldStage : public Stage {
         const int start = rows[r][0], n = rows[r][1];
         const float rowW = n * 88.0f;
         float x = cx - rowW / 2;
-        if (*labels[r]) emberKicker(dl, {cx - 5 * 44.0f - 100, y + 40}, 12.0f, labels[r]);
+        if (*labels[r]) emberKicker(dl, {cx - 5 * 44.0f - 100, y + 40}, 13.0f, labels[r]);
         for (int k = 0; k < n; ++k) {
           const int cellIndex = start + k;
           const ImVec2 c{x + 44, y + 48};
@@ -2672,7 +2681,7 @@ class OverworldStage : public Stage {
       ImGui::SetCursorScreenPos({a.x, a.y + 72 + 52 + boardH + 8});
     }
     // Afinidades
-    kicker("Afinidades", 14.0f);
+    kicker("Afinidades", 15.0f);
     {
       auto score = [&](const std::string& x, const std::string& y) {
         const std::string pair = x < y ? x + "|" + y : y + "|" + x;
@@ -2753,7 +2762,7 @@ class OverworldStage : public Stage {
       }
       const float h = 36 + 22 + static_cast<float>(shown.size()) * 34 + 12;
       slot({x, rowTop}, {x + cardW, rowTop + h});
-      emberTitle(dl, {x + 12, rowTop + 10}, 18.0f, hero.c_str());
+      emberTitle(dl, {x + 12, rowTop + 10}, 19.0f, hero.c_str());
       std::string line = "Treino na estrada: nenhum — toque em “Treinar” numa skill.";
       if (!training.empty()) {
         const double banked = std::fmod(num(save_.value("travelTrainingHours", ember::Json::object()), hero, 0), stepHours);
@@ -2776,7 +2785,7 @@ class OverworldStage : public Stage {
         const float vw = ui->CalcTextSizeA(14.0f, FLT_MAX, 0, value.c_str()).x;
         dl->AddText(ui, 14.0f, {x + cardW - 12 - vw, y}, kMuted, value.c_str());
         ImGui::PushID((hero + id).c_str());
-        if (emberBigButton("##train", on ? "TREINANDO" : "TREINAR", {x + cardW - 12 - vw - 8 - 96, y - 4}, {96, 24}, on, 10.0f)) {
+        if (emberBigButton("##train", on ? "TREINANDO" : "TREINAR", {x + cardW - 12 - vw - 8 - 96, y - 4}, {96, 24}, on, 11.0f)) {
           ember::Json& tr = save_["travelTraining"];
           if (!tr.is_object()) tr = ember::Json::object();
           if (on) tr.erase(hero);
@@ -2806,8 +2815,11 @@ class OverworldStage : public Stage {
   // weaponSkills.ts weaponTypesForClass: which weapon skills a hero's class trains (from the exported weapon list).
   bool heroUsesWeapon(const std::string& hero, const std::string& type) const {
     const ember::Json& types = world_.tables().contains("classWeaponTypes") ? world_.tables()["classWeaponTypes"] : ember::Json();
-    std::string cls = world_.tables()["baseClass"].value(hero, "");
-    if (save_.contains("promotions") && save_["promotions"].contains(hero) && save_["promotions"][hero].is_string()) cls = save_["promotions"][hero].get<std::string>();
+    std::string cls = hero == "Kael" ? "vanguard" : world_.tables()["baseClass"].value(hero, "");
+    if (save_.contains("promotions") && save_["promotions"].contains(hero) && save_["promotions"][hero].is_string()) {
+      std::string p = save_["promotions"][hero].get<std::string>();
+      if (!(hero == "Kael" && (p == "swordsman" || p == "paladin" || p == "heavyKnight"))) cls = p;
+    }
     if (!types.is_object() || !types.contains(cls)) return true;
     for (const ember::Json& t : types[cls])
       if (t == type) return true;

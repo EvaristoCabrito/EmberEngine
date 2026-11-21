@@ -7263,6 +7263,13 @@
         "y": 42,
         "level": 15,
         "useClassSprite": true
+      },
+      {
+        "name": "Telesm",
+        "classId": "telesm",
+        "level": 15,
+        "x": 14,
+        "y": 42
       }
     ],
     "enemySpawns": [

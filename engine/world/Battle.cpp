@@ -9,6 +9,7 @@
 #include <nlohmann/json.hpp>
 
 #include "core/Log.h"
+#include "world/BattleExport.h"
 #include "world/Progression.h"
 #include "world/Spells.h"
 
@@ -292,6 +293,10 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     o.name = text(u, "name");
     o.classId = text(u, "classId");
     o.className = text(u, "className");
+    if (o.name == "Kael" && (o.classId == "swordsman" || o.classId == "kaelFinal" || o.classId == "kaelEarly" || o.classId == "paladin" || o.classId == "heavyKnight" || o.classId.empty())) {
+      o.classId = "vanguard";
+      o.className = promotionName("vanguard");
+    }
     o.sprite = text(u, "sprite");
     o.x = integer(u, "x");
     o.y = integer(u, "y");
@@ -362,9 +367,18 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     }
     if (u.contains("spells") && u["spells"].is_object())
       for (int t = 0; t < 10; ++t) o.spells[t] = integer(u["spells"], ("tier" + std::to_string(t + 1)).c_str());
+    o.mana = integer(u, "mana", 0);
+    o.maxMana = integer(u, "maxMana", o.mana);
+    if (o.maxMana <= 0) {
+      o.maxMana = std::max(20, o.mag > 0 ? o.mag * 3 + o.level * 2 : 20);
+      o.mana = o.maxMana;
+    }
     if (u.contains("spellList") && u["spellList"].is_array())
       for (const json& k : u["spellList"])
         if (k.is_string()) o.spellList.push_back(k.get<std::string>());
+    if (o.side == "player") {
+      grantClassSpells(o);
+    }
     o.shockCharges = integer(u, "shockCharges");
     o.frostCharges = integer(u, "frostCharges");
     o.fantomForceCharges = integer(u, "fantomForceCharges");
@@ -423,6 +437,16 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
         const std::array<int, 16>& g = o.growth[static_cast<size_t>(o.level - 1)];
         o.gearHp = o.maxHp - g[0], o.gearAtk = o.atk - g[1], o.gearMag = o.mag - g[2], o.gearDef = o.def - g[3], o.gearDex = o.dex - g[4];
         o.gearMov = o.mov - g[15];
+      }
+      if (o.side == "player") {
+        if (const std::vector<std::array<int, 10>> table = classTierTable(o.classId); !table.empty()) {
+          bool changed = false;
+          for (size_t i = 0; i < o.growth.size(); ++i)
+            for (size_t t = 0; t < 10; ++t)
+              if (const int uses = table[std::min(i, table.size() - 1)][t]; o.growth[i][5 + t] != uses) o.growth[i][5 + t] = uses, changed = true;
+          if (changed && o.level >= 1 && static_cast<size_t>(o.level) <= o.growth.size())
+            for (size_t t = 0; t < 10; ++t) o.spells[t] = o.growth[static_cast<size_t>(o.level - 1)][5 + t];
+        }
       }
     }
     o.atkBlows = o.mag - o.gearMag <= 0;  // a class without MAG in the battle file keeps striking with ATK once it has MAG
