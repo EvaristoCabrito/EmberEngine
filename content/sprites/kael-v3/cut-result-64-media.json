@@ -31,7 +31,7 @@
     "h": 2.80678,
     "foot": 0.04375
    },
-   "pattern": "content/sprites/kael-v3/base-media64-v05/base-{}.png"
+   "pattern": "content/sprites/kael-v3/base-media64-v1121/base-{}.png"
   },
   "atk": {
    "video": "Attachments/KaelV3/supersize/ATT.mp4 (cropped x 225..1875 as the 720p one: build/video-cut/kael-v3d/ATT-cropped.mp4)",
@@ -64,7 +64,7 @@
     "h": 2.68666,
     "foot": -0.00085
    },
-   "pattern": "content/sprites/kael-v3/atk-media64-v05/atk-{}.png",
+   "pattern": "content/sprites/kael-v3/atk-media64-v1121/atk-{}.png",
    "impact": 0.2892
   },
   "turn-back": {
@@ -130,7 +130,7 @@
     "h": 2.62903,
     "foot": 0.01498
    },
-   "pattern": "content/sprites/kael-v3/cast-back-media64-v05/cast-back-{}.png"
+   "pattern": "content/sprites/kael-v3/cast-back-media64-v1121/cast-back-{}.png"
   },
   "double-strike": {
    "video": "Attachments/KaelV3/supersize/BackandDoubleSlash.mp4",
@@ -163,7 +163,7 @@
     "h": 2.74601,
     "foot": -0.00084
    },
-   "pattern": "content/sprites/kael-v3/double-strike-media64-v05/double-strike-{}.png",
+   "pattern": "content/sprites/kael-v3/double-strike-media64-v1121/double-strike-{}.png",
    "impact": 0.4138
   },
   "move": {
@@ -173,7 +173,7 @@
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
    "loopFirst": 102,
    "loopLast": 233,
-   "seamSteps": 0.99,
+   "seamSteps": 1.0,
    "bootRow": 1050,
    "bodyDrift": [
     -13,
@@ -199,7 +199,7 @@
     "h": 2.70021,
     "foot": 0.03553
    },
-   "pattern": "content/sprites/kael-v3/move-media64-v05/move-{}.png"
+   "pattern": "content/sprites/kael-v3/move-media64-v1121/move-{}.png"
   },
   "move-left": {
    "video": "Attachments/KaelV3/supersize/WalkLeft.mp4",
@@ -208,7 +208,7 @@
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
    "loopFirst": 72,
    "loopLast": 121,
-   "seamSteps": 0.74,
+   "seamSteps": 0.77,
    "bootRow": 1053,
    "bodyDrift": [
     19,
@@ -233,7 +233,7 @@
     "h": 2.73018,
     "foot": 0.05617
    },
-   "pattern": "content/sprites/kael-v3/move-left-media64-v05/move-left-{}.png"
+   "pattern": "content/sprites/kael-v3/move-left-media64-v1121/move-left-{}.png"
   },
   "special": {
    "video": "Attachments/KaelV3/supersize/KaleSpecial.mp4",
@@ -266,7 +266,7 @@
     "h": 2.85188,
     "foot": 0.03101
    },
-   "pattern": "content/sprites/kael-v3/special-media64-v05/special-{}.png",
+   "pattern": "content/sprites/kael-v3/special-media64-v1121/special-{}.png",
    "impact": 0.6263
   },
   "hit": {
@@ -332,7 +332,7 @@
     "h": 2.73691,
     "foot": 0.07823
    },
-   "pattern": "content/sprites/kael-v3/death-media64-v05/death-{}.png"
+   "pattern": "content/sprites/kael-v3/death-media64-v1121/death-{}.png"
   },
   "emote01": {
    "video": "Attachments/KaelV3/supersize/KaelEmote01.mp4",
@@ -365,7 +365,7 @@
     "h": 2.66813,
     "foot": 0.04257
    },
-   "pattern": "content/sprites/kael-v3/emote01-media64-v05/emote01-{}.png"
+   "pattern": "content/sprites/kael-v3/emote01-media64-v1121/emote01-{}.png"
   },
   "emote02": {
    "video": "Attachments/KaelV3/supersize/KaelEmote02.mp4",
@@ -398,7 +398,7 @@
     "h": 2.79562,
     "foot": 0.04195
    },
-   "pattern": "content/sprites/kael-v3/emote02-media64-v05/emote02-{}.png"
+   "pattern": "content/sprites/kael-v3/emote02-media64-v1121/emote02-{}.png"
   },
   "emote03": {
    "video": "Attachments/KaelV3/supersize/Emote03.mp4",
@@ -431,7 +431,7 @@
     "h": 2.66266,
     "foot": 0.03929
    },
-   "pattern": "content/sprites/kael-v3/emote03-media64-v05/emote03-{}.png"
+   "pattern": "content/sprites/kael-v3/emote03-media64-v1121/emote03-{}.png"
   },
   "emote04": {
    "video": "Attachments/KaelV3/supersize/HitandFall.mp4",
@@ -464,7 +464,7 @@
     "h": 2.76415,
     "foot": 0.03042
    },
-   "pattern": "content/sprites/kael-v3/emote04-media64-v05/emote04-{}.png"
+   "pattern": "content/sprites/kael-v3/emote04-media64-v1121/emote04-{}.png"
   },
   "move-up": {
    "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",
@@ -473,7 +473,7 @@
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
    "loopFirst": 35,
    "loopLast": 75,
-   "seamSteps": 2.16,
+   "seamSteps": 2.15,
    "bootRow": 1047,
    "bodyDrift": [
     -16,
@@ -498,7 +498,7 @@
     "h": 2.66578,
     "foot": 0.03317
    },
-   "pattern": "content/sprites/kael-v3/move-up-media64-v05/move-up-{}.png"
+   "pattern": "content/sprites/kael-v3/move-up-media64-v1121/move-up-{}.png"
   },
   "move-down": {
    "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",

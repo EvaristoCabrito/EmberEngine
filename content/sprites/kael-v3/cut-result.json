@@ -29,7 +29,7 @@
     "h": 2.80765,
     "foot": 0.04448
    },
-   "pattern": "content/sprites/kael-v3/base-v05/base-{}.png"
+   "pattern": "content/sprites/kael-v3/base-v1121/base-{}.png"
   },
   "atk": {
    "video": "Attachments/KaelV3/supersize/ATT.mp4 (cropped x 225..1875 as the 720p one: build/video-cut/kael-v3d/ATT-cropped.mp4)",
@@ -60,7 +60,7 @@
     "h": 2.68592,
     "foot": 0.0
    },
-   "pattern": "content/sprites/kael-v3/atk-v05/atk-{}.png",
+   "pattern": "content/sprites/kael-v3/atk-v1121/atk-{}.png",
    "impact": 0.2892
   },
   "turn-back": {
@@ -123,7 +123,7 @@
     "h": 2.62997,
     "foot": 0.01578
    },
-   "pattern": "content/sprites/kael-v3/cast-back-v05/cast-back-{}.png"
+   "pattern": "content/sprites/kael-v3/cast-back-v1121/cast-back-{}.png"
   },
   "double-strike": {
    "video": "Attachments/KaelV3/supersize/BackandDoubleSlash.mp4",
@@ -154,7 +154,7 @@
     "h": 2.74522,
     "foot": 0.0
    },
-   "pattern": "content/sprites/kael-v3/double-strike-v05/double-strike-{}.png",
+   "pattern": "content/sprites/kael-v3/double-strike-v1121/double-strike-{}.png",
    "impact": 0.4138
   },
   "move": {
@@ -164,7 +164,7 @@
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
    "loopFirst": 102,
    "loopLast": 233,
-   "seamSteps": 0.99,
+   "seamSteps": 1.0,
    "bootRow": 1050,
    "bodyDrift": [
     -13,
@@ -188,7 +188,7 @@
     "h": 2.70211,
     "foot": 0.03637
    },
-   "pattern": "content/sprites/kael-v3/move-v05/move-{}.png"
+   "pattern": "content/sprites/kael-v3/move-v1121/move-{}.png"
   },
   "move-left": {
    "video": "Attachments/KaelV3/supersize/WalkLeft.mp4",
@@ -197,7 +197,7 @@
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
    "loopFirst": 72,
    "loopLast": 121,
-   "seamSteps": 0.74,
+   "seamSteps": 0.77,
    "bootRow": 1053,
    "bodyDrift": [
     19,
@@ -221,7 +221,7 @@
     "h": 2.72887,
     "foot": 0.05696
    },
-   "pattern": "content/sprites/kael-v3/move-left-v05/move-left-{}.png"
+   "pattern": "content/sprites/kael-v3/move-left-v1121/move-left-{}.png"
   },
   "special": {
    "video": "Attachments/KaelV3/supersize/KaleSpecial.mp4",
@@ -252,7 +252,7 @@
     "h": 2.85018,
     "foot": 0.03179
    },
-   "pattern": "content/sprites/kael-v3/special-v05/special-{}.png",
+   "pattern": "content/sprites/kael-v3/special-v1121/special-{}.png",
    "impact": 0.6263
   },
   "hit": {
@@ -315,7 +315,7 @@
     "h": 2.73533,
     "foot": 0.07898
    },
-   "pattern": "content/sprites/kael-v3/death-v05/death-{}.png"
+   "pattern": "content/sprites/kael-v3/death-v1121/death-{}.png"
   },
   "emote01": {
    "video": "Attachments/KaelV3/supersize/KaelEmote01.mp4",
@@ -346,7 +346,7 @@
     "h": 2.66677,
     "foot": 0.04338
    },
-   "pattern": "content/sprites/kael-v3/emote01-v05/emote01-{}.png"
+   "pattern": "content/sprites/kael-v3/emote01-v1121/emote01-{}.png"
   },
   "emote02": {
    "video": "Attachments/KaelV3/supersize/KaelEmote02.mp4",
@@ -377,7 +377,7 @@
     "h": 2.80415,
     "foot": 0.04328
    },
-   "pattern": "content/sprites/kael-v3/emote02-v05/emote02-{}.png"
+   "pattern": "content/sprites/kael-v3/emote02-v1121/emote02-{}.png"
   },
   "emote03": {
    "video": "Attachments/KaelV3/supersize/Emote03.mp4",
@@ -408,7 +408,7 @@
     "h": 2.66023,
     "foot": 0.04012
    },
-   "pattern": "content/sprites/kael-v3/emote03-v05/emote03-{}.png"
+   "pattern": "content/sprites/kael-v3/emote03-v1121/emote03-{}.png"
   },
   "emote04": {
    "video": "Attachments/KaelV3/supersize/HitandFall.mp4",
@@ -439,7 +439,7 @@
     "h": 2.76484,
     "foot": 0.03124
    },
-   "pattern": "content/sprites/kael-v3/emote04-v05/emote04-{}.png"
+   "pattern": "content/sprites/kael-v3/emote04-v1121/emote04-{}.png"
   },
   "move-up": {
    "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",
@@ -448,7 +448,7 @@
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
    "loopFirst": 35,
    "loopLast": 75,
-   "seamSteps": 2.16,
+   "seamSteps": 2.15,
    "bootRow": 1047,
    "bodyDrift": [
     -16,
@@ -472,7 +472,7 @@
     "h": 2.66897,
     "foot": 0.03402
    },
-   "pattern": "content/sprites/kael-v3/move-up-v05/move-up-{}.png"
+   "pattern": "content/sprites/kael-v3/move-up-v1121/move-up-{}.png"
   },
   "move-down": {
    "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",
