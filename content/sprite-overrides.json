@@ -1184,6 +1184,34 @@
    "why": "the Embered Vanguard's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "emberedVanguard", "set": "embered-vanguard"},
    "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
+  },
+  {
+   "set": "vespera",
+   "version": "v01",
+   "hero": "vespera",
+   "newHero": {"name": "Vespera", "group": "hero", "sprite": "vespera", "reversed": false, "classId": "swordsman"},
+   "cut": "content/sprites/vespera/cut.json",
+   "why": "the user, 2026-11-20: Vespera, a new main character (a Guerreira, mace and shield) from five 1080p videos (Attachments/Vespera): idle, attack, special, walks in the four directions, hit, fall, turn to her back; Alta + 64 + 36",
+   "poses": {"idle": "base", "attack": "atk", "specialAttack": "special", "walk": "move", "walkLeft": "move-left", "walkUp": "move-up", "walkDown": "move-down", "hit": "hit", "death": "death", "turnBack": "turn-back"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "specialAttack": "Ataque especial", "walk": "Andar", "walkLeft": "Andar (esquerda)", "walkUp": "Andar (costas)", "walkDown": "Andar (frente)", "hit": "Dano", "death": "Queda", "turnBack": "De costas"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0, "move-up": 1.0, "move-down": 1.0}
+  },
+  {
+   "set": "vespera-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/vespera/cut-64-media.json",
+   "why": "Vespera's Personagens Média: 64 frames at ~610 px",
+   "mediumOf": {"hero": "vespera", "set": "vespera"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}
+  },
+  {
+   "set": "vespera-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/vespera/cut-36-media.json",
+   "why": "Vespera's Personagens Leve: 36 frames at ~610 px",
+   "lightOf": {"hero": "vespera", "set": "vespera"},
+   "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"}
   }
  ],
  "clips": [

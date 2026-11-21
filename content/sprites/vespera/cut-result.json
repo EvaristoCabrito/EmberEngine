@@ -1,0 +1,316 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Vespera/Vespera Idle.mp4",
+   "first": 128,
+   "last": 176,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/vespera/att 0:20",
+   "bootRow": 1870,
+   "bootRows": [
+    1869,
+    1870
+   ],
+   "figurePx": 1670.0,
+   "frames": 49,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    940,
+    1729
+   ],
+   "crop": [
+    6,
+    6,
+    929,
+    1723
+   ],
+   "box": {
+    "w": 1.49725,
+    "h": 2.75398,
+    "foot": 0.07805
+   },
+   "pattern": "content/sprites/vespera/base-v01/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Vespera/VesperaATTSpecial.mp4",
+   "first": 20,
+   "last": 92,
+   "bootRow": 1029,
+   "bootRows": [
+    1028,
+    1035
+   ],
+   "figurePx": 907.0,
+   "frames": 73,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    916,
+    930
+   ],
+   "crop": [
+    6,
+    5,
+    905,
+    921
+   ],
+   "box": {
+    "w": 2.68639,
+    "h": 2.72745,
+    "foot": 0.04399
+   },
+   "pattern": "content/sprites/vespera/atk-v01/atk-{}.png",
+   "impact": 0.6575
+  },
+  "special": {
+   "video": "Attachments/Vespera/VesperaATTSpecial.mp4",
+   "first": 120,
+   "last": 239,
+   "bootRow": 1030,
+   "bootRows": [
+    830,
+    1030
+   ],
+   "figurePx": 907.0,
+   "frames": 120,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    667,
+    1066
+   ],
+   "crop": [
+    4,
+    0,
+    659,
+    1056
+   ],
+   "box": {
+    "w": 1.95614,
+    "h": 3.12631,
+    "foot": 0.10265
+   },
+   "pattern": "content/sprites/vespera/special-v01/special-{}.png",
+   "impact": 0.45
+  },
+  "move": {
+   "video": "Attachments/Vespera/VesperaLeftandRight.mp4",
+   "first": 120,
+   "last": 239,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/vespera/att 0:20",
+   "loopFirst": 169,
+   "loopLast": 202,
+   "seamSteps": 0.69,
+   "bootRow": 1774,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 1523.5,
+   "frames": 34,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    850,
+    1570
+   ],
+   "crop": [
+    6,
+    6,
+    839,
+    1559
+   ],
+   "box": {
+    "w": 1.48408,
+    "h": 2.74119,
+    "foot": 0.02794
+   },
+   "pattern": "content/sprites/vespera/move-v01/move-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/Vespera/VesperaLeftandRight.mp4",
+   "first": 0,
+   "last": 119,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/vespera/att 0:20",
+   "loopFirst": 75,
+   "loopLast": 110,
+   "seamSteps": 0.82,
+   "bootRow": 1766,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 1521.5,
+   "frames": 36,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    888,
+    1566
+   ],
+   "crop": [
+    4,
+    7,
+    878,
+    1553
+   ],
+   "box": {
+    "w": 1.55247,
+    "h": 2.7378,
+    "foot": 0.02448
+   },
+   "pattern": "content/sprites/vespera/move-left-v01/move-left-{}.png"
+  },
+  "move-up": {
+   "video": "Attachments/Vespera/VesperaUpandDown.mp4",
+   "first": 0,
+   "last": 119,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/vespera/att 0:20",
+   "loopFirst": 28,
+   "loopLast": 91,
+   "seamSteps": 0.99,
+   "bootRow": 1678,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 1365.5,
+   "frames": 64,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    717,
+    1391
+   ],
+   "crop": [
+    4,
+    9,
+    709,
+    1378
+   ],
+   "box": {
+    "w": 1.39672,
+    "h": 2.70967,
+    "foot": 0.01948
+   },
+   "pattern": "content/sprites/vespera/move-up-v01/move-up-{}.png"
+  },
+  "move-down": {
+   "video": "Attachments/Vespera/VesperaUpandDown.mp4",
+   "first": 120,
+   "last": 239,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/vespera/att 0:20",
+   "loopFirst": 180,
+   "loopLast": 216,
+   "seamSteps": 1.08,
+   "bootRow": 1719,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 1434.0,
+   "frames": 37,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    719,
+    1478
+   ],
+   "crop": [
+    4,
+    7,
+    710,
+    1466
+   ],
+   "box": {
+    "w": 1.33371,
+    "h": 2.74162,
+    "foot": 0.03524
+   },
+   "pattern": "content/sprites/vespera/move-down-v01/move-down-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/Vespera/VesperaHitReact.mp4",
+   "first": 6,
+   "last": 54,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/vespera/att 0:20",
+   "bootRow": 1729,
+   "bootRows": [
+    1727,
+    1731
+   ],
+   "figurePx": 1543.0,
+   "frames": 49,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1080,
+    1562
+   ],
+   "crop": [
+    0,
+    7,
+    1080,
+    1549
+   ],
+   "box": {
+    "w": 1.86183,
+    "h": 2.69275,
+    "foot": 0.01724
+   },
+   "pattern": "content/sprites/vespera/hit-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Vespera/VesperaFall.mp4",
+   "first": 28,
+   "last": 110,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/vespera/att 0:20",
+   "bootRow": 995,
+   "bootRows": [
+    995,
+    995
+   ],
+   "figurePx": 858.0,
+   "frames": 83,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1484,
+    893
+   ],
+   "crop": [
+    4,
+    7,
+    1475,
+    880
+   ],
+   "box": {
+    "w": 4.60075,
+    "h": 2.76851,
+    "foot": 0.16741
+   },
+   "pattern": "content/sprites/vespera/death-v01/death-{}.png"
+  },
+  "turn-back": {
+   "video": "Attachments/Vespera/VesperaTurnAround.mp4",
+   "first": 30,
+   "last": 90,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/vespera/att 0:20",
+   "bootRow": 1725,
+   "bootRows": [
+    1710,
+    1745
+   ],
+   "figurePx": 1433.0,
+   "frames": 61,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    903,
+    1521
+   ],
+   "crop": [
+    6,
+    6,
+    893,
+    1509
+   ],
+   "box": {
+    "w": 1.67619,
+    "h": 2.82335,
+    "foot": 0.05383
+   },
+   "pattern": "content/sprites/vespera/turn-back-v01/turn-back-{}.png"
+  }
+ }
+}

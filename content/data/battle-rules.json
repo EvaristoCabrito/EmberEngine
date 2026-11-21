@@ -65084,7 +65084,8 @@
     "Salazar": "salazar",
     "Aldric": "aldric",
     "Malrec": "malrec",
-    "Isolde": "isolde-veo"
+    "Isolde": "isolde-veo",
+    "Vespera": "vespera"
   },
   "campaignHeroClasses": {
     "Kael": "swordsman",
@@ -84355,6 +84356,7 @@
       "arrowRelease:neera": []
     },
     "monster": {
+     "vespera": {"attack": [{"file": "VesperaATT001.mp3", "volume": 0.55, "offset": 0, "delay": 0, "exclusive": true}], "walk": [{"file": "VesperaWalk001.mp3", "volume": 0.45, "offset": 0, "delay": 0, "exclusive": true}], "hit": [{"file": "VesperaHit001.mp3", "volume": 0.55, "offset": 0, "delay": 0, "exclusive": true}], "death": [{"file": "VesperaDeath001.mp3", "volume": 0.55, "offset": 0, "delay": 0, "exclusive": true}]},
       "embered-vanguard": {
         "walk": [
           {
