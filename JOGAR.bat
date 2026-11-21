@@ -124,15 +124,11 @@ if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v3.pak"
 if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v2.pak"
 if not exist "%MESHES%" set "MESHES=%ART%\meshes\props.pak"
 set "MESHES_EXTRA=%ART%\meshes\material-overhaul-v03.pak"
-rem battle.pak = o pacote de sprites atual (cada mudanca de sprite e cozinhada nele); battle-v2.pak (19/10) so se faltar
-rem battle-new.pak = um pacote cozinhado com o jogo aberto (o battle.pak preso): entra no lugar dele aqui, o anterior guardado com a data
-if not exist "%ART%\sprites\battle-new.pak" goto :semnovo
-for /f %%D in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd-HHmm"') do set "STAMP=%%D"
-move /y "%ART%\sprites\battle.pak" "%ART%\sprites\battle-%STAMP%-antes.pak" >nul
-move /y "%ART%\sprites\battle-new.pak" "%ART%\sprites\battle.pak" >nul
-:semnovo
+rem battle.pak = o pacote de sprites atual (cada mudanca de sprite e cozinhada nele)
+rem battle-new.pak = um pacote cozinhado com o jogo aberto (o battle.pak preso): entra no lugar dele aqui e o anterior vai embora
+rem (o usuario, 2026-11-21: nada de guardar pacotes antigos; eram 54 copias, 204,6 GB)
+if exist "%ART%\sprites\battle-new.pak" move /y "%ART%\sprites\battle-new.pak" "%ART%\sprites\battle.pak" >nul
 set "SPRITES=%ART%\sprites\battle.pak"
-if not exist "%SPRITES%" set "SPRITES=%ART%\sprites\battle-v2.pak"
 set "HEROES="
 if exist "%ART%\scenes\roster.json" set "HEROES=--heroes %ART%\scenes\roster.json"
 
