@@ -1,0 +1,231 @@
+{
+ "clips": {
+  "turn-back": {
+   "video": "Attachments/KaelV3/KaelTurnAroundFinal.mp4",
+   "first": 26,
+   "last": 112,
+   "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
+   "bootRow": 1045,
+   "bootRows": [
+    1036,
+    1059
+   ],
+   "figurePx": 964.0,
+   "bodyAt": -0.19,
+   "scaledTo": 610.3,
+   "frames": 87,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    675,
+    635
+   ],
+   "crop": [
+    3,
+    3,
+    532,
+    628
+   ],
+   "box": {
+    "w": 2.85566,
+    "h": 2.68644,
+    "foot": 0.0394
+   },
+   "pattern": "content/sprites/kael-v3/turn-back-cine-v1121/turn-back-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/KaelV3/KaelHitreactCharacter_taking_impact_reaction_afb38c9a_1080p.mp4",
+   "first": 2,
+   "last": 50,
+   "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
+   "bootRow": 1889,
+   "bootRows": [
+    1888,
+    1890
+   ],
+   "figurePx": 1836.0,
+   "bodyAt": -0.1904,
+   "scaledTo": 609.7,
+   "frames": 49,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    420,
+    622
+   ],
+   "crop": [
+    1,
+    2,
+    330,
+    618
+   ],
+   "box": {
+    "w": 1.77621,
+    "h": 2.63048,
+    "foot": 0.00982
+   },
+   "pattern": "content/sprites/kael-v3/hit-cine-v1121/hit-{}.png"
+  },
+  "move-down": {
+   "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",
+   "first": 121,
+   "last": 239,
+   "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
+   "loopFirst": 157,
+   "loopLast": 196,
+   "seamSteps": 3.25,
+   "bootRow": 1048,
+   "bodyDrift": [
+    -41,
+    7
+   ],
+   "figurePx": 991.0,
+   "scaledTo": 610.4,
+   "frames": 40,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    334,
+    632
+   ],
+   "crop": [
+    3,
+    3,
+    328,
+    626
+   ],
+   "box": {
+    "w": 1.41366,
+    "h": 2.67496,
+    "foot": 0.03308
+   },
+   "pattern": "content/sprites/kael-v3/move-down-cine-v1121/move-down-{}.png"
+  },
+  "emote05": {
+   "video": "Attachments/KaelV3/supersize/HitReactUltimate.mp4",
+   "first": 20,
+   "last": 128,
+   "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
+   "bootRow": 1062,
+   "bootRows": [
+    1061,
+    1063
+   ],
+   "figurePx": 971.0,
+   "bodyAt": -0.19,
+   "scaledTo": 609.6,
+   "frames": 109,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    626,
+    651
+   ],
+   "crop": [
+    4,
+    3,
+    618,
+    645
+   ],
+   "box": {
+    "w": 2.64908,
+    "h": 2.75488,
+    "foot": 0.03109
+   },
+   "pattern": "content/sprites/kael-v3/emote05-cine-v1121/emote05-{}.png"
+  },
+  "emote06": {
+   "video": "Attachments/KaelV3/KaelVauEmote.mp4",
+   "first": 0,
+   "last": 99,
+   "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
+   "bootRow": 1047,
+   "bootRows": [
+    1047,
+    1055
+   ],
+   "figurePx": 996.0,
+   "bodyAt": 0.1904,
+   "scaledTo": 610.4,
+   "frames": 100,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    549,
+    630
+   ],
+   "crop": [
+    3,
+    2,
+    465,
+    625
+   ],
+   "box": {
+    "w": 2.32096,
+    "h": 2.6634,
+    "foot": 0.04582
+   },
+   "pattern": "content/sprites/kael-v3/emote06-cine-v1121/emote06-{}.png"
+  },
+  "emote07": {
+   "video": "Attachments/KaelV3/KaelVauEmote.mp4",
+   "first": 100,
+   "last": 239,
+   "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
+   "bootRow": 1059,
+   "bootRows": [
+    1042,
+    1076
+   ],
+   "figurePx": 1004.0,
+   "bodyAt": 0.1902,
+   "scaledTo": 609.8,
+   "frames": 140,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    468,
+    642
+   ],
+   "crop": [
+    9,
+    3,
+    456,
+    636
+   ],
+   "box": {
+    "w": 1.97869,
+    "h": 2.71435,
+    "foot": 0.03255
+   },
+   "pattern": "content/sprites/kael-v3/emote07-cine-v1121/emote07-{}.png"
+  },
+  "special-lightning": {
+   "video": "Attachments/KaelV3/KaelLightingSpecialATT.mp4",
+   "first": 2,
+   "last": 76,
+   "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
+   "bootRow": 1044,
+   "bootRows": [
+    1034,
+    1050
+   ],
+   "figurePx": 950.0,
+   "bodyAt": -0.1901,
+   "scaledTo": 610.2,
+   "frames": 75,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    902,
+    677
+   ],
+   "crop": [
+    3,
+    0,
+    850,
+    674
+   ],
+   "box": {
+    "w": 3.81297,
+    "h": 2.86184,
+    "foot": 0.02368
+   },
+   "pattern": "content/sprites/kael-v3/special-lightning-cine-v1121/special-lightning-{}.png",
+   "impact": 0.4533
+  }
+ }
+}

@@ -1127,14 +1127,14 @@
    "clip": "turn-back",
    "pose": "turnBack",
    "kind": "stand",
-   "src": "build/video-cut/kael-1080/turnfinal",
+   "src": "build/video-cut/redo-sonnet/kael-1080__turnfinal",
    "video": "Attachments/KaelV3/KaelTurnAroundFinal.mp4",
    "first": 26,
    "last": 112,
    "mode": "once",
    "bodyAt": -0.1902,
    "why": "the user, 2026-11-20: KaelTurnAroundFinal (1920 x 1080, light backdrop, ~975 px tall, nothing touches an edge: the old turn's sword and cape touched the edges in 25 frames); he stands to ~30, turns 32-88, his back settles after",
-   "version": "v1082",
+   "version": "v1121",
    "colorMatch": {
     "reference": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
     "frames": "24:30",
@@ -3317,14 +3317,14 @@
    "clip": "hit",
    "pose": "hit",
    "kind": "stand",
-   "src": "build/video-cut/kael-v3d/hit-v2",
+   "src": "build/video-cut/redo-sonnet/kael-v3d__hit-v2",
    "video": "Attachments/KaelV3/KaelHitreactCharacter_taking_impact_reaction_afb38c9a_1080p.mp4",
    "first": 2,
    "last": 50,
    "mode": "once",
    "why": "the user, 2026-11-17: the new hit react (KaelHitreact...1080p), from his stance, the recoil, back to it; the old one is emote05",
    "bodyAt": -0.1902,
-   "version": "v06",
+   "version": "v1121",
    "colorMatch": {
     "reference": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
     "frames": "36:50",
@@ -5485,7 +5485,7 @@
    "clip": "move-down",
    "pose": "walkDown",
    "kind": "walk",
-   "src": "build/video-cut/kael-v3d/walk-up",
+   "src": "build/video-cut/redo-sonnet/kael-v3d__walk-up",
    "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",
    "first": 121,
    "last": 239,
@@ -5493,7 +5493,7 @@
    "loopMax": 115,
    "mode": "loop",
    "why": "the user, 2026-11-20: KaelWalkBack5sec is the ready-made up and down (10 s: he walks away 0-119, the video cuts to his front at 120): the walk down now comes from its front half (121-239) instead of the separate KaelWalkFront (a 1080 x 1920 test, 7 frames on the right edge); the set's light is the one already matched on those frames",
-   "version": "v1082",
+   "version": "v1121",
    "colorMatch": {
     "reference": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
     "frames": "121:160",
@@ -5853,7 +5853,7 @@
    "clip": "emote05",
    "pose": "emote05",
    "kind": "stand",
-   "src": "build/video-cut/kael-v3d/hit",
+   "src": "build/video-cut/redo-sonnet/kael-v3d__hit",
    "video": "Attachments/KaelV3/supersize/HitReactUltimate.mp4",
    "first": 20,
    "last": 128,
@@ -6193,13 +6193,14 @@
       0.932472
      ]
     ]
-   }
+   },
+   "version": "v1121"
   },
   {
    "clip": "emote06",
    "pose": "emote06",
    "kind": "stand",
-   "src": "build/video-cut/kael-v3d/emote06",
+   "src": "build/video-cut/redo-sonnet/kael-v3d__emote06",
    "video": "Attachments/KaelV3/KaelVauEmote.mp4",
    "first": 0,
    "last": 99,
@@ -6572,13 +6573,14 @@
       0.932472
      ]
     ]
-   }
+   },
+   "version": "v1121"
   },
   {
    "clip": "emote07",
    "pose": "emote07",
    "kind": "stand",
-   "src": "build/video-cut/kael-v3d/emote06",
+   "src": "build/video-cut/redo-sonnet/kael-v3d__emote06",
    "video": "Attachments/KaelV3/KaelVauEmote.mp4",
    "first": 100,
    "last": 239,
@@ -6951,13 +6953,14 @@
       0.932472
      ]
     ]
-   }
+   },
+   "version": "v1121"
   },
   {
    "clip": "special-lightning",
    "pose": "specialAttack",
    "kind": "stand",
-   "src": "build/video-cut/kael-1080/special",
+   "src": "build/video-cut/redo-sonnet/kael-1080__special",
    "video": "Attachments/KaelV3/KaelLightingSpecialATT.mp4",
    "first": 2,
    "last": 76,
@@ -6965,7 +6968,7 @@
    "mode": "once",
    "bodyAt": -0.1902,
    "why": "the user, 2026-11-19: KaelLightingSpecialATT is his regular special attack (the sword tip / lightning leaves the top of the video in frames 12-21: he knows, wants to see it in the game first); the many-slashes clip 'special' stays as pose specialAttackHigh for the higher-tier spells",
-   "version": "v1080",
+   "version": "v1121",
    "colorMatch": {
     "reference": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
     "frames": "0:4,62:93",
@@ -7323,6 +7326,22 @@
       0.932472
      ]
     ]
+   },
+   "wallKey": {
+    "region": [
+     250,
+     0,
+     1720,
+     900
+    ],
+    "low": 58,
+    "high": 125,
+    "feather": 56,
+    "frames": [
+     11,
+     58
+    ],
+    "why": "the user, 2026-11-21: \"the lightning doesnt end at his edges\": the arcs kept past his body (the matte drops them)"
    }
   }
  ],

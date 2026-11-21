@@ -1127,13 +1127,13 @@
    "clip": "turn-back",
    "pose": "turnBack",
    "kind": "stand",
-   "src": "build/video-cut/kael-1080/turnfinal",
+   "src": "build/video-cut/redo-sonnet/kael-1080__turnfinal",
    "video": "Attachments/KaelV3/KaelTurnAroundFinal.mp4",
    "first": 26,
    "last": 112,
    "mode": "once",
    "bodyAt": -0.1902,
-   "version": "media36-v1082",
+   "version": "media36-v1121",
    "scaleTo": 610,
    "colorMatch": {
     "reference": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
@@ -3317,14 +3317,14 @@
    "clip": "hit",
    "pose": "hit",
    "kind": "stand",
-   "src": "build/video-cut/kael-v3d/hit-v2",
+   "src": "build/video-cut/redo-sonnet/kael-v3d__hit-v2",
    "video": "Attachments/KaelV3/KaelHitreactCharacter_taking_impact_reaction_afb38c9a_1080p.mp4",
    "first": 2,
    "last": 50,
    "mode": "once",
    "bodyAt": -0.1902,
    "scaleTo": 610,
-   "version": "media36-v06",
+   "version": "media36-v1121",
    "colorMatch": {
     "reference": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
     "frames": "36:50",
@@ -5485,14 +5485,14 @@
    "clip": "move-down",
    "pose": "walkDown",
    "kind": "walk",
-   "src": "build/video-cut/kael-v3d/walk-up",
+   "src": "build/video-cut/redo-sonnet/kael-v3d__walk-up",
    "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",
    "first": 121,
    "last": 239,
    "loopMin": 40,
    "loopMax": 115,
    "mode": "loop",
-   "version": "media36-v1082",
+   "version": "media36-v1121",
    "scaleTo": 610,
    "colorMatch": {
     "reference": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
@@ -5853,7 +5853,7 @@
    "clip": "emote05",
    "pose": "emote05",
    "kind": "stand",
-   "src": "build/video-cut/kael-v3d/hit",
+   "src": "build/video-cut/redo-sonnet/kael-v3d__hit",
    "video": "Attachments/KaelV3/supersize/HitReactUltimate.mp4",
    "first": 20,
    "last": 128,
@@ -6193,13 +6193,14 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-v1121"
   },
   {
    "clip": "emote06",
    "pose": "emote06",
    "kind": "stand",
-   "src": "build/video-cut/kael-v3d/emote06",
+   "src": "build/video-cut/redo-sonnet/kael-v3d__emote06",
    "video": "Attachments/KaelV3/KaelVauEmote.mp4",
    "first": 0,
    "last": 99,
@@ -6572,13 +6573,14 @@
       0.932472
      ]
     ]
-   }
+   },
+   "version": "media36-v1121"
   },
   {
    "clip": "emote07",
    "pose": "emote07",
    "kind": "stand",
-   "src": "build/video-cut/kael-v3d/emote06",
+   "src": "build/video-cut/redo-sonnet/kael-v3d__emote06",
    "video": "Attachments/KaelV3/KaelVauEmote.mp4",
    "first": 100,
    "last": 239,
@@ -6951,20 +6953,21 @@
       0.932472
      ]
     ]
-   }
+   },
+   "version": "media36-v1121"
   },
   {
    "clip": "special-lightning",
    "pose": "specialAttack",
    "kind": "stand",
-   "src": "build/video-cut/kael-1080/special",
+   "src": "build/video-cut/redo-sonnet/kael-1080__special",
    "video": "Attachments/KaelV3/KaelLightingSpecialATT.mp4",
    "first": 2,
    "last": 76,
    "impactFrame": 36,
    "mode": "once",
    "bodyAt": -0.1902,
-   "version": "media36-v1080",
+   "version": "media36-v1121",
    "scaleTo": 610,
    "colorMatch": {
     "reference": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
@@ -7323,6 +7326,22 @@
       0.932472
      ]
     ]
+   },
+   "wallKey": {
+    "region": [
+     250,
+     0,
+     1720,
+     900
+    ],
+    "low": 58,
+    "high": 125,
+    "feather": 56,
+    "frames": [
+     11,
+     58
+    ],
+    "why": "the user, 2026-11-21: \"the lightning doesnt end at his edges\": the arcs kept past his body (the matte drops them)"
    }
   }
  ],
