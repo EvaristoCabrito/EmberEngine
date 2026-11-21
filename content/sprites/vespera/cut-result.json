@@ -2,30 +2,30 @@
  "clips": {
   "base": {
    "video": "Attachments/Vespera/Vespera Idle.mp4",
-   "first": 128,
-   "last": 176,
+   "first": 0,
+   "last": 149,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/vespera/att 0:20",
    "bootRow": 1870,
    "bootRows": [
     1869,
-    1870
+    1919
    ],
    "figurePx": 1670.0,
-   "frames": 49,
+   "frames": 150,
    "frameMs": 41.666666666666664,
    "nat": [
-    940,
-    1729
+    973,
+    1771
    ],
    "crop": [
+    5,
     6,
-    6,
-    929,
-    1723
+    964,
+    1765
    ],
    "box": {
-    "w": 1.49725,
-    "h": 2.75398,
+    "w": 1.54981,
+    "h": 2.82087,
     "foot": 0.07805
    },
    "pattern": "content/sprites/vespera/base-v01/base-{}.png"
@@ -34,6 +34,7 @@
    "video": "Attachments/Vespera/VesperaATTSpecial.mp4",
    "first": 20,
    "last": 92,
+   "colorMatch": "build/video-cut/vespera/att 0:20 (the reference itself)",
    "bootRow": 1029,
    "bootRows": [
     1028,
@@ -64,6 +65,7 @@
    "video": "Attachments/Vespera/VesperaATTSpecial.mp4",
    "first": 120,
    "last": 239,
+   "colorMatch": "build/video-cut/vespera/att 0:20 (the reference itself)",
    "bootRow": 1030,
    "bootRows": [
     830,
@@ -97,7 +99,7 @@
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/vespera/att 0:20",
    "loopFirst": 169,
    "loopLast": 202,
-   "seamSteps": 0.69,
+   "seamSteps": 0.7,
    "bootRow": 1774,
    "bodyDrift": [
     0,
@@ -130,7 +132,7 @@
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/vespera/att 0:20",
    "loopFirst": 75,
    "loopLast": 110,
-   "seamSteps": 0.82,
+   "seamSteps": 0.83,
    "bootRow": 1766,
    "bodyDrift": [
     0,
@@ -196,7 +198,7 @@
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/vespera/att 0:20",
    "loopFirst": 180,
    "loopLast": 216,
-   "seamSteps": 1.08,
+   "seamSteps": 1.07,
    "bootRow": 1719,
    "bodyDrift": [
     0,
