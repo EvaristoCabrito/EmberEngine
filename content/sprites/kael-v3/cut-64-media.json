@@ -7369,18 +7369,18 @@
    "build/video-cut/kael-v3d/walk": "0:239",
    "build/video-cut/kael-v3d/walk-left": "0:142",
    "build/video-cut/kael-v3d/special": "24:27,135:142",
-   "build/video-cut/kael-v3d/hit": "0:19,129:142",
+   "build/video-cut/redo-sonnet/kael-v3d__hit": "0:19,129:142",
    "build/video-cut/kael-v3d/hitfall": "110:118",
    "build/video-cut/kael-v3d/emote01": "0:142",
    "build/video-cut/kael-v3d/emote02": "0:15",
    "build/video-cut/kael-v3d/emote03": "0:142",
-   "build/video-cut/kael-v3d/walk-up": "121:160",
+   "build/video-cut/redo-sonnet/kael-v3d__walk-up": "121:160",
    "build/video-cut/kael-v3d/walk-down": "17:142",
    "build/video-cut/kael-v3d/turn": "0:8",
-   "build/video-cut/kael-v3d/emote06": "0:239",
+   "build/video-cut/redo-sonnet/kael-v3d__emote06": "0:239",
    "build/video-cut/kael-1080/turn": "0:8",
-   "build/video-cut/kael-1080/special": "0:4,62:93",
-   "build/video-cut/kael-1080/turnfinal": "24:30"
+   "build/video-cut/redo-sonnet/kael-1080__special": "0:4,62:93",
+   "build/video-cut/redo-sonnet/kael-1080__turnfinal": "24:30"
   }
  },
  "result": "cut-result-64-media.json",
