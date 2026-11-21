@@ -33,6 +33,12 @@ O código do jogo não deve conter "teste"/"test" em nenhuma condicional. A úni
 Se encontrar código existente que viole esta regra: não copie o padrão nem acrescente outro ramo. Una as cópias numa função só que o jogo e o teste usam, e avise o usuário.
 
 ## REGRA PERMANENTE: o pipeline de sprites que funciona — não mudar
+**Os sprites são o aspecto mais importante do jogo.** Todo sprite, de toda unidade, passa pelo mesmo pipeline abaixo, sem exceção e sem atalho,
+e o resultado tem que ser **perfeito**: nada menos que perfeito é aceitável (o usuário, 2026-11-21). Parte cortada, cauda/asa/arma que some
+ou pisca, quadro tremido, tamanho ou luz diferente entre clipes = não está pronto, não entra no jogo, não vai para commit.
+Refazer uma unidade não reaproveita nada da anterior; os arquivos antigos (quadros, mattes, cópias `*-before-*`) são apagados assim que os novos
+estão no jogo.
+
 Vale para todo agente (Claude Opus/Sonnet/Haiku, Codex, qualquer outro). É o caminho com que todos os sprites bons do jogo foram feitos.
 Ninguém troca, "melhora" ou substitui uma ferramenta desta lista sem o usuário pedir com todas as letras.
 
