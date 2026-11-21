@@ -7893,14 +7893,6 @@ class MapStage final : public Stage {
         if (!id.empty()) ids.push_back(id);
         at = end + 1;
       }
-    std::set<std::string> names;
-    for (const std::string& id : ids) {
-      const std::optional<ember::CutsceneScript> script = ember::CutsceneScript::load("content/cutscenes/" + id + ".json", nullptr);
-      if (!script) continue;
-      for (const std::string& actor : script->offstage) names.insert(script->actors.at(actor));
-      for (const std::string& actor : script->fallen) keptBodies_.insert(script->actors.at(actor));
-    }
-    // A party hero is sent off too (2026-11-06, the Vau opening: Neera and Voss of the party walk in during Estranhos na Costa);
     return ids;
   }
   void sendOffstage() {
@@ -7914,8 +7906,17 @@ class MapStage final : public Stage {
       logInfo("cutscene: {} (reserve) waits off the board for its scenes", u.name);
     }
     const std::vector<std::string> ids = mapSceneIds();
+    std::set<std::string> names;
+    for (const std::string& id : ids) {
+      const std::optional<ember::CutsceneScript> script = ember::CutsceneScript::load("content/cutscenes/" + id + ".json", nullptr);
+      if (!script) continue;
+      for (const std::string& actor : script->offstage) names.insert(script->actors.at(actor));
+      for (const std::string& actor : script->fallen) keptBodies_.insert(script->actors.at(actor));
+    }
+    // A party hero is sent off too (2026-11-06, the Vau opening: Neera and Voss of the party walk in during Estranhos na Costa);
     // its hit points are kept for its "enter", and returnOffstageParty puts it back if no scene brings it in.
     for (ember::BattleUnit& u : battle_->units()) {
+      if (sceneOnly_.contains(u.id)) continue;  // already off, for its scenes only
       if (!u.alive || !names.contains(u.name)) continue;
       if (u.side == "player") offstageHp_[u.id] = u.hp;
       u.alive = false, u.hp = 0;
@@ -7924,7 +7925,6 @@ class MapStage final : public Stage {
     }
   }
   // Every party hero still waiting off the board once no scene is playing or queued (a scene refused, stopped or without its
-      if (sceneOnly_.contains(u.id)) continue;  // already off, for its scenes only
   // "enter"): back on its own hex, its hit points as before, so the fight never loses a hero to a scene.
   void returnOffstageParty() {
     if (offstageHp_.empty() || cutscene_ || !openingQueue_.empty() || !battle_ || !scene_) return;
@@ -7975,24 +7975,16 @@ class MapStage final : public Stage {
     if (!battle_ || !scene_) return logError("cutscene {}: refused, the map is not ready", id), false;
     Cutscene c;
     c.script = std::move(script);
+    std::vector<size_t> reserveIn;  // heroes of the reserve this scene brings on the board (sceneOnly_), once every actor is found
     for (const auto& [actor, unit] : c.script.actors) {
       int ui = sceneUnitNamed(unit);
       if (ui < 0 && c.script.fallen.contains(actor)) ui = sceneUnitNamed(unit, false);  // its body on the board (the fight's dead)
       if (ui < 0 && c.script.offstage.contains(actor)) ui = offstageUnitNamed(unit);  // waiting off the board for its "enter"
+      if (ui < 0 && sceneOnlyNames_.contains(unit))  // a hero of the reserve, off the board until a scene names it
+        if (ui = offstageUnitNamed(unit); ui >= 0) reserveIn.push_back(static_cast<size_t>(ui));
       if (ui < 0) return logError("cutscene {}: refused, actor \"{}\" = \"{}\" is not on the map", id, actor, unit), false;
       c.units[actor] = static_cast<size_t>(ui);
     }
-    // The control state taken over, given back at the end.
-    std::vector<size_t> reserveIn;  // heroes of the reserve this scene brings on the board (sceneOnly_), once every actor is found
-    c.selected = selected_;
-    c.heldTurns = holdTurns;
-    c.started = now_;
-    cutsceneFailed_ = false, cutsceneWhy_.clear(), cutsceneDone_ = false;
-      if (ui < 0 && sceneOnlyNames_.contains(unit))  // a hero of the reserve, off the board until a scene names it
-        if (ui = offstageUnitNamed(unit); ui >= 0) reserveIn.push_back(static_cast<size_t>(ui));
-    cutscene_ = std::move(c);
-    cutCam_.reset();
-    fx_ = CutsceneFx{};
     for (const size_t ui : reserveIn) {  // on its own hex (its spawn or formation place), or the nearest free one
       ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[ui])];
       if (const int there = battle_->unitAt(u.x, u.y); (there >= 0 && there != unitBattle_[ui]) || !battle_->cell(u.x, u.y).passable) {
@@ -8014,6 +8006,14 @@ class MapStage final : public Stage {
       logInfo("cutscene {}: {} (reserve) on the board for the scene at ({}, {})", id, u.name, u.x, u.y);
     }
     if (!reserveIn.empty()) refreshReach();
+    // The control state taken over, given back at the end.
+    c.selected = selected_;
+    c.heldTurns = holdTurns;
+    c.started = now_;
+    cutsceneFailed_ = false, cutsceneWhy_.clear(), cutsceneDone_ = false;
+    cutscene_ = std::move(c);
+    cutCam_.reset();
+    fx_ = CutsceneFx{};
     cutsceneMusic_ = music_;
     holdTurns = true;
     spellMode_.clear(), attackMode_ = false, offHandMode_ = false, pendingStrike_ = -1, talkAfterWalk_ = -1;
@@ -8054,14 +8054,6 @@ class MapStage final : public Stage {
     for (const size_t ui : cutscene_->heldPoses)  // a held pose (Kael's back) never outlives its scene
       if (ui < unitShot_.size() && unitShot_[ui].hold && (ui >= unitDiedAt_.size() || unitDiedAt_[ui] < 0.0f)) unitShot_[ui] = {};
     cutscene_.reset();
-    if (back >= 0 && back < static_cast<int>(unitBattle_.size()) && unitBattle_[static_cast<size_t>(back)] >= 0 &&
-        battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(back)])].alive)
-      select(back);
-    refreshReach();
-    cutsceneDone_ = true, cutsceneFailed_ = failed, cutsceneWhy_ = why;
-    if (failed) logError("cutscene {}: FAIL at step {} ({}); controls back", id, step, why);
-    else logInfo("cutscene {}: over ({} steps); controls back", id, step);
-  }
     // The scene over, the heroes of the reserve it brought leave the board: the fight goes on with the active party only.
     for (size_t i = 0; i < unitBattle_.size(); ++i) {
       if (unitBattle_[i] < 0) continue;
@@ -8074,6 +8066,14 @@ class MapStage final : public Stage {
       if (selected_ == static_cast<int>(i)) select(-1);
       logInfo("cutscene {}: {} (reserve) leaves the board; the fight is the active party's", id, u.name);
     }
+    if (back >= 0 && back < static_cast<int>(unitBattle_.size()) && unitBattle_[static_cast<size_t>(back)] >= 0 &&
+        battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(back)])].alive)
+      select(back);
+    refreshReach();
+    cutsceneDone_ = true, cutsceneFailed_ = failed, cutsceneWhy_ = why;
+    if (failed) logError("cutscene {}: FAIL at step {} ({}); controls back", id, step, why);
+    else logInfo("cutscene {}: over ({} steps); controls back", id, step);
+  }
 
   // A "pose" step's pose played once (its last frame kept with "hold").
   void playScenePose(Cutscene& c, size_t ui, const ember::CutsceneStep& st) {
@@ -15971,6 +15971,8 @@ class MapStage final : public Stage {
   std::optional<size_t> talkRequest_;          // a conversation asked for (takeTalk)
   std::string floorRequest_;                   // a floor connector taken: the linked map's mission id (wantsFloor)
   std::set<std::string> absent_;               // battle unit ids gone from the start (dead on an earlier visit, fallen on the floor before)
+  std::set<std::string> sceneOnlyNames_;       // heroes of the reserve seated only for this map's scenes (by name) ...
+  std::set<std::string> sceneOnly_;            // ... and their battle unit ids: off the board but while a scene that names them plays
   std::set<std::string> offstage_;             // ... of them, those waiting off the board for a cutscene's "enter" (sendOffstage)
   std::map<std::string, int> offstageHp_;      // ... the party heroes among them, by id: their hit points before (returnOffstageParty)
   std::optional<ember::Battle::Exit> finishExit_; // the waypoint the mission was ended on (the result screen's text and its way on)
@@ -15989,8 +15991,6 @@ class MapStage final : public Stage {
   bool logFull_ = false, logFullJustOpened_ = false;                 // ... and full screen
   bool logKeep_ = false;
   int hudActive_ = -2;                                               // the active unit the HUD last saw (a new turn closes the log)
-  std::set<std::string> sceneOnlyNames_;       // heroes of the reserve seated only for this map's scenes (by name) ...
-  std::set<std::string> sceneOnly_;            // ... and their battle unit ids: off the board but while a scene that names them plays
   std::map<std::string, Hotbar> hotbars_;                            // each hero's 12 sockets this fight (hotbarOf)
   bool hotbarEdit_ = false;                                          // "Atalhos" open
   int hotbarHero_ = -1;                                              // ... for this battle unit
