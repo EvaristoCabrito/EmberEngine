@@ -809,12 +809,23 @@ std::set<std::string> activePartyRoster(const ember::Json& save, const ember::Ov
   const std::vector<std::string> active = world.activeParty(save, test);
   return {active.begin(), active.end()};
 }
+// ... and every hero of the party, active or on the reserve (MapStageOptions::partyMembers: a map's own party takes its heroes from
+// here, MapDraft::partyHeroes).
+std::set<std::string> partyMemberSet(const ember::Json& save, const ember::Overworld& world, bool test) {
+  std::set<std::string> out;
+  for (const char* h : ember::Overworld::kPartyHeroes)
+    if (world.inParty(h, save, test)) out.insert(h);
+  return out;
+}
 
 void setUpExplore(MapStageOptions& options, const ember::Json& save, const ember::Overworld& world, bool test, const ember::InterludeData* interlude = nullptr) {
   std::ifstream in(options.battle, std::ios::binary);
   const ember::Json battle = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
   if (!battle.is_object() || !battle.value("explore", false)) return;
-  if (!(interlude && ember::interludeState(save) == ember::InterludeState::Active)) options.partyRoster = activePartyRoster(save, world, test);
+  if (!(interlude && ember::interludeState(save) == ember::InterludeState::Active)) {
+    options.partyRoster = activePartyRoster(save, world, test);
+    options.partyMembers = partyMemberSet(save, world, test);
+  }
   for (const char* hero : {"Neera", "Voss", "Salazar", "Aldric", "Malrec"})
     if (!test && !world.heroRecruited(hero, save)) options.absentNeutrals.insert(hero);
   if (options.leader.empty() && interlude && ember::interludeState(save) == ember::InterludeState::Active) options.leader = interlude->leader;
@@ -838,6 +849,7 @@ void setUpParty(MapStageOptions& options, const ember::Json& save, const ember::
     options.partyRoster = std::move(roster);
   } else {
     options.partyRoster = activePartyRoster(save, world, !campaign);
+    options.partyMembers = partyMemberSet(save, world, !campaign);
   }
   if (const auto f = save.find("partyFormation"); f != save.end() && f->is_array())
     for (const ember::Json& cell : *f) options.partyFormation.push_back(cell.is_string() ? cell.get<std::string>() : std::string());
@@ -1816,8 +1828,10 @@ int runWindow(const Options& o) {
           setUpParty(options, testSession ? testSession->save : campaign.activeSave(), world, !testSession && !playing.empty(), hasInterlude ? &interlude : nullptr);
         // ... the editor's Testar seats the same party (the user, 2026-11-13: "all maps are meant to follow the party setup"), on the
         // draft's own places
-        if (hasWorld && inEditorTest && !options.partyRoster)
+        if (hasWorld && inEditorTest && !options.partyRoster) {
           options.partyRoster = activePartyRoster(testSession ? testSession->save : campaign.activeSave(), world, testSession.has_value() || playing.empty());
+          options.partyMembers = partyMemberSet(testSession ? testSession->save : campaign.activeSave(), world, testSession.has_value() || playing.empty());
+        }
         options.arrivedFrom = std::exchange(arriveFrom, {});
         options.openingCutscenes = pending->cutscenes;  // the Map Editor's Testar esta cena
         options.preserveKnockouts = std::exchange(preserveKnockouts, false);
