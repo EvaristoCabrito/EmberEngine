@@ -735,10 +735,10 @@
    "newHero": {"name": "Stag", "group": "monster", "sprite": "classic-stag", "reversed": true},
    "cut": "content/sprites/classic-stag/cut.json",
    "why": "the user, 2026-11-13: Stag, a new unit from their videos (Attachments/Classic Animals); Alta + 64 + 36; its cast is its blow (no attack clip); a rank D enemy on Todas as Unidades",
-   "poses": {"idle": "base", "cast": "cast", "walk": "move", "hit": "hit", "death": "death"},
-   "labels": {"idle": "Parado", "cast": "Conjurar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
-   "packs": {"base": "field", "move": "field"},
-   "strides": {"move": 1.0}
+   "poses": {"idle": "base", "cast": "cast", "walk": "move", "hit": "hit", "death": "death", "walkUp": "move-up", "walkDown": "move-down"},
+   "labels": {"idle": "Parado", "cast": "Conjurar", "walk": "Andar", "hit": "Dano", "death": "Morte", "walkUp": "Andar (costas)", "walkDown": "Andar (frente)"},
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"},
+   "strides": {"move": 1.0, "move-up": 1.0, "move-down": 1.0}
   },
   {
    "set": "classic-stag-64-media",
@@ -746,16 +746,16 @@
    "cut": "content/sprites/classic-stag/cut-64-media.json",
    "why": "the Stag's Personagens Média: 64 frames at ~610 px",
    "mediumOf": {"hero": "stag", "set": "classic-stag"},
-   "packs": {"base": "field", "move": "field"}
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
-  {"set": "classic-stag-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "stag", "set": "classic-stag"}, "cut": "content/sprites/classic-stag/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field"}},
+  {"set": "classic-stag-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "stag", "set": "classic-stag"}, "cut": "content/sprites/classic-stag/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}},
   {
    "set": "classic-stag-36-media",
    "version": "media36-v01",
    "cut": "content/sprites/classic-stag/cut-36-media.json",
    "why": "the Stag's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "stag", "set": "classic-stag"},
-   "packs": {"base": "field", "move": "field"}
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
   {
    "set": "classic-boar",
@@ -764,10 +764,10 @@
    "newHero": {"name": "Boar", "group": "monster", "sprite": "classic-boar", "reversed": true},
    "cut": "content/sprites/classic-boar/cut.json",
    "why": "the user, 2026-11-13: Boar, a new unit from their videos (Attachments/Classic Animals); Alta + 64 + 36; its cast is its blow (no attack clip); a rank D enemy on Todas as Unidades",
-   "poses": {"idle": "base", "cast": "cast", "walk": "move", "hit": "hit", "death": "death"},
-   "labels": {"idle": "Parado", "cast": "Conjurar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
-   "packs": {"base": "field", "move": "field"},
-   "strides": {"move": 1.0}
+   "poses": {"idle": "base", "cast": "cast", "walk": "move", "hit": "hit", "death": "death", "walkUp": "move-up", "walkDown": "move-down"},
+   "labels": {"idle": "Parado", "cast": "Conjurar", "walk": "Andar", "hit": "Dano", "death": "Morte", "walkUp": "Andar (costas)", "walkDown": "Andar (frente)"},
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"},
+   "strides": {"move": 1.0, "move-up": 1.0, "move-down": 1.0}
   },
   {
    "set": "classic-boar-64-media",
@@ -775,16 +775,16 @@
    "cut": "content/sprites/classic-boar/cut-64-media.json",
    "why": "the Boar's Personagens Média: 64 frames at ~610 px",
    "mediumOf": {"hero": "boar", "set": "classic-boar"},
-   "packs": {"base": "field", "move": "field"}
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
-  {"set": "classic-boar-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "boar", "set": "classic-boar"}, "cut": "content/sprites/classic-boar/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field"}},
+  {"set": "classic-boar-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "boar", "set": "classic-boar"}, "cut": "content/sprites/classic-boar/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}},
   {
    "set": "classic-boar-36-media",
    "version": "media36-v01",
    "cut": "content/sprites/classic-boar/cut-36-media.json",
    "why": "the Boar's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "boar", "set": "classic-boar"},
-   "packs": {"base": "field", "move": "field"}
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
   {
    "set": "omnieye",
@@ -822,10 +822,10 @@
    "newHero": {"name": "Besouro das Profundezas", "group": "monster", "sprite": "deepground-beetle", "reversed": true},
    "cut": "content/sprites/deepground-beetle/cut.json",
    "why": "the user, 2026-11-14: the DeepGround Beetle, a new unit from two videos (Attachments/Monsters/Horse): idle, attack and cast in three-quarters, walk, hit and death in profile; Alta + 64 + 36; a rank D enemy on Todas as Unidades",
-   "poses": {"idle": "base", "attack": "atk", "cast": "cast", "walk": "move", "hit": "hit", "death": "death"},
-   "labels": {"idle": "Parado", "attack": "Atacar", "cast": "Conjurar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
-   "packs": {"base": "field", "move": "field"},
-   "strides": {"move": 1.0}
+   "poses": {"idle": "base", "attack": "atk", "cast": "cast", "walk": "move", "hit": "hit", "death": "death", "walkUp": "move-up", "walkDown": "move-down"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "cast": "Conjurar", "walk": "Andar", "hit": "Dano", "death": "Morte", "walkUp": "Andar (costas)", "walkDown": "Andar (frente)"},
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"},
+   "strides": {"move": 1.0, "move-up": 1.0, "move-down": 1.0}
   },
   {
    "set": "deepground-beetle-64-media",
@@ -833,16 +833,16 @@
    "cut": "content/sprites/deepground-beetle/cut-64-media.json",
    "why": "the DeepGround Beetle's Personagens Média: 64 frames at ~610 px",
    "mediumOf": {"hero": "deepgroundBeetle", "set": "deepground-beetle"},
-   "packs": {"base": "field", "move": "field"}
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
-  {"set": "deepground-beetle-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "deepgroundBeetle", "set": "deepground-beetle"}, "cut": "content/sprites/deepground-beetle/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field"}},
+  {"set": "deepground-beetle-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "deepgroundBeetle", "set": "deepground-beetle"}, "cut": "content/sprites/deepground-beetle/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}},
   {
    "set": "deepground-beetle-36-media",
    "version": "media36-v02",
    "cut": "content/sprites/deepground-beetle/cut-36-media.json",
    "why": "the DeepGround Beetle's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "deepgroundBeetle", "set": "deepground-beetle"},
-   "packs": {"base": "field", "move": "field"}
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
   {
    "set": "screeching-bat",

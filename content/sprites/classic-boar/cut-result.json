@@ -150,6 +150,72 @@
     "foot": 0.04009
    },
    "pattern": "content/sprites/classic-boar/death-v01/death-{}.png"
+  },
+  "move-up": {
+   "video": "Attachments/Monsters/UpDown/JavaliUpDown.mp4",
+   "first": 0,
+   "last": 119,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/classic-boar/idle-cast 96:118",
+   "loopFirst": 29,
+   "loopLast": 56,
+   "seamSteps": 0.4,
+   "bootRow": 661,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 497.5,
+   "frames": 28,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    273,
+    556
+   ],
+   "crop": [
+    4,
+    6,
+    265,
+    546
+   ],
+   "box": {
+    "w": 0.93286,
+    "h": 1.8999,
+    "foot": 0.04442
+   },
+   "pattern": "content/sprites/classic-boar/move-up-v01/move-up-{}.png"
+  },
+  "move-down": {
+   "video": "Attachments/Monsters/UpDown/JavaliUpDown.mp4",
+   "first": 120,
+   "last": 239,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/classic-boar/idle-cast 96:118",
+   "loopFirst": 202,
+   "loopLast": 229,
+   "seamSteps": 0.36,
+   "bootRow": 663,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 522.5,
+   "frames": 28,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    305,
+    580
+   ],
+   "crop": [
+    4,
+    8,
+    297,
+    568
+   ],
+   "box": {
+    "w": 0.99234,
+    "h": 1.88708,
+    "foot": 0.03904
+   },
+   "pattern": "content/sprites/classic-boar/move-down-v01/move-down-{}.png"
   }
  }
 }

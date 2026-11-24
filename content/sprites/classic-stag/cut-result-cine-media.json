@@ -1,0 +1,70 @@
+{
+ "clips": {
+  "move-up": {
+   "video": "Attachments/Monsters/UpDown/AlceUPDown.mp4",
+   "first": 0,
+   "last": 119,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/classic-stag/idle-cast 104:150",
+   "loopFirst": 2,
+   "loopLast": 42,
+   "seamSteps": 1.26,
+   "bootRow": 680,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 574.0,
+   "frames": 41,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    414,
+    671
+   ],
+   "crop": [
+    4,
+    6,
+    406,
+    661
+   ],
+   "box": {
+    "w": 1.87526,
+    "h": 3.03937,
+    "foot": 0.07247
+   },
+   "pattern": "content/sprites/classic-stag/move-up-cine-v01/move-up-{}.png"
+  },
+  "move-down": {
+   "video": "Attachments/Monsters/UpDown/AlceUPDown.mp4",
+   "first": 120,
+   "last": 239,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/classic-stag/idle-cast 104:150",
+   "loopFirst": 162,
+   "loopLast": 206,
+   "seamSteps": 1.01,
+   "bootRow": 680,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 588.0,
+   "frames": 45,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    440,
+    687
+   ],
+   "crop": [
+    5,
+    5,
+    431,
+    677
+   ],
+   "box": {
+    "w": 1.94558,
+    "h": 3.03776,
+    "foot": 0.08401
+   },
+   "pattern": "content/sprites/classic-stag/move-down-cine-v01/move-down-{}.png"
+  }
+ }
+}
