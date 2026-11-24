@@ -846,7 +846,7 @@
   },
   {
    "set": "screeching-bat",
-   "version": "v01",
+   "version": "r01",
    "hero": "screechingBat",
    "newHero": {"name": "Screeching Bat", "group": "monster", "sprite": "screeching-bat", "reversed": true},
    "cut": "content/sprites/screeching-bat/cut.json",
@@ -858,16 +858,16 @@
   },
   {
    "set": "screeching-bat-64-media",
-   "version": "media64-v01",
+   "version": "media64-r01",
    "cut": "content/sprites/screeching-bat/cut-64-media.json",
    "why": "the Screeching Bat's Personagens Média: 64 frames at ~610 px",
    "mediumOf": {"hero": "screechingBat", "set": "screeching-bat"},
    "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field", "hover-side": "cutscene", "fall-side": "cutscene"}
   },
-  {"set": "screeching-bat-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "screechingBat", "set": "screeching-bat"}, "cut": "content/sprites/screeching-bat/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field", "hover-side": "cutscene", "fall-side": "cutscene"}},
+  {"set": "screeching-bat-cine-media", "version": "cine-r01", "cinemaOf": {"hero": "screechingBat", "set": "screeching-bat"}, "cut": "content/sprites/screeching-bat/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field", "hover-side": "cutscene", "fall-side": "cutscene"}},
   {
    "set": "screeching-bat-36-media",
-   "version": "media36-v01",
+   "version": "media36-r01",
    "cut": "content/sprites/screeching-bat/cut-36-media.json",
    "why": "the Screeching Bat's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "screechingBat", "set": "screeching-bat"},
