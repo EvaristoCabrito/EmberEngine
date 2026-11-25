@@ -304,7 +304,8 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     if (kind == "ignite" && !ignites_.empty()) end = std::max(end, ignites_.back().end());
     if (kind == "iceStorm" && !storms_.empty()) end = std::max(end, storms_.back().start() + 1.0f);  // its first second, not the whole storm
     if (isBolt(kind, look) && !bolts_.empty()) end = std::max(end, bolts_.back().end());
-    if (isLightning(kind, look) && !lightnings_.empty()) end = std::max(end, lightnings_.back().end());
+    if (isLightning(kind, look) && look != 5 && !lightnings_.empty()) end = std::max(end, lightnings_.back().end());
+    if (isLightning(kind, look) && look == 5 && !stormBolts_.empty()) end = std::max(end, stormBolts_.back().end());
     if (kind == "chainLightning" && look == 2 && !chainLightnings_.empty()) end = std::max(end, chainLightnings_.back().end());
     if (kind == "primordialEmber" && look == 2 && !primordialEmbers_.empty()) end = std::max(end, primordialEmbers_.back().end());
     if (isFrost(kind, look) && !frosts_.empty()) end = std::max(end, frosts_.back().end());

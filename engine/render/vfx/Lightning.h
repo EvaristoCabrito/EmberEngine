@@ -12,6 +12,12 @@
 //                dazzling blue-white light dies away.
 //
 // World space (y up). The hit lands at `impact` (the rules' damage, numbers and hit pose land then). Choque is the same at 3/4 size.
+//
+// Relampago 04 (`refined`, 2026-11-25, the user's lightning brief): the same design, struck the way real lightning is. The bolt's
+// path is fractal (midpoint displacement, the offset halved at each level), thick where it leaves the sky and thinner at its foot,
+// its forks branching again, each thinner and dimmer and ending in a point. A thin pre-beam marks the body a moment before; the strike
+// is a faint leader coming down, the bright main stroke, then three re-flashes on the very same path, its brightness jumping on and
+// off, never fading; its light spikes with it; a dim violet-blue trace lingers a split second after; a puff of smoke at the feet.
 
 #include <cstdint>
 #include <vector>
@@ -31,7 +37,8 @@ class Lightning {
   };
   // The caster's feet and card height; the struck bodies (the first bolt falls at `impact`, the next ones 0.05 s apart); the cast
   // gathers from `start`. scale 1 = Relâmpago, 0.75 = Choque.
-  Lightning(glm::vec3 casterFeet, float casterHeight, std::vector<Target> targets, float start, float impact, float scale, uint32_t seed);
+  Lightning(glm::vec3 casterFeet, float casterHeight, std::vector<Target> targets, float start, float impact, float scale, uint32_t seed,
+            bool refined = false);
 
   float end() const { return impact_ + kStagger * static_cast<float>(targets_.size()) + 0.9f; }
   bool done(float now) const { return now >= end(); }
@@ -47,6 +54,7 @@ class Lightning {
   float casterHeight_ = 2.0f, scale_ = 1.0f, start_ = 0.0f, impact_ = 0.0f;
   std::vector<Target> targets_;
   uint32_t seed_ = 0;
+  bool refined_ = false;  // Relampago 04
 };
 
 }  // namespace ember
