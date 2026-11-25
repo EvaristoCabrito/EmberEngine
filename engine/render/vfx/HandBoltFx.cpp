@@ -131,6 +131,8 @@ glm::vec3 onCard(const HandBoltFx::Card& c, glm::vec2 uv) {
 
 }  // namespace
 
+glm::vec3 HandBoltFx::pointOnCard(const Card& card, glm::vec2 uv) { return onCard(card, uv); }
+
 void HandBoltFx::start(int unit, const Track& track, const Card& card, glm::vec3 targetFeet, float targetHeight, float start, float length, float impact,
                        uint32_t seed) {
   if (track.hands.empty()) return;

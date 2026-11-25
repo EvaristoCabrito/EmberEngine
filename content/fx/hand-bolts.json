@@ -1,5 +1,5 @@
 {
- "about": "Bolts that finish what the art's own hands begin (render/vfx/HandBoltFx, MapStage handBoltFor). Per unit (catalog key) and pose: where the glow is on each frame of the pose (full-image uv, u from the left as drawn facing right, v from the top), the frame its charge starts on and the frame it lets go on (1-based), the look. The bolt flies from the release frame's point to the struck body; the blow lands when it arrives. Measured from the frames' blue glow (build/video-cut/apparition-centre).",
+ "about": "Bolts that finish what the art's own hands begin (render/vfx/HandBoltFx, MapStage handBoltFor). Per unit (catalog key) and pose: where the glow is on each frame of the pose (full-image uv, u from the left as drawn facing right, v from the top), the frame its charge starts on and the frame it lets go on (1-based), the look. The bolt flies from the release frame's point to the struck body; the blow lands when it arrives. Measured from the frames' blue glow (build/video-cut/apparition-centre). Look \"arcane\": no track and no arcs of its own; the plain arcane bolt every caster throws (vfx/CombatFx, at the pose's impact) leaves from \"release\", the hand on the frame the pose lets go (\"releaseFrame\", 1-based, of \"frames\"), in place of a point guessed at the chest.",
  "units": {
   "apparition": {
    "pose": "attack",
@@ -250,6 +250,14 @@
      0.235
     ]
    ]
+  },
+  "blackCultist": {
+   "pose": "attack",
+   "look": "arcane",
+   "frames": 36,
+   "releaseFrame": 14,
+   "release": [0.553, 0.238],
+   "why": "the user, 2026-11-25: \"eu preciso de um efeito visual para o ataque do Cultista Negro\": his attack is his cast clip (cut.json impactFrame 13 = cast-14.png, the open hand thrust out); the palm measured on that frame (the centroid of the hand's opaque pixels); the bolt is the casters' plain one, smaller than any spell (the user: \"sem magias exageradas\")"
   },
   "_telesm": {
    "why": "the user, 2026-11-10: Telesm's cast (TelesmMoveand Casting.mp4) throws the cyan version of this bolt; its track goes here, key 'telesm', look 'telesm', once its frames are cut (build/video-cut/telesm)"

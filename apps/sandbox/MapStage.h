@@ -4770,6 +4770,8 @@ class MapStage final : public Stage {
       if (unitBoltCard_.size() <= ui) unitBoltCard_.resize(ui + 1);
       unitBoltCard_[ui] = {anchor, right, cardUp(unitCard_[ui]), boxW, boxH, foot, drift, mirror};
       spellFx_.handBolts().follow(static_cast<int>(ui), unitBoltCard_[ui]);
+      if (ui < unitBoltRelease_.size() && unitBoltRelease_[ui])
+        spellFx_.combat().aimFrom(static_cast<int>(ui), HandBoltFx::pointOnCard(unitBoltCard_[ui], *unitBoltRelease_[ui]), time);
     }
     const glm::vec3 eye = camera.position, fwd = camera.forward;
     std::vector<std::pair<float, uint32_t>> order(drawList_.size());
@@ -9496,7 +9498,9 @@ class MapStage final : public Stage {
     const std::string strikerKey = striker >= 0 && static_cast<size_t>(striker) < unitCatalog_.size() && unitCatalog_[static_cast<size_t>(striker)]
                                        ? unitCatalog_[static_cast<size_t>(striker)]->key : std::string();
     const bool isolde = strikerKey == "isolde";
-    const bool staffCounter = s.type == StepType::Combat && (x.counter || (isolde && s.kind.empty())) && striker >= 0 &&
+    // Every unit with that staff blow strikes with it a foe beside it, its attacks as well as its counters (the user, 2026-11-25: "o ataque de
+    // staff de voss não está wired in the game, talvez no counter de perto mas se seu chegar perto eu quero ataque de staff").
+    const bool staffCounter = s.type == StepType::Combat && (x.counter || s.kind.empty()) && striker >= 0 &&
                               hasPose(static_cast<size_t>(striker), "counterStaff") && strikeBeside(s);
     if (staffCounter) pose = "counterStaff";
     // Theirs is a magical staff hit (the user, 2026-10-25: "think of it a magical staff hit, on malrec's animation it's obvious";
@@ -9677,11 +9681,17 @@ class MapStage final : public Stage {
       x.boltStrength = hero == "voss" || ember ? 0.55f : 1.0f;
       // The Mago Negro's own (Voss, a hero): the arcane energy of vfx/ArcaneFx, small (the user, 2026-11-13: "the black mage regular
       // RANGE ATT is also arcane effect"); every other caster keeps the bolt it had.
+      // His is a lesser blow than his Míssil Mágico: the same energy, every part of it at the plain bolt's strength (the user,
+      // 2026-11-25: "até o ataque do voss é mais fodão que magic missile", "não precisa mudar o efeito preciso ser menor").
       if (hero == "voss")
-        spellFx_.arcaneAttack(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), now_, release, x.impact);
+        spellFx_.arcaneAttack(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), now_, release, x.impact, x.boltStrength);
       else
         spellFx_.combat().bolt(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), now_, release, x.impact, CombatPalette::of(x.element.c_str()),
-                               x.boltStrength, ember ? CombatFx::BoltLook::Ember : CombatFx::BoltLook::Arcane);
+                               x.boltStrength, ember ? CombatFx::BoltLook::Ember : CombatFx::BoltLook::Arcane, striker);
+      // A pose whose art shows where the bolt leaves (content/fx/hand-bolts.json, look "arcane": the Cultista Negro's open hand): the
+      // bolt leaves from there, followed on the card as drawn until it lets go (addCard's aimFrom).
+      if (unitBoltRelease_.size() <= su) unitBoltRelease_.resize(su + 1);
+      unitBoltRelease_[su] = boltReleaseFor(hero, pose);
     }
     // A bow's plain attack or counter shoots the arrow Tiro Longo already flies (SpellEffects::arrow), landing on the hit.
     x.arrow = !x.bolt && striker >= 0 && target >= 0 && strikeIsArrow(s, x.counter);
@@ -10416,6 +10426,25 @@ class MapStage final : public Stage {
     }();
     const auto it = tracks.find(key);
     return it != tracks.end() && it->second.first == pose ? &it->second.second : nullptr;
+  }
+  // Where a pose's art lets the plain arcane bolt go (content/fx/hand-bolts.json, look "arcane": the hand on its release frame, uv as
+  // drawn facing right); none: the bolt leaves from the chest (CombatFx::bolt).
+  static std::optional<glm::vec2> boltReleaseFor(const std::string& key, const std::string& pose) {
+    static const std::unordered_map<std::string, std::pair<std::string, glm::vec2>> points = [] {
+      std::unordered_map<std::string, std::pair<std::string, glm::vec2>> out;
+      std::ifstream in("content/fx/hand-bolts.json", std::ios::binary);
+      const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+      if (!j.is_object() || !j.contains("units") || !j["units"].is_object()) return out;
+      for (const auto& [k, v] : j["units"].items()) {
+        if (!v.is_object() || v.value("look", std::string()) != "arcane" || !v.contains("pose") || !v.contains("release")) continue;
+        const nlohmann::json& r = v["release"];
+        if (r.is_array() && r.size() == 2) out[k] = {v["pose"].get<std::string>(), {r[0].get<float>(), r[1].get<float>()}};
+      }
+      return out;
+    }();
+    const auto it = points.find(key);
+    if (it == points.end() || it->second.first != pose) return std::nullopt;
+    return it->second.second;
   }
   // A spot's card height (a hex with nobody on it: a body's, from its body point).
   // content/unit-size.json: {"sizes": {"<catalog key>": factor}}; 1 for everyone else.
@@ -11587,7 +11616,7 @@ class MapStage final : public Stage {
     if (kind == "arcaneAttack") {
       const float release = start + 0.45f;
       impact = release + CombatFx::flightSeconds(from.feet, to.feet);
-      spellFx_.arcaneAttack(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), start, release, impact);
+      spellFx_.arcaneAttack(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), start, release, impact, 0.55f);  // Voss's strength in play
       logInfo("fx test: Arcano bolt released at {:.2f} s, lands at {:.2f} s", release, impact);
     } else {
       spellFx_.combat().impact(kind == "hitHeavy" ? CombatFx::Kind::Heavy : kind == "slash" ? CombatFx::Kind::Slash : kind == "thrust" ? CombatFx::Kind::Thrust
@@ -15984,6 +16013,7 @@ class MapStage final : public Stage {
   };
   std::vector<CardRect> unitCard_;
   std::vector<HandBoltFx::Card> unitBoltCard_;  // each unit's card as drawn last frame, for a bolt leaving its hands (HandBoltFx)
+  std::vector<std::optional<glm::vec2>> unitBoltRelease_;  // where each unit's last plain bolt leaves its art (boltReleaseFor), if known
   bool offHandMode_ = false;         // "Mão Secundária" armed: the off-hand weapon is the one that strikes
   std::map<size_t, ember::Json> npcDialog_;      // battle unit -> its conversation (findConversations)
   int talkAfterWalk_ = -1;                     // the NPC the leader is walking up to, to talk once there

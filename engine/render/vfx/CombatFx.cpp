@@ -182,7 +182,7 @@ float CombatFx::flightSeconds(glm::vec3 fromFeet, glm::vec3 toFeet) {
 }
 
 void CombatFx::bolt(glm::vec3 casterFeet, float casterHeight, glm::vec3 targetFeet, float targetHeight, float start, float release, float impact,
-                    const CombatPalette& palette, float strength, BoltLook look) {
+                    const CombatPalette& palette, float strength, BoltLook look, int unit) {
   casterHeight = std::clamp(casterHeight, 1.0f, 4.0f), targetHeight = std::clamp(targetHeight, 1.0f, 4.0f);
   const glm::vec3 dir = flatDir(targetFeet - casterFeet, glm::vec3(0.0f, 0.0f, 1.0f));
   Bolt b;
@@ -195,7 +195,13 @@ void CombatFx::bolt(glm::vec3 casterFeet, float casterHeight, glm::vec3 targetFe
   b.seed = 0xb017u + 104729u * ++serial_;
   b.strength = std::clamp(strength, 0.1f, 1.0f);
   b.look = look;
+  b.unit = unit;
   bolts_.push_back(b);
+}
+
+void CombatFx::aimFrom(int unit, glm::vec3 hand, float now) {
+  for (Bolt& b : bolts_)
+    if (b.unit == unit && unit >= 0 && now < b.release) b.hand = hand;
 }
 
 float CombatFx::Bolt::progress(float now) const {

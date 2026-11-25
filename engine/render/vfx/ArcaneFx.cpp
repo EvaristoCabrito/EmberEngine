@@ -151,30 +151,30 @@ void ArcaneSpell::build(float now, const Camera& camera, VfxFrame& frame, std::v
       p.sigil(facing(hand_, direction_), 1.4f * S * easeOut(0.0f, 0.4f, age / gather), age * 1.6f, 4.0f, pull, false);
       for (uint32_t i = 0; i < 26; ++i) {
         const float q = std::fmod(age / gather * (1.2f + 0.8f * hash01(seed_, i + 10)) + hash01(seed_, i + 40), 1.0f) * (1.0f - stall);
-        const float a = hash01(seed_, i + 70) * kTau + q * 7.0f, r = 1.6f * (1.0f - q) * (1.0f - q);
+        const float a = hash01(seed_, i + 70) * kTau + q * 7.0f, r = 1.6f * S * (1.0f - q) * (1.0f - q);
         const glm::mat4 f = facing(hand_, direction_);
-        specks.push_back(blob(glm::vec3(f * glm::vec4(std::cos(a) * r, -0.6f * (1.0f - q), std::sin(a) * r, 1.0f)), 0.12f, pull * ease(0.0f, 0.2f, q), hash01(seed_, i + 100)));
+        specks.push_back(blob(glm::vec3(f * glm::vec4(std::cos(a) * r, -0.6f * S * (1.0f - q), std::sin(a) * r, 1.0f)), 0.12f * S, pull * ease(0.0f, 0.2f, q), hash01(seed_, i + 100)));
       }
       energy.push_back(blob(hand_, (0.7f + 1.5f * pull - 0.4f * stall) * S, pull, s0, 1.0f + 0.8f * stall));
-      lights.push_back({hand_, kArcaneLight, 2.0f + 7.0f * pull, 3.5f});
+      lights.push_back({hand_, kArcaneLight, (2.0f + 7.0f * pull) * S, 3.5f * S});
     } else if (now < impact_) {
       // The flight: the core on a tight spiral, wisps in orbit round it, threads snapping off behind it.
       const float flight = impact_ - release_, q = (now - release_) / flight;
       const glm::vec3 side = glm::normalize(glm::cross(direction_, kUp)), lift = glm::cross(side, direction_);
-      auto path = [&](float t) { return glm::mix(hand_, chest_, t) + (side * std::cos(t * 15.0f + s0) + lift * std::sin(t * 15.0f + s0)) * (0.3f * std::sin(kPi * t)); };
+      auto path = [&](float t) { return glm::mix(hand_, chest_, t) + (side * std::cos(t * 15.0f + s0) + lift * std::sin(t * 15.0f + s0)) * (0.3f * S * std::sin(kPi * t)); };
       const glm::vec3 at = path(q);
       energy.push_back(blob(at, 2.4f * S, 1.0f, s0, 1.6f));
       for (uint32_t i = 0; i < 9; ++i) {
         const float a = age * 9.0f + static_cast<float>(i) * kTau / 9.0f, back = 0.15f * static_cast<float>(i);
-        const glm::vec3 c = path(std::max(q - back / std::max(glm::length(chest_ - hand_), 1.0f), 0.0f));
-        specks.push_back(blob(c + (side * std::cos(a) + lift * std::sin(a)) * 0.45f, 0.16f - 0.01f * static_cast<float>(i), 1.0f - back / 1.5f, hash01(seed_, i + 130)));
+        const glm::vec3 c = path(std::max(q - back * S / std::max(glm::length(chest_ - hand_), 1.0f), 0.0f));
+        specks.push_back(blob(c + (side * std::cos(a) + lift * std::sin(a)) * (0.45f * S), (0.16f - 0.01f * static_cast<float>(i)) * S, 1.0f - back / 1.5f, hash01(seed_, i + 130)));
       }
       for (uint32_t i = 0; i < 3; ++i) {
-        const float back = 0.4f + 1.4f * hash01(tick, i + 160);
-        const glm::vec3 to = at - direction_ * back + (side * (hash01(tick, i + 190) - 0.5f) + lift * (hash01(tick, i + 220) - 0.5f)) * 1.4f;
+        const float back = (0.4f + 1.4f * hash01(tick, i + 160)) * S;
+        const glm::vec3 to = at - direction_ * back + (side * (hash01(tick, i + 190) - 0.5f) + lift * (hash01(tick, i + 220) - 0.5f)) * (1.4f * S);
         p.thread(at, to, 0.6f * S, 0.9f, hash01(tick, i + 250) * 9.0f);
       }
-      lights.push_back({at, kArcaneLight, 9.0f, 4.5f});
+      lights.push_back({at, kArcaneLight, 9.0f * S, 4.5f * S});
     }
     // the sigil it left stays a moment and fades
     if (now >= release_ && now < release_ + 0.3f) p.sigil(facing(hand_, direction_), (1.4f + 0.8f * (now - release_) / 0.3f) * S, age * 1.6f, 4.0f, 1.0f - (now - release_) / 0.3f, false);
@@ -205,16 +205,16 @@ void ArcaneSpell::build(float now, const Camera& camera, VfxFrame& frame, std::v
     const glm::mat4 ground = glm::translate(glm::mat4(1.0f), feet_ + kUp * 0.05f);
     p.sigil(ground, ((fold ? 3.0f : 0.8f) + 2.6f * easeOut(0.0f, 0.35f, since)) * S, age * 1.2f, 5.0f, 1.0f - ease(0.5f, 1.4f, since), true);
     for (uint32_t i = 0; i < 30; ++i) {  // the runes scattering: flung out low, each stopping dead
-      const float a = hash01(seed_, i + 300) * kTau, far = 1.0f + 2.4f * hash01(seed_, i + 330);
-      specks.push_back(blob(feet_ + glm::vec3(std::cos(a), 0.0f, std::sin(a)) * (far * easeOut(0.0f, 0.3f, since)) + kUp * (0.1f + 0.5f * hash01(seed_, i + 360)), 0.14f, 1.0f - k,
+      const float a = hash01(seed_, i + 300) * kTau, far = (1.0f + 2.4f * hash01(seed_, i + 330)) * S;
+      specks.push_back(blob(feet_ + glm::vec3(std::cos(a), 0.0f, std::sin(a)) * (far * easeOut(0.0f, 0.3f, since)) + kUp * ((0.1f + 0.5f * hash01(seed_, i + 360)) * S), 0.14f * S, 1.0f - k,
                             hash01(seed_, i + 390)));
     }
     if (since < 0.35f)
       for (uint32_t i = 0; i < 4; ++i) {
         const float a = hash01(tick, i + 420) * kTau;
-        p.thread(chest_, chest_ + glm::vec3(std::cos(a) * 2.4f * S, (hash01(tick, i + 450) - 0.3f) * 1.8f, std::sin(a) * 2.4f * S), 0.55f * S, 1.0f - since / 0.35f, hash01(tick, i + 480) * 9.0f);
+        p.thread(chest_, chest_ + glm::vec3(std::cos(a) * 2.4f * S, (hash01(tick, i + 450) - 0.3f) * 1.8f * S, std::sin(a) * 2.4f * S), 0.55f * S, 1.0f - since / 0.35f, hash01(tick, i + 480) * 9.0f);
       }
-    lights.push_back({chest_, kArcaneLight, 22.0f * std::exp(-since * 8.0f) + 2.0f * (1.0f - k), 6.0f});
+    lights.push_back({chest_, kArcaneLight, (22.0f * std::exp(-since * 8.0f) + 2.0f * (1.0f - k)) * S, 6.0f * S});
   }
 
   p.arcane(kEnergy, p.quad, 6, 1.0f, 1.0f, s0, &energy);

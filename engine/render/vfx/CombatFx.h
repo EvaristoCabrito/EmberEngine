@@ -70,8 +70,12 @@ class CombatFx {
   float impact(Kind kind, glm::vec3 feet, float height, glm::vec3 from, float at, const CombatPalette& palette = {}, float strength = 1.0f);
   // The Arcano bolt: the caster's pose starts at `start`, it lets go at `release`, the bolt lands at `impact` (the
   // stage asks flightSeconds for it).
+  // `unit`: the caster's scene unit, for aimFrom.
   void bolt(glm::vec3 casterFeet, float casterHeight, glm::vec3 targetFeet, float targetHeight, float start, float release, float impact,
-            const CombatPalette& palette = {}, float strength = 1.0f, BoltLook look = BoltLook::Arcane);
+            const CombatPalette& palette = {}, float strength = 1.0f, BoltLook look = BoltLook::Arcane, int unit = -1);
+  // Where the caster's art lets the bolt go this frame (its hand on the card as drawn, content/fx/hand-bolts.json "release"): the
+  // bolts of `unit` not yet let go leave from there.
+  void aimFrom(int unit, glm::vec3 hand, float now);
   // Seconds the bolt flies between two units (accelerating: slower at short range than a constant speed would be).
   static float flightSeconds(glm::vec3 fromFeet, glm::vec3 toFeet);
 
@@ -101,6 +105,7 @@ class CombatFx {
     uint32_t seed;
     float strength = 1.0f;
     BoltLook look = BoltLook::Arcane;
+    int unit = -1;
     float end() const { return impact + (look == BoltLook::Ember ? 1.0f : 0.65f); }  // its embers (an ember bolt's smoke) outlive it
     glm::vec3 at(float s) const;  // the path, s 0..1 (hand -> target)
     float progress(float now) const;  // 0..1 along the path (accelerating)

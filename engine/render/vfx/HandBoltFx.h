@@ -40,6 +40,8 @@ class HandBoltFx {
     std::vector<glm::vec2> hands;
     int chargeFrame = 1, releaseFrame = 1;
   };
+  // A point of the art (full-image uv as drawn facing right, v from the top) on the card as drawn.
+  static glm::vec3 pointOnCard(const Card& card, glm::vec2 uv);
   // Seconds from the release to the bolt reaching the body.
   static constexpr float kFlight = 0.1f;
   // How far into the pose the bolt lets go (a share of its length).
