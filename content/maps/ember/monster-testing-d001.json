@@ -1,12 +1,12 @@
 {
   "serial": 1,
-  "savedAt": 1795636543428,
+  "savedAt": 1795639568130,
   "draft": {
     "id": "monster-testing-d",
     "index": 0,
-    "title": "Monster Testing 4 · Guardas e clérigos",
+    "title": "Monster Testing 4 · Monstros",
     "place": "",
-    "briefing": "Os guardas, cavaleiros e clérigos que não estão em nenhum mapa de teste.",
+    "briefing": "Os monstros de verdade em teste agora (o usuário, 2026-11-25: \"make monster testing 4 contain actual monsters for testing no junk units\"): os dois Birolhos, o Troll da caverna, o Big Blue Ox, o Cogumelo de Brasa, o Besouro das Profundezas, a Vanguarda de Brasa e o Cavalo.",
     "objective": "Ver cada unidade andar, atacar, levar dano e cair",
     "win": "rout",
     "hub": false,
@@ -7259,64 +7259,64 @@
     ],
     "enemySpawns": [
       {
-        "name": "Sentinela",
-        "classId": "sentinel",
+        "name": "Birolho Legs",
+        "classId": "birolhoLegs",
         "x": 12,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Templário",
-        "classId": "templar",
+        "name": "Birolho",
+        "classId": "birolhoLegs2",
         "x": 16,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Cavaleiro Pesado",
-        "classId": "heavyKnight",
+        "name": "Troll da caverna",
+        "classId": "troll",
         "x": 20,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Paladino",
-        "classId": "paladin",
+        "name": "Big Blue Ox",
+        "classId": "bigBlueCalf",
         "x": 24,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Curandeiro",
-        "classId": "healer",
+        "name": "Cogumelo de Brasa",
+        "classId": "emberMushroom",
         "x": 12,
         "y": 31,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Clérigo",
-        "classId": "cleric",
+        "name": "Besouro das Profundezas",
+        "classId": "deepgroundBeetle",
         "x": 16,
         "y": 31,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Bispo",
-        "classId": "bishop",
+        "name": "Vanguarda de Brasa",
+        "classId": "emberedVanguard",
         "x": 20,
         "y": 31,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Elementalista",
-        "classId": "elementalist",
+        "name": "Horse",
+        "classId": "horse",
         "x": 24,
         "y": 31,
         "level": 15,
