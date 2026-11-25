@@ -8192,7 +8192,7 @@ class MapStage final : public Stage {
         ember::BattleUnit& xu = battle_->units()[static_cast<size_t>(unitBattle_[*ui])];
         if (xu.side == "player") return fail("a party hero cannot leave the board by a scene");
         unitWalk_[*ui] = Walk{};
-        unitShot_[*ui] = {"death", now_, true, actionRate()};
+        unitShot_[*ui] = {"death", now_, true, kClipRate};
         unitDiedAt_[*ui] = now_;
         xu.alive = false, xu.hp = 0;
         absent_.insert(xu.id), offstage_.insert(xu.id);
@@ -9059,8 +9059,8 @@ class MapStage final : public Stage {
           const size_t vs = static_cast<size_t>(vu);
           const std::string pose = hasPose(vs, "specialAttack") ? "specialAttack" : "attack";
           const float at = now_ + stepSeconds() * static_cast<float>(route.size() - 1);
-          unitShot_[vs] = {pose, at, false, actionRate()};
-          const float lands = at + poseSeconds(vs, pose) * poseImpact(vs, pose) / actionRate();
+          unitShot_[vs] = {pose, at, false, kClipRate};
+          const float lands = at + poseSeconds(vs, pose) * poseImpact(vs, pose) / kClipRate;
           const SpellEffects::Spot hit = hexSpot(route.back());
           const float height = cardHeightOf(unitSpot(ui));
           spellFx_.combat().impact(CombatFx::Kind::HeavySlash, hit.feet, height, unitWorld(vs), lands);
@@ -9153,7 +9153,7 @@ class MapStage final : public Stage {
     std::string pose;
     float start = 0.0f;
     bool hold = false;   // keeps its last frame (death)
-    float rate = 1.0f;   // its pace (Velocidade)
+    float rate = 1.0f;   // its pace: kClipRate, every clip at its video's own speed
     float until = -1.0f; // >= 0: held until this time instead of its own length (a still)
     std::string then;    // played next, as this one ends, until `thenUntil` (the cast pose, then its back still)
     float thenUntil = -1.0f;
@@ -9522,7 +9522,7 @@ class MapStage final : public Stage {
     };
     // Turned away to cast (the user, 2026-11-13: "use that turn around for casting and experiment with the illusion of depth"): such a
     // spell aimed into the board, by a caster with a turn of its own (turnBack, from the turn-around videos) and a back still, plays the
-    // turn in place of its cast pose, quick (kTurnCastSeconds); the spell then leaves its hands with its back to us and flies into the
+    // turn in place of its cast pose, at its video's own speed like every clip; the spell then leaves its hands with its back to us and flies into the
     // depth of the board, its back still held, drawn over the effect, until the spell is over (shot.then below).
     bool missileAimedAway = false;
     if (isMissile && striker >= 0) {
@@ -9535,7 +9535,7 @@ class MapStage final : public Stage {
       missileAimedAway = !flat_ && hasPose(static_cast<size_t>(striker), "turnBack") && hasPose(static_cast<size_t>(striker), "castBack") && aimedAway(aim0);
     }
     bool turnToCast = false;
-    float poseRate = actionRate();
+    const float poseRate = kClipRate;
     if (striker >= 0 && !x.counter && fromHands && !flat_ && s.type != StepType::Combat && !pose.empty() &&
         hasPose(static_cast<size_t>(striker), "turnBack") && hasPose(static_cast<size_t>(striker), "castBack")) {
       std::vector<SpellEffects::Spot> aim;
@@ -9546,7 +9546,6 @@ class MapStage final : public Stage {
           if (missileIndex == 0) {
             turnToCast = true;
             pose = "turnBack";
-            poseRate = actionRate() * std::max(1.0f, poseSeconds(static_cast<size_t>(striker), pose) / kTurnCastSeconds);
           } else {
             turnToCast = false;
             pose = "castBack";
@@ -9555,7 +9554,6 @@ class MapStage final : public Stage {
       } else if (aimedAway(aim)) {
         turnToCast = true;
         pose = "turnBack";
-        poseRate = actionRate() * std::max(1.0f, poseSeconds(static_cast<size_t>(striker), pose) / kTurnCastSeconds);
       }
     }
     const float length = (isMissile && missileAimedAway && missileIndex > 0)
@@ -9565,7 +9563,7 @@ class MapStage final : public Stage {
     x.end = now_ + length + kExchangeGap / actionRate();
     if (comboStep) {
       const size_t su = static_cast<size_t>(striker);
-      if (comboIndex == 0 || x.comboStart < 0.0f) x.comboStart = now_, x.comboLength = poseSeconds(su, "doubleStrike") / actionRate();
+      if (comboIndex == 0 || x.comboStart < 0.0f) x.comboStart = now_, x.comboLength = poseSeconds(su, "doubleStrike") / kClipRate;
       // the overhead cut at the clip's own impact (its cut.json impactFrame), the low sweep at 66 % (frame ~42 of 64)
       const float first = poseImpact(su, "doubleStrike"), last = std::max(first, 0.66f);
       const float share = comboCount <= 1 ? first : first + (last - first) * static_cast<float>(comboIndex) / static_cast<float>(comboCount - 1);
@@ -9693,14 +9691,14 @@ class MapStage final : public Stage {
       const SpellEffects::Spot from = unitSpot(static_cast<size_t>(striker)), to = unitSpot(static_cast<size_t>(target));
       if (const std::optional<float> release = arrowRelease(static_cast<size_t>(striker), pose)) {
         const float flight = std::clamp(glm::length(to.body - from.body) / 22.0f, 0.12f, 0.4f);
-        x.impact = now_ + *release / actionRate() + flight;
+        x.impact = now_ + *release / kClipRate + flight;
         x.end = std::max(x.end, x.impact + 0.5f + kExchangeGap / actionRate());
         // Neera's bow (the user, 2026-10-22, with her new attack): Bow2-Balanced-High at the release, in place of her old cue
         ember::Json cues = neeraBow(static_cast<size_t>(striker))
                             ? ember::Json::array({{{"file", "Bow2-Balanced-High.mp3"}, {"volume", 0.55}, {"offset", 0}, {"delay", 0}, {"exclusive", true}}})
                             : sounds(x.counter ? s.def : s.att, "release");
         if (cues.is_array())
-          for (ember::Json& c : cues) c["delay"] = c.value("delay", 0.0f) + *release / actionRate();
+          for (ember::Json& c : cues) c["delay"] = c.value("delay", 0.0f) + *release / kClipRate;
         playCues(cues);
       }
       spellFx_.cast("plainShot", std::max(spellLook("longShot", static_cast<size_t>(striker)), 1), unitSpot(static_cast<size_t>(striker)),
@@ -10490,7 +10488,7 @@ class MapStage final : public Stage {
       const SpellEffects::Spot me = unitSpot(static_cast<size_t>(hero_)), them = unitSpot(target);
       const float start = static_cast<float>(cycle) * kFxTestCycle;
       logInfo("fx test: kael {} at {:.1f} s", kind, start);
-      if (hasPose(static_cast<size_t>(hero_), "specialAttack")) unitShot_[static_cast<size_t>(hero_)] = {"specialAttack", start, false, actionRate()};
+      if (hasPose(static_cast<size_t>(hero_), "specialAttack")) unitShot_[static_cast<size_t>(hero_)] = {"specialAttack", start, false, kClipRate};
       if (kind == "riposte") spellFx_.vanguard().riposte({me.feet, me.cardHeight}, {them.feet, them.cardHeight}, start + 0.6f);
       else spellFx_.cast(kind, 1, me, {them}, start, start + 0.6f, static_cast<int>(hero_));
       if (kind == "crushAgainstStone") spellFx_.vanguard().stone({them.feet, them.cardHeight}, them.feet - me.feet, start + 0.7f);
@@ -11691,7 +11689,7 @@ class MapStage final : public Stage {
       if (!e.died || sounds(e.unit, "hitOnDeath") != ember::Json(false)) playCues(sounds(e.unit, "hit"));
       if (e.died) playCues(sounds(e.unit, "death"));
       if (e.died) {
-        unitShot_[u] = {"death", now_, true, actionRate()};
+        unitShot_[u] = {"death", now_, true, kClipRate};
         unitDiedAt_[u] = now_;
       } else {
         // A second hit in a row (Golpe Duplo's second blow, a spell's next missile): it comes from the same action as the one
@@ -11704,11 +11702,11 @@ class MapStage final : public Stage {
         const bool sameAction = action >= 0 && u < unitHitAction_.size() && unitHitAction_[u] == action;
         if ((reacting || sameAction) && hasPose(u, "hit2")) {
           if (!(reacting && was.pose == "hit2")) {
-            unitShot_[u] = {"hit2", now_, false, actionRate()};
+            unitShot_[u] = {"hit2", now_, false, kClipRate};
             logInfo("{}: second hit in a row: pose hit2", battle_->units()[e.unit].name);
           }
         } else {
-          unitShot_[u] = {"hit", now_, false, actionRate()};
+          unitShot_[u] = {"hit", now_, false, kClipRate};
         }
         if (u < unitHitAction_.size()) unitHitAction_[u] = action;
       }
@@ -16213,7 +16211,9 @@ class MapStage final : public Stage {
   ember::Mulberry32 rng_{1};
   static constexpr float kImpactShare = 0.55f;   // a strike lands this far into the attack pose
   static constexpr float kExchangeGap = 0.15f;   // a breath between the strike and the counter
-  static constexpr float kTurnCastSeconds = 1.1f;  // a caster turning away to cast into the board (turnToCast): its turn, sped up to this
+  // Every unit clip (idle, attack, cast, hit, death, turn, emote) plays at its video's own speed, at every Velocidade (the user,
+  // 2026-11-25: "not all animations get the same speed ... slow fast slower faster on the same unit"); Velocidade paces the rest.
+  static constexpr float kClipRate = 1.0f;
   static constexpr float kCorpseSeconds = 1.5f;  // the fallen lie this long after their death pose
   static constexpr float kEnterSeconds = 0.8f;   // a cutscene's "enter": the card's fade-in
   static constexpr size_t kTalkEvery = 5;        // a spoken line: one in this many opens with its speaker's own voice cue
