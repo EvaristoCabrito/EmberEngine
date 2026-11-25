@@ -436,23 +436,15 @@ void drawGather(const Pen& pen, glm::vec3 feet, glm::vec3 handAt, float k, float
     const float far = (0.9f + 0.6f * hash01(seed, turn, 10)) * k * (1.0f - u) * (1.0f - u);
     streaks.push_back(streak(hand + d * (far + 0.05f * k), -d * (0.12f * k * (1.0f - u) + 0.01f), 0.02f * k, u * f * fade, kEnergy, 2.4f));
   }
-  // Two small bolts leaving the hand, upward and out: each a tree of its own with forks, drawn as the great bolt is (a soft glow, a
-  // shell, a white-hot core), a new one every 0.05 s. Never hairlines, never a line down to the ground (the user, 2026-11-25: the thin
-  // arcs read as a wretched little bolt striking the caster).
-  const float burn = (0.35f + 0.65f * f) * fade;
-  for (uint32_t a = 0; a < 2; ++a) {
-    const uint32_t key = a + shape * 2u;
-    glm::vec3 d = sphereDir(hash01(seed, key, 11), hash01(seed, key, 12));
-    d.y = std::abs(d.y) * 0.6f + 0.55f;
-    d = glm::normalize(d);
-    std::vector<BoltLimb> limbs;
-    growTree(limbs, handAt, handAt + d * (0.9f + 0.8f * f) * k, 4, 0, 0.0f, 0.0f, seed + key * 131u, 0.6f * k);
-    drawTree(pen, limbs, 0, 0.1f * k, 1.2f, 0.16f * burn, kEnergy, kEnergy, 3.0f, handAt);
-    drawTree(pen, limbs, 0, 0.045f * k, 1.9f, 0.55f * burn, kEnergy, kCore, 3.0f, handAt);
-    drawTree(pen, limbs, 0, 0.02f * k, 5.6f, burn, kEnergy, kCore, 3.0f, handAt);
-    drawTree(pen, limbs, 1, 0.028f * k, 1.4f, 0.4f * burn, kEnergy, kCore, 3.0f, handAt);
-    drawTree(pen, limbs, 1, 0.011f * k, 3.8f, 0.85f * burn, kEnergy, kCore, 3.0f, handAt);
+  // Three short arcs jumping off the hand, a new shape every 0.05 s: as in the picture the user chose (2026-11-25). No line from
+  // the hand down to the ground, no larger bolts here.
+  std::vector<VfxVertex> v;
+  for (uint32_t a = 0; a < 3; ++a) {
+    const uint32_t key = a + shape * 3u;
+    const glm::vec3 d = glm::normalize(sphereDir(hash01(seed, key, 11), hash01(seed, key, 12)) + kUp * 0.4f);
+    ribbon(v, arcLine(fractalLine(handAt, handAt + d * (0.45f + 0.55f * f) * k, 3, 0.2f, seed + key * 131u), 1.0f, 0.0f), 0.012f * k, pen.eye, kPull);
   }
+  pen.draw(pen.frame.addVertices(v), v.size(), glm::mat4(1.0f), kLightning, 3.2f, (0.35f + 0.65f * f) * fade, kEnergy, glm::vec4(kCore, 3.0f), handAt);
   pen.lights.push_back({handAt, kLight, (4.0f + 12.0f * f) * (0.75f + 0.25f * hash01(seed, shape, 14)) * fade, 3.5f * k});
 }
 void drawStreaks(const Pen& pen, const std::vector<VfxInstance>& streaks, glm::vec3 sight) {
