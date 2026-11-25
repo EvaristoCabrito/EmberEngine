@@ -12,6 +12,8 @@ unidade (herói, monstro, animal, invocação), em Alta, 64, 36 e Cinemática.
   um pedaço "de emenda mais limpa": toca tudo.
 - Proibido: `loopMin`/`loopMax` em qualquer spec, laço curto, sugerir laço menor, encurtar o trecho para a emenda ficar melhor.
 - Laço curto encontrado no jogo: recortar com o maior laço e avisar o usuário.
+- **Trava na ferramenta (2026-11-25, o usuário: "salve esse padrão, nunca mais regredir"):** `tools/scripts/sprites/video_sprite.py`
+  recusa qualquer spec que ainda tenha `loopMin`/`loopMax` nos clipes a cortar, antes de gravar um quadro. Ninguém tira essa trava.
 
 ## REGRA PERMANENTE: modo de teste = mesmo jogo, só recursos infinitos
 Ler antes de tocar em qualquer código do jogo. Vale para todo agente de código (Claude, Codex, Cursor, Copilot, qualquer outro).

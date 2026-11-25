@@ -357,6 +357,14 @@ def main():
     except ValueError:
         result = {"clips": {}}
 
+    # REGRA MÁXIMA (AGENTS.md, the user, 2026-11-25: "quero que salve esse padrão, nunca mais regredir"): every loop plays its whole
+    # stretch, first..last. A loop range (loopMin / loopMax) let the cut pick a short piece of the video; any spec that still has one is
+    # refused here, before a single frame is written, whoever wrote it. Take the keys out of the spec: the whole stretch is the loop.
+    short = [c["clip"] for c in spec["clips"] if (not only or c["clip"] in only) and ("loopMin" in c or "loopMax" in c)]
+    if short:
+        raise SystemExit(f"{os.path.basename(spec_path)}: loopMin / loopMax in {', '.join(short)}: proibido (REGRA MÁXIMA, AGENTS.md). "
+                 "Todo laço é o trecho inteiro do vídeo: tire loopMin e loopMax do spec e corte de novo.")
+
     for c in spec["clips"]:
         if only and c["clip"] not in only:
             continue
