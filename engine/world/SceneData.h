@@ -117,6 +117,9 @@ struct HeroPose {
   // A cutscene-only pose (an emote; the user, 2026-11-12: "This emote will not load during combat, only during cutscenes"): cooked
   // in the "cutscene" pack, never pinned with a fight's characters, streamed in by a cutscene whose "pose" steps play it.
   bool cutscene = false;
+  // Played once, whole, each time this pose ends as a one-shot, before the idle comes back (the roster's "then": a skill that ends
+  // with the limbs open is followed by the unit's "fold"; docs/SPRITE_STANDARD.md "Abrir / fechar"). Empty = none.
+  std::string then;
   // Poses Ember holds on their hex (units/catalog.ts centerBody): per frame, how far right of frame 1 the body sits, as a
   // share of the pose's width (tools/scripts/data/measure_body_shift.py); empty = the pose plays as drawn.
   std::vector<float> bodyShift;

@@ -197,6 +197,7 @@ std::optional<std::vector<Hero>> loadHeroes(const std::filesystem::path& heroesJ
       q.lightStep = static_cast<int>(num(p, "lightStep", 0));
       if (p.contains("cinema") && p["cinema"].is_string()) q.cinema = p["cinema"].get<std::string>();
       q.cutscene = flag(p, "cutscene");
+      if (p.contains("then") && p["then"].is_string()) q.then = p["then"].get<std::string>();
       if (strides.is_object()) {
         const auto it = strides.find(q.set + "/" + q.clip);
         if (it != strides.end() && it->is_number()) q.strides = it->get<float>();
