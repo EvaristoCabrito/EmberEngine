@@ -7,10 +7,10 @@ unidade (herói, monstro, animal, invocação), em Alta, 64, 36 e Cinemática.
 
 - Toda animação usa o vídeo inteiro dela, cada quadro, do primeiro ao último (num vídeo com duas animações, cada uma o trecho inteiro
   dela). Nunca um pedaço.
-- Todo laço (andar, parada, pairar, qualquer pose em `loop`) é o **maior possível**: `loopMin` = `loopMax` = os quadros do trecho
-  (`last` − `first` + 1) menos 3 (os 3 quadros que o `video_sprite.py` compara na emenda). O corte não escolhe um pedaço "de emenda
-  mais limpa": toca tudo.
-- Proibido: `loopMin`/`loopMax` menores que isso, laço curto, sugerir laço menor, encurtar o trecho para a emenda ficar melhor.
+- Todo laço (andar, parada, pairar, qualquer pose em `loop`) é o **maior possível: o trecho inteiro**. No spec, a pose em `loop` não
+  leva `loopMin` nem `loopMax`: sem eles o `video_sprite.py` toca todos os quadros de `first` a `last` como o laço. O corte não escolhe
+  um pedaço "de emenda mais limpa": toca tudo.
+- Proibido: `loopMin`/`loopMax` em qualquer spec, laço curto, sugerir laço menor, encurtar o trecho para a emenda ficar melhor.
 - Laço curto encontrado no jogo: recortar com o maior laço e avisar o usuário.
 
 ## REGRA PERMANENTE: modo de teste = mesmo jogo, só recursos infinitos
