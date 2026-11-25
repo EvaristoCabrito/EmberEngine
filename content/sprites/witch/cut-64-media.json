@@ -1960,7 +1960,11 @@
      1.462
     ]
    ],
-   "zoomWhy": "the user, 2026-11-25: the camera pushes in as she falls; measured: her standing height 630 px (frames 110-122, hair top to boots) against her length lying still (principal axis of the matte: 911 px at 183, 919 at 201, 921 at 213); the push eased from 127 (still standing) to 183 (lying)"
+   "zoomWhy": "the user, 2026-11-25: the camera pushes in as she falls; measured: her standing height 630 px (frames 110-122, hair top to boots) against her length lying still (principal axis of the matte: 911 px at 183, 919 at 201, 921 at 213); the push eased from 127 (still standing) to 183 (lying)",
+   "useFrame": {
+    "152": 153
+   },
+   "useFrameWhy": "the video's frame 152 smears her slapping hand into a pale blob (the matte kept it as solid floor-coloured skin); shown as 153, where the hand has landed"
   },
   {
    "clip": "move-up",

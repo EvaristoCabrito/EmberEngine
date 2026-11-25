@@ -371,6 +371,11 @@ def main():
             alpha = np.stack([np.clip(f[..., 3], 0, 255).astype(np.uint8) for f in frames])
         else:
             rgb, alpha = load_frames(os.path.join(ROOT, c["src"]), c["first"], c["last"])
+            # `useFrame` {"video frame": video frame} (the user, 2026-11-25, the Witch's fall: her slapping hand is a pale smear in the
+            # video's frame 152): a broken video frame shown as its neighbour, the video's own pixels, the clip's timing kept
+            for bad, good in c.get("useFrame", {}).items():
+                rgb[int(bad) - c["first"]] = rgb[int(good) - c["first"]]
+                alpha[int(bad) - c["first"]] = alpha[int(good) - c["first"]]
             plate = backdrop_plate(rgb, alpha)
         if "sheet" in c:
             pass
