@@ -1039,7 +1039,7 @@ std::optional<json> exportBattle(const json& mapFile, std::string* error, int pl
     json ember = in ? json::parse(in, nullptr, false) : json();
     const json classes = ember.is_object() && ember.contains("classes") ? ember["classes"] : json::object();
     const std::string standIn = ember.is_object() ? str(ember, "standIn", "zombie") : "zombie";
-    for (const char* list : {"enemySpawns", "neutralSpawns"})
+    for (const char* list : {"playerSpawns", "enemySpawns", "neutralSpawns"})
       if (draft.contains(list) && draft[list].is_array())
         for (json& s : draft[list]) {
           const std::string c = str(s, "classId");
@@ -1265,7 +1265,7 @@ std::optional<json> exportBattle(const json& mapFile, std::string* error, int pl
     combat["faceDx"] = u.facing, combat["faceDy"] = 0, combat["facing"] = u.facing;
     o["combat"] = combat;
     o["sounds"] = cues.all(u);
-    if (u.side != "player") {
+    {
       const auto e = emberAt.find({u.x, u.y});
       if (e != emberAt.end()) {
         o["classId"] = e->second.classId, o["sprite"] = e->second.sprite, o["className"] = e->second.name;
