@@ -973,7 +973,7 @@ void SpellEffects::bolt(const Spot& target, float at, float scale) {
   rise.pull = 1.3f, rise.softness = 0.3f;
   rise.mirror = random() < 0.5f;
 
-  Element& ring = add("lightning-v3-secondary-flipbook-4x4", at, 0.7f);
+  Element& ring = add(nullptr, at, 0.7f);
   ring.from = ring.to = target.feet;
   ring.pivot = {0.5f, 0.45f};
   ring.height = 2.2f * scale;
@@ -989,7 +989,7 @@ void SpellEffects::bolt(const Spot& target, float at, float scale) {
 
 // Relâmpago / Choque: the caster gathers lightning in a ring, then each struck hex takes a bolt (a beat apart).
 void SpellEffects::lightning(const Spot& caster, const std::vector<Spot>& targets, float start, float impact, bool shock) {
-  Element& ring = add("lightning-v3-secondary-flipbook-4x4", start, impact - start + 0.15f);
+  Element& ring = add(nullptr, start, impact - start + 0.15f);
   ring.from = ring.to = caster.feet;
   ring.pivot = {0.5f, 0.45f};
   ring.height = 1.9f;

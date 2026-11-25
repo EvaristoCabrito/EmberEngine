@@ -152,9 +152,7 @@ void ChainLightning::buildCaster(float now, const Camera& camera, VfxFrame& fram
   const glm::vec3 hand = pulled(casterBody_, eye, kPull);
   const uint32_t flicker = static_cast<uint32_t>(std::max(0.0f, (now - start_) / 0.04f));
 
-  // Expanding crackling ring on the ground at the caster's feet
-  draw(disc, discGeometry().size(), glm::translate(glm::mat4(1.0f), casterFeet_ + glm::vec3(0.0f, 0.04f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.4f + 0.7f * f)),
-       kRing, 1.6f, (0.35f + 0.65f * f) * fade, kEnergy, glm::vec4(kCore, 0.88f), casterFeet_);
+  // (no ring on the ground: never in any lightning; the user, 2026-11-25)
 
   // Central flare and electric corona at the caster's hands
   const float flare = (0.3f + 0.5f * f) * (0.8f + 0.2f * hash01(seed_, flicker, 5));
@@ -243,13 +241,7 @@ void ChainLightning::buildArc(size_t index, float now, const Camera& camera, Vfx
   std::vector<VfxInstance> streaks;
   const glm::vec3 impactPoint = pulled(to, eye, kPull);
 
-  // Ground electric shockwave ring under target feet
-  const float ringFade = 1.0f - ease(0.0f, 0.35f, age);
-  if (ringFade > 0.01f) {
-    const float ringRadius = (0.4f + 1.4f * easeOut(0.0f, 0.25f, age)) * scale;
-    draw(disc, discGeometry().size(), glm::translate(glm::mat4(1.0f), toFeet + glm::vec3(0.0f, 0.04f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(ringRadius)),
-         kRing, 1.6f, ringFade * scale, kEnergy, glm::vec4(kCore, 0.9f), toFeet);
-  }
+  // (no ring on the ground: never in any lightning; the user, 2026-11-25)
 
   // Camera-facing core impact flash
   const float flashFade = 1.0f - ease(0.0f, 0.18f, age);

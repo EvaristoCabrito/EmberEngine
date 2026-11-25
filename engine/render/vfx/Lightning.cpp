@@ -210,8 +210,7 @@ void Lightning::buildCaster(float now, const Camera& camera, VfxFrame& frame, st
   const glm::vec3 hand = pulled(hand_, eye, kPull);
   const uint32_t flicker = static_cast<uint32_t>(std::max(0.0f, (now - start_) / 0.05f));
 
-  draw(disc, discGeometry().size(), glm::translate(glm::mat4(1.0f), feet_ + glm::vec3(0.0f, 0.04f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3((0.35f + 0.5f * f) * k)),
-       kRing, 1.4f, (0.35f + 0.65f * f) * fade, kEnergy, glm::vec4(kCore, 0.86f), feet_);
+  // (no ring on the ground: never in any lightning; the user, 2026-11-25)
   const float flare = (0.25f + 0.45f * f) * k * (0.75f + 0.25f * hash01(seed_, flicker, 5));
   streaks.push_back(streak(hand, glm::vec3(0.0f), flare, (0.5f + 0.5f * f) * fade, kCore, 2.6f));
   for (uint32_t i = 0; i < 5; ++i) {
@@ -306,10 +305,7 @@ void Lightning::buildStrike(size_t index, float age, const Camera& camera, VfxFr
     std::vector<VfxInstance> streaks;
     const glm::vec3 point = pulled(body, eye, kPull);
     if (bright > 0.5f) streaks.push_back(streak(point, glm::vec3(0.0f), 2.0f * k * bright, std::min(bright, 1.0f), kCore, 3.2f));
-    if (age < 0.55f) {
-      const glm::mat4 m = glm::translate(glm::mat4(1.0f), feet + glm::vec3(0.0f, 0.04f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3((0.35f + 2.2f * easeOut(0.05f, 0.4f, age)) * k));
-      draw(disc, discGeometry().size(), m, kRing, 2.6f, 1.0f - ease(0.1f, 0.55f, age), kEnergy, glm::vec4(kCore, 0.9f), feet);
-    }
+    // (no ring on the ground: never in any lightning; the user, 2026-11-25)
     for (uint32_t i = 0; i < 34; ++i) {
       const float life = 0.35f + 0.35f * hash01(seed, i, 41), t = age - 0.05f;
       if (t < 0.0f || t > life) continue;
@@ -394,10 +390,7 @@ void Lightning::buildStrike(size_t index, float age, const Camera& camera, VfxFr
   std::vector<VfxInstance> streaks;
   const glm::vec3 point = pulled(body, eye, kPull);
   if (age < 0.16f) streaks.push_back(streak(point, glm::vec3(0.0f), 1.8f * k * std::sqrt(1.0f - age / 0.16f), 1.0f - age / 0.16f, kCore, 3.2f));
-  if (age < 0.55f) {
-    const glm::mat4 m = glm::translate(glm::mat4(1.0f), feet + glm::vec3(0.0f, 0.04f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3((0.35f + 1.6f * easeOut(0.0f, 0.4f, age)) * k));
-    draw(disc, discGeometry().size(), m, kRing, 2.3f, 1.0f - ease(0.1f, 0.55f, age), kEnergy, glm::vec4(kCore, 0.88f), feet);
-  }
+  // (no ring on the ground: never in any lightning; the user, 2026-11-25)
   for (uint32_t i = 0; i < 26; ++i) {
     const float life = 0.35f + 0.3f * hash01(seed, i, 41);
     if (age > life) continue;
