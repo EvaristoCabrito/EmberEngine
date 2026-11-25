@@ -214,6 +214,10 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"sacrificeBond", "Elo de Sacrifício", 5, "", false}, "conjurer", 11},
     {{"nightmare", "Pesadelo", 4, "arcane", false}, "conjurer", 8},
     {{"boneLance", "Lança de Ossos", 6, "darkness", false}, "necromancer", 15},  // the Necromante's T6 (the user, 2026-10-20)
+    // Força Fantasmagórica II (the user, 2026-11-25: "phantasmal force II as a necro Tier 6 spell ... with new improved stats that match
+    // the level its gained"): the illusion that wounds a foe in sight, at T6 strength; drawn with Força Fantasmagórica 02's effect
+    // (vfx/ArcaneFx Phantasmal: the two sigils, the energy closing round the body and folding in on it)
+    {{"phantasmalForce2", "Força Fantasmagórica II", 6, "arcane", false}, "necromancer", 15},
     // the Arcanista's T8 summon (the user, 2026-10-27), beside the Necromante's Cão Zumbi (T8 since the same day, grantClassSpells)
     {{"summonSwampDeer", "Cervo Azul do Pântano", 8, "", false}, "sorcerer", 20},
     // Telesm, the shell defender (the user: "a new defender familiar, T2 for Selene, T3 for the others", docs/SKILLS_CONJURER.md): every
@@ -509,6 +513,7 @@ constexpr SpellTrack kSpellTracks[] = {
     {"summonHypostasis", 23, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
     {"empowerSummons", 15, "p1 p1 p1 R1 p1 p1 p1 p1 p1 p1 R1 p1 p1 p1"},
     {"boneLance", 15, "m0.1 l1 d1 f2 Z1 m0.1 t1 p10 m0.1 l1 d1 f2 p10 m0.1"},
+    {"phantasmalForce2", 15, "r1 m0.05 d1 r1 m0.05 f2 r1 m0.05 d1 r1 m0.05 f2 r1 m0.05"},
     {"arcaneBlade", 1, "r1 - - r1 - - r1 - - r1 - r1 - -"},
     {"markOfRuin", 15, "r1 p5 m0.05 r1 t1 d1 r1 p5 m0.05 f2 r1 p5 m0.05 r1"},
     {"creepingPlague", 15, "r1 m0.05 d1 r1 m0.05 v1 r1 s1 f2 m0.05 r1 d1 m0.05 r1"},
@@ -841,6 +846,8 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
     n.turns = 2 + g.n('t');                         // the ward lasts this many of the caster's turns
     n.pct = 40 + g.n('p');                          // the share of the spell that goes back to its caster (90 % at most: never all of it)
     n.spread = g.n('Z') > 0 ? 10 + g.n('x') : 0;    // its talent (Absorção): this share of what is left heals instead of hurting (50 % at most)
+  } else if (kind == "phantasmalForce2") {
+    n.range = 6, n.mul = mul(2.3), n.dice = dice(2), n.faces = faces(10);
   } else if (kind == "boneLance") {
     n.length = 4 + g.n('l');                        // the line of lances from the caster
     n.mul = mul(1.8), n.dice = dice(2), n.faces = faces(8);
@@ -965,7 +972,7 @@ int fallenAllyAt(const Battle& b, size_t caster, BattleHex cell) {
 // Aimed at a visible foe.
 bool emberBoltSpell(const std::string& kind) {
   return kind == "markOfRuin" || kind == "creepingPlague" || kind == "lifeDrain" || kind == "hemorrhage" || kind == "curseOfDecay" ||
-         kind == "devouringVoid" || kind == "chainLightning" || kind == "wrathOfTheSkies";
+         kind == "devouringVoid" || kind == "chainLightning" || kind == "wrathOfTheSkies" || kind == "phantasmalForce2";
 }
 
 // Experience (data.ts)
@@ -2999,6 +3006,7 @@ std::string spellExplain(const std::string& kind, bool en) {
       {"divineWrath", "Uma linha reta de fúria sagrada a partir de você: os inimigos sobre ela levam o dano, somado à metade da sua MAG.",
        "A straight line of holy wrath from you: the foes on it take the damage, plus half your MAG."},
       {"phantasmalForce", "Uma ilusão que fere um inimigo que você vê.", "An illusion that wounds a foe you can see."},
+      {"phantasmalForce2", "Uma ilusão mais forte que fere um inimigo que você vê.", "A stronger illusion that wounds a foe you can see."},
       {"webOfDreams", "Uma teia no hex mirado que fica 3 rodadas: quem está nela pode adormecer (1D4 turnos), aliados também; quem dorme leva 25% a mais de dano.",
        "A web on the aimed hex that stays 3 rounds: whoever is in it may fall asleep (1D4 turns), allies too; sleepers take 25% more damage."},
       {"twinResonance", "Vincula dois inimigos visíveis. Até o começo do próximo turno da Hipóstase, cada um ecoa no outro parte do dano que realmente sofreu, após as resistências; dano de aliados não ecoa.",
@@ -3397,6 +3405,7 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind, int moon)
   else if (kind == "blackPestilence") s += std::format("\n{} (os dois lados) · {} · {} · quem morre envenenado contagia os vizinhos", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces), poisonTier(n.tier)->name);
   else if (kind == "curseOfDecay") s += std::format("\n{} · -{}% de todos os atributos por turno até -{}% · {} por turno · {} turnos", dmg(n.mul, n.dice, n.faces), n.spread, n.pct, dmg(n.tickMul, n.tickDice, n.tickFaces), n.turns);
   else if (kind == "soulHarvest") s += std::format("\n{} · {} em cada inimigo · venenos, sangrias e maldições batem mais uma vez · cura {}% do HP por inimigo", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces), n.pct);
+  else if (kind == "phantasmalForce2") s += std::format("\n{}", dmg(n.mul, n.dice, n.faces));
   else if (kind == "devouringVoid") s += std::format("\n{} · -{} de resistência a Escuridão pelo resto da batalha · abaixo de {}% do HP, morre", dmg(n.mul, n.dice, n.faces), n.spread, n.pct);
   else if (kind == "pillarOfFlame") s += std::format("\n{} · {} · o chão arde {}D{} por {} rodada{}", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces), n.hazardDice, n.hazardFaces, n.rounds, n.rounds > 1 ? "s" : "");
   else if (kind == "iceLance") s += std::format("\nreta até a borda · {} · os seguintes recebem {}%", dmg(n.mul, n.dice, n.faces), n.pct);
@@ -3446,7 +3455,7 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"spearToss", "Spear Toss"}, {"hookPull", "Hook"}, {"poleVault", "Pole Vault"}, {"disarm", "Disarm"}, {"swapPost", "Change of Post"},
     {"impaleDrag", "Impale and Drag"}, {"sentinelVigil", "Sentinel's Vigil"}, {"sentinelStrike", "Sentinel's Thrust"},
     {"circleOfHealing", "Circle of Healing"}, {"resurrection", "Resurrection"}, {"judgment", "Judgment"},
-    {"placeSwap", "Place Swap"}, {"abyssalSwap", "Abyssal Swap"}, {"arcaneBanquet", "Arcane Banquet"}, {"twinResonance", "Twin Resonance"}, {"boneLance", "Bone Lances"}, {"arcaneReflection", "Arcane Reflection"}, {"mirrorImage", "Mirror Image"}, {"detonateSummon", "Detonate Summon"},
+    {"placeSwap", "Place Swap"}, {"abyssalSwap", "Abyssal Swap"}, {"arcaneBanquet", "Arcane Banquet"}, {"twinResonance", "Twin Resonance"}, {"boneLance", "Bone Lances"}, {"phantasmalForce2", "Phantasmal Force II"}, {"arcaneReflection", "Arcane Reflection"}, {"mirrorImage", "Mirror Image"}, {"detonateSummon", "Detonate Summon"},
     {"sacrificeBond", "Sacrifice Bond"}, {"nightmare", "Nightmare"}, {"empowerSummons", "Empower Summons"},
     {"cloudOfDaggers", "Cloud of Daggers"}, {"daggerStrike", "Dagger"}, {"dispelMagic", "Dispel Magic"}, {"globeOfInvulnerability", "Globe of Invulnerability"},
     {"holyStrike", "Consecrated Strike"}, {"holyTouch", "Holy Touch"}, {"crusaderOath", "Oath"}, {"crusaderMantle", "Crusader's Mantle"},

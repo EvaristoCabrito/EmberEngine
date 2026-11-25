@@ -74,6 +74,7 @@ int SpellEffects::looks(const std::string& kind) {
   // 05: the arcane energy (vfx/ArcaneFx, 2026-11-13).
   if (kind == "magicMissile" || kind == "magicMissileV2") return 5;
   if (kind == "phantasmalForce") return 2;  // 01 Ember's PhantasmalForceVFX, 02 the arcane energy (vfx/ArcaneFx)
+  if (kind == "phantasmalForce2") return 1;  // the Necromante's T6: Força Fantasmagórica 02's effect (vfx/ArcaneFx Phantasmal)
   if (kind == "divineBolt") return 2;  // 01: ours in 3D (vfx/SpellBolts), 02 the strike from the sky (vfx/HolyFx)
   if (kind == "turnUndead") return 1;  // 01: ours in 3D (vfx/TurnUndead)
   if (isLightning(kind, 2)) return 3;  // 01 the flipbook cards, 02 ours in 3D (vfx/Lightning), 03 02 small (the enemies')
@@ -159,6 +160,7 @@ int SpellEffects::classicLook(const std::string& kind) {
   if (kind == "minorVenom") return 1;
   if (kind == "creepingPlague" || kind == "blackPestilence") return 2;
   if (kind == "phantasmalForce") return 2;                           // the arcane energy (01 = PhantasmalForceVFX, the enemies')
+  if (kind == "phantasmalForce2") return 1;                          // Força Fantasmagórica 02's effect
   if (kind == "webOfDreams") return 2;                               // ours in 3D (DreamWeb: shot, floor, net; 01 = WebOfDreamsVFX)
   if (kind == "burningHands") return 2;                              // BurningHandsV2VFX, its cone opening outward (02)
   if (kind == "cleave") return 1;                                    // CleaveSweepVFX
@@ -211,7 +213,8 @@ float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& c
   if (kind == "ignite" && look >= 1) return Ignite::kLead;  // no flight: the heat gathers over the area, then it ignites
   if (kind == "phantasmalForce" && look == 1) return PhantasmalForce::kImpactAt;
   if (isArcane(kind, look) && !targets.empty())
-    return ArcaneSpell::lead(kind == "phantasmalForce" ? ArcaneSpell::Style::Phantasmal : ArcaneSpell::Style::Missile, caster.feet, targets.front().feet);
+    return ArcaneSpell::lead(kind == "phantasmalForce" || kind == "phantasmalForce2" ? ArcaneSpell::Style::Phantasmal : ArcaneSpell::Style::Missile, caster.feet,
+                             targets.front().feet);
   if (kind == "spectralBolt" && !targets.empty()) return ArmsFx::spectralFlight(caster.feet, areaCentre(targets).feet);
   if (kind == "webOfDreams" && look >= 1) return look == 2 ? DreamWeb::kShotTravel : WebOfDreams::kShotTravel;
   if ((kind == "burningHands" || kind == "poisonBreath") && look >= 1) return BurningHands::kRelease;
@@ -700,7 +703,7 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
   if (isArcane(kind, look)) {
     // The arcane energy (vfx/ArcaneFx): on the foe the cast names.
     const Spot& foe = targets.front();
-    arcanes_.emplace_back(kind == "phantasmalForce" ? ArcaneSpell::Style::Phantasmal : ArcaneSpell::Style::Missile, caster.feet, heightOf(caster), foe.feet, heightOf(foe), start, impact,
+    arcanes_.emplace_back(kind == "phantasmalForce" || kind == "phantasmalForce2" ? ArcaneSpell::Style::Phantasmal : ArcaneSpell::Style::Missile, caster.feet, heightOf(caster), foe.feet, heightOf(foe), start, impact,
                           static_cast<uint32_t>(random() * 4294967295.0f));
     return true;
   }

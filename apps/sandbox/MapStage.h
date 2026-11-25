@@ -12865,7 +12865,7 @@ class MapStage final : public Stage {
         {"cureMinor", "refresh-006/healing/cure-light-new-006.png"}, {"cureWounds", "refresh-007/healing/cure-medium-golden-bowl-007.png"},
         {"cureDisease", "refresh-007/healing/cure-disease-green-lantern-007.png"}, {"piercingThrust", "refresh-001/spells/piercing-thrust.png"},
         {"sweep", "refresh-001/spells/sweep.png"}, {"trip", "refresh-001/spells/trip.png"}, {"summonFamiliar", "refresh-001/spells/summon-familiar.png"},
-        {"phantasmalForce", "phantasmal-force.png"}, {"summonFamiliar2", "summon-familiar2.png"}, {"summonFamiliar3", "summon-familiar3.png"},
+        {"phantasmalForce", "phantasmal-force.png"}, {"phantasmalForce2", "phantasmal-force.png"}, {"summonFamiliar2", "summon-familiar2.png"}, {"summonFamiliar3", "summon-familiar3.png"},
         {"summonFamiliar4", "summon-familiar4.png"}, {"summonZombieDog", "summon-zombie-dog-002.png"}, {"webOfDreams", "refresh-001/spells/web-of-dreams.png"},
         {"warp", "warp-portal.png"}, {"lifeDrain", "refresh-001/spells/life-drain.png"}, {"familiarLifeDrain", "refresh-001/spells/life-drain.png"}, {"multiShot", "refresh-006/combat/multi-shot-006.png"},
         {"cureLight", "refresh-006/healing/cure-light-new-006.png"}, {"bless", "refresh-001/spells/bless.png"}, {"provoke", "provoke.jpg"},
@@ -15917,7 +15917,7 @@ class MapStage final : public Stage {
     static const std::unordered_map<std::string, uint32_t> kTint = {
         {"fireball", 0xff8a3c}, {"ignite", 0xff8a3c}, {"burningHands", 0xff8a3c}, {"frost", 0x9fd6ff}, {"iceStorm", 0x9fd6ff}, {"lightning", 0xb8d2ff},
         {"shock", 0xb8d2ff}, {"causticVenom", 0x86ff7c}, {"minorVenom", 0x86ff7c}, {"poisonBreath", 0x86ff7c}, {"lifeDrain", 0xff5a6e},
-        {"magicMissile", 0xc7b4ff}, {"magicMissileV2", 0xc7b4ff}, {"phantasmalForce", 0xc7b4ff}, {"fantomForce", 0xc7b4ff},
+        {"magicMissile", 0xc7b4ff}, {"magicMissileV2", 0xc7b4ff}, {"phantasmalForce", 0xc7b4ff}, {"phantasmalForce2", 0xc7b4ff}, {"fantomForce", 0xc7b4ff},
         {"webOfDreams", 0xd8c8ff}, {"warp", 0xb48cff}};
     uint32_t h = 0xffe6c0;
     if (attack) h = hero == "isolde" ? 0xff5a2a : hero == "voss" ? 0xa066ff : 0xffd45a;  // the staff hits: Isolde's ember, Voss's violet

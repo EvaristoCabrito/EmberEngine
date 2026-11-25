@@ -68,6 +68,7 @@ inline const std::vector<SpellEntry>& allSpells() {
       {"summonFamiliar4", "Familiar Radiante", false},
       {"fantomForce", "Força Fantasma", false},
       {"phantasmalForce", "Força Fantasmagórica", false},
+      {"phantasmalForce2", "Força Fantasmagórica II", false},
       {"frost", "Frost", false},
       {"wrathOfTheSkies", "Fúria dos Céus", false},
       {"shieldBash", "Golpe de Escudo", true},

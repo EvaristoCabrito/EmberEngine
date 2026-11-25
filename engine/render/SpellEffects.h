@@ -336,7 +336,8 @@ class SpellEffects {
   static bool isFrost(const std::string& kind, int look) { return look == 2 && kind == "frost"; }
   // The arcane energy (vfx/ArcaneFx): the heroes'; the enemies keep each spell's first version.
   static bool isArcane(const std::string& kind, int look) {
-    return (look == 5 && (kind == "magicMissile" || kind == "magicMissileV2")) || (look == 2 && kind == "phantasmalForce");
+    return (look == 5 && (kind == "magicMissile" || kind == "magicMissileV2")) || (look == 2 && kind == "phantasmalForce") ||
+           (look == 1 && kind == "phantasmalForce2");  // (Força Fantasmagórica II: the Necromante's T6, 02's effect)
   }
   // The holy light (vfx/HolyFx): the heroes'; the enemies keep each spell's first version.
   static bool isHolyLight(const std::string& kind, int look) {
