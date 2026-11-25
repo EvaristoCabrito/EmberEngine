@@ -11,7 +11,7 @@
    "clip": "base",
    "pose": "idle",
    "kind": "stand",
-   "src": "build/video-cut/witch/idle",
+   "src": "build/video-cut/redo-sonnet/witch__idle",
    "video": "Attachments/Witch/Idle.mp4",
    "first": 0,
    "last": 119,
@@ -19,13 +19,14 @@
    "loopMax": 119,
    "mode": "loop",
    "figurePx": 659.0,
-   "why": "standing, breathing, a hand lifted; the loop at its best seam"
+   "why": "standing, breathing, a hand lifted; the loop at its best seam",
+   "version": "r01"
   },
   {
    "clip": "atk",
    "pose": "attack",
    "kind": "stand",
-   "src": "build/video-cut/witch/att",
+   "src": "build/video-cut/redo-sonnet/witch__att",
    "video": "Attachments/Witch/ATTandCasting.mp4",
    "first": 24,
    "last": 120,
@@ -398,13 +399,14 @@
       0.366253
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "cast",
    "pose": "cast",
    "kind": "stand",
-   "src": "build/video-cut/witch/att",
+   "src": "build/video-cut/redo-sonnet/witch__att",
    "video": "Attachments/Witch/ATTandCasting.mp4",
    "first": 126,
    "last": 224,
@@ -777,13 +779,14 @@
       0.366253
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "move",
    "pose": "walk",
    "kind": "walk",
-   "src": "build/video-cut/witch/walk",
+   "src": "build/video-cut/redo-sonnet/witch__walk",
    "video": "Attachments/Witch/Woman_walking_in_place_4635965f (1).mp4",
    "first": 0,
    "last": 143,
@@ -1182,13 +1185,14 @@
       0.366253
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "hit",
    "pose": "hit",
    "kind": "stand",
-   "src": "build/video-cut/witch/hit",
+   "src": "build/video-cut/redo-sonnet/witch__hit",
    "video": "Attachments/Witch/Hitreact.mp4",
    "first": 8,
    "last": 60,
@@ -1544,13 +1548,14 @@
       0.366253
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "death",
    "pose": "death",
    "kind": "stand",
-   "src": "build/video-cut/witch/fall",
+   "src": "build/video-cut/redo-sonnet/witch__fall",
    "video": "Attachments/Witch/Fallat4Woman_falling_and_lying_still_7d74dba9 (1).mp4",
    "first": 122,
    "last": 216,
@@ -1935,7 +1940,27 @@
       0.366253
      ]
     ]
-   }
+   },
+   "version": "r01",
+   "cameraZoom": [
+    [
+     127,
+     1.0
+    ],
+    [
+     183,
+     1.446
+    ],
+    [
+     201,
+     1.459
+    ],
+    [
+     213,
+     1.462
+    ]
+   ],
+   "zoomWhy": "the user, 2026-11-25: the camera pushes in as she falls; measured: her standing height 630 px (frames 110-122, hair top to boots) against her length lying still (principal axis of the matte: 911 px at 183, 919 at 201, 921 at 213); the push eased from 127 (still standing) to 183 (lying)"
   },
   {
    "clip": "move-up",

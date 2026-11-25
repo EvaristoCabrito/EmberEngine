@@ -217,6 +217,54 @@ def resize_premultiplied(f, nw, nh):
     return np.dstack(rgb + [alpha]).astype(np.float32)
 
 
+def zoom_at(keys, f):
+    """The camera's zoom at video frame `f` from `cameraZoom` keys [[frame, zoom], ...], eased (smoothstep) between two keys."""
+    if f <= keys[0][0]:
+        return float(keys[0][1])
+    for (f0, z0), (f1, z1) in zip(keys, keys[1:]):
+        if f <= f1:
+            t = (f - f0) / (f1 - f0)
+            return float(z0 + (z1 - z0) * t * t * (3 - 2 * t))
+    return float(keys[-1][1])
+
+
+def camera_zoomed(frames, alpha, c):
+    """`cameraZoom` (the user, 2026-11-25, the Witch's fall: "the witch during death increases in size because the camera pans in"):
+    [[video frame, zoom], ...], the video camera's push-in measured on the figure (her standing height against her length lying
+    still), eased between the keys. Every frame is shrunk by its zoom (premultiplied Lanczos, as `scaleTo`) about her lowest point,
+    on the column of her standing feet, and that point set back toward the standing feet line by the share of the push done: she
+    falls and lies at her standing size, on the ground she stood on. Frames before the first key are untouched."""
+    from scipy import ndimage
+    keys = c["cameraZoom"]
+    k = c.get("standUntil", c["first"]) - c["first"] + 1
+    feet = int(np.median([r for r in (sole_row(alpha[i]) for i in range(k)) if r is not None]))
+    cols = np.nonzero((alpha[0][feet - 12:feet + 1] > 128).any(0))[0]
+    ax = (cols.min() + cols.max()) / 2.0
+    low = np.array([np.nonzero((f[..., 3] > 128).any(1))[0].max() for f in frames], np.float64)
+    low = ndimage.uniform_filter1d(ndimage.median_filter(low, 5, mode="nearest"), 5, mode="nearest")
+    zmax = max(z for _, z in keys)
+    out = []
+    for i, f in enumerate(frames):
+        z = zoom_at(keys, c["first"] + i)
+        if abs(z - 1.0) < 1e-4:
+            out.append(f)
+            continue
+        h, w = f.shape[:2]
+        nw, nh = max(1, round(w / z)), max(1, round(h / z))
+        small = resize_premultiplied(f, nw, nh)
+        sx, sy = nw / w, nh / h
+        done = (z - 1.0) / (zmax - 1.0) if zmax > 1.0 else 1.0
+        ox = int(round(ax - ax * sx))
+        oy = int(round(low[i] + done * (feet - low[i]) - low[i] * sy))
+        g = np.zeros_like(f)
+        x0, y0 = max(0, ox), max(0, oy)
+        x1, y1 = min(w, ox + nw), min(h, oy + nh)
+        g[y0:y1, x0:x1] = small[y0 - oy:y1 - oy, x0 - ox:x1 - ox]
+        out.append(g)
+    print(f"{c['clip']}: camera zoom {keys}, about column {ax:.0f}, feet line {feet}")
+    return out
+
+
 def sole_row(a):
     solid = a > 230
     h = a.shape[0]
@@ -380,6 +428,8 @@ def main():
                     v = x[..., k]
                     x[..., k] = np.where(v > xin[-1], v * (xout[-1] / xin[-1]), np.interp(v, xin, xout))
                 f[..., :3] = np.where(x <= 0.0031308, x * 12.92, 1.055 * np.clip(x, 0, 1) ** (1 / 2.4) - 0.055).clip(0, 1) * 255
+        if "cameraZoom" in c:
+            frames = camera_zoomed(frames, alpha, c)
         n = len(frames)
         info = {"video": c.get("video", c.get("sheet")), "first": c["first"], "last": c["last"]}
         if "exposure" in c:

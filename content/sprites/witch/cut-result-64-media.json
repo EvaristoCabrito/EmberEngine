@@ -11,28 +11,28 @@
    ],
    "loopFirst": 7,
    "loopLast": 103,
-   "seamSteps": 2.52,
+   "seamSteps": 2.61,
    "frameCountFrom": 97,
    "figurePx": 659.0,
    "scaledTo": 610.3,
    "frames": 64,
    "frameMs": 63.151041666666664,
    "nat": [
-    399,
-    627
+    396,
+    626
    ],
    "crop": [
     5,
     5,
-    388,
-    618
+    387,
+    616
    ],
    "box": {
-    "w": 1.7397,
-    "h": 2.73381,
-    "foot": 0.04022
+    "w": 1.72759,
+    "h": 2.73098,
+    "foot": 0.0362
    },
-   "pattern": "content/sprites/witch/base-media64-v01/base-{}.png"
+   "pattern": "content/sprites/witch/base-media64-r01/base-{}.png"
   },
   "atk": {
    "video": "Attachments/Witch/ATTandCasting.mp4",
@@ -50,21 +50,21 @@
    "frames": 64,
    "frameMs": 63.151041666666664,
    "nat": [
-    499,
+    495,
     622
    ],
    "crop": [
     6,
     5,
-    487,
+    484,
     612
    ],
    "box": {
-    "w": 2.17731,
-    "h": 2.71401,
-    "foot": 0.02918
+    "w": 2.15642,
+    "h": 2.70968,
+    "foot": 0.02914
    },
-   "pattern": "content/sprites/witch/atk-media64-v01/atk-{}.png",
+   "pattern": "content/sprites/witch/atk-media64-r01/atk-{}.png",
    "impact": 0.4124
   },
   "cast": {
@@ -89,7 +89,7 @@
    "crop": [
     5,
     5,
-    866,
+    877,
     617
    ],
    "box": {
@@ -97,7 +97,7 @@
     "h": 2.73319,
     "foot": 0.02916
    },
-   "pattern": "content/sprites/witch/cast-media64-v01/cast-{}.png",
+   "pattern": "content/sprites/witch/cast-media64-r01/cast-{}.png",
    "impact": 0.6263
   },
   "move": {
@@ -105,9 +105,9 @@
    "first": 0,
    "last": 143,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/witch/idle 0:119",
-   "loopFirst": 20,
-   "loopLast": 66,
-   "seamSteps": 0.77,
+   "loopFirst": 21,
+   "loopLast": 67,
+   "seamSteps": 0.79,
    "bootRow": 674,
    "bodyDrift": [
     0,
@@ -118,21 +118,21 @@
    "frames": 47,
    "frameMs": 41.666666666666664,
    "nat": [
-    377,
-    634
+    376,
+    635
    ],
    "crop": [
     5,
     5,
-    368,
-    624
+    367,
+    625
    ],
    "box": {
-    "w": 1.64282,
-    "h": 2.76272,
-    "foot": 0.0467
+    "w": 1.63856,
+    "h": 2.76725,
+    "foot": 0.05096
    },
-   "pattern": "content/sprites/witch/move-media64-v01/move-{}.png"
+   "pattern": "content/sprites/witch/move-media64-r01/move-{}.png"
   },
   "hit": {
    "video": "Attachments/Witch/Hitreact.mp4",
@@ -145,12 +145,12 @@
     1245
    ],
    "figurePx": 1124.0,
-   "scaledTo": 610.0,
+   "scaledTo": 609.5,
    "frames": 53,
    "frameMs": 41.666666666666664,
    "nat": [
     287,
-    623
+    622
    ],
    "crop": [
     3,
@@ -159,11 +159,11 @@
     617
    ],
    "box": {
-    "w": 1.24954,
-    "h": 2.71241,
-    "foot": 0.01554
+    "w": 1.2519,
+    "h": 2.71319,
+    "foot": 0.01319
    },
-   "pattern": "content/sprites/witch/hit-media64-v01/hit-{}.png"
+   "pattern": "content/sprites/witch/hit-media64-r01/hit-{}.png"
   },
   "death": {
    "video": "Attachments/Witch/Fallat4Woman_falling_and_lying_still_7d74dba9 (1).mp4",
@@ -177,25 +177,25 @@
    ],
    "frameCountFrom": 95,
    "figurePx": 632.0,
-   "scaledTo": 610.3,
+   "scaledTo": 610.1,
    "frames": 64,
    "frameMs": 61.84895833333333,
    "nat": [
-    929,
-    647
+    658,
+    640
    ],
    "crop": [
-    4,
     6,
-    920,
-    636
+    6,
+    645,
+    627
    ],
    "box": {
-    "w": 4.04892,
-    "h": 2.81986,
-    "foot": 0.13461
+    "w": 2.87044,
+    "h": 2.79192,
+    "foot": 0.1052
    },
-   "pattern": "content/sprites/witch/death-media64-v01/death-{}.png"
+   "pattern": "content/sprites/witch/death-media64-r01/death-{}.png"
   },
   "move-up": {
    "video": "Attachments/Witch/WitchUpandDown.mp4",

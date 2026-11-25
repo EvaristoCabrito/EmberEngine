@@ -11,19 +11,20 @@
    "clip": "base",
    "pose": "idle",
    "kind": "stand",
-   "src": "build/video-cut/aldric/idle",
-   "video": "Attachments/Aldric/AldricIdleATT.mp4",
+   "src": "build/video-cut/redo-sonnet/aldric__idle-v3",
+   "video": "Attachments/Aldric/AldricIldeV3.mp4",
    "first": 0,
-   "last": 119,
-   "figurePx": 899.0,
+   "last": 131,
+   "figurePx": 764.0,
    "mode": "pingpong",
-   "why": "standing, breathing, the spear at his side; back and forth, as the old Aldric's idle"
+   "why": "standing, breathing, the spear at his side; back and forth (the user, 2026-11-25: \"it needs to ping pong the idle\"); figurePx 764 = AldricIldeV3's own standing height (measured 2026-11-25, every 3rd frame 755..767): the 899 of the old idle video drew him ~15% smaller in the idle than in his other clips",
+   "version": "r01"
   },
   {
    "clip": "atk",
    "pose": "attack",
    "kind": "stand",
-   "src": "build/video-cut/aldric/att",
+   "src": "build/video-cut/redo-sonnet/aldric__att",
    "video": "Attachments/Aldric/AldricIdleATT.mp4",
    "first": 126,
    "last": 204,
@@ -414,13 +415,14 @@
       0.665387
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "cast",
    "pose": "cast",
    "kind": "stand",
-   "src": "build/video-cut/aldric/spec",
+   "src": "build/video-cut/redo-sonnet/aldric__fall",
    "video": "Attachments/Aldric/AldricSpecialAndFall.mp4",
    "first": 12,
    "last": 112,
@@ -807,13 +809,14 @@
       0.665387
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "move",
    "pose": "walk",
    "kind": "walk",
-   "src": "build/video-cut/aldric/walk",
+   "src": "build/video-cut/redo-sonnet/aldric__walk",
    "video": "Attachments/Aldric/Aldric_walking_left_in_place_51472b70_1080p.mp4",
    "first": 0,
    "last": 100,
@@ -1169,13 +1172,14 @@
       0.665387
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "move-left",
    "pose": "walkLeft",
    "kind": "walk",
-   "src": "build/video-cut/aldric/walk",
+   "src": "build/video-cut/redo-sonnet/aldric__walk",
    "video": "Attachments/Aldric/Aldric_walking_left_in_place_51472b70_1080p.mp4",
    "first": 0,
    "last": 100,
@@ -1530,13 +1534,14 @@
       0.665387
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "hit",
    "pose": "hit",
    "kind": "stand",
-   "src": "build/video-cut/aldric/hit",
+   "src": "build/video-cut/redo-sonnet/aldric__hit",
    "video": "Attachments/Aldric/AldricHitReactFinal.mp4",
    "first": 2,
    "last": 56,
@@ -1909,13 +1914,14 @@
       0.665387
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "death",
    "pose": "death",
    "kind": "stand",
-   "src": "build/video-cut/aldric/fall",
+   "src": "build/video-cut/redo-sonnet/aldric__fall",
    "video": "Attachments/Aldric/AldricSpecialAndFall.mp4",
    "first": 118,
    "last": 196,
@@ -2297,13 +2303,14 @@
       0.665387
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "turn-back",
    "pose": "turnBack",
    "kind": "stand",
-   "src": "build/video-cut/aldric/turn",
+   "src": "build/video-cut/redo-sonnet/aldric__turn",
    "video": "Attachments/Aldric/AldricCharacter_turning_around_in_studio_f67b35ed_1080p.mp4",
    "first": 30,
    "last": 104,
@@ -2676,13 +2683,14 @@
       0.665387
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "cast-back",
    "pose": "castBack",
    "kind": "stand",
-   "src": "build/video-cut/aldric/turn",
+   "src": "build/video-cut/redo-sonnet/aldric__turn",
    "video": "Attachments/Aldric/AldricCharacter_turning_around_in_studio_f67b35ed_1080p.mp4",
    "first": 130,
    "last": 130,
@@ -3055,13 +3063,14 @@
       0.665387
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "move-up",
    "pose": "walkUp",
    "kind": "walk",
-   "src": "build/video-cut/aldric/up",
+   "src": "build/video-cut/redo-sonnet/aldric__down",
    "video": "Attachments/Aldric/AldricWalkupandDown.mp4",
    "first": 0,
    "last": 96,
@@ -3448,13 +3457,14 @@
       0.665387
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "move-down",
    "pose": "walkDown",
    "kind": "walk",
-   "src": "build/video-cut/aldric/down",
+   "src": "build/video-cut/redo-sonnet/aldric__down",
    "video": "Attachments/Aldric/AldricWalkupandDown.mp4",
    "first": 124,
    "last": 220,
@@ -3825,7 +3835,8 @@
       0.665387
      ]
     ]
-   }
+   },
+   "version": "r01"
   }
  ]
 }
