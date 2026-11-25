@@ -39,6 +39,9 @@ ou pisca, quadro tremido, tamanho ou luz diferente entre clipes = não está pro
 Refazer uma unidade não reaproveita nada da anterior; os arquivos antigos (quadros, mattes, cópias `*-before-*`) são apagados assim que os novos
 estão no jogo.
 
+**Antes de qualquer sprite, abrir `docs/SPRITE_STANDARD.md`**: o padrão campo por campo (o do Kael, que o usuário aprova), a luz, as
+conferências e o commit. Todo conjunto segue esse arquivo.
+
 Vale para todo agente (Claude Opus/Sonnet/Haiku, Codex, qualquer outro). É o caminho com que todos os sprites bons do jogo foram feitos.
 Ninguém troca, "melhora" ou substitui uma ferramenta desta lista sem o usuário pedir com todas as letras.
 
