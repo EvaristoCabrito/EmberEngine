@@ -39,6 +39,7 @@ add_library(EmberEngine STATIC
   render/vfx/IceStorm.cpp
   render/vfx/SpellBolts.cpp
   render/vfx/Lightning.cpp
+  render/vfx/StormBolt.cpp
   render/vfx/ChainLightning.cpp
   render/vfx/PrimordialEmber.cpp
   render/vfx/CombatFx.cpp
