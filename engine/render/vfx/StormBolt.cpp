@@ -327,7 +327,7 @@ void drawLeader(const Pen& pen, const std::vector<BoltLimb>& limbs, float k, flo
 void drawBurning(const Pen& pen, const std::vector<BoltLimb>& limbs, float k, const Flash& flash, glm::vec3 sight, std::vector<VfxInstance>& streaks) {
   if (flash.trunk <= 0.0f) return;
   const float seen = std::min(flash.trunk, 1.0f), hot = std::max(flash.trunk, 1.0f);
-  drawTree(pen, limbs, 0, 0.2f * k * flash.swell, 1.2f * hot, 0.16f * seen, kEnergy, kEnergy, 3.0f, sight);
+  drawTree(pen, limbs, 0, 0.16f * k * flash.swell, 1.0f * hot, 0.1f * seen, kEnergy, kEnergy, 3.0f, sight);
   drawTree(pen, limbs, 0, 0.085f * k * flash.swell, 1.9f * hot, 0.55f * seen, kEnergy, kCore, 3.0f, sight);
   drawTree(pen, limbs, 0, 0.036f * k * flash.swell, 5.6f * hot, seen, kEnergy, kCore, 3.0f, sight);
   if (flash.forks > 0.0f) {
@@ -383,12 +383,9 @@ void drawStruck(const Pen& pen, glm::vec3 feet, glm::vec3 body, float height, bo
     }
     pen.draw(pen.frame.addVertices(v), v.size(), glm::mat4(1.0f), kLightning, 3.2f, on ? 0.9f : 0.28f, kEnergy, glm::vec4(kCore, 0.15f + age / 0.07f), feet);
   }
+  // No ring on the ground, in any lightning, ever (the user, 2026-11-25).
   const glm::vec3 point = stands ? body : feet + kUp * 0.2f;
-  if (on) streaks.push_back(streak(pulled(point, pen.eye, kPull), glm::vec3(0.0f), 1.4f * k * flash.trunk, std::min(flash.trunk, 1.0f), kCore, 3.2f));
-  if (age < 0.45f) drawGround(pen, feet, (0.3f + 2.6f * easeOut(0.0f, 0.35f, age)) * k, 2.6f, 1.0f - ease(0.08f, 0.45f, age), kEnergy, kCore, 0.9f);
-  if (age >= 0.085f && age < 0.5f) drawGround(pen, feet, (0.3f + 1.6f * easeOut(0.085f, 0.4f, age)) * k, 2.0f, 0.7f * (1.0f - ease(0.15f, 0.5f, age)), kViolet, kCore, 0.88f);
-  if (burnEnd > kSecond && age >= kSecond && age < kSecond + 0.45f)
-    drawGround(pen, feet, (0.3f + 2.2f * easeOut(kSecond, kSecond + 0.35f, age)) * k, 2.4f, 1.0f - ease(kSecond + 0.08f, kSecond + 0.45f, age), kEnergy, kCore, 0.9f);
+  if (on) streaks.push_back(streak(pulled(point, pen.eye, kPull), glm::vec3(0.0f), 0.7f * k * flash.trunk, 0.6f * std::min(flash.trunk, 1.0f), kCore, 2.4f));  // the look the user chose (2026-11-25): the struck body stays seen
   if (age >= 0.05f) drawGround(pen, feet, 0.9f * k, 1.8f, 0.9f * (1.0f - ease(burnEnd, tail, age)), kEmber, glm::vec3(1.0f, 0.85f, 0.6f), 0.0f);
   for (uint32_t i = 0; i < sparks; ++i) {
     const float life = 0.4f + 0.35f * hash01(seed, i, 41);
@@ -416,8 +413,8 @@ void drawStruck(const Pen& pen, glm::vec3 feet, glm::vec3 body, float height, bo
     smoke(pen.frame, pen.quad, pen.draw.time, feet + kUp * (0.15f + 0.5f * t), (0.35f + 0.55f * easeOut(0.0f, 0.6f, t)) * k, 1.1f, ease(0.35f, 0.95f, t), hash01(seed, 9, 9) * 30.0f);
   }
   if (age < burnEnd) {
-    pen.lights.push_back({point, kLight, (110.0f * flash.trunk * (on ? 1.0f : 0.5f) + 2.0f) * k, 12.0f * k});
-    pen.lights.push_back({point + kUp * (3.0f * k), kLight, 34.0f * k * (on ? flash.trunk : 0.0f), 8.0f * k});
+    pen.lights.push_back({point + kUp * (1.2f * k), kLight, (38.0f * flash.trunk * (on ? 1.0f : 0.5f) + 2.0f) * k, 12.0f * k});
+    pen.lights.push_back({point + kUp * (3.5f * k), kLight, 22.0f * k * (on ? flash.trunk : 0.0f), 9.0f * k});
   } else if (age < crawl) {
     pen.lights.push_back({point, glm::vec3(0.6f, 0.5f, 1.0f), 5.0f * k * (1.0f - ease(burnEnd, crawl, age)), 5.0f * k});
   }
@@ -425,12 +422,11 @@ void drawStruck(const Pen& pen, glm::vec3 feet, glm::vec3 body, float height, bo
 }
 
 // The charge drawn in to the caster's hand (`f` 0..1 as it gathers): a ring on the ground closing in under the caster, a flare at the
-// hand that jumps, motes of charge drawn in to it, three arcs jumping off the hand and one from the hand down to the ground (a new
-// shape every 0.05 s), its light.
+// hand that jumps, motes of charge drawn in to it, three arcs jumping off the hand (a new shape every
+// 0.05 s), its light.
 void drawGather(const Pen& pen, glm::vec3 feet, glm::vec3 handAt, float k, float f, float fade, float since, uint32_t seed, std::vector<VfxInstance>& streaks) {
   const glm::vec3 hand = pulled(handAt, pen.eye, kPull);
   const uint32_t shape = static_cast<uint32_t>(std::max(0.0f, since / kShapeSeconds));
-  drawGround(pen, feet, (1.25f - 0.6f * f) * k, 1.4f, (0.25f + 0.75f * f) * fade, kEnergy, kCore, 0.86f);
   streaks.push_back(streak(hand, glm::vec3(0.0f), (0.22f + 0.5f * f) * k * (0.7f + 0.3f * hash01(seed, shape, 5)), (0.45f + 0.55f * f) * fade, kCore, 2.6f));
   for (uint32_t i = 0; i < 12; ++i) {
     const float life = 0.35f + 0.25f * hash01(seed, i, 6), clock = std::max(since, 0.0f) + life * hash01(seed, i, 7);
@@ -446,9 +442,7 @@ void drawGather(const Pen& pen, glm::vec3 feet, glm::vec3 handAt, float k, float
     const glm::vec3 d = glm::normalize(sphereDir(hash01(seed, key, 11), hash01(seed, key, 12)) + kUp * 0.4f);
     ribbon(v, arcLine(fractalLine(handAt, handAt + d * (0.45f + 0.55f * f) * k, 3, 0.2f, seed + key * 131u), 1.0f, 0.0f), 0.012f * k, pen.eye, kPull);
   }
-  const float spin = hash01(seed, shape, 13) * kTau;
-  const glm::vec3 floor = feet + glm::vec3(std::cos(spin), 0.0f, std::sin(spin)) * (0.5f * k) + kUp * 0.05f;
-  ribbon(v, arcLine(fractalLine(handAt, floor, 4, 0.14f, seed + shape * 577u), 1.0f, 0.25f), 0.011f * k, pen.eye, kPull);
+  // (no arc from the hand down to the ground: a thin line there read as a small bolt striking the caster; the user, 2026-11-25)
   pen.draw(pen.frame.addVertices(v), v.size(), glm::mat4(1.0f), kLightning, 3.2f, (0.35f + 0.65f * f) * fade, kEnergy, glm::vec4(kCore, 3.0f), handAt);
   pen.lights.push_back({handAt, kLight, (4.0f + 12.0f * f) * (0.75f + 0.25f * hash01(seed, shape, 14)) * fade, 3.5f * k});
 }
@@ -598,7 +592,6 @@ void StormBolt::buildStrike(const Strike& s, float age, float time, const Camera
   if (age < 0.0f) {
     // ---- before the stroke: the body knows it first ----
     const float gather = ease(-kForewarn, -kLeader, age);
-    drawGround(pen, s.feet, (1.7f - 1.25f * gather) * k, 1.3f, 0.15f + 0.6f * gather, kEnergy, kCore, 0.86f);
     // streamers reaching up off its head, longer as the charge builds
     std::vector<VfxVertex> v;
     for (uint32_t a = 0; a < 3; ++a) {

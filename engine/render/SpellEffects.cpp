@@ -77,7 +77,9 @@ int SpellEffects::looks(const std::string& kind) {
   if (kind == "phantasmalForce2") return 1;  // the Necromante's T6: Força Fantasmagórica 02's effect (vfx/ArcaneFx Phantasmal)
   if (kind == "divineBolt") return 2;  // 01: ours in 3D (vfx/SpellBolts), 02 the strike from the sky (vfx/HolyFx)
   if (kind == "turnUndead") return 1;  // 01: ours in 3D (vfx/TurnUndead)
-  if (isLightning(kind, 2)) return 3;  // 01 the flipbook cards, 02 ours in 3D (vfx/Lightning), 03 02 small (the enemies')
+  if (isLightning(kind, 2)) return 5;  // 01 the flipbook cards, 02 ours in 3D (vfx/Lightning), 03 02 small (the enemies'), 04 02 refined, 05 vfx/StormBolt
+  if (kind == "thunderstorm" || kind == "wrathOfTheSkies") return 2;  // 01 the flipbook cards, 02 vfx/StormBolt (the cloud and its bolts)
+  if (kind == "chainLightning") return 3;                             // 01 the cards, 02 vfx/ChainLightning, 03 vfx/StormBolt (ChainBolt)
   // 01 Ember's BurningHandsV2VFX as it was, 02 its cone opening outward (ours).
   if (kind == "burningHands") return 2;
   // Sopro Venenoso: 01 and 02 Mãos Flamejantes' cone in green, 03 ours, a rolling cone of gas (vfx/PoisonFx).
@@ -150,7 +152,7 @@ int SpellEffects::classicLook(const std::string& kind) {
   if (kind == "magicMissile" || kind == "magicMissileV2") return 5;
   if (kind == "divineBolt") return 2;                                // the strike from the sky (vfx/HolyFx; 01 = SpellBolts, the enemies)
   if (kind == "turnUndead") return 1;                                // ours in 3D (vfx/TurnUndead)
-  if (isLightning(kind, 2)) return 2;                                // Raio, ours in 3D (vfx/Lightning; 01 = the cards, the enemies')
+  if (isLightning(kind, 2)) return 4;                                // Raio, 02's design refined (vfx/Lightning; 01 = the cards, the enemies')
   if (kind == "fireball") return 2;                                  // ours, a volume of fire (01 = FireballVFX, the enemies')
   if (kind == "ignite") return 1;                                    // ours, the air catching fire (vfx/Ignite)
   if (kind == "bless") return 2;                                     // modern holy remake (01 BlessVFX, the enemies')
@@ -309,6 +311,8 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     if (isBolt(kind, look) && !bolts_.empty()) end = std::max(end, bolts_.back().end());
     if (isLightning(kind, look) && look != 5 && !lightnings_.empty()) end = std::max(end, lightnings_.back().end());
     if (isLightning(kind, look) && look == 5 && !stormBolts_.empty()) end = std::max(end, stormBolts_.back().end());
+    if ((kind == "thunderstorm" || kind == "wrathOfTheSkies") && look == 2 && !stormBolts_.empty()) end = std::max(end, stormBolts_.back().end());
+    if (kind == "chainLightning" && look == 3 && !chainBolts_.empty()) end = std::max(end, chainBolts_.back().end());
     if (kind == "chainLightning" && look == 2 && !chainLightnings_.empty()) end = std::max(end, chainLightnings_.back().end());
     if (kind == "primordialEmber" && look == 2 && !primordialEmbers_.empty()) end = std::max(end, primordialEmbers_.back().end());
     if (isFrost(kind, look) && !frosts_.empty()) end = std::max(end, frosts_.back().end());
@@ -379,6 +383,31 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     return true;
   }
   if (kind == "burialWeight") return true;  // syncFamiliarSpellFx starts the terrain field from the resolved battle state
+  // Tempestade Elétrica 02, Ira dos Céus 02 (vfx/StormBolt): the cloud over the area and its bolts. The storm's fall on everyone
+  // standing in it and on three of its empty hexes at most; the wrath's on every body it names.
+  if ((kind == "thunderstorm" || kind == "wrathOfTheSkies") && look == 2) {
+    const bool storm = kind == "thunderstorm";
+    std::vector<StormBolt::Target> struck;
+    int empties = 0;
+    for (size_t i = 0; i < targets.size(); ++i) {
+      const bool stands = !storm || targets[i].cardHeight > 0.0f;
+      if (!stands && (empties >= 3 || i % 3 != 1)) continue;
+      if (!stands) ++empties;
+      struck.push_back({targets[i].feet, heightOf(targets[i]), stands});
+    }
+    if (struck.empty()) struck.push_back({targets.front().feet, heightOf(targets.front()), false});
+    stormBolts_.emplace_back(storm ? StormBolt::Style::Storm : StormBolt::Style::Wrath, caster.feet, heightOf(caster), struck, start, impact, storm ? 0.9f : 1.25f,
+                             storm ? 0x57012u : 0x3a7c5u);
+    return true;
+  }
+  // Cadeia de Raios 03 (vfx/StormBolt, ChainBolt): from the hand to the first body, then from body to body.
+  if (kind == "chainLightning" && look == 3) {
+    std::vector<ChainBolt::Target> chain;
+    for (const Spot& s : targets) chain.push_back({s.feet, s.body, heightOf(s)});
+    chainBolts_.emplace_back(caster.feet, heightOf(caster), chain, start, impact, 0xc4a17u);
+    return true;
+  }
+  if (kind == "lightning" || kind == "lightningTier3" || kind == "shock") stormEcho_ = look == 5;
   // The cures', the meal's and the potion's light (HolyLight), on every unit it reaches.
   if (isHoly(kind, look)) {
     using Style = HolyLight::Style;
@@ -745,12 +774,17 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     std::vector<glm::vec3> hexes;
     for (const Spot& s : targets) hexes.push_back(s.feet);
     frosts_.emplace_back(caster.feet, heightOf(caster), std::move(hexes), start, impact, 0xf2057u);
+  } else if (isLightning(kind, look) && look == 5) {
+    // Relâmpago 05 (vfx/StormBolt): the same spell struck another way; Choque is the same at 3/4 size.
+    std::vector<StormBolt::Target> struck;
+    for (const Spot& s : targets) struck.push_back({s.feet, heightOf(s)});
+    stormBolts_.emplace_back(StormBolt::Style::Bolt, caster.feet, heightOf(caster), struck, start, impact, kind == "shock" ? 0.75f : 1.0f, 0x51a7eu);
   } else if (isLightning(kind, look)) {
     // Relâmpago 02, ours, in 3D (vfx/Lightning): a bolt from the sky on every struck body; Choque is the same at 3/4 size.
     std::vector<Lightning::Target> struck;
     for (const Spot& s : targets) struck.push_back({s.feet, heightOf(s)});
     lightnings_.emplace_back(caster.feet, heightOf(caster), std::move(struck), start, impact,
-                             (kind == "shock" ? 0.75f : 1.0f) * (look == 3 ? kTinyFx : 1.0f), 0x11417u);
+                             (kind == "shock" ? 0.75f : 1.0f) * (look == 3 ? kTinyFx : 1.0f), 0x11417u, look == 4);
   } else if (isBolt(kind, look)) {
     // Ours, in 3D (vfx/SpellBolts): one look, the same on every cast (fixed seeds).
     if (kind == "divineBolt") {
@@ -966,7 +1000,13 @@ void SpellEffects::lightning(const Spot& caster, const std::vector<Spot>& target
   for (size_t i = 0; i < targets.size(); ++i) bolt(targets[i], impact + 0.05f * static_cast<float>(i), shock ? 0.75f : 1.0f);
 }
 
-void SpellEffects::echo(const Spot& target, float at) { bolt(target, at, 0.6f); }
+void SpellEffects::echo(const Spot& target, float at) {
+  // The echo of a Relâmpago 05 strikes as that bolt did (vfx/StormBolt, small, the leader and the stroke alone); else the bolt art.
+  if (stormEcho_)
+    stormBolts_.emplace_back(StormBolt::Style::Echo, target.feet, heightOf(target), std::vector<StormBolt::Target>{{target.feet, heightOf(target), true}}, at, at + 0.14f,
+                             0.6f, 0xec40u);
+  else bolt(target, at, 0.6f);
+}
 
 // Frost: cold gathers on the caster; ice erupts on every hex of the area, nearest first, each with its ring and an
 // icy flash (Ember FROST_FLASH: a strong lantern, gone in a fraction of a second).
@@ -1234,6 +1274,8 @@ bool SpellEffects::active(float now) const {
   if (std::any_of(storms_.begin(), storms_.end(), [&](const IceStorm& s) { return !s.done(now); })) return true;
   if (std::any_of(bolts_.begin(), bolts_.end(), [&](const SpellBolt& b) { return !b.done(now); })) return true;
   if (std::any_of(lightnings_.begin(), lightnings_.end(), [&](const Lightning& l) { return !l.done(now); })) return true;
+  if (std::any_of(stormBolts_.begin(), stormBolts_.end(), [&](const StormBolt& b) { return !b.done(now); })) return true;
+  if (std::any_of(chainBolts_.begin(), chainBolts_.end(), [&](const ChainBolt& b) { return !b.done(now); })) return true;
   if (std::any_of(frosts_.begin(), frosts_.end(), [&](const FrostLine& f) { return !f.done(now); })) return true;
   if (std::any_of(ices_.begin(), ices_.end(), [&](const IceSpell& s) { return !s.done(now); })) return true;
   if (std::any_of(arcanes_.begin(), arcanes_.end(), [&](const ArcaneSpell& s) { return !s.done(now); })) return true;
@@ -1290,6 +1332,10 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   for (const SpellBolt& b : bolts_) b.build(now, camera, vfx_, vfxLights);
   std::erase_if(lightnings_, [&](const Lightning& l) { return l.done(now); });
   for (const Lightning& l : lightnings_) l.build(now, camera, vfx_, vfxLights);
+  std::erase_if(stormBolts_, [&](const StormBolt& b) { return b.done(now); });
+  for (const StormBolt& b : stormBolts_) b.build(now, camera, vfx_, vfxLights);
+  std::erase_if(chainBolts_, [&](const ChainBolt& b) { return b.done(now); });
+  for (const ChainBolt& b : chainBolts_) b.build(now, camera, vfx_, vfxLights);
   std::erase_if(chainLightnings_, [&](const ChainLightning& c) { return c.done(now); });
   for (const ChainLightning& c : chainLightnings_) c.build(now, camera, vfx_, vfxLights);
   std::erase_if(primordialEmbers_, [&](const PrimordialEmber& e) { return e.done(now); });

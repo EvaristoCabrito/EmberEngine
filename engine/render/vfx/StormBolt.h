@@ -8,7 +8,7 @@
 //                from the sky to the body, forks leaving it downward, twigs leaving the forks. Each generation has fewer levels than
 //                the one it leaves (so it ends), is thinner and dimmer, and runs out to a point. Drawn as flat ribbons turned to the
 //                eye at every point: the kinks stay sharp at any distance.
-//   The cast     the charge is drawn in to the caster's hand (motes, arcs off the hand and down to the ground, a ring closing in),
+//   The cast     the charge is drawn in to the caster's hand (motes, arcs off the hand, a ring closing in),
 //                then thrown up: a thin bolt leaves the hand for the sky a moment before the sky answers.
 //   The body     knows it first: a ring closes in round its feet, thin streamers reach up off its head, a faint thread of light
 //                marks the path (the pre-beam).

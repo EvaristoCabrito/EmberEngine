@@ -39,6 +39,7 @@
 #include "render/vfx/ArcaneFx.h"
 #include "render/vfx/IceStorm.h"
 #include "render/vfx/Lightning.h"
+#include "render/vfx/StormBolt.h"
 #include "render/vfx/ChainLightning.h"
 #include "render/vfx/PrimordialEmber.h"
 #include "render/vfx/SpellBolts.h"
@@ -184,7 +185,7 @@ class SpellEffects {
     arcanes_.emplace_back(ArcaneSpell::Style::Missile, from, fromHeight, to, toHeight, start, impact, static_cast<uint32_t>(random() * 4294967295.0f));
     arcanes_.back().asAttack(start, release, impact, scale);
   }
-  void clear() { arcanes_.clear(), holySpells_.clear(), poisons_.clear(), ices_.clear(), combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), ignites_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), dreamWebs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), frosts_.clear(), warrior_.clear(), vanguard_.clear(), arms_.clear(), ranger_.clear(), lancer_.clear(), turnUndead_.clear(), healer_.clear(), conjurer_.clear(), status_.clear(), daggers_.clear(), mage_.clear(), crusader_.clear(), selene_.clear(), handBolts_.clear(), witchStitch_.clear(), burialWeight_.clear(), moonwarden_.clear(); }
+  void clear() { arcanes_.clear(), holySpells_.clear(), poisons_.clear(), ices_.clear(), combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), ignites_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), dreamWebs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), stormBolts_.clear(), chainBolts_.clear(), frosts_.clear(), warrior_.clear(), vanguard_.clear(), arms_.clear(), ranger_.clear(), lancer_.clear(), turnUndead_.clear(), healer_.clear(), conjurer_.clear(), status_.clear(), daggers_.clear(), mage_.clear(), crusader_.clear(), selene_.clear(), handBolts_.clear(), witchStitch_.clear(), burialWeight_.clear(), moonwarden_.clear(); }
   // The Mago Negro's Nuvem de Adagas standing round its caster (vfx/DaggerFx, ours, 3D): the stage keeps one cloud per unit (MapStage
   // syncDaggers); cast() plays the conjuring, the thrown dagger ("daggerStrike") and, through intercept(), the shot knocked down.
   DaggerFx& daggers() { return daggers_; }
@@ -322,6 +323,9 @@ class SpellEffects {
   std::vector<IceStorm> storms_;      // Tempestade de Gelo 01 (Ember's Blizzard2D) / 02 (ours, 3D)
   std::vector<SpellBolt> bolts_;      // Míssil Mágico 03, Raio Divino 01 (ours, 3D)
   std::vector<Lightning> lightnings_;
+  std::vector<StormBolt> stormBolts_;  // Relâmpago / Choque 05, Tempestade Elétrica 02, Ira dos Céus 02, the echo (vfx/StormBolt)
+  std::vector<ChainBolt> chainBolts_;  // Cadeia de Raios 03 (vfx/StormBolt)
+  bool stormEcho_ = false;             // the last bolt cast was a 05: its echo strikes the same way
   std::vector<ChainLightning> chainLightnings_; // Cadeia de Raios 02 (ours, 3D)
   std::vector<PrimordialEmber> primordialEmbers_; // Brasa Primordial 02 (ours, 3D) // Relâmpago / Relâmpago Maior / Choque 02 (ours, 3D)
   std::vector<FrostLine> frosts_;     // Frost 02 (ours, 3D)
@@ -358,8 +362,10 @@ class SpellEffects {
   }
   // The lightning spells' 3D version (02).
   // Relâmpago / Choque 02, and 03 = the same at a small size (the enemies', the user 2026-10-20: "tiny ... thunder").
+  // 04 (2026-11-25): 02's design struck as real lightning is (vfx/Lightning `refined`), the heroes'.
   static bool isLightning(const std::string& kind, int look) {
-    return (look == 2 || look == 3) && (kind == "lightning" || kind == "lightningTier3" || kind == "shock");
+    // 05 (2026-11-25): a second version to choose from, its own effect (vfx/StormBolt).
+    return (look >= 2 && look <= 5) && (kind == "lightning" || kind == "lightningTier3" || kind == "shock");
   }
   // The bolt of Míssil Mágico 03 (04 = the same at a small size, the enemies') / Raio Divino 01, or none.
   static bool isBolt(const std::string& kind, int look) {
