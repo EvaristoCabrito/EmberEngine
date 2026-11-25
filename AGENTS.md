@@ -54,11 +54,30 @@ Ninguém troca, "melhora" ou substitui uma ferramenta desta lista sem o usuário
    a ~610 px) e `cut-36-media.json` (36 a ~610 px): sempre os três.
 4. **No jogo:** entradas em `content/sprite-overrides.json`, `apply_sprite_overrides.py` (pelo passo apply dos scripts `build/video-cut/*-after-matte.py`,
    guardando só os conjuntos mudados), cozinha (`Cooker.exe sprites`), prévia.
-5. **Janela de progresso (parte do procedimento, sempre):** toda fila de sprites tem a sua janela PowerShell aberta na tela do usuário com a lista
-   inteira (cada vídeo com barra, quadros feitos / total, o que roda agora, previsão só com o tempo medido), como
-   `build/video-cut/progresso-refazer.ps1` (abrir com o `.cmd` do lado). Fila nova = janela nova ou a mesma atualizada, antes de começar.
+5. **Progresso na conversa (parte do procedimento, sempre), NUNCA janela:** o usuário, 2026-11-25: "CHEGA DE JANELAS SEM INFORMAÇÃO".
+   Nenhuma janela PowerShell/Terminal é aberta na tela dele. O agente roda `build/video-cut/progresso-refazer.ps1 -Once` e cola na conversa
+   a tabela (cada etapa com barra, quadros feitos / total, o que roda agora, previsão só com o tempo medido), em todo relato.
 6. **Conferir antes de dizer pronto:** para cada clipe, o quadro com arma, cajado, mão e efeito, em tamanho grande, sobre verde forte:
    vídeo | matte | sprite do jogo, lado a lado. O usuário não consegue achar esses momentos no jogo: quem confere é o agente.
+
+## REGRA PERMANENTE: toda animação toca inteira, na sua velocidade — nunca acelerar, espremer ou cortar
+O jogo é feito para ser a apresentação mais cinematográfica possível. O usuário, 2026-11-25: "he can take all the time in the world doing
+his moves, that is exactly whats wrong with the game everything runs fast or gets cut short"; "Its meant to make for the most cinematic
+presentation possible" e os agentes "keep nerfing everything".
+
+Vale para todo agente (Claude Opus/Sonnet/Haiku, Codex, qualquer outro) e para toda unidade, chefe ou não.
+
+**Proibido:**
+- Espremer um clipe num tempo menor que o dele (ex.: o abrir do Birolho comprimido em dois hexes), tocar mais rápido que o vídeo, pular
+  quadros para "ganhar tempo".
+- Deixar a próxima ação, o próximo turno, o idle ou outra pose cortar uma animação antes do fim. Quem espera é o jogo: o turno, a troca de
+  golpes e a caminhada só terminam quando a animação terminou.
+- Tocar uma animação "às vezes". Se a unidade tem a pose (abrir, fechar, a pose que segue uma habilidade), ela toca sempre.
+- Sugerir encurtar um laço, regravar mais curto, ou apresentar o tempo de espera como custo, problema ou ponto negativo.
+
+**Como fazer:** ao ligar uma pose (abrir / fechar, a pose que segue uma habilidade — `"then"` na pose do roster —, conjuração, dano, queda,
+morte), somar o tamanho inteiro dela ao tempo que o jogo espera. Código existente que acelera ou corta um clipe: consertar para tocar
+inteiro e avisar o usuário. Por dado na pose, nunca por nome de unidade.
 
 ## Bosque Morto ground lock
 - Keep the approved ground mask `content/ground/bosque-morto-ground-mask-v02.png` and the `bosque-morto-v04` ground mapping unchanged.
