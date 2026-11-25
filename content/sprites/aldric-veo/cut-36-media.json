@@ -2,8 +2,8 @@
  "about": "aldric-veo's Personagens Leve (tools/scripts/sprites/quality_copies.py, the rule of 2026-10-25): every clip of cut.json from the same matted frames, at most 36 frames picked evenly (no blend, the clip's timing kept), the figure ~610 px tall (a clip already shorter keeps its own size).",
  "set": "aldric-veo-36-media",
  "version": "media36-v01",
- "figureUnits": 2.511,
- "figureNote": "the old Aldric's own height (its idle's head top to boots, measured)",
+ "figureUnits": 2.639,
+ "figureNote": "the user, 2026-11-25: \"each character has a different size\": Aldric stood 2.51 units against the heroes' 2.60-2.70 (Kael 2.60, Salazar 2.60, Vespera 2.64, Isolde 2.66, Selene 2.66, Voss 2.70, head top to boots, measured on their sprites); now 2.64, the heroes' middle (was 2.511, the old Aldric's height)",
  "scaleNote": "measured 2026-11-18 (head top by video_sprite.hood_top, the spear's thin tip not counted, to the boot row): the old Aldric's idle 544 px of his 640-px frames = 2.511 units (his box 2.951 high); the new videos: {'idle': 899.0, 'att': 883.0, 'spec': 928.0, 'fall': 925.5, 'walk': 952.0, 'hit': 967.0, 'turn': 952.5, 'up': 1012.0, 'down': 1021.0}. One figurePx per video, figureUnits = the old Aldric's, so he stands as tall as before",
  "edgeKey": true,
  "clips": [

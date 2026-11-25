@@ -45,18 +45,18 @@
    "frames": 64,
    "frameMs": 63.151041666666664,
    "nat": [
-    926,
+    1072,
     631
    ],
    "crop": [
-    32,
+    109,
     4,
     856,
     627
    ],
    "box": {
-    "w": 3.34135,
-    "h": 2.27688,
+    "w": 3.86737,
+    "h": 2.27641,
     "foot": 0.03956
    },
    "pattern": "content/sprites/omnieye/cast-media64-v01/cast-{}.png"

@@ -1,0 +1,532 @@
+{
+ "about": "voss-veo's Personagens Cinemática (tools/scripts/sprites/quality_copies.py, the rule of 2026-10-25): every clip of cut.json from the same matted frames, every frame (the clip's own timing), the figure ~610 px tall (a clip already shorter keeps its own size).",
+ "set": "voss-veo-cine-media",
+ "version": "cine-v01",
+ "figureUnits": 2.687,
+ "figureNote": "each clip's median hood top to boot row, as tall as voss-final's idle (the cast-back pose's note: 2.687 units)",
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/idle",
+   "video": "Attachments/VeoVoss/Idle/VossV2Idle.mp4",
+   "first": 16,
+   "last": 120,
+   "mode": "pingpong",
+   "scaleTo": 610
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/voss-veo/walk-right",
+   "video": "Attachments/VeoVoss/WalkRight/Voss_walking_to_the_right_20261017230249.mp4",
+   "first": 29,
+   "last": 152,
+   "loopMin": 88,
+   "loopMax": 121,
+   "mode": "loop",
+   "scaleTo": 610
+  },
+  {
+   "clip": "move-left",
+   "pose": "walkLeft",
+   "kind": "walk",
+   "src": "build/video-cut/voss-veo/walk-left",
+   "video": "Attachments/VeoVoss/Walk Left/Character_walking_left_with_staff_20261017230240.mp4",
+   "first": 0,
+   "last": 148,
+   "loopMin": 101,
+   "loopMax": 146,
+   "mode": "loop",
+   "scaleTo": 610
+  },
+  {
+   "clip": "cast",
+   "pose": "cast",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/cast",
+   "video": "Attachments/VeoVoss/Casting/Voss_casting_purple_arcane_spell_20261017231306.mp4",
+   "first": 8,
+   "last": 120,
+   "mode": "once",
+   "wallKey": {
+    "region": [
+     330,
+     0,
+     660,
+     380
+    ],
+    "low": 30,
+    "high": 110,
+    "feather": 56,
+    "why": "the user, 2026-10-20: half of the staff vanished at the end of the cast (v01 frames 77-90: the model dropped the flash, the burst and the staff's head as background); v01 kept"
+   },
+   "bodyAt": -0.242,
+   "scaleTo": 610,
+   "version": "cine-v02"
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/attack",
+   "video": "Attachments/VeoVoss/CounterDistance/CounterDistanceat420sec.mp4",
+   "first": 146,
+   "last": 186,
+   "impactFrame": 162,
+   "mode": "once",
+   "scaleTo": 610,
+   "version": "cine-v02"
+  },
+  {
+   "clip": "counter-staff",
+   "pose": "counterStaff",
+   "label": "Contra-ataque (cajado)",
+   "kind": "stand",
+   "src": "build/video-cut/redo-sonnet/voss-1080__counter",
+   "video": "Attachments/Voss/VossStaffCounter.mp4",
+   "first": 16,
+   "last": 90,
+   "impactFrame": 36,
+   "mode": "once",
+   "bodyAt": -0.242,
+   "scaleTo": 610,
+   "version": "cine-r01"
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "label": "Dano",
+   "kind": "stand",
+   "src": "build/video-cut/redo-sonnet/voss-veo__hit-v2",
+   "video": "Attachments/KaelV3/VossCharacter_taking_impact_jolt_3f33452d_1080p.mp4",
+   "first": 2,
+   "last": 52,
+   "mode": "once",
+   "bodyAt": -0.242,
+   "edgeKey": true,
+   "colorMatch": {
+    "reference": "C:\\EmberEngineB\\build/video-cut/voss-veo/idle 16:120",
+    "frames": "44:56",
+    "r": [
+     [
+      0.0,
+      0.001113
+     ],
+     [
+      0.000304,
+      0.001518
+     ],
+     [
+      0.000607,
+      0.001669
+     ],
+     [
+      0.000911,
+      0.002125
+     ],
+     [
+      0.001518,
+      0.002732
+     ],
+     [
+      0.001821,
+      0.003035
+     ],
+     [
+      0.002732,
+      0.003677
+     ],
+     [
+      0.003035,
+      0.004025
+     ],
+     [
+      0.003677,
+      0.005182
+     ],
+     [
+      0.004777,
+      0.006049
+     ],
+     [
+      0.005605,
+      0.006995
+     ],
+     [
+      0.006995,
+      0.008568
+     ],
+     [
+      0.008568,
+      0.009721
+     ],
+     [
+      0.01033,
+      0.01096
+     ],
+     [
+      0.012983,
+      0.013702
+     ],
+     [
+      0.015209,
+      0.015996
+     ],
+     [
+      0.0185,
+      0.019382
+     ],
+     [
+      0.022174,
+      0.022174
+     ],
+     [
+      0.027321,
+      0.028426
+     ],
+     [
+      0.035601,
+      0.040915
+     ],
+     [
+      0.045186,
+      0.05448
+     ],
+     [
+      0.056128,
+      0.07036
+     ],
+     [
+      0.084376,
+      0.099899
+     ],
+     [
+      0.132868,
+      0.130136
+     ],
+     [
+      0.287441,
+      0.208637
+     ],
+     [
+      0.473532,
+      0.318547
+     ],
+     [
+      0.863157,
+      0.533276
+     ]
+    ],
+    "g": [
+     [
+      0.0,
+      0.001113
+     ],
+     [
+      0.000304,
+      0.001518
+     ],
+     [
+      0.000607,
+      0.001669
+     ],
+     [
+      0.000911,
+      0.002125
+     ],
+     [
+      0.001518,
+      0.002732
+     ],
+     [
+      0.001821,
+      0.003035
+     ],
+     [
+      0.002732,
+      0.003677
+     ],
+     [
+      0.003035,
+      0.004025
+     ],
+     [
+      0.003677,
+      0.005182
+     ],
+     [
+      0.004777,
+      0.006049
+     ],
+     [
+      0.005605,
+      0.006995
+     ],
+     [
+      0.006995,
+      0.008568
+     ],
+     [
+      0.008568,
+      0.009721
+     ],
+     [
+      0.01033,
+      0.01096
+     ],
+     [
+      0.012286,
+      0.013702
+     ],
+     [
+      0.015209,
+      0.015209
+     ],
+     [
+      0.0185,
+      0.0185
+     ],
+     [
+      0.022174,
+      0.022174
+     ],
+     [
+      0.027321,
+      0.028426
+     ],
+     [
+      0.035601,
+      0.040915
+     ],
+     [
+      0.045186,
+      0.05448
+     ],
+     [
+      0.05448,
+      0.068478
+     ],
+     [
+      0.082283,
+      0.097587
+     ],
+     [
+      0.127438,
+      0.127438
+     ],
+     [
+      0.278894,
+      0.201556
+     ],
+     [
+      0.467784,
+      0.309469
+     ],
+     [
+      0.846873,
+      0.527115
+     ]
+    ],
+    "b": [
+     [
+      0.0,
+      0.001062
+     ],
+     [
+      0.000304,
+      0.001518
+     ],
+     [
+      0.000607,
+      0.001821
+     ],
+     [
+      0.000911,
+      0.002125
+     ],
+     [
+      0.001518,
+      0.002732
+     ],
+     [
+      0.001821,
+      0.003035
+     ],
+     [
+      0.002428,
+      0.003677
+     ],
+     [
+      0.003035,
+      0.004025
+     ],
+     [
+      0.003677,
+      0.005182
+     ],
+     [
+      0.004777,
+      0.006049
+     ],
+     [
+      0.005605,
+      0.006995
+     ],
+     [
+      0.006512,
+      0.008568
+     ],
+     [
+      0.008568,
+      0.009721
+     ],
+     [
+      0.009721,
+      0.01096
+     ],
+     [
+      0.012286,
+      0.012983
+     ],
+     [
+      0.014444,
+      0.015209
+     ],
+     [
+      0.017642,
+      0.0185
+     ],
+     [
+      0.021219,
+      0.022174
+     ],
+     [
+      0.027321,
+      0.028426
+     ],
+     [
+      0.035601,
+      0.039546
+     ],
+     [
+      0.043735,
+      0.052861
+     ],
+     [
+      0.05448,
+      0.068478
+     ],
+     [
+      0.08022,
+      0.097587
+     ],
+     [
+      0.122139,
+      0.124772
+     ],
+     [
+      0.274677,
+      0.194618
+     ],
+     [
+      0.467784,
+      0.300544
+     ],
+     [
+      0.846873,
+      0.514918
+     ]
+    ]
+   },
+   "scaleTo": 610,
+   "version": "cine-r01"
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "label": "Morte",
+   "kind": "stand",
+   "src": "build/video-cut/redo-sonnet/voss-1080__hitfall",
+   "video": "Attachments/Voss/Mage_hit_and_fall_animations_a0ec26d6_1080p.mp4",
+   "first": 124,
+   "last": 214,
+   "standUntil": 132,
+   "mode": "once",
+   "bodyAt": -0.242,
+   "scaleTo": 610,
+   "version": "cine-r01"
+  },
+  {
+   "clip": "turn-back",
+   "pose": "turnBack",
+   "kind": "stand",
+   "src": "build/video-cut/redo-sonnet/voss-1080__turn",
+   "video": "Attachments/TurnAround/Person_turning_180_degrees_3a633cfa_1080p.mp4",
+   "first": 6,
+   "last": 108,
+   "mode": "once",
+   "bodyAt": -0.242,
+   "scaleTo": 610,
+   "version": "cine-r01"
+  },
+  {
+   "clip": "cast-back",
+   "pose": "castBack",
+   "kind": "stand",
+   "src": "build/video-cut/redo-sonnet/voss-1080__turn",
+   "video": "Attachments/TurnAround/Person_turning_180_degrees_3a633cfa_1080p.mp4",
+   "first": 140,
+   "last": 140,
+   "mode": "once",
+   "bodyAt": -0.242,
+   "scaleTo": 610,
+   "version": "cine-r01"
+  },
+  {
+   "clip": "emote01",
+   "pose": "emote01",
+   "label": "VossEmote01",
+   "kind": "stand",
+   "src": "build/video-cut/redo-sonnet/voss-1080__hitfall",
+   "video": "Attachments/Voss/Mage_hit_and_fall_animations_a0ec26d6_1080p.mp4",
+   "first": 26,
+   "last": 96,
+   "mode": "once",
+   "bodyAt": -0.242,
+   "scaleTo": 610,
+   "version": "cine-r01"
+  },
+  {
+   "clip": "move-up",
+   "pose": "walkUp",
+   "kind": "walk",
+   "src": "build/video-cut/redo-sonnet/voss-1080__updown",
+   "video": "Attachments/TurnAround/VossWalkuUpandDown.mp4",
+   "first": 0,
+   "last": 119,
+   "loopMin": 40,
+   "loopMax": 110,
+   "mode": "loop",
+   "scaleTo": 610,
+   "version": "cine-r01"
+  },
+  {
+   "clip": "move-down",
+   "pose": "walkDown",
+   "kind": "walk",
+   "src": "build/video-cut/redo-sonnet/voss-1080__updown",
+   "video": "Attachments/TurnAround/VossWalkuUpandDown.mp4",
+   "first": 121,
+   "last": 239,
+   "loopMin": 40,
+   "loopMax": 110,
+   "mode": "loop",
+   "scaleTo": 610,
+   "version": "cine-r01"
+  }
+ ],
+ "result": "cut-result-cine-media.json"
+}

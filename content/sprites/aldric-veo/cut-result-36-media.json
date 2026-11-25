@@ -25,9 +25,9 @@
     711
    ],
    "box": {
-    "w": 1.77808,
-    "h": 2.95523,
-    "foot": 0.03246
+    "w": 1.86872,
+    "h": 3.10587,
+    "foot": 0.03411
    },
    "pattern": "content/sprites/aldric-veo/base-media36-r01/base-{}.png"
   },
@@ -43,7 +43,7 @@
    ],
    "frameCountFrom": 79,
    "figurePx": 883.0,
-   "bodyAt": 0.2247,
+   "bodyAt": 0.2362,
    "scaledTo": 609.6,
    "frames": 36,
    "frameMs": 91.43518518518518,
@@ -58,9 +58,9 @@
     674
    ],
    "box": {
-    "w": 3.71673,
-    "h": 2.79887,
-    "foot": 0.02209
+    "w": 3.90619,
+    "h": 2.94154,
+    "foot": 0.02322
    },
    "pattern": "content/sprites/aldric-veo/atk-media36-r01/atk-{}.png",
    "impact": 0.4304
@@ -77,24 +77,24 @@
    ],
    "frameCountFrom": 101,
    "figurePx": 928.0,
-   "bodyAt": 0.2246,
+   "bodyAt": 0.2247,
    "scaledTo": 610.1,
    "frames": 36,
    "frameMs": 116.89814814814814,
    "nat": [
-    910,
-    639
+    1208,
+    641
    ],
    "crop": [
-    118,
-    3,
+    270,
+    4,
     787,
-    633
+    634
    ],
    "box": {
-    "w": 3.74485,
-    "h": 2.62963,
-    "foot": 0.01823
+    "w": 5.22681,
+    "h": 2.7735,
+    "foot": 0.02202
    },
    "pattern": "content/sprites/aldric-veo/cast-media36-r01/cast-{}.png",
    "impact": 0.5545
@@ -128,9 +128,9 @@
     663
    ],
    "box": {
-    "w": 1.543,
-    "h": 2.75271,
-    "foot": 0.02563
+    "w": 1.62166,
+    "h": 2.89303,
+    "foot": 0.02694
    },
    "pattern": "content/sprites/aldric-veo/move-media36-r01/move-{}.png"
   },
@@ -163,9 +163,9 @@
     663
    ],
    "box": {
-    "w": 1.543,
-    "h": 2.75271,
-    "foot": 0.02563
+    "w": 1.62166,
+    "h": 2.89303,
+    "foot": 0.02694
    },
    "pattern": "content/sprites/aldric-veo/move-left-media36-r01/move-left-{}.png"
   },
@@ -181,7 +181,7 @@
    ],
    "frameCountFrom": 55,
    "figurePx": 967.0,
-   "bodyAt": -0.2246,
+   "bodyAt": -0.236,
    "scaledTo": 609.8,
    "frames": 36,
    "frameMs": 63.657407407407405,
@@ -196,9 +196,9 @@
     629
    ],
    "box": {
-    "w": 2.00724,
-    "h": 2.61188,
-    "foot": 0.0148
+    "w": 2.10956,
+    "h": 2.74502,
+    "foot": 0.01555
    },
    "pattern": "content/sprites/aldric-veo/hit-media36-r01/hit-{}.png"
   },
@@ -214,7 +214,7 @@
    ],
    "frameCountFrom": 79,
    "figurePx": 925.5,
-   "bodyAt": -0.2252,
+   "bodyAt": -0.2367,
    "scaledTo": 610.0,
    "frames": 36,
    "frameMs": 91.43518518518518,
@@ -229,9 +229,9 @@
     664
    ],
    "box": {
-    "w": 4.64216,
-    "h": 2.76143,
-    "foot": 0.0427
+    "w": 4.8788,
+    "h": 2.9022,
+    "foot": 0.04488
    },
    "pattern": "content/sprites/aldric-veo/death-media36-r01/death-{}.png"
   },
@@ -247,7 +247,7 @@
    ],
    "frameCountFrom": 75,
    "figurePx": 952.5,
-   "bodyAt": -0.2254,
+   "bodyAt": -0.2369,
    "scaledTo": 609.6,
    "frames": 36,
    "frameMs": 86.80555555555556,
@@ -262,9 +262,9 @@
     640
    ],
    "box": {
-    "w": 2.07734,
-    "h": 2.66147,
-    "foot": 0.02295
+    "w": 2.18323,
+    "h": 2.79714,
+    "foot": 0.02412
    },
    "pattern": "content/sprites/aldric-veo/turn-back-media36-r01/turn-back-{}.png"
   },
@@ -279,7 +279,7 @@
     1024
    ],
    "figurePx": 952.5,
-   "bodyAt": -0.2254,
+   "bodyAt": -0.2369,
    "scaledTo": 610.3,
    "frames": 1,
    "frameMs": 41.666666666666664,
@@ -294,9 +294,9 @@
     611
    ],
    "box": {
-    "w": 2.01144,
-    "h": 2.53795,
-    "foot": 0.01244
+    "w": 2.11397,
+    "h": 2.66732,
+    "foot": 0.01307
    },
    "pattern": "content/sprites/aldric-veo/cast-back-media36-r01/cast-back-{}.png"
   },
@@ -329,9 +329,9 @@
     632
    ],
    "box": {
-    "w": 1.5061,
-    "h": 2.62128,
-    "foot": 0.02649
+    "w": 1.58287,
+    "h": 2.7549,
+    "foot": 0.02784
    },
    "pattern": "content/sprites/aldric-veo/move-up-media36-r01/move-up-{}.png"
   },
@@ -364,9 +364,9 @@
     638
    ],
    "box": {
-    "w": 1.73384,
-    "h": 2.65225,
-    "foot": 0.03362
+    "w": 1.82222,
+    "h": 2.78745,
+    "foot": 0.03533
    },
    "pattern": "content/sprites/aldric-veo/move-down-media36-r01/move-down-{}.png"
   }

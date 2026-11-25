@@ -83,7 +83,7 @@
    "pose": "counterStaff",
    "label": "Contra-ataque (cajado)",
    "kind": "stand",
-   "src": "build/video-cut/voss-1080/counter",
+   "src": "build/video-cut/redo-sonnet/voss-1080__counter",
    "video": "Attachments/Voss/VossStaffCounter.mp4",
    "first": 16,
    "last": 90,
@@ -91,21 +91,21 @@
    "mode": "once",
    "bodyAt": -0.242,
    "why": "the user, 2026-11-20: VossStaffCounter (1920 x 1080, light backdrop, ~820 px tall, nothing touches an edge) instead of the old one (720 x 1280, cut by the edges in 55 + 19 + 22 frames): he stands to ~18, strikes 20-60, settles by ~88",
-   "version": "v1081"
+   "version": "r01"
   },
   {
    "clip": "hit",
    "pose": "hit",
    "label": "Dano",
    "kind": "stand",
-   "src": "build/video-cut/voss-veo/hit-v2",
+   "src": "build/video-cut/redo-sonnet/voss-veo__hit-v2",
    "video": "Attachments/KaelV3/VossCharacter_taking_impact_jolt_3f33452d_1080p.mp4",
    "first": 2,
    "last": 52,
    "mode": "once",
    "bodyAt": -0.242,
    "why": "the user, 2026-11-17: the new hit react (VossCharacter_taking_impact_jolt...1080p), from his stance, the recoil, back to it; the old one is emote01",
-   "version": "v02",
+   "version": "r01",
    "edgeKey": true,
    "colorMatch": {
     "reference": "C:\\EmberEngineB\\build/video-cut/voss-veo/idle 16:120",
@@ -447,7 +447,7 @@
    "pose": "death",
    "label": "Morte",
    "kind": "stand",
-   "src": "build/video-cut/voss-1080/hitfall",
+   "src": "build/video-cut/redo-sonnet/voss-1080__hitfall",
    "video": "Attachments/Voss/Mage_hit_and_fall_animations_a0ec26d6_1080p.mp4",
    "first": 124,
    "last": 214,
@@ -455,53 +455,53 @@
    "mode": "once",
    "bodyAt": -0.242,
    "why": "the same video: he stands to ~132, falls 136-184, lies still after (the old death was 485 px tall)",
-   "version": "v1081"
+   "version": "r01"
   },
   {
    "clip": "turn-back",
    "pose": "turnBack",
    "kind": "stand",
-   "src": "build/video-cut/voss-1080/turn",
+   "src": "build/video-cut/redo-sonnet/voss-1080__turn",
    "video": "Attachments/TurnAround/Person_turning_180_degrees_3a633cfa_1080p.mp4",
    "first": 6,
    "last": 108,
    "mode": "once",
    "bodyAt": -0.242,
    "why": "the user, 2026-11-19: his turn at 1080p, the same take as before (6-108)",
-   "version": "v1080"
+   "version": "r01"
   },
   {
    "clip": "cast-back",
    "pose": "castBack",
    "kind": "stand",
-   "src": "build/video-cut/voss-1080/turn",
+   "src": "build/video-cut/redo-sonnet/voss-1080__turn",
    "video": "Attachments/TurnAround/Person_turning_180_degrees_3a633cfa_1080p.mp4",
    "first": 140,
    "last": 140,
    "mode": "once",
    "bodyAt": -0.242,
    "why": "the back still of the same turn",
-   "version": "v1080"
+   "version": "r01"
   },
   {
    "clip": "emote01",
    "pose": "emote01",
    "label": "VossEmote01",
    "kind": "stand",
-   "src": "build/video-cut/voss-1080/hitfall",
+   "src": "build/video-cut/redo-sonnet/voss-1080__hitfall",
    "video": "Attachments/Voss/Mage_hit_and_fall_animations_a0ec26d6_1080p.mp4",
    "first": 26,
    "last": 96,
    "mode": "once",
    "bodyAt": -0.242,
    "why": "the user, 2026-11-20: the hit in Mage_hit_and_fall_animations looks silly as a hit react (his proper hit stays the 1080p one already in the game): it is his emote01 now (cutscenes only), 1080p instead of the old 720p one (642 px)",
-   "version": "v1081"
+   "version": "r01"
   },
   {
    "clip": "move-up",
    "pose": "walkUp",
    "kind": "walk",
-   "src": "build/video-cut/voss-1080/updown",
+   "src": "build/video-cut/redo-sonnet/voss-1080__updown",
    "video": "Attachments/TurnAround/VossWalkuUpandDown.mp4",
    "first": 0,
    "last": 119,
@@ -509,13 +509,13 @@
    "loopMax": 110,
    "mode": "loop",
    "why": "the user, 2026-11-19: VossWalkuUpandDown, walking away from the camera in place (0-119; the video cuts to his front at 120)",
-   "version": "v1080"
+   "version": "r01"
   },
   {
    "clip": "move-down",
    "pose": "walkDown",
    "kind": "walk",
-   "src": "build/video-cut/voss-1080/updown",
+   "src": "build/video-cut/redo-sonnet/voss-1080__updown",
    "video": "Attachments/TurnAround/VossWalkuUpandDown.mp4",
    "first": 121,
    "last": 239,
@@ -523,7 +523,7 @@
    "loopMax": 110,
    "mode": "loop",
    "why": "the same video, walking toward the camera in place (121-239)",
-   "version": "v1080"
+   "version": "r01"
   }
  ]
 }

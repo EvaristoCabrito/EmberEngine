@@ -1,11 +1,9 @@
 {
- "about": "Voss's 36-frame copy for Personagens Leve (the user, 2026-10-22: \"36 is on with LEVE setup and 64 is on with Medium. High plays the full version\"): every clip of cut.json from the same matted frames at ~610 px of figure (scaleTo; clips already ~610 stay as they are), 36 frames picked evenly (no blend), the clip's timing kept.",
+ "about": "voss-veo's Personagens Leve (tools/scripts/sprites/quality_copies.py, the rule of 2026-10-25): every clip of cut.json from the same matted frames, at most 36 frames picked evenly (no blend, the clip's timing kept), the figure ~610 px tall (a clip already shorter keeps its own size).",
  "set": "voss-veo-36-media",
  "version": "media36-v01",
- "result": "cut-result-36-media.json",
  "figureUnits": 2.687,
  "figureNote": "each clip's median hood top to boot row, as tall as voss-final's idle (the cast-back pose's note: 2.687 units)",
- "frameCount": 36,
  "clips": [
   {
    "clip": "base",
@@ -15,9 +13,7 @@
    "video": "Attachments/VeoVoss/Idle/VossV2Idle.mp4",
    "first": 16,
    "last": 120,
-   "loopMin": 48,
-   "loopMax": 100,
-   "mode": "loop",
+   "mode": "pingpong",
    "scaleTo": 610
   },
   {
@@ -26,10 +22,10 @@
    "kind": "walk",
    "src": "build/video-cut/voss-veo/walk-right",
    "video": "Attachments/VeoVoss/WalkRight/Voss_walking_to_the_right_20261017230249.mp4",
-   "first": 40,
-   "last": 130,
-   "loopMin": 40,
-   "loopMax": 86,
+   "first": 29,
+   "last": 152,
+   "loopMin": 88,
+   "loopMax": 121,
    "mode": "loop",
    "scaleTo": 610
   },
@@ -39,10 +35,10 @@
    "kind": "walk",
    "src": "build/video-cut/voss-veo/walk-left",
    "video": "Attachments/VeoVoss/Walk Left/Character_walking_left_with_staff_20261017230240.mp4",
-   "first": 30,
-   "last": 170,
-   "loopMin": 40,
-   "loopMax": 110,
+   "first": 0,
+   "last": 148,
+   "loopMin": 101,
+   "loopMax": 146,
    "mode": "loop",
    "scaleTo": 610
   },
@@ -76,8 +72,8 @@
    "kind": "stand",
    "src": "build/video-cut/voss-veo/attack",
    "video": "Attachments/VeoVoss/CounterDistance/CounterDistanceat420sec.mp4",
-   "first": 101,
-   "last": 212,
+   "first": 146,
+   "last": 186,
    "impactFrame": 162,
    "mode": "once",
    "scaleTo": 610
@@ -87,70 +83,449 @@
    "pose": "counterStaff",
    "label": "Contra-ataque (cajado)",
    "kind": "stand",
-   "src": "build/video-cut/voss-veo/counter-staff",
-   "video": "Attachments/VeoVoss/CounterStaff/CounterClseat4sec.mp4",
-   "first": 96,
-   "last": 220,
-   "impactFrame": 166,
+   "src": "build/video-cut/redo-sonnet/voss-1080__counter",
+   "video": "Attachments/Voss/VossStaffCounter.mp4",
+   "first": 16,
+   "last": 90,
+   "impactFrame": 36,
    "mode": "once",
-   "scaleTo": 610
+   "bodyAt": -0.242,
+   "scaleTo": 610,
+   "version": "media36-r01"
   },
   {
    "clip": "hit",
    "pose": "hit",
    "label": "Dano",
    "kind": "stand",
-   "src": "build/video-cut/voss-veo/hit",
-   "video": "Attachments/VeoVoss/HitandDeath/VossHitDeath.mp4",
-   "first": 28,
-   "last": 72,
+   "src": "build/video-cut/redo-sonnet/voss-veo__hit-v2",
+   "video": "Attachments/KaelV3/VossCharacter_taking_impact_jolt_3f33452d_1080p.mp4",
+   "first": 2,
+   "last": 52,
    "mode": "once",
    "bodyAt": -0.242,
-   "wallKey": {
-    "region": [
-     220,
-     0,
-     560,
-     260
+   "edgeKey": true,
+   "colorMatch": {
+    "reference": "C:\\EmberEngineB\\build/video-cut/voss-veo/idle 16:120",
+    "frames": "44:56",
+    "r": [
+     [
+      0.0,
+      0.001113
+     ],
+     [
+      0.000304,
+      0.001518
+     ],
+     [
+      0.000607,
+      0.001669
+     ],
+     [
+      0.000911,
+      0.002125
+     ],
+     [
+      0.001518,
+      0.002732
+     ],
+     [
+      0.001821,
+      0.003035
+     ],
+     [
+      0.002732,
+      0.003677
+     ],
+     [
+      0.003035,
+      0.004025
+     ],
+     [
+      0.003677,
+      0.005182
+     ],
+     [
+      0.004777,
+      0.006049
+     ],
+     [
+      0.005605,
+      0.006995
+     ],
+     [
+      0.006995,
+      0.008568
+     ],
+     [
+      0.008568,
+      0.009721
+     ],
+     [
+      0.01033,
+      0.01096
+     ],
+     [
+      0.012983,
+      0.013702
+     ],
+     [
+      0.015209,
+      0.015996
+     ],
+     [
+      0.0185,
+      0.019382
+     ],
+     [
+      0.022174,
+      0.022174
+     ],
+     [
+      0.027321,
+      0.028426
+     ],
+     [
+      0.035601,
+      0.040915
+     ],
+     [
+      0.045186,
+      0.05448
+     ],
+     [
+      0.056128,
+      0.07036
+     ],
+     [
+      0.084376,
+      0.099899
+     ],
+     [
+      0.132868,
+      0.130136
+     ],
+     [
+      0.287441,
+      0.208637
+     ],
+     [
+      0.473532,
+      0.318547
+     ],
+     [
+      0.863157,
+      0.533276
+     ]
     ],
-    "low": 25,
-    "high": 110,
-    "feather": 40,
-    "why": "the user, 2026-10-21: the staff was missing in the first frame (video 28-30: the model dropped the glowing staff head as background; the purple glow gone in the later frames too)"
+    "g": [
+     [
+      0.0,
+      0.001113
+     ],
+     [
+      0.000304,
+      0.001518
+     ],
+     [
+      0.000607,
+      0.001669
+     ],
+     [
+      0.000911,
+      0.002125
+     ],
+     [
+      0.001518,
+      0.002732
+     ],
+     [
+      0.001821,
+      0.003035
+     ],
+     [
+      0.002732,
+      0.003677
+     ],
+     [
+      0.003035,
+      0.004025
+     ],
+     [
+      0.003677,
+      0.005182
+     ],
+     [
+      0.004777,
+      0.006049
+     ],
+     [
+      0.005605,
+      0.006995
+     ],
+     [
+      0.006995,
+      0.008568
+     ],
+     [
+      0.008568,
+      0.009721
+     ],
+     [
+      0.01033,
+      0.01096
+     ],
+     [
+      0.012286,
+      0.013702
+     ],
+     [
+      0.015209,
+      0.015209
+     ],
+     [
+      0.0185,
+      0.0185
+     ],
+     [
+      0.022174,
+      0.022174
+     ],
+     [
+      0.027321,
+      0.028426
+     ],
+     [
+      0.035601,
+      0.040915
+     ],
+     [
+      0.045186,
+      0.05448
+     ],
+     [
+      0.05448,
+      0.068478
+     ],
+     [
+      0.082283,
+      0.097587
+     ],
+     [
+      0.127438,
+      0.127438
+     ],
+     [
+      0.278894,
+      0.201556
+     ],
+     [
+      0.467784,
+      0.309469
+     ],
+     [
+      0.846873,
+      0.527115
+     ]
+    ],
+    "b": [
+     [
+      0.0,
+      0.001062
+     ],
+     [
+      0.000304,
+      0.001518
+     ],
+     [
+      0.000607,
+      0.001821
+     ],
+     [
+      0.000911,
+      0.002125
+     ],
+     [
+      0.001518,
+      0.002732
+     ],
+     [
+      0.001821,
+      0.003035
+     ],
+     [
+      0.002428,
+      0.003677
+     ],
+     [
+      0.003035,
+      0.004025
+     ],
+     [
+      0.003677,
+      0.005182
+     ],
+     [
+      0.004777,
+      0.006049
+     ],
+     [
+      0.005605,
+      0.006995
+     ],
+     [
+      0.006512,
+      0.008568
+     ],
+     [
+      0.008568,
+      0.009721
+     ],
+     [
+      0.009721,
+      0.01096
+     ],
+     [
+      0.012286,
+      0.012983
+     ],
+     [
+      0.014444,
+      0.015209
+     ],
+     [
+      0.017642,
+      0.0185
+     ],
+     [
+      0.021219,
+      0.022174
+     ],
+     [
+      0.027321,
+      0.028426
+     ],
+     [
+      0.035601,
+      0.039546
+     ],
+     [
+      0.043735,
+      0.052861
+     ],
+     [
+      0.05448,
+      0.068478
+     ],
+     [
+      0.08022,
+      0.097587
+     ],
+     [
+      0.122139,
+      0.124772
+     ],
+     [
+      0.274677,
+      0.194618
+     ],
+     [
+      0.467784,
+      0.300544
+     ],
+     [
+      0.846873,
+      0.514918
+     ]
+    ]
    },
-   "why": "the user, 2026-10-21: one video for both (VossHitDeath.mp4); the blow lands at frame 30, he is upright again by 72",
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01"
   },
   {
    "clip": "death",
    "pose": "death",
    "label": "Morte",
    "kind": "stand",
-   "src": "build/video-cut/voss-veo/death",
-   "video": "Attachments/VeoVoss/HitandDeath/VossHitDeath.mp4",
-   "first": 134,
-   "last": 212,
-   "standUntil": 150,
+   "src": "build/video-cut/redo-sonnet/voss-1080__hitfall",
+   "video": "Attachments/Voss/Mage_hit_and_fall_animations_a0ec26d6_1080p.mp4",
+   "first": 124,
+   "last": 214,
+   "standUntil": 132,
    "mode": "once",
    "bodyAt": -0.242,
-   "wallKey": {
-    "region": [
-     0,
-     0,
-     385,
-     650
-    ],
-    "frames": [
-     150,
-     161
-    ],
-    "low": 28,
-    "high": 210,
-    "feather": 30,
-    "why": "video 152-161: the falling staff is motion-blurred and the model took it for background (white head, the shaft gone, frame 160 almost empty); the region is the staff's sweep left of the body; only while it falls (before, the purple glow lit the wall; after, its shadow lies on the floor); low / high = a dark staff over the 230 wall, so alpha follows the blur; low 28: under it the wall's darker top corner leaked faint patches (alpha <= 23)"
-   },
-   "why": "the same video: struck at 136, the staff falls from 150, on his knees by 175, sitting still by 200; his feet line and height from the frames he still stands in (134-150); bodyAt keeps the body where the idle has it although the fallen staff widens the frame on the left",
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01"
+  },
+  {
+   "clip": "turn-back",
+   "pose": "turnBack",
+   "kind": "stand",
+   "src": "build/video-cut/redo-sonnet/voss-1080__turn",
+   "video": "Attachments/TurnAround/Person_turning_180_degrees_3a633cfa_1080p.mp4",
+   "first": 6,
+   "last": 108,
+   "mode": "once",
+   "bodyAt": -0.242,
+   "scaleTo": 610,
+   "version": "media36-r01"
+  },
+  {
+   "clip": "cast-back",
+   "pose": "castBack",
+   "kind": "stand",
+   "src": "build/video-cut/redo-sonnet/voss-1080__turn",
+   "video": "Attachments/TurnAround/Person_turning_180_degrees_3a633cfa_1080p.mp4",
+   "first": 140,
+   "last": 140,
+   "mode": "once",
+   "bodyAt": -0.242,
+   "scaleTo": 610,
+   "version": "media36-r01"
+  },
+  {
+   "clip": "emote01",
+   "pose": "emote01",
+   "label": "VossEmote01",
+   "kind": "stand",
+   "src": "build/video-cut/redo-sonnet/voss-1080__hitfall",
+   "video": "Attachments/Voss/Mage_hit_and_fall_animations_a0ec26d6_1080p.mp4",
+   "first": 26,
+   "last": 96,
+   "mode": "once",
+   "bodyAt": -0.242,
+   "scaleTo": 610,
+   "version": "media36-r01"
+  },
+  {
+   "clip": "move-up",
+   "pose": "walkUp",
+   "kind": "walk",
+   "src": "build/video-cut/redo-sonnet/voss-1080__updown",
+   "video": "Attachments/TurnAround/VossWalkuUpandDown.mp4",
+   "first": 0,
+   "last": 119,
+   "loopMin": 40,
+   "loopMax": 110,
+   "mode": "loop",
+   "scaleTo": 610,
+   "version": "media36-r01"
+  },
+  {
+   "clip": "move-down",
+   "pose": "walkDown",
+   "kind": "walk",
+   "src": "build/video-cut/redo-sonnet/voss-1080__updown",
+   "video": "Attachments/TurnAround/VossWalkuUpandDown.mp4",
+   "first": 121,
+   "last": 239,
+   "loopMin": 40,
+   "loopMax": 110,
+   "mode": "loop",
+   "scaleTo": 610,
+   "version": "media36-r01"
   }
- ]
+ ],
+ "result": "cut-result-36-media.json",
+ "frameCount": 36
 }

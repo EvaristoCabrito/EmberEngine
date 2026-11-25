@@ -1,0 +1,258 @@
+{
+ "clips": {
+  "counter-staff": {
+   "video": "Attachments/Voss/VossStaffCounter.mp4",
+   "first": 16,
+   "last": 90,
+   "bootRow": 969,
+   "bootRows": [
+    969,
+    969
+   ],
+   "figurePx": 801.0,
+   "bodyAt": -0.2415,
+   "scaledTo": 610.0,
+   "frames": 75,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    660,
+    674
+   ],
+   "crop": [
+    16,
+    4,
+    639,
+    667
+   ],
+   "box": {
+    "w": 2.9084,
+    "h": 2.97009,
+    "foot": 0.01961
+   },
+   "pattern": "content/sprites/voss-veo/counter-staff-cine-r01/counter-staff-{}.png",
+   "impact": 0.2667
+  },
+  "hit": {
+   "video": "Attachments/KaelV3/VossCharacter_taking_impact_jolt_3f33452d_1080p.mp4",
+   "first": 2,
+   "last": 52,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/voss-veo/idle 16:120",
+   "bootRow": 1037,
+   "bootRows": [
+    1037,
+    1037
+   ],
+   "figurePx": 943.0,
+   "bodyAt": -0.2422,
+   "scaledTo": 610.0,
+   "frames": 51,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    481,
+    676
+   ],
+   "crop": [
+    29,
+    0,
+    447,
+    673
+   ],
+   "box": {
+    "w": 2.11712,
+    "h": 2.97541,
+    "foot": 0.01915
+   },
+   "pattern": "content/sprites/voss-veo/hit-cine-r01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Voss/Mage_hit_and_fall_animations_a0ec26d6_1080p.mp4",
+   "first": 124,
+   "last": 214,
+   "bootRow": 1035,
+   "bootRows": [
+    1035,
+    1035
+   ],
+   "figurePx": 931.0,
+   "bodyAt": -0.2424,
+   "scaledTo": 610.3,
+   "frames": 91,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1107,
+    664
+   ],
+   "crop": [
+    5,
+    4,
+    812,
+    657
+   ],
+   "box": {
+    "w": 4.87758,
+    "h": 2.92567,
+    "foot": 0.09744
+   },
+   "pattern": "content/sprites/voss-veo/death-cine-r01/death-{}.png"
+  },
+  "turn-back": {
+   "video": "Attachments/TurnAround/Person_turning_180_degrees_3a633cfa_1080p.mp4",
+   "first": 6,
+   "last": 108,
+   "bootRow": 1824,
+   "bootRows": [
+    1806,
+    1878
+   ],
+   "figurePx": 1627.0,
+   "bodyAt": -0.2419,
+   "scaledTo": 610.1,
+   "frames": 103,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    440,
+    648
+   ],
+   "crop": [
+    48,
+    2,
+    390,
+    644
+   ],
+   "box": {
+    "w": 1.93722,
+    "h": 2.85299,
+    "foot": 0.03164
+   },
+   "pattern": "content/sprites/voss-veo/turn-back-cine-r01/turn-back-{}.png"
+  },
+  "cast-back": {
+   "video": "Attachments/TurnAround/Person_turning_180_degrees_3a633cfa_1080p.mp4",
+   "first": 140,
+   "last": 140,
+   "bootRow": 1820,
+   "bootRows": [
+    1820,
+    1820
+   ],
+   "figurePx": 1622.0,
+   "bodyAt": -0.2419,
+   "scaledTo": 609.9,
+   "frames": 1,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    508,
+    628
+   ],
+   "crop": [
+    2,
+    2,
+    319,
+    624
+   ],
+   "box": {
+    "w": 2.23641,
+    "h": 2.76469,
+    "foot": 0.02511
+   },
+   "pattern": "content/sprites/voss-veo/cast-back-cine-r01/cast-back-{}.png"
+  },
+  "emote01": {
+   "video": "Attachments/Voss/Mage_hit_and_fall_animations_a0ec26d6_1080p.mp4",
+   "first": 26,
+   "last": 96,
+   "bootRow": 1040,
+   "bootRows": [
+    1035,
+    1040
+   ],
+   "figurePx": 919.0,
+   "bodyAt": -0.2427,
+   "scaledTo": 610.0,
+   "frames": 71,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    821,
+    695
+   ],
+   "crop": [
+    3,
+    4,
+    605,
+    687
+   ],
+   "box": {
+    "w": 3.61678,
+    "h": 3.06171,
+    "foot": 0.02265
+   },
+   "pattern": "content/sprites/voss-veo/emote01-cine-r01/emote01-{}.png"
+  },
+  "move-up": {
+   "video": "Attachments/TurnAround/VossWalkuUpandDown.mp4",
+   "first": 0,
+   "last": 119,
+   "loopFirst": 66,
+   "loopLast": 107,
+   "seamSteps": 1.48,
+   "bootRow": 1052,
+   "bodyDrift": [
+    -9,
+    26
+   ],
+   "figurePx": 963.5,
+   "scaledTo": 609.6,
+   "frames": 42,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    356,
+    639
+   ],
+   "crop": [
+    3,
+    3,
+    349,
+    633
+   ],
+   "box": {
+    "w": 1.57009,
+    "h": 2.81822,
+    "foot": 0.06058
+   },
+   "pattern": "content/sprites/voss-veo/move-up-cine-r01/move-up-{}.png"
+  },
+  "move-down": {
+   "video": "Attachments/TurnAround/VossWalkuUpandDown.mp4",
+   "first": 121,
+   "last": 239,
+   "loopFirst": 166,
+   "loopLast": 233,
+   "seamSteps": 1.73,
+   "bootRow": 1049,
+   "bodyDrift": [
+    -14,
+    33
+   ],
+   "figurePx": 983.0,
+   "scaledTo": 610.0,
+   "frames": 68,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    398,
+    641
+   ],
+   "crop": [
+    4,
+    3,
+    390,
+    635
+   ],
+   "box": {
+    "w": 1.75489,
+    "h": 2.82634,
+    "foot": 0.032
+   },
+   "pattern": "content/sprites/voss-veo/move-down-cine-r01/move-down-{}.png"
+  }
+ }
+}

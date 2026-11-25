@@ -43,23 +43,23 @@
    ],
    "frameCountFrom": 125,
    "figurePx": 615.0,
-   "scaledTo": 610.5,
+   "scaledTo": 609.7,
    "frames": 36,
    "frameMs": 144.67592592592592,
    "nat": [
-    703,
-    671
+    707,
+    686
    ],
    "crop": [
-    6,
-    4,
+    8,
+    20,
     689,
-    662
+    661
    ],
    "box": {
-    "w": 4.15024,
-    "h": 3.96133,
-    "foot": 0.10546
+    "w": 4.17366,
+    "h": 4.04969,
+    "foot": 0.10531
    },
    "pattern": "content/sprites/bandit-horseman/atk-media36-v01/atk-{}.png",
    "impact": 0.288

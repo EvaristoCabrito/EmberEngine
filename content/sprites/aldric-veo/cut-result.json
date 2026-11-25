@@ -23,9 +23,9 @@
     892
    ],
    "box": {
-    "w": 1.79122,
-    "h": 2.96127,
-    "foot": 0.03287
+    "w": 1.88253,
+    "h": 3.11222,
+    "foot": 0.03455
    },
    "pattern": "content/sprites/aldric-veo/base-r01/base-{}.png"
   },
@@ -40,7 +40,7 @@
     1039
    ],
    "figurePx": 883.0,
-   "bodyAt": 0.2247,
+   "bodyAt": 0.2362,
    "frames": 79,
    "frameMs": 41.666666666666664,
    "nat": [
@@ -54,9 +54,9 @@
     977
    ],
    "box": {
-    "w": 3.71673,
-    "h": 2.8039,
-    "foot": 0.02275
+    "w": 3.90619,
+    "h": 2.94683,
+    "foot": 0.02391
    },
    "pattern": "content/sprites/aldric-veo/atk-r01/atk-{}.png",
    "impact": 0.4304
@@ -72,7 +72,7 @@
     1032
    ],
    "figurePx": 928.0,
-   "bodyAt": 0.2246,
+   "bodyAt": 0.236,
    "frames": 101,
    "frameMs": 41.666666666666664,
    "nat": [
@@ -86,9 +86,9 @@
     964
    ],
    "box": {
-    "w": 4.95165,
-    "h": 2.63817,
-    "foot": 0.02165
+    "w": 5.20406,
+    "h": 2.77265,
+    "foot": 0.02275
    },
    "pattern": "content/sprites/aldric-veo/cast-r01/cast-{}.png",
    "impact": 0.5545
@@ -120,9 +120,9 @@
     1035
    ],
    "box": {
-    "w": 1.54827,
-    "h": 2.75366,
-    "foot": 0.02638
+    "w": 1.62719,
+    "h": 2.89403,
+    "foot": 0.02772
    },
    "pattern": "content/sprites/aldric-veo/move-r01/move-{}.png"
   },
@@ -153,9 +153,9 @@
     1035
    ],
    "box": {
-    "w": 1.54827,
-    "h": 2.75366,
-    "foot": 0.02638
+    "w": 1.62719,
+    "h": 2.89403,
+    "foot": 0.02772
    },
    "pattern": "content/sprites/aldric-veo/move-left-r01/move-left-{}.png"
   },
@@ -170,7 +170,7 @@
     1051
    ],
    "figurePx": 967.0,
-   "bodyAt": -0.2246,
+   "bodyAt": -0.236,
    "frames": 55,
    "frameMs": 41.666666666666664,
    "nat": [
@@ -184,9 +184,9 @@
     998
    ],
    "box": {
-    "w": 2.02282,
-    "h": 2.61487,
-    "foot": 0.01558
+    "w": 2.12593,
+    "h": 2.74816,
+    "foot": 0.01637
    },
    "pattern": "content/sprites/aldric-veo/hit-r01/hit-{}.png"
   },
@@ -201,7 +201,7 @@
     1026
    ],
    "figurePx": 925.5,
-   "bodyAt": -0.2252,
+   "bodyAt": -0.2367,
    "frames": 79,
    "frameMs": 41.666666666666664,
    "nat": [
@@ -215,9 +215,9 @@
     1007
    ],
    "box": {
-    "w": 4.64216,
-    "h": 2.76196,
-    "foot": 0.04341
+    "w": 4.8788,
+    "h": 2.90275,
+    "foot": 0.04562
    },
    "pattern": "content/sprites/aldric-veo/death-r01/death-{}.png"
   },
@@ -232,7 +232,7 @@
     1028
    ],
    "figurePx": 952.5,
-   "bodyAt": -0.2254,
+   "bodyAt": -0.2369,
    "frames": 75,
    "frameMs": 41.666666666666664,
    "nat": [
@@ -246,9 +246,9 @@
     1002
    ],
    "box": {
-    "w": 2.09316,
-    "h": 2.66786,
-    "foot": 0.02373
+    "w": 2.19986,
+    "h": 2.80386,
+    "foot": 0.02494
    },
    "pattern": "content/sprites/aldric-veo/turn-back-r01/turn-back-{}.png"
   },
@@ -263,7 +263,7 @@
     1024
    ],
    "figurePx": 952.5,
-   "bodyAt": -0.2254,
+   "bodyAt": -0.2369,
    "frames": 1,
    "frameMs": 41.666666666666664,
    "nat": [
@@ -277,9 +277,9 @@
     955
    ],
    "box": {
-    "w": 2.01144,
-    "h": 2.53868,
-    "foot": 0.01318
+    "w": 2.11397,
+    "h": 2.66809,
+    "foot": 0.01385
    },
    "pattern": "content/sprites/aldric-veo/cast-back-r01/cast-back-{}.png"
   },
@@ -310,9 +310,9 @@
     1048
    ],
    "box": {
-    "w": 1.5061,
-    "h": 2.62017,
-    "foot": 0.02729
+    "w": 1.58287,
+    "h": 2.75374,
+    "foot": 0.02868
    },
    "pattern": "content/sprites/aldric-veo/move-up-r01/move-up-{}.png"
   },
@@ -343,9 +343,9 @@
     1070
    ],
    "box": {
-    "w": 1.73384,
-    "h": 2.65118,
-    "foot": 0.03443
+    "w": 1.82222,
+    "h": 2.78633,
+    "foot": 0.03619
    },
    "pattern": "content/sprites/aldric-veo/move-down-r01/move-down-{}.png"
   }

@@ -167,99 +167,265 @@
    "impact": 0.5446
   },
   "counter-staff": {
-   "video": "Attachments/VeoVoss/CounterStaff/CounterClseat4sec.mp4",
-   "first": 96,
-   "last": 220,
-   "bootRow": 1224,
+   "video": "Attachments/Voss/VossStaffCounter.mp4",
+   "first": 16,
+   "last": 90,
+   "bootRow": 969,
    "bootRows": [
-    1221,
-    1243
+    969,
+    969
    ],
-   "frameCountFrom": 125,
-   "figurePx": 1124.0,
-   "scaledTo": 610.3,
+   "frameCountFrom": 75,
+   "figurePx": 801.0,
+   "bodyAt": -0.2415,
+   "scaledTo": 610.0,
    "frames": 36,
-   "frameMs": 144.67592592592592,
+   "frameMs": 86.80555555555556,
    "nat": [
-    391,
-    670
+    657,
+    674
    ],
    "crop": [
-    0,
-    0,
-    391,
+    16,
+    4,
+    636,
     667
    ],
    "box": {
-    "w": 1.72121,
-    "h": 2.94939,
-    "foot": 0.0205
+    "w": 2.89498,
+    "h": 2.96989,
+    "foot": 0.01961
    },
-   "pattern": "content/sprites/voss-veo/counter-staff-media36-v01/counter-staff-{}.png",
-   "impact": 0.56
+   "pattern": "content/sprites/voss-veo/counter-staff-media36-r01/counter-staff-{}.png",
+   "impact": 0.2667
   },
   "hit": {
-   "video": "Attachments/VeoVoss/HitandDeath/VossHitDeath.mp4",
-   "first": 28,
-   "last": 72,
-   "bootRow": 693,
+   "video": "Attachments/KaelV3/VossCharacter_taking_impact_jolt_3f33452d_1080p.mp4",
+   "first": 2,
+   "last": 52,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/voss-veo/idle 16:120",
+   "bootRow": 1037,
    "bootRows": [
-    691,
-    693
+    1037,
+    1037
    ],
-   "frameCountFrom": 45,
-   "figurePx": 612.0,
-   "bodyAt": -0.2415,
-   "scaledTo": 610.3,
+   "frameCountFrom": 51,
+   "figurePx": 943.0,
+   "bodyAt": -0.2422,
+   "scaledTo": 610.0,
    "frames": 36,
-   "frameMs": 52.083333333333336,
+   "frameMs": 59.02777777777778,
    "nat": [
-    664,
-    698
+    481,
+    676
    ],
    "crop": [
-    8,
-    1,
-    628,
-    693
+    31,
+    0,
+    445,
+    673
    ],
    "box": {
-    "w": 2.92409,
-    "h": 3.07382,
-    "foot": 0.02634
+    "w": 2.11712,
+    "h": 2.97541,
+    "foot": 0.01915
    },
-   "pattern": "content/sprites/voss-veo/hit-media36-v01/hit-{}.png"
+   "pattern": "content/sprites/voss-veo/hit-media36-r01/hit-{}.png"
   },
   "death": {
-   "video": "Attachments/VeoVoss/HitandDeath/VossHitDeath.mp4",
-   "first": 134,
-   "last": 212,
-   "bootRow": 690,
+   "video": "Attachments/Voss/Mage_hit_and_fall_animations_a0ec26d6_1080p.mp4",
+   "first": 124,
+   "last": 214,
+   "bootRow": 1035,
    "bootRows": [
-    690,
-    690
+    1035,
+    1035
    ],
-   "frameCountFrom": 79,
-   "figurePx": 609.0,
-   "bodyAt": -0.2427,
+   "frameCountFrom": 91,
+   "figurePx": 931.0,
+   "bodyAt": -0.2424,
+   "scaledTo": 610.3,
    "frames": 36,
-   "frameMs": 91.43518518518518,
+   "frameMs": 105.32407407407408,
    "nat": [
-    1192,
-    679
+    1107,
+    664
    ],
    "crop": [
-    7,
     5,
-    826,
-    667
+    4,
+    811,
+    657
    ],
    "box": {
-    "w": 5.25928,
-    "h": 2.99585,
-    "foot": 0.1103
+    "w": 4.87758,
+    "h": 2.92567,
+    "foot": 0.09744
    },
-   "pattern": "content/sprites/voss-veo/death-media36-v01/death-{}.png"
+   "pattern": "content/sprites/voss-veo/death-media36-r01/death-{}.png"
+  },
+  "turn-back": {
+   "video": "Attachments/TurnAround/Person_turning_180_degrees_3a633cfa_1080p.mp4",
+   "first": 6,
+   "last": 108,
+   "bootRow": 1824,
+   "bootRows": [
+    1806,
+    1878
+   ],
+   "frameCountFrom": 103,
+   "figurePx": 1627.0,
+   "bodyAt": -0.2419,
+   "scaledTo": 610.1,
+   "frames": 36,
+   "frameMs": 119.21296296296295,
+   "nat": [
+    438,
+    648
+   ],
+   "crop": [
+    47,
+    2,
+    388,
+    644
+   ],
+   "box": {
+    "w": 1.92731,
+    "h": 2.85136,
+    "foot": 0.03163
+   },
+   "pattern": "content/sprites/voss-veo/turn-back-media36-r01/turn-back-{}.png"
+  },
+  "cast-back": {
+   "video": "Attachments/TurnAround/Person_turning_180_degrees_3a633cfa_1080p.mp4",
+   "first": 140,
+   "last": 140,
+   "bootRow": 1820,
+   "bootRows": [
+    1820,
+    1820
+   ],
+   "figurePx": 1622.0,
+   "bodyAt": -0.2419,
+   "scaledTo": 609.9,
+   "frames": 1,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    508,
+    628
+   ],
+   "crop": [
+    2,
+    2,
+    319,
+    624
+   ],
+   "box": {
+    "w": 2.23641,
+    "h": 2.76469,
+    "foot": 0.02511
+   },
+   "pattern": "content/sprites/voss-veo/cast-back-media36-r01/cast-back-{}.png"
+  },
+  "emote01": {
+   "video": "Attachments/Voss/Mage_hit_and_fall_animations_a0ec26d6_1080p.mp4",
+   "first": 26,
+   "last": 96,
+   "bootRow": 1040,
+   "bootRows": [
+    1035,
+    1040
+   ],
+   "frameCountFrom": 71,
+   "figurePx": 919.0,
+   "bodyAt": -0.2427,
+   "scaledTo": 610.0,
+   "frames": 36,
+   "frameMs": 82.17592592592592,
+   "nat": [
+    821,
+    691
+   ],
+   "crop": [
+    4,
+    4,
+    595,
+    684
+   ],
+   "box": {
+    "w": 3.61678,
+    "h": 3.04408,
+    "foot": 0.01973
+   },
+   "pattern": "content/sprites/voss-veo/emote01-media36-r01/emote01-{}.png"
+  },
+  "move-up": {
+   "video": "Attachments/TurnAround/VossWalkuUpandDown.mp4",
+   "first": 0,
+   "last": 119,
+   "loopFirst": 66,
+   "loopLast": 107,
+   "seamSteps": 1.48,
+   "bootRow": 1052,
+   "bodyDrift": [
+    -9,
+    26
+   ],
+   "frameCountFrom": 42,
+   "figurePx": 963.5,
+   "scaledTo": 609.8,
+   "frames": 36,
+   "frameMs": 48.611111111111114,
+   "nat": [
+    356,
+    638
+   ],
+   "crop": [
+    3,
+    3,
+    349,
+    632
+   ],
+   "box": {
+    "w": 1.57009,
+    "h": 2.81381,
+    "foot": 0.0606
+   },
+   "pattern": "content/sprites/voss-veo/move-up-media36-r01/move-up-{}.png"
+  },
+  "move-down": {
+   "video": "Attachments/TurnAround/VossWalkuUpandDown.mp4",
+   "first": 121,
+   "last": 239,
+   "loopFirst": 166,
+   "loopLast": 233,
+   "seamSteps": 1.73,
+   "bootRow": 1049,
+   "bodyDrift": [
+    -14,
+    33
+   ],
+   "frameCountFrom": 68,
+   "figurePx": 983.0,
+   "scaledTo": 610.2,
+   "frames": 36,
+   "frameMs": 78.7037037037037,
+   "nat": [
+    395,
+    640
+   ],
+   "crop": [
+    4,
+    4,
+    388,
+    633
+   ],
+   "box": {
+    "w": 1.74122,
+    "h": 2.82122,
+    "foot": 0.02926
+   },
+   "pattern": "content/sprites/voss-veo/move-down-media36-r01/move-down-{}.png"
   }
  }
 }

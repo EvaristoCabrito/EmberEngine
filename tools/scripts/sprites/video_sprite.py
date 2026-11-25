@@ -545,6 +545,12 @@ def main():
         # `frameCount` (a clip's or the spec's; the user, 2026-10-22, "Slime36 with 36 frames per animation"): that many of the
         # clip's frames, picked evenly from its first to its last, each kept as it is (no blend); the clip keeps its duration
         n_full = len(frames)
+        # the union box is taken over every frame of the clip, before a copy picks some of them (the user, 2026-11-25: "voss is
+        # definitely stretched during casting"): the game draws every copy (Média, Leve) in the Alta pose's box, so a copy cut to the
+        # union of only its picked frames (the cast's widest flash frames left out) came out narrower and was drawn pulled wide
+        m = np.zeros(frames[0].shape[:2], bool)
+        for f in frames:
+            m |= f[..., 3] > 0
         want_n = c.get("frameCount", spec.get("frameCount"))
         if want_n and want_n < n_full:
             pick = [round(k * (n_full - 1) / (want_n - 1)) for k in range(want_n)]
@@ -568,9 +574,7 @@ def main():
         clip_units_px = spec["figureUnits"] / height
         info["figurePx"] = round(height, 1)
         print(f"{c['clip']}: figure {height:.0f} px -> {clip_units_px:.6f} units a pixel")
-        # cut every frame to the clip's union box (+ margin), the feet line kept
-        al = np.stack([f[..., 3] for f in frames])
-        m = (al > 0).any(0)
+        # cut every frame to the clip's union box (+ margin, `m` above: all its frames), the feet line kept
         ys, xs = np.nonzero(m)
         pad = 4
         x0, x1 = max(0, xs.min() - pad), min(m.shape[1], xs.max() + 1 + pad)
