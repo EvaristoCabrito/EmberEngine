@@ -332,6 +332,8 @@ class HexStepMover {
   bool animatingWalk() const { return animatingWalk_; }
   bool facingLocked() const { return facingLocked_; }
   SpriteFacing4 facing() const { return facing_; }
+  // +1 / -1: the side the last step headed (up-right and down-right are right, up-left and down-left are left); 0 before any step.
+  int side() const { return side_; }
   const HexWaypoint& currentHex() const { return current_; }
   const HexWaypoint& targetHex() const { return target_; }
   glm::vec2 worldPos() const { return worldPos_; }
@@ -358,6 +360,9 @@ class HexStepMover {
     const int dq = targetAx.q - curAx.q;
     const int dr = targetAx.r - curAx.r;
     if (const std::optional<SpriteFacing4> mapped = axialDeltaToFacing4(dq, dr)) facing_ = *mapped;
+    // The side of the step's six directions: east, north-east and south-east head right, the other three left
+    // (a pointy-top step moves 2 dq + dr half-hexes along x).
+    if (const int halfX = 2 * dq + dr; halfX != 0) side_ = halfX > 0 ? 1 : -1;
 
     animatingWalk_ = true;
     facingLocked_ = true;
@@ -379,6 +384,7 @@ class HexStepMover {
   float stepProgress_ = 0.0f;
   float travelled_ = 0.0f;
   SpriteFacing4 facing_ = SpriteFacing4::Right;
+  int side_ = 0;
   bool facingLocked_ = false;
   bool animatingWalk_ = false;
 };
