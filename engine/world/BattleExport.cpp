@@ -497,7 +497,8 @@ struct Spawner {
     return oneOf(u.classId, {"archer", "ranger", "assassin"});
   }
   static bool isArcaneCaster(const std::string& c) {
-    return oneOf(c, {"mage", "voss", "elementalist", "warlock", "cultist", "cultistV2", "blackCultist"}) || isBirolho(c);
+    // never the Birolhos (the user, 2026-11-25: their attack had an effect nobody asked for): their own video blow, no arcane bolt
+    return oneOf(c, {"mage", "voss", "elementalist", "warlock", "cultist", "cultistV2", "blackCultist"});
   }
   // Isolde (ours, the user 2026-10-24): a conjurer whose plain attack and counter work like a mage's ("its counter and ATT like a
   // mage"): the bolt at range, the staff beside her (MapStage); her class, reach and spells stay the conjurer's.
