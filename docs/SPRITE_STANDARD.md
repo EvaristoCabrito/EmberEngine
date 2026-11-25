@@ -15,8 +15,8 @@ todo conjunto novo ou refeito segue este arquivo, campo por campo. As ferramenta
 | `figurePx` | **não usar**: o corte mede a altura de cada clipe (a mediana da cabeça à bota), todos do mesmo tamanho |
 | `edgeKey` | `true` (a borda lida entre a cor da figura e a da parede: sem franja cinza) |
 | `bodyAt` | em **toda** pose em pé: a posição da cabeça na parada (lida da parada, como o −0.1902 do Kael); a parada também. Sem isso ele pula de lado ao trocar de pose |
-| parada (`base`) | o vídeo de parada inteiro em `pingpong`, ou um loop fechado com a emenda onde ele está parado (`loopMin`/`loopMax`); nunca cortar no meio de um movimento |
-| andar (`walk`, `walkLeft`, `walkUp`, `walkDown`) | `kind: walk`, `mode: loop`, o vídeo inteiro daquela vista e `loopMin`/`loopMax` largos (Kael: 96–239, 40–142), para o corte achar a melhor emenda; esquerda e direita / cima e baixo do mesmo vídeo combinado |
+| parada (`base`) | o vídeo de parada inteiro em `pingpong`, ou em `loop` com o maior laço possível (`loopMin` = `loopMax` = quadros do trecho − 3) |
+| andar (`walk`, `walkLeft`, `walkUp`, `walkDown`) | `kind: walk`, `mode: loop`, o vídeo inteiro daquela vista e o **maior laço possível**: `loopMin` = `loopMax` = quadros do trecho (`last` − `first` + 1) − 3; esquerda e direita / cima e baixo do mesmo vídeo combinado |
 | ataques e especiais | `impactFrame` no quadro do golpe; efeito de luz que o matte apaga (arma dentro do brilho): `wallKey` na região do efeito, só nos quadros dele |
 | queda | `standUntil` no último quadro em pé; o último quadro fica |
 | `version` | versão nova a cada refação (`r01`, `v1121`...); Média `media64-`, Leve `media36-`, Cinemática `cine-` com a mesma |

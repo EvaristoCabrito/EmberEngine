@@ -1,5 +1,18 @@
 # EmberEngineB project safeguards
 
+## REGRA MÁXIMA: o vídeo inteiro em toda animação, o maior laço possível em tudo
+Acima de todas as outras. O usuário, 2026-11-25: "vai usar o caralho inteiro do video em todas as animações sem exceção, salvar como
+regra máxima"; "você fazia o menor loop possível, agora vai fazer o maior loop possível para tudo". Vale para todo agente e toda
+unidade (herói, monstro, animal, invocação), em Alta, 64, 36 e Cinemática.
+
+- Toda animação usa o vídeo inteiro dela, cada quadro, do primeiro ao último (num vídeo com duas animações, cada uma o trecho inteiro
+  dela). Nunca um pedaço.
+- Todo laço (andar, parada, pairar, qualquer pose em `loop`) é o **maior possível**: `loopMin` = `loopMax` = os quadros do trecho
+  (`last` − `first` + 1) menos 3 (os 3 quadros que o `video_sprite.py` compara na emenda). O corte não escolhe um pedaço "de emenda
+  mais limpa": toca tudo.
+- Proibido: `loopMin`/`loopMax` menores que isso, laço curto, sugerir laço menor, encurtar o trecho para a emenda ficar melhor.
+- Laço curto encontrado no jogo: recortar com o maior laço e avisar o usuário.
+
 ## REGRA PERMANENTE: modo de teste = mesmo jogo, só recursos infinitos
 Ler antes de tocar em qualquer código do jogo. Vale para todo agente de código (Claude, Codex, Cursor, Copilot, qualquer outro).
 
