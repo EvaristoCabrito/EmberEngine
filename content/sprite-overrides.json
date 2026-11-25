@@ -666,10 +666,10 @@
    "newHero": {"name": "Telesm", "group": "summon", "sprite": "telesm", "reversed": false},
    "cut": "content/sprites/telesm/cut.json",
    "why": "the user, 2026-11-10: the shell defence summon, a giant shell monster that sits on the ground (Attachments/Telesm): idle, attack, the shell defence, walk, cast, hit and fall (\"always hit and fall, never death\"), Alta + 64 + 36. No summon spell places it yet",
-   "poses": {"idle": "base", "attack": "atk", "defend": "defend", "walk": "move", "cast": "cast", "hit": "defend", "death": "death"},
-   "labels": {"idle": "Parado", "attack": "Atacar", "defend": "Defesa (concha)", "walk": "Andar", "cast": "Conjurar", "hit": "Dano", "death": "Queda"},
-   "packs": {"base": "field", "move": "field"},
-   "strides": {"move": 1.0}
+   "poses": {"idle": "base", "attack": "atk", "defend": "defend", "walk": "move", "cast": "cast", "hit": "defend", "death": "death", "walkUp": "move-up", "walkDown": "move-down"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "defend": "Defesa (concha)", "walk": "Andar", "cast": "Conjurar", "hit": "Dano", "death": "Queda", "walkUp": "Andar (costas)", "walkDown": "Andar (frente)"},
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"},
+   "strides": {"move": 1.0, "move-up": 1.0, "move-down": 1.0}
   },
   {
    "set": "telesm-64-media",
@@ -677,16 +677,16 @@
    "cut": "content/sprites/telesm/cut-64-media.json",
    "why": "Telesm's Personagens Média: 64 frames from the same mattes",
    "mediumOf": {"hero": "telesm", "set": "telesm"},
-   "packs": {"base": "field", "move": "field"}
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
-  {"set": "telesm-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "telesm", "set": "telesm"}, "cut": "content/sprites/telesm/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field"}},
+  {"set": "telesm-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "telesm", "set": "telesm"}, "cut": "content/sprites/telesm/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}},
   {
    "set": "telesm-36-media",
    "version": "media36-v01",
    "cut": "content/sprites/telesm/cut-36-media.json",
    "why": "Telesm's Personagens Leve: 36 frames from the same mattes",
    "lightOf": {"hero": "telesm", "set": "telesm"},
-   "packs": {"base": "field", "move": "field"}
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
   {
    "set": "radiant-familiar",
@@ -938,10 +938,10 @@
    "newHero": {"name": "Rato Doente", "group": "monster", "sprite": "sick-rat", "reversed": false},
    "cut": "content/sprites/sick-rat/cut.json",
    "why": "the user, 2026-11-14: the Sick Rat, a new unit from two videos (Attachments/Monsters/Horse): idle and attack (swipe, screech, swipe) in three-quarters, walk, hit and death in profile; Alta + 64 + 36; a rank F enemy on Todas as Unidades",
-   "poses": {"idle": "base", "attack": "atk", "walk": "move", "hit": "hit", "death": "death"},
-   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "hit": "Dano", "death": "Morte"},
-   "packs": {"base": "field", "move": "field"},
-   "strides": {"move": 1.0}
+   "poses": {"idle": "base", "attack": "atk", "walk": "move", "hit": "hit", "death": "death", "walkUp": "move-up", "walkDown": "move-down"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "hit": "Dano", "death": "Morte", "walkUp": "Andar (costas)", "walkDown": "Andar (frente)"},
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"},
+   "strides": {"move": 1.0, "move-up": 1.0, "move-down": 1.0}
   },
   {
    "set": "sick-rat-64-media",
@@ -949,16 +949,16 @@
    "cut": "content/sprites/sick-rat/cut-64-media.json",
    "why": "the Sick Rat's Personagens Média: 64 frames at ~610 px",
    "mediumOf": {"hero": "sickRat", "set": "sick-rat"},
-   "packs": {"base": "field", "move": "field"}
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
-  {"set": "sick-rat-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "sickRat", "set": "sick-rat"}, "cut": "content/sprites/sick-rat/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field"}},
+  {"set": "sick-rat-cine-media", "version": "cine-v01", "cinemaOf": {"hero": "sickRat", "set": "sick-rat"}, "cut": "content/sprites/sick-rat/cut-cine-media.json", "why": "Cinemática Média / Leve (the user, 2026-11-21): every frame of the clips at ~610 px of figure (quality_copies.py cine-media)", "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}},
   {
    "set": "sick-rat-36-media",
    "version": "media36-v01",
    "cut": "content/sprites/sick-rat/cut-36-media.json",
    "why": "the Sick Rat's Personagens Leve: 36 frames at ~610 px",
    "lightOf": {"hero": "sickRat", "set": "sick-rat"},
-   "packs": {"base": "field", "move": "field"}
+   "packs": {"base": "field", "move": "field", "move-up": "field", "move-down": "field"}
   },
   {
    "set": "ember-mushroom",

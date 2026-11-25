@@ -213,6 +213,72 @@
     "foot": 0.11978
    },
    "pattern": "content/sprites/telesm/death-v01/death-{}.png"
+  },
+  "move-up": {
+   "video": "Attachments/Monsters/TelesmUpandDown.mp4",
+   "first": 0,
+   "last": 119,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/telesm/idle 0:143",
+   "loopFirst": 69,
+   "loopLast": 116,
+   "seamSteps": 1.41,
+   "bootRow": 998,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 842.5,
+   "frames": 48,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    882,
+    872
+   ],
+   "crop": [
+    5,
+    4,
+    871,
+    864
+   ],
+   "box": {
+    "w": 3.14065,
+    "h": 3.10504,
+    "foot": 0.05697
+   },
+   "pattern": "content/sprites/telesm/move-up-v01/move-up-{}.png"
+  },
+  "move-down": {
+   "video": "Attachments/Monsters/TelesmUpandDown.mp4",
+   "first": 120,
+   "last": 239,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/telesm/idle 0:143",
+   "loopFirst": 153,
+   "loopLast": 203,
+   "seamSteps": 1.35,
+   "bootRow": 1007,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 874.0,
+   "frames": 51,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    916,
+    898
+   ],
+   "crop": [
+    5,
+    4,
+    906,
+    889
+   ],
+   "box": {
+    "w": 3.14416,
+    "h": 3.08238,
+    "foot": 0.04805
+   },
+   "pattern": "content/sprites/telesm/move-down-v01/move-down-{}.png"
   }
  }
 }
