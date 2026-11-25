@@ -84697,6 +84697,15 @@
         ]
       },
       "embered-vanguard": {
+        "attack": [
+          {
+            "file": "EmberedVanguardATT001.mp3",
+            "volume": 0.55,
+            "offset": 0,
+            "delay": 0,
+            "exclusive": true
+          }
+        ],
         "walk": [
           {
             "file": "EmberedVanguardWalk001.mp3",
