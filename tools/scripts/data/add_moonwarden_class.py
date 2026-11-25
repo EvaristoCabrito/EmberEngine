@@ -1,4 +1,4 @@
-# Garam Holt's class (docs/SKILLS_MOONWARDEN.md, 2026-11-13): the Guardião da Lua (Moonwarden), sword and shield.
+# Garam's class (docs/SKILLS_MOONWARDEN.md, 2026-11-13): the Guardião da Lua (Moonwarden), sword and shield.
 # One run writes it into the data files the game reads; running it again changes nothing.
 #   content/ember-classes.json  heroClasses.moonwarden (merged into the battle rules' classes): the Guerreiro's stats, the Conjuração
 #                               Média tiers (the Arqueira's table, as the Vanguarda's), no Guerreiro skill (his techniques come from
@@ -8,14 +8,14 @@
 #                                        the class name
 #   content/data/overworld.json  the class's HP and weapon types
 #   content/data/action-points.json  each technique's AP (the design's), the class's weapon category
-#   content/progression.json  Garam Holt (the Guerreiro's gains, as Kael's)
+#   content/progression.json  Garam (the Guerreiro's gains, as Kael's)
 # Usage: python -I tools/scripts/data/add_moonwarden_class.py   (from the project root)
 import json
 import sys
 
 CID = "moonwarden"
 PT, EN = "Guardião da Lua", "Moonwarden"
-HERO = "Garam Holt"
+HERO = "Garam"
 # The design's AP per technique ("Moonwarden — Permanent Skills, T1–T10"; a normal sword blow is 6, a turn 12; Vigiar a Brecha's
 # reaction blow is the sword's own 6)
 AP = {"steadyStrike": 6, "digIn": 4, "flankStep": 7, "closeRanks": 5, "breakStride": 6, "watchTheGap": 4, "followThrough": 9,

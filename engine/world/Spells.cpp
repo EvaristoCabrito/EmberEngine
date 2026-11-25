@@ -169,7 +169,7 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"reapTheFlanks", "Ceifar os Flancos", 8, "", true}, "warbringer", 23},
     {{"rollingAdvance", "Avanço Rolante", 8, "", true}, "warbringer", 25},
     {{"shatterTheLine", "Estilhaçar a Linha", 8, "", true}, "warbringer", 27},
-    // Garam Holt, the Guardião da Lua (docs/SKILLS_MOONWARDEN.md, the user 2026-11-13: "Moonwarden — Permanent Skills, T1–T10"): one
+    // Garam, the Guardião da Lua (docs/SKILLS_MOONWARDEN.md, the user 2026-11-13: "Moonwarden — Permanent Skills, T1–T10"): one
     // class from 1 to 30, one permanent skill a tier, on the casters' table (T1-T10 open at 1, 3, 6, 8, 11, 13, 16, 18, 21, 23)
     {{"steadyStrike", "Golpe Firme", 1, "", true}, "moonwarden", 1},
     {{"digIn", "Firmar o Pé", 2, "", true}, "moonwarden", 3},

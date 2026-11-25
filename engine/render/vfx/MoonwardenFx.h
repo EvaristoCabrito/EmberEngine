@@ -1,6 +1,6 @@
 #pragma once
 
-// Garam Holt's techniques, the Guardião da Lua (docs/SKILLS_MOONWARDEN.md, 2026-11-13), ours, in 3D on the effect runtime: the Combat
+// Garam's techniques, the Guardião da Lua (docs/SKILLS_MOONWARDEN.md, 2026-11-13), ours, in 3D on the effect runtime: the Combat
 // material's sheets, shells, ground rings, columns and streaks (shaders/vfx.hlsl kMaterialCombat) in moonlight - pale silver light, a
 // white core, a cold blue edge. One look each, version 01 (the user: "maybe you should create the visual effects for these new skills").
 //

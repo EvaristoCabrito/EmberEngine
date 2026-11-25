@@ -1,6 +1,6 @@
-# Garam Holt: Guardião da Lua (Moonwarden)
+# Garam: Guardião da Lua (Moonwarden)
 
-The user, 2026-11-13: "Garam Holt — Moonwarden", "Guardião da Lua em Português", then the design "Moonwarden — Permanent Skills,
+The user, 2026-11-13: "Garam — Moonwarden", "Guardião da Lua em Português", then the design "Moonwarden — Permanent Skills,
 T1–T10", which replaced the first moon-phase draft (ten skills over T1-T5, three changed by the moon): one class from level 1 to 30,
 one permanent skill a tier. The skills work in every form (human, intermediate, werewolf, full wolf); only the human form is in the
 game. His loop: guard an ally, take part of the hit, punish the foe responsible.
@@ -9,8 +9,8 @@ game. His loop: guard an ally, take part of the hit, punish the foe responsible.
 
 - Data: `content/ember-classes.json` `heroClasses.moonwarden` (the Guerreiro's stats, the casters' tier table - T1-T10 open at 1, 3,
   6, 8, 11, 13, 16, 18, 21, 23 - one-handed swords, a shield in the off hand), `content/data/weapons.json` / `inn.json`,
-  `overworld.json`, `class-stats.json`, `classes.json`, `action-points.json` (`spells.byKind`), `content/progression.json` (Garam
-  Holt: the Guerreiro's gains). Written by `tools/scripts/data/add_moonwarden_class.py` (running it again changes nothing).
+  `overworld.json`, `class-stats.json`, `classes.json`, `action-points.json` (`spells.byKind`), `content/progression.json` (Garam:
+  the Guerreiro's gains). Written by `tools/scripts/data/add_moonwarden_class.py` (running it again changes nothing).
 - Rules: `engine/world/SpellsMoonwarden.inc` (aims, casts, the guards, Assumir o Peso's transfer, Vigiar a Brecha's reaction, the
   words), included by `SpellsVanguard.inc`: the same technique system as Kael's (`kTechniques`, ranks, cooldowns, one use of the
   tier). Hooks: `Spells.cpp` `resolveStrikeImpl` (Puxar para Longe's aim, the reductions, the transfer), `Battle.h`
@@ -57,7 +57,7 @@ game. His loop: guard an ally, take part of the hit, punish the foe responsible.
 
 ## Look
 
-- Sprites: the user's temporary sheets (`content/sprites/moonwarden-v01/human`, set `moonwarden-v01`, hero `garranHolt`): idle, walk,
+- Sprites: the user's temporary sheets (`content/sprites/moonwarden-v01/human`, set `moonwarden-v01`, hero `garam`): idle, walk,
   attack, special (his blows), block (his guards), hit, fall.
 - Effects: `engine/render/vfx/MoonwardenFx` (moonlight, ours, 3D), one look per skill, played from `MapStage` as the step lands.
 - Icons: `content/ui/spells/<kind>.jpg`, from the user's `Attachments/Icons` (98gm6 Golpe Firme, 72aWB Firmar o Pé, VyGHz Passo de
