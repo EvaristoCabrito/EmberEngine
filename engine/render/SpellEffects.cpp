@@ -152,7 +152,7 @@ int SpellEffects::classicLook(const std::string& kind) {
   if (kind == "magicMissile" || kind == "magicMissileV2") return 5;
   if (kind == "divineBolt") return 2;                                // the strike from the sky (vfx/HolyFx; 01 = SpellBolts, the enemies)
   if (kind == "turnUndead") return 1;                                // ours in 3D (vfx/TurnUndead)
-  if (isLightning(kind, 2)) return 4;                                // Raio, 02's design refined (vfx/Lightning; 01 = the cards, the enemies')
+  if (isLightning(kind, 2)) return 5;                                // Raio, the heroes': vfx/StormBolt, the look the user chose (2026-11-25); the older versions stay, the monsters'
   if (kind == "fireball") return 2;                                  // ours, a volume of fire (01 = FireballVFX, the enemies')
   if (kind == "ignite") return 1;                                    // ours, the air catching fire (vfx/Ignite)
   if (kind == "bless") return 2;                                     // modern holy remake (01 BlessVFX, the enemies')

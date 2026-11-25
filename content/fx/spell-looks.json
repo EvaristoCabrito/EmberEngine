@@ -62,13 +62,13 @@
   "glacialGale": 2,
   "iceLance": 2,
   "iceStorm": 2,
-  "lightning": 4,
-  "lightningTier3": 2,
+  "lightning": 5,
+  "lightningTier3": 5,
   "magicMissile": 4,
   "magicMissileV2": 4,
   "phantasmalForce": 1,
   "poisonBreath": 3,
-  "shock": 3,
+  "shock": 5,
   "warp": 1,
   "webOfDreams": 2
  }
