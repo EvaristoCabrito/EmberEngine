@@ -79,6 +79,25 @@ Vale para todo agente (Claude Opus/Sonnet/Haiku, Codex, qualquer outro) e para t
 morte), somar o tamanho inteiro dela ao tempo que o jogo espera. Código existente que acelera ou corta um clipe: consertar para tocar
 inteiro e avisar o usuário. Por dado na pose, nunca por nome de unidade.
 
+**Método definitivo: a cadeia de uma animação até o jogo.** O usuário, 2026-11-25: "we need a definitive method, any step that gets
+skipped ruins the whole chain". Uma animação só existe no jogo se TODOS os elos abaixo estão feitos, nesta ordem. Um elo pulado = a
+animação não aparece, aparece às vezes ou aparece cortada. Nenhum agente diz "pronto" com um elo faltando; o relato lista os oito, cada
+um como feito (com a prova) ou NÃO FEITO, e o que falta vem na primeira linha.
+
+1. **Clipe:** a pose está no `cut.json` do conjunto com o clipe inteiro (o pipeline de sprites acima; Alta, 64 e 36).
+2. **Dado:** a entrada da pose em `content/sprite-overrides.json`, com o que a liga às outras (`"then"`: a pose que a segue; `"reversed"`:
+   a pose que é outra ao contrário).
+3. **Roster:** o passo apply rodou e a pose está em `build/scenes/roster.json` com `pace` não vazio e os mesmos campos do elo 2.
+   Prova: abrir o roster e ler a pose.
+4. **Cozinha:** `Cooker.exe sprites` rodou depois do apply e o clipe está no `battle.pak`. Prova: o log do jogo sem
+   "not drawn: no sprite clip" para essa unidade.
+5. **Motor:** o código toca a pose sempre e o jogo espera o tamanho inteiro dela (caminhada: `Walk::hold` / `foldUntil`; habilidade: o
+   `x.end` da troca soma o `"then"`). Pose nova de um tipo que o motor ainda não espera = código novo, por dado, antes de dizer pronto.
+6. **Build:** `Sandbox.exe` linkado depois da última mudança de código (o jogo fechado para linkar). Prova: a hora do arquivo.
+7. **Conferência:** quem confere é o agente, elo por elo, com as provas acima; o que só o usuário pode ver no jogo é dito assim, com a
+   unidade e a ação exata para ele testar.
+8. **Commit:** o que é do agente, commitado; o que ficou fora, dito com o motivo.
+
 ## Bosque Morto ground lock
 - Keep the approved ground mask `content/ground/bosque-morto-ground-mask-v02.png` and the `bosque-morto-v04` ground mapping unchanged.
 - Do not recolor, replace, regenerate, or remap that mask or tile. Preserve the active map version and all non-ground content when making ground-only fixes.
