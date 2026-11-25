@@ -926,13 +926,14 @@ bool prepareCampaignMap(const std::filesystem::path& mapFile, const std::filesys
   legacyClassIds(*r, mission);
   const int cols = integer(mission, "cols"), rows = integer(mission, "rows");
   std::vector<json> added;
-  if (!flag(mission, "explore")) {
+  if (!flag(mission, "hub")) {
     std::vector<json> decorations = closeWatchtowerWalls(*r, str(mission, "id"), tilesOf(*r, mission), cols, rows, listOf(mission, "decorations"));
     std::vector<std::string> terrain = tilesOf(*r, mission);
     clearRockColumnTiles(*r, terrain, cols, rows, decorations, str(mission, "baseTile"));
     std::set<std::string> present;
     std::set<Hex> occupied;
     for (const json& s : listOf(mission, "playerSpawns")) present.insert(str(s, "name"));
+    for (const json& s : listOf(mission, "neutralSpawns")) present.insert(str(s, "name"));
     for (const char* list : {"playerSpawns", "enemySpawns", "neutralSpawns"})
       for (const json& s : listOf(mission, list)) occupied.insert({integer(s, "x"), integer(s, "y")});
     const std::vector<json> players = listOf(mission, "playerSpawns");

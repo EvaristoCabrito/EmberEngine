@@ -23,6 +23,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include "world/HexMovement.h"
+
 namespace ember {
 
 struct BattleHex {
@@ -526,6 +528,8 @@ class Battle {
   std::vector<ReachCell> reachable(size_t unit, bool pruneStops = true) const;
   // The walk from the unit's hex to (x, y) through a reach map, start first; empty when (x, y) is not in it.
   static std::vector<BattleHex> path(const std::vector<ReachCell>& reach, int x, int y);
+  // Turn-penalized A* path from the unit's current hex to `goal`, start first; empty when unreachable.
+  std::vector<BattleHex> findPath(size_t unit, BattleHex goal, bool requireStop = true) const;
   // Moves the unit to (x, y) along a reachable path, spending its cost. False when (x, y) is not reachable.
   bool move(size_t unit, int x, int y);
   // Validates an entire voluntary route before any movement-triggered effect may resolve.

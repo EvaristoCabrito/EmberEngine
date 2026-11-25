@@ -59,35 +59,46 @@ struct LightSpellMetrics {
   float healerRadiusWorld = 3.0f * kHexToWorldUnits;
 };
 
-// Calculate effective power (1..10) from character level
+// Calculate effective power / level (1..30)
 inline int effectiveLightPower(int level) {
-  if (level <= 1) return 1;
-  if (level <= 10) return level;
-  // If higher levels up to 30: interpolate between 1 and 10
-  const double t = std::clamp<double>(level - 1, 0, 29) / 29.0;
-  return std::clamp<int>(static_cast<int>(std::round(1.0 + t * 9.0)), 1, 10);
+  return std::clamp(level, 1, 30);
 }
 
-// Compute metrics from power tier (1..10)
+// Compute metrics from level / power (1..30)
+// Progresses every level from level 1 up through the next 15 levels and on to level 30
 inline LightSpellMetrics lightMetricsForPower(int power) {
-  power = std::clamp(power, 1, 10);
+  power = std::clamp(power, 1, 30);
   LightSpellMetrics m;
   m.power = power;
-  // Table:
-  // 1: 60m, cone 6, conj r 4.0, conj reach 6.0, healer r 3.0
-  // 2: 80m, cone 7, conj r 4.5, conj reach 6.5, healer r 3.5
-  // ...
-  // 10: 240m, cone 15, conj r 8.5, conj reach 10.5, healer r 7.5
-  m.durationMinutes = 40 + 20 * power;
-  m.coneLengthHex = 5.0f + static_cast<float>(power);
+  const float t = static_cast<float>(power - 1) / 29.0f;
+
+  // Feixe de Luz (Mage cone):
+  // Level 1: 8 hexes, 65°
+  // Level 15: 19 hexes, ~87°
+  // Level 30: 30 hexes, 110°
+  m.coneLengthHex = std::round(8.0f + 22.0f * t);
   m.coneLengthWorld = m.coneLengthHex * kHexToWorldUnits;
-  m.coneAngleDegrees = 60.0f;
-  m.conjurerRadiusHex = 3.5f + 0.5f * static_cast<float>(power);
+  m.coneAngleDegrees = 65.0f + 45.0f * t;
+
+  // Luz Ancorada (Conjurer sphere & reach):
+  // Level 1: radius 5.0 hexes, range 8.0 hexes
+  // Level 15: radius 11.3 hexes, range 16.7 hexes
+  // Level 30: radius 18.0 hexes, range 26.0 hexes
+  m.conjurerRadiusHex = 5.0f + 13.0f * t;
   m.conjurerRadiusWorld = m.conjurerRadiusHex * kHexToWorldUnits;
-  m.conjurerRangeHex = 5.5f + 0.5f * static_cast<float>(power);
+  m.conjurerRangeHex = 8.0f + 18.0f * t;
   m.conjurerRangeWorld = m.conjurerRangeHex * kHexToWorldUnits;
-  m.healerRadiusHex = 2.5f + 0.5f * static_cast<float>(power);
+
+  // Halo Luminoso (Healer radiant aura):
+  // Level 1: radius 4.0 hexes
+  // Level 15: radius 9.8 hexes
+  // Level 30: radius 16.0 hexes
+  m.healerRadiusHex = 4.0f + 12.0f * t;
   m.healerRadiusWorld = m.healerRadiusHex * kHexToWorldUnits;
+
+  // Duration: scales smoothly from 60 min (level 1) to 378 min (~6.3h at level 15) to 720 min (12h at level 30)
+  m.durationMinutes = static_cast<int>(std::round(60.0f + 660.0f * t));
+
   return m;
 }
 
@@ -205,12 +216,12 @@ inline std::string lightingSpellDisplayName(const std::string& kind) {
   return kind;
 }
 
-// Cost helpers
-inline int lightingSpellApCost(const std::string& /*kind*/) {
-  return 4;  // All 3 versions propose 4 AP
+// Cost helpers: fixed AP and Mana cost (AP never scales down with level)
+inline int lightingSpellApCost(const std::string& /*kind*/, int /*level*/ = 1) {
+  return 4;  // Fixed 4 AP
 }
 
-inline int lightingSpellManaCost(const std::string& kind) {
+inline int lightingSpellManaCost(const std::string& kind, int /*level*/ = 1) {
   if (kind == kSpellAnchoredLight) return 7;
   return 6;  // arcaneBeam: 6, luminousHalo: 6
 }

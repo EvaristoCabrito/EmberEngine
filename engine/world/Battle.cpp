@@ -772,6 +772,40 @@ std::vector<BattleHex> Battle::path(const std::vector<ReachCell>& reach, int x, 
   return out;
 }
 
+std::vector<BattleHex> Battle::findPath(size_t unit, BattleHex goal, bool requireStop) const {
+  if (unit >= units_.size() || !inBounds(goal.x, goal.y)) return {};
+  const BattleUnit& u = units_[unit];
+  if (goal.x == u.x && goal.y == u.y) return {{u.x, u.y}};
+
+  const bool burialRooted = std::any_of(u.cond.burialRootSources.begin(), u.cond.burialRootSources.end(), [&](const std::string& source) {
+    return std::any_of(units_.begin(), units_.end(), [&](const BattleUnit& owner) { return owner.alive && owner.id == source && owner.burialWeightActive; });
+  });
+  const bool movementImmune = burialRooted || (u.alive && u.burialWeightActive);
+  const bool oneHexOnly = turnRestrained_;
+  if (movementImmune || (oneHexOnly && u.moveUsed > 0)) return {};
+
+  const ApRules& apr = apRules();
+  const bool apFree = roaming_ && apr.movement.freeWhileRoaming;
+  const int apBudget = apFree ? std::numeric_limits<int>::max() : std::max(0, u.ap);
+  const int movBudget = oneHexOnly ? 1 : (roaming_ ? cols_ * rows_ : std::numeric_limits<int>::max());
+  const int minStepAp = apFree ? 0 : std::max(0, apr.movement.minimum);
+  const std::vector<int> occ = occupancy();
+
+  const std::vector<std::pair<int, int>> raw = findTurnPenalizedHexPath(
+      cols_, rows_, u.x, u.y, goal.x, goal.y, apBudget, movBudget, minStepAp,
+      [&](int nx, int ny, int stepsSoFar, bool isGoal) -> std::optional<int> {
+        int apStep = 0;
+        const std::optional<int> step = stepCost(nx, ny, u, occ, isGoal && requireStop, apFree ? nullptr : &apStep);
+        if (!step) return std::nullopt;
+        if (!apFree && stepsSoFar < u.cond.martial.lowCutHexes) apStep += 1;
+        return apFree ? 0 : apStep;
+      });
+  std::vector<BattleHex> out;
+  out.reserve(raw.size());
+  for (const auto& [hx, hy] : raw) out.push_back({hx, hy});
+  return out;
+}
+
 bool Battle::move(size_t unit, int x, int y) {
   BattleUnit& u = units_[unit];
   for (const ReachCell& c : reachable(unit))

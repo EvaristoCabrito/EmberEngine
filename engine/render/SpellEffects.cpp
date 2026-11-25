@@ -325,7 +325,7 @@ void SpellEffects::lightingSpellCast(const std::string& kind, const Spot& caster
     Element& flash = add(nullptr, start, std::max(0.45f, impact - start + 0.25f));
     flash.from = flash.to = caster.body;
     flash.lightColor = {0.88f, 0.94f, 1.0f};
-    flash.lightIntensity = 8.0f;
+    flash.lightIntensity = 1.8f;
     flash.lightRadius = 3.5f;
     flash.lightDecay = 1.4f;
   } else if (kind == "anchoredLight") {
@@ -339,14 +339,14 @@ void SpellEffects::lightingSpellCast(const std::string& kind, const Spot& caster
     carrier.moveEnd = impact;
     carrier.arc = 0.65f;
     carrier.lightColor = {0.96f, 0.91f, 1.0f};
-    carrier.lightIntensity = 7.5f;
+    carrier.lightIntensity = 1.5f;
     carrier.lightRadius = 3.2f;
     carrier.lightDecay = 1.4f;
 
     Element& settle = add(nullptr, impact, 0.55f);
     settle.from = settle.to = anchorPos;
     settle.lightColor = {0.96f, 0.91f, 1.0f};
-    settle.lightIntensity = 9.0f;
+    settle.lightIntensity = 1.8f;
     settle.lightRadius = 3.8f;
     settle.lightDecay = 1.3f;
   } else if (kind == "luminousHalo") {
@@ -354,7 +354,7 @@ void SpellEffects::lightingSpellCast(const std::string& kind, const Spot& caster
     Element& flare = add(nullptr, start, std::max(0.45f, impact - start + 0.35f));
     flare.from = flare.to = caster.body;
     flare.lightColor = {1.0f, 0.95f, 0.84f};
-    flare.lightIntensity = 9.0f;
+    flare.lightIntensity = 1.8f;
     flare.lightRadius = 3.8f;
     flare.lightDecay = 1.3f;
   }

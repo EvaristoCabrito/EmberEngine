@@ -1529,20 +1529,21 @@ std::vector<size_t> unitsOn(const Battle& b, size_t caster, const std::vector<Ba
 }
 // A hex's centre on the board plane (odd-r: odd rows half a hex to the right).
 std::pair<double, double> hexCentre(BattleHex h) { return {h.x + 0.5 * (h.y & 1), h.y * (kSqrt3 / 2)}; }
-// Vendaval Glacial's cone: every hex within `length` of the caster whose direction lies within ~37 degrees of the aim
-// (one hex wide next to the caster, five or so at its end).
-std::vector<BattleHex> coneHexes(const Battle& b, BattleHex origin, BattleHex aim, int length) {
+// Cone of hexes from origin in direction of aim within length and opening angle
+std::vector<BattleHex> coneHexes(const Battle& b, BattleHex origin, BattleHex aim, int length, float angleDegrees = 65.0f) {
   std::vector<BattleHex> out;
   if (origin == aim) return out;
   const auto [ox, oz] = hexCentre(origin);
   const auto [ax, az] = hexCentre(aim);
   const double dx = ax - ox, dz = az - oz, dl = std::hypot(dx, dz);
+  const double halfAngleRad = (static_cast<double>(angleDegrees) * 0.5) * (std::numbers::pi / 180.0);
+  const double minCos = std::cos(halfAngleRad);
   for (const BattleHex& h : hexesWithin(b, origin, length)) {
     if (h == origin) continue;
     const auto [hx, hz] = hexCentre(h);
     const double vx = hx - ox, vz = hz - oz, vl = std::hypot(vx, vz);
     if (vl < 1e-6) continue;
-    if ((vx * dx + vz * dz) / (vl * dl) >= 0.8) out.push_back(h);
+    if ((vx * dx + vz * dz) / (vl * dl) >= minCos) out.push_back(h);
   }
   return out;
 }
@@ -3275,26 +3276,26 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind, int moon)
   if (isLightingSpell(kind)) {
     const int power = effectiveLightPower(c.level);
     const LightSpellMetrics m = lightMetricsForPower(power);
-    const int ap = lightingSpellApCost(kind);
-    const int mana = lightingSpellManaCost(kind);
+    const int ap = lightingSpellApCost(kind, c.level);
+    const int mana = lightingSpellManaCost(kind, c.level);
     if (kind == "arcaneBeam") {
-      return std::format("T2 · Arcano · {} PA · {} Mana · Potência {} ({})\n"
+      return std::format("T2 · Arcano · {} PA · {} Mana · Nível {} ({})\n"
                          "Cone fixo projetado à frente a partir da posição e direção de lançamento.\n"
-                         "Abertura: 60° · Comprimento: {:g} hexes · Duração: {} min.\n"
+                         "Abertura: {:.0f}° · Comprimento: {:g} hexes · Duração: {} min.\n"
                          "Vínculo: Posição e direção fixas no mapa.\n"
                          "Encerramento: Ao expirar ou ao sair do mapa lógico.",
-                         ap, mana, power, lightingSpellDisplayName(kind), m.coneLengthHex, m.durationMinutes);
+                         ap, mana, power, lightingSpellDisplayName(kind), m.coneAngleDegrees, m.coneLengthHex, m.durationMinutes);
     }
     if (kind == "anchoredLight") {
-      return std::format("T2 · Arcano · {} PA · {} Mana · Potência {} ({})\n"
-                         "Pequena esfera luminosa posicionada em um ponto escolhido.\n"
+      return std::format("T2 · Arcano · {} PA · {} Mana · Nível {} ({})\n"
+                         "Esfera luminosa posicionada em um ponto escolhido.\n"
                          "Raio: {:g} hexes · Alcance de posicionamento: {:g} hexes · Duração: {} min.\n"
                          "Vínculo: Posição fixa no mapa.\n"
                          "Encerramento: Ao expirar ou ao sair do mapa lógico.",
                          ap, mana, power, lightingSpellDisplayName(kind), m.conjurerRadiusHex, m.conjurerRangeHex, m.durationMinutes);
     }
     if (kind == "luminousHalo") {
-      return std::format("T2 · Sagrado · {} PA · {} Mana · Potência {} ({})\n"
+      return std::format("T2 · Sagrado · {} PA · {} Mana · Nível {} ({})\n"
                          "Luz centrada no conjurador, iluminando seu corpo e o entorno.\n"
                          "Raio: {:g} hexes · Acompanha o personagem entre andares · Duração: {} min.\n"
                          "Vínculo: Móvel (entidade do conjurador).\n"
@@ -4077,7 +4078,7 @@ std::vector<BattleHex> spellArea(const Battle& b, size_t caster, const std::stri
   if (kind == "arcaneBeam") {
     const int power = effectiveLightPower(u.level);
     const LightSpellMetrics m = lightMetricsForPower(power);
-    return coneHexes(b, {u.x, u.y}, cell, static_cast<int>(std::round(m.coneLengthHex)));
+    return coneHexes(b, {u.x, u.y}, cell, static_cast<int>(std::round(m.coneLengthHex)), m.coneAngleDegrees);
   }
   if (kind == "anchoredLight") {
     const int power = effectiveLightPower(u.level);
@@ -6435,7 +6436,7 @@ TurnStart beginUnitTurn(Battle& b, size_t unit, Mulberry32& rng, std::vector<Bat
       for (size_t i = 0; i < b.units().size(); ++i)
         if (b.units()[i].alive && b.units()[i].side != u.side && b.units()[i].side != "neutral") threats.push_back(i);
     b.setTurnRestrained(b.isWebCell(u.x, u.y) && !b.shielded(u));
-    const std::vector<ReachCell> reach = b.reachable(unit, true), paths = b.reachable(unit, false);
+    const std::vector<ReachCell> reach = b.reachable(unit, true);
     auto distance = [&](BattleHex c) {
       if (threats.empty()) return 0;
       int best = 1 << 30;
@@ -6446,7 +6447,7 @@ TurnStart beginUnitTurn(Battle& b, size_t unit, Mulberry32& rng, std::vector<Bat
     for (const ReachCell& c : reach)
       if (distance({c.x, c.y}) > distance(destination)) destination = {c.x, c.y};
     if (!(destination.x == u.x && destination.y == u.y)) {
-      std::vector<BattleHex> path = Battle::path(paths, destination.x, destination.y);
+      std::vector<BattleHex> path = b.findPath(unit, destination, true);
       if (path.size() > 1) r.fleePath = std::move(path);
     }
     u.moved = true, u.acted = true;
@@ -6519,7 +6520,6 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
   // Action Points: it casts only from a hex it can still pay a cast from after the walk there (the cheapest cast the rules
   // price; the real cast's cost is checked once the plan is made, planEnemyCast)
   std::vector<ReachCell> reach = b.reachable(unit, true);
-  const std::vector<ReachCell> walk = b.reachable(unit, false);
   if (!b.roaming()) {
     // the cheapest of its own casts (apCost: its attack cost and its tiers)
     int cheapest = u.spellList.empty() ? apCost(b, u, ApAction::cast(std::string())) : std::numeric_limits<int>::max();
@@ -6552,7 +6552,7 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
   };
   auto walkTo = [&](BattleHex from) {
     std::vector<BattleHex> path;
-    if (from.x != u.x || from.y != u.y) path = Battle::path(walk, from.x, from.y);
+    if (from.x != u.x || from.y != u.y) path = b.findPath(unit, from, true);
     return path;
   };
   auto single = [&](const Pick& p, const char* kind, int dice, int faces, int bonus, double mul, std::optional<BattleUnit::Echo> echo) {

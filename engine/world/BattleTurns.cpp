@@ -291,7 +291,7 @@ std::vector<int> Battle::distanceField(BattleHex from) const {
 
 AiPlan Battle::planEnemy(size_t unit) const {
   const BattleUnit& u = units_[unit];
-  const std::vector<ReachCell> reach = reachable(unit, true), walk = reachable(unit, false);
+  const std::vector<ReachCell> reach = reachable(unit, true);
   // Every hero standing, the enmity target first; enmity weighs the choice (enmityBonus), it never hides a foe in reach.
   const std::vector<size_t> heroes = aiTargets(unit);
   double stitchMovementPenalty = 0.0;
@@ -318,7 +318,7 @@ AiPlan Battle::planEnemy(size_t unit) const {
     if (iceZones_.empty()) return false;
     if (inStorm(c.x, c.y)) return true;
     if (caught) return false;
-    for (const BattleHex& h : path(walk, c.x, c.y))
+    for (const BattleHex& h : findPath(unit, {c.x, c.y}, true))
       if (inStorm(h.x, h.y)) return true;
     return false;
   };
@@ -345,7 +345,7 @@ AiPlan Battle::planEnemy(size_t unit) const {
       if (!bestScore || score > *bestScore) bestScore = score, from = {c.x, c.y}, plan.target = static_cast<int>(h);
     }
   if (bestScore) {
-    if (from.x != u.x || from.y != u.y) plan.path = path(walk, from.x, from.y);
+    if (from.x != u.x || from.y != u.y) plan.path = findPath(unit, from, true);
     return plan;
   }
   if (heroes.empty()) return plan;
@@ -384,7 +384,7 @@ AiPlan Battle::planEnemy(size_t unit) const {
   double dist = std::numeric_limits<double>::infinity();
   for (const ReachCell& c : options)
     if (const double d = at(*nearest, c.x, c.y); d < dist) dist = d, closest = BattleHex{c.x, c.y};
-  if (closest && (closest->x != u.x || closest->y != u.y)) plan.path = path(walk, closest->x, closest->y);
+  if (closest && (closest->x != u.x || closest->y != u.y)) plan.path = findPath(unit, *closest, true);
   return plan;
 }
 

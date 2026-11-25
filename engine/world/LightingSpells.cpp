@@ -76,24 +76,24 @@ bool LightingSpellRegistry::cast(const std::string& kind,
     inst.range = metrics.coneLengthWorld;
     inst.coneAngleDeg = metrics.coneAngleDegrees;
     inst.color = kColorArcaneBeam;
-    inst.intensity = 8.5f + 0.35f * static_cast<float>(power);
-    inst.decay = 0.55f;
+    inst.intensity = 0.65f;
+    inst.decay = 0.85f;
   } else if (kind == kSpellAnchoredLight) {
     inst.bindType = LightBindType::FixedPosition;
     inst.position = originPos;
     inst.facing = glm::vec3(0.0f);
     inst.range = metrics.conjurerRadiusWorld;
     inst.color = kColorAnchoredLight;
-    inst.intensity = 7.2f + 0.30f * static_cast<float>(power);
-    inst.decay = 0.75f;
+    inst.intensity = 0.60f;
+    inst.decay = 0.85f;
   } else if (kind == kSpellLuminousHalo) {
     inst.bindType = LightBindType::CasterEntity;
     inst.position = originPos;
     inst.facing = glm::vec3(0.0f);
     inst.range = metrics.healerRadiusWorld;
     inst.color = kColorLuminousHalo;
-    inst.intensity = 6.8f + 0.28f * static_cast<float>(power);
-    inst.decay = 0.80f;
+    inst.intensity = 0.55f;
+    inst.decay = 0.85f;
   }
 
   instances_.push_back(inst);

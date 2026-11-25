@@ -10,6 +10,7 @@
 
 #include "core/Log.h"
 #include "world/Combat.h"
+#include "world/LightingSpells.h"
 #include "world/Spells.h"
 
 namespace ember {
@@ -325,7 +326,8 @@ int apCost(const Battle& b, const BattleUnit& u, const ApAction& a) {
       break;
     }
     case ApAction::Kind::Spell: {
-      if (const auto it = r.spells.byKind.find(a.spell); it != r.spells.byKind.end()) v = it->second;
+      if (isLightingSpell(a.spell)) v = lightingSpellApCost(a.spell, u.level);
+      else if (const auto it = r.spells.byKind.find(a.spell); it != r.spells.byKind.end()) v = it->second;
       else if (r.spells.weaponSkillsUseWeaponCost && spellWeaponAbility(a.spell)) v = r.attackCost(category);
       else if (const auto t = r.spells.byTier.find(spellTierNumber(a.spell)); t != r.spells.byTier.end()) v = t->second;
       else if (r.spells.fromAttack) {
