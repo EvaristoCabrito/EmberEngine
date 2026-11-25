@@ -5507,6 +5507,21 @@ class MapStage final : public Stage {
   // The map's units find their own catalog entry by key. The panel's poses: those at least one of the map's units
 
   // has, in the catalog's order of first appearance with its label, the idle ("Parado") first.
+  // A unit's own arrows (content/fx/arrow-art.json, by its catalog key; Neera's, cut from her video where they leave the bow, the user
+  // 2026-11-24: "can you copy the arrow from the bow?"): handed to the effects for its plain shot ("plain") and Tiro Múltiplo ("multi").
+  void registerArrowArt(size_t ui) {
+    static const ember::Json art = [] {
+      std::ifstream in("content/fx/arrow-art.json", std::ios::binary);
+      return in ? ember::Json::parse(in, nullptr, false) : ember::Json();
+    }();
+    const ember::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
+    if (!entry || !art.is_object() || !art.contains(entry->key) || !art[entry->key].is_object()) return;
+    for (const auto& [which, a] : art[entry->key].items())
+      if (a.is_object() && a.contains("clip") && a["clip"].is_string())
+        spellFx_.setArrowArt(static_cast<int>(ui), which,
+                             {a["clip"].get<std::string>(), a.value("height", 0.3f), a.value("angle", 0.0f)});
+  }
+
   void setUpPoses(const std::filesystem::path& path) {
     if (catalog_.empty()) {  // (read once: the editor's edits match the scene's units again on the same catalog)
       std::optional<std::vector<ember::Hero>> catalog = ember::loadHeroes(path);
@@ -5522,6 +5537,7 @@ class MapStage final : public Stage {
       const auto it = byKey.find(scene_->units[i].key);
       if (it != byKey.end()) unitCatalog_[i] = it->second;
       else unknown.push_back(scene_->units[i].name + " (" + scene_->units[i].key + ")");
+      registerArrowArt(i);
       // One source for a unit's art on every map and in every mode (the user, 2026-10-25: "same art, same rules"): the catalog's
       // idle, always; the scene file's copy of it (its frames, pace, box) is never used, even when it names the same set (Isolde's
       // kept a stale forward-only pace that way while Voss's, a different set name, was replaced).
@@ -5759,6 +5775,7 @@ class MapStage final : public Stage {
       pinArt(su, entry);
       scene_->units.push_back(std::move(su));
       unitCatalog_.push_back(entry);
+      registerArrowArt(unitCatalog_.size() - 1);
       unitPos_.push_back(at);
       unitMoved_.push_back(1);
       unitFacing_.push_back(1);
@@ -9419,7 +9436,11 @@ class MapStage final : public Stage {
     if (striker >= 0 && !x.counter && !s.kind.empty() && s.type != StepType::Potion && s.type != StepType::Move && !pose.empty()) {
       const size_t su = static_cast<size_t>(striker);
       if (su < unitCatalog_.size() && unitCatalog_[su] && unitCatalog_[su]->key == "neera") {
-        if (hasPose(su, "attack2")) pose = "attack2";
+        // her three-arrow special (the user, 2026-11-24: "the 3 arrows will be used for triple shot, so it only plays one animation and both
+        // AOE with arrows; the rest will use her regular special"): Tiro Múltiplo, Chuva and Tempestade de Flechas
+        const bool volley = s.kind == "multiShot" || s.kind == "arrowRain" || s.kind == "arrowStorm";
+        if (volley && hasPose(su, "attack3")) pose = "attack3";
+        else if (hasPose(su, "attack2")) pose = "attack2";
         else if (hasPose(su, "cast")) pose = "cast";
       } else if (su < unitCatalog_.size() && unitCatalog_[su] && unitCatalog_[su]->key == "aldric") {
         if (hasPose(su, "specialAttack")) pose = "specialAttack";

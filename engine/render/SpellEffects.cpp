@@ -279,7 +279,9 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
   // When everything this cast adds is over (the newest element or ported effect of each list), for castEnd.
   const size_t before[] = {elements_.size(), missiles_.size(), fireballs_.size(), blesses_.size(), venoms_.size(), phantasms_.size(),
                            webs_.size(),     burns_.size(),    cleaves_.size(),   sweeps_.size(),  holies_.size(),    dreamWebs_.size()};
+  castOwner_ = owner;  // its own arrow art, if it has some (arrowArtOf)
   const bool made = castEffect(kind, look, caster, targets, start, impact);
+  castOwner_ = -1;
   if (made && owner >= 0) {
     float end = start;
     for (size_t i = before[0]; i < elements_.size(); ++i) end = std::max(end, elements_[i].end);
@@ -514,6 +516,10 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
   // "plainShot": a bow's or crossbow's plain attack / counter (MapStage), Tiro Longo's 01 card for the heroes; 02 the crossbowmen's own
   // quarrel (RangerFx Bolt), so their plain shot is never mistaken for Tiro Longo / Múltiplo.
   if (kind == "plainShot") {
+    if (const ArrowArt* own = arrowArtOf("plain")) {  // the unit's own arrow (Neera's, cut from her video), whatever the look
+      arrow(caster, targets, start, impact, false, own);
+      return true;
+    }
     if (look != 2) {
       arrow(caster, targets, start, impact, false);
       return true;
@@ -533,6 +539,13 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     const float release = std::max(start, impact - RangerFx::flightSeconds(caster.feet, foe->feet));
     ranger_.shot(RangerFx::Shot::Swift, caster.feet, caster.cardHeight, {foe->feet, foe->cardHeight}, release, impact);
     return true;
+  }
+  if (kind == "multiShot") {
+    // the unit's own three arrows (Neera's, cut from her video as they leave the bow), flying together at the foe
+    if (const ArrowArt* own = arrowArtOf("multi")) {
+      arrow(caster, {targets.front()}, start, impact, false, own);
+      return true;
+    }
   }
   if (kind == "bloodyShot" || kind == "multiShot") {
     const Spot& foe = targets.front();
@@ -1022,7 +1035,7 @@ void SpellEffects::cure(const Spot& caster, const std::vector<Spot>& targets, fl
 // goes, and lands on the hit; a piercing shot carries on through the line to the last body it strikes (its targets are
 // the line's every hex to the board's edge: the bodies on it are the ones with a card; the user, 2026-10-20: "it doesnt end
 // at his target and just bounces off all the way out of the screen").
-void SpellEffects::arrow(const Spot& caster, const std::vector<Spot>& targets, float start, float impact, bool piercing) {
+void SpellEffects::arrow(const Spot& caster, const std::vector<Spot>& targets, float start, float impact, bool piercing, const ArrowArt* art) {
   if (targets.empty()) return;
   const Spot* firstBody = nullptr;
   const Spot* lastBody = nullptr;
@@ -1038,15 +1051,15 @@ void SpellEffects::arrow(const Spot& caster, const std::vector<Spot>& targets, f
   const float travel = std::clamp(firstDist / 22.0f, 0.12f, 0.4f);
   const float launch = std::max(start, impact - travel);
   const float arrive = launch + (impact - launch) * (firstDist > 1e-3f ? std::max(lastDist / firstDist, 1.0f) : 1.0f);
-  Element& a = add("arrow-002", launch, arrive - launch);
+  Element& a = add(art ? art->clip.c_str() : "arrow-002", launch, arrive - launch);
   a.facing = Facing::Along;
   a.from = caster.body + dir * 0.3f;
   a.to = last;
   a.moveStart = launch, a.moveEnd = arrive;
   a.arc = lastDist * 0.06f;
   a.pivot = {0.5f, 0.5f};
-  a.height = 1.3f;
-  a.angle = std::atan2(0.6f, 0.74f);  // the art points from its feathers (lower left) to its head (upper right)
+  a.height = art ? art->height : 1.3f;
+  a.angle = art ? art->angle : std::atan2(0.6f, 0.74f);  // arrow-002 points from its feathers (lower left) to its head (upper right)
   a.opacity = 1.0f;
   a.lit = true;
   a.pull = 0.3f;

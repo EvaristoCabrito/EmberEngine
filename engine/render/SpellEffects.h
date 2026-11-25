@@ -12,7 +12,9 @@
 // projectile or strike arrives exactly then. Main thread only.
 
 #include <array>
+#include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -96,6 +98,15 @@ class SpellEffects {
   // stage holds a caster turned away from the camera until then).
   bool cast(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact,
             int owner = -1);
+  // A unit's own arrows (the user, 2026-11-24, Neera: "can you copy the arrow from the bow?"): the arrow its video lets go, cut out of
+  // the frame where it leaves the bow (an fx clip; content/fx/arrow-art.json): "plain" flies for its plain shot, "multi" (three arrows)
+  // for its Tiro Múltiplo. `height`: the card's height in world units (the arrow's real size beside the unit); `angle`: the art's own
+  // axis (radians from +u). A unit with none, or art not cooked yet, keeps the game's arrows.
+  struct ArrowArt {
+    std::string clip;
+    float height = 0.0f, angle = 0.0f;
+  };
+  void setArrowArt(int owner, const std::string& which, ArrowArt art) { arrowArt_[{owner, which}] = std::move(art); }
   float castEnd(int owner) const;  // the latest end of `owner`'s casts (-1: none)
   bool castEffect(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
   // One fx clip on its own (the Spells menu's loose effects): played once at the spot, placed by what the art is
@@ -248,7 +259,14 @@ class SpellEffects {
   void bolt(const Spot& target, float impact, float scale);
   void frost(const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
   void cure(const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
-  void arrow(const Spot& caster, const std::vector<Spot>& targets, float start, float impact, bool piercing);
+  void arrow(const Spot& caster, const std::vector<Spot>& targets, float start, float impact, bool piercing, const ArrowArt* art = nullptr);
+  // The casting unit's own arrow art of that kind ("plain" / "multi"), when it has some and it is cooked; else nullptr.
+  const ArrowArt* arrowArtOf(const char* which) const {
+    const auto it = arrowArt_.find({castOwner_, which});
+    return it != arrowArt_.end() && clip(it->second.clip.c_str()) != kNoSpriteClip ? &it->second : nullptr;
+  }
+  std::map<std::pair<int, std::string>, ArrowArt> arrowArt_;
+  int castOwner_ = -1;  // the unit whose cast is being made (cast()), for its own arrow art
   void bladeSkill(const Spot& caster, float start, float impact);
   void lightingSpellCast(const std::string& kind, const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
   // Ours (SpellEffectsEmber.cpp). True when `kind` is one of them.
