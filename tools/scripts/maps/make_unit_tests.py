@@ -45,6 +45,18 @@ SERIES = [
     ("monster-testing-d", "Monster Testing 4",
      ["emberedVanguard", "emberedZombie", "banditHorseman", "bigBlueCalf", "ashesCrawler", "roccoTheBird"], ["swampBlueDeer", "hypostasis"]),
 ]
+# Unidades Antigas 1 a 3 (the user, 2026-11-26 1:50 AM, after the list of the units that walk on the old 36-frame art with no video:
+# "faz uma porra duma série de mapas com essas criaturas porque eu nunca nem as avistei"): the same concept (each unit once in the
+# series and never in Monster Testing, one class per art, at most eight a map, summons on the party's side), the old art instead of
+# the new. Sub-36-frame placeholders stay out. `python -I tools/scripts/maps/make_unit_tests.py antigas` writes only these.
+OLD_SERIES = [
+    ("unidades-antigas-a", "Unidades Antigas 1",
+     ["miliciaV2", "basePikeman", "baseCrossbowman", "brigandCrossbowman", "undeadOx", "lancer", "elementalist"], ["familiar2"]),
+    ("unidades-antigas-b", "Unidades Antigas 2",
+     ["apparition", "theButcher", "cultistV2", "minorHorror", "ancientGolem", "emberedWraith"], ["familiar3"]),
+    ("unidades-antigas-c", "Unidades Antigas 3",
+     ["sapling", "jacare", "wardog2", "mordavianWolfFinal", "carnivorousPlant", "plagueBearingCattle"], []),
+]
 ENEMY_AT = [(12, 36), (16, 36), (20, 36), (24, 36), (12, 31), (16, 31), (20, 31), (24, 31)]
 SUMMON_AT = [(26, 44), (24, 44)]
 PARTY = ("aldric", "kaelFinal", "conjurer", "neera", "salazar", "voss")
@@ -57,18 +69,22 @@ def new_set(entry):
     return bool(idle.get("medium") and idle.get("light")) and max(p.get("frames", 0) for p in poses) > 36
 
 
-def main():
+def main(old=False):
     classes = {**json.load(open(EMBER, encoding="utf-8"))["classes"], **json.load(open(RULES, encoding="utf-8"))["classes"]}
     roster = {e["key"]: e for e in json.load(open(ROSTER, encoding="utf-8"))["heroes"]}
     seen, art = {}, {}
-    for mid, _, enemies, summons in SERIES:
+    for mid, _, enemies, summons in SERIES + OLD_SERIES:
+        is_old = (mid, _, enemies, summons) in OLD_SERIES
         assert len(enemies) <= len(ENEMY_AT) and len(summons) <= len(SUMMON_AT), mid
         for c in enemies + summons:
             assert c in classes, f"{c}: not a class"
             assert c not in seen, f"{c} on {seen.get(c)} and {mid}: a unit goes on one map of the series only"
             seen[c] = mid
             e = roster.get(c)
-            assert e and new_set(e), f"{c}: not a new set (Alta + 64 + 36, over 36 frames)"
+            if is_old:
+                assert e and not new_set(e) and max(p.get("frames", 0) for p in e["poses"]) >= 36, f"{c}: not old 36-frame art"
+            else:
+                assert e and new_set(e), f"{c}: not a new set (Alta + 64 + 36, over 36 frames)"
             s = e["poses"][0].get("set")
             assert s not in art, f"{c} and {art.get(s)} are the same art ({s})"
             art[s] = c
@@ -81,9 +97,10 @@ def main():
     camp_text = open(CAMPAIGN, encoding="utf-8").read()
     camp = json.loads(camp_text)
     camp["missions"] = [x for x in camp["missions"] if x.get("id") not in LEAVE_LIST]
-    for mid, title, enemies, summons in SERIES:
+    for mid, title, enemies, summons in (OLD_SERIES if old else SERIES):
         names = ", ".join(classes[c].get("name", c) for c in enemies)
-        briefing = f"Unidades novas (Alta, 64 e 36), cada uma só neste mapa da série: {names}" + (
+        kind = "Unidades da arte antiga (36 quadros)" if old else "Unidades novas (Alta, 64 e 36)"
+        briefing = f"{kind}, cada uma só neste mapa da série: {names}" + (
             f"; no seu grupo: {', '.join(classes[c].get('name', c) for c in summons)}." if summons else ".")
         objective = "Ver cada unidade andar, atacar, levar dano e cair"
         m = copy.deepcopy(tpl)
@@ -103,7 +120,8 @@ def main():
                  "mapFile": f"{mid}000.json"}
         at = next((k for k, x in enumerate(camp["missions"]) if x.get("id") == mid), None)
         if at is None:
-            at = max((k for k, x in enumerate(camp["missions"]) if str(x.get("id", "")).startswith("monster-testing")), default=-1) + 1 or len(camp["missions"])
+            at = max((k for k, x in enumerate(camp["missions"]) if str(x.get("id", "")).startswith(("monster-testing", "unidades-antigas"))),
+                     default=-1) + 1 or len(camp["missions"])
             camp["missions"].insert(at, entry)
         else:
             camp["missions"][at] = entry
@@ -115,4 +133,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    main(old=sys.argv[1:] == ["antigas"])
