@@ -40,7 +40,15 @@ class ArcaneSpell {
 
   // The Mago Negro's plain ranged attack: the Missile at `scale` of its size, let go at `release` and landing at `impact` (the
   // attack pose's own beats).
-  void asAttack(float start, float release, float impact, float scale);
+  // `palmUntil` > 0: the energy stays on the palm after the release until then (the pose's end), at `palmScale` (its gathering too).
+  void asAttack(float start, float release, float impact, float scale, int unit = -1, float palmUntil = 0.0f, float palmScale = 0.0f);
+  // The palm alone (a pose with a measured palm that throws no bolt: the Cultista Negro's spells' cast, his counters; the user,
+  // 2026-11-26: "nao pode nunca ficar vazia"): it gathers from `start`, flares at `release` and stays on the palm until `palmUntil`;
+  // nothing flies, nothing lands.
+  void asCharge(float start, float release, float palmUntil, float palmScale, int unit);
+  // A pose whose art shows the hand (content/fx/hand-bolts.json, look "arcane"): the energy gathers at the palm as drawn this frame
+  // (`hand`, world) until it lets go, and stays on it until palmUntil; `unit`: the striker's scene unit, as given to asAttack.
+  void aimFrom(int unit, glm::vec3 hand, float now);
 
   float end() const { return end_; }
   bool done(float now) const { return now >= end_; }
@@ -51,6 +59,10 @@ class ArcaneSpell {
   glm::vec3 hand_{0.0f}, feet_{0.0f}, chest_{0.0f}, direction_{0.0f, 0.0f, 1.0f};
   float height_ = 2.0f, start_ = 0.0f, release_ = 0.0f, impact_ = 0.0f, end_ = 0.0f;
   float scale_ = 1.0f;
+  glm::vec3 palm_{0.0f};                       // the palm as drawn, followed until palmUntil_
+  float palmUntil_ = 0.0f, palmScale_ = 1.0f;  // the energy kept on the palm after the release, its size
+  bool chargeOnly_ = false;                    // asCharge: no flight, no hit
+  int unit_ = -1;
   uint32_t seed_ = 0;
 };
 

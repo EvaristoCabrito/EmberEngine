@@ -4773,8 +4773,14 @@ class MapStage final : public Stage {
       if (unitBoltCard_.size() <= ui) unitBoltCard_.resize(ui + 1);
       unitBoltCard_[ui] = {anchor, right, cardUp(unitCard_[ui]), boxW, boxH, foot, drift, mirror};
       spellFx_.handBolts().follow(static_cast<int>(ui), unitBoltCard_[ui]);
-      if (ui < unitBoltRelease_.size() && unitBoltRelease_[ui])
-        spellFx_.combat().aimFrom(static_cast<int>(ui), HandBoltFx::pointOnCard(unitBoltCard_[ui], *unitBoltRelease_[ui]), time);
+      if (ui < unitBoltRelease_.size() && unitBoltRelease_[ui]) {
+        // the palm on the frame drawn (its measured track), else the point it lets go from
+        const BoltHand& bh = *unitBoltRelease_[ui];
+        const glm::vec2 uv = bh.has(shown) && frame < bh.hands.size() ? bh.hands[frame] : bh.release;
+        const glm::vec3 palm = HandBoltFx::pointOnCard(unitBoltCard_[ui], uv);
+        spellFx_.combat().aimFrom(static_cast<int>(ui), palm, time);
+        spellFx_.arcaneAimFrom(static_cast<int>(ui), palm, time);
+      }
     }
     const glm::vec3 eye = camera.position, fwd = camera.forward;
     std::vector<std::pair<float, uint32_t>> order(drawList_.size());
@@ -9686,20 +9692,59 @@ class MapStage final : public Stage {
       // spells ... matching her ember colors"): the ember bolt, its impact in the ember palette, a lesser blow like his
       const bool ember = hero == "isolde";
       if (ember) x.element = "ember";
-      x.boltStrength = hero == "voss" || ember ? 0.55f : 1.0f;
-      // The Mago Negro's own (Voss, a hero): the arcane energy of vfx/ArcaneFx, small (the user, 2026-11-13: "the black mage regular
-      // RANGE ATT is also arcane effect"); every other caster keeps the bolt it had.
-      // His is a lesser blow than his Míssil Mágico: the same energy, every part of it at the plain bolt's strength (the user,
-      // 2026-11-25: "até o ataque do voss é mais fodão que magic missile", "não precisa mudar o efeito preciso ser menor").
-      if (hero == "voss")
-        spellFx_.arcaneAttack(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), now_, release, x.impact, x.boltStrength);
-      else
-        spellFx_.combat().bolt(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), now_, release, x.impact, CombatPalette::of(x.element.c_str()),
-                               x.boltStrength, ember ? CombatFx::BoltLook::Ember : CombatFx::BoltLook::Arcane, striker);
+      // Every plain bolt is a small one: only the high tiers' spells are big (the user, 2026-11-25, of the Cultista Negro's: "bem grande
+      // para um efeito de counter", "eu já falei que só magias de tier alto são grandes").
+      x.boltStrength = 0.55f;
       // A pose whose art shows where the bolt leaves (content/fx/hand-bolts.json, look "arcane": the Cultista Negro's open hand): the
       // bolt leaves from there, followed on the card as drawn until it lets go (addCard's aimFrom).
+      const std::optional<BoltHand> handArt = boltReleaseFor(hero, pose);
       if (unitBoltRelease_.size() <= su) unitBoltRelease_.resize(su + 1);
-      unitBoltRelease_[su] = boltReleaseFor(hero, pose);
+      unitBoltRelease_[su] = handArt;
+      // The Mago Negro's own (Voss, a hero): the arcane energy of vfx/ArcaneFx, small (the user, 2026-11-13: "the black mage regular
+      // RANGE ATT is also arcane effect"); his is a lesser blow than his Míssil Mágico: the same energy, every part of it at the plain
+      // bolt's strength (the user, 2026-11-25: "até o ataque do voss é mais fodão que magic missile", "não precisa mudar o efeito preciso
+      // ser menor"). The same energy for a caster whose art's palm is measured ("hands": the Cultista Negro; the user, 2026-11-25:
+      // "quando é que vai fazer um efeito na MÃO do cultista", "aparece uma bolha no inimigo eu quero na mão dele também"): it gathers
+      // on the palm as drawn from the frame the hand starts up ("chargeFrame") until the release, then flies from it.
+      if (hero == "voss" || (handArt && !handArt->hands.empty())) {
+        float gather = now_;
+        if (handArt && handArt->releaseFrame > 1) {
+          const float perFrame = (release - now_) / static_cast<float>(handArt->releaseFrame - 1);
+          gather = now_ + perFrame * static_cast<float>(std::clamp(handArt->chargeFrame, 1, handArt->releaseFrame) - 1);
+        }
+        // the palm keeps its energy until the pose is over, at the Míssil Mágico's own size (the user, 2026-11-26: "nao pode nunca ficar
+        // vazia"; "eu peço para não exagerar e ele faz a coisa mais minimalista possível")
+        const bool palm = handArt && !handArt->hands.empty();
+        spellFx_.arcaneAttack(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), gather, release, x.impact, x.boltStrength, striker,
+                              palm ? now_ + length : 0.0f, palm ? kPalmScale : 0.0f);
+      } else {
+        spellFx_.combat().bolt(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), now_, release, x.impact, CombatPalette::of(x.element.c_str()),
+                               x.boltStrength, ember ? CombatFx::BoltLook::Ember : CombatFx::BoltLook::Arcane, striker);
+      }
+    }
+    // The palm is never empty (the user, 2026-11-26, of the Cultista Negro: "nao pode nunca ficar vazia"): every other pose that plays the
+    // clip its palm was measured on (content/fx/hand-bolts.json "poses": his spells' cast, a counter that throws no bolt) gathers the same
+    // energy there from "chargeFrame", flares at "releaseFrame" and keeps it on the palm until the pose is over; the spell's own effect
+    // follows the pose as before.
+    if (!x.bolt && striker >= 0 && !pose.empty()) {
+      const size_t su = static_cast<size_t>(striker);
+      if (std::optional<BoltHand> palmArt = boltReleaseFor(strikerKey, pose); palmArt && !palmArt->hands.empty()) {
+        const SpellEffects::Spot from = unitSpot(su);
+        glm::vec3 toward = from.feet;
+        if (target >= 0) toward = unitSpot(static_cast<size_t>(target)).feet;
+        else if (!s.tiles.empty()) toward = hexSpot(s.tiles.front()).feet;
+        if (glm::length(glm::vec2(toward.x - from.feet.x, toward.z - from.feet.z)) < 0.5f) {  // nobody to face: the way it faces on screen
+          const float yaw = flat_ ? 0.0f : cam_.yaw, side = su < unitFacing_.size() && unitFacing_[su] == -1 ? -1.0f : 1.0f;
+          toward = from.feet + glm::vec3(std::cos(yaw), 0.0f, -std::sin(yaw)) * (3.0f * side);
+        }
+        const float perFrame = length / static_cast<float>(palmArt->hands.size());
+        const int releaseFrame = std::clamp(palmArt->releaseFrame, 1, static_cast<int>(palmArt->hands.size()));
+        const float gather = now_ + perFrame * static_cast<float>(std::clamp(palmArt->chargeFrame, 1, releaseFrame) - 1);
+        const float release = now_ + perFrame * static_cast<float>(releaseFrame - 1);
+        if (unitBoltRelease_.size() <= su) unitBoltRelease_.resize(su + 1);
+        unitBoltRelease_[su] = std::move(palmArt);
+        spellFx_.arcaneCharge(from.feet, cardHeightOf(from), toward, gather, release, now_ + length, kPalmScale, striker);
+      }
     }
     // A bow's plain attack or counter shoots the arrow Tiro Longo already flies (SpellEffects::arrow), landing on the hit.
     x.arrow = !x.bolt && striker >= 0 && target >= 0 && strikeIsArrow(s, x.counter);
@@ -10462,21 +10507,42 @@ class MapStage final : public Stage {
   }
   // Where a pose's art lets the plain arcane bolt go (content/fx/hand-bolts.json, look "arcane": the hand on its release frame, uv as
   // drawn facing right); none: the bolt leaves from the chest (CombatFx::bolt).
-  static std::optional<glm::vec2> boltReleaseFor(const std::string& key, const std::string& pose) {
-    static const std::unordered_map<std::string, std::pair<std::string, glm::vec2>> points = [] {
-      std::unordered_map<std::string, std::pair<std::string, glm::vec2>> out;
+  // content/fx/hand-bolts.json, look "arcane": where a plain attack's bolt leaves the art's hand, and (with "hands") the palm on each
+  // frame of the pose, its energy gathering there from "chargeFrame" (1-based) to "releaseFrame".
+  struct BoltHand {
+    std::vector<std::string> poses;  // "pose", and "poses": every pose that plays the clip the palm was measured on
+    glm::vec2 release{0.0f};
+    std::vector<glm::vec2> hands;
+    int chargeFrame = 1, releaseFrame = 1;
+    bool has(const std::string& pose) const { return std::find(poses.begin(), poses.end(), pose) != poses.end(); }
+  };
+  static std::optional<BoltHand> boltReleaseFor(const std::string& key, const std::string& pose) {
+    static const std::unordered_map<std::string, BoltHand> points = [] {
+      std::unordered_map<std::string, BoltHand> out;
       std::ifstream in("content/fx/hand-bolts.json", std::ios::binary);
       const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
       if (!j.is_object() || !j.contains("units") || !j["units"].is_object()) return out;
       for (const auto& [k, v] : j["units"].items()) {
         if (!v.is_object() || v.value("look", std::string()) != "arcane" || !v.contains("pose") || !v.contains("release")) continue;
         const nlohmann::json& r = v["release"];
-        if (r.is_array() && r.size() == 2) out[k] = {v["pose"].get<std::string>(), {r[0].get<float>(), r[1].get<float>()}};
+        if (!r.is_array() || r.size() != 2) continue;
+        BoltHand h;
+        h.poses.push_back(v["pose"].get<std::string>());
+        if (v.contains("poses") && v["poses"].is_array())
+          for (const nlohmann::json& p : v["poses"])
+            if (p.is_string() && !h.has(p.get<std::string>())) h.poses.push_back(p.get<std::string>());
+        h.release = {r[0].get<float>(), r[1].get<float>()};
+        h.releaseFrame = v.value("releaseFrame", 1);
+        h.chargeFrame = v.value("chargeFrame", h.releaseFrame);
+        if (v.contains("hands") && v["hands"].is_array())
+          for (const nlohmann::json& p : v["hands"])
+            if (p.is_array() && p.size() == 2) h.hands.push_back({p[0].get<float>(), p[1].get<float>()});
+        out[k] = std::move(h);
       }
       return out;
     }();
     const auto it = points.find(key);
-    if (it == points.end() || it->second.first != pose) return std::nullopt;
+    if (it == points.end() || !it->second.has(pose)) return std::nullopt;
     return it->second.second;
   }
   // A spot's card height (a hex with nobody on it: a body's, from its body point).
@@ -16046,7 +16112,7 @@ class MapStage final : public Stage {
   };
   std::vector<CardRect> unitCard_;
   std::vector<HandBoltFx::Card> unitBoltCard_;  // each unit's card as drawn last frame, for a bolt leaving its hands (HandBoltFx)
-  std::vector<std::optional<glm::vec2>> unitBoltRelease_;  // where each unit's last plain bolt leaves its art (boltReleaseFor), if known
+  std::vector<std::optional<BoltHand>> unitBoltRelease_;  // where each unit's last plain bolt leaves its art (boltReleaseFor), if known
   bool offHandMode_ = false;         // "Mão Secundária" armed: the off-hand weapon is the one that strikes
   std::map<size_t, ember::Json> npcDialog_;      // battle unit -> its conversation (findConversations)
   int talkAfterWalk_ = -1;                     // the NPC the leader is walking up to, to talk once there
@@ -16277,6 +16343,8 @@ class MapStage final : public Stage {
   // Every unit clip (idle, attack, cast, hit, death, turn, emote) plays at its video's own speed, at every Velocidade (the user,
   // 2026-11-25: "not all animations get the same speed ... slow fast slower faster on the same unit"); Velocidade paces the rest.
   static constexpr float kClipRate = 1.0f;
+  // The arcane energy kept on a measured palm (hand-bolts.json): the Míssil Mágico's own gathering size, never a speck (the user, 2026-11-26).
+  static constexpr float kPalmScale = 1.0f;
   // The turn away to cast (turnBack, the turn-around videos, all 24 fps): the videos turn slowly, it played slower than every other
   // move; at twice its video's speed (the user, 2026-11-26: "faz o turn around mais rapido ele esta em camera lenta", "esta mais lento
   // que todos os outros movimentos", "faz esse bosta rapido"). Every frame of it still plays.

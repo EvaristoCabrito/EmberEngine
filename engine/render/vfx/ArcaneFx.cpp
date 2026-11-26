@@ -129,8 +129,29 @@ ArcaneSpell::ArcaneSpell(Style style, glm::vec3 casterFeet, float casterHeight, 
   end_ = impact_ + (style == Style::Missile ? 1.6f : 1.7f);
 }
 
-void ArcaneSpell::asAttack(float start, float release, float impact, float scale) {
+void ArcaneSpell::aimFrom(int unit, glm::vec3 hand, float now) {
+  if (unit < 0 || unit != unit_ || now >= std::max(release_, palmUntil_)) return;
+  if (now < release_) {  // the bolt leaves from where the palm was at the release
+    glm::vec3 d = chest_ - hand;
+    if (glm::dot(d, d) > 1e-6f) direction_ = glm::normalize(d);
+    hand_ = hand + direction_ * (0.12f * palmScale_);  // on the open palm, a little out from it
+  }
+  palm_ = hand + direction_ * (0.12f * palmScale_);
+}
+
+void ArcaneSpell::asAttack(float start, float release, float impact, float scale, int unit, float palmUntil, float palmScale) {
+  unit_ = unit;
   start_ = start, release_ = std::max(release, start + 0.05f), impact_ = std::max(impact, release_ + 0.05f), end_ = impact_ + 0.8f, scale_ = scale;
+  palmScale_ = palmScale > 0.0f ? palmScale : scale;
+  palmUntil_ = palmUntil, palm_ = hand_;
+  end_ = std::max(end_, palmUntil_);
+}
+
+void ArcaneSpell::asCharge(float start, float release, float palmUntil, float palmScale, int unit) {
+  unit_ = unit, chargeOnly_ = true;
+  start_ = start, release_ = std::max(release, start + 0.05f), impact_ = release_, scale_ = palmScale_ = palmScale;
+  palmUntil_ = std::max(palmUntil, release_ + 0.3f), palm_ = hand_;
+  end_ = palmUntil_;
 }
 
 void ArcaneSpell::build(float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) const {
@@ -145,19 +166,38 @@ void ArcaneSpell::build(float now, const Camera& camera, VfxFrame& frame, std::v
 
   if (style_ == Style::Missile) {
     const float gather = release_ - start_;
+    const float G = palmScale_;  // the gathering on the palm (the plain bolt's flight and hit keep S)
     if (now < release_) {
       // The sigil stands in front of the hand; light is drawn in through it in spirals; it stalls a beat before the release.
       const float pull = ease(0.0f, 0.75f, age / gather), stall = ease(0.75f, 1.0f, age / gather);
-      p.sigil(facing(hand_, direction_), 1.4f * S * easeOut(0.0f, 0.4f, age / gather), age * 1.6f, 4.0f, pull, false);
+      p.sigil(facing(hand_, direction_), 1.4f * G * easeOut(0.0f, 0.4f, age / gather), age * 1.6f, 4.0f, pull, false);
       for (uint32_t i = 0; i < 26; ++i) {
         const float q = std::fmod(age / gather * (1.2f + 0.8f * hash01(seed_, i + 10)) + hash01(seed_, i + 40), 1.0f) * (1.0f - stall);
-        const float a = hash01(seed_, i + 70) * kTau + q * 7.0f, r = 1.6f * S * (1.0f - q) * (1.0f - q);
+        const float a = hash01(seed_, i + 70) * kTau + q * 7.0f, r = 1.6f * G * (1.0f - q) * (1.0f - q);
         const glm::mat4 f = facing(hand_, direction_);
-        specks.push_back(blob(glm::vec3(f * glm::vec4(std::cos(a) * r, -0.6f * S * (1.0f - q), std::sin(a) * r, 1.0f)), 0.12f * S, pull * ease(0.0f, 0.2f, q), hash01(seed_, i + 100)));
+        specks.push_back(blob(glm::vec3(f * glm::vec4(std::cos(a) * r, -0.6f * G * (1.0f - q), std::sin(a) * r, 1.0f)), 0.12f * G, pull * ease(0.0f, 0.2f, q), hash01(seed_, i + 100)));
       }
-      energy.push_back(blob(hand_, (0.7f + 1.5f * pull - 0.4f * stall) * S, pull, s0, 1.0f + 0.8f * stall));
-      lights.push_back({hand_, kArcaneLight, (2.0f + 7.0f * pull) * S, 3.5f * S});
-    } else if (now < impact_) {
+      energy.push_back(blob(hand_, (0.7f + 1.5f * pull - 0.4f * stall) * G, pull, s0, 1.0f + 0.8f * stall));
+      lights.push_back({hand_, kArcaneLight, (2.0f + 7.0f * pull) * G, 3.5f * G});
+    } else if (now < palmUntil_) {
+      // Kept on the palm (asCharge, or a bolt with palmUntil): it flares as the hand lets go, then the core stays there, pulsing, its
+      // sigil turning in front of the palm, wisps in orbit round it and threads snapping off it, until the pose is over.
+      const float held = now - release_, flare = 1.0f - ease(0.0f, 0.35f, held), fade = 1.0f - ease(palmUntil_ - 0.3f, palmUntil_, now);
+      const float beat = 0.5f + 0.5f * std::sin(now * 9.0f + s0);
+      const glm::mat4 f = facing(palm_, direction_);
+      p.sigil(f, (1.3f + 0.5f * flare) * G, age * 1.6f, 4.0f, fade, false);
+      energy.push_back(blob(palm_, (1.3f + 1.1f * flare + 0.2f * beat) * G, fade, s0, 1.3f + 1.0f * flare + 0.3f * beat));
+      for (uint32_t i = 0; i < 18; ++i) {
+        const float a = hash01(seed_, i + 500) * kTau + age * (4.0f + 3.0f * hash01(seed_, i + 530)), r = (0.55f + 0.5f * hash01(seed_, i + 560)) * G;
+        specks.push_back(blob(glm::vec3(f * glm::vec4(std::cos(a) * r, 0.25f * G * std::sin(a * 2.0f), std::sin(a) * r, 1.0f)), 0.12f * G, fade, hash01(seed_, i + 590)));
+      }
+      for (uint32_t i = 0; i < 3; ++i) {
+        const float a = hash01(tick, i + 620) * kTau, r = (0.9f + 0.7f * hash01(tick, i + 650)) * G;
+        p.thread(palm_, glm::vec3(f * glm::vec4(std::cos(a) * r, (hash01(tick, i + 680) - 0.5f) * G, std::sin(a) * r, 1.0f)), 0.5f * G, fade, hash01(tick, i + 710) * 9.0f);
+      }
+      lights.push_back({palm_, kArcaneLight, (5.0f + 9.0f * flare + 1.5f * beat) * G * fade, 4.0f * G});
+    }
+    if (!chargeOnly_ && now >= release_ && now < impact_) {
       // The flight: the core on a tight spiral, wisps in orbit round it, threads snapping off behind it.
       const float flight = impact_ - release_, q = (now - release_) / flight;
       const glm::vec3 side = glm::normalize(glm::cross(direction_, kUp)), lift = glm::cross(side, direction_);
@@ -177,7 +217,7 @@ void ArcaneSpell::build(float now, const Camera& camera, VfxFrame& frame, std::v
       lights.push_back({at, kArcaneLight, 9.0f * S, 4.5f * S});
     }
     // the sigil it left stays a moment and fades
-    if (now >= release_ && now < release_ + 0.3f) p.sigil(facing(hand_, direction_), (1.4f + 0.8f * (now - release_) / 0.3f) * S, age * 1.6f, 4.0f, 1.0f - (now - release_) / 0.3f, false);
+    if (palmUntil_ <= release_ && now >= release_ && now < release_ + 0.3f) p.sigil(facing(hand_, direction_), (1.4f + 0.8f * (now - release_) / 0.3f) * S, age * 1.6f, 4.0f, 1.0f - (now - release_) / 0.3f, false);
   } else if (since < 0.0f) {
     // The Phantasmal: a sigil under the foe and a second over its head, turning against each other; the energy gathers out of
     // nothing round the body between them; threads snap from the rings into it.
@@ -197,8 +237,9 @@ void ArcaneSpell::build(float now, const Camera& camera, VfxFrame& frame, std::v
   }
 
   // The hit (both): the energy folds in or bursts, a flash, a sharp ring racing over the ground, the runes scattering.
-  if (since >= 0.0f) {
-    const float life = end_ - impact_, k = since / life;
+  const float hitLife = palmUntil_ > 0.0f ? 0.8f : end_ - impact_;  // the palm may outlast the hit (asAttack's own 0.8 s)
+  if (!chargeOnly_ && since >= 0.0f && since < hitLife) {
+    const float life = hitLife, k = since / life;
     const bool fold = style_ == Style::Phantasmal;
     energy.push_back(blob(chest_, fold ? 6.6f * (1.0f - easeOut(0.0f, 0.3f, since)) + 0.4f : (2.0f + 4.5f * easeOut(0.0f, 0.3f, since)) * S, std::pow(1.0f - k, 1.5f), s0,
                           2.2f * (1.0f - ease(0.0f, 0.4f, since)) + 0.4f));
