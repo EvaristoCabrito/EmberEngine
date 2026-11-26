@@ -40,10 +40,9 @@
    "video": "Attachments/Mush/MusrromMenwalking.mp4",
    "first": 0,
    "last": 142,
-   "loopMin": 20,
-   "loopMax": 142,
    "mode": "loop",
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-left",
@@ -54,10 +53,9 @@
    "video": "Attachments/Mush/MusrromMenwalking.mp4",
    "first": 0,
    "last": 142,
-   "loopMin": 20,
-   "loopMax": 142,
    "mode": "loop",
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "hit",

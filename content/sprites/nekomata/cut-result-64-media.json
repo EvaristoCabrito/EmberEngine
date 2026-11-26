@@ -65,31 +65,32 @@
    "video": "Attachments/Nekomata/Animal_walking_in_place_side_6c43c5a0.mp4",
    "first": 40,
    "last": 143,
-   "loopFirst": 92,
-   "loopLast": 139,
-   "seamSteps": 1.75,
+   "loopFirst": 40,
+   "loopLast": 143,
+   "seamSteps": NaN,
    "bootRow": 254,
    "bodyDrift": [
     0,
     0
    ],
+   "frameCountFrom": 104,
    "figurePx": 119.0,
-   "frames": 48,
-   "frameMs": 41.666666666666664,
+   "frames": 64,
+   "frameMs": 67.70833333333333,
    "nat": [
-    330,
-    152
+    331,
+    154
    ],
    "crop": [
     4,
     5,
-    321,
-    143
+    323,
+    145
    ],
    "box": {
-    "w": 4.71429,
-    "h": 2.17143,
-    "foot": 0.07143
+    "w": 4.72857,
+    "h": 2.2,
+    "foot": 0.08571
    },
    "pattern": "content/sprites/nekomata/move-media64-v01/move-{}.png"
   },
@@ -97,31 +98,32 @@
    "video": "Attachments/Nekomata/Animal_walking_in_place_side_6c43c5a0.mp4",
    "first": 40,
    "last": 143,
-   "loopFirst": 92,
-   "loopLast": 139,
-   "seamSteps": 1.75,
+   "loopFirst": 40,
+   "loopLast": 143,
+   "seamSteps": NaN,
    "bootRow": 254,
    "bodyDrift": [
     0,
     0
    ],
+   "frameCountFrom": 104,
    "figurePx": 119.0,
-   "frames": 48,
-   "frameMs": 41.666666666666664,
+   "frames": 64,
+   "frameMs": 67.70833333333333,
    "nat": [
-    330,
-    152
+    331,
+    154
    ],
    "crop": [
+    4,
     5,
-    5,
-    321,
-    143
+    323,
+    145
    ],
    "box": {
-    "w": 4.71429,
-    "h": 2.17143,
-    "foot": 0.07143
+    "w": 4.72857,
+    "h": 2.2,
+    "foot": 0.08571
    },
    "pattern": "content/sprites/nekomata/move-left-media64-v01/move-left-{}.png"
   },
@@ -139,7 +141,7 @@
    "frames": 64,
    "frameMs": 78.125,
    "nat": [
-    344,
+    389,
     192
    ],
    "crop": [
@@ -149,7 +151,7 @@
     184
    ],
    "box": {
-    "w": 4.91429,
+    "w": 5.55714,
     "h": 2.74286,
     "foot": 0.22857
    },
@@ -249,66 +251,68 @@
   "move-down": {
    "video": "Attachments/Monsters/Nekomata/Nekomata720UpandDown.mp4",
    "first": 0,
-   "last": 100,
-   "loopFirst": 40,
-   "loopLast": 95,
-   "seamSteps": 1.98,
+   "last": 119,
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
    "bootRow": 581,
    "bodyDrift": [
     0,
     0
    ],
+   "frameCountFrom": 120,
    "figurePx": 319.3,
-   "frames": 56,
-   "frameMs": 41.666666666666664,
+   "frames": 64,
+   "frameMs": 78.125,
    "nat": [
-    484,
-    401
+    542,
+    409
    ],
    "crop": [
     5,
     6,
-    474,
-    390
+    532,
+    398
    ],
    "box": {
-    "w": 2.57689,
-    "h": 2.13498,
-    "foot": 0.08519
+    "w": 2.88569,
+    "h": 2.17758,
+    "foot": 0.10116
    },
-   "pattern": "content/sprites/nekomata/move-down-media64-v01/move-down-{}.png"
+   "pattern": "content/sprites/nekomata/move-down-media64-r01/move-down-{}.png"
   },
   "move-up": {
    "video": "Attachments/Monsters/Nekomata/Nekomata720UpandDown.mp4",
-   "first": 124,
-   "last": 224,
-   "loopFirst": 159,
-   "loopLast": 192,
-   "seamSteps": 1.18,
+   "first": 120,
+   "last": 239,
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 571,
    "bodyDrift": [
     0,
     0
    ],
+   "frameCountFrom": 120,
    "figurePx": 301.4,
-   "frames": 34,
-   "frameMs": 41.666666666666664,
+   "frames": 64,
+   "frameMs": 78.125,
    "nat": [
-    222,
-    374
+    242,
+    397
    ],
    "crop": [
     5,
     5,
-    212,
-    365
+    232,
+    387
    ],
    "box": {
-    "w": 1.25216,
-    "h": 2.10949,
-    "foot": 0.0564
+    "w": 1.36496,
+    "h": 2.23922,
+    "foot": 0.14665
    },
-   "pattern": "content/sprites/nekomata/move-up-media64-v01/move-up-{}.png"
+   "pattern": "content/sprites/nekomata/move-up-media64-r01/move-up-{}.png"
   }
  }
 }

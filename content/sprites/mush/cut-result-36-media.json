@@ -67,32 +67,32 @@
    "video": "Attachments/Mush/MusrromMenwalking.mp4",
    "first": 0,
    "last": 142,
-   "loopFirst": 60,
-   "loopLast": 139,
-   "seamSteps": 1.82,
+   "loopFirst": 0,
+   "loopLast": 142,
+   "seamSteps": NaN,
    "bootRow": 697,
    "bodyDrift": [
     0,
     0
    ],
-   "frameCountFrom": 80,
+   "frameCountFrom": 143,
    "figurePx": 699.0,
    "scaledTo": 609.7,
    "frames": 36,
-   "frameMs": 92.59259259259258,
+   "frameMs": 165.50925925925924,
    "nat": [
-    600,
+    607,
     628
    ],
    "crop": [
     6,
     0,
-    589,
+    594,
     628
    ],
    "box": {
-    "w": 2.85021,
-    "h": 2.98322,
+    "w": 2.8834,
+    "h": 2.98316,
     "foot": 0.09085
    },
    "pattern": "content/sprites/mush/move-media36-v01/move-{}.png"
@@ -101,32 +101,32 @@
    "video": "Attachments/Mush/MusrromMenwalking.mp4",
    "first": 0,
    "last": 142,
-   "loopFirst": 60,
-   "loopLast": 139,
-   "seamSteps": 1.82,
+   "loopFirst": 0,
+   "loopLast": 142,
+   "seamSteps": NaN,
    "bootRow": 697,
    "bodyDrift": [
     0,
     0
    ],
-   "frameCountFrom": 80,
+   "frameCountFrom": 143,
    "figurePx": 699.0,
    "scaledTo": 609.7,
    "frames": 36,
-   "frameMs": 92.59259259259258,
+   "frameMs": 165.50925925925924,
    "nat": [
-    600,
+    607,
     628
    ],
    "crop": [
-    5,
+    7,
     0,
-    589,
+    594,
     628
    ],
    "box": {
-    "w": 2.85021,
-    "h": 2.98322,
+    "w": 2.8834,
+    "h": 2.98316,
     "foot": 0.09085
    },
    "pattern": "content/sprites/mush/move-left-media36-v01/move-left-{}.png"

@@ -13,11 +13,12 @@
    "src": "build/video-cut/omnieye/main",
    "video": "Attachments/Classic Animals/Omnieye.mp4",
    "first": 96,
-   "last": 136,
+   "last": 140,
    "mode": "pingpong",
    "why": "hovering, the eye ahead; back and forth",
    "floorRow": 707,
-   "figurePx": 665.0
+   "figurePx": 665.0,
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "cast",
@@ -38,13 +39,14 @@
    "kind": "walk",
    "src": "build/video-cut/omnieye/main",
    "video": "Attachments/Classic Animals/Omnieye.mp4",
-   "first": 52,
-   "last": 84,
+   "first": 0,
+   "last": 95,
    "mode": "pingpong",
    "inPlace": true,
    "why": "the eye looking to its side (screen left), the tendrils trailing: its float that way",
    "floorRow": 707,
-   "figurePx": 665.0
+   "figurePx": 665.0,
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move",
@@ -52,14 +54,15 @@
    "kind": "walk",
    "src": "build/video-cut/omnieye/main",
    "video": "Attachments/Classic Animals/Omnieye.mp4",
-   "first": 52,
-   "last": 84,
+   "first": 0,
+   "last": 95,
    "mode": "pingpong",
    "inPlace": true,
    "mirror": true,
    "why": "the same, mirrored: its float to the right",
    "floorRow": 707,
-   "figurePx": 665.0
+   "figurePx": 665.0,
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "hit",

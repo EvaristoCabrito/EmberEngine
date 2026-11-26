@@ -3,7 +3,7 @@
   "base": {
    "video": "Attachments/Classic Animals/Omnieye.mp4",
    "first": 96,
-   "last": 136,
+   "last": 140,
    "bootRow": 707,
    "bootRows": [
     707,
@@ -11,21 +11,21 @@
    ],
    "figurePx": 665.0,
    "scaledTo": 610.1,
-   "frames": 41,
+   "frames": 45,
    "frameMs": 41.666666666666664,
    "nat": [
     314,
-    633
+    634
    ],
    "crop": [
     5,
-    4,
-    305,
+    5,
+    304,
     629
    ],
    "box": {
     "w": 1.13143,
-    "h": 2.28087,
+    "h": 2.28448,
     "foot": 0.03952
    },
    "pattern": "content/sprites/omnieye/base-media64-v01/base-{}.png"
@@ -63,67 +63,69 @@
   },
   "move-left": {
    "video": "Attachments/Classic Animals/Omnieye.mp4",
-   "first": 52,
-   "last": 84,
-   "loopFirst": 52,
-   "loopLast": 84,
+   "first": 0,
+   "last": 95,
+   "loopFirst": 0,
+   "loopLast": 95,
    "seamSteps": NaN,
    "bootRow": 707,
    "bodyDrift": [
     0,
     0
    ],
+   "frameCountFrom": 96,
    "figurePx": 665.0,
-   "scaledTo": 610.2,
-   "frames": 33,
-   "frameMs": 41.666666666666664,
+   "scaledTo": 610.4,
+   "frames": 64,
+   "frameMs": 62.5,
    "nat": [
     631,
-    635
+    637
    ],
    "crop": [
     4,
-    6,
+    5,
     622,
-    624
+    632
    ],
    "box": {
     "w": 2.27609,
-    "h": 2.29052,
-    "foot": 0.03295
+    "h": 2.29773,
+    "foot": 0.03958
    },
    "pattern": "content/sprites/omnieye/move-left-media64-v01/move-left-{}.png"
   },
   "move": {
    "video": "Attachments/Classic Animals/Omnieye.mp4",
-   "first": 52,
-   "last": 84,
-   "loopFirst": 52,
-   "loopLast": 84,
+   "first": 0,
+   "last": 95,
+   "loopFirst": 0,
+   "loopLast": 95,
    "seamSteps": NaN,
    "bootRow": 707,
    "bodyDrift": [
     0,
     0
    ],
+   "frameCountFrom": 96,
    "figurePx": 665.0,
-   "scaledTo": 610.2,
-   "frames": 33,
-   "frameMs": 41.666666666666664,
+   "scaledTo": 610.4,
+   "frames": 64,
+   "frameMs": 62.5,
    "nat": [
     631,
-    635
+    637
    ],
    "crop": [
     5,
-    6,
+    5,
     622,
-    624
+    632
    ],
    "box": {
     "w": 2.27609,
-    "h": 2.29052,
-    "foot": 0.03295
+    "h": 2.29773,
+    "foot": 0.03958
    },
    "pattern": "content/sprites/omnieye/move-media64-v01/move-{}.png"
   },

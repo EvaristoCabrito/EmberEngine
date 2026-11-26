@@ -3,28 +3,28 @@
   "base": {
    "video": "Attachments/Classic Animals/Omnieye.mp4",
    "first": 96,
-   "last": 136,
+   "last": 140,
    "bootRow": 707,
    "bootRows": [
     707,
     707
    ],
    "figurePx": 665.0,
-   "frames": 41,
+   "frames": 45,
    "frameMs": 41.666666666666664,
    "nat": [
     342,
-    690
+    691
    ],
    "crop": [
     5,
-    4,
+    5,
     332,
     686
    ],
    "box": {
     "w": 1.13143,
-    "h": 2.28271,
+    "h": 2.28602,
     "foot": 0.0397
    },
    "pattern": "content/sprites/omnieye/base-v01/base-{}.png"
@@ -60,10 +60,10 @@
   },
   "move-left": {
    "video": "Attachments/Classic Animals/Omnieye.mp4",
-   "first": 52,
-   "last": 84,
-   "loopFirst": 52,
-   "loopLast": 84,
+   "first": 0,
+   "last": 95,
+   "loopFirst": 0,
+   "loopLast": 95,
    "seamSteps": NaN,
    "bootRow": 707,
    "bodyDrift": [
@@ -71,31 +71,31 @@
     0
    ],
    "figurePx": 665.0,
-   "frames": 33,
+   "frames": 96,
    "frameMs": 41.666666666666664,
    "nat": [
     688,
-    692
+    694
    ],
    "crop": [
     5,
-    6,
+    5,
     678,
-    680
+    689
    ],
    "box": {
     "w": 2.27609,
-    "h": 2.28932,
-    "foot": 0.03308
+    "h": 2.29594,
+    "foot": 0.0397
    },
    "pattern": "content/sprites/omnieye/move-left-v01/move-left-{}.png"
   },
   "move": {
    "video": "Attachments/Classic Animals/Omnieye.mp4",
-   "first": 52,
-   "last": 84,
-   "loopFirst": 52,
-   "loopLast": 84,
+   "first": 0,
+   "last": 95,
+   "loopFirst": 0,
+   "loopLast": 95,
    "seamSteps": NaN,
    "bootRow": 707,
    "bodyDrift": [
@@ -103,22 +103,22 @@
     0
    ],
    "figurePx": 665.0,
-   "frames": 33,
+   "frames": 96,
    "frameMs": 41.666666666666664,
    "nat": [
     688,
-    692
+    694
    ],
    "crop": [
     5,
-    6,
+    5,
     678,
-    680
+    689
    ],
    "box": {
     "w": 2.27609,
-    "h": 2.28932,
-    "foot": 0.03308
+    "h": 2.29594,
+    "foot": 0.0397
    },
    "pattern": "content/sprites/omnieye/move-v01/move-{}.png"
   },

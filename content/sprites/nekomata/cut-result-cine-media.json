@@ -1,0 +1,132 @@
+{
+ "clips": {
+  "move-down": {
+   "video": "Attachments/Monsters/Nekomata/Nekomata720UpandDown.mp4",
+   "first": 0,
+   "last": 119,
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
+   "bootRow": 581,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 319.3,
+   "frames": 120,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    542,
+    409
+   ],
+   "crop": [
+    5,
+    5,
+    532,
+    399
+   ],
+   "box": {
+    "w": 2.88569,
+    "h": 2.17758,
+    "foot": 0.10116
+   },
+   "pattern": "content/sprites/nekomata/move-down-cine-r01/move-down-{}.png"
+  },
+  "move-up": {
+   "video": "Attachments/Monsters/Nekomata/Nekomata720UpandDown.mp4",
+   "first": 120,
+   "last": 239,
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
+   "bootRow": 571,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 301.4,
+   "frames": 120,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    242,
+    397
+   ],
+   "crop": [
+    4,
+    5,
+    233,
+    387
+   ],
+   "box": {
+    "w": 1.36496,
+    "h": 2.23922,
+    "foot": 0.14665
+   },
+   "pattern": "content/sprites/nekomata/move-up-cine-r01/move-up-{}.png"
+  },
+  "move": {
+   "video": "Attachments/Nekomata/Animal_walking_in_place_side_6c43c5a0.mp4",
+   "first": 40,
+   "last": 143,
+   "loopFirst": 40,
+   "loopLast": 143,
+   "seamSteps": NaN,
+   "bootRow": 254,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 119.0,
+   "frames": 104,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    331,
+    154
+   ],
+   "crop": [
+    4,
+    5,
+    323,
+    145
+   ],
+   "box": {
+    "w": 4.72857,
+    "h": 2.2,
+    "foot": 0.08571
+   },
+   "pattern": "content/sprites/nekomata/move-cine-v01/move-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/Nekomata/Animal_walking_in_place_side_6c43c5a0.mp4",
+   "first": 40,
+   "last": 143,
+   "loopFirst": 40,
+   "loopLast": 143,
+   "seamSteps": NaN,
+   "bootRow": 254,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 119.0,
+   "frames": 104,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    331,
+    154
+   ],
+   "crop": [
+    4,
+    5,
+    323,
+    145
+   ],
+   "box": {
+    "w": 4.72857,
+    "h": 2.2,
+    "foot": 0.08571
+   },
+   "pattern": "content/sprites/nekomata/move-left-cine-v01/move-left-{}.png"
+  }
+ }
+}

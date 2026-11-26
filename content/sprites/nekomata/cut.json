@@ -44,11 +44,10 @@
    "figurePx": 119,
    "first": 40,
    "last": 143,
-   "loopMin": 48,
-   "loopMax": 143,
    "mode": "loop",
    "why": "the video walks left in place, steady from ~48: mirrored to walk right",
-   "floorRow": 254
+   "floorRow": 254,
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-left",
@@ -60,11 +59,10 @@
    "figurePx": 119,
    "first": 40,
    "last": 143,
-   "loopMin": 48,
-   "loopMax": 143,
    "mode": "loop",
    "why": "the video as made: walking left in place",
-   "floorRow": 254
+   "floorRow": 254,
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "cast",
@@ -133,16 +131,16 @@
    "kind": "walk",
    "inPlace": true,
    "mirror": true,
-   "src": "build/video-cut/nekomata/updown",
+   "src": "build/video-cut/redo-sonnet/nekomata__updown",
    "video": "Attachments/Monsters/Nekomata/Nekomata720UpandDown.mp4",
    "first": 0,
-   "last": 100,
-   "loopMin": 32,
-   "loopMax": 100,
+   "last": 119,
    "mode": "loop",
    "figurePx": 319.3,
    "floorRow": 581,
-   "why": "the user, 2026-11-18: Nekomata720UpandDown, walking toward the camera in three-quarters, in place (720p); turned to face right"
+   "why": "the user, 2026-11-18: Nekomata720UpandDown, walking toward the camera in three-quarters, in place (720p); turned to face right",
+   "version": "r01",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-up",
@@ -150,16 +148,16 @@
    "kind": "walk",
    "inPlace": true,
    "mirror": true,
-   "src": "build/video-cut/nekomata/updown",
+   "src": "build/video-cut/redo-sonnet/nekomata__updown",
    "video": "Attachments/Monsters/Nekomata/Nekomata720UpandDown.mp4",
-   "first": 124,
-   "last": 224,
-   "loopMin": 32,
-   "loopMax": 100,
+   "first": 120,
+   "last": 239,
    "mode": "loop",
    "figurePx": 301.4,
    "floorRow": 571,
-   "why": "the same video, walking away from the camera, its back (the video cuts to it at ~116); 720p"
+   "why": "the same video, walking away from the camera, its back (the video cuts to it at ~116); 720p",
+   "version": "r01",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   }
  ],
  "scaleNote2": "measured 2026-11-18: the old side walk's median height 139 px in its 360p video, drawn at figurePx 119 (x 0.856); the new video's median height 373 px walking toward the camera, 352 px away: figurePx 319.3 and 301.4; paws at row 581 and 571"

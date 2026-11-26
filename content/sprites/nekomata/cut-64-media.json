@@ -44,11 +44,10 @@
    "figurePx": 119,
    "first": 40,
    "last": 143,
-   "loopMin": 48,
-   "loopMax": 143,
    "mode": "loop",
    "scaleTo": 916,
-   "floorRow": 254
+   "floorRow": 254,
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-left",
@@ -60,11 +59,10 @@
    "figurePx": 119,
    "first": 40,
    "last": 143,
-   "loopMin": 48,
-   "loopMax": 143,
    "mode": "loop",
    "scaleTo": 916,
-   "floorRow": 254
+   "floorRow": 254,
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "cast",
@@ -133,16 +131,16 @@
    "kind": "walk",
    "inPlace": true,
    "mirror": true,
-   "src": "build/video-cut/nekomata/updown",
+   "src": "build/video-cut/redo-sonnet/nekomata__updown",
    "video": "Attachments/Monsters/Nekomata/Nekomata720UpandDown.mp4",
    "first": 0,
-   "last": 100,
-   "loopMin": 32,
-   "loopMax": 100,
+   "last": 119,
    "mode": "loop",
    "figurePx": 319.3,
    "floorRow": 581,
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media64-r01",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-up",
@@ -150,16 +148,16 @@
    "kind": "walk",
    "inPlace": true,
    "mirror": true,
-   "src": "build/video-cut/nekomata/updown",
+   "src": "build/video-cut/redo-sonnet/nekomata__updown",
    "video": "Attachments/Monsters/Nekomata/Nekomata720UpandDown.mp4",
-   "first": 124,
-   "last": 224,
-   "loopMin": 32,
-   "loopMax": 100,
+   "first": 120,
+   "last": 239,
    "mode": "loop",
    "figurePx": 301.4,
    "floorRow": 571,
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media64-r01",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   }
  ],
  "result": "cut-result-64-media.json",
