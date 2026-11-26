@@ -9667,7 +9667,7 @@ class MapStage final : public Stage {
     x.release = magic ? fxStart : 0.0f;  // Câmera de ação: on the caster until then, then on the target / area
     auto afterPose = [&](ember::Json cues) {
       if (magic && cues.is_array())
-        for (ember::Json& c : cues) c["delay"] = c.value("delay", 0.0f) + length;
+        for (ember::Json& c : cues) c["delay"] = c.value("delay", 0.0f) + length + turnLead;
       return cues;
     };
     // The Arcano attack: energy gathers at the hand while the pose winds up, the bolt leaves at the pose's release and
