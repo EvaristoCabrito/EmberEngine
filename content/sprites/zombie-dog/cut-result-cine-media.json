@@ -1,0 +1,182 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/BigZombie_dog_animation_reference_ba9abcc5_720p.mp4",
+   "first": 0,
+   "last": 96,
+   "bootRow": 685,
+   "bootRows": [
+    685,
+    685
+   ],
+   "figurePx": 512.5,
+   "frames": 97,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    771,
+    527
+   ],
+   "crop": [
+    5,
+    4,
+    761,
+    519
+   ],
+   "box": {
+    "w": 3.36788,
+    "h": 2.30204,
+    "foot": 0.03495
+   },
+   "pattern": "content/sprites/zombie-dog/base-cine-r01/base-{}.png"
+  },
+  "cast": {
+   "video": "Attachments/BigZombie_dog_animation_reference_ba9abcc5_720p.mp4",
+   "first": 98,
+   "last": 220,
+   "bootRow": 685,
+   "bootRows": [
+    685,
+    685
+   ],
+   "figurePx": 512.5,
+   "frames": 123,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    841,
+    620
+   ],
+   "crop": [
+    5,
+    5,
+    831,
+    611
+   ],
+   "box": {
+    "w": 3.67365,
+    "h": 2.70828,
+    "foot": 0.03495
+   },
+   "pattern": "content/sprites/zombie-dog/cast-cine-r01/cast-{}.png"
+  },
+  "move": {
+   "video": "Attachments/BigZombie_dog_walk_and_attack_6e721e64_720p.mp4",
+   "first": 0,
+   "last": 120,
+   "loopFirst": 71,
+   "loopLast": 100,
+   "seamSteps": 3.56,
+   "bootRow": 655,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 512.5,
+   "frames": 30,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    741,
+    505
+   ],
+   "crop": [
+    4,
+    4,
+    733,
+    496
+   ],
+   "box": {
+    "w": 3.23683,
+    "h": 2.20594,
+    "foot": 0.07426
+   },
+   "pattern": "content/sprites/zombie-dog/move-cine-r01/move-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/BigZombie_dog_walk_and_attack_6e721e64_720p.mp4",
+   "first": 124,
+   "last": 204,
+   "bootRow": 657,
+   "bootRows": [
+    657,
+    657
+   ],
+   "figurePx": 512.5,
+   "frames": 81,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    821,
+    540
+   ],
+   "crop": [
+    4,
+    6,
+    812,
+    530
+   ],
+   "box": {
+    "w": 3.58629,
+    "h": 2.35883,
+    "foot": 0.02621
+   },
+   "pattern": "content/sprites/zombie-dog/atk-cine-r01/atk-{}.png",
+   "impact": 0.5432
+  },
+  "hit": {
+   "video": "Attachments/BigZombie_dog_animation_reference_efc4c366_720p.mp4",
+   "first": 16,
+   "last": 62,
+   "bootRow": 648,
+   "bootRows": [
+    648,
+    648
+   ],
+   "figurePx": 512.5,
+   "frames": 47,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    951,
+    630
+   ],
+   "crop": [
+    4,
+    5,
+    942,
+    621
+   ],
+   "box": {
+    "w": 4.15415,
+    "h": 2.75196,
+    "foot": 0.03058
+   },
+   "pattern": "content/sprites/zombie-dog/hit-cine-r01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/BigZombie_dog_animation_reference_efc4c366_720p.mp4",
+   "first": 144,
+   "last": 205,
+   "bootRow": 648,
+   "bootRows": [
+    648,
+    648
+   ],
+   "figurePx": 512.5,
+   "frames": 62,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    918,
+    488
+   ],
+   "crop": [
+    6,
+    6,
+    906,
+    478
+   ],
+   "box": {
+    "w": 4.01,
+    "h": 2.13168,
+    "foot": 0.083
+   },
+   "pattern": "content/sprites/zombie-dog/death-cine-r01/death-{}.png"
+  }
+ }
+}

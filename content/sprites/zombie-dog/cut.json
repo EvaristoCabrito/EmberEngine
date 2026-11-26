@@ -11,74 +11,79 @@
    "clip": "base",
    "pose": "idle",
    "kind": "stand",
-   "src": "build/video-cut/zombie-dog/big-reference-hrm",
+   "src": "build/video-cut/redo-sonnet/zombie-dog__big-reference",
    "video": "Attachments/BigZombie_dog_animation_reference_ba9abcc5_720p.mp4",
    "first": 0,
    "last": 96,
    "mode": "pingpong",
-   "why": "standing and breathing, until the mouth starts to open for the roar at ~98; played back and forth: the best hard-cut loop in this stretch jumps 4.2 x a frame's step at its seam; 2026-11-17 the user: \"you will redo the idle\": matted with the HR matting model (hr_matte.py --crop 200,0,1050,720; the user: \"there is less of that annoying drool on the new one ... keep the new one\")"
+   "why": "standing and breathing, until the mouth starts to open for the roar at ~98; played back and forth: the best hard-cut loop in this stretch jumps 4.2 x a frame's step at its seam; 2026-11-17 the user: \"you will redo the idle\": matted with the HR matting model (hr_matte.py --crop 200,0,1050,720; the user: \"there is less of that annoying drool on the new one ... keep the new one\")",
+   "version": "r01"
   },
   {
    "clip": "cast",
    "pose": "cast",
    "kind": "stand",
-   "src": "build/video-cut/zombie-dog/big-reference",
+   "src": "build/video-cut/redo-sonnet/zombie-dog__big-reference",
    "video": "Attachments/BigZombie_dog_animation_reference_ba9abcc5_720p.mp4",
    "first": 98,
    "last": 220,
    "mode": "once",
-   "why": "the head lifts and roars from ~100, the green glow runs ~136..204, standing again by ~220"
+   "why": "the head lifts and roars from ~100, the green glow runs ~136..204, standing again by ~220",
+   "version": "r01"
   },
   {
    "clip": "move",
    "pose": "walk",
    "kind": "walk",
    "inPlace": true,
-   "src": "build/video-cut/zombie-dog/big-walkattack",
+   "src": "build/video-cut/redo-sonnet/zombie-dog__big-walkattack",
    "video": "Attachments/BigZombie_dog_walk_and_attack_6e721e64_720p.mp4",
-   "first": 0,
-   "last": 120,
-   "loopMin": 20,
-   "loopMax": 120,
+   "first": 13,
+   "last": 123,
    "mode": "loop",
-   "why": "walking in place, facing right, until he crouches for the leap at ~124"
+   "why": "walking in place, facing right, until he crouches for the leap at ~124",
+   "version": "r01",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "atk",
    "pose": "attack",
    "kind": "stand",
-   "src": "build/video-cut/zombie-dog/big-walkattack",
+   "src": "build/video-cut/redo-sonnet/zombie-dog__big-walkattack",
    "video": "Attachments/BigZombie_dog_walk_and_attack_6e721e64_720p.mp4",
    "first": 124,
    "last": 204,
    "standUntil": 150,
    "impactFrame": 168,
    "mode": "once",
-   "why": "crouches 124..152, leaps at ~156 with the jaws open (the bite at ~168), lands ~180, standing by ~204; he leaves his feet, so the feet line comes from the crouch"
+   "why": "crouches 124..152, leaps at ~156 with the jaws open (the bite at ~168), lands ~180, standing by ~204; he leaves his feet, so the feet line comes from the crouch",
+   "version": "r01"
   },
   {
    "clip": "hit",
    "pose": "hit",
    "kind": "stand",
-   "src": "build/video-cut/zombie-dog/big-hitdeath",
+   "src": "build/video-cut/redo-sonnet/zombie-dog__big-hitdeath",
    "video": "Attachments/BigZombie_dog_animation_reference_efc4c366_720p.mp4",
    "first": 16,
    "last": 62,
    "standUntil": 20,
    "mode": "once",
-   "why": "recoils from ~20, rears with a front paw up at ~36..40, standing again by ~60"
+   "why": "recoils from ~20, rears with a front paw up at ~36..40, standing again by ~60",
+   "version": "r01"
   },
   {
    "clip": "death",
    "pose": "death",
    "kind": "stand",
-   "src": "build/video-cut/zombie-dog/big-hitdeath",
+   "src": "build/video-cut/redo-sonnet/zombie-dog__big-hitdeath",
    "video": "Attachments/BigZombie_dog_animation_reference_efc4c366_720p.mp4",
    "first": 144,
    "last": 205,
    "standUntil": 150,
    "mode": "once",
-   "why": "stumbles at ~152, down by ~168, lying still from ~176"
+   "why": "stumbles at ~152, down by ~168, lying still from ~176",
+   "version": "r01"
   }
  ]
 }
