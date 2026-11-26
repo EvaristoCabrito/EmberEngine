@@ -204,6 +204,7 @@ std::optional<std::vector<Hero>> loadHeroes(const std::filesystem::path& heroesJ
         else if (strides.contains("__default") && strides["__default"].is_number()) q.strides = strides["__default"].get<float>();
       }
       if (p.contains("bodyShift") && p["bodyShift"].is_array()) q.bodyShift = p["bodyShift"].get<std::vector<float>>();
+      if (p.contains("frameScale") && p["frameScale"].is_array()) q.frameScale = p["frameScale"].get<std::vector<float>>();
       o.poses.push_back(std::move(q));
     }
     heroes.push_back(std::move(o));

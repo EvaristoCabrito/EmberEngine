@@ -4690,13 +4690,15 @@ class MapStage final : public Stage {
       // A copy with fewer frames (Voss's 64 / 36-frame Média / Leve, the user 2026-10-22) plays on the full clip's timing: the
       // full clip's frame mapped to the copy's, so the pose keeps its length and its blow lands at the same moment. A copy cut
       // with an integer step (every Nth frame: Voss's Leve, the user 2026-10-27) shows frame f / N: one fixed time a frame.
+      // The size this frame is drawn at (the pose's frameScale, by the full clip's frame, so Alta, Média, Leve and Cinemática alike).
+      const float frameScale = p && frame < p->frameScale.size() ? p->frameScale[frame] : 1.0f;
       if (const uint32_t n = sprites_.header(clip).frames, full = static_cast<uint32_t>(p ? p->frames : u.frames); n > 0 && full > n) {
         const uint32_t step = lightStepOf(p ? p : scenePose(u, entry), artTier(u, entry));
         frame = std::min(n - 1, step > 0 ? frame / step : static_cast<uint32_t>(static_cast<uint64_t>(frame) * n / full));
       }
       // A unit drawn at its own size (content/unit-size.json; the user, 2026-10-22: the Cultista Ancestral ~10% smaller), every
       // pose alike, feet kept on the ground.
-      const float size = unitSize(entry ? entry->key : u.key, entry && entry->group == "npc");
+      const float size = unitSize(entry ? entry->key : u.key, entry && entry->group == "npc") * frameScale;
       float boxW = (p ? p->boxW : u.boxW) * size, boxH = (p ? p->boxH : u.boxH) * size;
       const float foot = (p ? p->foot : u.foot) * size;
       glm::vec3 anchor = static_cast<int>(ui) == hero_ && path_.size() > 1 ? heroAt_ : unitWorld(ui);

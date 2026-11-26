@@ -236,6 +236,26 @@ def main():
             hero["poses"] = copy.deepcopy(src)
             print(f"reuse {key}: {len(src)} poses of {ru['poses']}")
 
+    # "frameScale" (the user, 2026-11-26: "o birolho não pode mudar de tamanho só porque colocou os braços de fora"): per frame of a
+    # pose's full clip, the size it is drawn at, from content/sprites/<set>/frame-scale.json (tools/scripts/sprites/frame_scale.py,
+    # measured on the cut frames). Only while its length is the pose's frame count: a set cut again drops it until it is measured again.
+    for st in over.get("sets", []):
+        if "hero" not in st or "mediumOf" in st or "lightOf" in st or "cinemaOf" in st:
+            continue
+        hero = next((h for h in roster["heroes"] if h.get("key") == st["hero"]), None)
+        path = os.path.join(ROOT, "content", "sprites", st["set"], "frame-scale.json")
+        scales = load(path)["clips"] if os.path.exists(path) else {}
+        for p in hero["poses"] if hero else []:
+            if p.get("set") != st["set"]:
+                continue
+            s = scales.get(p["clip"])
+            if s and len(s) == p["frames"]:
+                p["frameScale"] = s
+            else:
+                p.pop("frameScale", None)
+                if s:
+                    print(f"frameScale {st['hero']} {p['pose']}: {len(s)} scales for {p['frames']} frames; dropped (run frame_scale.py again)")
+
     # "copies" (after every set, so a medium copy's marks come along): another unit drawn with the same art at `scale` (the Large
     # Corrosive Slime: two hexes, the Small one's art twice as big); its poses are the hero's, each box (width, height, foot) scaled.
     for st in over.get("sets", []):

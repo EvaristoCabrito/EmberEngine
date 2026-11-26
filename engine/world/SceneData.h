@@ -123,6 +123,10 @@ struct HeroPose {
   // Poses Ember holds on their hex (units/catalog.ts centerBody): per frame, how far right of frame 1 the body sits, as a
   // share of the pose's width (tools/scripts/data/measure_body_shift.py); empty = the pose plays as drawn.
   std::vector<float> bodyShift;
+  // Per frame of the full clip, the size it is drawn at (1 = the pose's box): a video whose camera pulls back as the limbs open (the
+  // Birolhos' unfold) is drawn at the idle's body size on every frame (content/sprites/<set>/frame-scale.json,
+  // tools/scripts/sprites/frame_scale.py); empty = the pose's box on every frame.
+  std::vector<float> frameScale;
 };
 struct Hero {
   std::string name;
