@@ -344,6 +344,18 @@ class HexStepMover {
   size_t remainingSteps() const { return queue_.size(); }
   // The hex after the one it is walking to (null on the last step): what a walk's heading and its rounded corners look ahead to.
   const HexWaypoint* nextQueued() const { return queue_.empty() ? nullptr : &queue_.front(); }
+  // The point `ahead` world units further along the whole route still to walk (this step, then every queued one), the route's end
+  // when less is left: what a camera following the walk leads to, so its lead does not fall to nothing at every hex.
+  glm::vec2 pointAhead(float ahead) const {
+    glm::vec2 at = worldPos_, to = targetWorldPos_;
+    for (size_t i = 0;; ++i) {
+      const float seg = glm::length(to - at);
+      if (seg >= ahead) return seg > 1e-6f ? at + (to - at) * (ahead / seg) : to;
+      ahead -= seg, at = to;
+      if (i >= queue_.size()) return at;
+      to = queue_[i].worldPos;
+    }
+  }
 
  private:
   bool runStepStart() {

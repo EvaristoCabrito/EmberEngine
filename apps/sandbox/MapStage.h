@@ -12625,13 +12625,13 @@ class MapStage final : public Stage {
       const size_t fu = static_cast<size_t>(s->follow);
       if (unitWalk_[fu].active()) {
         glm::vec3 pos = unitWorld(fu);
-        const glm::vec2 dest = unitWalk_[fu].mover.targetWorldPos();
-        const glm::vec2 leadDir = dest - glm::vec2(pos.x, pos.z);
-        if (glm::dot(leadDir, leadDir) > 1e-4f) {
-          const glm::vec2 n = glm::normalize(leadDir) * std::min(cameraConfig_.enemyTurnLeadAhead, glm::length(leadDir));
-          pos.x += n.x;
-          pos.z += n.y;
-        }
+        // The lead runs along the whole route still to walk, not to the next hex: aimed at the hex being walked to, it fell to nothing
+        // as the unit reached each hex and leapt ahead at the next, the camera surging hex by hex (the user, 2026-11-26: "vai casa por
+        // casa saltando ao invés de smooth following"); it now shrinks only as the walk's end comes near.
+        const ember::HexStepMover& mv = unitWalk_[fu].mover;
+        const glm::vec2 lead = mv.pointAhead(cameraConfig_.enemyTurnLeadAhead) - mv.worldPos();
+        pos.x += lead.x;
+        pos.z += lead.y;
         if (enemyTurn_ && enemyTurn_->target >= 0 && static_cast<size_t>(enemyTurn_->target) < unitPos_.size()) {
           pos = (pos + unitWorld(static_cast<size_t>(enemyTurn_->target))) * 0.5f;
         }
