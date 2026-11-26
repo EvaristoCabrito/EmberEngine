@@ -1,0 +1,65 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Monsters/Giant_spider_performing IdleandCasting.mp4",
+   "first": 0,
+   "last": 90,
+   "bootRow": 584,
+   "bootRows": [
+    572,
+    586
+   ],
+   "figurePx": 417.0,
+   "frames": 91,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    879,
+    506
+   ],
+   "crop": [
+    4,
+    5,
+    870,
+    496
+   ],
+   "box": {
+    "w": 3.58071,
+    "h": 2.06125,
+    "foot": 0.2159
+   },
+   "pattern": "content/sprites/giant-spider/base-cine-v01/base-{}.png"
+  },
+  "move": {
+   "video": "Attachments/Monsters/Giant_spider_animation_movementandATT.mp4",
+   "first": 7,
+   "last": 119,
+   "loopFirst": 7,
+   "loopLast": 119,
+   "seamSteps": NaN,
+   "bootRow": 565,
+   "bodyDrift": [
+    0,
+    70
+   ],
+   "figurePx": 401.0,
+   "frames": 113,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    932,
+    488
+   ],
+   "crop": [
+    5,
+    5,
+    922,
+    479
+   ],
+   "box": {
+    "w": 3.9481,
+    "h": 2.06725,
+    "foot": 0.27535
+   },
+   "pattern": "content/sprites/giant-spider/move-cine-v01/move-{}.png"
+  }
+ }
+}

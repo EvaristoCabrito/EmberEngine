@@ -1,0 +1,97 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/IleAtck.mp4",
+   "first": 0,
+   "last": 96,
+   "bootRow": 652,
+   "bootRows": [
+    614,
+    652
+   ],
+   "figurePx": 551.0,
+   "frames": 97,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    640,
+    606
+   ],
+   "crop": [
+    4,
+    5,
+    631,
+    596
+   ],
+   "box": {
+    "w": 3.56286,
+    "h": 3.37358,
+    "foot": 0.17814
+   },
+   "pattern": "content/sprites/hypostasis/base-cine-v02/base-{}.png"
+  },
+  "move": {
+   "video": "Attachments/Creature_walking_in_place_4dc8b81e.mp4",
+   "first": 0,
+   "last": 143,
+   "loopFirst": 0,
+   "loopLast": 143,
+   "seamSteps": NaN,
+   "bootRow": 669,
+   "bodyDrift": [
+    -17,
+    6
+   ],
+   "figurePx": 521.0,
+   "frames": 144,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    892,
+    602
+   ],
+   "crop": [
+    4,
+    5,
+    883,
+    593
+   ],
+   "box": {
+    "w": 5.25167,
+    "h": 3.54429,
+    "foot": 0.25316
+   },
+   "pattern": "content/sprites/hypostasis/move-cine-v02/move-{}.png"
+  },
+  "movefront": {
+   "video": "Attachments/Walkleftandright.mp4",
+   "first": 57,
+   "last": 122,
+   "loopFirst": 57,
+   "loopLast": 122,
+   "seamSteps": NaN,
+   "bootRow": 630,
+   "bodyDrift": [
+    -1,
+    13
+   ],
+   "figurePx": 526.0,
+   "frames": 66,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    641,
+    589
+   ],
+   "crop": [
+    5,
+    6,
+    631,
+    578
+   ],
+   "box": {
+    "w": 3.73803,
+    "h": 3.43479,
+    "foot": 0.2216
+   },
+   "pattern": "content/sprites/hypostasis/movefront-cine-v02/movefront-{}.png"
+  }
+ }
+}

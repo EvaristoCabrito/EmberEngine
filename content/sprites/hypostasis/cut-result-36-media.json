@@ -9,27 +9,24 @@
     614,
     652
    ],
-   "loopFirst": 6,
-   "loopLast": 58,
-   "seamSteps": 2.4,
-   "frameCountFrom": 53,
-   "figurePx": 553.0,
+   "frameCountFrom": 97,
+   "figurePx": 551.0,
    "frames": 36,
-   "frameMs": 61.34259259259258,
+   "frameMs": 112.26851851851852,
    "nat": [
-    639,
+    640,
     606
    ],
    "crop": [
     4,
     5,
     631,
-    596
+    595
    ],
    "box": {
-    "w": 3.54443,
-    "h": 3.36138,
-    "foot": 0.1775
+    "w": 3.56286,
+    "h": 3.37358,
+    "foot": 0.17814
    },
    "pattern": "content/sprites/hypostasis/base-media36-v02/base-{}.png"
   },
@@ -134,51 +131,51 @@
    "video": "Attachments/Creature_walking_in_place_4dc8b81e.mp4",
    "first": 0,
    "last": 143,
-   "loopFirst": 24,
-   "loopLast": 68,
-   "seamSteps": 0.88,
+   "loopFirst": 0,
+   "loopLast": 143,
+   "seamSteps": NaN,
    "bootRow": 669,
    "bodyDrift": [
-    -12,
+    -17,
     6
    ],
-   "frameCountFrom": 45,
-   "figurePx": 523.0,
+   "frameCountFrom": 144,
+   "figurePx": 521.0,
    "frames": 36,
-   "frameMs": 52.083333333333336,
+   "frameMs": 166.66666666666666,
    "nat": [
-    876,
-    598
+    892,
+    602
    ],
    "crop": [
-    5,
-    5,
-    866,
-    588
+    11,
+    9,
+    869,
+    589
    ],
    "box": {
-    "w": 5.13775,
-    "h": 3.50728,
-    "foot": 0.22874
+    "w": 5.25167,
+    "h": 3.54429,
+    "foot": 0.25316
    },
    "pattern": "content/sprites/hypostasis/move-media36-v02/move-{}.png"
   },
   "movefront": {
    "video": "Attachments/Walkleftandright.mp4",
-   "first": 56,
-   "last": 135,
-   "loopFirst": 65,
-   "loopLast": 107,
-   "seamSteps": 2.19,
-   "bootRow": 634,
+   "first": 57,
+   "last": 122,
+   "loopFirst": 57,
+   "loopLast": 122,
+   "seamSteps": NaN,
+   "bootRow": 630,
    "bodyDrift": [
-    1,
-    15
+    -1,
+    13
    ],
-   "frameCountFrom": 43,
-   "figurePx": 524.0,
+   "frameCountFrom": 66,
+   "figurePx": 526.0,
    "frames": 36,
-   "frameMs": 49.76851851851851,
+   "frameMs": 76.38888888888889,
    "nat": [
     641,
     589
@@ -186,13 +183,13 @@
    "crop": [
     5,
     6,
-    631,
+    630,
     578
    ],
    "box": {
-    "w": 3.7523,
-    "h": 3.4479,
-    "foot": 0.22245
+    "w": 3.73803,
+    "h": 3.43479,
+    "foot": 0.2216
    },
    "pattern": "content/sprites/hypostasis/movefront-media36-v02/movefront-{}.png"
   },

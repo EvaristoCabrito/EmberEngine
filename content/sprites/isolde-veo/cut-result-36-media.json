@@ -10,94 +10,94 @@
     1851
    ],
    "frameCountFrom": 110,
-   "figurePx": 1650.0,
-   "scaledTo": 610.4,
+   "figurePx": 1651.0,
+   "scaledTo": 609.9,
    "frames": 36,
    "frameMs": 127.31481481481481,
    "nat": [
     350,
-    633
+    631
    ],
    "crop": [
+    1,
     2,
-    2,
-    346,
-    629
+    347,
+    627
    ],
    "box": {
-    "w": 1.52829,
-    "h": 2.76402,
-    "foot": 0.01801
+    "w": 1.52575,
+    "h": 2.75072,
+    "foot": 0.01473
    },
-   "pattern": "content/sprites/isolde-veo/base-media36-v1080/base-{}.png"
+   "pattern": "content/sprites/isolde-veo/base-media36-r01/base-{}.png"
   },
   "move": {
    "video": "Attachments/TurnAround/IsoldeWalk2.mp4",
    "first": 7,
    "last": 189,
-   "loopFirst": 45,
-   "loopLast": 150,
-   "seamSteps": 1.79,
+   "loopFirst": 7,
+   "loopLast": 189,
+   "seamSteps": NaN,
    "bootRow": 1841,
    "bodyDrift": [
-    0,
-    31
+    -18,
+    24
    ],
-   "frameCountFrom": 106,
-   "figurePx": 1733.5,
+   "frameCountFrom": 183,
+   "figurePx": 1733.0,
    "scaledTo": 609.8,
    "frames": 36,
-   "frameMs": 122.68518518518516,
+   "frameMs": 211.80555555555554,
    "nat": [
-    352,
-    630
+    377,
+    632
    ],
    "crop": [
     2,
-    3,
-    350,
+    4,
+    366,
     625
    ],
    "box": {
-    "w": 1.536,
-    "h": 2.7491,
-    "foot": 0.01701
+    "w": 1.64389,
+    "h": 2.7558,
+    "foot": 0.0216
    },
-   "pattern": "content/sprites/isolde-veo/move-media36-v1080/move-{}.png"
+   "pattern": "content/sprites/isolde-veo/move-media36-r01/move-{}.png"
   },
   "move-left": {
    "video": "Attachments/TurnAround/IsoldeWalk2.mp4",
    "first": 7,
    "last": 189,
-   "loopFirst": 45,
-   "loopLast": 150,
-   "seamSteps": 1.79,
+   "loopFirst": 7,
+   "loopLast": 189,
+   "seamSteps": NaN,
    "bootRow": 1841,
    "bodyDrift": [
-    0,
-    31
+    -18,
+    24
    ],
-   "frameCountFrom": 106,
-   "figurePx": 1733.5,
+   "frameCountFrom": 183,
+   "figurePx": 1733.0,
    "scaledTo": 609.8,
    "frames": 36,
-   "frameMs": 122.68518518518516,
+   "frameMs": 211.80555555555554,
    "nat": [
-    352,
-    630
+    377,
+    632
    ],
    "crop": [
-    0,
-    3,
-    350,
+    9,
+    4,
+    366,
     625
    ],
    "box": {
-    "w": 1.536,
-    "h": 2.7491,
-    "foot": 0.01701
+    "w": 1.64389,
+    "h": 2.7558,
+    "foot": 0.0216
    },
-   "pattern": "content/sprites/isolde-veo/move-left-media36-v1082/move-left-{}.png"
+   "pattern": "content/sprites/isolde-veo/move-left-media36-r01/move-left-{}.png"
   },
   "cast": {
    "video": "Attachments/TurnAround/IsoldeIdleCastAlta.mp4",
@@ -121,80 +121,80 @@
    "crop": [
     2,
     2,
-    312,
+    313,
     627
    ],
    "box": {
-    "w": 1.4475,
-    "h": 2.75112,
-    "foot": 0.0117
+    "w": 1.44587,
+    "h": 2.74801,
+    "foot": 0.01168
    },
-   "pattern": "content/sprites/isolde-veo/cast-media36-v1080/cast-{}.png"
+   "pattern": "content/sprites/isolde-veo/cast-media36-r01/cast-{}.png"
   },
   "hit": {
-   "video": "build/video-cut/isolde-1080/src/IsoldeHitReacV4-crop.mp4",
-   "first": 10,
-   "last": 80,
-   "bootRow": 1058,
+   "video": "Attachments/Isolde/IsoldeOGhitreactalta.mp4",
+   "first": 12,
+   "last": 56,
+   "bootRow": 1908,
    "bootRows": [
-    1058,
-    1059
+    1879,
+    1914
    ],
-   "frameCountFrom": 71,
-   "figurePx": 991.0,
-   "bodyAt": -0.2255,
-   "scaledTo": 610.2,
+   "frameCountFrom": 45,
+   "figurePx": 1810.0,
+   "bodyAt": -0.2263,
+   "scaledTo": 609.9,
    "frames": 36,
-   "frameMs": 82.17592592592592,
+   "frameMs": 52.083333333333336,
    "nat": [
-    465,
-    625
+    385,
+    647
    ],
    "crop": [
-    3,
-    4,
-    395,
-    618
+    21,
+    0,
+    364,
+    647
    ],
    "box": {
-    "w": 2.02922,
-    "h": 2.72745,
-    "foot": 0.02066
+    "w": 1.67977,
+    "h": 2.82288,
+    "foot": 0.01473
    },
-   "pattern": "content/sprites/isolde-veo/hit-media36-v1080/hit-{}.png"
+   "pattern": "content/sprites/isolde-veo/hit-media36-r01/hit-{}.png"
   },
   "counter-staff": {
-   "video": "Attachments/Isolde/IsoldeStaffCounterFinal.mp4",
-   "first": 10,
-   "last": 88,
-   "bootRow": 965,
+   "video": "Attachments/Isolde/IsoldeStattCounterPorperface.mp4",
+   "first": 6,
+   "last": 92,
+   "bootRow": 1018,
    "bootRows": [
-    965,
-    966
+    998,
+    1018
    ],
-   "frameCountFrom": 79,
-   "figurePx": 821.0,
-   "bodyAt": -0.2268,
-   "scaledTo": 609.6,
+   "frameCountFrom": 87,
+   "figurePx": 879.0,
+   "bodyAt": -0.2254,
+   "impact": 0.5287,
+   "scaledTo": 610.0,
    "frames": 36,
-   "frameMs": 91.43518518518518,
+   "frameMs": 100.69444444444444,
    "nat": [
-    802,
-    672
+    687,
+    685
    ],
    "crop": [
-    5,
-    5,
-    581,
-    663
+    17,
+    4,
+    666,
+    677
    ],
    "box": {
-    "w": 3.49915,
-    "h": 2.93195,
-    "foot": 0.02212
+    "w": 2.9959,
+    "h": 2.98718,
+    "foot": 0.0296
    },
-   "pattern": "content/sprites/isolde-veo/counter-staff-media36-v1082/counter-staff-{}.png",
-   "impact": 0.3038
+   "pattern": "content/sprites/isolde-veo/counter-staff-media36-r01/counter-staff-{}.png"
   },
   "fall": {
    "video": "Attachments/Isolde/IsoldeFall2.mp4",
@@ -206,59 +206,59 @@
     1003
    ],
    "frameCountFrom": 77,
-   "figurePx": 881.0,
-   "bodyAt": -0.2264,
-   "scaledTo": 610.3,
+   "figurePx": 882.0,
+   "bodyAt": -0.2262,
+   "scaledTo": 609.8,
    "frames": 36,
    "frameMs": 89.12037037037037,
    "nat": [
-    798,
-    656
+    795,
+    654
    ],
    "crop": [
     3,
     3,
-    697,
-    649
+    695,
+    648
    ],
    "box": {
-    "w": 3.47823,
-    "h": 2.8593,
-    "foot": 0.14728
+    "w": 3.46524,
+    "h": 2.85065,
+    "foot": 0.14397
    },
-   "pattern": "content/sprites/isolde-veo/fall-media36-v1081/fall-{}.png"
+   "pattern": "content/sprites/isolde-veo/fall-media36-r01/fall-{}.png"
   },
   "move-up": {
    "video": "Attachments/Isolde/IsoldeUPandDown.mp4",
    "first": 0,
    "last": 119,
-   "loopFirst": 18,
-   "loopLast": 57,
-   "seamSteps": 1.76,
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
    "bootRow": 1031,
    "bodyDrift": [
     -6,
-    22
+    28
    ],
-   "frameCountFrom": 40,
-   "figurePx": 959.0,
+   "frameCountFrom": 120,
+   "figurePx": 956.0,
    "scaledTo": 609.7,
    "frames": 36,
-   "frameMs": 46.29629629629629,
+   "frameMs": 138.88888888888889,
    "nat": [
-    324,
-    630
+    337,
+    639
    ],
    "crop": [
     4,
     4,
-    317,
-    623
+    328,
+    629
    ],
    "box": {
-    "w": 1.4146,
-    "h": 2.75061,
-    "foot": 0.03529
+    "w": 1.46912,
+    "h": 2.78566,
+    "foot": 0.03535
    },
    "pattern": "content/sprites/isolde-veo/move-up-media36-v01/move-up-{}.png"
   },
@@ -266,33 +266,33 @@
    "video": "Attachments/Isolde/IsoldeUPandDown.mp4",
    "first": 121,
    "last": 239,
-   "loopFirst": 173,
-   "loopLast": 212,
-   "seamSteps": 0.95,
+   "loopFirst": 121,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 1058,
    "bodyDrift": [
-    10,
+    -3,
     29
    ],
-   "frameCountFrom": 40,
-   "figurePx": 995.0,
+   "frameCountFrom": 119,
+   "figurePx": 993.0,
    "scaledTo": 610.1,
    "frames": 36,
-   "frameMs": 46.29629629629629,
+   "frameMs": 137.73148148148147,
    "nat": [
-    356,
-    645
+    359,
+    647
    ],
    "crop": [
-    3,
-    3,
-    350,
-    639
+    5,
+    8,
+    349,
+    636
    ],
    "box": {
-    "w": 1.55323,
-    "h": 2.81413,
-    "foot": 0.04463
+    "w": 1.56707,
+    "h": 2.82422,
+    "foot": 0.04744
    },
    "pattern": "content/sprites/isolde-veo/move-down-media36-v01/move-down-{}.png"
   },
@@ -300,20 +300,20 @@
    "video": "Attachments/Isolde/IsoldeTurnAroundFinal.mp4",
    "first": 24,
    "last": 112,
-   "bootRow": 1026,
+   "bootRow": 1025,
    "bootRows": [
-    1013,
+    1012,
     1029
    ],
    "frameCountFrom": 89,
-   "figurePx": 926.0,
-   "bodyAt": -0.2255,
-   "scaledTo": 610.3,
+   "figurePx": 925.0,
+   "bodyAt": -0.2257,
+   "scaledTo": 609.9,
    "frames": 36,
    "frameMs": 103.00925925925925,
    "nat": [
-    598,
-    634
+    597,
+    635
    ],
    "crop": [
     4,
@@ -322,42 +322,42 @@
     627
    ],
    "box": {
-    "w": 2.60829,
-    "h": 2.76531,
-    "foot": 0.04812
+    "w": 2.60249,
+    "h": 2.76814,
+    "foot": 0.051
    },
-   "pattern": "content/sprites/isolde-veo/turn-back-media36-v1081/turn-back-{}.png"
+   "pattern": "content/sprites/isolde-veo/turn-back-media36-r01/turn-back-{}.png"
   },
   "cast-back": {
    "video": "Attachments/Isolde/IsoldeTurnAroundFinal.mp4",
    "first": 135,
    "last": 135,
-   "bootRow": 1026,
+   "bootRow": 1025,
    "bootRows": [
-    1026,
-    1026
+    1025,
+    1025
    ],
-   "figurePx": 928.0,
-   "bodyAt": -0.2264,
-   "scaledTo": 609.9,
+   "figurePx": 927.0,
+   "bodyAt": -0.2267,
+   "scaledTo": 610.5,
    "frames": 1,
    "frameMs": 41.666666666666664,
    "nat": [
-    463,
+    464,
     623
    ],
    "crop": [
     3,
-    4,
+    3,
     280,
-    616
+    617
    ],
    "box": {
-    "w": 2.01793,
-    "h": 2.71527,
-    "foot": 0.01644
+    "w": 2.02298,
+    "h": 2.7162,
+    "foot": 0.01648
    },
-   "pattern": "content/sprites/isolde-veo/cast-back-media36-v1081/cast-back-{}.png"
+   "pattern": "content/sprites/isolde-veo/cast-back-media36-r01/cast-back-{}.png"
   },
   "emote01": {
    "video": "Attachments/Isolde/IsoldeEmoteStartled.mp4",
@@ -390,7 +390,7 @@
     "h": 2.76567,
     "foot": 0.02203
    },
-   "pattern": "content/sprites/isolde-veo/emote01-media36-v1080/emote01-{}.png"
+   "pattern": "content/sprites/isolde-veo/emote01-media36-r01/emote01-{}.png"
   }
  }
 }

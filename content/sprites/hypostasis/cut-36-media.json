@@ -12,10 +12,9 @@
    "video": "Attachments/IleAtck.mp4",
    "first": 0,
    "last": 96,
-   "loopMin": 40,
-   "loopMax": 96,
    "mode": "loop",
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "atk",
@@ -64,10 +63,9 @@
    "video": "Attachments/Creature_walking_in_place_4dc8b81e.mp4",
    "first": 0,
    "last": 143,
-   "loopMin": 40,
-   "loopMax": 140,
    "mode": "loop",
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "movefront",
@@ -75,12 +73,11 @@
    "kind": "walk",
    "src": "build/video-cut/hypostasis/walkfront",
    "video": "Attachments/Walkleftandright.mp4",
-   "first": 56,
-   "last": 135,
-   "loopMin": 40,
-   "loopMax": 80,
+   "first": 57,
+   "last": 122,
    "mode": "loop",
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "hit",

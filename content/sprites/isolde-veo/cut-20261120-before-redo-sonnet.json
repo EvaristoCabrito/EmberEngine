@@ -1,0 +1,480 @@
+{
+ "about": "Isolde, a new main character, cut from the user's videos (Attachments/Isolde, 2026-10-24) like Voss: every native frame at 24 fps, the video's own resolution (Personagens Alta); cut-64-media.json / cut-36-media.json are her Média / Leve. tools/scripts/sprites/video_matte.py (BiRefNet) then tools/scripts/sprites/video_sprite.py this file. IsoldeIdleandCasting.mp4: idle 0-5 s, the cast from 5 s (the red rune on the staff), at rest again by ~8.8 s; Fallat3sec.mp4: the fall (no death, the user) from 3 s, lying still by ~6.2 s; IsoldeHitReact.mp4: struck at ~0.7 s, upright again by ~2 s; IsoldeRightWalkstartsat2sec.mp4 / IsoldeLeftWalk.mp4: the walks, in place.",
+ "set": "isolde-veo",
+ "version": "v01",
+ "figureUnits": 2.66,
+ "figureNote": "first value: Neera's height (2.66 units); each clip's median head top to boot row; the user judges her size in play",
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-1080/idlecast",
+   "video": "Attachments/TurnAround/IsoldeIdleCastAlta.mp4",
+   "first": 0,
+   "last": 109,
+   "mode": "pingpong",
+   "why": "the user, 2026-11-19: IsoldeIdleCastAlta (1080 x 1920), the idle half, 0-109 as the old video's",
+   "version": "v1080"
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/isolde-1080/walk",
+   "video": "Attachments/TurnAround/IsoldeWalk2.mp4",
+   "first": 7,
+   "last": 189,
+   "loopMin": 96,
+   "loopMax": 183,
+   "mode": "loop",
+   "why": "the user, 2026-11-19: IsoldeWalk2 instead of her old walk (the only one of the three that is the same woman)",
+   "version": "v1080"
+  },
+  {
+   "clip": "move-left",
+   "pose": "walkLeft",
+   "kind": "walk",
+   "src": "build/video-cut/isolde-1080/walk",
+   "video": "Attachments/TurnAround/IsoldeWalk2.mp4",
+   "first": 7,
+   "last": 189,
+   "loopMin": 96,
+   "loopMax": 183,
+   "mode": "loop",
+   "mirror": true,
+   "why": "the user, 2026-11-20: the video model cannot put the staff in the other hand, and her Walk2 already works: her walk left is Walk2 mirrored (the staff ends in her left hand), 1080p instead of the old 720 x 1280 left walk",
+   "version": "v1082"
+  },
+  {
+   "clip": "cast",
+   "pose": "cast",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-1080/idlecast",
+   "video": "Attachments/TurnAround/IsoldeIdleCastAlta.mp4",
+   "first": 116,
+   "last": 214,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "why": "IsoldeIdleCastAlta, the cast half (the red glow is on from 124 to 190), 116-214 as the old video's",
+   "version": "v1080"
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "label": "Dano",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-1080/hitv4",
+   "video": "build/video-cut/isolde-1080/src/IsoldeHitReacV4-crop.mp4",
+   "first": 10,
+   "last": 80,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "why": "the user, 2026-11-19: IsoldeHitReacV4, the cleanest way in and out of the idle; its 804 x 1080 centre panel (the video has the shot inset)",
+   "version": "v1080"
+  },
+  {
+   "clip": "counter-staff",
+   "pose": "counterStaff",
+   "label": "Contra-ataque (cajado)",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-1080/counterfinal",
+   "video": "Attachments/Isolde/IsoldeStaffCounterFinal.mp4",
+   "first": 10,
+   "last": 88,
+   "impactFrame": 34,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "why": "the user, 2026-11-20: IsoldeStaffCounterFinal (1920 x 1080, 94 frames, grey backdrop, ~820 px tall, nothing touches an edge): a two-handed thrust with a small deep red ember burst at the gem (the burst at ~32-34, the embers fade by ~64), instead of the old 720 x 1280 one (its staff left the picture in 33 frames)",
+   "version": "v1082"
+  },
+  {
+   "clip": "fall",
+   "pose": "death",
+   "label": "Queda",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-1080/fall2",
+   "video": "Attachments/Isolde/IsoldeFall2.mp4",
+   "first": 54,
+   "last": 130,
+   "standUntil": 60,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "why": "the user, 2026-11-20: IsoldeFall2 (a wide picture, she stays in the centre, nothing touches an edge): she stands to ~58, falls 60-108, lies still after; instead of IsoldeHit2FallAlta's fall (its lying body ran off the video's edges)",
+   "version": "v1081"
+  },
+  {
+   "clip": "move-up",
+   "pose": "walkUp",
+   "kind": "walk",
+   "src": "build/video-cut/isolde-veo/updown",
+   "video": "Attachments/Isolde/IsoldeUPandDown.mp4",
+   "first": 0,
+   "last": 119,
+   "loopMin": 40,
+   "loopMax": 110,
+   "mode": "loop",
+   "why": "the user, 2026-11-13: IsoldeUPandDown, walking away from the camera in place (0-119; the video cuts to her front at 120)"
+  },
+  {
+   "clip": "move-down",
+   "pose": "walkDown",
+   "kind": "walk",
+   "src": "build/video-cut/isolde-veo/updown",
+   "video": "Attachments/Isolde/IsoldeUPandDown.mp4",
+   "first": 121,
+   "last": 239,
+   "loopMin": 40,
+   "loopMax": 110,
+   "mode": "loop",
+   "why": "the same video, walking toward the camera in place (121-239)"
+  },
+  {
+   "clip": "turn-back",
+   "pose": "turnBack",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-1080/turnfinal",
+   "video": "Attachments/Isolde/IsoldeTurnAroundFinal.mp4",
+   "first": 24,
+   "last": 112,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "why": "the user, 2026-11-20: IsoldeTurnAroundFinal (1920 x 1080, she stays in the centre, nothing touches an edge: the cloak's tip no longer reaches the edge); she stands to ~28, turns 28-100, her back settles after",
+   "version": "v1081"
+  },
+  {
+   "clip": "cast-back",
+   "pose": "castBack",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-1080/turnfinal",
+   "video": "Attachments/Isolde/IsoldeTurnAroundFinal.mp4",
+   "first": 135,
+   "last": 135,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "why": "the back still of the same turn",
+   "version": "v1081"
+  },
+  {
+   "clip": "emote01",
+   "pose": "emote01",
+   "label": "IsoldeEmoteStartled",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-1080/startled",
+   "video": "Attachments/Isolde/IsoldeEmoteStartled.mp4",
+   "first": 0,
+   "last": 72,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "why": "the user, 2026-11-19: IsoldeEmoteStartled (the action ends around 3 s), a cutscene-only pose; filmed against a dungeon wall: light matched to the idle",
+   "version": "v1080",
+   "colorMatch": {
+    "reference": "C:\\EmberEngineB\\build/video-cut\\isolde-1080\\idlecast 0:109",
+    "frames": "0:24",
+    "r": [
+     [
+      0.0,
+      0.000835
+     ],
+     [
+      0.000304,
+      0.001821
+     ],
+     [
+      0.000607,
+      0.002732
+     ],
+     [
+      0.000911,
+      0.003677
+     ],
+     [
+      0.001518,
+      0.004777
+     ],
+     [
+      0.001821,
+      0.006049
+     ],
+     [
+      0.002732,
+      0.007499
+     ],
+     [
+      0.003347,
+      0.009134
+     ],
+     [
+      0.004777,
+      0.01096
+     ],
+     [
+      0.006049,
+      0.012983
+     ],
+     [
+      0.007499,
+      0.015996
+     ],
+     [
+      0.009721,
+      0.019382
+     ],
+     [
+      0.012286,
+      0.023153
+     ],
+     [
+      0.015996,
+      0.027321
+     ],
+     [
+      0.020289,
+      0.031896
+     ],
+     [
+      0.025187,
+      0.038204
+     ],
+     [
+      0.033105,
+      0.046665
+     ],
+     [
+      0.045186,
+      0.059511
+     ],
+     [
+      0.068478,
+      0.088656
+     ],
+     [
+      0.109462,
+      0.135633
+     ],
+     [
+      0.174647,
+      0.198069
+     ],
+     [
+      0.318547,
+      0.323143
+     ],
+     [
+      0.434154,
+      0.428691
+     ],
+     [
+      0.590619,
+      0.577581
+     ],
+     [
+      0.737911,
+      0.665387
+     ],
+     [
+      1.0,
+      0.806952
+     ]
+    ],
+    "g": [
+     [
+      0.0,
+      0.00078
+     ],
+     [
+      0.000304,
+      0.002125
+     ],
+     [
+      0.000607,
+      0.003035
+     ],
+     [
+      0.000911,
+      0.003677
+     ],
+     [
+      0.001518,
+      0.004777
+     ],
+     [
+      0.002125,
+      0.005605
+     ],
+     [
+      0.002732,
+      0.006995
+     ],
+     [
+      0.003677,
+      0.008023
+     ],
+     [
+      0.004777,
+      0.009721
+     ],
+     [
+      0.006049,
+      0.011612
+     ],
+     [
+      0.008023,
+      0.013702
+     ],
+     [
+      0.009721,
+      0.015996
+     ],
+     [
+      0.012286,
+      0.0185
+     ],
+     [
+      0.015209,
+      0.022174
+     ],
+     [
+      0.020289,
+      0.027321
+     ],
+     [
+      0.028426,
+      0.035601
+     ],
+     [
+      0.046665,
+      0.05448
+     ],
+     [
+      0.078187,
+      0.084376
+     ],
+     [
+      0.124772,
+      0.127438
+     ],
+     [
+      0.223228,
+      0.212231
+     ],
+     [
+      0.313989,
+      0.287441
+     ],
+     [
+      0.462077,
+      0.401978
+     ],
+     [
+      0.665387,
+      0.48515
+     ],
+     [
+      0.991102,
+      0.730461
+     ]
+    ],
+    "b": [
+     [
+      0.0,
+      0.000569
+     ],
+     [
+      0.000304,
+      0.002125
+     ],
+     [
+      0.000607,
+      0.002732
+     ],
+     [
+      0.000911,
+      0.003347
+     ],
+     [
+      0.001214,
+      0.004025
+     ],
+     [
+      0.001821,
+      0.004777
+     ],
+     [
+      0.002428,
+      0.006049
+     ],
+     [
+      0.003347,
+      0.006995
+     ],
+     [
+      0.004391,
+      0.008568
+     ],
+     [
+      0.006049,
+      0.01033
+     ],
+     [
+      0.007499,
+      0.012286
+     ],
+     [
+      0.009721,
+      0.014444
+     ],
+     [
+      0.012286,
+      0.017642
+     ],
+     [
+      0.015209,
+      0.020289
+     ],
+     [
+      0.019382,
+      0.025187
+     ],
+     [
+      0.026241,
+      0.031896
+     ],
+     [
+      0.043735,
+      0.046665
+     ],
+     [
+      0.07036,
+      0.072272
+     ],
+     [
+      0.109462,
+      0.109462
+     ],
+     [
+      0.198069,
+      0.181164
+     ],
+     [
+      0.278894,
+      0.242281
+     ],
+     [
+      0.428691,
+      0.341914
+     ],
+     [
+      0.658375,
+      0.434154
+     ],
+     [
+      0.973445,
+      0.715694
+     ]
+    ]
+   }
+  }
+ ],
+ "bodyNote": "bodyAt -0.226 on every standing clip but the idle: the head where the idle has it (measured on its first frame), so she never slides sideways when a pose starts"
+}

@@ -9,12 +9,10 @@
     614,
     652
    ],
-   "loopFirst": 6,
-   "loopLast": 58,
-   "seamSteps": 2.4,
-   "figurePx": 553.0,
-   "frames": 53,
-   "frameMs": 41.666666666666664,
+   "frameCountFrom": 97,
+   "figurePx": 551.0,
+   "frames": 64,
+   "frameMs": 63.151041666666664,
    "nat": [
     640,
     606
@@ -26,9 +24,9 @@
     596
    ],
    "box": {
-    "w": 3.54997,
-    "h": 3.36138,
-    "foot": 0.1775
+    "w": 3.56286,
+    "h": 3.37358,
+    "foot": 0.17814
    },
    "pattern": "content/sprites/hypostasis/base-media64-v02/base-{}.png"
   },
@@ -131,49 +129,51 @@
    "video": "Attachments/Creature_walking_in_place_4dc8b81e.mp4",
    "first": 0,
    "last": 143,
-   "loopFirst": 24,
-   "loopLast": 68,
-   "seamSteps": 0.88,
+   "loopFirst": 0,
+   "loopLast": 143,
+   "seamSteps": NaN,
    "bootRow": 669,
    "bodyDrift": [
-    -12,
+    -17,
     6
    ],
-   "figurePx": 523.0,
-   "frames": 45,
-   "frameMs": 41.666666666666664,
+   "frameCountFrom": 144,
+   "figurePx": 521.0,
+   "frames": 64,
+   "frameMs": 93.75,
    "nat": [
-    876,
-    598
+    892,
+    602
    ],
    "crop": [
-    5,
-    5,
-    866,
+    4,
+    8,
+    882,
     588
    ],
    "box": {
-    "w": 5.13775,
-    "h": 3.50728,
-    "foot": 0.22874
+    "w": 5.25167,
+    "h": 3.54429,
+    "foot": 0.25316
    },
    "pattern": "content/sprites/hypostasis/move-media64-v02/move-{}.png"
   },
   "movefront": {
    "video": "Attachments/Walkleftandright.mp4",
-   "first": 56,
-   "last": 135,
-   "loopFirst": 65,
-   "loopLast": 107,
-   "seamSteps": 2.19,
-   "bootRow": 634,
+   "first": 57,
+   "last": 122,
+   "loopFirst": 57,
+   "loopLast": 122,
+   "seamSteps": NaN,
+   "bootRow": 630,
    "bodyDrift": [
-    1,
-    15
+    -1,
+    13
    ],
-   "figurePx": 524.0,
-   "frames": 43,
-   "frameMs": 41.666666666666664,
+   "frameCountFrom": 66,
+   "figurePx": 526.0,
+   "frames": 64,
+   "frameMs": 42.96875,
    "nat": [
     641,
     589
@@ -185,9 +185,9 @@
     578
    ],
    "box": {
-    "w": 3.7523,
-    "h": 3.4479,
-    "foot": 0.22245
+    "w": 3.73803,
+    "h": 3.43479,
+    "foot": 0.2216
    },
    "pattern": "content/sprites/hypostasis/movefront-media64-v02/movefront-{}.png"
   },

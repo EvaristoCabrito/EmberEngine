@@ -12,10 +12,9 @@
    "video": "Attachments/Monsters/Giant_spider_performing IdleandCasting.mp4",
    "first": 0,
    "last": 90,
-   "loopMin": 40,
-   "loopMax": 90,
    "mode": "loop",
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "cast",
@@ -35,12 +34,11 @@
    "kind": "walk",
    "src": "build/video-cut/giant-spider/moveatk",
    "video": "Attachments/Monsters/Giant_spider_animation_movementandATT.mp4",
-   "first": 30,
-   "last": 116,
-   "loopMin": 36,
-   "loopMax": 110,
+   "first": 7,
+   "last": 119,
    "mode": "loop",
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "atk",

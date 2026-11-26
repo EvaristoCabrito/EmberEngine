@@ -1,0 +1,477 @@
+{
+ "about": "isolde-veo's Personagens Cinemática (tools/scripts/sprites/quality_copies.py, the rule of 2026-10-25): every clip of cut.json from the same matted frames, every frame (the clip's own timing), the figure ~610 px tall (a clip already shorter keeps its own size).",
+ "set": "isolde-veo-cine-media",
+ "version": "cine-v01",
+ "figureUnits": 2.66,
+ "figureNote": "first value: Neera's height (2.66 units); each clip's median head top to boot row; the user judges her size in play",
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/redo-sonnet/isolde-1080__idlecast",
+   "video": "Attachments/TurnAround/IsoldeIdleCastAlta.mp4",
+   "first": 0,
+   "last": 109,
+   "mode": "pingpong",
+   "scaleTo": 610,
+   "version": "cine-r01"
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/redo-sonnet/isolde-1080__walk",
+   "video": "Attachments/TurnAround/IsoldeWalk2.mp4",
+   "first": 7,
+   "last": 189,
+   "mode": "loop",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
+   "scaleTo": 610,
+   "version": "cine-r01"
+  },
+  {
+   "clip": "move-left",
+   "pose": "walkLeft",
+   "kind": "walk",
+   "src": "build/video-cut/redo-sonnet/isolde-1080__walk",
+   "video": "Attachments/TurnAround/IsoldeWalk2.mp4",
+   "first": 7,
+   "last": 189,
+   "mode": "loop",
+   "mirror": true,
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
+   "scaleTo": 610,
+   "version": "cine-r01"
+  },
+  {
+   "clip": "cast",
+   "pose": "cast",
+   "kind": "stand",
+   "src": "build/video-cut/redo-sonnet/isolde-1080__idlecast",
+   "video": "Attachments/TurnAround/IsoldeIdleCastAlta.mp4",
+   "first": 116,
+   "last": 214,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "scaleTo": 610,
+   "version": "cine-r01"
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "label": "Dano",
+   "kind": "stand",
+   "src": "build/video-cut/redo-sonnet/isolde-1080__oghit",
+   "video": "Attachments/Isolde/IsoldeOGhitreactalta.mp4",
+   "first": 12,
+   "last": 56,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "scaleTo": 610,
+   "version": "cine-r01"
+  },
+  {
+   "clip": "counter-staff",
+   "pose": "counterStaff",
+   "label": "Contra-ataque (cajado)",
+   "kind": "stand",
+   "src": "build/video-cut/redo-sonnet/isolde-1080__counter-properface",
+   "video": "Attachments/Isolde/IsoldeStattCounterPorperface.mp4",
+   "first": 6,
+   "last": 92,
+   "impactFrame": 52,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "scaleTo": 610,
+   "version": "cine-r01"
+  },
+  {
+   "clip": "fall",
+   "pose": "death",
+   "label": "Queda",
+   "kind": "stand",
+   "src": "build/video-cut/redo-sonnet/isolde-1080__fall2",
+   "video": "Attachments/Isolde/IsoldeFall2.mp4",
+   "first": 54,
+   "last": 130,
+   "standUntil": 60,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "scaleTo": 610,
+   "version": "cine-r01"
+  },
+  {
+   "clip": "move-up",
+   "pose": "walkUp",
+   "kind": "walk",
+   "src": "build/video-cut/isolde-veo/updown",
+   "video": "Attachments/Isolde/IsoldeUPandDown.mp4",
+   "first": 0,
+   "last": 119,
+   "mode": "loop",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
+   "scaleTo": 610
+  },
+  {
+   "clip": "move-down",
+   "pose": "walkDown",
+   "kind": "walk",
+   "src": "build/video-cut/isolde-veo/updown",
+   "video": "Attachments/Isolde/IsoldeUPandDown.mp4",
+   "first": 121,
+   "last": 239,
+   "mode": "loop",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
+   "scaleTo": 610
+  },
+  {
+   "clip": "turn-back",
+   "pose": "turnBack",
+   "kind": "stand",
+   "src": "build/video-cut/redo-sonnet/isolde-1080__turnfinal",
+   "video": "Attachments/Isolde/IsoldeTurnAroundFinal.mp4",
+   "first": 24,
+   "last": 112,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "scaleTo": 610,
+   "version": "cine-r01"
+  },
+  {
+   "clip": "cast-back",
+   "pose": "castBack",
+   "kind": "stand",
+   "src": "build/video-cut/redo-sonnet/isolde-1080__turnfinal",
+   "video": "Attachments/Isolde/IsoldeTurnAroundFinal.mp4",
+   "first": 135,
+   "last": 135,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "scaleTo": 610,
+   "version": "cine-r01"
+  },
+  {
+   "clip": "emote01",
+   "pose": "emote01",
+   "label": "IsoldeEmoteStartled",
+   "kind": "stand",
+   "src": "build/video-cut/redo-sonnet/isolde-1080__startled",
+   "video": "Attachments/Isolde/IsoldeEmoteStartled.mp4",
+   "first": 0,
+   "last": 72,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "colorMatch": {
+    "reference": "C:\\EmberEngineB\\build/video-cut\\isolde-1080\\idlecast 0:109",
+    "frames": "0:24",
+    "r": [
+     [
+      0.0,
+      0.000835
+     ],
+     [
+      0.000304,
+      0.001821
+     ],
+     [
+      0.000607,
+      0.002732
+     ],
+     [
+      0.000911,
+      0.003677
+     ],
+     [
+      0.001518,
+      0.004777
+     ],
+     [
+      0.001821,
+      0.006049
+     ],
+     [
+      0.002732,
+      0.007499
+     ],
+     [
+      0.003347,
+      0.009134
+     ],
+     [
+      0.004777,
+      0.01096
+     ],
+     [
+      0.006049,
+      0.012983
+     ],
+     [
+      0.007499,
+      0.015996
+     ],
+     [
+      0.009721,
+      0.019382
+     ],
+     [
+      0.012286,
+      0.023153
+     ],
+     [
+      0.015996,
+      0.027321
+     ],
+     [
+      0.020289,
+      0.031896
+     ],
+     [
+      0.025187,
+      0.038204
+     ],
+     [
+      0.033105,
+      0.046665
+     ],
+     [
+      0.045186,
+      0.059511
+     ],
+     [
+      0.068478,
+      0.088656
+     ],
+     [
+      0.109462,
+      0.135633
+     ],
+     [
+      0.174647,
+      0.198069
+     ],
+     [
+      0.318547,
+      0.323143
+     ],
+     [
+      0.434154,
+      0.428691
+     ],
+     [
+      0.590619,
+      0.577581
+     ],
+     [
+      0.737911,
+      0.665387
+     ],
+     [
+      1.0,
+      0.806952
+     ]
+    ],
+    "g": [
+     [
+      0.0,
+      0.00078
+     ],
+     [
+      0.000304,
+      0.002125
+     ],
+     [
+      0.000607,
+      0.003035
+     ],
+     [
+      0.000911,
+      0.003677
+     ],
+     [
+      0.001518,
+      0.004777
+     ],
+     [
+      0.002125,
+      0.005605
+     ],
+     [
+      0.002732,
+      0.006995
+     ],
+     [
+      0.003677,
+      0.008023
+     ],
+     [
+      0.004777,
+      0.009721
+     ],
+     [
+      0.006049,
+      0.011612
+     ],
+     [
+      0.008023,
+      0.013702
+     ],
+     [
+      0.009721,
+      0.015996
+     ],
+     [
+      0.012286,
+      0.0185
+     ],
+     [
+      0.015209,
+      0.022174
+     ],
+     [
+      0.020289,
+      0.027321
+     ],
+     [
+      0.028426,
+      0.035601
+     ],
+     [
+      0.046665,
+      0.05448
+     ],
+     [
+      0.078187,
+      0.084376
+     ],
+     [
+      0.124772,
+      0.127438
+     ],
+     [
+      0.223228,
+      0.212231
+     ],
+     [
+      0.313989,
+      0.287441
+     ],
+     [
+      0.462077,
+      0.401978
+     ],
+     [
+      0.665387,
+      0.48515
+     ],
+     [
+      0.991102,
+      0.730461
+     ]
+    ],
+    "b": [
+     [
+      0.0,
+      0.000569
+     ],
+     [
+      0.000304,
+      0.002125
+     ],
+     [
+      0.000607,
+      0.002732
+     ],
+     [
+      0.000911,
+      0.003347
+     ],
+     [
+      0.001214,
+      0.004025
+     ],
+     [
+      0.001821,
+      0.004777
+     ],
+     [
+      0.002428,
+      0.006049
+     ],
+     [
+      0.003347,
+      0.006995
+     ],
+     [
+      0.004391,
+      0.008568
+     ],
+     [
+      0.006049,
+      0.01033
+     ],
+     [
+      0.007499,
+      0.012286
+     ],
+     [
+      0.009721,
+      0.014444
+     ],
+     [
+      0.012286,
+      0.017642
+     ],
+     [
+      0.015209,
+      0.020289
+     ],
+     [
+      0.019382,
+      0.025187
+     ],
+     [
+      0.026241,
+      0.031896
+     ],
+     [
+      0.043735,
+      0.046665
+     ],
+     [
+      0.07036,
+      0.072272
+     ],
+     [
+      0.109462,
+      0.109462
+     ],
+     [
+      0.198069,
+      0.181164
+     ],
+     [
+      0.278894,
+      0.242281
+     ],
+     [
+      0.428691,
+      0.341914
+     ],
+     [
+      0.658375,
+      0.434154
+     ],
+     [
+      0.973445,
+      0.715694
+     ]
+    ]
+   },
+   "scaleTo": 610,
+   "version": "cine-r01"
+  }
+ ],
+ "bodyNote": "bodyAt -0.226 on every standing clip but the idle: the head where the idle has it (measured on its first frame), so she never slides sideways when a pose starts",
+ "result": "cut-result-cine-media.json"
+}

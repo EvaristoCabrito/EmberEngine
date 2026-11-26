@@ -422,12 +422,11 @@
    "src": "build/video-cut/horse/walk-fall",
    "video": "Attachments/Monsters/Horse/HorsewalkreactFall.mp4",
    "first": 0,
-   "last": 96,
-   "loopMin": 24,
-   "loopMax": 92,
+   "last": 97,
    "mode": "loop",
    "inPlace": true,
-   "why": "walking in place, the loop at its best seam"
+   "why": "walking in place, the loop at its best seam",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "hit",

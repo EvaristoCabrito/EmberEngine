@@ -1,7 +1,7 @@
 {
  "clips": {
   "base": {
-   "video": "Attachments/Giant Spider/Giant_spider_performing IdleandCasting.mp4",
+   "video": "Attachments/Monsters/Giant_spider_performing IdleandCasting.mp4",
    "first": 0,
    "last": 90,
    "bootRow": 584,
@@ -9,26 +9,24 @@
     572,
     586
    ],
-   "loopFirst": 30,
-   "loopLast": 69,
-   "seamSteps": 7.21,
-   "figurePx": 414.0,
-   "frames": 40,
-   "frameMs": 41.666666666666664,
+   "frameCountFrom": 91,
+   "figurePx": 417.0,
+   "frames": 64,
+   "frameMs": 59.244791666666664,
    "nat": [
-    863,
-    484
+    879,
+    506
    ],
    "crop": [
+    4,
     5,
-    5,
-    853,
-    474
+    870,
+    496
    ],
    "box": {
-    "w": 3.54101,
-    "h": 1.98592,
-    "foot": 0.21336
+    "w": 3.58071,
+    "h": 2.06125,
+    "foot": 0.2159
    },
    "pattern": "content/sprites/giant-spider/base-media64-v01/base-{}.png"
   },
@@ -64,34 +62,35 @@
    "impact": 0.5669
   },
   "move": {
-   "video": "Attachments/Giant Spider/Giant_spider_animation_movementandATT.mp4",
-   "first": 30,
-   "last": 116,
-   "loopFirst": 57,
-   "loopLast": 97,
-   "seamSteps": 2.85,
-   "bootRow": 567,
+   "video": "Attachments/Monsters/Giant_spider_animation_movementandATT.mp4",
+   "first": 7,
+   "last": 119,
+   "loopFirst": 7,
+   "loopLast": 119,
+   "seamSteps": NaN,
+   "bootRow": 565,
    "bodyDrift": [
-    -4,
-    19
+    0,
+    70
    ],
-   "figurePx": 407.0,
-   "frames": 41,
-   "frameMs": 41.666666666666664,
+   "frameCountFrom": 113,
+   "figurePx": 401.0,
+   "frames": 64,
+   "frameMs": 73.56770833333333,
    "nat": [
-    916,
-    482
+    932,
+    488
    ],
    "crop": [
     5,
     5,
-    906,
-    471
+    922,
+    479
    ],
    "box": {
-    "w": 3.82312,
-    "h": 2.01173,
-    "foot": 0.24625
+    "w": 3.9481,
+    "h": 2.06725,
+    "foot": 0.27535
    },
    "pattern": "content/sprites/giant-spider/move-media64-v01/move-{}.png"
   },

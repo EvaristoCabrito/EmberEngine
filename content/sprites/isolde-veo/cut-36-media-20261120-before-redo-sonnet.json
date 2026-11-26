@@ -1,0 +1,482 @@
+{
+ "about": "Isolde's 36-frame copy for Personagens Leve (as Voss's, the user 2026-10-22: \"36 is on with LEVE setup and 64 is on with Medium. High plays the full version\"): every clip of cut.json from the same matted frames at ~610 px of figure (scaleTo), 36 frames picked evenly (no blend), the clip's timing kept; Personagens Leve draws it halved.",
+ "set": "isolde-veo-36-media",
+ "version": "media36-v01",
+ "figureUnits": 2.66,
+ "figureNote": "first value: Neera's height (2.66 units); each clip's median head top to boot row; the user judges her size in play",
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-1080/idlecast",
+   "video": "Attachments/TurnAround/IsoldeIdleCastAlta.mp4",
+   "first": 0,
+   "last": 109,
+   "mode": "pingpong",
+   "version": "media36-v1080",
+   "scaleTo": 610
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/isolde-1080/walk",
+   "video": "Attachments/TurnAround/IsoldeWalk2.mp4",
+   "first": 7,
+   "last": 189,
+   "loopMin": 96,
+   "loopMax": 183,
+   "mode": "loop",
+   "version": "media36-v1080",
+   "scaleTo": 610
+  },
+  {
+   "clip": "move-left",
+   "pose": "walkLeft",
+   "kind": "walk",
+   "src": "build/video-cut/isolde-1080/walk",
+   "video": "Attachments/TurnAround/IsoldeWalk2.mp4",
+   "first": 7,
+   "last": 189,
+   "loopMin": 96,
+   "loopMax": 183,
+   "mode": "loop",
+   "mirror": true,
+   "version": "media36-v1082",
+   "scaleTo": 610
+  },
+  {
+   "clip": "cast",
+   "pose": "cast",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-1080/idlecast",
+   "video": "Attachments/TurnAround/IsoldeIdleCastAlta.mp4",
+   "first": 116,
+   "last": 214,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "version": "media36-v1080",
+   "scaleTo": 610
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "label": "Dano",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-1080/hitv4",
+   "video": "build/video-cut/isolde-1080/src/IsoldeHitReacV4-crop.mp4",
+   "first": 10,
+   "last": 80,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "version": "media36-v1080",
+   "scaleTo": 610
+  },
+  {
+   "clip": "counter-staff",
+   "pose": "counterStaff",
+   "label": "Contra-ataque (cajado)",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-1080/counterfinal",
+   "video": "Attachments/Isolde/IsoldeStaffCounterFinal.mp4",
+   "first": 10,
+   "last": 88,
+   "impactFrame": 34,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "version": "media36-v1082",
+   "scaleTo": 610
+  },
+  {
+   "clip": "fall",
+   "pose": "death",
+   "label": "Queda",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-1080/fall2",
+   "video": "Attachments/Isolde/IsoldeFall2.mp4",
+   "first": 54,
+   "last": 130,
+   "standUntil": 60,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "version": "media36-v1081",
+   "scaleTo": 610
+  },
+  {
+   "clip": "move-up",
+   "pose": "walkUp",
+   "kind": "walk",
+   "src": "build/video-cut/isolde-veo/updown",
+   "video": "Attachments/Isolde/IsoldeUPandDown.mp4",
+   "first": 0,
+   "last": 119,
+   "loopMin": 40,
+   "loopMax": 110,
+   "mode": "loop",
+   "scaleTo": 610
+  },
+  {
+   "clip": "move-down",
+   "pose": "walkDown",
+   "kind": "walk",
+   "src": "build/video-cut/isolde-veo/updown",
+   "video": "Attachments/Isolde/IsoldeUPandDown.mp4",
+   "first": 121,
+   "last": 239,
+   "loopMin": 40,
+   "loopMax": 110,
+   "mode": "loop",
+   "scaleTo": 610
+  },
+  {
+   "clip": "turn-back",
+   "pose": "turnBack",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-1080/turnfinal",
+   "video": "Attachments/Isolde/IsoldeTurnAroundFinal.mp4",
+   "first": 24,
+   "last": 112,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "version": "media36-v1081",
+   "scaleTo": 610
+  },
+  {
+   "clip": "cast-back",
+   "pose": "castBack",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-1080/turnfinal",
+   "video": "Attachments/Isolde/IsoldeTurnAroundFinal.mp4",
+   "first": 135,
+   "last": 135,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "version": "media36-v1081",
+   "scaleTo": 610
+  },
+  {
+   "clip": "emote01",
+   "pose": "emote01",
+   "label": "IsoldeEmoteStartled",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-1080/startled",
+   "video": "Attachments/Isolde/IsoldeEmoteStartled.mp4",
+   "first": 0,
+   "last": 72,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "version": "media36-v1080",
+   "scaleTo": 610,
+   "colorMatch": {
+    "reference": "C:\\EmberEngineB\\build/video-cut\\isolde-1080\\idlecast 0:109",
+    "frames": "0:24",
+    "r": [
+     [
+      0.0,
+      0.000835
+     ],
+     [
+      0.000304,
+      0.001821
+     ],
+     [
+      0.000607,
+      0.002732
+     ],
+     [
+      0.000911,
+      0.003677
+     ],
+     [
+      0.001518,
+      0.004777
+     ],
+     [
+      0.001821,
+      0.006049
+     ],
+     [
+      0.002732,
+      0.007499
+     ],
+     [
+      0.003347,
+      0.009134
+     ],
+     [
+      0.004777,
+      0.01096
+     ],
+     [
+      0.006049,
+      0.012983
+     ],
+     [
+      0.007499,
+      0.015996
+     ],
+     [
+      0.009721,
+      0.019382
+     ],
+     [
+      0.012286,
+      0.023153
+     ],
+     [
+      0.015996,
+      0.027321
+     ],
+     [
+      0.020289,
+      0.031896
+     ],
+     [
+      0.025187,
+      0.038204
+     ],
+     [
+      0.033105,
+      0.046665
+     ],
+     [
+      0.045186,
+      0.059511
+     ],
+     [
+      0.068478,
+      0.088656
+     ],
+     [
+      0.109462,
+      0.135633
+     ],
+     [
+      0.174647,
+      0.198069
+     ],
+     [
+      0.318547,
+      0.323143
+     ],
+     [
+      0.434154,
+      0.428691
+     ],
+     [
+      0.590619,
+      0.577581
+     ],
+     [
+      0.737911,
+      0.665387
+     ],
+     [
+      1.0,
+      0.806952
+     ]
+    ],
+    "g": [
+     [
+      0.0,
+      0.00078
+     ],
+     [
+      0.000304,
+      0.002125
+     ],
+     [
+      0.000607,
+      0.003035
+     ],
+     [
+      0.000911,
+      0.003677
+     ],
+     [
+      0.001518,
+      0.004777
+     ],
+     [
+      0.002125,
+      0.005605
+     ],
+     [
+      0.002732,
+      0.006995
+     ],
+     [
+      0.003677,
+      0.008023
+     ],
+     [
+      0.004777,
+      0.009721
+     ],
+     [
+      0.006049,
+      0.011612
+     ],
+     [
+      0.008023,
+      0.013702
+     ],
+     [
+      0.009721,
+      0.015996
+     ],
+     [
+      0.012286,
+      0.0185
+     ],
+     [
+      0.015209,
+      0.022174
+     ],
+     [
+      0.020289,
+      0.027321
+     ],
+     [
+      0.028426,
+      0.035601
+     ],
+     [
+      0.046665,
+      0.05448
+     ],
+     [
+      0.078187,
+      0.084376
+     ],
+     [
+      0.124772,
+      0.127438
+     ],
+     [
+      0.223228,
+      0.212231
+     ],
+     [
+      0.313989,
+      0.287441
+     ],
+     [
+      0.462077,
+      0.401978
+     ],
+     [
+      0.665387,
+      0.48515
+     ],
+     [
+      0.991102,
+      0.730461
+     ]
+    ],
+    "b": [
+     [
+      0.0,
+      0.000569
+     ],
+     [
+      0.000304,
+      0.002125
+     ],
+     [
+      0.000607,
+      0.002732
+     ],
+     [
+      0.000911,
+      0.003347
+     ],
+     [
+      0.001214,
+      0.004025
+     ],
+     [
+      0.001821,
+      0.004777
+     ],
+     [
+      0.002428,
+      0.006049
+     ],
+     [
+      0.003347,
+      0.006995
+     ],
+     [
+      0.004391,
+      0.008568
+     ],
+     [
+      0.006049,
+      0.01033
+     ],
+     [
+      0.007499,
+      0.012286
+     ],
+     [
+      0.009721,
+      0.014444
+     ],
+     [
+      0.012286,
+      0.017642
+     ],
+     [
+      0.015209,
+      0.020289
+     ],
+     [
+      0.019382,
+      0.025187
+     ],
+     [
+      0.026241,
+      0.031896
+     ],
+     [
+      0.043735,
+      0.046665
+     ],
+     [
+      0.07036,
+      0.072272
+     ],
+     [
+      0.109462,
+      0.109462
+     ],
+     [
+      0.198069,
+      0.181164
+     ],
+     [
+      0.278894,
+      0.242281
+     ],
+     [
+      0.428691,
+      0.341914
+     ],
+     [
+      0.658375,
+      0.434154
+     ],
+     [
+      0.973445,
+      0.715694
+     ]
+    ]
+   }
+  }
+ ],
+ "bodyNote": "bodyAt -0.226 on every standing clip but the idle: the head where the idle has it (measured on its first frame), so she never slides sideways when a pose starts",
+ "result": "cut-result-36-media.json",
+ "frameCount": 36
+}
