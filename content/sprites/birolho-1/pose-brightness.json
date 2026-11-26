@@ -1,0 +1,5 @@
+{
+ "why": "the user, 2026-11-26: the Birolho's colours fixed without recutting. In the main video the unfold, the walk toward the camera and the side walk were drawn 15-26 % brighter than the idle (median luminance of the body, linear, measured on the r02 Alta frames: idle 0.0292, unfold 0.0337, move-down 0.0369, move-left / move 0.0350). One multiplier per pose, on the linear colour of the sprite (1.0 = untouched), so each pose reaches the idle's brightness. No frame is touched.",
+ "measured": {"idle": 0.0292, "unfold": 0.0337, "walkDown": 0.0369, "walkLeft": 0.0350, "walk": 0.0350},
+ "poses": {"unfold": 0.866, "walkDown": 0.791, "walkLeft": 0.834, "walk": 0.834}
+}
