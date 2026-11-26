@@ -3,14 +3,14 @@
   "base": {
    "video": "Attachments/SwampBlueDeer/SwampBlueDeerIdleATT.mp4",
    "first": 0,
-   "last": 72,
-   "bootRow": 672,
+   "last": 95,
+   "bootRow": 673,
    "bootRows": [
     672,
     674
    ],
    "figurePx": 587.0,
-   "frames": 73,
+   "frames": 96,
    "frameMs": 41.666666666666664,
    "nat": [
     643,
@@ -61,31 +61,31 @@
   },
   "move": {
    "video": "Attachments/SwampBlueDeer/SwampBlueDeerWalking.mp4",
-   "first": 12,
-   "last": 186,
-   "loopFirst": 20,
-   "loopLast": 115,
-   "seamSteps": 1.14,
+   "first": 2,
+   "last": 191,
+   "loopFirst": 2,
+   "loopLast": 191,
+   "seamSteps": NaN,
    "bootRow": 677,
    "bodyDrift": [
-    -27,
-    -11
+    -30,
+    0
    ],
    "figurePx": 601.0,
-   "frames": 96,
+   "frames": 190,
    "frameMs": 41.666666666666664,
    "nat": [
-    656,
+    669,
     719
    ],
    "crop": [
-    8,
+    9,
     5,
-    643,
+    654,
     709
    ],
    "box": {
-    "w": 3.21997,
+    "w": 3.28378,
     "h": 3.5292,
     "foot": 0.20616
    },

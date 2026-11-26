@@ -11,22 +11,22 @@
    "clip": "base",
    "pose": "idle",
    "kind": "stand",
-   "src": "build/video-cut/vampire-mosquito/ima",
+   "src": "build/video-cut/redo-sonnet/vampire-mosquito__ima",
    "video": "Attachments/Monsters/VampireMosquito/VampireMosquitoIdleMoveATT.mp4",
    "first": 0,
-   "last": 71,
-   "loopMin": 24,
-   "loopMax": 70,
+   "last": 121,
    "mode": "loop",
    "floorRow": 642,
    "figurePx": 439.5,
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01",
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "atk",
    "pose": "attack",
    "kind": "stand",
-   "src": "build/video-cut/vampire-mosquito/ima",
+   "src": "build/video-cut/redo-sonnet/vampire-mosquito__ima",
    "video": "Attachments/Monsters/VampireMosquito/VampireMosquitoIdleMoveATT.mp4",
    "first": 122,
    "last": 162,
@@ -34,13 +34,14 @@
    "mode": "once",
    "floorRow": 642,
    "figurePx": 439.5,
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01"
   },
   {
    "clip": "cast",
    "pose": "cast",
    "kind": "stand",
-   "src": "build/video-cut/vampire-mosquito/spec",
+   "src": "build/video-cut/redo-sonnet/vampire-mosquito__spec",
    "video": "Attachments/Monsters/VampireMosquito/VampireMosquitoSpecial.mp4",
    "first": 44,
    "last": 106,
@@ -434,29 +435,30 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01"
   },
   {
    "clip": "move",
    "pose": "walk",
    "kind": "walk",
-   "src": "build/video-cut/vampire-mosquito/ima",
+   "src": "build/video-cut/redo-sonnet/vampire-mosquito__ima",
    "video": "Attachments/Monsters/VampireMosquito/VampireMosquitoIdleMoveATT.mp4",
    "first": 0,
-   "last": 71,
-   "loopMin": 24,
-   "loopMax": 70,
+   "last": 121,
    "inPlace": true,
    "mode": "loop",
    "floorRow": 642,
    "figurePx": 439.5,
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01",
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "hit",
    "pose": "hit",
    "kind": "stand",
-   "src": "build/video-cut/vampire-mosquito/hf",
+   "src": "build/video-cut/redo-sonnet/vampire-mosquito__hf",
    "video": "Attachments/Monsters/VampireMosquito/VampireMosquitoHitandFall.mp4",
    "first": 34,
    "last": 100,
@@ -849,13 +851,14 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01"
   },
   {
    "clip": "death",
    "pose": "death",
    "kind": "stand",
-   "src": "build/video-cut/vampire-mosquito/hf",
+   "src": "build/video-cut/redo-sonnet/vampire-mosquito__hf",
    "video": "Attachments/Monsters/VampireMosquito/VampireMosquitoHitandFall.mp4",
    "first": 146,
    "last": 190,
@@ -1249,18 +1252,17 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01"
   },
   {
    "clip": "move-down",
    "pose": "walkDown",
    "kind": "walk",
-   "src": "build/video-cut/vampire-mosquito/ud",
+   "src": "build/video-cut/redo-sonnet/vampire-mosquito__ud",
    "video": "Attachments/Monsters/VampireMosquito/VampireMosquitoUpandDOwn.mp4",
    "first": 0,
-   "last": 71,
-   "loopMin": 24,
-   "loopMax": 70,
+   "last": 119,
    "inPlace": true,
    "mode": "loop",
    "floorRow": 751,
@@ -1655,18 +1657,18 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01",
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-up",
    "pose": "walkUp",
    "kind": "walk",
-   "src": "build/video-cut/vampire-mosquito/ud",
+   "src": "build/video-cut/redo-sonnet/vampire-mosquito__ud",
    "video": "Attachments/Monsters/VampireMosquito/VampireMosquitoUpandDOwn.mp4",
    "first": 120,
-   "last": 191,
-   "loopMin": 24,
-   "loopMax": 70,
+   "last": 239,
    "inPlace": true,
    "mode": "loop",
    "floorRow": 777,
@@ -2061,7 +2063,9 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01",
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   }
  ],
  "result": "cut-result-36-media.json",

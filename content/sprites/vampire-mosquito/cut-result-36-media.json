@@ -9,29 +9,29 @@
     642,
     642
    ],
-   "loopFirst": 21,
-   "loopLast": 59,
-   "seamSteps": 0.54,
+   "loopFirst": 22,
+   "loopLast": 60,
+   "seamSteps": 0.52,
    "frameCountFrom": 39,
    "figurePx": 439.5,
    "frames": 36,
    "frameMs": 45.138888888888886,
    "nat": [
-    772,
+    771,
     629
    ],
    "crop": [
     5,
     5,
-    763,
-    556
+    761,
+    557
    ],
    "box": {
-    "w": 2.45916,
+    "w": 2.45597,
     "h": 2.00364,
     "foot": 0.01274
    },
-   "pattern": "content/sprites/vampire-mosquito/base-media36-v01/base-{}.png"
+   "pattern": "content/sprites/vampire-mosquito/base-media36-r01/base-{}.png"
   },
   "atk": {
    "video": "Attachments/Monsters/VampireMosquito/VampireMosquitoIdleMoveATT.mp4",
@@ -54,14 +54,14 @@
     0,
     5,
     1024,
-    565
+    566
    ],
    "box": {
     "w": 3.27782,
     "h": 2.01957,
     "foot": 0.01274
    },
-   "pattern": "content/sprites/vampire-mosquito/atk-media36-v01/atk-{}.png",
+   "pattern": "content/sprites/vampire-mosquito/atk-media36-r01/atk-{}.png",
    "impact": 0.3415
   },
   "cast": {
@@ -94,16 +94,16 @@
     "h": 1.49584,
     "foot": -0.2141
    },
-   "pattern": "content/sprites/vampire-mosquito/cast-media36-v01/cast-{}.png",
+   "pattern": "content/sprites/vampire-mosquito/cast-media36-r01/cast-{}.png",
    "impact": 0.5714
   },
   "move": {
    "video": "Attachments/Monsters/VampireMosquito/VampireMosquitoIdleMoveATT.mp4",
    "first": 0,
    "last": 71,
-   "loopFirst": 21,
-   "loopLast": 59,
-   "seamSteps": 0.54,
+   "loopFirst": 22,
+   "loopLast": 60,
+   "seamSteps": 0.52,
    "bootRow": 642,
    "bodyDrift": [
     0,
@@ -114,21 +114,21 @@
    "frames": 36,
    "frameMs": 45.138888888888886,
    "nat": [
-    772,
+    771,
     629
    ],
    "crop": [
     5,
     5,
-    763,
-    556
+    761,
+    557
    ],
    "box": {
-    "w": 2.45916,
+    "w": 2.45597,
     "h": 2.00364,
     "foot": 0.01274
    },
-   "pattern": "content/sprites/vampire-mosquito/move-media36-v01/move-{}.png"
+   "pattern": "content/sprites/vampire-mosquito/move-media36-r01/move-{}.png"
   },
   "hit": {
    "video": "Attachments/Monsters/VampireMosquito/VampireMosquitoHitandFall.mp4",
@@ -145,21 +145,21 @@
    "frames": 36,
    "frameMs": 77.54629629629629,
    "nat": [
-    870,
+    893,
     647
    ],
    "crop": [
-    5,
+    4,
     0,
-    860,
+    854,
     597
    ],
    "box": {
-    "w": 2.52697,
+    "w": 2.59378,
     "h": 1.87925,
     "foot": 0.01162
    },
-   "pattern": "content/sprites/vampire-mosquito/hit-media36-v01/hit-{}.png"
+   "pattern": "content/sprites/vampire-mosquito/hit-media36-r01/hit-{}.png"
   },
   "death": {
    "video": "Attachments/Monsters/VampireMosquito/VampireMosquitoHitandFall.mp4",
@@ -176,21 +176,21 @@
    "frames": 36,
    "frameMs": 52.083333333333336,
    "nat": [
-    882,
-    628
+    881,
+    627
    ],
    "crop": [
-    5,
+    4,
     4,
     872,
     619
    ],
    "box": {
-    "w": 2.56183,
-    "h": 1.82407,
-    "foot": 0.15975
+    "w": 2.55892,
+    "h": 1.82116,
+    "foot": 0.15685
    },
-   "pattern": "content/sprites/vampire-mosquito/death-media36-v01/death-{}.png"
+   "pattern": "content/sprites/vampire-mosquito/death-media36-r01/death-{}.png"
   },
   "move-down": {
    "video": "Attachments/Monsters/VampireMosquito/VampireMosquitoUpandDOwn.mp4",
@@ -223,7 +223,7 @@
     "h": 1.85441,
     "foot": -0.08405
    },
-   "pattern": "content/sprites/vampire-mosquito/move-down-media36-v01/move-down-{}.png"
+   "pattern": "content/sprites/vampire-mosquito/move-down-media36-r01/move-down-{}.png"
   },
   "move-up": {
    "video": "Attachments/Monsters/VampireMosquito/VampireMosquitoUpandDOwn.mp4",
@@ -256,7 +256,7 @@
     "h": 1.78565,
     "foot": -0.14384
    },
-   "pattern": "content/sprites/vampire-mosquito/move-up-media36-v01/move-up-{}.png"
+   "pattern": "content/sprites/vampire-mosquito/move-up-media36-r01/move-up-{}.png"
   }
  }
 }

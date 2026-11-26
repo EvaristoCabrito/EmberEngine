@@ -831,8 +831,6 @@
    "video": "Attachments/Telesm/TelesmMoveand Casting.mp4",
    "first": 0,
    "last": 136,
-   "loopMin": 40,
-   "loopMax": 136,
    "mode": "loop",
    "figurePx": 648,
    "why": "three-quarter view, the tentacles stepping in place, facing right",
@@ -1205,7 +1203,8 @@
       0.658375
      ]
     ]
-   }
+   },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "cast",
@@ -2411,8 +2410,6 @@
    "video": "Attachments/Monsters/TelesmUpandDown.mp4",
    "first": 0,
    "last": 119,
-   "loopMin": 24,
-   "loopMax": 110,
    "inPlace": true,
    "mode": "loop",
    "why": "the user, 2026-11-21 (TelesmUpandDown.mp4): walking away, seen from behind (the combo's first half); in place, the loop at its best seam",
@@ -2810,7 +2807,8 @@
       0.658375
      ]
     ]
-   }
+   },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-down",
@@ -2820,8 +2818,6 @@
    "video": "Attachments/Monsters/TelesmUpandDown.mp4",
    "first": 120,
    "last": 239,
-   "loopMin": 24,
-   "loopMax": 110,
    "inPlace": true,
    "mode": "loop",
    "why": "the user, 2026-11-21 (TelesmUpandDown.mp4): walking toward us (the combo's second half); in place, the loop at its best seam",
@@ -3219,7 +3215,8 @@
       0.658375
      ]
     ]
-   }
+   },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   }
  ]
 }

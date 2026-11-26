@@ -831,8 +831,6 @@
    "video": "Attachments/Telesm/TelesmMoveand Casting.mp4",
    "first": 0,
    "last": 136,
-   "loopMin": 40,
-   "loopMax": 136,
    "mode": "loop",
    "figurePx": 648,
    "colorMatch": {
@@ -1205,7 +1203,8 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "cast",
@@ -2411,8 +2410,6 @@
    "video": "Attachments/Monsters/TelesmUpandDown.mp4",
    "first": 0,
    "last": 119,
-   "loopMin": 24,
-   "loopMax": 110,
    "inPlace": true,
    "mode": "loop",
    "figurePx": 842.5,
@@ -2810,7 +2807,8 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-down",
@@ -2820,8 +2818,6 @@
    "video": "Attachments/Monsters/TelesmUpandDown.mp4",
    "first": 120,
    "last": 239,
-   "loopMin": 24,
-   "loopMax": 110,
    "inPlace": true,
    "mode": "loop",
    "figurePx": 874.0,
@@ -3219,7 +3215,8 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   }
  ],
  "result": "cut-result-36-media.json",
