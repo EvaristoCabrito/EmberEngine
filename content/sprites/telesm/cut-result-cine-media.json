@@ -5,32 +5,32 @@
    "first": 0,
    "last": 119,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/telesm/idle 0:143",
-   "loopFirst": 69,
-   "loopLast": 116,
-   "seamSteps": 1.41,
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
    "bootRow": 998,
    "bodyDrift": [
     0,
     0
    ],
    "figurePx": 842.5,
-   "scaledTo": 609.7,
-   "frames": 48,
+   "scaledTo": 610.0,
+   "frames": 120,
    "frameMs": 41.666666666666664,
    "nat": [
-    639,
-    631
+    677,
+    635
    ],
    "crop": [
     3,
     3,
-    632,
-    625
+    670,
+    628
    ],
    "box": {
-    "w": 3.14065,
-    "h": 3.10133,
-    "foot": 0.05623
+    "w": 3.32938,
+    "h": 3.12283,
+    "foot": 0.0741
    },
    "pattern": "content/sprites/telesm/move-up-cine-v01/move-up-{}.png"
   },
@@ -39,34 +39,68 @@
    "first": 120,
    "last": 239,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/telesm/idle 0:143",
-   "loopFirst": 153,
-   "loopLast": 203,
-   "seamSteps": 1.35,
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 1007,
    "bodyDrift": [
     0,
     0
    ],
    "figurePx": 874.0,
-   "scaledTo": 610.2,
-   "frames": 51,
+   "scaledTo": 610.4,
+   "frames": 120,
    "frameMs": 41.666666666666664,
    "nat": [
-    639,
-    627
+    648,
+    630
    ],
    "crop": [
     4,
     3,
-    632,
-    621
+    639,
+    623
    ],
    "box": {
-    "w": 3.14416,
-    "h": 3.08512,
-    "foot": 0.04736
+    "w": 3.18879,
+    "h": 3.10021,
+    "foot": 0.05081
    },
    "pattern": "content/sprites/telesm/move-down-cine-v01/move-down-{}.png"
+  },
+  "move": {
+   "video": "Attachments/Telesm/TelesmMoveand Casting.mp4",
+   "first": 0,
+   "last": 136,
+   "colorMatch": "build/video-cut/telesm/idle 0:143",
+   "loopFirst": 0,
+   "loopLast": 136,
+   "seamSteps": NaN,
+   "bootRow": 682,
+   "bodyDrift": [
+    0,
+    72
+   ],
+   "figurePx": 648.0,
+   "scaledTo": 609.7,
+   "frames": 137,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    792,
+    653
+   ],
+   "crop": [
+    5,
+    4,
+    782,
+    645
+   ],
+   "box": {
+    "w": 3.89352,
+    "h": 3.21019,
+    "foot": 0.16175
+   },
+   "pattern": "content/sprites/telesm/move-cine-v01/move-{}.png"
   }
  }
 }

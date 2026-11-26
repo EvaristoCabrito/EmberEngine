@@ -95,30 +95,30 @@
    "first": 0,
    "last": 136,
    "colorMatch": "build/video-cut/telesm/idle 0:143",
-   "loopFirst": 52,
-   "loopLast": 101,
-   "seamSteps": 1.83,
+   "loopFirst": 0,
+   "loopLast": 136,
+   "seamSteps": NaN,
    "bootRow": 682,
    "bodyDrift": [
-    46,
-    64
+    0,
+    72
    ],
    "figurePx": 648.0,
-   "frames": 50,
+   "frames": 137,
    "frameMs": 41.666666666666664,
    "nat": [
-    828,
-    691
+    841,
+    694
    ],
    "crop": [
     5,
     4,
-    818,
-    682
+    831,
+    685
    ],
    "box": {
-    "w": 3.83333,
-    "h": 3.19907,
+    "w": 3.89352,
+    "h": 3.21296,
     "foot": 0.16204
    },
    "pattern": "content/sprites/telesm/move-v01/move-{}.png"
@@ -219,31 +219,31 @@
    "first": 0,
    "last": 119,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/telesm/idle 0:143",
-   "loopFirst": 69,
-   "loopLast": 116,
-   "seamSteps": 1.41,
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
    "bootRow": 998,
    "bodyDrift": [
     0,
     0
    ],
    "figurePx": 842.5,
-   "frames": 48,
+   "frames": 120,
    "frameMs": 41.666666666666664,
    "nat": [
-    882,
-    872
+    935,
+    877
    ],
    "crop": [
-    5,
     4,
-    871,
-    864
+    4,
+    926,
+    868
    ],
    "box": {
-    "w": 3.14065,
-    "h": 3.10504,
-    "foot": 0.05697
+    "w": 3.32938,
+    "h": 3.12285,
+    "foot": 0.07478
    },
    "pattern": "content/sprites/telesm/move-up-v01/move-up-{}.png"
   },
@@ -252,31 +252,31 @@
    "first": 120,
    "last": 239,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/telesm/idle 0:143",
-   "loopFirst": 153,
-   "loopLast": 203,
-   "seamSteps": 1.35,
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 1007,
    "bodyDrift": [
     0,
     0
    ],
    "figurePx": 874.0,
-   "frames": 51,
+   "frames": 120,
    "frameMs": 41.666666666666664,
    "nat": [
-    916,
-    898
+    929,
+    902
    ],
    "crop": [
     5,
     4,
-    906,
-    889
+    917,
+    893
    ],
    "box": {
-    "w": 3.14416,
-    "h": 3.08238,
-    "foot": 0.04805
+    "w": 3.18879,
+    "h": 3.09611,
+    "foot": 0.05149
    },
    "pattern": "content/sprites/telesm/move-down-v01/move-down-{}.png"
   }

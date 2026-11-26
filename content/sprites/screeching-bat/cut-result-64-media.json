@@ -9,25 +9,22 @@
     825,
     825
    ],
-   "loopFirst": 17,
-   "loopLast": 39,
-   "seamSteps": 0.65,
    "figurePx": 464.0,
-   "frames": 23,
+   "frames": 53,
    "frameMs": 41.666666666666664,
    "nat": [
     1280,
-    645
+    658
    ],
    "crop": [
     0,
     4,
     1280,
-    598
+    611
    ],
    "box": {
     "w": 3.86207,
-    "h": 1.94612,
+    "h": 1.98534,
     "foot": -0.31983
    },
    "pattern": "content/sprites/screeching-bat/base-media64-r01/base-{}.png"
@@ -64,32 +61,33 @@
   "move": {
    "video": "Attachments/Monsters/Bat/Bat_flying_and_snapping_jaws_93b456f6.mp4",
    "first": 0,
-   "last": 130,
+   "last": 239,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/screeching-bat/idle 0:52",
-   "loopFirst": 38,
-   "loopLast": 67,
-   "seamSteps": 0.29,
+   "loopFirst": 0,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 707,
    "bodyDrift": [
     0,
     0
    ],
+   "frameCountFrom": 240,
    "figurePx": 420.5,
-   "frames": 30,
-   "frameMs": 41.666666666666664,
+   "frames": 64,
+   "frameMs": 156.25,
    "nat": [
-    772,
-    702
+    889,
+    713
    ],
    "crop": [
+    12,
     5,
-    5,
-    761,
-    697
+    868,
+    708
    ],
    "box": {
-    "w": 2.57027,
-    "h": 2.33722,
+    "w": 2.95981,
+    "h": 2.37384,
     "foot": 0.03995
    },
    "pattern": "content/sprites/screeching-bat/move-media64-r01/move-{}.png"
@@ -195,11 +193,8 @@
     651,
     651
    ],
-   "loopFirst": 10,
-   "loopLast": 41,
-   "seamSteps": 0.77,
    "figurePx": 479.0,
-   "frames": 32,
+   "frames": 56,
    "frameMs": 41.666666666666664,
    "nat": [
     1204,
@@ -254,30 +249,31 @@
    "first": 0,
    "last": 119,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/screeching-bat/idle 0:52",
-   "loopFirst": 80,
-   "loopLast": 116,
-   "seamSteps": 0.37,
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
    "bootRow": 586,
    "bodyDrift": [
     0,
     0
    ],
+   "frameCountFrom": 120,
    "figurePx": 230.5,
-   "frames": 37,
-   "frameMs": 41.666666666666664,
+   "frames": 64,
+   "frameMs": 78.125,
    "nat": [
-    819,
-    409
+    826,
+    426
    ],
    "crop": [
+    6,
     5,
-    4,
-    809,
-    390
+    815,
+    408
    ],
    "box": {
-    "w": 4.9744,
-    "h": 2.48416,
+    "w": 5.01692,
+    "h": 2.58742,
     "foot": 0.0243
    },
    "pattern": "content/sprites/screeching-bat/move-up-media64-r01/move-up-{}.png"
@@ -287,31 +283,32 @@
    "first": 120,
    "last": 239,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/screeching-bat/idle 0:52",
-   "loopFirst": 164,
-   "loopLast": 198,
-   "seamSteps": 0.44,
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 674,
    "bodyDrift": [
     0,
     0
    ],
+   "frameCountFrom": 120,
    "figurePx": 337.5,
-   "frames": 35,
-   "frameMs": 41.666666666666664,
+   "frames": 64,
+   "frameMs": 78.125,
    "nat": [
-    1080,
-    534
+    1100,
+    553
    ],
    "crop": [
     5,
     4,
-    1069,
-    514
+    1090,
+    538
    ],
    "box": {
-    "w": 4.48,
-    "h": 2.21511,
-    "foot": 0.01659
+    "w": 4.56296,
+    "h": 2.29393,
+    "foot": 0.04563
    },
    "pattern": "content/sprites/screeching-bat/move-down-media64-r01/move-down-{}.png"
   }

@@ -1,7 +1,7 @@
 {
  "clips": {
   "base": {
-   "video": "Attachments/Corrosive Slime/Slime_creature_pulsing_and_casting_20261021211244.mp4",
+   "video": "Attachments/Monsters/Slime_creature_pulsing_and_casting_20261021211244.mp4",
    "first": 0,
    "last": 86,
    "bootRow": 680,
@@ -9,28 +9,25 @@
     679,
     681
    ],
-   "loopFirst": 11,
-   "loopLast": 59,
-   "seamSteps": 3.33,
-   "frameCountFrom": 49,
+   "frameCountFrom": 87,
    "figurePx": 562.0,
-   "scaledTo": 312.1,
+   "scaledTo": 311.5,
    "frames": 36,
-   "frameMs": 56.71296296296296,
+   "frameMs": 100.69444444444444,
    "nat": [
-    513,
-    326
+    530,
+    327
    ],
    "crop": [
     3,
-    2,
-    507,
+    3,
+    524,
     321
    ],
    "box": {
-    "w": 1.76908,
-    "h": 1.12421,
-    "foot": 0.01264
+    "w": 1.82843,
+    "h": 1.12811,
+    "foot": 0.01262
    },
    "pattern": "content/sprites/corrosive-slime-36/base-media-v01/base-{}.png"
   },
@@ -68,37 +65,37 @@
    "impact": 0.4865
   },
   "move": {
-   "video": "Attachments/Corrosive Slime/Slime_creature_moving_and_attacking_20261021215513.mp4",
-   "first": 24,
+   "video": "Attachments/Monsters/Slime_creature_moving_and_attacking_20261021215513.mp4",
+   "first": 18,
    "last": 128,
-   "loopFirst": 56,
-   "loopLast": 96,
-   "seamSteps": 3.52,
+   "loopFirst": 18,
+   "loopLast": 128,
+   "seamSteps": NaN,
    "bootRow": 595,
    "bodyDrift": [
-    36,
-    47
+    0,
+    62
    ],
-   "frameCountFrom": 41,
+   "frameCountFrom": 111,
    "figurePx": 562.0,
    "bodyAt": -0.0661,
-   "scaledTo": 312.2,
+   "scaledTo": 311.8,
    "frames": 36,
-   "frameMs": 47.4537037037037,
+   "frameMs": 128.47222222222223,
    "nat": [
-    690,
-    255
+    672,
+    294
    ],
    "crop": [
-    40,
+    22,
     3,
     647,
-    250
+    288
    ],
    "box": {
-    "w": 2.38175,
-    "h": 0.88021,
-    "foot": 0.01266
+    "w": 2.31665,
+    "h": 1.01354,
+    "foot": 0.01453
    },
    "pattern": "content/sprites/corrosive-slime-36/move-media-v01/move-{}.png"
   },

@@ -819,8 +819,8 @@
       "kind": "walk",
       "src": "build/video-cut/redo-sonnet/aldric__walk",
       "video": "Attachments/Aldric/Aldric_walking_left_in_place_51472b70_1080p.mp4",
-      "first": 0,
-      "last": 142,
+      "first": 33,
+      "last": 96,
       "inPlace": true,
       "mode": "loop",
       "mirror": true,
@@ -1173,7 +1173,7 @@
         ]
       },
       "version": "r01",
-      "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
+      "maxLoop": "the longest seamless loop before the bug (2026-11-26): his face darkens from ~100 on; 33-96 closes as one step (aldric-seam.py)"
     },
     {
       "clip": "move-left",
@@ -1181,8 +1181,8 @@
       "kind": "walk",
       "src": "build/video-cut/redo-sonnet/aldric__walk",
       "video": "Attachments/Aldric/Aldric_walking_left_in_place_51472b70_1080p.mp4",
-      "first": 0,
-      "last": 142,
+      "first": 33,
+      "last": 96,
       "inPlace": true,
       "mode": "loop",
       "figurePx": 952.0,
@@ -1534,7 +1534,7 @@
         ]
       },
       "version": "r01",
-      "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
+      "maxLoop": "the longest seamless loop before the bug (2026-11-26): his face darkens from ~100 on; 33-96 closes as one step (aldric-seam.py)"
     },
     {
       "clip": "hit",

@@ -3623,7 +3623,7 @@
    "mode": "loop",
    "inPlace": true,
    "why": "the whole walk away from the camera (its own video, 94 frames)",
-   "figurePx": 667.4,
+   "figurePx": 873.9,
    "colorMatch": {
     "reference": "build/video-cut/redo-sonnet/birolho-1__main 0:26 + the set's grade (match_set_light.py)",
     "frames": "0:93",
@@ -4013,7 +4013,8 @@
       0.62396
      ]
     ]
-   }
+   },
+   "scaleWhy": "measured 2026-11-26 on the r02 cut: standing on his legs, the walk away was 6.73 units tall and the side walk 4.44 against the walk toward the camera 5.14 (the Birolho Legs: 6.06 / 5.74 / 5.83); one height for the three walks (docs/SPRITE_STANDARD.md, the same size in every pose)"
   },
   {
    "clip": "move-down",
@@ -4625,7 +4626,7 @@
    "mode": "loop",
    "inPlace": true,
    "why": "the whole walk in profile, facing left as filmed (96-160)",
-   "figurePx": 970.2,
+   "figurePx": 838.1,
    "colorMatch": {
     "reference": "build/video-cut/redo-sonnet/birolho-1__main 0:26 + the set's grade (match_set_light.py)",
     "frames": "",
@@ -5211,7 +5212,8 @@
       0.999632
      ]
     ]
-   }
+   },
+   "scaleWhy": "measured 2026-11-26 on the r02 cut: standing on his legs, the walk away was 6.73 units tall and the side walk 4.44 against the walk toward the camera 5.14 (the Birolho Legs: 6.06 / 5.74 / 5.83); one height for the three walks (docs/SPRITE_STANDARD.md, the same size in every pose)"
   },
   {
    "clip": "move",
@@ -5225,7 +5227,7 @@
    "inPlace": true,
    "mirror": true,
    "why": "the whole walk in profile, mirrored to walk right",
-   "figurePx": 970.2,
+   "figurePx": 838.1,
    "colorMatch": {
     "reference": "build/video-cut/redo-sonnet/birolho-1__main 0:26 + the set's grade (match_set_light.py)",
     "frames": "",
@@ -5811,7 +5813,8 @@
       0.999632
      ]
     ]
-   }
+   },
+   "scaleWhy": "measured 2026-11-26 on the r02 cut: standing on his legs, the walk away was 6.73 units tall and the side walk 4.44 against the walk toward the camera 5.14 (the Birolho Legs: 6.06 / 5.74 / 5.83); one height for the three walks (docs/SPRITE_STANDARD.md, the same size in every pose)"
   }
  ],
  "bodyAtWhy": "docs/SPRITE_STANDARD.md: every standing pose has the ball where the idle has it, or he jumps sideways as a pose starts",

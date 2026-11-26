@@ -65,35 +65,36 @@
   },
   "move": {
    "video": "Attachments/Monsters/Horse/Rat_walks,_recoils,_and_collapses_4bffe6bf_1080p.mp4",
-   "first": 2,
-   "last": 90,
+   "first": 1,
+   "last": 83,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/sick-rat/combat 0:96",
-   "loopFirst": 18,
-   "loopLast": 47,
-   "seamSteps": 0.98,
-   "bootRow": 915,
+   "loopFirst": 1,
+   "loopLast": 83,
+   "seamSteps": NaN,
+   "bootRow": 914,
    "bodyDrift": [
     0,
     0
    ],
+   "frameCountFrom": 83,
    "figurePx": 697.0,
-   "scaledTo": 609.8,
-   "frames": 30,
-   "frameMs": 41.666666666666664,
+   "scaledTo": 610.3,
+   "frames": 36,
+   "frameMs": 96.06481481481481,
    "nat": [
-    1377,
-    650
+    1398,
+    662
    ],
    "crop": [
     5,
-    6,
-    1369,
-    640
+    8,
+    1388,
+    641
    ],
    "box": {
-    "w": 2.4825,
-    "h": 1.17184,
-    "foot": 0.08032
+    "w": 2.52037,
+    "h": 1.19348,
+    "foot": 0.08514
    },
    "pattern": "content/sprites/sick-rat/move-media36-v01/move-{}.png"
   },
@@ -165,32 +166,33 @@
    "first": 0,
    "last": 119,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/sick-rat/combat 0:96",
-   "loopFirst": 34,
-   "loopLast": 59,
-   "seamSteps": 0.55,
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
    "bootRow": 975,
    "bodyDrift": [
     0,
     0
    ],
+   "frameCountFrom": 120,
    "figurePx": 680.5,
-   "scaledTo": 610.0,
-   "frames": 26,
-   "frameMs": 41.666666666666664,
+   "scaledTo": 609.7,
+   "frames": 36,
+   "frameMs": 138.88888888888889,
    "nat": [
-    568,
-    684
+    585,
+    689
    ],
    "crop": [
-    6,
     8,
-    557,
-    672
+    8,
+    572,
+    673
    ],
    "box": {
-    "w": 1.02483,
-    "h": 1.23413,
-    "foot": 0.05814
+    "w": 1.05555,
+    "h": 1.2432,
+    "foot": 0.06781
    },
    "pattern": "content/sprites/sick-rat/move-up-media36-v01/move-up-{}.png"
   },
@@ -199,33 +201,33 @@
    "first": 120,
    "last": 239,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/sick-rat/combat 0:96",
-   "loopFirst": 190,
-   "loopLast": 227,
-   "seamSteps": 1.18,
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 970,
    "bodyDrift": [
     0,
     0
    ],
-   "frameCountFrom": 38,
+   "frameCountFrom": 120,
    "figurePx": 710.5,
-   "scaledTo": 610.2,
+   "scaledTo": 609.5,
    "frames": 36,
-   "frameMs": 43.98148148148148,
+   "frameMs": 138.88888888888889,
    "nat": [
-    477,
-    639
+    493,
+    640
    ],
    "crop": [
-    4,
-    7,
-    467,
+    9,
+    6,
+    479,
     628
    ],
    "box": {
-    "w": 0.8608,
-    "h": 1.15315,
-    "foot": 0.02312
+    "w": 0.88867,
+    "h": 1.15365,
+    "foot": 0.02462
    },
    "pattern": "content/sprites/sick-rat/move-down-media36-v01/move-down-{}.png"
   }
