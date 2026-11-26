@@ -1,0 +1,229 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Radiant Familiar/Fantasy_creature_prompt_generation_d3875dd7_1080p.mp4",
+   "first": 0,
+   "last": 46,
+   "colorMatch": "build/video-cut/radiant-familiar/main 0:46 + the set's grade (match_set_light.py)",
+   "bootRow": 1023,
+   "bootRows": [
+    1023,
+    1023
+   ],
+   "figurePx": 903.0,
+   "scaledTo": 610.4,
+   "frames": 47,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    707,
+    632
+   ],
+   "crop": [
+    10,
+    3,
+    687,
+    590
+   ],
+   "box": {
+    "w": 3.09578,
+    "h": 2.76737,
+    "foot": 0.01113
+   },
+   "pattern": "content/sprites/radiant-familiar/base-cine-r01/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Radiant Familiar/Fantasy_creature_prompt_generation_d3875dd7_1080p.mp4",
+   "first": 157,
+   "last": 238,
+   "colorMatch": "build/video-cut/radiant-familiar/main 0:46 + the set's grade (match_set_light.py)",
+   "bootRow": 1023,
+   "bootRows": [
+    1023,
+    1023
+   ],
+   "figurePx": 903.0,
+   "scaledTo": 610.2,
+   "frames": 82,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1015,
+    698
+   ],
+   "crop": [
+    96,
+    0,
+    912,
+    694
+   ],
+   "box": {
+    "w": 4.44409,
+    "h": 3.05613,
+    "foot": 0.02592
+   },
+   "pattern": "content/sprites/radiant-familiar/atk-cine-r01/atk-{}.png",
+   "impact": 0.378
+  },
+  "move": {
+   "video": "Attachments/Radiant Familiar/Fantasy_creature_prompt_generation_d3875dd7_1080p.mp4",
+   "first": 141,
+   "last": 148,
+   "colorMatch": "build/video-cut/radiant-familiar/main 0:46 + the set's grade (match_set_light.py)",
+   "loopFirst": 141,
+   "loopLast": 148,
+   "seamSteps": NaN,
+   "bootRow": 1023,
+   "bodyDrift": [
+    -64,
+    0
+   ],
+   "figurePx": 903.0,
+   "scaledTo": 609.9,
+   "frames": 8,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    946,
+    564
+   ],
+   "crop": [
+    0,
+    4,
+    941,
+    450
+   ],
+   "box": {
+    "w": 4.14249,
+    "h": 2.46973,
+    "foot": 0.01112
+   },
+   "pattern": "content/sprites/radiant-familiar/move-cine-r01/move-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/Radiant Familiar/Fantasy_creature_prompt_generation_d3875dd7_1080p.mp4",
+   "first": 141,
+   "last": 148,
+   "colorMatch": "build/video-cut/radiant-familiar/main 0:46 + the set's grade (match_set_light.py)",
+   "loopFirst": 141,
+   "loopLast": 148,
+   "seamSteps": NaN,
+   "bootRow": 1023,
+   "bodyDrift": [
+    -64,
+    0
+   ],
+   "figurePx": 903.0,
+   "scaledTo": 609.9,
+   "frames": 8,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    946,
+    564
+   ],
+   "crop": [
+    5,
+    4,
+    941,
+    450
+   ],
+   "box": {
+    "w": 4.14249,
+    "h": 2.46973,
+    "foot": 0.01112
+   },
+   "pattern": "content/sprites/radiant-familiar/move-left-cine-r01/move-left-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/Radiant Familiar/EmoteandFallBigCreature_moving_and_landing_462eae0d_1080p.mp4",
+   "first": 122,
+   "last": 132,
+   "colorMatch": "build/video-cut/radiant-familiar/main 0:46 + the set's grade (match_set_light.py)",
+   "bootRow": 923,
+   "bootRows": [
+    923,
+    923
+   ],
+   "thereAndBack": true,
+   "figurePx": 695.0,
+   "scaledTo": 610.1,
+   "frames": 21,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    775,
+    704
+   ],
+   "crop": [
+    6,
+    5,
+    764,
+    674
+   ],
+   "box": {
+    "w": 3.39224,
+    "h": 3.08147,
+    "foot": 0.0151
+   },
+   "pattern": "content/sprites/radiant-familiar/hit-cine-r01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Radiant Familiar/EmoteandFallBigCreature_moving_and_landing_462eae0d_1080p.mp4",
+   "first": 122,
+   "last": 238,
+   "colorMatch": "build/video-cut/radiant-familiar/main 0:46 + the set's grade (match_set_light.py)",
+   "bootRow": 994,
+   "bootRows": [
+    994,
+    994
+   ],
+   "figurePx": 695.0,
+   "scaledTo": 609.9,
+   "frames": 117,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1457,
+    795
+   ],
+   "crop": [
+    5,
+    5,
+    1448,
+    786
+   ],
+   "box": {
+    "w": 6.37727,
+    "h": 3.4797,
+    "foot": 0.14184
+   },
+   "pattern": "content/sprites/radiant-familiar/death-cine-r01/death-{}.png"
+  },
+  "emote": {
+   "video": "Attachments/Radiant Familiar/EmoteandFallBigCreature_moving_and_landing_462eae0d_1080p.mp4",
+   "first": 0,
+   "last": 62,
+   "colorMatch": "build/video-cut/radiant-familiar/main 0:46 + the set's grade (match_set_light.py)",
+   "bootRow": 940,
+   "bootRows": [
+    940,
+    940
+   ],
+   "figurePx": 695.0,
+   "scaledTo": 610.0,
+   "frames": 63,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    864,
+    710
+   ],
+   "crop": [
+    4,
+    4,
+    855,
+    692
+   ],
+   "box": {
+    "w": 3.78026,
+    "h": 3.10646,
+    "foot": 0.01509
+   },
+   "pattern": "content/sprites/radiant-familiar/emote-cine-r01/emote-{}.png"
+  }
+ }
+}

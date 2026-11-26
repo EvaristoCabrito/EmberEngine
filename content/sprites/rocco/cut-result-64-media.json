@@ -3,34 +3,32 @@
   "base": {
    "video": "Attachments/Monsters/Rocco/Creature_hovering_in_place_af8aa02f_720p.mp4",
    "first": 0,
-   "last": 71,
-   "bootRow": 633,
+   "last": 142,
+   "bootRow": 639,
    "bootRows": [
-    607,
-    663
+    605,
+    662
    ],
-   "loopFirst": 13,
-   "loopLast": 58,
-   "seamSteps": 0.78,
+   "frameCountFrom": 143,
    "figurePx": 566.5,
-   "frames": 46,
-   "frameMs": 41.666666666666664,
+   "frames": 64,
+   "frameMs": 93.09895833333333,
    "nat": [
-    1154,
-    639
+    1153,
+    640
    ],
    "crop": [
     0,
-    5,
-    1149,
-    630
+    7,
+    1148,
+    629
    ],
    "box": {
-    "w": 10.73536,
-    "h": 5.94445,
-    "foot": 0.75352
+    "w": 10.72605,
+    "h": 5.95375,
+    "foot": 0.74422
    },
-   "pattern": "content/sprites/rocco/base-media64-v01/base-{}.png"
+   "pattern": "content/sprites/rocco/base-media64-r01/base-{}.png"
   },
   "atk": {
    "video": "Attachments/Monsters/Rocco/Creature_walking_and_attacking_a\u2026_3cb2cd21_720p.mp4",
@@ -46,21 +44,21 @@
    "frames": 61,
    "frameMs": 41.666666666666664,
    "nat": [
-    1168,
+    1171,
     720
    ],
    "crop": [
     6,
     0,
-    1156,
+    1160,
     720
    ],
    "box": {
-    "w": 10.8656,
+    "w": 10.8935,
     "h": 6.69797,
     "foot": 0.36281
    },
-   "pattern": "content/sprites/rocco/atk-media64-v01/atk-{}.png",
+   "pattern": "content/sprites/rocco/atk-media64-r01/atk-{}.png",
    "impact": 0.3934
   },
   "cast": {
@@ -92,74 +90,76 @@
     "h": 6.69797,
     "foot": 0.85585
    },
-   "pattern": "content/sprites/rocco/cast-media64-v01/cast-{}.png",
+   "pattern": "content/sprites/rocco/cast-media64-r01/cast-{}.png",
    "impact": 0.6434
   },
   "move": {
    "video": "Attachments/Monsters/Rocco/Creature_walking_and_attacking_a\u2026_3cb2cd21_720p.mp4",
-   "first": 40,
-   "last": 150,
+   "first": 8,
+   "last": 122,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/rocco/hover 0:71",
-   "loopFirst": 58,
-   "loopLast": 97,
-   "seamSteps": 1.69,
-   "bootRow": 680,
+   "loopFirst": 8,
+   "loopLast": 122,
+   "seamSteps": NaN,
+   "bootRow": 679,
    "bodyDrift": [
     0,
     0
    ],
+   "frameCountFrom": 115,
    "figurePx": 566.5,
-   "frames": 40,
-   "frameMs": 41.666666666666664,
+   "frames": 64,
+   "frameMs": 74.86979166666666,
    "nat": [
-    945,
-    595
+    967,
+    632
    ],
    "crop": [
     4,
-    5,
-    935,
-    585
+    4,
+    955,
+    624
    ],
    "box": {
-    "w": 8.79109,
-    "h": 5.53513,
-    "foot": 0.12094
+    "w": 8.99575,
+    "h": 5.87933,
+    "foot": 0.17675
    },
-   "pattern": "content/sprites/rocco/move-media64-v01/move-{}.png"
+   "pattern": "content/sprites/rocco/move-media64-r01/move-{}.png"
   },
   "move-left": {
    "video": "Attachments/Monsters/Rocco/Creature_walking_and_attacking_a\u2026_3cb2cd21_720p.mp4",
-   "first": 40,
-   "last": 150,
+   "first": 8,
+   "last": 122,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/rocco/hover 0:71",
-   "loopFirst": 58,
-   "loopLast": 97,
-   "seamSteps": 1.69,
-   "bootRow": 680,
+   "loopFirst": 8,
+   "loopLast": 122,
+   "seamSteps": NaN,
+   "bootRow": 679,
    "bodyDrift": [
     0,
     0
    ],
+   "frameCountFrom": 115,
    "figurePx": 566.5,
-   "frames": 40,
-   "frameMs": 41.666666666666664,
+   "frames": 64,
+   "frameMs": 74.86979166666666,
    "nat": [
-    945,
-    595
+    967,
+    632
    ],
    "crop": [
-    6,
-    5,
-    935,
-    585
+    8,
+    4,
+    955,
+    624
    ],
    "box": {
-    "w": 8.79109,
-    "h": 5.53513,
-    "foot": 0.12094
+    "w": 8.99575,
+    "h": 5.87933,
+    "foot": 0.17675
    },
-   "pattern": "content/sprites/rocco/move-left-media64-v01/move-left-{}.png"
+   "pattern": "content/sprites/rocco/move-left-media64-r01/move-left-{}.png"
   },
   "hit": {
    "video": "Attachments/Monsters/Rocco/Creature_hit_reaction_animation_0af988fe_720p.mp4",
@@ -190,7 +190,7 @@
     "h": 6.69797,
     "foot": 0.52095
    },
-   "pattern": "content/sprites/rocco/hit-media64-v01/hit-{}.png",
+   "pattern": "content/sprites/rocco/hit-media64-r01/hit-{}.png",
    "impact": 0.1333
   }
  }

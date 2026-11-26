@@ -15,21 +15,21 @@
    "frames": 47,
    "frameMs": 41.666666666666664,
    "nat": [
-    840,
+    707,
     632
    ],
    "crop": [
-    134,
+    10,
     3,
-    699,
+    687,
     590
    ],
    "box": {
-    "w": 3.67827,
-    "h": 2.76746,
+    "w": 3.09578,
+    "h": 2.76737,
     "foot": 0.01113
    },
-   "pattern": "content/sprites/radiant-familiar/base-media64-v02/base-{}.png"
+   "pattern": "content/sprites/radiant-familiar/base-media64-r01/base-{}.png"
   },
   "atk": {
    "video": "Attachments/Radiant Familiar/Fantasy_creature_prompt_generation_d3875dd7_1080p.mp4",
@@ -43,25 +43,25 @@
    ],
    "frameCountFrom": 82,
    "figurePx": 903.0,
-   "scaledTo": 609.9,
+   "scaledTo": 610.2,
    "frames": 64,
    "frameMs": 53.385416666666664,
    "nat": [
-    1154,
-    697
+    1015,
+    698
    ],
    "crop": [
-    176,
+    96,
     0,
-    925,
-    693
+    911,
+    694
    ],
    "box": {
-    "w": 5.05319,
-    "h": 3.05206,
-    "foot": 0.02295
+    "w": 4.44409,
+    "h": 3.05613,
+    "foot": 0.02592
    },
-   "pattern": "content/sprites/radiant-familiar/atk-media64-v02/atk-{}.png",
+   "pattern": "content/sprites/radiant-familiar/atk-media64-r01/atk-{}.png",
    "impact": 0.378
   },
   "move": {
@@ -74,7 +74,7 @@
    "seamSteps": NaN,
    "bootRow": 1023,
    "bodyDrift": [
-    -63,
+    -64,
     0
    ],
    "figurePx": 903.0,
@@ -96,7 +96,7 @@
     "h": 2.46973,
     "foot": 0.01112
    },
-   "pattern": "content/sprites/radiant-familiar/move-media64-v02/move-{}.png"
+   "pattern": "content/sprites/radiant-familiar/move-media64-r01/move-{}.png"
   },
   "move-left": {
    "video": "Attachments/Radiant Familiar/Fantasy_creature_prompt_generation_d3875dd7_1080p.mp4",
@@ -108,7 +108,7 @@
    "seamSteps": NaN,
    "bootRow": 1023,
    "bodyDrift": [
-    -63,
+    -64,
     0
    ],
    "figurePx": 903.0,
@@ -130,7 +130,7 @@
     "h": 2.46973,
     "foot": 0.01112
    },
-   "pattern": "content/sprites/radiant-familiar/move-left-media64-v02/move-left-{}.png"
+   "pattern": "content/sprites/radiant-familiar/move-left-media64-r01/move-left-{}.png"
   },
   "hit": {
    "video": "Attachments/Radiant Familiar/EmoteandFallBigCreature_moving_and_landing_462eae0d_1080p.mp4",
@@ -148,21 +148,21 @@
    "frames": 21,
    "frameMs": 41.666666666666664,
    "nat": [
-    776,
+    775,
     704
    ],
    "crop": [
-    7,
+    6,
     5,
     764,
     674
    ],
    "box": {
-    "w": 3.39609,
-    "h": 3.08099,
+    "w": 3.39224,
+    "h": 3.08147,
     "foot": 0.0151
    },
-   "pattern": "content/sprites/radiant-familiar/hit-media64-v02/hit-{}.png"
+   "pattern": "content/sprites/radiant-familiar/hit-media64-r01/hit-{}.png"
   },
   "emote": {
    "video": "Attachments/Radiant Familiar/EmoteandFallBigCreature_moving_and_landing_462eae0d_1080p.mp4",
@@ -179,21 +179,21 @@
    "frames": 63,
    "frameMs": 41.666666666666664,
    "nat": [
-    865,
+    864,
     710
    ],
    "crop": [
-    5,
+    4,
     4,
     855,
     692
    ],
    "box": {
-    "w": 3.78794,
-    "h": 3.10918,
-    "foot": 0.01511
+    "w": 3.78026,
+    "h": 3.10646,
+    "foot": 0.01509
    },
-   "pattern": "content/sprites/radiant-familiar/emote-media64-v02/emote-{}.png"
+   "pattern": "content/sprites/radiant-familiar/emote-media64-r01/emote-{}.png"
   },
   "death": {
    "video": "Attachments/Radiant Familiar/EmoteandFallBigCreature_moving_and_landing_462eae0d_1080p.mp4",
@@ -211,7 +211,7 @@
    "frames": 64,
    "frameMs": 76.171875,
    "nat": [
-    1458,
+    1457,
     795
    ],
    "crop": [
@@ -221,11 +221,11 @@
     786
    ],
    "box": {
-    "w": 6.38111,
-    "h": 3.47941,
-    "foot": 0.14183
+    "w": 6.37727,
+    "h": 3.4797,
+    "foot": 0.14184
    },
-   "pattern": "content/sprites/radiant-familiar/death-media64-v02/death-{}.png"
+   "pattern": "content/sprites/radiant-familiar/death-media64-r01/death-{}.png"
   }
  }
 }

@@ -29,7 +29,7 @@
    "clip": "base",
    "pose": "idle",
    "kind": "stand",
-   "src": "build/video-cut/radiant-familiar/main",
+   "src": "build/video-cut/redo-sonnet/radiant-familiar__main",
    "video": "Attachments/Radiant Familiar/Fantasy_creature_prompt_generation_d3875dd7_1080p.mp4",
    "first": 0,
    "last": 46,
@@ -622,13 +622,14 @@
       1.0
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "atk",
    "pose": "attack",
    "kind": "stand",
-   "src": "build/video-cut/radiant-familiar/main",
+   "src": "build/video-cut/redo-sonnet/radiant-familiar__main",
    "video": "Attachments/Radiant Familiar/Fantasy_creature_prompt_generation_d3875dd7_1080p.mp4",
    "first": 157,
    "last": 238,
@@ -1222,13 +1223,14 @@
       1.0
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "move",
    "pose": "walk",
    "kind": "walk",
-   "src": "build/video-cut/radiant-familiar/main",
+   "src": "build/video-cut/redo-sonnet/radiant-familiar__main",
    "video": "Attachments/Radiant Familiar/Fantasy_creature_prompt_generation_d3875dd7_1080p.mp4",
    "first": 141,
    "last": 148,
@@ -1821,13 +1823,14 @@
       1.0
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "move-left",
    "pose": "walkLeft",
    "kind": "walk",
-   "src": "build/video-cut/radiant-familiar/main",
+   "src": "build/video-cut/redo-sonnet/radiant-familiar__main",
    "video": "Attachments/Radiant Familiar/Fantasy_creature_prompt_generation_d3875dd7_1080p.mp4",
    "first": 141,
    "last": 148,
@@ -2421,13 +2424,14 @@
       1.0
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "hit",
    "pose": "hit",
    "kind": "stand",
-   "src": "build/video-cut/radiant-familiar/big",
+   "src": "build/video-cut/redo-sonnet/radiant-familiar__big",
    "video": "Attachments/Radiant Familiar/EmoteandFallBigCreature_moving_and_landing_462eae0d_1080p.mp4",
    "first": 122,
    "last": 132,
@@ -2805,13 +2809,14 @@
       0.846873
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "death",
    "pose": "death",
    "kind": "stand",
-   "src": "build/video-cut/radiant-familiar/big",
+   "src": "build/video-cut/redo-sonnet/radiant-familiar__big",
    "video": "Attachments/Radiant Familiar/EmoteandFallBigCreature_moving_and_landing_462eae0d_1080p.mp4",
    "first": 122,
    "last": 238,
@@ -3188,13 +3193,14 @@
       0.846873
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "emote",
    "pose": "emote",
    "kind": "stand",
-   "src": "build/video-cut/radiant-familiar/big",
+   "src": "build/video-cut/redo-sonnet/radiant-familiar__big",
    "video": "Attachments/Radiant Familiar/EmoteandFallBigCreature_moving_and_landing_462eae0d_1080p.mp4",
    "first": 0,
    "last": 62,
@@ -3571,7 +3577,8 @@
       0.846873
      ]
     ]
-   }
+   },
+   "version": "r01"
   }
  ]
 }
