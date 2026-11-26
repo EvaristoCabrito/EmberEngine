@@ -1,12 +1,12 @@
 {
-  "serial": 1,
-  "savedAt": 1795636543414,
+  "serial": 2,
+  "savedAt": 1795655649419,
   "draft": {
-    "id": "monster-testing-c",
+    "id": "monster-testing-b",
     "index": 0,
-    "title": "Monster Testing 3 · Bandidos e magos",
+    "title": "Monster Testing 2",
     "place": "",
-    "briefing": "Os bandidos, cultistas e magos que não estão em nenhum mapa de teste.",
+    "briefing": "Unidades novas (Alta, 64 e 36), cada uma só neste mapa da série: Omnieye, Sahagin, Mosquito Vampiro, Screeching Bat, Bruxa, Hipóstase, Birolho Legs; no seu grupo: Telesm.",
     "objective": "Ver cada unidade andar, atacar, levar dano e cair",
     "win": "rout",
     "hub": false,
@@ -7255,69 +7255,69 @@
         "x": 22,
         "y": 44,
         "level": 15
+      },
+      {
+        "name": "Telesm",
+        "classId": "telesm",
+        "x": 26,
+        "y": 44,
+        "level": 15,
+        "useClassSprite": true
       }
     ],
     "enemySpawns": [
       {
-        "name": "Feiticeiro",
-        "classId": "cultist",
+        "name": "Omnieye",
+        "classId": "omnieye",
         "x": 12,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Cultista Branco",
-        "classId": "cultistV2",
+        "name": "Sahagin",
+        "classId": "sahagin",
         "x": 16,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Assassino",
-        "classId": "assassin",
+        "name": "Mosquito Vampiro",
+        "classId": "vampireMosquito",
         "x": 20,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Ladino",
-        "classId": "rogue",
+        "name": "Screeching Bat",
+        "classId": "screechingBat",
         "x": 24,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Bruxo",
-        "classId": "warlock",
+        "name": "Bruxa",
+        "classId": "witch",
         "x": 12,
         "y": 31,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Arcanista",
-        "classId": "sorcerer",
+        "name": "Hipóstase",
+        "classId": "hypostasis",
         "x": 16,
         "y": 31,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Necromante",
-        "classId": "necromancer",
+        "name": "Birolho Legs",
+        "classId": "birolhoLegs",
         "x": 20,
-        "y": 31,
-        "level": 15,
-        "useClassSprite": true
-      },
-      {
-        "name": "Patrulheiro",
-        "classId": "ranger",
-        "x": 24,
         "y": 31,
         "level": 15,
         "useClassSprite": true

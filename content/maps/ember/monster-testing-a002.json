@@ -1,12 +1,12 @@
 {
-  "serial": 1,
-  "savedAt": 1795636543414,
+  "serial": 2,
+  "savedAt": 1795655649414,
   "draft": {
-    "id": "monster-testing-b",
+    "id": "monster-testing-a",
     "index": 0,
-    "title": "Monster Testing 2 · Soldados",
+    "title": "Monster Testing 1",
     "place": "",
-    "briefing": "Os soldados e combatentes de linha que não estão em nenhum mapa de teste.",
+    "briefing": "Unidades novas (Alta, 64 e 36), cada uma só neste mapa da série: Stag, Boar, Cervo Azul do Pântano, Horse, Nekomata, Rato Doente, Troll da caverna; no seu grupo: Cão Zumbi.",
     "objective": "Ver cada unidade andar, atacar, levar dano e cair",
     "win": "rout",
     "hub": false,
@@ -7255,69 +7255,69 @@
         "x": 22,
         "y": 44,
         "level": 15
+      },
+      {
+        "name": "Cão Zumbi",
+        "classId": "zombieDog",
+        "x": 26,
+        "y": 44,
+        "level": 15,
+        "useClassSprite": true
       }
     ],
     "enemySpawns": [
       {
-        "name": "Guerreiro",
-        "classId": "swordsman",
+        "name": "Stag",
+        "classId": "stag",
         "x": 12,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Arqueira",
-        "classId": "archer",
+        "name": "Boar",
+        "classId": "boar",
         "x": 16,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Soldado",
-        "classId": "soldier",
+        "name": "Cervo Azul do Pântano",
+        "classId": "swampBlueDeer",
         "x": 20,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Milícia",
-        "classId": "miliciaV2",
+        "name": "Horse",
+        "classId": "horse",
         "x": 24,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Besteiro",
-        "classId": "brigand",
+        "name": "Nekomata",
+        "classId": "nekomata",
         "x": 12,
         "y": 31,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Capitão",
-        "classId": "captain",
+        "name": "Rato Doente",
+        "classId": "sickRat",
         "x": 16,
         "y": 31,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Lanceiro",
-        "classId": "lancer",
+        "name": "Troll da caverna",
+        "classId": "troll",
         "x": 20,
-        "y": 31,
-        "level": 15,
-        "useClassSprite": true
-      },
-      {
-        "name": "Piqueiro",
-        "classId": "pikeman",
-        "x": 24,
         "y": 31,
         "level": 15,
         "useClassSprite": true

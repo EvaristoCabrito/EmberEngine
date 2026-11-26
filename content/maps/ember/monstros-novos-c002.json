@@ -1,13 +1,13 @@
 {
-  "serial": 1,
-  "savedAt": 1795639568130,
+  "serial": 2,
+  "savedAt": 1795615633647,
   "draft": {
-    "id": "monster-testing-d",
+    "id": "monstros-novos-c",
     "index": 0,
-    "title": "Monster Testing 4 · Monstros",
+    "title": "Monstros Novos 3",
     "place": "",
-    "briefing": "Os monstros de verdade em teste agora (o usuário, 2026-11-25: \"make monster testing 4 contain actual monsters for testing no junk units\"): os dois Birolhos, o Troll da caverna, o Big Blue Ox, o Cogumelo de Brasa, o Besouro das Profundezas, a Vanguarda de Brasa e o Cavalo.",
-    "objective": "Ver cada unidade andar, atacar, levar dano e cair",
+    "briefing": "Todos os monstros do jogo num campo vazio, para ver cada um andar, atacar, levar dano e cair.",
+    "objective": "Ver os monstros novos",
     "win": "rout",
     "hub": false,
     "autoTactics": true,
@@ -7255,68 +7255,84 @@
         "x": 22,
         "y": 44,
         "level": 15
+      },
+      {
+        "name": "Cão Zumbi",
+        "classId": "zombieDog",
+        "x": 26,
+        "y": 44,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Familiar Radiante",
+        "classId": "familiar4",
+        "x": 24,
+        "y": 44,
+        "level": 15,
+        "useClassSprite": true
       }
     ],
     "enemySpawns": [
       {
-        "name": "Birolho Legs",
-        "classId": "birolhoLegs",
+        "name": "DeepGround Beetle",
+        "classId": "deepgroundBeetle",
         "x": 12,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Birolho",
-        "classId": "birolhoLegs2",
+        "name": "Stag",
+        "classId": "stag",
         "x": 16,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Troll da caverna",
-        "classId": "troll",
+        "name": "Boar",
+        "classId": "boar",
         "x": 20,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Big Blue Ox",
-        "classId": "bigBlueCalf",
+        "name": "Omnieye",
+        "classId": "omnieye",
         "x": 24,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Cogumelo de Brasa",
-        "classId": "emberMushroom",
+        "name": "MushroomMan",
+        "classId": "mushroomMan",
         "x": 12,
         "y": 31,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Besouro das Profundezas",
-        "classId": "deepgroundBeetle",
+        "name": "Rastreador de Cinzas",
+        "classId": "ashesCrawler",
         "x": 16,
         "y": 31,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Vanguarda de Brasa",
-        "classId": "emberedVanguard",
+        "name": "Cultista Negro",
+        "classId": "blackCultist",
         "x": 20,
         "y": 31,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Horse",
-        "classId": "horse",
+        "name": "LancerZero",
+        "classId": "lancerZero",
         "x": 24,
         "y": 31,
         "level": 15,

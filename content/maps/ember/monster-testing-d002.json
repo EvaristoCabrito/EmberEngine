@@ -1,12 +1,12 @@
 {
-  "serial": 1,
-  "savedAt": 1795636543410,
+  "serial": 2,
+  "savedAt": 1795655649430,
   "draft": {
-    "id": "monster-testing-a",
+    "id": "monster-testing-d",
     "index": 0,
-    "title": "Monster Testing 1 · Feras",
+    "title": "Monster Testing 4",
     "place": "",
-    "briefing": "As feras que não estão em nenhum mapa de teste: cães, lobos, o cervo azul, o Horror e a Asherah; os três Familiares no seu grupo.",
+    "briefing": "Unidades novas (Alta, 64 e 36), cada uma só neste mapa da série: Vanguarda de Brasa, Embered Zombie, Bandit Horseman, Big Blue Ox, Rastreador de Cinzas, Rocco The Bird.",
     "objective": "Ver cada unidade andar, atacar, levar dano e cair",
     "win": "rout",
     "hub": false,
@@ -7255,73 +7255,52 @@
         "x": 22,
         "y": 44,
         "level": 15
-      },
-      {
-        "name": "Familiar",
-        "classId": "familiar",
-        "x": 26,
-        "y": 44,
-        "level": 15
-      },
-      {
-        "name": "Familiar Maior",
-        "classId": "familiar2",
-        "x": 28,
-        "y": 44,
-        "level": 15
-      },
-      {
-        "name": "Familiar Titã",
-        "classId": "familiar3",
-        "x": 30,
-        "y": 44,
-        "level": 15
       }
     ],
     "enemySpawns": [
       {
-        "name": "War Dog",
-        "classId": "wardog",
+        "name": "Vanguarda de Brasa",
+        "classId": "emberedVanguard",
         "x": 12,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Mordavian Wolf",
-        "classId": "mordavianWolf",
+        "name": "Embered Zombie",
+        "classId": "emberedZombie",
         "x": 16,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Mordavian Puppy",
-        "classId": "morvenianWolf",
+        "name": "Bandit Horseman",
+        "classId": "banditHorseman",
         "x": 20,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Cobalt Blue Deer",
-        "classId": "swampBlueCalf",
+        "name": "Big Blue Ox",
+        "classId": "bigBlueCalf",
         "x": 24,
         "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Horror",
-        "classId": "horror",
+        "name": "Rastreador de Cinzas",
+        "classId": "ashesCrawler",
         "x": 12,
         "y": 31,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Asherah",
-        "classId": "asherah",
+        "name": "Rocco The Bird",
+        "classId": "roccoTheBird",
         "x": 16,
         "y": 31,
         "level": 15,
