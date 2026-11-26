@@ -13,8 +13,9 @@
    "src": "build/video-cut/classic-boar/idle-cast",
    "video": "Attachments/Classic Animals/Creature_performing_movement_rou…_49af85e4 (1).mp4",
    "first": 0,
-   "last": 70,
+   "last": 149,
    "mode": "pingpong",
+   "maxLoop": "REGRA MÁXIMA (2026-11-26): the whole idle stretch of the video, measured on the video's contact sheet (max-loops-idle.py)",
    "scaleTo": 610
   },
   {
@@ -34,10 +35,8 @@
    "kind": "walk",
    "src": "build/video-cut/classic-boar/walk-fall",
    "video": "Attachments/Classic Animals/Creature_walking_and_falling_down_c6c5f507 (1).mp4",
-   "first": 4,
+   "first": 7,
    "last": 88,
-   "loopMin": 24,
-   "loopMax": 80,
    "mode": "loop",
    "colorMatch": {
     "reference": "C:\\EmberEngineB\\build/video-cut/classic-boar/idle-cast 96:118",
@@ -393,6 +392,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610
   },
   {
@@ -1134,8 +1134,6 @@
    "video": "Attachments/Monsters/UpDown/JavaliUpDown.mp4",
    "first": 0,
    "last": 119,
-   "loopMin": 24,
-   "loopMax": 110,
    "inPlace": true,
    "mode": "loop",
    "colorMatch": {
@@ -1524,6 +1522,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610
   },
   {
@@ -1534,8 +1533,6 @@
    "video": "Attachments/Monsters/UpDown/JavaliUpDown.mp4",
    "first": 120,
    "last": 239,
-   "loopMin": 24,
-   "loopMax": 110,
    "inPlace": true,
    "mode": "loop",
    "colorMatch": {
@@ -1924,6 +1921,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610
   }
  ],

@@ -12,9 +12,10 @@
    "kind": "stand",
    "src": "build/video-cut/classic-stag/idle-cast",
    "video": "Attachments/Classic Animals/Creature_performing_animation_ro…_fd278c24.mp4",
-   "first": 104,
-   "last": 150,
+   "first": 0,
+   "last": 149,
    "mode": "pingpong",
+   "maxLoop": "REGRA MÁXIMA (2026-11-26): the whole idle stretch of the video, measured on the video's contact sheet (max-loops-idle.py)",
    "scaleTo": 610
   },
   {
@@ -35,9 +36,7 @@
    "src": "build/video-cut/classic-stag/walk-fall",
    "video": "Attachments/Classic Animals/Quadruped_walking_and_collapsing_7db95ead.mp4",
    "first": 0,
-   "last": 90,
-   "loopMin": 24,
-   "loopMax": 86,
+   "last": 87,
    "mode": "loop",
    "colorMatch": {
     "reference": "C:\\EmberEngineB\\build/video-cut/classic-stag/idle-cast 104:150",
@@ -425,6 +424,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610
   },
   {
@@ -1230,8 +1230,6 @@
    "video": "Attachments/Monsters/UpDown/AlceUPDown.mp4",
    "first": 0,
    "last": 119,
-   "loopMin": 24,
-   "loopMax": 110,
    "inPlace": true,
    "mode": "loop",
    "colorMatch": {
@@ -1624,6 +1622,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610
   },
   {
@@ -1634,8 +1633,6 @@
    "video": "Attachments/Monsters/UpDown/AlceUPDown.mp4",
    "first": 120,
    "last": 239,
-   "loopMin": 24,
-   "loopMax": 110,
    "inPlace": true,
    "mode": "loop",
    "colorMatch": {
@@ -2028,6 +2025,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610
   }
  ],

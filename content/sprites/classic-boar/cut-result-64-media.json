@@ -3,30 +3,30 @@
   "base": {
    "video": "Attachments/Classic Animals/Creature_performing_movement_rou\u2026_49af85e4 (1).mp4",
    "first": 0,
-   "last": 70,
+   "last": 149,
    "bootRow": 652,
    "bootRows": [
-    652,
-    652
+    638,
+    659
    ],
-   "frameCountFrom": 71,
-   "figurePx": 529.0,
+   "frameCountFrom": 150,
+   "figurePx": 531.0,
    "frames": 64,
-   "frameMs": 46.22395833333333,
+   "frameMs": 97.65625,
    "nat": [
-    840,
-    567
+    986,
+    576
    ],
    "crop": [
     5,
     6,
-    829,
-    556
+    975,
+    560
    ],
    "box": {
-    "w": 2.69943,
-    "h": 1.82212,
-    "foot": 0.01928
+    "w": 3.15669,
+    "h": 1.84407,
+    "foot": 0.04802
    },
    "pattern": "content/sprites/classic-boar/base-media64-v01/base-{}.png"
   },
@@ -62,35 +62,36 @@
   },
   "move": {
    "video": "Attachments/Classic Animals/Creature_walking_and_falling_down_c6c5f507 (1).mp4",
-   "first": 4,
+   "first": 7,
    "last": 88,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/classic-boar/idle-cast 96:118",
-   "loopFirst": 16,
-   "loopLast": 54,
-   "seamSteps": 1.49,
-   "bootRow": 696,
+   "loopFirst": 7,
+   "loopLast": 88,
+   "seamSteps": NaN,
+   "bootRow": 695,
    "bodyDrift": [
-    21,
-    46
+    0,
+    64
    ],
-   "figurePx": 640.0,
-   "scaledTo": 610.1,
-   "frames": 39,
-   "frameMs": 41.666666666666664,
+   "frameCountFrom": 82,
+   "figurePx": 642.0,
+   "scaledTo": 610.2,
+   "frames": 64,
+   "frameMs": 53.385416666666664,
    "nat": [
-    1058,
-    654
+    1088,
+    653
    ],
    "crop": [
+    4,
     5,
-    6,
-    1048,
-    643
+    1077,
+    642
    ],
    "box": {
-    "w": 2.94844,
-    "h": 1.82257,
-    "foot": 0.02916
+    "w": 3.03193,
+    "h": 1.81972,
+    "foot": 0.02907
    },
    "pattern": "content/sprites/classic-boar/move-media64-v01/move-{}.png"
   },
@@ -162,31 +163,32 @@
    "first": 0,
    "last": 119,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/classic-boar/idle-cast 96:118",
-   "loopFirst": 29,
-   "loopLast": 56,
-   "seamSteps": 0.4,
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
    "bootRow": 661,
    "bodyDrift": [
     0,
     0
    ],
-   "figurePx": 497.5,
-   "frames": 28,
-   "frameMs": 41.666666666666664,
+   "frameCountFrom": 120,
+   "figurePx": 496.5,
+   "frames": 64,
+   "frameMs": 78.125,
    "nat": [
-    273,
-    556
+    274,
+    557
    ],
    "crop": [
-    4,
+    5,
     6,
     265,
-    546
+    547
    ],
    "box": {
-    "w": 0.93286,
-    "h": 1.8999,
-    "foot": 0.04442
+    "w": 0.93817,
+    "h": 1.90715,
+    "foot": 0.04794
    },
    "pattern": "content/sprites/classic-boar/move-up-media64-v01/move-up-{}.png"
   },
@@ -195,31 +197,32 @@
    "first": 120,
    "last": 239,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/classic-boar/idle-cast 96:118",
-   "loopFirst": 202,
-   "loopLast": 229,
-   "seamSteps": 0.36,
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 663,
    "bodyDrift": [
     0,
     0
    ],
-   "figurePx": 522.5,
-   "frames": 28,
-   "frameMs": 41.666666666666664,
+   "frameCountFrom": 120,
+   "figurePx": 523.0,
+   "frames": 64,
+   "frameMs": 78.125,
    "nat": [
-    305,
-    580
+    306,
+    581
    ],
    "crop": [
-    4,
-    8,
+    5,
+    6,
     297,
-    568
+    571
    ],
    "box": {
-    "w": 0.99234,
-    "h": 1.88708,
-    "foot": 0.03904
+    "w": 0.99465,
+    "h": 1.88853,
+    "foot": 0.03901
    },
    "pattern": "content/sprites/classic-boar/move-down-media64-v01/move-down-{}.png"
   }

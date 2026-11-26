@@ -5,31 +5,31 @@
    "first": 0,
    "last": 119,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/classic-stag/idle-cast 104:150",
-   "loopFirst": 2,
-   "loopLast": 42,
-   "seamSteps": 1.26,
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
    "bootRow": 680,
    "bodyDrift": [
     0,
     0
    ],
-   "figurePx": 574.0,
-   "frames": 41,
+   "figurePx": 570.0,
+   "frames": 120,
    "frameMs": 41.666666666666664,
    "nat": [
-    414,
+    418,
     671
    ],
    "crop": [
-    4,
+    5,
     6,
-    406,
+    409,
     661
    ],
    "box": {
-    "w": 1.87526,
-    "h": 3.03937,
-    "foot": 0.07247
+    "w": 1.90667,
+    "h": 3.0607,
+    "foot": 0.07298
    },
    "pattern": "content/sprites/classic-stag/move-up-cine-v01/move-up-{}.png"
   },
@@ -38,33 +38,95 @@
    "first": 120,
    "last": 239,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/classic-stag/idle-cast 104:150",
-   "loopFirst": 162,
-   "loopLast": 206,
-   "seamSteps": 1.01,
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 680,
    "bodyDrift": [
     0,
     0
    ],
-   "figurePx": 588.0,
-   "frames": 45,
+   "figurePx": 587.0,
+   "frames": 120,
    "frameMs": 41.666666666666664,
    "nat": [
-    440,
-    687
+    442,
+    689
    ],
    "crop": [
+    4,
     5,
-    5,
-    431,
-    677
+    433,
+    679
    ],
    "box": {
-    "w": 1.94558,
-    "h": 3.03776,
-    "foot": 0.08401
+    "w": 1.95775,
+    "h": 3.05179,
+    "foot": 0.08416
    },
    "pattern": "content/sprites/classic-stag/move-down-cine-v01/move-down-{}.png"
+  },
+  "move": {
+   "video": "Attachments/Classic Animals/Quadruped_walking_and_collapsing_7db95ead.mp4",
+   "first": 0,
+   "last": 87,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/classic-stag/idle-cast 104:150",
+   "loopFirst": 0,
+   "loopLast": 87,
+   "seamSteps": NaN,
+   "bootRow": 674,
+   "bodyDrift": [
+    -14,
+    73
+   ],
+   "figurePx": 575.0,
+   "frames": 88,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    763,
+    686
+   ],
+   "crop": [
+    4,
+    0,
+    754,
+    682
+   ],
+   "box": {
+    "w": 3.45009,
+    "h": 3.10191,
+    "foot": 0.04974
+   },
+   "pattern": "content/sprites/classic-stag/move-cine-v01/move-{}.png"
+  },
+  "base": {
+   "video": "Attachments/Classic Animals/Creature_performing_animation_ro\u2026_fd278c24.mp4",
+   "first": 0,
+   "last": 149,
+   "bootRow": 685,
+   "bootRows": [
+    675,
+    687
+   ],
+   "figurePx": 555.5,
+   "frames": 150,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    698,
+    690
+   ],
+   "crop": [
+    6,
+    4,
+    687,
+    681
+   ],
+   "box": {
+    "w": 3.26697,
+    "h": 3.22952,
+    "foot": 0.0468
+   },
+   "pattern": "content/sprites/classic-stag/base-cine-v01/base-{}.png"
   }
  }
 }

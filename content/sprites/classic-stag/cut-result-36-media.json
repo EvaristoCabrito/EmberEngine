@@ -2,31 +2,31 @@
  "clips": {
   "base": {
    "video": "Attachments/Classic Animals/Creature_performing_animation_ro\u2026_fd278c24.mp4",
-   "first": 104,
-   "last": 150,
+   "first": 0,
+   "last": 149,
    "bootRow": 685,
    "bootRows": [
-    676,
+    675,
     687
    ],
-   "frameCountFrom": 47,
-   "figurePx": 602.0,
+   "frameCountFrom": 150,
+   "figurePx": 555.5,
    "frames": 36,
-   "frameMs": 54.398148148148145,
+   "frameMs": 173.61111111111111,
    "nat": [
-    679,
-    689
+    698,
+    690
    ],
    "crop": [
+    6,
     5,
-    5,
-    669,
-    680
+    687,
+    679
    ],
    "box": {
-    "w": 2.93256,
-    "h": 2.97575,
-    "foot": 0.03887
+    "w": 3.26697,
+    "h": 3.22952,
+    "foot": 0.0468
    },
    "pattern": "content/sprites/classic-stag/base-media36-v01/base-{}.png"
   },
@@ -63,34 +63,34 @@
   "move": {
    "video": "Attachments/Classic Animals/Quadruped_walking_and_collapsing_7db95ead.mp4",
    "first": 0,
-   "last": 90,
+   "last": 87,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/classic-stag/idle-cast 104:150",
-   "loopFirst": 20,
-   "loopLast": 58,
-   "seamSteps": 1.87,
+   "loopFirst": 0,
+   "loopLast": 87,
+   "seamSteps": NaN,
    "bootRow": 674,
    "bodyDrift": [
-    36,
-    69
+    -14,
+    73
    ],
-   "frameCountFrom": 39,
-   "figurePx": 562.0,
+   "frameCountFrom": 88,
+   "figurePx": 575.0,
    "frames": 36,
-   "frameMs": 45.138888888888886,
+   "frameMs": 101.85185185185185,
    "nat": [
-    752,
-    664
+    763,
+    686
    ],
    "crop": [
     5,
-    5,
-    742,
-    655
+    0,
+    753,
+    682
    ],
    "box": {
-    "w": 3.479,
-    "h": 3.07189,
-    "foot": 0.05089
+    "w": 3.45009,
+    "h": 3.10191,
+    "foot": 0.04974
    },
    "pattern": "content/sprites/classic-stag/move-media36-v01/move-{}.png"
   },
@@ -161,32 +161,32 @@
    "first": 0,
    "last": 119,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/classic-stag/idle-cast 104:150",
-   "loopFirst": 2,
-   "loopLast": 42,
-   "seamSteps": 1.26,
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
    "bootRow": 680,
    "bodyDrift": [
     0,
     0
    ],
-   "frameCountFrom": 41,
-   "figurePx": 574.0,
+   "frameCountFrom": 120,
+   "figurePx": 570.0,
    "frames": 36,
-   "frameMs": 47.4537037037037,
+   "frameMs": 138.88888888888889,
    "nat": [
-    414,
+    418,
     671
    ],
    "crop": [
-    4,
+    5,
     6,
-    405,
-    661
+    408,
+    659
    ],
    "box": {
-    "w": 1.87526,
-    "h": 3.03937,
-    "foot": 0.07247
+    "w": 1.90667,
+    "h": 3.0607,
+    "foot": 0.07298
    },
    "pattern": "content/sprites/classic-stag/move-up-media36-v01/move-up-{}.png"
   },
@@ -195,32 +195,32 @@
    "first": 120,
    "last": 239,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/classic-stag/idle-cast 104:150",
-   "loopFirst": 162,
-   "loopLast": 206,
-   "seamSteps": 1.01,
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 680,
    "bodyDrift": [
     0,
     0
    ],
-   "frameCountFrom": 45,
-   "figurePx": 588.0,
+   "frameCountFrom": 120,
+   "figurePx": 587.0,
    "frames": 36,
-   "frameMs": 52.083333333333336,
+   "frameMs": 138.88888888888889,
    "nat": [
-    440,
-    687
+    442,
+    689
    ],
    "crop": [
-    5,
-    5,
-    431,
+    4,
+    7,
+    433,
     677
    ],
    "box": {
-    "w": 1.94558,
-    "h": 3.03776,
-    "foot": 0.08401
+    "w": 1.95775,
+    "h": 3.05179,
+    "foot": 0.08416
    },
    "pattern": "content/sprites/classic-stag/move-down-media36-v01/move-down-{}.png"
   }
