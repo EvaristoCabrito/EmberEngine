@@ -13,9 +13,8 @@
    "video": "Attachments/Monsters/Slime_creature_pulsing_and_casting_20261021211244.mp4",
    "first": 0,
    "last": 86,
-   "loopMin": 40,
-   "loopMax": 86,
-   "mode": "loop"
+   "mode": "loop",
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "cast",
@@ -35,12 +34,11 @@
    "kind": "walk",
    "src": "build/video-cut/corrosive-slime/moveatk",
    "video": "Attachments/Monsters/Slime_creature_moving_and_attacking_20261021215513.mp4",
-   "first": 24,
+   "first": 18,
    "last": 128,
-   "loopMin": 30,
-   "loopMax": 100,
    "mode": "loop",
-   "bodyAt": -0.066
+   "bodyAt": -0.066,
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "atk",

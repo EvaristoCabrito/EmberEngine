@@ -1,0 +1,229 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Monsters/EmbredVanguard/EmberVanguardIdleATT.mp4",
+   "first": 0,
+   "last": 36,
+   "bootRow": 693,
+   "bootRows": [
+    693,
+    693
+   ],
+   "figurePx": 651.0,
+   "scaledTo": 610.1,
+   "frames": 37,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    485,
+    627
+   ],
+   "crop": [
+    4,
+    5,
+    477,
+    618
+   ],
+   "box": {
+    "w": 2.22796,
+    "h": 2.88027,
+    "foot": 0.04721
+   },
+   "pattern": "content/sprites/embered-vanguard/base-cine-r01/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Monsters/EmbredVanguard/EmberVanguardIdleATT.mp4",
+   "first": 40,
+   "last": 78,
+   "bootRow": 693,
+   "bootRows": [
+    693,
+    693
+   ],
+   "figurePx": 651.0,
+   "scaledTo": 609.6,
+   "frames": 39,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    608,
+    618
+   ],
+   "crop": [
+    5,
+    4,
+    598,
+    610
+   ],
+   "box": {
+    "w": 2.7914,
+    "h": 2.83731,
+    "foot": 0.02135
+   },
+   "pattern": "content/sprites/embered-vanguard/atk-cine-r01/atk-{}.png",
+   "impact": 0.4615
+  },
+  "move": {
+   "video": "Attachments/Monsters/EmbredVanguard/EmberedVanguardWalk.mp4",
+   "first": 0,
+   "last": 71,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/embered-vanguard/ima 0:36",
+   "loopFirst": 5,
+   "loopLast": 67,
+   "seamSteps": 1.66,
+   "bootRow": 1225,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 1178.0,
+   "scaledTo": 609.8,
+   "frames": 63,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    334,
+    629
+   ],
+   "crop": [
+    2,
+    3,
+    332,
+    623
+   ],
+   "box": {
+    "w": 1.53311,
+    "h": 2.8872,
+    "foot": 0.02266
+   },
+   "pattern": "content/sprites/embered-vanguard/move-cine-r01/move-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/Monsters/EmbredVanguard/EmberVanguardHitReactFall.mp4",
+   "first": 106,
+   "last": 136,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/embered-vanguard/ima 0:36",
+   "bootRow": 698,
+   "bootRows": [
+    698,
+    698
+   ],
+   "figurePx": 657.0,
+   "scaledTo": 610.4,
+   "frames": 31,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    605,
+    629
+   ],
+   "crop": [
+    5,
+    5,
+    595,
+    620
+   ],
+   "box": {
+    "w": 2.77869,
+    "h": 2.88892,
+    "foot": 0.02544
+   },
+   "pattern": "content/sprites/embered-vanguard/hit-cine-r01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Monsters/EmbredVanguard/EmberVanguardHitReactFall.mp4",
+   "first": 148,
+   "last": 214,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/embered-vanguard/ima 0:36",
+   "bootRow": 697,
+   "bootRows": [
+    697,
+    697
+   ],
+   "figurePx": 657.0,
+   "scaledTo": 609.8,
+   "frames": 67,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    690,
+    633
+   ],
+   "crop": [
+    4,
+    5,
+    681,
+    628
+   ],
+   "box": {
+    "w": 3.16651,
+    "h": 2.90493,
+    "foot": 0.09354
+   },
+   "pattern": "content/sprites/embered-vanguard/death-cine-r01/death-{}.png"
+  },
+  "move-up": {
+   "video": "Attachments/Monsters/EmbredVanguard/Embered Vanguard Commander_walking_in_place_09bf3edb.mp4",
+   "first": 0,
+   "last": 119,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/embered-vanguard/ima 0:36",
+   "loopFirst": 21,
+   "loopLast": 57,
+   "seamSteps": 0.9,
+   "bootRow": 1187,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 1079.5,
+   "scaledTo": 610.2,
+   "frames": 37,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    280,
+    628
+   ],
+   "crop": [
+    3,
+    3,
+    274,
+    622
+   ],
+   "box": {
+    "w": 1.28652,
+    "h": 2.88548,
+    "foot": 0.03276
+   },
+   "pattern": "content/sprites/embered-vanguard/move-up-cine-r01/move-up-{}.png"
+  },
+  "move-down": {
+   "video": "Attachments/Monsters/EmbredVanguard/Embered Vanguard Commander_walking_in_place_09bf3edb.mp4",
+   "first": 120,
+   "last": 239,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/embered-vanguard/ima 0:36",
+   "loopFirst": 142,
+   "loopLast": 186,
+   "seamSteps": 0.91,
+   "bootRow": 1206,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 1107.5,
+   "scaledTo": 609.9,
+   "frames": 45,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    295,
+    635
+   ],
+   "crop": [
+    2,
+    4,
+    291,
+    628
+   ],
+   "box": {
+    "w": 1.35512,
+    "h": 2.91696,
+    "foot": 0.0521
+   },
+   "pattern": "content/sprites/embered-vanguard/move-down-cine-r01/move-down-{}.png"
+  }
+ }
+}

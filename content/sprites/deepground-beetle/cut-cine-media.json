@@ -50,10 +50,8 @@
    "kind": "walk",
    "src": "build/video-cut/deepground-beetle-1080/walk-fall",
    "video": "Attachments/Monsters/Beetle/DeepGroundBeetleQuadruped_walking_and_falling_an…_6124444d_1080p.mp4",
-   "first": 2,
-   "last": 96,
-   "loopMin": 24,
-   "loopMax": 90,
+   "first": 0,
+   "last": 95,
    "inPlace": true,
    "mode": "loop",
    "figurePx": 789.0,
@@ -415,6 +413,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610
   },
   {
@@ -1166,8 +1165,6 @@
    "video": "Attachments/Monsters/UpDown/DeepBeetleUpDown.mp4",
    "first": 0,
    "last": 119,
-   "loopMin": 24,
-   "loopMax": 110,
    "inPlace": true,
    "mode": "loop",
    "figurePx": 526.0,
@@ -1553,6 +1550,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610
   },
   {
@@ -1563,8 +1561,6 @@
    "video": "Attachments/Monsters/UpDown/DeepBeetleUpDown.mp4",
    "first": 120,
    "last": 239,
-   "loopMin": 24,
-   "loopMax": 110,
    "inPlace": true,
    "mode": "loop",
    "figurePx": 539.5,
@@ -1950,6 +1946,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610
   }
  ],

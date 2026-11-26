@@ -93,35 +93,36 @@
   },
   "move": {
    "video": "Attachments/Monsters/Beetle/DeepGroundBeetleQuadruped_walking_and_falling_an\u2026_6124444d_1080p.mp4",
-   "first": 2,
-   "last": 96,
+   "first": 0,
+   "last": 95,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/deepground-beetle-1080/combat 108:150",
-   "loopFirst": 57,
-   "loopLast": 92,
-   "seamSteps": 2.17,
+   "loopFirst": 0,
+   "loopLast": 95,
+   "seamSteps": NaN,
    "bootRow": 974,
    "bodyDrift": [
     0,
     0
    ],
+   "frameCountFrom": 96,
    "figurePx": 789.0,
-   "scaledTo": 609.6,
-   "frames": 36,
-   "frameMs": 41.666666666666664,
+   "scaledTo": 610.2,
+   "frames": 64,
+   "frameMs": 62.5,
    "nat": [
-    1032,
-    632
+    1055,
+    638
    ],
    "crop": [
     5,
     4,
-    1022,
-    624
+    1045,
+    630
    ],
    "box": {
-    "w": 2.53802,
-    "h": 1.55429,
-    "foot": 0.04912
+    "w": 2.59316,
+    "h": 1.56818,
+    "foot": 0.04914
    },
    "pattern": "content/sprites/deepground-beetle/move-media64-v02/move-{}.png"
   },
@@ -193,31 +194,32 @@
    "first": 0,
    "last": 119,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/deepground-beetle-1080/combat 108:150",
-   "loopFirst": 50,
-   "loopLast": 89,
-   "seamSteps": 3.22,
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
    "bootRow": 635,
    "bodyDrift": [
     0,
     0
    ],
+   "frameCountFrom": 120,
    "figurePx": 526.0,
-   "frames": 40,
-   "frameMs": 41.666666666666664,
+   "frames": 64,
+   "frameMs": 78.125,
    "nat": [
     736,
-    546
+    568
    ],
    "crop": [
     5,
     5,
     727,
-    536
+    558
    ],
    "box": {
     "w": 2.09886,
-    "h": 1.55703,
-    "foot": 0.07414
+    "h": 1.61977,
+    "foot": 0.077
    },
    "pattern": "content/sprites/deepground-beetle/move-up-media64-v02/move-up-{}.png"
   },
@@ -226,30 +228,31 @@
    "first": 120,
    "last": 239,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/deepground-beetle-1080/combat 108:150",
-   "loopFirst": 150,
-   "loopLast": 187,
-   "seamSteps": 2.36,
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 641,
    "bodyDrift": [
     0,
     0
    ],
+   "frameCountFrom": 120,
    "figurePx": 539.5,
-   "frames": 38,
-   "frameMs": 41.666666666666664,
+   "frames": 64,
+   "frameMs": 78.125,
    "nat": [
-    746,
-    564
+    759,
+    570
    ],
    "crop": [
-    5,
+    6,
     4,
-    736,
-    555
+    747,
+    561
    ],
    "box": {
-    "w": 2.07414,
-    "h": 1.56812,
+    "w": 2.11029,
+    "h": 1.5848,
     "foot": 0.08897
    },
    "pattern": "content/sprites/deepground-beetle/move-down-media64-v02/move-down-{}.png"

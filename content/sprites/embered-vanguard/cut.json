@@ -11,37 +11,37 @@
    "clip": "base",
    "pose": "idle",
    "kind": "stand",
-   "src": "build/video-cut/embered-vanguard/ima",
+   "src": "build/video-cut/redo-sonnet/embered-vanguard__ima",
    "video": "Attachments/Monsters/EmbredVanguard/EmberVanguardIdleATT.mp4",
    "first": 0,
    "last": 36,
    "mode": "pingpong",
    "figurePx": 651.0,
-   "why": "standing, the sword's point on the floor, breathing; back and forth"
+   "why": "standing, the sword's point on the floor, breathing; back and forth",
+   "version": "r01"
   },
   {
    "clip": "atk",
    "pose": "attack",
    "kind": "stand",
-   "src": "build/video-cut/embered-vanguard/ima",
+   "src": "build/video-cut/redo-sonnet/embered-vanguard__ima",
    "video": "Attachments/Monsters/EmbredVanguard/EmberVanguardIdleATT.mp4",
    "first": 40,
    "last": 78,
    "impactFrame": 58,
    "mode": "once",
    "figurePx": 651.0,
-   "why": "the sword comes up and sweeps out to the right (full out ~58), back to the stance by ~76"
+   "why": "the sword comes up and sweeps out to the right (full out ~58), back to the stance by ~76",
+   "version": "r01"
   },
   {
    "clip": "move",
    "pose": "walk",
    "kind": "walk",
-   "src": "build/video-cut/embered-vanguard/walk",
+   "src": "build/video-cut/redo-sonnet/embered-vanguard__walk",
    "video": "Attachments/Monsters/EmbredVanguard/EmberedVanguardWalk.mp4",
-   "first": 0,
-   "last": 71,
-   "loopMin": 36,
-   "loopMax": 71,
+   "first": 3,
+   "last": 143,
    "inPlace": true,
    "mode": "loop",
    "figurePx": 1178.0,
@@ -411,13 +411,15 @@
       0.791298
      ]
     ]
-   }
+   },
+   "version": "r01",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "hit",
    "pose": "hit",
    "kind": "stand",
-   "src": "build/video-cut/embered-vanguard/hf",
+   "src": "build/video-cut/redo-sonnet/embered-vanguard__hf",
    "video": "Attachments/Monsters/EmbredVanguard/EmberVanguardHitReactFall.mp4",
    "first": 106,
    "last": 136,
@@ -797,13 +799,14 @@
       0.791298
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "death",
    "pose": "death",
    "kind": "stand",
-   "src": "build/video-cut/embered-vanguard/hf",
+   "src": "build/video-cut/redo-sonnet/embered-vanguard__hf",
    "video": "Attachments/Monsters/EmbredVanguard/EmberVanguardHitReactFall.mp4",
    "first": 148,
    "last": 214,
@@ -1184,18 +1187,17 @@
       0.791298
      ]
     ]
-   }
+   },
+   "version": "r01"
   },
   {
    "clip": "move-up",
    "pose": "walkUp",
    "kind": "walk",
-   "src": "build/video-cut/embered-vanguard/ud",
+   "src": "build/video-cut/redo-sonnet/embered-vanguard__ud",
    "video": "Attachments/Monsters/EmbredVanguard/Embered Vanguard Commander_walking_in_place_09bf3edb.mp4",
    "first": 0,
    "last": 119,
-   "loopMin": 24,
-   "loopMax": 112,
    "inPlace": true,
    "mode": "loop",
    "why": "the user, 2026-11-20: walking away, seen from behind, in place; the loop at its best seam",
@@ -1585,18 +1587,18 @@
       0.791298
      ]
     ]
-   }
+   },
+   "version": "r01",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-down",
    "pose": "walkDown",
    "kind": "walk",
-   "src": "build/video-cut/embered-vanguard/ud",
+   "src": "build/video-cut/redo-sonnet/embered-vanguard__ud",
    "video": "Attachments/Monsters/EmbredVanguard/Embered Vanguard Commander_walking_in_place_09bf3edb.mp4",
    "first": 120,
    "last": 239,
-   "loopMin": 24,
-   "loopMax": 112,
    "inPlace": true,
    "mode": "loop",
    "why": "the same video, walking toward the camera, facing us (the view cuts at 119 / 120)",
@@ -1986,7 +1988,9 @@
       0.791298
      ]
     ]
-   }
+   },
+   "version": "r01",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   }
  ],
  "scaleNote2": "measured 2026-11-20: the new up / down video's median standing height 1079.5 px walking away (back view, frames 0-119), 1107.5 px toward the camera (front view, 120-239); one figurePx each"

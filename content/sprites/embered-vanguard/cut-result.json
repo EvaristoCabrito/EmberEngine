@@ -13,21 +13,21 @@
    "frames": 37,
    "frameMs": 41.666666666666664,
    "nat": [
-    520,
-    670
+    518,
+    669
    ],
    "crop": [
-    6,
+    4,
     5,
-    509,
-    660
+    510,
+    659
    ],
    "box": {
-    "w": 2.23656,
-    "h": 2.88172,
-    "foot": 0.05161
+    "w": 2.22796,
+    "h": 2.87742,
+    "foot": 0.04731
    },
-   "pattern": "content/sprites/embered-vanguard/base-v01/base-{}.png"
+   "pattern": "content/sprites/embered-vanguard/base-r01/base-{}.png"
   },
   "atk": {
    "video": "Attachments/Monsters/EmbredVanguard/EmberVanguardIdleATT.mp4",
@@ -43,20 +43,20 @@
    "frameMs": 41.666666666666664,
    "nat": [
     649,
-    661
+    660
    ],
    "crop": [
     5,
-    4,
+    5,
     639,
-    652
+    651
    ],
    "box": {
     "w": 2.7914,
-    "h": 2.84301,
-    "foot": 0.02581
+    "h": 2.83871,
+    "foot": 0.02151
    },
-   "pattern": "content/sprites/embered-vanguard/atk-v01/atk-{}.png",
+   "pattern": "content/sprites/embered-vanguard/atk-r01/atk-{}.png",
    "impact": 0.4615
   },
   "move": {
@@ -77,20 +77,20 @@
    "frameMs": 41.666666666666664,
    "nat": [
     645,
-    1214
+    1215
    ],
    "crop": [
     4,
     6,
     641,
-    1203
+    1204
    ],
    "box": {
     "w": 1.53311,
-    "h": 2.88557,
-    "foot": 0.02139
+    "h": 2.88795,
+    "foot": 0.02377
    },
-   "pattern": "content/sprites/embered-vanguard/move-v01/move-{}.png"
+   "pattern": "content/sprites/embered-vanguard/move-r01/move-{}.png"
   },
   "hit": {
    "video": "Attachments/Monsters/EmbredVanguard/EmberVanguardHitReactFall.mp4",
@@ -106,21 +106,21 @@
    "frames": 31,
    "frameMs": 41.666666666666664,
    "nat": [
-    651,
+    652,
     677
    ],
    "crop": [
-    4,
+    5,
     5,
     642,
     668
    ],
    "box": {
-    "w": 2.77443,
+    "w": 2.77869,
     "h": 2.88524,
     "foot": 0.02557
    },
-   "pattern": "content/sprites/embered-vanguard/hit-v01/hit-{}.png"
+   "pattern": "content/sprites/embered-vanguard/hit-r01/hit-{}.png"
   },
   "death": {
    "video": "Attachments/Monsters/EmbredVanguard/EmberVanguardHitReactFall.mp4",
@@ -136,7 +136,7 @@
    "frames": 67,
    "frameMs": 41.666666666666664,
    "nat": [
-    742,
+    743,
     682
    ],
    "crop": [
@@ -146,11 +146,11 @@
     677
    ],
    "box": {
-    "w": 3.16225,
+    "w": 3.16651,
     "h": 2.90654,
     "foot": 0.09376
    },
-   "pattern": "content/sprites/embered-vanguard/death-v01/death-{}.png"
+   "pattern": "content/sprites/embered-vanguard/death-r01/death-{}.png"
   },
   "move-up": {
    "video": "Attachments/Monsters/EmbredVanguard/Embered Vanguard Commander_walking_in_place_09bf3edb.mp4",
@@ -159,7 +159,7 @@
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/embered-vanguard/ima 0:36",
    "loopFirst": 21,
    "loopLast": 57,
-   "seamSteps": 0.91,
+   "seamSteps": 0.9,
    "bootRow": 1187,
    "bodyDrift": [
     0,
@@ -169,21 +169,21 @@
    "frames": 37,
    "frameMs": 41.666666666666664,
    "nat": [
-    495,
-    1112
+    496,
+    1111
    ],
    "crop": [
     5,
-    7,
+    6,
     486,
-    1100
+    1099
    ],
    "box": {
-    "w": 1.28393,
-    "h": 2.8843,
+    "w": 1.28652,
+    "h": 2.8817,
     "foot": 0.03372
    },
-   "pattern": "content/sprites/embered-vanguard/move-up-v01/move-up-{}.png"
+   "pattern": "content/sprites/embered-vanguard/move-up-r01/move-up-{}.png"
   },
   "move-down": {
    "video": "Attachments/Monsters/EmbredVanguard/Embered Vanguard Commander_walking_in_place_09bf3edb.mp4",
@@ -193,7 +193,7 @@
    "loopFirst": 142,
    "loopLast": 186,
    "seamSteps": 0.91,
-   "bootRow": 1207,
+   "bootRow": 1206,
    "bodyDrift": [
     0,
     0
@@ -203,20 +203,20 @@
    "frameMs": 41.666666666666664,
    "nat": [
     536,
-    1144
+    1153
    ],
    "crop": [
     4,
     8,
     528,
-    1129
+    1140
    ],
    "box": {
     "w": 1.35512,
-    "h": 2.89228,
-    "foot": 0.03287
+    "h": 2.91503,
+    "foot": 0.05309
    },
-   "pattern": "content/sprites/embered-vanguard/move-down-v01/move-down-{}.png"
+   "pattern": "content/sprites/embered-vanguard/move-down-r01/move-down-{}.png"
   }
  }
 }

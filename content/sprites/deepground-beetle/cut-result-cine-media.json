@@ -5,31 +5,31 @@
    "first": 0,
    "last": 119,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/deepground-beetle-1080/combat 108:150",
-   "loopFirst": 50,
-   "loopLast": 89,
-   "seamSteps": 3.22,
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
    "bootRow": 635,
    "bodyDrift": [
     0,
     0
    ],
    "figurePx": 526.0,
-   "frames": 40,
+   "frames": 120,
    "frameMs": 41.666666666666664,
    "nat": [
     736,
-    546
+    568
    ],
    "crop": [
     5,
     5,
     727,
-    536
+    558
    ],
    "box": {
     "w": 2.09886,
-    "h": 1.55703,
-    "foot": 0.07414
+    "h": 1.61977,
+    "foot": 0.077
    },
    "pattern": "content/sprites/deepground-beetle/move-up-cine-v02/move-up-{}.png"
   },
@@ -38,33 +38,67 @@
    "first": 120,
    "last": 239,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/deepground-beetle-1080/combat 108:150",
-   "loopFirst": 150,
-   "loopLast": 187,
-   "seamSteps": 2.36,
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 641,
    "bodyDrift": [
     0,
     0
    ],
    "figurePx": 539.5,
-   "frames": 38,
+   "frames": 120,
    "frameMs": 41.666666666666664,
    "nat": [
-    746,
-    564
+    759,
+    570
+   ],
+   "crop": [
+    6,
+    4,
+    747,
+    561
+   ],
+   "box": {
+    "w": 2.11029,
+    "h": 1.5848,
+    "foot": 0.08897
+   },
+   "pattern": "content/sprites/deepground-beetle/move-down-cine-v02/move-down-{}.png"
+  },
+  "move": {
+   "video": "Attachments/Monsters/Beetle/DeepGroundBeetleQuadruped_walking_and_falling_an\u2026_6124444d_1080p.mp4",
+   "first": 0,
+   "last": 95,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/deepground-beetle-1080/combat 108:150",
+   "loopFirst": 0,
+   "loopLast": 95,
+   "seamSteps": NaN,
+   "bootRow": 974,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 789.0,
+   "scaledTo": 610.2,
+   "frames": 96,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1055,
+    638
    ],
    "crop": [
     5,
     4,
-    736,
-    555
+    1045,
+    630
    ],
    "box": {
-    "w": 2.07414,
-    "h": 1.56812,
-    "foot": 0.08897
+    "w": 2.59316,
+    "h": 1.56818,
+    "foot": 0.04914
    },
-   "pattern": "content/sprites/deepground-beetle/move-down-cine-v02/move-down-{}.png"
+   "pattern": "content/sprites/deepground-beetle/move-cine-v02/move-{}.png"
   }
  }
 }

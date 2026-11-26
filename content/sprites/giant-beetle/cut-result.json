@@ -9,26 +9,23 @@
     613,
     620
    ],
-   "loopFirst": 45,
-   "loopLast": 97,
-   "seamSteps": 5.44,
    "figurePx": 448.0,
-   "frames": 53,
+   "frames": 144,
    "frameMs": 41.666666666666664,
    "nat": [
-    882,
-    564
+    890,
+    566
    ],
    "crop": [
-    4,
     5,
-    874,
-    554
+    5,
+    880,
+    557
    ],
    "box": {
-    "w": 2.60899,
-    "h": 1.66833,
-    "foot": 0.05029
+    "w": 2.63265,
+    "h": 1.67425,
+    "foot": 0.0562
    },
    "pattern": "content/sprites/giant-beetle/base-v01/base-{}.png"
   },
@@ -66,30 +63,30 @@
    "video": "Attachments/GiantBeetle/GiantBeetleWalk.mp4",
    "first": 0,
    "last": 143,
-   "loopFirst": 80,
-   "loopLast": 119,
-   "seamSteps": 1.8,
+   "loopFirst": 0,
+   "loopLast": 143,
+   "seamSteps": NaN,
    "bootRow": 622,
    "bodyDrift": [
     -73,
     42
    ],
    "figurePx": 448.0,
-   "frames": 40,
+   "frames": 144,
    "frameMs": 41.666666666666664,
    "nat": [
-    1034,
-    507
+    1050,
+    512
    ],
    "crop": [
-    6,
     5,
-    1023,
-    496
+    4,
+    1040,
+    502
    ],
    "box": {
-    "w": 3.05861,
-    "h": 1.49972,
+    "w": 3.10594,
+    "h": 1.51451,
     "foot": 0.08874
    },
    "pattern": "content/sprites/giant-beetle/move-v01/move-{}.png"

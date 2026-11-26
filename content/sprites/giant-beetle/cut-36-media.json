@@ -15,11 +15,10 @@
    "video": "Attachments/GiantBeetle/GiantBeetleIdle.mp4",
    "first": 0,
    "last": 143,
-   "loopMin": 40,
-   "loopMax": 144,
    "mode": "loop",
    "mirror": true,
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "atk",
@@ -42,11 +41,10 @@
    "video": "Attachments/GiantBeetle/GiantBeetleWalk.mp4",
    "first": 0,
    "last": 143,
-   "loopMin": 40,
-   "loopMax": 140,
    "mode": "loop",
    "mirror": true,
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "death",

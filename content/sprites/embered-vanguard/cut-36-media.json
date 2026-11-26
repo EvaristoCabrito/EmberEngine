@@ -11,37 +11,37 @@
    "clip": "base",
    "pose": "idle",
    "kind": "stand",
-   "src": "build/video-cut/embered-vanguard/ima",
+   "src": "build/video-cut/redo-sonnet/embered-vanguard__ima",
    "video": "Attachments/Monsters/EmbredVanguard/EmberVanguardIdleATT.mp4",
    "first": 0,
    "last": 36,
    "mode": "pingpong",
    "figurePx": 651.0,
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01"
   },
   {
    "clip": "atk",
    "pose": "attack",
    "kind": "stand",
-   "src": "build/video-cut/embered-vanguard/ima",
+   "src": "build/video-cut/redo-sonnet/embered-vanguard__ima",
    "video": "Attachments/Monsters/EmbredVanguard/EmberVanguardIdleATT.mp4",
    "first": 40,
    "last": 78,
    "impactFrame": 58,
    "mode": "once",
    "figurePx": 651.0,
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01"
   },
   {
    "clip": "move",
    "pose": "walk",
    "kind": "walk",
-   "src": "build/video-cut/embered-vanguard/walk",
+   "src": "build/video-cut/redo-sonnet/embered-vanguard__walk",
    "video": "Attachments/Monsters/EmbredVanguard/EmberedVanguardWalk.mp4",
-   "first": 0,
-   "last": 71,
-   "loopMin": 36,
-   "loopMax": 71,
+   "first": 3,
+   "last": 143,
    "inPlace": true,
    "mode": "loop",
    "figurePx": 1178.0,
@@ -411,13 +411,15 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01",
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "hit",
    "pose": "hit",
    "kind": "stand",
-   "src": "build/video-cut/embered-vanguard/hf",
+   "src": "build/video-cut/redo-sonnet/embered-vanguard__hf",
    "video": "Attachments/Monsters/EmbredVanguard/EmberVanguardHitReactFall.mp4",
    "first": 106,
    "last": 136,
@@ -797,13 +799,14 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01"
   },
   {
    "clip": "death",
    "pose": "death",
    "kind": "stand",
-   "src": "build/video-cut/embered-vanguard/hf",
+   "src": "build/video-cut/redo-sonnet/embered-vanguard__hf",
    "video": "Attachments/Monsters/EmbredVanguard/EmberVanguardHitReactFall.mp4",
    "first": 148,
    "last": 214,
@@ -1184,18 +1187,17 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01"
   },
   {
    "clip": "move-up",
    "pose": "walkUp",
    "kind": "walk",
-   "src": "build/video-cut/embered-vanguard/ud",
+   "src": "build/video-cut/redo-sonnet/embered-vanguard__ud",
    "video": "Attachments/Monsters/EmbredVanguard/Embered Vanguard Commander_walking_in_place_09bf3edb.mp4",
    "first": 0,
    "last": 119,
-   "loopMin": 24,
-   "loopMax": 112,
    "inPlace": true,
    "mode": "loop",
    "figurePx": 1079.5,
@@ -1585,18 +1587,18 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01",
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-down",
    "pose": "walkDown",
    "kind": "walk",
-   "src": "build/video-cut/embered-vanguard/ud",
+   "src": "build/video-cut/redo-sonnet/embered-vanguard__ud",
    "video": "Attachments/Monsters/EmbredVanguard/Embered Vanguard Commander_walking_in_place_09bf3edb.mp4",
    "first": 120,
    "last": 239,
-   "loopMin": 24,
-   "loopMax": 112,
    "inPlace": true,
    "mode": "loop",
    "figurePx": 1107.5,
@@ -1986,7 +1988,9 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01",
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   }
  ],
  "result": "cut-result-36-media.json",

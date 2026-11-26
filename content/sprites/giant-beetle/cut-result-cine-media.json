@@ -1,0 +1,65 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/GiantBeetle/GiantBeetleIdle.mp4",
+   "first": 0,
+   "last": 143,
+   "bootRow": 618,
+   "bootRows": [
+    613,
+    620
+   ],
+   "figurePx": 448.0,
+   "frames": 144,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    890,
+    566
+   ],
+   "crop": [
+    5,
+    5,
+    880,
+    557
+   ],
+   "box": {
+    "w": 2.63265,
+    "h": 1.67425,
+    "foot": 0.0562
+   },
+   "pattern": "content/sprites/giant-beetle/base-cine-v01/base-{}.png"
+  },
+  "move": {
+   "video": "Attachments/GiantBeetle/GiantBeetleWalk.mp4",
+   "first": 0,
+   "last": 143,
+   "loopFirst": 0,
+   "loopLast": 143,
+   "seamSteps": NaN,
+   "bootRow": 622,
+   "bodyDrift": [
+    -73,
+    42
+   ],
+   "figurePx": 448.0,
+   "frames": 144,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1050,
+    512
+   ],
+   "crop": [
+    5,
+    4,
+    1040,
+    502
+   ],
+   "box": {
+    "w": 3.10594,
+    "h": 1.51451,
+    "foot": 0.08874
+   },
+   "pattern": "content/sprites/giant-beetle/move-cine-v01/move-{}.png"
+  }
+ }
+}
