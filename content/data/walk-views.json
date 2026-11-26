@@ -1,0 +1,17 @@
+{
+ "about": "A tabela única das vistas de andar (o usuário, 2026-11-26: direção vem do hex, uma tabela só; \"temos mirror das costas e de frente\"). O jogo pega a direção do passo na tabela de vizinhos do tabuleiro (engine/world/HexMovement.h kAxialDirs: 0 L, 1 NE, 2 NO, 3 O, 4 SO, 5 SE) e a parada da câmera (de 30 em 30 graus), e cai numa das 12 linhas abaixo: linha = (2 x direção - parada) mod 12. Nenhuma conta de tela escolhe a vista. 'turn' é para onde o passo vai na tela, em graus (0 = direita, 90 = fundo, 180 = esquerda, 270 = frente). 'walk': right = walk, left = walkLeft (ou o walk espelhado em quem não tem), up = walkUp (costas), down = walkDown (frente). 'mirror': a vista de costas / de frente espelhada (só troca esquerda e direita; nunca faz frente de costas). 'side': o lado em que a unidade fica virada ao parar (1 direita, -1 esquerda, 0 mantém).",
+ "views": [
+  {"turn": 0,   "walk": "right", "mirror": false, "side": 1},
+  {"turn": 30,  "walk": "right", "mirror": false, "side": 1},
+  {"turn": 60,  "walk": "up",    "mirror": false, "side": 1},
+  {"turn": 90,  "walk": "up",    "mirror": false, "side": 0},
+  {"turn": 120, "walk": "up",    "mirror": true,  "side": -1},
+  {"turn": 150, "walk": "left",  "mirror": false, "side": -1},
+  {"turn": 180, "walk": "left",  "mirror": false, "side": -1},
+  {"turn": 210, "walk": "left",  "mirror": false, "side": -1},
+  {"turn": 240, "walk": "down",  "mirror": true,  "side": -1},
+  {"turn": 270, "walk": "down",  "mirror": false, "side": 0},
+  {"turn": 300, "walk": "down",  "mirror": false, "side": 1},
+  {"turn": 330, "walk": "right", "mirror": false, "side": 1}
+ ]
+}
