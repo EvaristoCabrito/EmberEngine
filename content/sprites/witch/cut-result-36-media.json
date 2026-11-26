@@ -9,23 +9,20 @@
     695,
     704
    ],
-   "loopFirst": 7,
-   "loopLast": 103,
-   "seamSteps": 2.61,
-   "frameCountFrom": 97,
+   "frameCountFrom": 120,
    "figurePx": 659.0,
    "scaledTo": 610.3,
    "frames": 36,
-   "frameMs": 112.26851851851852,
+   "frameMs": 138.88888888888889,
    "nat": [
     398,
     626
    ],
    "crop": [
+    7,
     5,
-    5,
-    388,
-    616
+    387,
+    615
    ],
    "box": {
     "w": 1.73566,
@@ -105,33 +102,33 @@
    "first": 0,
    "last": 143,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/witch/idle 0:119",
-   "loopFirst": 21,
-   "loopLast": 67,
-   "seamSteps": 0.79,
+   "loopFirst": 0,
+   "loopLast": 143,
+   "seamSteps": NaN,
    "bootRow": 674,
    "bodyDrift": [
     0,
     0
    ],
-   "frameCountFrom": 47,
+   "frameCountFrom": 144,
    "figurePx": 625.0,
    "scaledTo": 609.6,
    "frames": 36,
-   "frameMs": 54.398148148148145,
+   "frameMs": 166.66666666666666,
    "nat": [
-    373,
-    634
+    388,
+    635
    ],
    "crop": [
+    7,
     5,
-    5,
-    363,
-    624
+    373,
+    623
    ],
    "box": {
-    "w": 1.62579,
-    "h": 2.76341,
-    "foot": 0.04671
+    "w": 1.69389,
+    "h": 2.77221,
+    "foot": 0.05105
    },
    "pattern": "content/sprites/witch/move-media36-r01/move-{}.png"
   },
@@ -204,33 +201,33 @@
    "first": 0,
    "last": 119,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/witch/idle 0:119",
-   "loopFirst": 75,
-   "loopLast": 115,
-   "seamSteps": 1.26,
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
    "bootRow": 1179,
    "bodyDrift": [
     0,
     0
    ],
-   "frameCountFrom": 41,
+   "frameCountFrom": 120,
    "figurePx": 1076.0,
-   "scaledTo": 609.8,
+   "scaledTo": 610.4,
    "frames": 36,
-   "frameMs": 47.4537037037037,
+   "frameMs": 138.88888888888889,
    "nat": [
-    247,
-    637
+    265,
+    662
    ],
    "crop": [
-    3,
-    6,
-    242,
-    628
+    5,
+    5,
+    249,
+    654
    ],
    "box": {
-    "w": 1.07784,
-    "h": 2.7797,
-    "foot": 0.08561
+    "w": 1.15695,
+    "h": 2.8902,
+    "foot": 0.08574
    },
    "pattern": "content/sprites/witch/move-up-media36-v01/move-up-{}.png"
   },
@@ -239,32 +236,33 @@
    "first": 120,
    "last": 239,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/witch/idle 0:119",
-   "loopFirst": 156,
-   "loopLast": 189,
-   "seamSteps": 1.42,
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 1181,
    "bodyDrift": [
     0,
     0
    ],
+   "frameCountFrom": 120,
    "figurePx": 1074.5,
-   "scaledTo": 610.0,
-   "frames": 34,
-   "frameMs": 41.666666666666664,
+   "scaledTo": 609.6,
+   "frames": 36,
+   "frameMs": 138.88888888888889,
    "nat": [
-    238,
-    633
+    249,
+    640
    ],
    "crop": [
     3,
     4,
-    233,
+    243,
     626
    ],
    "box": {
-    "w": 1.03974,
-    "h": 2.76536,
-    "foot": 0.05858
+    "w": 1.0843,
+    "h": 2.78695,
+    "foot": 0.05835
    },
    "pattern": "content/sprites/witch/move-down-media36-v01/move-down-{}.png"
   }

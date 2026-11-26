@@ -60,33 +60,33 @@
   },
   "move": {
    "video": "Attachments/BigZombie_dog_walk_and_attack_6e721e64_720p.mp4",
-   "first": 0,
-   "last": 120,
-   "loopFirst": 71,
-   "loopLast": 100,
-   "seamSteps": 3.56,
+   "first": 13,
+   "last": 123,
+   "loopFirst": 13,
+   "loopLast": 123,
+   "seamSteps": NaN,
    "bootRow": 655,
    "bodyDrift": [
     0,
     0
    ],
    "figurePx": 512.5,
-   "frames": 30,
+   "frames": 111,
    "frameMs": 41.666666666666664,
    "nat": [
-    741,
-    505
+    745,
+    548
    ],
    "crop": [
     4,
-    4,
-    733,
-    496
+    7,
+    736,
+    537
    ],
    "box": {
-    "w": 3.23683,
-    "h": 2.20594,
-    "foot": 0.07426
+    "w": 3.25431,
+    "h": 2.39377,
+    "foot": 0.08736
    },
    "pattern": "content/sprites/zombie-dog/move-cine-r01/move-{}.png"
   },

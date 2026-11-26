@@ -9,11 +9,8 @@
     695,
     704
    ],
-   "loopFirst": 7,
-   "loopLast": 103,
-   "seamSteps": 2.61,
    "figurePx": 659.0,
-   "frames": 97,
+   "frames": 120,
    "frameMs": 41.666666666666664,
    "nat": [
     430,
@@ -99,29 +96,29 @@
    "first": 0,
    "last": 143,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/witch/idle 0:119",
-   "loopFirst": 21,
-   "loopLast": 67,
-   "seamSteps": 0.79,
+   "loopFirst": 0,
+   "loopLast": 143,
+   "seamSteps": NaN,
    "bootRow": 674,
    "bodyDrift": [
     0,
     0
    ],
    "figurePx": 625.0,
-   "frames": 47,
+   "frames": 144,
    "frameMs": 41.666666666666664,
    "nat": [
-    385,
+    398,
     651
    ],
    "crop": [
     5,
     5,
-    376,
+    388,
     641
    ],
    "box": {
-    "w": 1.63856,
+    "w": 1.69389,
     "h": 2.77066,
     "foot": 0.05107
    },
@@ -192,30 +189,30 @@
    "first": 0,
    "last": 119,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/witch/idle 0:119",
-   "loopFirst": 75,
-   "loopLast": 115,
-   "seamSteps": 1.26,
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
    "bootRow": 1179,
    "bodyDrift": [
     0,
     0
    ],
    "figurePx": 1076.0,
-   "frames": 41,
+   "frames": 120,
    "frameMs": 41.666666666666664,
    "nat": [
-    436,
-    1127
+    468,
+    1167
    ],
    "crop": [
-    5,
-    12,
-    427,
-    1110
+    6,
+    9,
+    456,
+    1153
    ],
    "box": {
-    "w": 1.07784,
-    "h": 2.78608,
+    "w": 1.15695,
+    "h": 2.88496,
     "foot": 0.08652
    },
    "pattern": "content/sprites/witch/move-up-v01/move-up-{}.png"
@@ -225,30 +222,30 @@
    "first": 120,
    "last": 239,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/witch/idle 0:119",
-   "loopFirst": 156,
-   "loopLast": 189,
-   "seamSteps": 1.42,
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 1181,
    "bodyDrift": [
     0,
     0
    ],
    "figurePx": 1074.5,
-   "frames": 34,
+   "frames": 120,
    "frameMs": 41.666666666666664,
    "nat": [
-    420,
-    1115
+    438,
+    1128
    ],
    "crop": [
     5,
-    7,
-    411,
-    1102
+    6,
+    428,
+    1116
    ],
    "box": {
-    "w": 1.03974,
-    "h": 2.76026,
+    "w": 1.0843,
+    "h": 2.79244,
     "foot": 0.05941
    },
    "pattern": "content/sprites/witch/move-down-v01/move-down-{}.png"

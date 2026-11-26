@@ -9,12 +9,9 @@
     695,
     704
    ],
-   "loopFirst": 7,
-   "loopLast": 103,
-   "seamSteps": 2.61,
    "figurePx": 659.0,
    "scaledTo": 610.3,
-   "frames": 97,
+   "frames": 120,
    "frameMs": 41.666666666666664,
    "nat": [
     398,
@@ -102,9 +99,9 @@
    "first": 0,
    "last": 143,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/witch/idle 0:119",
-   "loopFirst": 21,
-   "loopLast": 67,
-   "seamSteps": 0.79,
+   "loopFirst": 0,
+   "loopLast": 143,
+   "seamSteps": NaN,
    "bootRow": 674,
    "bodyDrift": [
     0,
@@ -112,22 +109,22 @@
    ],
    "figurePx": 625.0,
    "scaledTo": 609.6,
-   "frames": 47,
+   "frames": 144,
    "frameMs": 41.666666666666664,
    "nat": [
-    376,
+    388,
     635
    ],
    "crop": [
     5,
     5,
-    367,
+    378,
     625
    ],
    "box": {
-    "w": 1.63856,
-    "h": 2.76725,
-    "foot": 0.05096
+    "w": 1.69389,
+    "h": 2.77221,
+    "foot": 0.05105
    },
    "pattern": "content/sprites/witch/move-cine-r01/move-{}.png"
   },
@@ -192,6 +189,74 @@
     "foot": 0.1052
    },
    "pattern": "content/sprites/witch/death-cine-r01/death-{}.png"
+  },
+  "move-up": {
+   "video": "Attachments/Witch/WitchUpandDown.mp4",
+   "first": 0,
+   "last": 119,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/witch/idle 0:119",
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
+   "bootRow": 1179,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 1076.0,
+   "scaledTo": 610.4,
+   "frames": 120,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    265,
+    662
+   ],
+   "crop": [
+    4,
+    5,
+    257,
+    654
+   ],
+   "box": {
+    "w": 1.15695,
+    "h": 2.8902,
+    "foot": 0.08574
+   },
+   "pattern": "content/sprites/witch/move-up-cine-v01/move-up-{}.png"
+  },
+  "move-down": {
+   "video": "Attachments/Witch/WitchUpandDown.mp4",
+   "first": 120,
+   "last": 239,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/witch/idle 0:119",
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
+   "bootRow": 1181,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 1074.5,
+   "scaledTo": 609.6,
+   "frames": 120,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    249,
+    640
+   ],
+   "crop": [
+    3,
+    4,
+    243,
+    633
+   ],
+   "box": {
+    "w": 1.0843,
+    "h": 2.78695,
+    "foot": 0.05835
+   },
+   "pattern": "content/sprites/witch/move-down-cine-v01/move-down-{}.png"
   }
  }
 }
