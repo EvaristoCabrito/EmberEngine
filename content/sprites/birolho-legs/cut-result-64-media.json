@@ -3,362 +3,370 @@
   "base": {
    "video": "Attachments/Birolho/BiroLegs/Birolho2IdleATT.mp4",
    "first": 0,
-   "last": 72,
-   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
-   "bootRow": 1085,
+   "last": 139,
+   "colorMatch": "build/video-cut/redo-sonnet/birolho-legs__idleatt 0:139 + the set's grade (match_set_light.py)",
+   "bootRow": 1022,
    "bootRows": [
-    1085,
-    1085
+    1022,
+    1022
    ],
-   "loopFirst": 0,
-   "loopLast": 58,
-   "seamSteps": 1.48,
+   "frameCountFrom": 140,
    "figurePx": 878.0,
-   "scaledTo": 610.4,
-   "frames": 59,
-   "frameMs": 41.666666666666664,
+   "bodyAt": -0.1484,
+   "scaledTo": 609.7,
+   "frames": 64,
+   "frameMs": 91.14583333333333,
    "nat": [
-    746,
-    689
+    805,
+    659
    ],
    "crop": [
+    5,
     3,
-    3,
-    739,
-    619
+    797,
+    652
    ],
    "box": {
-    "w": 6.01587,
-    "h": 5.55621,
-    "foot": -0.03487
+    "w": 6.48638,
+    "h": 5.30997,
+    "foot": 0.05472
    },
-   "pattern": "content/sprites/birolho-legs/base-media64-v01/base-{}.png"
+   "pattern": "content/sprites/birolho-legs/base-media64-r02/base-{}.png"
   },
   "atk": {
    "video": "Attachments/Birolho/BiroLegs/Birolho2IdleATT.mp4",
    "first": 140,
-   "last": 194,
-   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
-   "bootRow": 1100,
+   "last": 200,
+   "colorMatch": "build/video-cut/redo-sonnet/birolho-legs__idleatt 0:139 + the set's grade (match_set_light.py)",
+   "bootRow": 1022,
    "bootRows": [
-    1100,
-    1100
+    1022,
+    1022
    ],
-   "figurePx": 923.2,
+   "figurePx": 878.0,
+   "bodyAt": -0.1484,
    "scaledTo": 609.9,
-   "frames": 55,
+   "frames": 61,
    "frameMs": 41.666666666666664,
    "nat": [
-    854,
-    662
+    1022,
+    696
    ],
    "crop": [
-    4,
+    128,
     3,
-    846,
-    659
+    890,
+    693
    ],
    "box": {
-    "w": 6.88797,
-    "h": 5.33939,
-    "foot": -0.11327
+    "w": 8.23961,
+    "h": 5.61132,
+    "foot": 0.31798
    },
-   "pattern": "content/sprites/birolho-legs/atk-media64-v01/atk-{}.png",
-   "impact": 0.5455
+   "pattern": "content/sprites/birolho-legs/atk-media64-r02/atk-{}.png",
+   "impact": 0.5902
   },
   "atk2": {
    "video": "Attachments/Birolho/BiroLegs/Birolhoextending_limbs_and_posing_ef1650aa_1080p.mp4",
    "first": 1,
    "last": 93,
-   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
-   "bootRow": 1030,
+   "colorMatch": "build/video-cut/redo-sonnet/birolho-legs__idleatt 0:139 + the set's grade (match_set_light.py)",
+   "bootRow": 969,
    "bootRows": [
-    1030,
-    1030
+    969,
+    969
    ],
    "frameCountFrom": 93,
-   "figurePx": 896.5,
-   "scaledTo": 609.8,
+   "figurePx": 858.6,
+   "bodyAt": -0.1489,
+   "scaledTo": 610.2,
    "frames": 64,
    "frameMs": 60.546875,
    "nat": [
-    1198,
-    670
+    1292,
+    700
    ],
    "crop": [
     3,
-    3,
-    1192,
-    664
+    4,
+    1244,
+    693
    ],
    "box": {
-    "w": 9.65497,
-    "h": 5.39969,
-    "foot": 0.04805
+    "w": 10.4191,
+    "h": 5.64502,
+    "foot": 0.4
    },
-   "pattern": "content/sprites/birolho-legs/atk2-media64-v01/atk2-{}.png",
+   "pattern": "content/sprites/birolho-legs/atk2-media64-r02/atk2-{}.png",
    "impact": 0.914
   },
   "unfold": {
    "video": "Attachments/Birolho/BiroLegs/Birolhoextending_limbs_and_posing_ef1650aa_1080p.mp4",
    "first": 1,
    "last": 32,
-   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
-   "bootRow": 1007,
+   "colorMatch": "build/video-cut/redo-sonnet/birolho-legs__idleatt 0:139 + the set's grade (match_set_light.py)",
+   "bootRow": 969,
    "bootRows": [
-    1007,
-    1007
+    969,
+    969
    ],
-   "figurePx": 937.6,
-   "scaledTo": 609.6,
+   "figurePx": 858.6,
+   "bodyAt": -0.1489,
+   "scaledTo": 610.1,
    "frames": 32,
    "frameMs": 41.666666666666664,
    "nat": [
-    645,
-    632
+    788,
+    690
    ],
    "crop": [
     3,
-    3,
-    637,
-    626
+    4,
+    696,
+    683
    ],
    "box": {
-    "w": 5.1981,
-    "h": 5.09333,
-    "foot": 0.09815
+    "w": 6.35227,
+    "h": 5.56227,
+    "foot": 0.31962
    },
-   "pattern": "content/sprites/birolho-legs/unfold-media64-v01/unfold-{}.png"
+   "pattern": "content/sprites/birolho-legs/unfold-media64-r02/unfold-{}.png"
   },
   "cast": {
    "video": "Attachments/Birolho/BiroLegs/BiroCastReactFall.mp4",
    "first": 1,
-   "last": 100,
-   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
-   "bootRow": 1162,
+   "last": 160,
+   "colorMatch": "build/video-cut/redo-sonnet/birolho-legs__idleatt 0:139 + the set's grade (match_set_light.py)",
+   "bootRow": 1051,
    "bootRows": [
-    1162,
-    1162
+    1051,
+    1051
    ],
-   "frameCountFrom": 100,
-   "figurePx": 1049.5,
-   "scaledTo": 610.3,
+   "frameCountFrom": 160,
+   "figurePx": 966.6,
+   "bodyAt": -0.1476,
+   "scaledTo": 610.4,
    "frames": 64,
-   "frameMs": 65.10416666666666,
+   "frameMs": 104.16666666666666,
    "nat": [
-    1116,
-    628
+    1246,
+    682
    ],
    "crop": [
     0,
     0,
-    1116,
-    628
+    1212,
+    682
    ],
    "box": {
-    "w": 8.9972,
-    "h": 5.06294,
-    "foot": -0.39078
+    "w": 10.04868,
+    "h": 5.50016,
+    "foot": 0.14111
    },
-   "pattern": "content/sprites/birolho-legs/cast-media64-v01/cast-{}.png",
-   "impact": 0.59
+   "pattern": "content/sprites/birolho-legs/cast-media64-r02/cast-{}.png",
+   "impact": 0.3688
   },
   "hit": {
    "video": "Attachments/Birolho/BiroLegs/BirolhoHitReactV2.mp4",
    "first": 4,
-   "last": 56,
-   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
-   "bootRow": 1045,
+   "last": 60,
+   "colorMatch": "build/video-cut/redo-sonnet/birolho-legs__idleatt 0:139 + the set's grade (match_set_light.py)",
+   "bootRow": 987,
    "bootRows": [
-    1045,
-    1045
+    987,
+    987
    ],
-   "figurePx": 954.4,
-   "scaledTo": 610.0,
-   "frames": 53,
+   "figurePx": 897.8,
+   "bodyAt": -0.1479,
+   "scaledTo": 609.9,
+   "frames": 57,
    "frameMs": 41.666666666666664,
    "nat": [
-    768,
-    643
+    859,
+    663
    ],
    "crop": [
+    47,
     3,
-    3,
-    762,
-    618
+    808,
+    657
    ],
    "box": {
-    "w": 6.18872,
-    "h": 5.18144,
-    "foot": 0.01915
+    "w": 6.92946,
+    "h": 5.34835,
+    "foot": 0.17406
    },
-   "pattern": "content/sprites/birolho-legs/hit-media64-v01/hit-{}.png",
-   "impact": 0.1509
+   "pattern": "content/sprites/birolho-legs/hit-media64-r02/hit-{}.png",
+   "impact": 0.1404
   },
   "death": {
    "video": "Attachments/Birolho/BiroLegs/BirolhoHitReactV2.mp4",
    "first": 88,
    "last": 142,
-   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
-   "bootRow": 1045,
+   "colorMatch": "build/video-cut/redo-sonnet/birolho-legs__idleatt 0:139 + the set's grade (match_set_light.py)",
+   "bootRow": 987,
    "bootRows": [
-    1045,
-    1045
+    987,
+    987
    ],
-   "figurePx": 954.4,
+   "figurePx": 897.8,
+   "bodyAt": -0.1479,
    "scaledTo": 610.3,
    "frames": 55,
    "frameMs": 41.666666666666664,
    "nat": [
-    940,
-    649
+    1001,
+    690
    ],
    "crop": [
-    4,
+    5,
     3,
-    933,
-    643
+    993,
+    684
    ],
    "box": {
-    "w": 7.58003,
-    "h": 5.23344,
-    "foot": 0.11198
+    "w": 8.06885,
+    "h": 5.56194,
+    "foot": 0.43709
    },
-   "pattern": "content/sprites/birolho-legs/death-media64-v01/death-{}.png"
+   "pattern": "content/sprites/birolho-legs/death-media64-r02/death-{}.png"
   },
   "move-down": {
    "video": "Attachments/Birolho/BiroLegs/BirolhoWalkandATT2.mp4",
    "first": 36,
-   "last": 70,
-   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
+   "last": 71,
+   "colorMatch": "build/video-cut/redo-sonnet/birolho-legs__idleatt 0:139 + the set's grade (match_set_light.py)",
    "loopFirst": 36,
-   "loopLast": 66,
-   "seamSteps": 1.1,
-   "bootRow": 950,
+   "loopLast": 71,
+   "seamSteps": NaN,
+   "bootRow": 949,
    "bodyDrift": [
     0,
     0
    ],
-   "figurePx": 641.8,
-   "scaledTo": 610.0,
-   "frames": 31,
+   "figurePx": 630.1,
+   "scaledTo": 610.4,
+   "frames": 36,
    "frameMs": 41.666666666666664,
    "nat": [
-    754,
-    730
+    778,
+    744
    ],
    "crop": [
     4,
     4,
-    744,
-    722
+    769,
+    736
    ],
    "box": {
-    "w": 6.07662,
-    "h": 5.8832,
-    "foot": 0.12237
+    "w": 6.27531,
+    "h": 6.00107,
+    "foot": 0.1249
    },
-   "pattern": "content/sprites/birolho-legs/move-down-media64-v01/move-down-{}.png"
+   "pattern": "content/sprites/birolho-legs/move-down-media64-r02/move-down-{}.png"
   },
   "move-up": {
    "video": "Attachments/Birolho/BiroLegs/BirolhoWalkandATT2.mp4",
    "first": 72,
-   "last": 104,
-   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
+   "last": 106,
+   "colorMatch": "build/video-cut/redo-sonnet/birolho-legs__idleatt 0:139 + the set's grade (match_set_light.py)",
    "loopFirst": 72,
-   "loopLast": 92,
-   "seamSteps": 2.27,
+   "loopLast": 106,
+   "seamSteps": NaN,
    "bootRow": 947,
    "bodyDrift": [
     0,
     0
    ],
-   "figurePx": 627.1,
-   "scaledTo": 610.2,
-   "frames": 21,
+   "figurePx": 598.6,
+   "frames": 35,
    "frameMs": 41.666666666666664,
    "nat": [
-    717,
-    759
+    747,
+    780
    ],
    "crop": [
     4,
     4,
-    708,
-    750
+    738,
+    770
    ],
    "box": {
-    "w": 5.77989,
-    "h": 6.11846,
-    "foot": 0.14893
+    "w": 6.13723,
+    "h": 6.40835,
+    "foot": 0.1561
    },
-   "pattern": "content/sprites/birolho-legs/move-up-media64-v01/move-up-{}.png"
+   "pattern": "content/sprites/birolho-legs/move-up-media64-r02/move-up-{}.png"
   },
   "move-left": {
    "video": "Attachments/Birolho/BiroLegs/BirolhoWalkandATT2.mp4",
-   "first": 108,
+   "first": 107,
    "last": 176,
-   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
-   "loopFirst": 114,
-   "loopLast": 151,
-   "seamSteps": 0.49,
+   "colorMatch": "build/video-cut/redo-sonnet/birolho-legs__idleatt 0:139 + the set's grade (match_set_light.py)",
+   "loopFirst": 107,
+   "loopLast": 176,
+   "seamSteps": NaN,
    "bootRow": 951,
    "bodyDrift": [
     0,
     0
    ],
-   "figurePx": 569.2,
-   "frames": 38,
-   "frameMs": 41.666666666666664,
+   "frameCountFrom": 70,
+   "figurePx": 632.7,
+   "scaledTo": 610.2,
+   "frames": 64,
+   "frameMs": 45.572916666666664,
    "nat": [
-    548,
-    789
+    529,
+    761
+   ],
+   "crop": [
+    4,
+    4,
+    520,
+    752
+   ],
+   "box": {
+    "w": 4.2674,
+    "h": 6.13892,
+    "foot": 0.21771
+   },
+   "pattern": "content/sprites/birolho-legs/move-left-media64-r02/move-left-{}.png"
+  },
+  "move": {
+   "video": "Attachments/Birolho/BiroLegs/BirolhoWalkandATT2.mp4",
+   "first": 107,
+   "last": 176,
+   "colorMatch": "build/video-cut/redo-sonnet/birolho-legs__idleatt 0:139 + the set's grade (match_set_light.py)",
+   "loopFirst": 107,
+   "loopLast": 176,
+   "seamSteps": NaN,
+   "bootRow": 951,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "frameCountFrom": 70,
+   "figurePx": 632.7,
+   "scaledTo": 610.2,
+   "frames": 64,
+   "frameMs": 45.572916666666664,
+   "nat": [
+    529,
+    761
    ],
    "crop": [
     5,
     4,
-    539,
-    780
+    520,
+    752
    ],
    "box": {
-    "w": 4.73483,
-    "h": 6.81712,
-    "foot": 0.24193
+    "w": 4.2674,
+    "h": 6.13892,
+    "foot": 0.21771
    },
-   "pattern": "content/sprites/birolho-legs/move-left-media64-v01/move-left-{}.png"
-  },
-  "move": {
-   "video": "Attachments/Birolho/BiroLegs/BirolhoWalkandATT2.mp4",
-   "first": 108,
-   "last": 176,
-   "colorMatch": "C:\\EmberEngineB\\build/video-cut/birolho-legs/idleatt 0:72",
-   "loopFirst": 114,
-   "loopLast": 151,
-   "seamSteps": 0.49,
-   "bootRow": 951,
-   "bodyDrift": [
-    0,
-    0
-   ],
-   "figurePx": 569.2,
-   "frames": 38,
-   "frameMs": 41.666666666666664,
-   "nat": [
-    548,
-    789
-   ],
-   "crop": [
-    4,
-    4,
-    539,
-    780
-   ],
-   "box": {
-    "w": 4.73483,
-    "h": 6.81712,
-    "foot": 0.24193
-   },
-   "pattern": "content/sprites/birolho-legs/move-media64-v01/move-{}.png"
+   "pattern": "content/sprites/birolho-legs/move-media64-r02/move-{}.png"
   }
  }
 }
