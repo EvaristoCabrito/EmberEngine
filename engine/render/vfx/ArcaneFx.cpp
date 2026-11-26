@@ -129,15 +129,7 @@ ArcaneSpell::ArcaneSpell(Style style, glm::vec3 casterFeet, float casterHeight, 
   end_ = impact_ + (style == Style::Missile ? 1.6f : 1.7f);
 }
 
-void ArcaneSpell::aimFrom(int unit, glm::vec3 hand, float now) {
-  if (unit < 0 || unit != unit_ || now >= release_) return;
-  glm::vec3 d = chest_ - hand;
-  if (glm::dot(d, d) > 1e-6f) direction_ = glm::normalize(d);
-  hand_ = hand + direction_ * (0.12f * scale_);  // on the open palm, a little out from it
-}
-
-void ArcaneSpell::asAttack(float start, float release, float impact, float scale, int unit) {
-  unit_ = unit;
+void ArcaneSpell::asAttack(float start, float release, float impact, float scale) {
   start_ = start, release_ = std::max(release, start + 0.05f), impact_ = std::max(impact, release_ + 0.05f), end_ = impact_ + 0.8f, scale_ = scale;
 }
 

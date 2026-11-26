@@ -1,12 +1,12 @@
 {
   "serial": 2,
-  "savedAt": 1795655649419,
+  "savedAt": 1795656594611,
   "draft": {
     "id": "monster-testing-b",
     "index": 0,
     "title": "Monster Testing 2",
     "place": "",
-    "briefing": "Unidades novas (Alta, 64 e 36), cada uma só neste mapa da série: Omnieye, Sahagin, Mosquito Vampiro, Screeching Bat, Bruxa, Hipóstase, Birolho Legs; no seu grupo: Telesm.",
+    "briefing": "Unidades novas (Alta, 64 e 36), cada uma só neste mapa da série: Omnieye, Sahagin, Mosquito Vampiro, Screeching Bat, Bruxa, Birolho Legs; no seu grupo: Telesm.",
     "objective": "Ver cada unidade andar, atacar, levar dano e cair",
     "win": "rout",
     "hub": false,
@@ -7307,17 +7307,9 @@
         "useClassSprite": true
       },
       {
-        "name": "Hipóstase",
-        "classId": "hypostasis",
-        "x": 16,
-        "y": 31,
-        "level": 15,
-        "useClassSprite": true
-      },
-      {
         "name": "Birolho Legs",
         "classId": "birolhoLegs",
-        "x": 20,
+        "x": 16,
         "y": 31,
         "level": 15,
         "useClassSprite": true

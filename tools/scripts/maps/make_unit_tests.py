@@ -37,13 +37,13 @@ LEAVE_LIST = ["unidades-novas"]  # Todas as Unidades: every class, the placehold
 # (map id, title, enemies, summons on the party's side); the big ones (size 3-4) one or two a map, in the back row
 SERIES = [
     ("monster-testing-a", "Monster Testing 1",
-     ["stag", "boar", "swampBlueDeer", "horse", "nekomata", "sickRat", "troll"], ["zombieDog"]),
+     ["stag", "boar", "horse", "nekomata", "sickRat", "troll"], ["zombieDog"]),
     ("monster-testing-b", "Monster Testing 2",
-     ["omnieye", "sahagin", "vampireMosquito", "screechingBat", "witch", "hypostasis", "birolhoLegs"], ["telesm"]),
+     ["omnieye", "sahagin", "vampireMosquito", "screechingBat", "witch", "birolhoLegs"], ["telesm"]),
     ("monster-testing-c", "Monster Testing 3",
      ["giantBeetle", "deepgroundBeetle", "mushroomMan", "emberMushroom", "corrosiveSlime", "giantSpider", "birolhoLegs2"], ["familiar4"]),
     ("monster-testing-d", "Monster Testing 4",
-     ["emberedVanguard", "emberedZombie", "banditHorseman", "bigBlueCalf", "ashesCrawler", "roccoTheBird"], []),
+     ["emberedVanguard", "emberedZombie", "banditHorseman", "bigBlueCalf", "ashesCrawler", "roccoTheBird"], ["swampBlueDeer", "hypostasis"]),
 ]
 ENEMY_AT = [(12, 36), (16, 36), (20, 36), (24, 36), (12, 31), (16, 31), (20, 31), (24, 31)]
 SUMMON_AT = [(26, 44), (24, 44)]

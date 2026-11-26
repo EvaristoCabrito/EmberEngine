@@ -1,5 +1,5 @@
 {
- "about": "Bolts that finish what the art's own hands begin (render/vfx/HandBoltFx, MapStage handBoltFor). Per unit (catalog key) and pose: where the glow is on each frame of the pose (full-image uv, u from the left as drawn facing right, v from the top), the frame its charge starts on and the frame it lets go on (1-based), the look. The bolt flies from the release frame's point to the struck body; the blow lands when it arrives. Measured from the frames' blue glow (build/video-cut/apparition-centre). Look \"arcane\": no track and no arcs of its own; the plain arcane bolt every caster throws (vfx/CombatFx, at the pose's impact) leaves from \"release\", the hand on the frame the pose lets go (\"releaseFrame\", 1-based, of \"frames\"), in place of a point guessed at the chest. With \"hands\" (the palm on each frame of the pose, measured from the art) and \"chargeFrame\", the heroes' arcane energy (vfx/ArcaneFx, the plain attack's small size) gathers on the palm as drawn from that frame until the release, and flies from it (the user, 2026-11-25: \"quando é que vai fazer um efeito na MÃO do cultista\").",
+ "about": "Bolts that finish what the art's own hands begin (render/vfx/HandBoltFx, MapStage handBoltFor). Per unit (catalog key) and pose: where the glow is on each frame of the pose (full-image uv, u from the left as drawn facing right, v from the top), the frame its charge starts on and the frame it lets go on (1-based), the look. The bolt flies from the release frame's point to the struck body; the blow lands when it arrives. Measured from the frames' blue glow (build/video-cut/apparition-centre). Look \"arcane\": no track and no arcs of its own; the plain arcane bolt every caster throws (vfx/CombatFx, at the pose's impact) leaves from \"release\", the hand on the frame the pose lets go (\"releaseFrame\", 1-based, of \"frames\"), in place of a point guessed at the chest.",
  "units": {
   "apparition": {
    "pose": "attack",
@@ -257,8 +257,6 @@
    "frames": 36,
    "releaseFrame": 14,
    "release": [0.553, 0.238],
-   "chargeFrame": 9,
-   "hands": [[0.532, 0.294], [0.532, 0.294], [0.532, 0.294], [0.532, 0.294], [0.532, 0.294], [0.532, 0.294], [0.532, 0.294], [0.532, 0.294], [0.532, 0.294], [0.536, 0.267], [0.55, 0.241], [0.565, 0.215], [0.568, 0.228], [0.567, 0.233], [0.575, 0.242], [0.577, 0.25], [0.578, 0.254], [0.572, 0.259], [0.573, 0.265], [0.571, 0.273], [0.572, 0.275], [0.575, 0.279], [0.585, 0.284], [0.593, 0.295], [0.6, 0.305], [0.614, 0.317], [0.614, 0.317], [0.614, 0.317], [0.614, 0.317], [0.614, 0.317], [0.614, 0.317], [0.614, 0.317], [0.614, 0.317], [0.614, 0.317], [0.614, 0.317], [0.614, 0.317]],
    "why": "the user, 2026-11-25: \"eu preciso de um efeito visual para o ataque do Cultista Negro\": his attack is his cast clip (cut.json impactFrame 13 = cast-14.png, the open hand thrust out); the palm measured on that frame (the centroid of the hand's opaque pixels); the bolt is the casters' plain one, smaller than any spell (the user: \"sem magias exageradas\")"
   },
   "_telesm": {

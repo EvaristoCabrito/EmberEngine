@@ -1,12 +1,12 @@
 {
   "serial": 2,
-  "savedAt": 1795655649414,
+  "savedAt": 1795656594607,
   "draft": {
     "id": "monster-testing-a",
     "index": 0,
     "title": "Monster Testing 1",
     "place": "",
-    "briefing": "Unidades novas (Alta, 64 e 36), cada uma só neste mapa da série: Stag, Boar, Cervo Azul do Pântano, Horse, Nekomata, Rato Doente, Troll da caverna; no seu grupo: Cão Zumbi.",
+    "briefing": "Unidades novas (Alta, 64 e 36), cada uma só neste mapa da série: Stag, Boar, Horse, Nekomata, Rato Doente, Troll da caverna; no seu grupo: Cão Zumbi.",
     "objective": "Ver cada unidade andar, atacar, levar dano e cair",
     "win": "rout",
     "hub": false,
@@ -7283,17 +7283,9 @@
         "useClassSprite": true
       },
       {
-        "name": "Cervo Azul do Pântano",
-        "classId": "swampBlueDeer",
-        "x": 20,
-        "y": 36,
-        "level": 15,
-        "useClassSprite": true
-      },
-      {
         "name": "Horse",
         "classId": "horse",
-        "x": 24,
+        "x": 20,
         "y": 36,
         "level": 15,
         "useClassSprite": true
@@ -7301,15 +7293,15 @@
       {
         "name": "Nekomata",
         "classId": "nekomata",
-        "x": 12,
-        "y": 31,
+        "x": 24,
+        "y": 36,
         "level": 15,
         "useClassSprite": true
       },
       {
         "name": "Rato Doente",
         "classId": "sickRat",
-        "x": 16,
+        "x": 12,
         "y": 31,
         "level": 15,
         "useClassSprite": true
@@ -7317,7 +7309,7 @@
       {
         "name": "Troll da caverna",
         "classId": "troll",
-        "x": 20,
+        "x": 16,
         "y": 31,
         "level": 15,
         "useClassSprite": true

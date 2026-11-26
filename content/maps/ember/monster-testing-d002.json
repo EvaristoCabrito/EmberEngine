@@ -1,12 +1,12 @@
 {
   "serial": 2,
-  "savedAt": 1795655649430,
+  "savedAt": 1795656594621,
   "draft": {
     "id": "monster-testing-d",
     "index": 0,
     "title": "Monster Testing 4",
     "place": "",
-    "briefing": "Unidades novas (Alta, 64 e 36), cada uma só neste mapa da série: Vanguarda de Brasa, Embered Zombie, Bandit Horseman, Big Blue Ox, Rastreador de Cinzas, Rocco The Bird.",
+    "briefing": "Unidades novas (Alta, 64 e 36), cada uma só neste mapa da série: Vanguarda de Brasa, Embered Zombie, Bandit Horseman, Big Blue Ox, Rastreador de Cinzas, Rocco The Bird; no seu grupo: Cervo Azul do Pântano, Hipóstase.",
     "objective": "Ver cada unidade andar, atacar, levar dano e cair",
     "win": "rout",
     "hub": false,
@@ -7255,6 +7255,22 @@
         "x": 22,
         "y": 44,
         "level": 15
+      },
+      {
+        "name": "Cervo Azul do Pântano",
+        "classId": "swampBlueDeer",
+        "x": 26,
+        "y": 44,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Hipóstase",
+        "classId": "hypostasis",
+        "x": 24,
+        "y": 44,
+        "level": 15,
+        "useClassSprite": true
       }
     ],
     "enemySpawns": [
