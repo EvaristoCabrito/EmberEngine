@@ -12,17 +12,18 @@
    "clip": "base",
    "pose": "idle",
    "kind": "stand",
-   "src": "build/video-cut/cave-troll/idle",
+   "src": "build/video-cut/redo-sonnet/cave-troll__idle",
    "video": "Attachments/Monsters/Cave_troll_standing_breathing_24073d90_1080p.mp4",
    "first": 0,
    "last": 142,
    "mode": "pingpong",
    "figurePx": 1002.0,
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01"
   },
   {
    "kind": "stand",
-   "src": "build/video-cut/cave-troll/main",
+   "src": "build/video-cut/redo-sonnet/cave-troll__main",
    "video": "Attachments/Monsters/Cave_troll_animation_set_9bb2b8b8_720p.mp4",
    "clip": "atk",
    "pose": "attack",
@@ -422,12 +423,13 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01"
   },
   {
    "kind": "walk",
    "inPlace": true,
-   "src": "build/video-cut/cave-troll/main",
+   "src": "build/video-cut/redo-sonnet/cave-troll__main",
    "video": "Attachments/Monsters/Cave_troll_animation_set_9bb2b8b8_720p.mp4",
    "mode": "loop",
    "clip": "move",
@@ -435,8 +437,6 @@
    "mirror": true,
    "first": 106,
    "last": 176,
-   "loopMin": 24,
-   "loopMax": 68,
    "colorMatch": {
     "reference": "C:\\EmberEngineB\\build/video-cut/cave-troll/idle 0:142",
     "frames": "36:70,72:104,106:176,178:238",
@@ -827,20 +827,20 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01",
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "kind": "walk",
    "inPlace": true,
-   "src": "build/video-cut/cave-troll/main",
+   "src": "build/video-cut/redo-sonnet/cave-troll__main",
    "video": "Attachments/Monsters/Cave_troll_animation_set_9bb2b8b8_720p.mp4",
    "mode": "loop",
    "clip": "move-left",
    "pose": "walkLeft",
    "first": 106,
    "last": 176,
-   "loopMin": 24,
-   "loopMax": 68,
    "colorMatch": {
     "reference": "C:\\EmberEngineB\\build/video-cut/cave-troll/idle 0:142",
     "frames": "36:70,72:104,106:176,178:238",
@@ -1231,20 +1231,20 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01",
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "kind": "walk",
    "inPlace": true,
-   "src": "build/video-cut/cave-troll/main",
+   "src": "build/video-cut/redo-sonnet/cave-troll__main",
    "video": "Attachments/Monsters/Cave_troll_animation_set_9bb2b8b8_720p.mp4",
    "mode": "loop",
    "clip": "move-down",
    "pose": "walkDown",
    "first": 72,
    "last": 104,
-   "loopMin": 16,
-   "loopMax": 30,
    "colorMatch": {
     "reference": "C:\\EmberEngineB\\build/video-cut/cave-troll/idle 0:142",
     "frames": "36:70,72:104,106:176,178:238",
@@ -1635,20 +1635,20 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01",
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "kind": "walk",
    "inPlace": true,
-   "src": "build/video-cut/cave-troll/main",
+   "src": "build/video-cut/redo-sonnet/cave-troll__main",
    "video": "Attachments/Monsters/Cave_troll_animation_set_9bb2b8b8_720p.mp4",
    "mode": "loop",
    "clip": "move-up",
    "pose": "walkUp",
    "first": 36,
    "last": 70,
-   "loopMin": 16,
-   "loopMax": 32,
    "colorMatch": {
     "reference": "C:\\EmberEngineB\\build/video-cut/cave-troll/idle 0:142",
     "frames": "36:70,72:104,106:176,178:238",
@@ -2039,13 +2039,15 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01",
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "hit",
    "pose": "hit",
    "kind": "stand",
-   "src": "build/video-cut/cave-troll/fall",
+   "src": "build/video-cut/redo-sonnet/cave-troll__fall",
    "video": "Attachments/Monsters/Cave_troll_falls_down_426a3a6c_1080p.mp4",
    "first": 21,
    "last": 58,
@@ -2442,13 +2444,14 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01"
   },
   {
    "clip": "death",
    "pose": "death",
    "kind": "stand",
-   "src": "build/video-cut/cave-troll/fall",
+   "src": "build/video-cut/redo-sonnet/cave-troll__fall",
    "video": "Attachments/Monsters/Cave_troll_falls_down_426a3a6c_1080p.mp4",
    "first": 78,
    "last": 142,
@@ -2845,7 +2848,8 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-r01"
   }
  ],
  "result": "cut-result-36-media.json",

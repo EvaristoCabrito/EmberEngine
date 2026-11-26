@@ -65,9 +65,9 @@
    "video": "Attachments/BlackCultist/WalkLeft2/sprite-max-px-frames-36-rows-6-cols-6.png",
    "first": 10,
    "last": 35,
-   "loopFirst": 12,
-   "loopLast": 32,
-   "seamSteps": 1.37,
+   "loopFirst": 10,
+   "loopLast": 35,
+   "seamSteps": NaN,
    "bootRow": 581,
    "bodyDrift": [
     -1,
@@ -75,20 +75,20 @@
    ],
    "figurePx": 560.0,
    "bodyAt": 0.0,
-   "frames": 21,
+   "frames": 26,
    "frameMs": 100.0,
    "nat": [
-    376,
+    369,
     582
    ],
    "crop": [
     0,
     5,
     316,
-    574
+    576
    ],
    "box": {
-    "w": 1.84643,
+    "w": 1.81205,
     "h": 2.85804,
     "foot": 0.03929
    },
@@ -98,9 +98,9 @@
    "video": "Attachments/BlackCultist/WalkLeft2/sprite-max-px-frames-36-rows-6-cols-6.png",
    "first": 10,
    "last": 35,
-   "loopFirst": 12,
-   "loopLast": 32,
-   "seamSteps": 1.37,
+   "loopFirst": 10,
+   "loopLast": 35,
+   "seamSteps": NaN,
    "bootRow": 581,
    "bodyDrift": [
     -1,
@@ -108,20 +108,20 @@
    ],
    "figurePx": 560.0,
    "bodyAt": 0.0,
-   "frames": 21,
+   "frames": 26,
    "frameMs": 100.0,
    "nat": [
-    376,
+    369,
     582
    ],
    "crop": [
-    60,
+    53,
     5,
     316,
-    574
+    576
    ],
    "box": {
-    "w": 1.84643,
+    "w": 1.81205,
     "h": 2.85804,
     "foot": 0.03929
    },
