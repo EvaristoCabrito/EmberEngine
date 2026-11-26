@@ -84,8 +84,9 @@ a mando dele).
 | Fase | O quê | Depende de | Estado |
 |---|---|---|---|
 | 0 | Vista pela tela; rumo em vez de hex a hex; quinas arredondadas; abrir / fechar inteiros | nada | código feito 2026-11-25, **não visto no jogo** |
-| 1 | O som do andar (`walk` / `walkLeft`) escolhido pela tela, como a vista (hoje ainda é pelo tabuleiro) | nada | a fazer |
-| 2 | Proposta A: paradas da câmera de 60 em 60 | o sim dele | espera |
+| 1 | O som do andar (`walk` / `walkLeft`) escolhido pela tela, como a vista | nada | código feito 2026-11-25 (`stepGoesLeft`), não visto no jogo |
+| 2 | Proposta A: paradas da câmera de 60 em 60 (botões e ao soltar o giro do mouse) | nada | código feito 2026-11-25 (`yawStop`), a mando dele ("é para você aprender e aplicar no jogo"), não visto no jogo |
+| 2b | A câmera acompanha a unidade do jogador que anda (como já fazia com o inimigo) e fica com ela onde parar | nada | código feito 2026-11-25 (`applyActionShot`), não visto no jogo |
 | 3 | Proposta B: vídeos de três quartos. Primeiro as 9 unidades que já têm as quatro vistas (heróis), depois as 12 com costas e frente | o sim dele e os vídeos | espera |
 | 4 | Costas e frente para as 55 unidades que só andam de lado; andar para as 47 que não têm nenhum | os vídeos | espera |
 | 5 | Câmera no andar (acompanhar, aproximar, inclinação), um de cada vez | o sim dele a cada um | espera |
