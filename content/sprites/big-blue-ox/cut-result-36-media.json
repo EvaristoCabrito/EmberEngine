@@ -2,33 +2,33 @@
  "clips": {
   "base": {
    "video": "Attachments/Monsters/SwampBlueCalf/Swamp_Blue_Calf_heavy_idle_a58ef267_720p.mp4",
-   "first": 72,
-   "last": 136,
+   "first": 0,
+   "last": 142,
    "bootRow": 679,
    "bootRows": [
     676,
     679
    ],
-   "frameCountFrom": 65,
+   "frameCountFrom": 143,
    "figurePx": 566.0,
    "frames": 36,
-   "frameMs": 75.23148148148147,
+   "frameMs": 165.50925925925924,
    "nat": [
-    982,
-    604
+    1061,
+    619
    ],
    "crop": [
-    6,
     4,
-    972,
-    596
+    5,
+    1053,
+    610
    ],
    "box": {
-    "w": 5.0488,
-    "h": 3.10537,
+    "w": 5.45496,
+    "h": 3.18249,
     "foot": 0.03599
    },
-   "pattern": "content/sprites/big-blue-ox/base-media36-v01/base-{}.png"
+   "pattern": "content/sprites/big-blue-ox/base-media36-r01/base-{}.png"
   },
   "atk": {
    "video": "Attachments/Monsters/SwampBlueCalf/WalkATTV1.mp4",
@@ -45,7 +45,7 @@
    "frames": 36,
    "frameMs": 107.63888888888889,
    "nat": [
-    1059,
+    1058,
     551
    ],
    "crop": [
@@ -55,11 +55,11 @@
     541
    ],
    "box": {
-    "w": 5.44468,
+    "w": 5.43954,
     "h": 2.83288,
     "foot": 0.03599
    },
-   "pattern": "content/sprites/big-blue-ox/atk-media36-v01/atk-{}.png",
+   "pattern": "content/sprites/big-blue-ox/atk-media36-r01/atk-{}.png",
    "impact": 0.7527
   },
   "special": {
@@ -82,16 +82,16 @@
    ],
    "crop": [
     4,
-    5,
+    4,
     1115,
-    660
+    661
    ],
    "box": {
     "w": 5.77887,
     "h": 3.4447,
     "foot": 0.14396
    },
-   "pattern": "content/sprites/big-blue-ox/special-media36-v01/special-{}.png",
+   "pattern": "content/sprites/big-blue-ox/special-media36-r01/special-{}.png",
    "impact": 0.701
   },
   "hit": {
@@ -123,7 +123,7 @@
     "h": 3.62979,
     "foot": 0.03085
    },
-   "pattern": "content/sprites/big-blue-ox/hit-media36-v01/hit-{}.png",
+   "pattern": "content/sprites/big-blue-ox/hit-media36-r01/hit-{}.png",
    "impact": 0.2192
   },
   "death": {
@@ -141,89 +141,89 @@
    "frames": 36,
    "frameMs": 104.16666666666667,
    "nat": [
-    1082,
-    573
+    1083,
+    574
    ],
    "crop": [
-    6,
-    4,
-    1072,
+    5,
+    5,
+    1073,
     564
    ],
    "box": {
-    "w": 5.56293,
-    "h": 2.94599,
+    "w": 5.56807,
+    "h": 2.95113,
     "foot": 0.03599
    },
-   "pattern": "content/sprites/big-blue-ox/death-media36-v01/death-{}.png"
+   "pattern": "content/sprites/big-blue-ox/death-media36-r01/death-{}.png"
   },
   "move": {
    "video": "Attachments/Monsters/SwampBlueCalf/WalkATTV1.mp4",
    "first": 0,
-   "last": 96,
+   "last": 117,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/big-blue-ox/idle 72:136",
-   "loopFirst": 24,
-   "loopLast": 90,
-   "seamSteps": 1.51,
+   "loopFirst": 0,
+   "loopLast": 117,
+   "seamSteps": NaN,
    "bootRow": 667,
    "bodyDrift": [
     0,
     0
    ],
-   "frameCountFrom": 67,
+   "frameCountFrom": 118,
    "figurePx": 566.0,
    "frames": 36,
-   "frameMs": 77.54629629629629,
+   "frameMs": 136.57407407407405,
    "nat": [
-    932,
-    561
+    953,
+    568
    ],
    "crop": [
-    7,
+    6,
     5,
-    921,
-    552
+    942,
+    556
    ],
    "box": {
-    "w": 4.79173,
-    "h": 2.88429,
-    "foot": 0.03599
+    "w": 4.8997,
+    "h": 2.92028,
+    "foot": 0.0617
    },
-   "pattern": "content/sprites/big-blue-ox/move-media36-v01/move-{}.png"
+   "pattern": "content/sprites/big-blue-ox/move-media36-r01/move-{}.png"
   },
   "move-left": {
    "video": "Attachments/Monsters/SwampBlueCalf/WalkATTV1.mp4",
    "first": 0,
-   "last": 96,
+   "last": 117,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/big-blue-ox/idle 72:136",
-   "loopFirst": 24,
-   "loopLast": 90,
-   "seamSteps": 1.51,
+   "loopFirst": 0,
+   "loopLast": 117,
+   "seamSteps": NaN,
    "bootRow": 667,
    "bodyDrift": [
     0,
     0
    ],
-   "frameCountFrom": 67,
+   "frameCountFrom": 118,
    "figurePx": 566.0,
    "frames": 36,
-   "frameMs": 77.54629629629629,
+   "frameMs": 136.57407407407405,
    "nat": [
-    932,
-    561
+    953,
+    568
    ],
    "crop": [
-    4,
     5,
-    921,
-    552
+    5,
+    942,
+    556
    ],
    "box": {
-    "w": 4.79173,
-    "h": 2.88429,
-    "foot": 0.03599
+    "w": 4.8997,
+    "h": 2.92028,
+    "foot": 0.0617
    },
-   "pattern": "content/sprites/big-blue-ox/move-left-media36-v01/move-left-{}.png"
+   "pattern": "content/sprites/big-blue-ox/move-left-media36-r01/move-left-{}.png"
   }
  }
 }
