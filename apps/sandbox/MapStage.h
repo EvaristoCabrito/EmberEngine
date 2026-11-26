@@ -4634,7 +4634,8 @@ class MapStage final : public Stage {
         const bool over = shot->until >= 0.0f ? time > shot->until : time - shot->start > poseSeconds(ui, shot->pose) / shot->rate;
         if (!shot->hold && over) {
           OneShot& s = unitShot_[ui];
-          if (!s.then.empty() && time < s.thenUntil) s = {s.then, time, false, s.rate, s.thenUntil};  // drawn from the next frame
+          if (!s.next.empty()) s = {s.next, time, false, s.rate, -1.0f, s.then, s.thenUntil};  // the turn, whole, then the back still
+          else if (!s.then.empty() && time < s.thenUntil) s = {s.then, time, false, s.rate, s.thenUntil};  // drawn from the next frame
           else s.pose.clear();
         }
       } else if (walking && entry) {
@@ -9159,6 +9160,7 @@ class MapStage final : public Stage {
     float until = -1.0f; // >= 0: held until this time instead of its own length (a still)
     std::string then;    // played next, as this one ends, until `thenUntil` (the cast pose, then its back still)
     float thenUntil = -1.0f;
+    std::string next;    // played whole as this one ends, before `then` (the turn after the cast pose, then the back still)
   };
   // An action in play (Ember's queue): its steps one after another (a strike and its counter, a spell's hits, a
   // heal), each a pose with the rules applied at its impact.
@@ -9525,9 +9527,12 @@ class MapStage final : public Stage {
       return glm::length(d) > 1e-3f && away >= -0.5f * glm::length(d);
     };
     // Turned away to cast (the user, 2026-11-13: "use that turn around for casting and experiment with the illusion of depth"): such a
-    // spell aimed into the board, by a caster with a turn of its own (turnBack, from the turn-around videos) and a back still, plays the
-    // turn in place of its cast pose, at its video's own speed like every clip; the spell then leaves its hands with its back to us and flies into the
-    // depth of the board, its back still held, drawn over the effect, until the spell is over (shot.then below).
+    // spell aimed into the board, by a caster with a turn of its own (turnBack, from the turn-around videos) and a back still, plays its
+    // whole cast pose facing us, and only AFTER the cast the whole turn, then it lets the spell go (the user, 2026-11-25: "ele só vira
+    // de costas APOS CASTING", "ele vira e solta"; "quero todas animações no maximo gastando o maximo de tempo na tela"; "sem slow down
+    // sem variação de tempo"), each at its video's own speed; the spell leaves its hands with its back to us, at the hands' height (not
+    // the hip: "parece que ele esta mijando a magia", "acerta as alturas"), and flies into the depth of the board, its back still held,
+    // drawn over the effect, until the spell is over (shot.next and shot.then below). The spell and the step wait for both clips whole.
     bool missileAimedAway = false;
     if (isMissile && striker >= 0) {
       const ember::BattleStep& s0 = x.steps[firstMissileStep];
@@ -9548,8 +9553,7 @@ class MapStage final : public Stage {
       if (isMissile) {
         if (missileAimedAway) {
           if (missileIndex == 0) {
-            turnToCast = true;
-            pose = "turnBack";
+            turnToCast = true;  // the cast pose stays: the turn follows it
           } else {
             turnToCast = false;
             pose = "castBack";
@@ -9557,14 +9561,15 @@ class MapStage final : public Stage {
         }
       } else if (aimedAway(aim)) {
         turnToCast = true;
-        pose = "turnBack";
       }
     }
+    // the whole turn after the whole cast pose: the spell, the step's end and the camera wait for it
+    const float turnLead = turnToCast ? poseSeconds(static_cast<size_t>(striker), "turnBack") / poseRate : 0.0f;
     const float length = (isMissile && missileAimedAway && missileIndex > 0)
                              ? (0.12f / actionRate())
                              : ((striker >= 0 && !pose.empty() ? poseSeconds(static_cast<size_t>(striker), pose) : 0.6f) / poseRate);
     x.impact = now_ + length * (striker >= 0 && !pose.empty() ? poseImpact(static_cast<size_t>(striker), pose) : kImpactShare);
-    x.end = now_ + length + kExchangeGap / actionRate();
+    x.end = now_ + length + turnLead + kExchangeGap / actionRate();
     if (comboStep) {
       const size_t su = static_cast<size_t>(striker);
       if (comboIndex == 0 || x.comboStart < 0.0f) x.comboStart = now_, x.comboLength = poseSeconds(su, "doubleStrike") / kClipRate;
@@ -9634,6 +9639,7 @@ class MapStage final : public Stage {
         shot.then = "castBack";
       } else {
         unitShot_[static_cast<size_t>(striker)] = {pose, now_, false, poseRate};
+        if (turnToCast) unitShot_[static_cast<size_t>(striker)].next = "turnBack";
       }
     }
     // The casting light (Ember Battle3D syncCastLight): every caster while its cast pose plays, in its spell's colour (Malrec,
@@ -9657,7 +9663,7 @@ class MapStage final : public Stage {
     // plain blows and potions keep the blow inside the pose.
     const bool magic = striker >= 0 && !x.counter && !s.kind.empty() && !pose.empty() && s.type != StepType::Combat &&
                        s.type != StepType::Potion && ember::spellPose(s.kind) != "attack";
-    const float fxStart = magic ? now_ + length : now_;
+    const float fxStart = magic ? now_ + length + turnLead : now_;
     x.release = magic ? fxStart : 0.0f;  // Câmera de ação: on the caster until then, then on the target / area
     auto afterPose = [&](ember::Json cues) {
       if (magic && cues.is_array())
@@ -9863,7 +9869,15 @@ class MapStage final : public Stage {
       }
       if (spots.empty() && target >= 0) spots.push_back(unitSpot(static_cast<size_t>(target)));
       // A version with Ember's own timeline (Míssil Mágico 02) lands when it hits, as Ember's rules wait for it.
-      const SpellEffects::Spot casterSpot = unitSpot(static_cast<size_t>(striker));
+      SpellEffects::Spot casterSpot = unitSpot(static_cast<size_t>(striker));
+      // A spell leaves the caster's hands at their height in the pose it lets go in (content/fx/cast-hands.json: the cast pose, or the
+      // back still after the turn), not at the body's middle, the hip. The spells thrown from the hands (fromHands); the lightning keeps
+      // the look the user chose (its charge on the hand is placed by vfx/StormBolt).
+      if (magic && fromHands) {
+        const std::string releasePose = turnToCast || (isMissile && missileAimedAway && missileIndex > 0) ? std::string("castBack") : pose;
+        if (const float share = castHandsShare(strikerKey, releasePose); share > 0.0f && casterSpot.cardHeight > 0.0f)
+          casterSpot.body = casterSpot.feet + glm::vec3(0.0f, share * casterSpot.cardHeight, 0.0f);
+      }
       const std::string fxKind = s.kind == "witchStitchRupture" ? "witchStitch" : s.kind;
       int look = spellLook(fxKind, static_cast<size_t>(striker));
       if (s.kind == "abyssalSwap" && s.att < battle_->units().size())
@@ -10402,6 +10416,23 @@ class MapStage final : public Stage {
     if (h <= 0.0f) h = 1.8f;
     const float body = std::clamp(h * 0.45f, 0.5f, 2.0f);
     return {feet, feet + glm::vec3(0.0f, body, 0.0f), h};
+  }
+  // content/fx/cast-hands.json: the height a unit's (catalog key) spell leaves its hands at in a pose, a share of its card's height;
+  // 0 when not measured (the body's middle stays).
+  static float castHandsShare(const std::string& key, const std::string& pose) {
+    static const std::unordered_map<std::string, float> shares = [] {
+      std::unordered_map<std::string, float> out;
+      std::ifstream in("content/fx/cast-hands.json", std::ios::binary);
+      const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+      if (!j.is_object() || !j.contains("units") || !j["units"].is_object()) return out;
+      for (const auto& [k, v] : j["units"].items())
+        if (v.is_object())
+          for (const auto& [p, s] : v.items())
+            if (s.is_number()) out[k + "/" + p] = s.get<float>();
+      return out;
+    }();
+    const auto it = shares.find(key + "/" + pose);
+    return it == shares.end() ? 0.0f : it->second;
   }
   // content/fx/hand-bolts.json: the pose of a unit (catalog key) whose art throws a bolt from its hands, and where its glow is on each
   // frame (HandBoltFx). Null for every other unit and pose.

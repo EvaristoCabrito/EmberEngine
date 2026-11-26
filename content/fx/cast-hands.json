@@ -1,0 +1,8 @@
+{
+ "about": "Where a caster's spell leaves its hands (MapStage castHandsShare): per unit (catalog key) and the pose shown when the spell lets go, the height of the hands / the spell's glow as a share of the card's height from the feet (0 = feet, 1 = top of the image). In place of the body's middle (0.45, the hip: the user, 2026-11-25: \"parece que ele esta mijando a magia\", \"porra como sai sempre tudo a virilha porra acerta as alturas\"). Measured from the art: \"cast\" = the centroid of the spell's glow over the frames of the cast pose (Voss violet, Isolde red; Aldric the thrusting hand), \"castBack\" = the hands on the back still (after the turn: \"ele vira e solta\"). A spell only: weapon skills keep their own (\"habilidades de espada não são magias\").",
+ "units": {
+  "voss": {"cast": 0.83, "castBack": 0.71},
+  "isolde": {"cast": 0.87, "castBack": 0.61},
+  "aldric": {"cast": 0.62, "castBack": 0.63}
+ }
+}
