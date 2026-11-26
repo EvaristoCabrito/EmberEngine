@@ -40,7 +40,10 @@ class ArcaneSpell {
 
   // The Mago Negro's plain ranged attack: the Missile at `scale` of its size, let go at `release` and landing at `impact` (the
   // attack pose's own beats).
-  void asAttack(float start, float release, float impact, float scale);
+  void asAttack(float start, float release, float impact, float scale, int unit = -1);
+  // A plain attack whose art shows the hand (content/fx/hand-bolts.json, look "arcane"): the energy gathers at the palm as drawn
+  // this frame (`hand`, world) until it lets go; `unit`: the striker's scene unit, as given to asAttack.
+  void aimFrom(int unit, glm::vec3 hand, float now);
 
   float end() const { return end_; }
   bool done(float now) const { return now >= end_; }
@@ -51,6 +54,7 @@ class ArcaneSpell {
   glm::vec3 hand_{0.0f}, feet_{0.0f}, chest_{0.0f}, direction_{0.0f, 0.0f, 1.0f};
   float height_ = 2.0f, start_ = 0.0f, release_ = 0.0f, impact_ = 0.0f, end_ = 0.0f;
   float scale_ = 1.0f;
+  int unit_ = -1;
   uint32_t seed_ = 0;
 };
 

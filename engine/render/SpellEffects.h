@@ -181,9 +181,13 @@ class SpellEffects {
   bool active(float now) const;
   // The Mago Negro's plain ranged attack and counter as a small bolt of arcane energy (vfx/ArcaneFx, the Missile with every part at
   // `scale` of its size and light: a lesser blow than the spell).
-  void arcaneAttack(glm::vec3 from, float fromHeight, glm::vec3 to, float toHeight, float start, float release, float impact, float scale) {
+  void arcaneAttack(glm::vec3 from, float fromHeight, glm::vec3 to, float toHeight, float start, float release, float impact, float scale, int unit = -1) {
     arcanes_.emplace_back(ArcaneSpell::Style::Missile, from, fromHeight, to, toHeight, start, impact, static_cast<uint32_t>(random() * 4294967295.0f));
-    arcanes_.back().asAttack(start, release, impact, scale);
+    arcanes_.back().asAttack(start, release, impact, scale, unit);
+  }
+  // The striker's palm as drawn this frame (MapStage addCard): its arcane attack gathers there until it lets go.
+  void arcaneAimFrom(int unit, glm::vec3 hand, float now) {
+    for (ArcaneSpell& a : arcanes_) a.aimFrom(unit, hand, now);
   }
   void clear() { arcanes_.clear(), holySpells_.clear(), poisons_.clear(), ices_.clear(), combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), ignites_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), dreamWebs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), stormBolts_.clear(), chainBolts_.clear(), frosts_.clear(), warrior_.clear(), vanguard_.clear(), arms_.clear(), ranger_.clear(), lancer_.clear(), turnUndead_.clear(), healer_.clear(), conjurer_.clear(), status_.clear(), daggers_.clear(), mage_.clear(), crusader_.clear(), selene_.clear(), handBolts_.clear(), witchStitch_.clear(), burialWeight_.clear(), moonwarden_.clear(); }
   // The Mago Negro's Nuvem de Adagas standing round its caster (vfx/DaggerFx, ours, 3D): the stage keeps one cloud per unit (MapStage
