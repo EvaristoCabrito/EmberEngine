@@ -24,12 +24,11 @@
    "kind": "walk",
    "src": "build/video-cut/voss-veo/walk-right",
    "video": "Attachments/VeoVoss/WalkRight/Voss_walking_to_the_right_20261017230249.mp4",
-   "first": 29,
-   "last": 152,
-   "loopMin": 88,
-   "loopMax": 121,
+   "first": 20,
+   "last": 191,
    "mode": "loop",
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-left",
@@ -38,11 +37,10 @@
    "src": "build/video-cut/voss-veo/walk-left",
    "video": "Attachments/VeoVoss/Walk Left/Character_walking_left_with_staff_20261017230240.mp4",
    "first": 0,
-   "last": 148,
-   "loopMin": 101,
-   "loopMax": 146,
+   "last": 191,
    "mode": "loop",
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "cast",
@@ -508,11 +506,10 @@
    "video": "Attachments/TurnAround/VossWalkuUpandDown.mp4",
    "first": 0,
    "last": 119,
-   "loopMin": 40,
-   "loopMax": 110,
    "mode": "loop",
    "version": "leve-passo-r01",
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-down",
@@ -522,11 +519,10 @@
    "video": "Attachments/TurnAround/VossWalkuUpandDown.mp4",
    "first": 121,
    "last": 239,
-   "loopMin": 40,
-   "loopMax": 110,
    "mode": "loop",
    "version": "leve-passo-r01",
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   }
  ]
 }

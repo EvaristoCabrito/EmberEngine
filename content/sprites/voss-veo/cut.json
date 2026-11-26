@@ -22,12 +22,11 @@
    "kind": "walk",
    "src": "build/video-cut/voss-veo/walk-right",
    "video": "Attachments/VeoVoss/WalkRight/Voss_walking_to_the_right_20261017230249.mp4",
-   "first": 29,
-   "last": 152,
-   "loopMin": 88,
-   "loopMax": 121,
+   "first": 20,
+   "last": 191,
    "mode": "loop",
-   "why": "the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (29..152, 124 frames), the seam trims at most 24; the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (29..152, 124 frames), the seam trims at most 36"
+   "why": "the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (29..152, 124 frames), the seam trims at most 24; the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (29..152, 124 frames), the seam trims at most 36",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-left",
@@ -36,11 +35,10 @@
    "src": "build/video-cut/voss-veo/walk-left",
    "video": "Attachments/VeoVoss/Walk Left/Character_walking_left_with_staff_20261017230240.mp4",
    "first": 0,
-   "last": 148,
-   "loopMin": 101,
-   "loopMax": 146,
+   "last": 191,
    "mode": "loop",
-   "why": "the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (0..148, 149 frames), the seam trims at most 24; the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (0..148, 149 frames), the seam trims at most 48"
+   "why": "the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (0..148, 149 frames), the seam trims at most 24; the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (0..148, 149 frames), the seam trims at most 48",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "cast",
@@ -505,11 +503,10 @@
    "video": "Attachments/TurnAround/VossWalkuUpandDown.mp4",
    "first": 0,
    "last": 119,
-   "loopMin": 40,
-   "loopMax": 110,
    "mode": "loop",
    "why": "the user, 2026-11-19: VossWalkuUpandDown, walking away from the camera in place (0-119; the video cuts to his front at 120)",
-   "version": "r01"
+   "version": "r01",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-down",
@@ -519,11 +516,10 @@
    "video": "Attachments/TurnAround/VossWalkuUpandDown.mp4",
    "first": 121,
    "last": 239,
-   "loopMin": 40,
-   "loopMax": 110,
    "mode": "loop",
    "why": "the same video, walking toward the camera in place (121-239)",
-   "version": "r01"
+   "version": "r01",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   }
  ]
 }

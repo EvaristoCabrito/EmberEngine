@@ -15,12 +15,11 @@
    "video": "Attachments/Witch/Idle.mp4",
    "first": 0,
    "last": 119,
-   "loopMin": 60,
-   "loopMax": 119,
    "mode": "loop",
    "figurePx": 659.0,
    "scaleTo": 610,
-   "version": "media64-r01"
+   "version": "media64-r01",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "atk",
@@ -790,8 +789,6 @@
    "video": "Attachments/Witch/Woman_walking_in_place_4635965f (1).mp4",
    "first": 0,
    "last": 143,
-   "loopMin": 24,
-   "loopMax": 136,
    "inPlace": true,
    "mode": "loop",
    "figurePx": 625.0,
@@ -1186,7 +1183,8 @@
     ]
    },
    "scaleTo": 610,
-   "version": "media64-r01"
+   "version": "media64-r01",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "hit",
@@ -1974,8 +1972,6 @@
    "video": "Attachments/Witch/WitchUpandDown.mp4",
    "first": 0,
    "last": 119,
-   "loopMin": 24,
-   "loopMax": 112,
    "inPlace": true,
    "mode": "loop",
    "figurePx": 1076.0,
@@ -2361,7 +2357,8 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-down",
@@ -2371,8 +2368,6 @@
    "video": "Attachments/Witch/WitchUpandDown.mp4",
    "first": 120,
    "last": 239,
-   "loopMin": 24,
-   "loopMax": 112,
    "inPlace": true,
    "mode": "loop",
    "figurePx": 1074.5,
@@ -2762,7 +2757,8 @@
      ]
     ]
    },
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   }
  ],
  "result": "cut-result-64-media.json",
