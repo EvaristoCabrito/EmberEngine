@@ -108,6 +108,9 @@ struct HeroPose {
   std::vector<int> pace;     // frame shown at each 1/240 s (Ember framePace)
   int doneAt = -1;           // one-shot poses: the 1/240 s tick it finishes (-1 = loops)
   float strides = 2.0f;      // walk clips: full strides (both legs) the whole clip holds (content/data/walk-strides.json)
+  // walk clips: how fast the feet cover the ground as the video plays, world units a second at the unit's size 1
+  // (content/data/walk-speeds.json, tools/scripts/sprites/walk_speed.py); 0 = not read (fliers): the game's step
+  float groundSpeed = 0.0f;
   float impact = -1;         // strike poses: share of the pose at which the blow lands (art cut from video); -1 = the default
   float release = -1;        // bow poses: share of the pose at which the arrow leaves the bow (art cut from video); -1 = none
   std::string medium;        // the same clip at ~610 px of figure in this sprite set (Personagens Média); empty = none

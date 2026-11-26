@@ -39,6 +39,8 @@ class DebugUi {
   // Renderer: draws this frame's UI into `target` (in COLOR_ATTACHMENT_OPTIMAL). Does nothing if
   // newFrame() was not called since the last record.
   void record(VkCommandBuffer cmd, VkImageView target, VkExtent2D size);
+  // Immediately frees UI images queued for destruction (e.g. by releaseUiImages) and any already retired ones.
+  void flushReleasedTextures();
 
   // Every screen is laid out on a canvas kUiHeight tall; the UI is drawn zoomed to the real height (user,
   // 2026-10-15: menus too small to read), so text, buttons and plates grow together with the window.

@@ -184,7 +184,8 @@ void WebOfDreams::build(float now, const Camera&, VfxFrame& frame, std::vector<V
   const glm::vec3 sight = vfxFromEmber(center_);
   const float tightening = kTightening * three::smoothstep(e, 1.04f, 1.48f);
   auto draw = [&](VfxMaterial material, uint32_t first, size_t count, const glm::mat4& model, glm::vec4 p0, glm::vec4 p1, glm::vec4 color,
-                  VfxBlend blend, uint32_t firstInstance = 0xFFFFFFFFu, uint32_t instances = 1) {
+                  VfxBlend blend, uint32_t firstInstance = 0xFFFFFFFFu, uint32_t instances = 1, bool underCards = false,
+                  bool behindCard = false, glm::vec3 cardAt = glm::vec3(0.0f)) {
     VfxDraw d;
     d.gpu.model = model;
     d.gpu.params0 = p0;
@@ -198,12 +199,16 @@ void WebOfDreams::build(float now, const Camera&, VfxFrame& frame, std::vector<V
     d.instances = instances;
     d.blend = blend;
     d.depthTest = true;
+    d.underCards = underCards;
+    d.behindCard = behindCard;
+    d.cardAt = cardAt;
     frame.draws.push_back(d);
   };
 
   // --- The net (renderOrder 3) ---
   draw(VfxMaterial::WebThread, frame.addVertices(net_), net_.size(), group, {e, kPulseSpeed, formation, tightening},
-       {kDisplacement, 0.9f * (1.0f + bind * kPulseBrightness * 0.42f), 0.9f * live, 0}, {}, VfxBlend::Additive);
+       {kDisplacement, 0.9f * (1.0f + bind * kPulseBrightness * 0.42f), 0.9f * live, 0}, {}, VfxBlend::Additive, 0xFFFFFFFFu, 1, false,
+       true, sight);
 
   // --- The knots (updateNodes) ---
   {
@@ -222,7 +227,7 @@ void WebOfDreams::build(float now, const Camera&, VfxFrame& frame, std::vector<V
     frame.instances.insert(frame.instances.end(), knots.begin(), knots.end());
     draw(VfxMaterial::Standard, frame.addVertices(knotGeometry()), knotGeometry().size(), group, {0.25f, 0.08f, 0, 0},
          glm::vec4(three::hex(0x7959ff), 1.8f + std::exp(-std::pow((e - 1.42f) / 0.14f, 2.0f)) * 4.0f), glm::vec4(three::hex(0xb8a2ff), 0.92f * live),
-         VfxBlend::Alpha, firstInstance, static_cast<uint32_t>(knots.size()));
+         VfxBlend::Alpha, firstInstance, static_cast<uint32_t>(knots.size()), false, true, sight);
   }
 
   // --- 32 drifting shards (updateParticles) ---
@@ -242,14 +247,15 @@ void WebOfDreams::build(float now, const Camera&, VfxFrame& frame, std::vector<V
     const uint32_t firstInstance = static_cast<uint32_t>(frame.instances.size());
     frame.instances.insert(frame.instances.end(), shards.begin(), shards.end());
     draw(VfxMaterial::Standard, frame.addVertices(shardGeometry()), shardGeometry().size(), group, {0.38f, 0.05f, 0, 0},
-         glm::vec4(three::hex(0x8061ff), 1.25f), glm::vec4(three::hex(0xb9a5ff), live), VfxBlend::Alpha, firstInstance, static_cast<uint32_t>(shards.size()));
+         glm::vec4(three::hex(0x8061ff), 1.25f), glm::vec4(three::hex(0xb9a5ff), live), VfxBlend::Alpha, firstInstance, static_cast<uint32_t>(shards.size()),
+         false, true, sight);
   }
 
   // --- Each unit inside: its own strands (renderOrder 4) ---
   for (const Wrapped& w : targets_)
     draw(VfxMaterial::WebThread, frame.addVertices(w.strands), w.strands.size(), group * glm::translate(glm::mat4(1.0f), w.offset),
          {e, kPulseSpeed, formation, tightening}, {kDisplacement, 1.1f * (1.0f + bind * kPulseBrightness * 0.5f), 0.98f * live, 0}, {},
-         VfxBlend::Additive);
+         VfxBlend::Additive, 0xFFFFFFFFu, 1, false, true, vfxFromEmber(center_ + w.offset));
 
   // --- Lights: the central one forming, flashing on the bind, sustained; two travelling with the pulses ---
   const float formationLight = kCentralLight * three::smoothstep(e, 0.02f, 0.54f);

@@ -71,6 +71,7 @@ void SpriteSystem::beginFight() {
   pinnedSet_.clear();
   pendingPins_.clear();
   lightAsked_ = false;  // each fight asks again (setLight)
+  fullShared_ = false;
   decided_ = false;
   fightPending_ = true;
   pinsLogged_ = false;
@@ -131,7 +132,7 @@ std::pair<uint32_t, uint32_t> SpriteSystem::pinProgress() const {
     if (headerFailed) ++done;
     else if (!decided_) continue;
     else if (c.light) done += c.baseFailed || c.baseState == State::Resident || (!c.needsBase() && c.tailIndex != kNoTexture) ? 1u : 0u;
-    else done += c.state == State::Resident || !fullPool_ ? 1u : 0u;  // no pool at all: tails only (logged)
+    else done += c.state == State::Resident || !fullPool_ || fullShared_ ? 1u : 0u;  // no pool or shared streaming budget: tails/on-demand
   }
   return {done, total};
 }
@@ -177,7 +178,10 @@ void SpriteSystem::updateBases() {
         c.baseUpload = {c.baseImage.image, c.baseImage.extent.width, c.baseImage.extent.height, c.header.mipCount - kBaseFirstMip,
                         c.header.frames, kBc7BlockBytes, bytes.subspan(skip)};
         uploads_.enqueue(c.baseUpload);
-        baseBytes_ += clipBytes(c.header, kBaseFirstMip);
+        VmaAllocationInfo allocInfo{};
+        vmaGetAllocationInfo(context_.allocator, c.baseImage.allocation, &allocInfo);
+        c.baseAllocBytes = allocInfo.size;
+        baseBytes_ += c.baseAllocBytes;
         c.baseState = State::Uploading;
       }
     }
@@ -209,18 +213,23 @@ void SpriteSystem::measureClips() {
   // The real size of each full clip image (with the driver's padding), to size the blocks.
   VkDeviceSize largest = 0;
   const SpriteClipHeader* largestHeader = nullptr;
-  for (const auto& clip : clips_) {
-    if (!clip->headerReady) continue;
+  const auto measureImage = [&](uint32_t firstMip, const SpriteClipHeader& h) {
     uint32_t families[2];
-    const VkImageCreateInfo info = imageCreateInfo(context_, clipImageDesc(clip->header, 0), families);
+    const VkImageCreateInfo info = imageCreateInfo(context_, clipImageDesc(h, firstMip), families);
     VkDeviceImageMemoryRequirements query{VK_STRUCTURE_TYPE_DEVICE_IMAGE_MEMORY_REQUIREMENTS};
     query.pCreateInfo = &info;
     VkMemoryRequirements2 req{VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
     vkGetDeviceImageMemoryRequirements(context_.device, &query, &req);
-    clip->memoryBytes = req.memoryRequirements.size;
-    clip->memoryAlignment = req.memoryRequirements.alignment;
-    if (req.memoryRequirements.size > largest) {
-      largest = req.memoryRequirements.size;
+    return req.memoryRequirements;
+  };
+  for (const auto& clip : clips_) {
+    if (!clip->headerReady) continue;
+    const VkMemoryRequirements req = measureImage(0, clip->header);
+    clip->memoryBytes = req.size;
+    clip->memoryAlignment = req.alignment;
+    if (clip->needsBase()) clip->baseMemoryBytes = measureImage(kBaseFirstMip, clip->header).size;
+    if (req.size > largest) {
+      largest = req.size;
       largestHeader = &clip->header;
     }
   }
@@ -241,7 +250,8 @@ void SpriteSystem::dropBase(Clip& c) {
   assets_.release(c.baseHandle);
   c.baseHandle = {};
   if (c.baseImage.image) {
-    baseBytes_ -= clipBytes(c.header, kBaseFirstMip);
+    baseBytes_ = baseBytes_ > c.baseAllocBytes ? baseBytes_ - c.baseAllocBytes : 0;
+    c.baseAllocBytes = 0;
     retire(c.baseImage, c.baseIndex);
   }
   c.baseState = State::Idle;
@@ -277,12 +287,22 @@ void SpriteSystem::destroyFullPool() {
 void SpriteSystem::decideFight() {
   const auto started = std::chrono::steady_clock::now();
   fightPending_ = false;
+  fullShared_ = false;
   decided_ = true;
   // The last fight's clips this one does not pin again let go of their bases (Leve copies, outside the pool); their full
   // versions stay in the pool as any clip streamed in, the first to leave when room is needed. Those pinned again keep
   // everything they have on the GPU: nothing of them is loaded again.
   uint32_t again = 0, released = 0;
   bool idle = false;
+  const auto flushRetired = [&] {
+    if (retired_.empty()) return;
+    if (!idle) vkDeviceWaitIdle(context_.device), idle = true;
+    for (Retired& r : retired_) {
+      destroyImage(context_, r.image);
+      if (r.index != kNoTexture) bindless_.removeSampledImage(r.index);
+    }
+    retired_.clear();
+  };
   for (auto& clipPtr : clips_) {
     Clip& c = *clipPtr;
     if (!c.kept) continue;
@@ -295,6 +315,7 @@ void SpriteSystem::decideFight() {
     if (c.baseState == State::Uploading && !idle) vkDeviceWaitIdle(context_.device), idle = true;
     if (c.baseState != State::Idle) dropBase(c);
   }
+  flushRetired();
   if (!largestClip_) {  // no clip has a valid header: tails only, as ever
     for (const SpriteClipId id : pinned_) clips_[id]->light = false;
     return;
@@ -303,12 +324,15 @@ void SpriteSystem::decideFight() {
   // The pinned clips (a fight's characters) are loaded whole before the fight opens and held: Alta or Leve for those
   // with two versions (the player's choice), at full resolution for everyone else. Alta that does not fit the GPU's free
   // memory (with a margin) is taken as Leve, logged.
-  uint64_t fullOne = 0, fullTwo = 0, halfTwo = 0;
+  uint64_t fullOne = 0, fullTwo = 0, halfTwo = 0, halfTwoGpu = 0;
   for (const SpriteClipId id : pinned_) {
     const Clip& c = *clips_[id];
     if (!c.headerReady) continue;
     (c.twoVersions ? fullTwo : fullOne) += c.header.fullBytes;
-    if (c.twoVersions) halfTwo += clipBytes(c.header, std::min(kBaseFirstMip, c.header.tailFirstMip));
+    if (c.twoVersions) {
+      halfTwo += clipBytes(c.header, std::min(kBaseFirstMip, c.header.tailFirstMip));
+      if (c.needsBase()) halfTwoGpu += c.baseAllocBytes ? c.baseAllocBytes : c.baseMemoryBytes;
+    }
   }
   const VkPhysicalDeviceMemoryProperties* props = nullptr;
   vmaGetMemoryProperties(context_.allocator, &props);
@@ -321,11 +345,14 @@ void SpriteSystem::decideFight() {
   const uint64_t free = heap.budget > used ? heap.budget - used : 0;
   constexpr uint64_t kMargin = 256ull << 20;  // the rest of the fight (effects, meshes still landing)
   const uint64_t streaming = streamingBytes_;
+  const VkDeviceSize block = std::max(kPoolBlockBytes, largestClip_);
+  const auto blocksFor = [&](uint64_t bytes) { return static_cast<size_t>(bytes / block + 1); };
   lightActive_ = lightAsked_;
-  if (!lightActive_ && fullTwo > 0 && streaming + fullOne + fullTwo + kMargin > free) {
+  if (!lightActive_ && fullTwo > 0 &&
+      (streaming + fullOne + fullTwo + kMargin > free || blocksFor(fullOne + fullTwo) * block + kMargin > free)) {
     lightActive_ = true;
-    logWarn("sprites: Personagens Alta needs {} MB, the GPU has {} MB free: Leve for this fight", (streaming + fullOne + fullTwo + kMargin) >> 20,
-            free >> 20);
+    const uint64_t need = std::max(streaming + fullOne + fullTwo + kMargin, blocksFor(fullOne + fullTwo) * block + kMargin);
+    logWarn("sprites: Personagens Alta needs {} MB, the GPU has {} MB free: Leve for this fight", need >> 20, free >> 20);
   }
 
   // Budget plus the pinned full clips plus one block of slack, all allocated at once; a fragmented pool opens holes
@@ -335,50 +362,90 @@ void SpriteSystem::decideFight() {
   // what the map's 3D pieces need (trees are admitted only with their bytes + 16 MB free, and the fight's turns wait for every piece:
   // the user, 2026-11-18, Wisp Forest Crossing: no tree, the wolf's turn never ends; the log: pool 4 x 338 MB of 1429 MB free, 77 MB
   // left). Short of room the slack block goes first; the pinned clips' own blocks (plus one for packing) never.
-  const VkDeviceSize block = std::max(kPoolBlockBytes, largestClip_);
-  const auto blocksFor = [&](uint64_t bytes) { return static_cast<size_t>(bytes / block + 1); };
-  uint64_t want = streaming + fullOne + (lightActive_ ? 0 : fullTwo);
-  const auto poolBlocks = [&](uint64_t bytes) {
-    size_t blocks = blocksFor(bytes);
-    if (blocks * block + kMargin > free) {
-      const size_t fit = free > kMargin ? static_cast<size_t>((free - kMargin) / block) : 0;
-      blocks = std::max(blocksFor(fullOne + (lightActive_ ? 0 : fullTwo)), std::min(blocks, fit));
-    }
-    return blocks;
+  struct PoolPlan {
+    VkDeviceSize blockSize = 0;
+    size_t blockCount = 0;
+    uint64_t budget = 0;
   };
-  const size_t have = fullPool_ && fullPoolBlock_ == block ? static_cast<size_t>(fullPoolBytes_ / block) : 0;
-  const size_t needBlocks = poolBlocks(want);
-  const bool keepPool = have > 0 && have >= needBlocks && (have == needBlocks || (have == needBlocks + 1 && have * block + kMargin <= free));
+  const auto planPool = [&](uint64_t bytes, uint64_t pinnedBytes, uint64_t baseBytes) -> PoolPlan {
+    const uint64_t reserve = kMargin + baseBytes;
+    const uint64_t cappedBytes = (pinnedBytes == 0 && baseBytes > 0) ? std::min<uint64_t>(bytes, block - 1) : bytes;
+    size_t blocks = blocksFor(cappedBytes);
+    if (blocks * block + reserve > free) {
+      const size_t fit = free > reserve ? static_cast<size_t>((free - reserve) / block) : 0;
+      const size_t minBlocks = pinnedBytes > 0 ? blocksFor(pinnedBytes) : 0;
+      blocks = std::max(minBlocks, std::min(blocks, fit));
+    }
+    if (blocks > 0) return {block, blocks, std::min<uint64_t>(bytes, block * blocks)};
+    if (free > reserve + kPoolBlockBytes) return {kPoolBlockBytes, 1, kPoolBlockBytes};
+    return {0, 0, 0};
+  };
+  const uint64_t baseReserve = lightActive_ ? halfTwoGpu : 0;
+  const uint64_t pinnedFullRequested = fullOne + (lightActive_ ? 0 : fullTwo);
+  if (pinnedFullRequested > 0 && blocksFor(pinnedFullRequested) * block + kMargin + baseReserve > free) {
+    logWarn("sprites: fight's {} MB of full clips needs {} MB pool, GPU has {} MB free after margin: sharing the {} MB budget",
+            pinnedFullRequested >> 20, (blocksFor(pinnedFullRequested) * block) >> 20,
+            (free > kMargin + baseReserve ? free - kMargin - baseReserve : 0) >> 20, streaming >> 20);
+    fullShared_ = true;
+  }
+  const uint64_t pinnedFull = fullShared_ ? 0 : pinnedFullRequested;
+  uint64_t want = streaming + pinnedFull;
+  PoolPlan plan = planPool(want, pinnedFull, baseReserve);
+  const size_t have = fullPool_ && plan.blockSize > 0 && fullPoolBlock_ == plan.blockSize
+                          ? static_cast<size_t>(fullPoolBytes_ / plan.blockSize)
+                          : 0;
+  const bool keepPool = plan.blockCount > 0 && have >= plan.blockCount &&
+                        (have == plan.blockCount || (have == plan.blockCount + 1 && have * plan.blockSize + kMargin + baseReserve <= free));
   VkResult result = VK_SUCCESS;
   if (!keepPool) {
     destroyFullPool();
+    if (!lightActive_) {
+      for (const SpriteClipId id : pinned_) {
+        Clip& c = *clips_[id];
+        if (!(c.twoVersions && lightActive_) && c.baseState != State::Idle) {
+          if (c.baseState == State::Uploading && !idle) vkDeviceWaitIdle(context_.device), idle = true;
+          dropBase(c);
+        }
+      }
+      flushRetired();
+    }
     VmaPoolCreateInfo poolInfo{};
     poolInfo.memoryTypeIndex = fullMemoryType_;
-    poolInfo.blockSize = block;
-    const auto createPool = [&](uint64_t bytes) {
-      poolInfo.minBlockCount = poolInfo.maxBlockCount = poolBlocks(bytes);
+    const auto createPool = [&](const PoolPlan& p) -> VkResult {
+      if (p.blockCount == 0 || p.blockSize == 0) {
+        fullPool_ = VK_NULL_HANDLE;
+        return VK_SUCCESS;
+      }
+      poolInfo.blockSize = p.blockSize;
+      poolInfo.minBlockCount = poolInfo.maxBlockCount = static_cast<uint32_t>(p.blockCount);
       return vmaCreatePool(context_.allocator, &poolInfo, &fullPool_);
     };
-    result = createPool(want);
+    result = createPool(plan);
     if (result != VK_SUCCESS && !lightActive_ && fullTwo > 0) {
       logWarn("sprites: no GPU room for Personagens Alta ({}): Leve for this fight", string_VkResult(result));
       lightActive_ = true;
       want = streaming + fullOne;
-      result = createPool(want);
+      plan = planPool(want, fullOne, halfTwoGpu);
+      result = createPool(plan);
     }
-    if (result != VK_SUCCESS && fullOne > 0) {
+    if (result != VK_SUCCESS && !fullShared_ && fullOne > 0) {
       logError("sprites: no GPU room for the fight's {} MB of full clips ({}); they share the {} MB budget", fullOne >> 20,
                string_VkResult(result), streaming >> 20);
+      fullShared_ = true;
       want = streaming;
-      result = createPool(want);
+      plan = planPool(want, 0, lightActive_ ? halfTwoGpu : 0);
+      result = createPool(plan);
     }
-    if (result != VK_SUCCESS) {
-      logError("sprites: cannot reserve {} MB of GPU memory for full clips ({}); drawing tails only", (block * poolInfo.maxBlockCount) >> 20,
-               string_VkResult(result));
+    if (result != VK_SUCCESS || !fullPool_) {
+      if (result != VK_SUCCESS)
+        logError("sprites: cannot reserve {} MB of GPU memory for full clips ({}); drawing tails only", (plan.blockSize * plan.blockCount) >> 20,
+                 string_VkResult(result));
       fullPool_ = VK_NULL_HANDLE;
+      fullPoolBlock_ = 0;
+      fullPoolBytes_ = 0;
     } else {
-      fullPoolBlock_ = block;
-      fullPoolBytes_ = block * poolInfo.maxBlockCount;
+      fullPoolBlock_ = plan.blockSize;
+      fullPoolBytes_ = plan.blockSize * plan.blockCount;
     }
   }
   // Each pinned clip's version for this fight; one held as a base that now plays whole lets the base go.
@@ -390,14 +457,15 @@ void SpriteSystem::decideFight() {
       dropBase(c);
     }
   }
-  if (fullPool_) budget_.gpuBytes = want;
+  flushRetired();
+  if (fullPool_) budget_.gpuBytes = std::min<uint64_t>(want, fullPoolBytes_);
   if (!pinned_.empty())
     logInfo("sprites: Personagens {}{}: the cast {} MB at {} resolution, the others {} MB (GPU {} MB free before the fight)",
             lightActive_ ? "Leve" : "Alta", lightActive_ && !lightAsked_ ? " (Alta asked)" : "", (lightActive_ ? halfTwo : fullTwo) >> 20,
             lightActive_ ? "half" : "full", fullOne >> 20, free >> 20);
   logInfo("sprites: fight set up in {:.1f} ms: {} clips pinned, {} of them already held from the last fight, {} let go; full-clip pool {} x {} MB{}",
           std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count(), pinned_.size(), again, released,
-          fullPoolBytes_ / std::max<VkDeviceSize>(block, 1), block >> 20, keepPool ? " (kept)" : "");
+          fullPoolBlock_ ? fullPoolBytes_ / fullPoolBlock_ : 0, fullPoolBlock_ >> 20, keepPool ? " (kept)" : "");
 }
 
 void SpriteSystem::retire(Image& image, uint32_t& index) {
@@ -477,7 +545,13 @@ void SpriteSystem::updateStartup() {
         clip.tailHandle = {};
         --tailsPending_;
       } else if (state == AssetState::Ready) {
-        clip.tailImage = createImage(context_, clipImageDesc(clip.header, clip.header.tailFirstMip));
+        if (!tryCreateImage(context_, clipImageDesc(clip.header, clip.header.tailFirstMip), clip.tailImage)) {
+          logError("sprites: no GPU memory for tail of {}: skipped", clip.header.name);
+          assets_.release(clip.tailHandle);
+          clip.tailHandle = {};
+          --tailsPending_;
+          continue;
+        }
         clip.tailUpload = {clip.tailImage.image, clip.tailImage.extent.width, clip.tailImage.extent.height,
                            clip.header.mipCount - clip.header.tailFirstMip, clip.header.frames, kBc7BlockBytes, bytes};
         uploads_.enqueue(clip.tailUpload);
@@ -601,11 +675,12 @@ void SpriteSystem::update() {
   });
 
   if (!ready()) updateStartup();
-  if (fightPending_ && measured_) decideFight();
+  if (fightPending_ && ready()) decideFight();
   if (decided_) {
     // Pinned clips at full resolution are asked for every frame (so never evicted); Leve ones keep their base.
-    for (const SpriteClipId id : pinned_)
-      if (!clips_[id]->light) request(id, kPinned);
+    if (!fullShared_)
+      for (const SpriteClipId id : pinned_)
+        if (!clips_[id]->light) request(id, kPinned);
     updateBases();
   }
   if (!pinsLogged_ && !pinned_.empty() && pendingPins_.empty() && decided_) {
@@ -670,7 +745,7 @@ void SpriteSystem::update() {
             [&](SpriteClipId a, SpriteClipId b) { return clips_[a]->priority > clips_[b]->priority; });
   for (const SpriteClipId id : requested_) {
     Clip& clip = *clips_[id];
-    if (clip.state != State::Idle || !clip.headerReady || !fullPool_) continue;
+    if (clip.state != State::Idle || !clip.headerReady || !fullPool_ || clip.memoryBytes > fullPoolBlock_) continue;
     if (!makeRoom(clip.header.fullBytes)) {
       ++starved_;
       continue;

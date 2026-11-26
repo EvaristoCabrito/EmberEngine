@@ -81,7 +81,7 @@ class SpriteSystem {
   bool lightActive() const { return lightActive_; }
   // Pinned clips on the GPU, out of all pinned (one that cannot be made counts as done: logged).
   std::pair<uint32_t, uint32_t> pinProgress() const;
-  bool isPinned(SpriteClipId id) const { return id < clips_.size() && clips_[id]->pinned; }
+  bool isPinned(SpriteClipId id) const { return id < clips_.size() && clips_[id]->pinned && (!fullShared_ || clips_[id]->light); }
   static constexpr uint32_t kBaseFirstMip = 1;
 
   struct Texture {
@@ -129,6 +129,8 @@ class SpriteSystem {
     ImageUpload fullUpload;
     uint32_t fullIndex = kNoTexture;
     VkDeviceSize memoryBytes = 0, memoryAlignment = 1;  // the full image's real GPU footprint
+    VkDeviceSize baseMemoryBytes = 0;                   // the half-resolution base image's real GPU footprint
+    uint64_t baseAllocBytes = 0;                        // the allocated base image's VMA size in VRAM
 
     uint64_t lastRequested = 0;  // frame
     int32_t priority = 0;        // highest asked for this frame
@@ -209,6 +211,7 @@ class SpriteSystem {
   std::vector<std::string> pinnedSet_;   // each pinned clip's sprite set (one character's poses)
   uint64_t baseBytes_ = 0;
   bool lightAsked_ = false, lightActive_ = false;
+  bool fullShared_ = false;
   bool decided_ = false;  // the pool is made and each pinned clip's Alta / Leve is set: loads may start
   bool pinsLogged_ = false;
   std::chrono::steady_clock::time_point pinsAsked_{};

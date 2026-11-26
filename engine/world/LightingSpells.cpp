@@ -5,6 +5,16 @@
 
 namespace ember {
 
+namespace {
+
+float inferGroundY(const std::string& kind, const glm::vec3& originPos) {
+  if (kind == kSpellArcaneBeam) return originPos.y - 1.25f;
+  if (kind == kSpellAnchoredLight) return originPos.y - 0.85f;
+  return originPos.y;
+}
+
+}  // namespace
+
 LightingSpellRegistry& LightingSpellRegistry::get() {
   static LightingSpellRegistry sInstance;
   return sInstance;
@@ -41,7 +51,9 @@ bool LightingSpellRegistry::cast(const std::string& kind,
                                 glm::vec3 originPos,
                                 glm::vec3 facingDir,
                                 int64_t currentMinute,
-                                std::string* error) {
+                                std::string* error,
+                                int look,
+                                std::optional<float> groundY) {
   if (!isLightingSpell(kind)) {
     if (error) *error = "Não é uma magia de iluminação.";
     return false;
@@ -49,6 +61,8 @@ bool LightingSpellRegistry::cast(const std::string& kind,
 
   const int power = effectiveLightPower(casterLevel);
   const LightSpellMetrics metrics = lightMetricsForPower(power);
+  const int effectiveLook = (look <= 0) ? 1 : std::clamp(look, 1, 2);
+  const float t = static_cast<float>(power - 1) / 29.0f;
 
   // Recasting the same version replaces the previous instance of that caster with fresh full duration
   std::erase_if(instances_, [&](const LightSpellInstance& inst) {
@@ -62,6 +76,8 @@ bool LightingSpellRegistry::cast(const std::string& kind,
   inst.logicalMapId = logicalMapId.empty() ? currentLogicalMapId_ : logicalMapId;
   inst.floorId = floorId;
   inst.power = power;
+  inst.look = effectiveLook;
+  inst.groundY = groundY.value_or(inferGroundY(kind, originPos));
   inst.castMinute = currentMinute;
   inst.expireMinute = currentMinute + metrics.durationMinutes;
 
@@ -76,24 +92,39 @@ bool LightingSpellRegistry::cast(const std::string& kind,
     inst.range = metrics.coneLengthWorld;
     inst.coneAngleDeg = metrics.coneAngleDegrees;
     inst.color = kColorArcaneBeam;
-    inst.intensity = 0.65f;
-    inst.decay = 0.85f;
+    if (effectiveLook == 2) {
+      inst.intensity = 4.2f + 1.8f * t;
+      inst.decay = 0.60f;
+    } else {
+      inst.intensity = 3.6f + 1.4f * t;
+      inst.decay = 0.62f;
+    }
   } else if (kind == kSpellAnchoredLight) {
     inst.bindType = LightBindType::FixedPosition;
     inst.position = originPos;
     inst.facing = glm::vec3(0.0f);
     inst.range = metrics.conjurerRadiusWorld;
     inst.color = kColorAnchoredLight;
-    inst.intensity = 0.60f;
-    inst.decay = 0.85f;
+    if (effectiveLook == 2) {
+      inst.intensity = 3.8f + 1.6f * t;
+      inst.decay = 0.62f;
+    } else {
+      inst.intensity = 3.2f + 1.3f * t;
+      inst.decay = 0.65f;
+    }
   } else if (kind == kSpellLuminousHalo) {
     inst.bindType = LightBindType::CasterEntity;
     inst.position = originPos;
     inst.facing = glm::vec3(0.0f);
     inst.range = metrics.healerRadiusWorld;
     inst.color = kColorLuminousHalo;
-    inst.intensity = 0.55f;
-    inst.decay = 0.85f;
+    if (effectiveLook == 2) {
+      inst.intensity = 3.5f + 1.5f * t;
+      inst.decay = 0.65f;
+    } else {
+      inst.intensity = 3.0f + 1.2f * t;
+      inst.decay = 0.68f;
+    }
   }
 
   instances_.push_back(inst);
@@ -220,6 +251,8 @@ nlohmann::json LightingSpellRegistry::toJson() const {
         {"facingY", inst.facing.y},
         {"facingZ", inst.facing.z},
         {"power", inst.power},
+        {"look", inst.look},
+        {"groundY", inst.groundY},
         {"range", inst.range},
         {"coneAngleDeg", inst.coneAngleDeg},
         {"colorR", inst.color.r},
@@ -253,6 +286,8 @@ void LightingSpellRegistry::fromJson(const nlohmann::json& j, int64_t currentMin
       inst.position = {item.value("posX", 0.0f), item.value("posY", 0.0f), item.value("posZ", 0.0f)};
       inst.facing = {item.value("facingX", 0.0f), item.value("facingY", 0.0f), item.value("facingZ", 0.0f)};
       inst.power = item.value("power", 1);
+      inst.look = std::clamp(item.value("look", 1), 1, 2);
+      inst.groundY = item.value("groundY", inferGroundY(inst.spellKind, inst.position));
       inst.range = item.value("range", 0.0f);
       inst.coneAngleDeg = item.value("coneAngleDeg", 60.0f);
       inst.color = {item.value("colorR", 1.0f), item.value("colorG", 1.0f), item.value("colorB", 1.0f)};

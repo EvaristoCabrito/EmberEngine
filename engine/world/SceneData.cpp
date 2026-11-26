@@ -173,6 +173,12 @@ std::optional<std::vector<Hero>> loadHeroes(const std::filesystem::path& heroesJ
     std::ifstream sin(heroesJson.parent_path() / "walk-strides.json", std::ios::binary);
     if (sin) strides = json::parse(sin, nullptr, false);
   }
+  // How fast each walk clip's feet cover the ground in its video ("set/clip": world units a second), beside the roster.
+  json speeds;
+  {
+    std::ifstream sin(heroesJson.parent_path() / "walk-speeds.json", std::ios::binary);
+    if (sin) speeds = json::parse(sin, nullptr, false);
+  }
   std::vector<Hero> heroes;
   for (const json& h : j["heroes"]) {
     Hero o;
@@ -202,6 +208,10 @@ std::optional<std::vector<Hero>> loadHeroes(const std::filesystem::path& heroesJ
         const auto it = strides.find(q.set + "/" + q.clip);
         if (it != strides.end() && it->is_number()) q.strides = it->get<float>();
         else if (strides.contains("__default") && strides["__default"].is_number()) q.strides = strides["__default"].get<float>();
+      }
+      if (speeds.is_object()) {
+        const auto it = speeds.find(q.set + "/" + q.clip);
+        if (it != speeds.end() && it->is_number()) q.groundSpeed = it->get<float>();
       }
       if (p.contains("bodyShift") && p["bodyShift"].is_array()) q.bodyShift = p["bodyShift"].get<std::vector<float>>();
       if (p.contains("frameScale") && p["frameScale"].is_array()) q.frameScale = p["frameScale"].get<std::vector<float>>();

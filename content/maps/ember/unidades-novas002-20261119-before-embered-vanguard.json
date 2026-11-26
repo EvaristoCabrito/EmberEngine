@@ -1,13 +1,13 @@
 {
   "serial": 2,
-  "savedAt": 1795656594621,
+  "savedAt": 1794419695098,
   "draft": {
-    "id": "monster-testing-d",
+    "id": "unidades-novas",
     "index": 0,
-    "title": "Monster Testing 4",
+    "title": "Todas as Unidades",
     "place": "",
-    "briefing": "Unidades novas (Alta, 64 e 36), cada uma só neste mapa da série: Vanguarda de Brasa, Embered Zombie, Bandit Horseman, Big Blue Ox, Rastreador de Cinzas, Rocco The Bird; no seu grupo: Cervo Azul do Pântano, Hipóstase.",
-    "objective": "Ver cada unidade andar, atacar, levar dano e cair",
+    "briefing": "Todos os monstros do jogo num campo vazio, para ver cada um andar, atacar, levar dano e cair.",
+    "objective": "Derrote todos os inimigos",
     "win": "rout",
     "hub": false,
     "autoTactics": true,
@@ -7257,16 +7257,16 @@
         "level": 15
       },
       {
-        "name": "Cervo Azul do Pântano",
-        "classId": "swampBlueDeer",
+        "name": "Cão Zumbi",
+        "classId": "zombieDog",
         "x": 26,
         "y": 44,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Hipóstase",
-        "classId": "hypostasis",
+        "name": "Familiar Radiante",
+        "classId": "familiar4",
         "x": 24,
         "y": 44,
         "level": 15,
@@ -7275,50 +7275,418 @@
     ],
     "enemySpawns": [
       {
-        "name": "Vanguarda de Brasa",
-        "classId": "emberedVanguard",
-        "x": 12,
-        "y": 36,
+        "name": "Apparition",
+        "classId": "apparition",
+        "x": 8,
+        "y": 4,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Muda Carnívora",
+        "classId": "sapling",
+        "x": 13,
+        "y": 4,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Jacaré",
+        "classId": "jacare",
+        "x": 18,
+        "y": 4,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Boi Morto-vivo",
+        "classId": "undeadOx",
+        "x": 23,
+        "y": 4,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Planta Carnívora",
+        "classId": "carnivorousPlant",
+        "x": 28,
+        "y": 4,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Mago Negro",
+        "classId": "mage",
+        "x": 43,
+        "y": 4,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Piqueiro Base",
+        "classId": "basePikeman",
+        "x": 13,
+        "y": 9,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Besteiro Base",
+        "classId": "baseCrossbowman",
+        "x": 23,
+        "y": 9,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Besteiro Salteador",
+        "classId": "brigandCrossbowman",
+        "x": 28,
+        "y": 9,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "War Dog 2",
+        "classId": "wardog2",
+        "x": 43,
+        "y": 9,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Mordavian Wolf Final",
+        "classId": "mordavianWolfFinal",
+        "x": 8,
+        "y": 14,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "StagWolf",
+        "classId": "stagWolf",
+        "x": 13,
+        "y": 14,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Carrasco",
+        "classId": "punisher",
+        "x": 18,
+        "y": 14,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "The Butcher",
+        "classId": "theButcher",
+        "x": 23,
+        "y": 14,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "BirolhoLegs",
+        "classId": "birolhoLegs",
+        "x": 28,
+        "y": 14,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Sahagin",
+        "classId": "sahagin",
+        "x": 13,
+        "y": 24,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Nekomata",
+        "classId": "nekomata",
+        "x": 18,
+        "y": 24,
         "level": 15,
         "useClassSprite": true
       },
       {
         "name": "Embered Zombie",
         "classId": "emberedZombie",
-        "x": 16,
-        "y": 36,
+        "x": 23,
+        "y": 24,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Vampire Mosquito",
+        "classId": "vampireMosquito",
+        "x": 43,
+        "y": 29,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Witch",
+        "classId": "witch",
+        "x": 38,
+        "y": 29,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Ember Mushroom",
+        "classId": "emberMushroom",
+        "x": 33,
+        "y": 29,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Sick Rat",
+        "classId": "sickRat",
+        "x": 28,
+        "y": 29,
         "level": 15,
         "useClassSprite": true
       },
       {
         "name": "Bandit Horseman",
         "classId": "banditHorseman",
-        "x": 20,
-        "y": 36,
+        "x": 18,
+        "y": 29,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Big Blue Ox",
-        "classId": "bigBlueCalf",
-        "x": 24,
-        "y": 36,
+        "name": "Horse",
+        "classId": "horse",
+        "x": 13,
+        "y": 29,
         "level": 15,
         "useClassSprite": true
       },
       {
-        "name": "Rastreador de Cinzas",
-        "classId": "ashesCrawler",
-        "x": 12,
-        "y": 31,
+        "name": "Screeching Bat",
+        "classId": "screechingBat",
+        "x": 8,
+        "y": 29,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "DeepGround Beetle",
+        "classId": "deepgroundBeetle",
+        "x": 23,
+        "y": 29,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Stag",
+        "classId": "stag",
+        "x": 38,
+        "y": 24,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Boar",
+        "classId": "boar",
+        "x": 48,
+        "y": 24,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Omnieye",
+        "classId": "omnieye",
+        "x": 3,
+        "y": 24,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "MushroomMan",
+        "classId": "mushroomMan",
+        "x": 48,
+        "y": 34,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "BirolhoLegs2",
+        "classId": "birolhoLegs2",
+        "x": 33,
+        "y": 14,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Minor Horror",
+        "classId": "minorHorror",
+        "x": 48,
+        "y": 14,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Golem Ancião",
+        "classId": "ancientGolem",
+        "x": 13,
+        "y": 19,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Zumbi",
+        "classId": "zombie",
+        "x": 18,
+        "y": 19,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Embered Wraith",
+        "classId": "emberedWraith",
+        "x": 23,
+        "y": 19,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Zumbi 2",
+        "classId": "zombie2",
+        "x": 28,
+        "y": 19,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Plague Bearing Cattle",
+        "classId": "plagueBearingCattle",
+        "x": 33,
+        "y": 19,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Troll da caverna",
+        "classId": "troll",
+        "x": 43,
+        "y": 19,
         "level": 15,
         "useClassSprite": true
       },
       {
         "name": "Rocco The Bird",
         "classId": "roccoTheBird",
-        "x": 16,
-        "y": 31,
+        "x": 48,
+        "y": 19,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Big Blue Ox",
+        "classId": "bigBlueCalf",
+        "x": 8,
+        "y": 24,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Lanceiro",
+        "classId": "sandoval",
+        "x": 28,
+        "y": 24,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Guerreiro",
+        "classId": "kaelEarly",
+        "x": 33,
+        "y": 24,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Conjurador",
+        "classId": "conjurer",
+        "x": 43,
+        "y": 24,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Slime Corrosivo",
+        "classId": "corrosiveSlime",
+        "x": 3,
+        "y": 34,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Slime Corrosivo Grande",
+        "classId": "corrosiveSlimeLarge",
+        "x": 8,
+        "y": 34,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Aranha Gigante",
+        "classId": "giantSpider",
+        "x": 13,
+        "y": 34,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Slime36",
+        "classId": "corrosiveSlime36",
+        "x": 18,
+        "y": 34,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Slime64",
+        "classId": "corrosiveSlime64",
+        "x": 23,
+        "y": 34,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Penitente Acorrentado",
+        "classId": "chainBoundPenitent",
+        "x": 28,
+        "y": 34,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Besouro Gigante",
+        "classId": "giantBeetle",
+        "x": 33,
+        "y": 34,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Rastreador de Cinzas",
+        "classId": "ashesCrawler",
+        "x": 38,
+        "y": 34,
+        "level": 15,
+        "useClassSprite": true
+      },
+      {
+        "name": "Cultista Negro",
+        "classId": "blackCultist",
+        "x": 43,
+        "y": 34,
         "level": 15,
         "useClassSprite": true
       }

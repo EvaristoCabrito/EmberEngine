@@ -151,6 +151,8 @@ void Ignite::build(float now, const Camera& camera, VfxFrame& frame, std::vector
     d.gpu.sightAt = sight;
     d.blend = VfxBlend::Alpha;
     d.depthTest = true;
+    d.behindCard = true;
+    d.cardAt = at;
     frame.draws.push_back(d);
   };
 
@@ -228,6 +230,8 @@ void Ignite::build(float now, const Camera& camera, VfxFrame& frame, std::vector
     d.instances = static_cast<uint32_t>(live.size());
     d.blend = VfxBlend::Alpha;
     d.depthTest = true;
+    d.behindCard = true;
+    d.cardAt = centre_;
     frame.draws.push_back(d);
   }
 

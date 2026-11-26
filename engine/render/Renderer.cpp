@@ -2430,11 +2430,36 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
                                   bufferAddress(context_, frame.meshFrame), camera_.forward, cardLean_ ? 1u : 0u};
       // The cards back to front (MapStage sorts them by depth along the view); an effect circling a body (behindCard) is drawn
       // between them, right before the card standing where it circles: that body and the nearer cards cover it.
-      auto cardKey = [&](glm::vec3 p) { return glm::dot(p - camera_.position, camera_.forward); };
-      std::vector<std::pair<float, uint32_t>> behind;
+      const glm::vec2 viewDir = glm::length(glm::vec2(camera_.forward.x, camera_.forward.z)) > 1e-4f
+                                  ? glm::normalize(glm::vec2(camera_.forward.x, camera_.forward.z))
+                                  : glm::vec2(0.0f, 1.0f);
+      auto groundKey = [&](glm::vec3 p) {
+        return glm::dot(glm::vec2(p.x - camera_.position.x, p.z - camera_.position.z), viewDir);
+      };
+      auto findCardSplit = [&](glm::vec3 cardAt) -> uint32_t {
+        int bestIdx = -1;
+        float bestDistSq = 2.5f * 2.5f;
+        for (uint32_t i = 0; i < sprites_.size(); ++i) {
+          if ((sprites_[i].flags & kSpriteFront) == 0) continue;
+          const float dx = sprites_[i].origin.x - cardAt.x;
+          const float dz = sprites_[i].origin.z - cardAt.z;
+          const float d2 = dx * dx + dz * dz;
+          if (d2 < bestDistSq) {
+            bestDistSq = d2;
+            bestIdx = static_cast<int>(i);
+          }
+        }
+        if (bestIdx >= 0) return static_cast<uint32_t>(bestIdx);
+        const float targetKey = groundKey(cardAt);
+        for (uint32_t i = 0; i < sprites_.size(); ++i) {
+          if (groundKey(sprites_[i].origin) <= targetKey) return i;
+        }
+        return static_cast<uint32_t>(sprites_.size());
+      };
+      std::vector<std::pair<uint32_t, uint32_t>> behind;
       for (uint32_t i = 0; i < vfxDraws_.size(); ++i)
-        if (vfxDraws_[i].behindCard) behind.push_back({cardKey(vfxDraws_[i].cardAt), i});
-      std::stable_sort(behind.begin(), behind.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
+        if (vfxDraws_[i].behindCard) behind.push_back({findCardSplit(vfxDraws_[i].cardAt), i});
+      std::stable_sort(behind.begin(), behind.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
       auto drawCards = [&](uint32_t from, uint32_t to) {
         if (to <= from) return;
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, cardPipeline());
@@ -2443,16 +2468,13 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
         vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(part), &part);
         vkCmdDraw(cmd, 6, to - from, 0, 0);
       };
-      constexpr float kCardSlack = 0.25f;  // the body's own card stands at its feet, give or take its placement
       uint32_t from = 0;
       for (size_t g = 0; g < behind.size();) {
-        const float key = behind[g].first;
-        uint32_t to = from;
-        while (to < sprites_.size() && cardKey(sprites_[to].origin) > key + kCardSlack) ++to;
-        drawCards(from, to);
-        from = to;
+        const uint32_t split = behind[g].first;
+        drawCards(from, split);
+        from = split;
         VkPipeline bound = VK_NULL_HANDLE;
-        for (; g < behind.size() && behind[g].first >= key - 1e-4f; ++g) {
+        for (; g < behind.size() && behind[g].first == split; ++g) {
           const VfxDraw& d = vfxDraws_[behind[g].second];
           const VkPipeline pipeline = d.solid ? vfxSolidPipeline_ : vfxPipelines_[d.depthTest ? 1 : 0];
           if (pipeline != bound) vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, bound = pipeline);

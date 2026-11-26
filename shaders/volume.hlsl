@@ -108,7 +108,16 @@ float3 airLocalLights(MeshFrame f, float3 p, float3 toCamera, float g) {
     if (d >= light.range) continue;
     const float ratio = d / light.range;
     const float window = saturate(1.0 - ratio * ratio * ratio * ratio);
-    const float falloff = window * window / max(pow(d, light.decay), 0.01) * lightFacing(light, p);
+    const bool isAreaSpellLight = light.decay < 1.0;
+    float falloff;
+    if (isAreaSpellLight) {
+      const float isSpotlight = light.behind <= -100.0 ? 1.0 : 0.0;
+      const float coreSpan = lerp(0.55, 0.60, isSpotlight) * light.range;
+      const float normD = d / max(coreSpan, 1.0);
+      falloff = 0.25 * window / (1.0 + normD * normD * light.decay) * lightFacing(light, p);
+    } else {
+      falloff = window * window / max(pow(d, light.decay), 0.01) * lightFacing(light, p);
+    }
     color += light.color * f.exposure * falloff * phaseHG(dot(toLight / max(d, 1e-4), -toCamera), g);
   }
   return color;

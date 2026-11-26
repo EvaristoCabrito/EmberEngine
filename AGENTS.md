@@ -15,6 +15,22 @@ unidade (herói, monstro, animal, invocação), em Alta, 64, 36 e Cinemática.
 - **Trava na ferramenta (2026-11-25, o usuário: "salve esse padrão, nunca mais regredir"):** `tools/scripts/sprites/video_sprite.py`
   recusa qualquer spec que ainda tenha `loopMin`/`loopMax` nos clipes a cortar, antes de gravar um quadro. Ninguém tira essa trava.
 
+## REGRA PERMANENTE: como trabalhar com o usuário (todo agente, todo chat)
+O usuário, 2026-11-26, depois de um dia inteiro repetindo o mesmo em cada chat: "salvar isso para todos os futuros chats, não aguento mais
+ter que ensinar cada chat, cada bot". Vale para Claude, Codex, qualquer outro.
+
+- **Uma mensagem nova não anula a anterior.** Toda instrução dele continua valendo até ele dizer o contrário; a nova vale junto com as
+  antigas. Confira cada mensagem nova contra as instruções em vigor e contra a tarefa em andamento. Se duas parecem brigar, faça o que
+  satisfaz as duas, ou pergunte uma coisa curta; nunca largue uma em silêncio.
+- **Uma tarefa de cada vez, até o fim.** Termine a tarefa em andamento (feita, conferida, commitada) antes de seguir para outra. Mensagem,
+  foto ou detalhe novo é informação para a tarefa em andamento ou tarefa para depois, nunca motivo de trocar. Só mexa no que foi pedido: um
+  personagem que ele disse para deixar parado fica parado; número, tabela ou arquivo de outro personagem não se muda "de passagem".
+- **Ele é ansioso e não consegue ficar esperando parado: nunca fique em silêncio.** A cada passo, uma linha curta em português simples dizendo
+  o que está acontecendo agora e o que vem depois; ele pode escrever a qualquer hora e deve receber resposta na hora. Nada de números ou
+  termos técnicos que ele não pediu: diga o que muda no jogo, em palavras. Horários em 12 horas (7:05 PM).
+- **Dizer a verdade do que existe.** Não chame de pronto o que está só num arquivo; diga o que está no jogo, o que está só no disco e o que
+  não foi feito. Nunca afirme algo que você não verificou.
+
 ## REGRA PERMANENTE: modo de teste = mesmo jogo, só recursos infinitos
 Ler antes de tocar em qualquer código do jogo. Vale para todo agente de código (Claude, Codex, Cursor, Copilot, qualquer outro).
 
@@ -112,6 +128,13 @@ um como feito (com a prova) ou NÃO FEITO, e o que falta vem na primeira linha.
 7. **Conferência:** quem confere é o agente, elo por elo, com as provas acima; o que só o usuário pode ver no jogo é dito assim, com a
    unidade e a ação exata para ele testar.
 8. **Commit:** o que é do agente, commitado; o que ficou fora, dito com o motivo.
+
+## REGRA PERMANENTE: nunca usar efeitos 2D em magias ou habilidades
+O usuário, 2026-11-25: "NUNCA MAIS USAR EFEITOS 2d".
+
+- **Proibido** em magias/habilidades novas ou refeitas: flipbooks 2D (`EffectDraw`, `add("*-flipbook-*")`, `burst("*-flipbook-*")`), discos/setores/adesivos planos 2D no chão, fitas planas 2D de papel ou billboards planos 2D (`quadGeometry()`).
+- **Obrigatório:** toda magia ou habilidade nova ou refeita usa apenas malhas 3D reais (`render/vfx/*`: volumes 3D, tubos, toros, esferas, cristais facetados, cones/feixes volumétricos 3D com normais reais) e luzes 3D reais da cena.
+- Versões antigas/legadas permanecem preservadas (nunca apagadas), enquanto os padrões dos heróis (`classicLook`) sempre apontam para a versão 3D pura.
 
 ## Bosque Morto ground lock
 - Keep the approved ground mask `content/ground/bosque-morto-ground-mask-v02.png` and the `bosque-morto-v04` ground mapping unchanged.

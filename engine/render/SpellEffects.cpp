@@ -59,7 +59,8 @@ glm::vec3 SpellEffects::position(const Element& e, float now) const {
 }
 
 int SpellEffects::looks(const std::string& kind) {
-  if (kind == "arcaneBeam" || kind == "anchoredLight" || kind == "luminousHalo" || kind == "tendrilSwipe" || kind == "secondWind") return 1;
+  if (kind == "arcaneBeam" || kind == "anchoredLight" || kind == "luminousHalo") return 2;  // 01: 3D clássico; 02: 3D luz real persistente
+  if (kind == "tendrilSwipe" || kind == "secondWind") return 1;
   if (kind == "witchStitch") return 1;
   if (kind == "burialWeight") return 1;
   if (kind == "abyssalSwap") return 1;
@@ -144,7 +145,7 @@ int SpellEffects::looks(const std::string& kind) {
 }
 
 int SpellEffects::classicLook(const std::string& kind) {
-  if (kind == "arcaneBeam" || kind == "anchoredLight" || kind == "luminousHalo") return 1;
+  if (kind == "arcaneBeam" || kind == "anchoredLight" || kind == "luminousHalo") return 2;
   // The holy light (vfx/HolyFx) is the heroes'; the enemies keep each spell's first version.
   if (kind == "cureMinor") return 3;
   if (kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease") return 2;
@@ -312,6 +313,8 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     if (isConjurer(kind)) end = std::max(end, conjurer_.latestEnd());
     if (isDagger(kind)) end = std::max(end, daggers_.latestEnd());
     if (isMage(kind)) end = std::max(end, mage_.latestEnd());
+    if (kind == "arcaneBeam" || kind == "anchoredLight" || kind == "luminousHalo")
+      end = std::max(end, lightingCasts_.latestEnd());
     for (size_t i = before[7]; i < burns_.size(); ++i) end = std::max(end, burns_[i].first.end());
     if (kind == "acidCloud") end = std::max(end, start + 0.55f);
     if (kind == "ignite" && !ignites_.empty()) end = std::max(end, ignites_.back().end());
@@ -336,45 +339,9 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
   return made;
 }
 
-void SpellEffects::lightingSpellCast(const std::string& kind, const Spot& caster, const std::vector<Spot>& targets, float start, float impact) {
-  if (kind == "arcaneBeam") {
-    // Feixe de Luz: clean 3D cast ignition pulse (no flat sprite blobs; persistent 3D cone light drives illumination)
-    Element& flash = add(nullptr, start, std::max(0.45f, impact - start + 0.25f));
-    flash.from = flash.to = caster.body;
-    flash.lightColor = {0.88f, 0.94f, 1.0f};
-    flash.lightIntensity = 1.8f;
-    flash.lightRadius = 3.5f;
-    flash.lightDecay = 1.4f;
-  } else if (kind == "anchoredLight") {
-    // Luz Ancorada: subtle traveling 3D ignition pulse to the anchor (no 2D sprite flare)
-    const Spot& target = targets.empty() ? caster : targets.front();
-    const glm::vec3 anchorPos = target.feet + glm::vec3(0.0f, 0.85f, 0.0f);
-    Element& carrier = add(nullptr, start, std::max(0.35f, impact - start + 0.1f));
-    carrier.from = caster.body;
-    carrier.to = anchorPos;
-    carrier.moveStart = start;
-    carrier.moveEnd = impact;
-    carrier.arc = 0.65f;
-    carrier.lightColor = {0.96f, 0.91f, 1.0f};
-    carrier.lightIntensity = 1.5f;
-    carrier.lightRadius = 3.2f;
-    carrier.lightDecay = 1.4f;
-
-    Element& settle = add(nullptr, impact, 0.55f);
-    settle.from = settle.to = anchorPos;
-    settle.lightColor = {0.96f, 0.91f, 1.0f};
-    settle.lightIntensity = 1.8f;
-    settle.lightRadius = 3.8f;
-    settle.lightDecay = 1.3f;
-  } else if (kind == "luminousHalo") {
-    // Halo Luminoso: warm-neutral ignition pulse around the caster (no 2D halo ring or sprites)
-    Element& flare = add(nullptr, start, std::max(0.45f, impact - start + 0.35f));
-    flare.from = flare.to = caster.body;
-    flare.lightColor = {1.0f, 0.95f, 0.84f};
-    flare.lightIntensity = 1.8f;
-    flare.lightRadius = 3.8f;
-    flare.lightDecay = 1.3f;
-  }
+void SpellEffects::lightingSpellCast(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact) {
+  const glm::vec3 targetFeet = targets.empty() ? caster.feet + glm::vec3(0.0f, 0.0f, 4.0f) : targets.front().feet;
+  lightingCasts_.cast(kind, look, caster.feet, heightOf(caster), targetFeet, start, impact);
 }
 
 bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact) {
@@ -384,7 +351,7 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
       kind != "provoke" && kind != "luminousHalo" && kind != "warp")
     return false;
   if (kind == "arcaneBeam" || kind == "anchoredLight" || kind == "luminousHalo") {
-    lightingSpellCast(kind, caster, targets, start, impact);
+    lightingSpellCast(kind, look, caster, targets, start, impact);
     return true;
   }
   if (kind == "witchStitch") {
@@ -1276,7 +1243,7 @@ void SpellEffects::disarmed(const Spot& foe, const Spot& from, float at) { lance
 
 bool SpellEffects::active(float now) const {
   if (combat_.active(now) || warrior_.active(now) || vanguard_.active(now) || arms_.active(now) || ranger_.active(now) || lancer_.active(now) || turnUndead_.active(now) || healer_.active(now) ||
-      conjurer_.active(now) || daggers_.active(now) || mage_.active(now) || crusader_.active(now) || selene_.active(now) || handBolts_.active(now) || witchStitch_.active(now) || burialWeight_.active(now) ||
+      conjurer_.active(now) || daggers_.active(now) || mage_.active(now) || lightingCasts_.active(now) || crusader_.active(now) || selene_.active(now) || handBolts_.active(now) || witchStitch_.active(now) || burialWeight_.active(now) ||
       moonwarden_.active(now))
     return true;
   if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
@@ -1399,6 +1366,7 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   status_.build(now, camera, vfx_, vfxLights);
   daggers_.build(now, camera, vfx_, vfxLights);
   mage_.build(now, camera, vfx_, vfxLights);
+  lightingCasts_.build(now, camera, vfx_, vfxLights);
   // Every ring and glow on the ground round a unit's feet or an area's centre lies on the ground itself, centred where it belongs,
   // under the cards (the user, 2026-11-11: "esses efeitos de anéis ou qualquer coisa circulando ao redor do card não podem ficar
   // assim"): the effects pulled them toward the camera, which moved them off the feet and, seen from high up, over the cards.

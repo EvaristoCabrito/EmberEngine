@@ -130,6 +130,8 @@ struct LightSpellInstance {
   glm::vec3 facing{0.0f};    // horizontal direction vector for cone
 
   int power = 1;
+  int look = 2;            // 1 = V1 3D clássico, 2 = V2 luz 3D real persistente
+  float groundY = 0.0f;    // ground elevation beneath originPos for ground-anchored meshes
   float range = 0.0f;        // world radius or cone length
   float coneAngleDeg = 60.0f;
   glm::vec3 color{1.0f};
@@ -166,7 +168,9 @@ class LightingSpellRegistry {
             glm::vec3 originPos,
             glm::vec3 facingDir,
             int64_t currentMinute,
-            std::string* error = nullptr);
+            std::string* error = nullptr,
+            int look = 1,
+            std::optional<float> groundY = std::nullopt);
 
   // Update time and prune expired spells
   void updateTime(int64_t currentMinute);

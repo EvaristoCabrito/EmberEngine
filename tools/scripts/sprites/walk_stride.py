@@ -17,8 +17,52 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
+def front_back(result, clip):
+    """A walk toward / away from the camera (the clip's name ends in -up / -down): the legs overlap, so the outline of the legs repeats after a
+    whole stride, not after a step, and the first dip below reads half the true count (Vespera, 2026-11-25: walk up read 2.0, it is 3.5,
+    and the game played the loop 1.7x too fast). Here each foot's lowest point (left and right of the body's centre column, in the legs'
+    rows) is followed over the loop and its own period is the stride. (strides, stride frames, loop frames) or None."""
+    r = result["clips"][clip]
+    n = r["frames"]
+    pat = os.path.join(ROOT, r["pattern"])
+    low = ([], [])
+    for i in range(n):
+        a = np.asarray(Image.open(pat.replace("{}", str(i + 1))).convert("RGBA"))[..., 3] > 128
+        ys = np.nonzero(a.any(1))[0]
+        top, h = ys.min(), ys.max() - ys.min()
+        mid = np.nonzero(a[int(top + h * 0.45):int(top + h * 0.55)].any(0))[0]
+        if not len(mid):
+            return None
+        cx = int((mid.min() + mid.max()) / 2)
+        legs = a[int(top + h * 0.80):]
+        for side, (x0, x1) in zip(low, ((0, cx), (cx, legs.shape[1]))):
+            yy = np.nonzero(legs[:, x0:x1].any(1))[0]
+            side.append(yy.max() if len(yy) else 0)
+    found = []
+    for s in low:
+        s = np.asarray(s, np.float64)
+        s = s - s.mean()
+        ac = np.array([np.sum(s * np.roll(s, -k)) for k in range(n)])
+        if ac[0] <= 0:
+            return None
+        ac /= ac[0]
+        k = 1
+        while k < n // 2 and ac[k] > 0:
+            k += 1
+        p = next((j for j in range(k, n // 2 + 1) if ac[j] >= ac[j - 1] and (j + 1 >= n or ac[j] >= ac[j + 1]) and ac[j] > 0.2), None)
+        if p is None:
+            return None
+        found.append(p)
+    p = sum(found) / 2.0
+    return round(2.0 * n / p) / 2, round(p), n
+
+
 def strides(result, clip):
     """(strides, step frames, loop frames), strides None when no step shows (a float, a glide)."""
+    if clip.endswith(("-up", "-down")):
+        fb = front_back(result, clip)
+        if fb is not None:
+            return fb
     r = result["clips"][clip]
     n = r["frames"]
     pat = os.path.join(ROOT, r["pattern"])

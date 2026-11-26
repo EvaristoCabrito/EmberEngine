@@ -65,6 +65,7 @@
 #include "render/vfx/ArmsFx.h"
 #include "render/vfx/DreamWeb.h"
 #include "render/vfx/WebOfDreams.h"
+#include "render/vfx/LightingSpellFx.h"
 
 namespace ember {
 
@@ -281,7 +282,7 @@ class SpellEffects {
   std::map<std::pair<int, std::string>, ArrowArt> arrowArt_;
   int castOwner_ = -1;  // the unit whose cast is being made (cast()), for its own arrow art
   void bladeSkill(const Spot& caster, float start, float impact);
-  void lightingSpellCast(const std::string& kind, const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
+  void lightingSpellCast(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
   // Ours (SpellEffectsEmber.cpp). True when `kind` is one of them.
   bool emberCast(const std::string& kind, const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
   void markOfRuin(const Spot& caster, const Spot& target, float start, float impact);
@@ -412,6 +413,7 @@ class SpellEffects {
   StatusFx status_;        // poison / disease on the units (ours, 3D)
   DaggerFx daggers_;       // the Mago Negro's Nuvem de Adagas (ours, 3D)
   MageFx mage_;            // ... and his Dissipar Magia / Globo de Invulnerabilidade (ours, 3D)
+  LightingSpellCastFx lightingCasts_;  // Feixe de Luz / Luz Ancorada / Halo Luminoso (ours, 3D)
   static bool isDagger(const std::string& kind) { return kind == "cloudOfDaggers" || kind == "daggerStrike"; }
   static bool isMage(const std::string& kind) { return kind == "dispelMagic" || kind == "globeOfInvulnerability"; }
   static bool isConjurer(const std::string& kind) {

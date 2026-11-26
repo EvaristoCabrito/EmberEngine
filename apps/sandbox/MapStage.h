@@ -88,6 +88,7 @@
 #include "world/Battle.h"
 #include "world/BattleExport.h"
 #include "world/Combat.h"
+#include "world/HexMovement.h"
 #include "world/Initiative.h"
 #include "world/Inn.h"
 #include "world/Loadout.h"
@@ -342,6 +343,35 @@ struct CameraConfig {
       cfg.impactShakeSeconds = fr.value("impactShakeSeconds", cfg.impactShakeSeconds);
     }
     return cfg;
+  }
+};
+
+// The one table of walk views (content/data/walk-views.json): 12 rows, one each 30 degrees of where a step goes on screen
+// (row = (2 x the step's board direction - the camera's stop) mod 12). The game reads nothing else to pick a walk.
+struct WalkViews {
+  struct View {
+    ember::SpriteFacing4 walk = ember::SpriteFacing4::Right;
+    bool mirror = false;  // the back / front walk turned over (left and right swapped only)
+    int side = 0;         // the side the unit is left facing: 1 right, -1 left, 0 as it was
+  };
+  std::array<View, 12> views{};
+  static WalkViews load(const std::filesystem::path& path = "content/data/walk-views.json") {
+    WalkViews t;
+    std::ifstream in(path, std::ios::binary);
+    const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+    if (!j.is_object() || !j.contains("views") || !j["views"].is_array() || j["views"].size() != 12) {
+      logError("walk views: {} is missing or does not hold 12 rows; every walk shows the side walk", path.string());
+      return t;
+    }
+    for (size_t i = 0; i < 12; ++i) {
+      const auto& r = j["views"][i];
+      const std::string w = r.value("walk", "right");
+      t.views[i].walk = w == "up" ? ember::SpriteFacing4::Up : w == "down" ? ember::SpriteFacing4::Down
+                        : w == "left" ? ember::SpriteFacing4::Left : ember::SpriteFacing4::Right;
+      t.views[i].mirror = r.value("mirror", false);
+      t.views[i].side = r.value("side", 0);
+    }
+    return t;
   }
 };
 
@@ -701,7 +731,7 @@ class MapStage final : public Stage {
     // The world's seconds (1:1 with the real ones) pass in free movement, in a conversation / film, in the editor's preview (a map
     // with no battle: the user watches the sun walk) and while the turns are held; in turn-based combat they pass by the rounds only
     // (updateTurns: 60 s a round, counted once). A frame over 5 s is a stall (a load, the window asleep), not play.
-    if (lastCampaignTick_ && options_.sceneTime < 0 && !pauseOpen_ && loading().ready &&
+    if (lastCampaignTick_ && options_.sceneTime < 0 && !pauseOpen_ && (loading().ready || openingDone_) &&
         (clockNow - *lastCampaignTick_) < std::chrono::seconds(5) &&
         (!battle_ || battle_->roaming() || inputHeld || cutscene_ || holdTurns)) {
       const auto before=campaignMinuteNow();
@@ -1003,7 +1033,8 @@ class MapStage final : public Stage {
       const std::string logMap = ember::logicalMapOfScreen(currentFloor);
       if (!ember::LightingSpellRegistry::get().instances().empty()) {
         auto getCasterPos = [this](const std::string& casterId) { return resolveLightCasterFeet(casterId); };
-        ember::appendLightingSpellVfx(ownFrame(), time, camera, currentFloor, logMap, campaignMinuteNow(), getCasterPos);
+        auto getCasterHead = [this](const std::string& casterId) { return resolveLightCasterHead(casterId); };
+        ember::appendLightingSpellVfx(ownFrame(), time, camera, currentFloor, logMap, campaignMinuteNow(), getCasterPos, getCasterHead);
       }
     }
     renderer.setVfx(ownVfx ? weatherFrame_ : spellFx_.vfx());
@@ -1737,6 +1768,7 @@ class MapStage final : public Stage {
         if (!spellMode_.empty() || attackMode_ || offHandMode_ || examineMode_ || pendingFoe_ >= 0)
           cancelAction();
       }
+      else if (rightDown_ && !flat_) yaw_ = yawStop(yaw_, 0);  // a turn by hand comes to rest on the nearest stop
       rightDown_.reset();
     }
     if (e.type == SDL_EVENT_MOUSE_MOTION && panning_ && (e.motion.state & SDL_BUTTON_LMASK)) {
@@ -1803,6 +1835,14 @@ class MapStage final : public Stage {
   // the pivot (the user, 2026-10-19: "não pode deixar sair tanto assim do tabuleiro": with the edge allowed to reach the screen's
   // centre, a corner left three quarters of the screen off the board); the farther the zoom, the nearer the middle (never past
   // it). Tilt and zoom stay in range.
+  // The camera's turn rests on the stops the walk views are tabled for (content/data/walk-views.json: one row each 30 degrees).
+  // dir +1 / -1: the next stop that way; 0: the nearest.
+  static float yawStop(float yaw, int dir) {
+    const float step = std::numbers::pi_v<float> / 6.0f;
+    const float k = yaw / step;
+    const float n = dir > 0 ? std::floor(k + 1e-3f) + 1.0f : dir < 0 ? std::ceil(k - 1e-3f) - 1.0f : std::round(k);
+    return n * step;
+  }
   void clampGoal() {
     pitch_ = std::clamp(pitch_, minPitch(), kMaxPitch);
     distance_ = std::clamp(distance_, cameraConfig_.minDistance, maxDistance_);
@@ -2015,9 +2055,9 @@ class MapStage final : public Stage {
     ImGui::SameLine();
     if (plate("##up", {kPlate, kPlate}, barIcon("chevron-up"))) pitch_ = std::clamp(pitch_ + kTiltStep, minPitch(), kMaxPitch);
     ImGui::SameLine();
-    if (plate("##left", {kPlate, kPlate}, barIcon("chevron-left"))) yaw_ += kTurnStep;
+    if (plate("##left", {kPlate, kPlate}, barIcon("chevron-left"))) yaw_ = yawStop(yaw_, 1);
     ImGui::SameLine();
-    if (plate("##right", {kPlate, kPlate}, barIcon("chevron-right"))) yaw_ -= kTurnStep;
+    if (plate("##right", {kPlate, kPlate}, barIcon("chevron-right"))) yaw_ = yawStop(yaw_, -1);
     ImGui::SameLine();
     if (plate("##reset", {kPlate, kPlate}, barIcon("rotate-ccw"))) {
       if (flat_) setFlat(false);
@@ -2630,7 +2670,7 @@ class MapStage final : public Stage {
     ember::Json snap = battle_->snapshot();
     const int active = battle_->activeUnit();
     const bool inFlight = exchange_ || enemyTurn_ || pendingStrike_ >= 0 ||
-                          std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
+                          std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return w.active(); });
     if (active >= 0 && inFlight) {
       const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(active)];
       for (ember::Json& su : snap["units"])
@@ -4594,7 +4634,7 @@ class MapStage final : public Stage {
       // its side's facing against the unit's drawn direction, which is the same for every pose.
       // A walking unit shows Ember's walk for its direction (UnitActor.walkShown), timed from the walk's start.
       const ember::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
-      const bool walking = !unitWalk_[ui].points.empty();
+      const bool walking = unitWalk_[ui].mover.active() && unitWalk_[ui].mover.animatingWalk();
       std::string shown = kIdle;
       const ember::HeroPose* p = nullptr;
       // The fallen: their death plays out, then they fade away over kCorpseSeconds and are gone (the user, 2026-10-30: "um efeito de
@@ -4636,18 +4676,20 @@ class MapStage final : public Stage {
           OneShot& s = unitShot_[ui];
           if (!s.next.empty()) s = {s.next, time, false, s.next == "turnBack" ? kTurnRate : s.rate, -1.0f, s.then, s.thenUntil};  // the turn, whole, then the back still
           else if (!s.then.empty() && time < s.thenUntil) s = {s.then, time, false, s.rate, s.thenUntil};  // drawn from the next frame
+          // the pose's own follow-up in the roster ("then": the fold after a skill that ends with the limbs open), played whole
+          else if (const ember::HeroPose* next = p && !p->then.empty() && p->then != shot->pose ? entry->find(p->then) : nullptr;
+                   next && !next->pace.empty())
+            s = {p->then, time, false, s.rate};
           else s.pose.clear();
         }
       } else if (walking && entry) {
         p = walkPose(*entry, unitWalk_[ui].dir, unitFacing_[ui], u.sprite, shown);
         // A sheet with an "unfold" pose (the Birolho's limbs coming out of his floating body, the user, 2026-11-19: "just before he walks")
-        // plays it once as the walk sets off, over at most two hexes' time, then the walk takes over
-        if (p)
-          if (const ember::HeroPose* uf = entry->find("unfold"); uf && !uf->pace.empty()) {
-            const float length = poseSeconds(ui, "unfold");
-            const float t = (time - unitWalk_[ui].start) * std::max(1.0f, length / (2.0f * stepSeconds()));
-            if (t >= 0.0f && t < length) p = uf, shown = "unfold", unfoldClock = t;
-          }
+        // plays it whole, at its own speed, where he stands (updateUnits holds the first step until it is over), then the walk
+        if (const ember::HeroPose* uf = entry->find("unfold"); uf && !uf->pace.empty()) {
+          const float t = time - unitWalk_[ui].start;
+          if (t >= 0.0f && t < unitWalk_[ui].hold) p = uf, shown = "unfold", unfoldClock = t;
+        }
       } else if (unitFoldAt_[ui] >= 0.0f && entry && entry->find("fold") && !entry->find("fold")->pace.empty() &&
                  time - unitFoldAt_[ui] < poseSeconds(ui, "fold")) {
         p = entry->find("fold"), shown = "fold", unfoldClock = time - unitFoldAt_[ui];
@@ -4666,14 +4708,20 @@ class MapStage final : public Stage {
       if (p && unfoldClock >= 0.0f) {
         frame = static_cast<uint32_t>(p->pace[std::min(static_cast<size_t>(unfoldClock * 240.0f), p->pace.size() - 1)]);
       } else if (p) {
-        // A walk is timed by the ground covered, not by the clock, and the whole clip plays (nothing is cut): each
-        // full stride (both legs) spans kWalkStride world units for every character, heroes and foes alike, and the clip
-        // holds `strides` of them (walk-strides.json), so all step at one cadence (the user: everyone at the same pace;
-        // a stride scaled by the card's height gave Voss 0.72 s a stride against Kael's 0.44). Malrec's clip holds 3, Aldric's 2.
+        // A walk plays as in its video (the user, 2026-11-26: "they must move like in the videos period"; "tem que tocar igual
+        // no vídeo e adaptar para menos frames nas resoluções baixas"): the whole clip at the video's own speed, the unit moving as
+        // fast as the feet in the video cover the ground (walkSpeed), so the ground covered over that speed is the video's clock.
+        // The Média / Leve copies map onto the full clip's timing below. The old way (every unit at one fixed step, the clip
+        // stretched to it) played Aldric's 6 s walk in 1.5 s.
         float walkClock = 0.0f;
+        // The unit crosses the board at the game's step (the user, 2026-11-26: "não é o movimento mas sim o fato deles não
+        // descolar") and the clip keeps its feet on the ground: it advances by the ground covered at its video's own stride
+        // (walk-speeds.json: the ground the video's feet cover a second), so each stride spans what it spans in the video ("acertar
+        // o ritmo do caminhar"). A clip with no feet to read (fliers) plays at its video's speed.
         if (walking && !shot) {
-          const double cycle = p->doneAt >= 0 ? static_cast<double>(p->doneAt) : paceLoop(p->pace, p->frames).period;
-          walkClock = static_cast<float>(unitWalk_[ui].travelled / (p->strides * kWalkStride) * cycle / 240.0);
+          const float size = unitSize(entry ? entry->key : u.key, entry && entry->group == "npc");
+          walkClock = static_cast<float>(unitWalk_[ui].travelled /
+                                         (p->groundSpeed > 0.0f ? p->groundSpeed * size : walkSpeed(*p, entry ? entry->key : u.key, entry && entry->group == "npc")));
         }
         const float clock = shot ? std::max(0.0f, time - shot->start) * shot->rate : walking ? walkClock : time;
         if (shot || p->doneAt >= 0) {
@@ -4711,8 +4759,11 @@ class MapStage final : public Stage {
       // A unit with a walk of its own for each side (a "walkLeft" pose beside "walk": Isolde's and Voss's videos, 2026-10-25, the
       // user: "só tem o walk de um lado, eu fiz dois videos um para cada") is never mirrored while walking, whatever its sprite.
       const bool ownSides = walking && entry && entry->find("walkLeft") && !entry->find("walkLeft")->pace.empty();
+      // The up / down walks are filmed straight: as drawn on the right diagonals, turned over on the left ones (about the hex, addCard).
+      const bool diagonalWalk = shown == "walkUp" || shown == "walkDown";
+      const bool verticalWalk = shown == "walkBack" || shown == "walkFront";
       const bool leftCut = shown == "walkLeft" || shown == "attackLeft" || shown == "attack2Left" || shown == "castLeft" ||
-                           (walking && kDirectionalWalk.contains(u.sprite)) || ownSides;
+                           verticalWalk || (walking && kDirectionalWalk.contains(u.sprite)) || ownSides;
       // Ember UnitActor.drawnReversed: Kael Final's idle is drawn turned left, but his walk and attacks face right
       // (and the old Kael's attacks), so those poses are not reversed: reading his idle for them walked him backwards.
       static const std::unordered_set<std::string> kAttackPoses = {"attack", "attackLeft", "attack2", "attack2Left", "attackShort",
@@ -4722,11 +4773,10 @@ class MapStage final : public Stage {
       const bool drawnRight = (u.sprite == "kaelFinal" && (walking || attackPose)) || (u.sprite == "defaultWarrior" && attackPose);
       // The Besteiro Salteador's shot (BrigandCrossbowman atk) is drawn aiming left while his idle stands as drawn right: read as his
       // idle, he shot away from his target (the user, 2026-10-28: "ele não está virando para o lado onde atira").
-      // Isolde's counter-staff video strikes left while her idle faces right: read as her idle, she struck away from her target.
-      const bool isoldeStaff = (u.sprite == "isolde-veo" || (entry && entry->key == "isolde")) && shown == "counterStaff";
-      const bool drawnLeft = (u.sprite == "BrigandCrossbowman" && shown == "attack") || isoldeStaff;
+      // Isolde's counter-staff (counter-staff-r01) strikes right with the glowing red gem head, matching her idle.
+      const bool drawnLeft = (u.sprite == "BrigandCrossbowman" && shown == "attack");
       const bool reversed = drawnLeft || (unitReversed_[ui] != 0 && !drawnRight);
-      const bool mirror = !leftCut && ((unitFacing_[ui] == -1) != reversed);
+      const bool mirror = diagonalWalk ? unitWalk_[ui].lean == -1 :!leftCut && ((unitFacing_[ui] == -1) != reversed);
       // Tática (Ember UnitActor.update with flatTop): flat over its own row's cards by half a row step, no shadow.
       if (flat_) anchor.y = flatY(anchor.z) + kFlatRowStep * 0.5f;
       uint32_t flags = flat_ ? kSpriteLit | kSpriteFlat : kSpriteLit | kSpriteFront | kSpriteCastsShadow;
@@ -4738,6 +4788,10 @@ class MapStage final : public Stage {
           }))
         flags |= kSpriteFrontNear;
       if (corpseFade > 0.0f) flags |= static_cast<uint32_t>(std::lround(corpseFade * 255.0f)) << kSpriteFadeShift;
+      const bool movingUnit = (static_cast<int>(ui) == hero_ && path_.size() > 1) ||
+                              (ui < unitWalk_.size() && unitWalk_[ui].active()) ||
+                              (ui < unitLeap_.size() && time >= unitLeap_[ui].start && time <= unitLeap_[ui].end);
+      if (movingUnit) flags |= kSpriteMoving;
       const size_t cardsBefore = drawList_.size();
       // Ember centerBody: a sheet that drifts sideways mid-swing (Neera's off-hand dagger) is held on its hex.
       const float drift = p && frame < p->bodyShift.size() ? p->bodyShift[frame] * boxW : 0.0f;
@@ -4768,6 +4822,7 @@ class MapStage final : public Stage {
         cr.bodyBottom = cy * boxH;
         cr.bodyTop = cr.bodyBottom + boxH * ch.contentHeight / sh;
         cr.bodyHalf = 0.3f * boxW * ch.contentWidth / sw;
+        cr.contentHalf = 0.5f * boxW * ch.contentWidth / sw;
       }
       // The card as drawn, for a bolt leaving its hands (HandBoltFx: the Aparição's attack): it follows the card as the camera turns.
       if (unitBoltCard_.size() <= ui) unitBoltCard_.resize(ui + 1);
@@ -4809,21 +4864,52 @@ class MapStage final : public Stage {
       // That shift can carry a figure past another standing near it, and then the one behind was drawn over the one in front, at some
       // camera angles only (the user, 2026-10-30: "every now and then the camera will make a card on the back draw in front of
       // another", "if I move the camera a little it auto fixes"). Two figures overlapping on screen keep their own depth order.
+      // Moving units get visual preference: when passing in front or beside another, the moving unit stays in front (no ghosting);
+      // but when moving behind another card, the nearer card in front correctly covers it (user 2026-11-25).
       std::vector<size_t> units;
       for (size_t k = 0; k < order.size(); ++k)
         if ((drawList_[order[k].second].flags & kSpriteFront) != 0) units.push_back(k);
-      for (int pass = 0; pass < 4; ++pass) {
+      const glm::vec2 viewDir = glm::length(glm::vec2(fwd.x, fwd.z)) > 1e-4f ? glm::normalize(glm::vec2(fwd.x, fwd.z)) : glm::vec2(0.0f, 1.0f);
+      for (int pass = 0; pass < 6; ++pass) {
         bool moved = false;
-        for (size_t a : units)
-          for (size_t b : units) {
+        for (size_t i = 0; i < units.size(); ++i) {
+          for (size_t j = i + 1; j < units.size(); ++j) {
+            const size_t a = units[i], b = units[j];
             const SpriteInstance& ua = drawList_[order[a].second];
             const SpriteInstance& ub = drawList_[order[b].second];
-            const float depthA = glm::dot(ua.origin - eye, fwd), depthB = glm::dot(ub.origin - eye, fwd);
-            if (depthA <= depthB) continue;  // a is the farther one: it must be drawn first (the larger key)
             const float sa = glm::dot(glm::vec2(ua.origin.x, ua.origin.z), across), sb = glm::dot(glm::vec2(ub.origin.x, ub.origin.z), across);
             if (std::abs(sa - sb) >= 0.5f * (ua.width + ub.width)) continue;
-            if (order[a].first <= order[b].first) order[a].first = order[b].first + 1e-4f, moved = true;
+
+            const float depthA = glm::dot(glm::vec2(ua.origin.x - eye.x, ua.origin.z - eye.z), viewDir);
+            const float depthB = glm::dot(glm::vec2(ub.origin.x - eye.x, ub.origin.z - eye.z), viewDir);
+            const bool aMoving = (ua.flags & kSpriteMoving) != 0;
+            const bool bMoving = (ub.flags & kSpriteMoving) != 0;
+
+            size_t behindIdx = a;
+            size_t frontIdx = b;
+
+            const float diff = depthA - depthB;
+            if (std::abs(diff) < 0.05f && (aMoving != bMoving)) {
+              // When two figures cross at virtually identical depth (< 5 cm), mover gets visual preference to prevent flickering.
+              behindIdx = aMoving ? b : a;
+              frontIdx = aMoving ? a : b;
+            } else {
+              // True ground depth along view direction governs all other cases: larger depth is farther from camera (in the background).
+              if (depthA > depthB) {
+                behindIdx = a;
+                frontIdx = b;
+              } else {
+                behindIdx = b;
+                frontIdx = a;
+              }
+            }
+
+            if (order[behindIdx].first <= order[frontIdx].first) {
+              order[behindIdx].first = order[frontIdx].first + 1e-3f;
+              moved = true;
+            }
           }
+        }
         if (!moved) break;
       }
     }
@@ -5685,6 +5771,11 @@ class MapStage final : public Stage {
   // The Cinemática copy only once it is cooked (the copies are cut as the sets are cut again, the user 2026-11-21): else the Média one.
   const std::string& artSet(const ember::HeroPose& p, const ArtTier& t) const {
     if (t.cinema && !p.cinema.empty() && sprites_.find(p.cinema, p.clip) != kNoSpriteClip) return p.cinema;
+    // A walk in Média / Leve draws every frame of its video (the Cinemática copy, ~610 px, Leve halving it): it plays at the
+    // video's speed, and 36 frames over Aldric's 6 s loop were 6 a second, slow and choppy (the user, 2026-11-26: "tem que tocar
+    // igual no vídeo e adaptar para menos frames nas resoluções baixas"; "é lento demais e nada a ver com o vídeo").
+    if ((t.light || t.medium) && p.pose.starts_with("walk") && !p.cinema.empty() && sprites_.find(p.cinema, p.clip) != kNoSpriteClip)
+      return p.cinema;
     if (t.light && !p.light.empty()) return p.light;
     return t.medium && !p.medium.empty() ? p.medium : p.set;
   }
@@ -6068,6 +6159,34 @@ class MapStage final : public Stage {
     return std::nullopt;
   }
 
+  std::optional<glm::vec3> resolveLightCasterHead(const std::string& casterId) const {
+    if (!scene_) return std::nullopt;
+    for (size_t ui = 0; ui < scene_->units.size(); ++ui) {
+      bool match = scene_->units[ui].name == casterId;
+      if (!match && battle_ && ui < unitBattle_.size() && unitBattle_[ui] >= 0 &&
+          static_cast<size_t>(unitBattle_[ui]) < battle_->units().size()) {
+        match = battle_->units()[static_cast<size_t>(unitBattle_[ui])].id == casterId;
+      }
+      if (match) {
+        if (ui < unitCard_.size() && unitCard_[ui].drawn && !unitCard_[ui].flat && unitCard_[ui].height > 0.1f) {
+          const CardRect& c = unitCard_[ui];
+          return c.origin + cardUp(c) * (c.height * 0.98f);
+        }
+        const glm::vec3 feet = (static_cast<int>(ui) == hero_ && path_.size() > 1) ? heroAt_ : unitWorld(ui);
+        return feet + glm::vec3(0.0f, 2.55f, 0.0f);
+      }
+    }
+    if (battle_ && board_) {
+      for (const ember::BattleUnit& bu : battle_->units()) {
+        if (bu.id == casterId && battle_->inBounds(bu.x, bu.y)) {
+          const glm::vec2 w = anchorWorld(bu, {bu.x, bu.y});
+          return glm::vec3(w.x, groundAt(w.x, w.y) + 2.55f, w.y);
+        }
+      }
+    }
+    return std::nullopt;
+  }
+
   // Where a battle unit's feet stand with its anchor on a hex: the middle of its body's front row (Ember's footprint
   // centroid, as the map importer places the spawns).
   glm::vec2 anchorWorld(const ember::BattleUnit& u, ember::BattleHex at) const {
@@ -6248,50 +6367,186 @@ class MapStage final : public Stage {
     clampGoal();
   }
 
-  // Ember UnitActor.update for walking units: one hex every 0.22 s; facing and walk direction relative to the camera.
+  // Six walking directions from four walks, by one table (content/data/walk-views.json; the user, 2026-11-26: the direction comes
+  // from the hex, never from a screen vector; "temos mirror das costas e de frente"): the step's index in the board's own table of
+  // neighbours and the camera's stop (30 degrees each) pick the row, integers only. Set once as the step starts, held to the next hex.
+  const WalkViews::View* stepView(ember::BattleHex from, ember::BattleHex to) const {
+    const ember::AxialHex a = ember::oddRToAxial(from.x, from.y), b = ember::oddRToAxial(to.x, to.y);
+    const int dir = ember::axialDirectionIndex(b.q - a.q, b.r - a.r);
+    if (dir < 0) return nullptr;
+    const int stop = flat_ ? 0 : static_cast<int>(std::lround(cam_.yaw / (std::numbers::pi_v<float> / 6.0f)));
+    return &walkViews_.views[static_cast<size_t>(((2 * dir - stop) % 12 + 12) % 12)];
+  }
+  void syncUnitFacing(size_t ui, auto& w) {  // w: a Walk (declared further down)
+    if (ui >= unitFacing_.size()) return;
+    const ember::HexStepMover& m = w.mover;
+    w.hasBefore = w.steps > 0;
+    if (w.hasBefore) w.before = w.from;
+    w.from = m.currentHex().worldPos, ++w.steps;
+    const WalkViews::View* v = stepView({m.currentHex().x, m.currentHex().y}, {m.targetHex().x, m.targetHex().y});
+    if (!v) return;
+    w.dir = v->walk;
+    w.lean = v->mirror ? -1 : 1;
+    if (v->side != 0) unitFacing_[ui] = v->side;
+  }
+
+  // A step that goes left on screen, by the same table: the walk's sound for that side.
+  bool stepGoesLeft(const ember::BattleUnit&, ember::BattleHex from, ember::BattleHex to) const {
+    const WalkViews::View* v = stepView(from, to);
+    return v && v->side < 0;
+  }
+
+  // Where a walking unit is: along its route with the corners rounded (from the middle of one hex side to the middle of the
+  // next, bending past the hex's centre), so a zigzag of hexes is walked as a soft wave and a turn as a curve, never as sharp
+  // corners at every centre. It starts and ends exactly on its hexes; a straight run is the straight line.
+  glm::vec2 walkPoint(const auto& w) const {
+    const ember::HexStepMover& m = w.mover;
+    if (m.state() != ember::HexMoveState::Moving) return m.worldPos();
+    const glm::vec2 a = m.currentHex().worldPos, b = m.targetHex().worldPos, mid = (a + b) * 0.5f;
+    const float t = std::clamp(m.stepProgress(), 0.0f, 1.0f);
+    auto bend = [](glm::vec2 p0, glm::vec2 c, glm::vec2 p1, float u) { return (1.0f - u) * (1.0f - u) * p0 + 2.0f * u * (1.0f - u) * c + u * u * p1; };
+    if (t < 0.5f) return w.hasBefore ? bend((w.before + a) * 0.5f, a, mid, 0.5f + t) : a + (b - a) * t;
+    if (const ember::HexWaypoint* next = m.nextQueued()) return bend(mid, b, (b + next->worldPos) * 0.5f, t - 0.5f);
+    return a + (b - a) * t;
+  }
+
+  void assignUnitWalk(size_t ui, const ember::BattleUnit& u, const std::vector<ember::BattleHex>& route, float speedScale, std::string fadeSound) {
+    if (ui >= unitWalk_.size() || route.size() < 2) return;
+    std::vector<ember::HexWaypoint> queue;
+    queue.reserve(route.size() - 1);
+    for (size_t k = 1; k < route.size(); ++k) queue.push_back({route[k].x, route[k].y, anchorWorld(u, route[k])});
+    Walk& existing = unitWalk_[ui];
+    if (existing.mover.active() && existing.mover.targetHex().x == route[0].x && existing.mover.targetHex().y == route[0].y) {
+      existing.mover.replaceQueuedSteps(std::move(queue));
+      existing.speedScale = speedScale;
+      if (!fadeSound.empty()) existing.fadeSound = std::move(fadeSound);
+      return;
+    }
+    Walk w;
+    w.start = now_;
+    w.hold = walkLead(ui);
+    w.speedScale = speedScale;
+    w.fadeSound = std::move(fadeSound);
+    const ember::SpriteFacing4 initialFacing =
+        ui < unitFacing_.size() && unitFacing_[ui] < 0 ? ember::SpriteFacing4::Left : ember::SpriteFacing4::Right;
+    w.mover.setFacingIfUnlocked(initialFacing);
+    const bool started = w.mover.assignPath({route[0].x, route[0].y, anchorWorld(u, route[0])}, std::move(queue));
+    unitPos_[ui] = w.mover.worldPos();
+    if (started) syncUnitFacing(ui, w);
+    existing = std::move(w);
+  }
+
+  const std::vector<ember::BattleHex>& previewRoute(size_t b, ember::BattleHex to) const {
+    static const std::vector<ember::BattleHex> kEmpty;
+    if (!battle_ || b >= battle_->units().size()) return kEmpty;
+    const ember::BattleUnit& u = battle_->units()[b];
+    const ember::BattleHex from{u.x, u.y};
+    const bool turn = myTurn();
+    const int ap = turn ? u.ap : ember::apMax(*battle_, u);
+    if (hoverRouteUnit_ == b && hoverRouteFrom_ == from && hoverRouteTo_ == to &&
+        hoverRouteAp_ == ap && hoverRouteMyTurn_ == turn && hoverRouteRoaming_ == battle_->roaming()) {
+      return hoverRoute_;
+    }
+    hoverRouteUnit_ = b;
+    hoverRouteFrom_ = from;
+    hoverRouteTo_ = to;
+    hoverRouteAp_ = ap;
+    hoverRouteMyTurn_ = turn;
+    hoverRouteRoaming_ = battle_->roaming();
+    if (turn) {
+      hoverRoute_ = battle_->findPath(b, to, true);
+    } else {
+      ember::Battle look = *battle_;
+      look.units()[b].moveUsed = 0;
+      look.units()[b].ap = ember::apMax(look, look.units()[b]);
+      hoverRoute_ = look.findPath(b, to, true);
+    }
+    return hoverRoute_;
+  }
+
+  // Step-locked discrete waypoint movement update: facing and walk pose are set once at STEP_START, as the camera sees the step.
   void updateUnits(float dt) {
     if (!scene_) return;
-    const float yaw = flat_ ? 0.0f : cam_.yaw;
+    const float baseSpeed = std::sqrt(3.0f) / stepSeconds();
     for (size_t i = 0; i < unitWalk_.size(); ++i) {
       Walk& w = unitWalk_[i];
-      if (w.points.empty()) continue;
-      glm::vec2& p = unitPos_[i];
-      const glm::vec2 d = w.points.front() - p;
-      const float dist = glm::length(d);
-      const float screenX = d.x * std::cos(yaw) - d.y * std::sin(yaw);
-      if (std::abs(screenX) > 0.05f) unitFacing_[i] = screenX > 0.0f ? 1 : -1;
-      const float away = -(d.x * std::sin(yaw) + d.y * std::cos(yaw));
-      if (dist > 1e-4f) w.dir = std::abs(away) > dist * 0.5f ? (away > 0.0f ? kWalkBack : kWalkFront) : kWalkSide;
-      const float move = std::min(dist, std::sqrt(3.0f) / stepSeconds() * dt);
-      if (dist > 1e-4f) p += d / dist * move;
-      w.travelled += move;
-      unitMoved_[i] = 1;
-      if (dist - move < 1e-3f) {
-        w.points.erase(w.points.begin());
-        if (!w.hexes.empty()) w.hexes.erase(w.hexes.begin());
+      if (!w.active()) continue;
+      // The Birolhos' limbs (the user, 2026-11-25: opening and closing "never showed in the game", "only when it wants"): the
+      // unfold plays whole where he stands before the first step, the fold whole where he stops, every walk; the walk is over
+      // only when the fold is.
+      if (w.foldUntil >= 0.0f) {
+        if (now_ >= w.foldUntil) w.foldUntil = -1.0f;
+        continue;
       }
-      if (w.points.empty() && !w.fadeSound.empty()) AudioMixer::get().fadeSfx(std::exchange(w.fadeSound, {}));
+      if (now_ - w.start < w.hold) continue;
+      // its own feet's speed on a walk of its own (speedScale 1); a dash or a charge keeps the pace its caller timed
+      const float feet = w.speedScale == 1.0f ? feetSpeed(i, w.dir) : 0.0f;
+      const bool stepChanged = w.mover.update(dt, feet > 0.0f ? feet : baseSpeed * w.speedScale);
+      if (stepChanged) syncUnitFacing(i, w);
+      const glm::vec2 at = walkPoint(w);
+      w.travelled += glm::length(at - unitPos_[i]);  // the ground really covered: the feet keep to it round the corners
+      unitPos_[i] = at;
+      unitMoved_[i] = 1;
+      if (!w.mover.active()) {
+        if (!w.fadeSound.empty()) AudioMixer::get().fadeSfx(std::exchange(w.fadeSound, {}));
+        if (const float fold = walkPoseSeconds(i, "fold"); fold > 0.0f) w.foldUntil = now_ + fold;
+      }
     }
     if (!levelUpMoment_) queueChangedLevels();
     if (hero_ >= 0 && path_.size() <= 1) heroAt_ = unitWorld(static_cast<size_t>(hero_));  // the test lights follow it
   }
 
+  // How fast a unit crosses the ground: as fast as the feet in its own walk clip go, the clip played at its own speed (the user,
+  // 2026-11-25, AGENTS.md: every animation whole, at its own speed, never sped up; "qual parte de máximo você não entende"): the walk
+  // drawn here is timed by the ground covered (strides x kWalkStride a loop), so moving at strides x kWalkStride per the loop's own
+  // seconds plays the video's frames at the video's pace. By the pose's data, every unit alike; 0 when the pose has no loop to read.
+  float feetSpeed(size_t ui, ember::SpriteFacing4 dir) {
+    const ember::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
+    if (!entry || !battle_ || ui >= unitBattle_.size() || unitBattle_[ui] < 0) return 0.0f;
+    const size_t b = static_cast<size_t>(unitBattle_[ui]);
+    if (b >= battle_->units().size()) return 0.0f;
+    std::string shown;
+    const ember::HeroPose* p = walkPose(*entry, dir, ui < unitFacing_.size() ? unitFacing_[ui] : 1, battle_->units()[b].sprite, shown);
+    if (!p || p->doneAt >= 0 || p->pace.empty()) return 0.0f;
+    return walkSpeed(*p, entry->key, entry->group == "npc");
+  }
+  // The ground a walk pose covers a second: its video's feet (walk-speeds.json, at the unit's own size), every unit by its data
+  // (the user, 2026-11-26: "they must move like in the videos period"); a clip with no feet to read (fliers) at the game's step.
+  // Every unit crosses the board at the game's step (a hex in stepSeconds); its walk clip plays at the video's own speed on top
+  // of it. walk-speeds.json (the videos' feet, walk_speed.py) is kept for the day the feet are to keep to the ground.
+  float walkSpeed(const ember::HeroPose&, const std::string&, bool) const { return std::sqrt(3.0f) / stepSeconds(); }
+  // The seconds a unit's walk along a route takes at its own feet's speed (each hex in the direction it is walked), the old fixed
+  // step where a pose has no loop to read: when its effects, the foes' reactions and the next step come.
+  float routeSeconds(size_t ui, const std::vector<ember::BattleHex>& route) {
+    float s = 0.0f;
+    for (size_t k = 1; k < route.size(); ++k) {
+      const auto dir = ember::hexStepToFacing4(route[k - 1].x, route[k - 1].y, route[k].x, route[k].y);
+      const float feet = dir ? feetSpeed(ui, *dir) : 0.0f;
+      s += feet > 0.0f ? std::sqrt(3.0f) / feet : stepSeconds();
+    }
+    return s;
+  }
+
   // Ember UnitActor.walkShown: a still for the direction, else the up / down cycle, else the side walk (its own left
   // cut when facing left; the Lancer's cuts are swapped).
-  static const ember::HeroPose* walkPose(const ember::Hero& h, int dir, int facing, const std::string& sprite, std::string& shown) {
+  static const ember::HeroPose* walkPose(const ember::Hero& h, ember::SpriteFacing4 dir, int facing, const std::string& sprite, std::string& shown) {
     auto has = [&](const char* pose) -> const ember::HeroPose* {
       const ember::HeroPose* p = h.find(pose);
       if (!p || p->pace.empty()) return nullptr;
       shown = pose;
       return p;
     };
-    static const char* kStill[3] = {"walkBack", "walkFront", "walkSide"};
-    if (const ember::HeroPose* p = has(kStill[dir])) return p;
-    if (dir == kWalkBack)
+    if (dir == ember::SpriteFacing4::Up) {
+      if (const ember::HeroPose* p = has("walkBack")) return p;
       if (const ember::HeroPose* p = has("walkUp")) return p;
-    if (dir == kWalkFront)
+    } else if (dir == ember::SpriteFacing4::Down) {
+      if (const ember::HeroPose* p = has("walkFront")) return p;
       if (const ember::HeroPose* p = has("walkDown")) return p;
-    const bool wantLeft = sprite == "lancer" || sprite == "lancerZero" ? facing == 1 : facing == -1;
+    } else {
+      if (const ember::HeroPose* p = has("walkSide")) return p;
+    }
+    const int sideFacing = facing;  // the unit's side on screen (syncUnitFacing), never the board's left / right
+    const bool wantLeft = sprite == "lancer" || sprite == "lancerZero" ? sideFacing == 1 : sideFacing == -1;
     if (wantLeft)
       if (const ember::HeroPose* p = has("walkLeft")) return p;
     if (const ember::HeroPose* p = has("walk")) return p;
@@ -7346,6 +7601,8 @@ class MapStage final : public Stage {
       const std::string logMap = ember::logicalMapOfScreen(floorId);
       const glm::vec3 casterFeet = unitWorld(static_cast<size_t>(selected_));
       const glm::vec2 aimW = anchorWorld(u, hex);
+      const int look = spellLook(kind, static_cast<size_t>(selected_));
+      const float groundY = (kind == "anchoredLight") ? groundAt(aimW.x, aimW.y) : casterFeet.y;
       glm::vec3 originPos = casterFeet;
       glm::vec3 facingDir{0.0f, 0.0f, 1.0f};
 
@@ -7359,10 +7616,10 @@ class MapStage final : public Stage {
         }
         originPos = casterFeet + glm::vec3(facingDir.x * 0.35f, 1.25f, facingDir.z * 0.35f);
       } else if (kind == "anchoredLight") {
-        originPos = glm::vec3(aimW.x, groundAt(aimW.x, aimW.y) + 0.85f, aimW.y);
+        originPos = glm::vec3(aimW.x, groundY + 0.85f, aimW.y);
       }
 
-      ember::LightingSpellRegistry::get().cast(kind, u.id, logMap, floorId, u.level, originPos, facingDir, campaignMinuteNow(), &why);
+      ember::LightingSpellRegistry::get().cast(kind, u.id, logMap, floorId, u.level, originPos, facingDir, campaignMinuteNow(), &why, look, groundY);
     }
     play(std::move(*steps), static_cast<size_t>(selected_));
   }
@@ -7580,6 +7837,7 @@ class MapStage final : public Stage {
 
   void refreshReach() {
     reach_.clear(), reachPaths_.clear(), targets_.clear();
+    hoverRouteUnit_ = SIZE_MAX;
     if (!battle_ || selected_ < 0 || unitBattle_[static_cast<size_t>(selected_)] < 0) return;
     const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
     const ember::BattleUnit& u = battle_->units()[b];
@@ -7638,7 +7896,7 @@ class MapStage final : public Stage {
   // Something is playing that input must not cut into: a walk, a strike, an enemy's turn, the battle's end.
   bool busy() const {
     if (levelUpMoment_ || exchange_ || enemyTurn_ || !result_.empty() || sightPause() || cutscene_) return true;
-    return std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
+    return std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return w.active(); });
   }
 
   // Ember's turn loop (tick / beginUnitTurn / startNewRound): whoever is next in the round acts; when everyone has
@@ -7661,7 +7919,7 @@ class MapStage final : public Stage {
   void updateTurns() {
     // Nobody acts under an on-map cutscene (the user, 2026-11-06: the enemies struck during the Vau's opening), whatever holdTurns says.
     if (!battle_ || !scene_ || levelUpMoment_ || !result_.empty() || holdTurns || cutscene_ || !openingDone_ || !openingQueue_.empty() || battle_->roaming()) return;
-    const bool walking = std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
+    const bool walking = std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return w.active(); });
     if (exchange_ || walking || sightPause()) return;
     // Let an enemy's action shot finish its post-impact hold before advancing the initiative.
     if (shot_ && now_ < shot_->holdUntil) return;
@@ -7682,7 +7940,7 @@ class MapStage final : public Stage {
         enemyTurn_ = t;
         if (t.path.size() > 1) {
           walkAlong(t.unit, t.path);
-          return;
+          if (unitWalk_[t.unit].active()) return;
         }
       }
       enemyTurn_.reset();
@@ -7750,16 +8008,23 @@ class MapStage final : public Stage {
       // resumed mid-turn, a click on bare ground, Esc on another unit), it is picked again, else Esperar / Fim do turno and
       // the actions stay dead until the player clicks it. Another unit clicked to look at it stays picked until let go.
       const int ui = sceneUnitOf(active);
-      if (selected_ < 0 && ui >= 0 && battle_->units()[static_cast<size_t>(active)].side == "player" &&
-          battle_->units()[static_cast<size_t>(active)].alive) {
-        if (pickActiveOnResume_) undo_.clear();
-        select(ui);
+      if (battle_->units()[static_cast<size_t>(active)].side == "player") {
+        if (selected_ < 0 && ui >= 0 && battle_->units()[static_cast<size_t>(active)].alive) {
+          if (pickActiveOnResume_) undo_.clear();
+          select(ui);
+        }
+        pickActiveOnResume_ = false;
+        return;
       }
-      pickActiveOnResume_ = false;
+      if (enemyTurn_) return;
+      battle_->units()[static_cast<size_t>(active)].moved = true;
+      turnUnit_ = -1;
       return;
     }
     pickActiveOnResume_ = false;
     turnUnit_ = active;
+    logInfo("battle turn: round {} {} ({})", battle_->round(), battle_->units()[static_cast<size_t>(active)].name,
+            battle_->units()[static_cast<size_t>(active)].side);
     battle_->beginTurn(static_cast<size_t>(active));
     {
       // The start of its own turn: a lightning echo, the ground's flames, our zones and conditions, a Meteoro it called.
@@ -7782,12 +8047,15 @@ class MapStage final : public Stage {
       else pendingFx_.push_back({now_ + 0.9f, fx});
       if (!battle_->units()[static_cast<size_t>(active)].alive) {
         battle_->units()[static_cast<size_t>(active)].moved = true;
+        turnUnit_ = -1;
         return;
       }
       if (turn.kind != ember::TurnStart::Kind::Normal) {  // it loses the turn (stunned, asleep) or runs from what it fears
         const int ui = sceneUnitOf(active);
         if (ui >= 0 && !turn.tip.empty()) tip_ = battle_->units()[static_cast<size_t>(active)].name + turn.tip, tipAt_ = now_;
         if (ui >= 0 && turn.kind == ember::TurnStart::Kind::Fled && turn.fleePath.size() > 1) fleeAlong(static_cast<size_t>(ui), turn.fleePath);
+        battle_->units()[static_cast<size_t>(active)].moved = true;
+        turnUnit_ = -1;
         return;
       }
     }
@@ -7795,6 +8063,7 @@ class MapStage final : public Stage {
     const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(active)];
     if (ui < 0) {  // a unit with no card in this scene sits its turns out
       battle_->units()[static_cast<size_t>(active)].moved = true;
+      turnUnit_ = -1;
       return;
     }
     if (u.side == "player") {
@@ -7808,6 +8077,7 @@ class MapStage final : public Stage {
       const size_t i = static_cast<size_t>(ember::indexOf(board_->layout(), u.x, u.y));
       if (!litHex(i)) {
         battle_->units()[static_cast<size_t>(active)].moved = true;
+        turnUnit_ = -1;
         return;
       }
       awake_.insert(active);
@@ -8063,11 +8333,12 @@ class MapStage final : public Stage {
     const size_t step = cutscene_->step;
     for (const auto& [actor, ui] : cutscene_->units) {
       Walk& w = unitWalk_[ui];
-      if (w.points.empty() || w.hexes.empty() || unitBattle_[ui] < 0) continue;
+      if (!w.active() || unitBattle_[ui] < 0) continue;
       ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[ui])];
-      const int there = battle_->unitAt(w.hexes.front().x, w.hexes.front().y);
-      if (there < 0 || there == unitBattle_[ui]) u.x = w.hexes.front().x, u.y = w.hexes.front().y;
-      w.points.resize(1), w.hexes.resize(1);
+      const ember::BattleHex next{w.mover.targetHex().x, w.mover.targetHex().y};
+      const int there = battle_->unitAt(next.x, next.y);
+      if (there < 0 || there == unitBattle_[ui]) u.x = next.x, u.y = next.y;
+      w.mover.clearQueuedSteps();
     }
     cutsceneDialog_.reset();
     holdTurns = cutscene_->heldTurns || !options_.battleScript.empty();
@@ -8130,7 +8401,7 @@ class MapStage final : public Stage {
       switch (c.script.steps[c.step].kind) {
         case ember::CutsceneStep::Kind::Move: {
           const size_t ui = c.units[c.script.steps[c.step].actor];
-          if (!unitWalk_[ui].points.empty()) return;
+          if (unitWalk_[ui].active()) return;
           break;
         }
         case ember::CutsceneStep::Kind::Say:
@@ -8144,7 +8415,7 @@ class MapStage final : public Stage {
           break;
         case ember::CutsceneStep::Kind::Enter: {  // the walk of a hero already on the board, else the fade-in
           const size_t ui = c.units[c.script.steps[c.step].actor];
-          if (!unitWalk_[ui].points.empty() || now_ - c.stepStart < kEnterSeconds) return;
+          if (unitWalk_[ui].active() || now_ - c.stepStart < kEnterSeconds) return;
           break;
         }
         case ember::CutsceneStep::Kind::Face: break;
@@ -8290,7 +8561,7 @@ class MapStage final : public Stage {
                   battle_->units()[static_cast<size_t>(there)].name, toX, toY);
           if (u.x == toX && u.y == toY) return;
         }
-        std::vector<ember::BattleHex> route = ember::Battle::path(reach, toX, toY);
+        std::vector<ember::BattleHex> route = look.findPath(b, {toX, toY}, false);
         if (route.size() < 2) return fail(std::format("({}, {}) is unreachable for {}", toX, toY, u.name));
         std::vector<ember::BattleEffect> fx;
         walkHexes(b, route, fx);  // the rules of the ground underfoot (a hazard, a gate) as in any walk
@@ -8298,7 +8569,7 @@ class MapStage final : public Stage {
         animateAlong(*ui, route, stepSeconds());
         const auto [hx, hy] = ember::heading(route[route.size() - 2], route.back());
         u.faceDx = hx, u.faceDy = hy;
-        playCues(sounds(b, route[1].x < route[0].x ? "walkLeft" : "walk"));
+        playCues(sounds(b, stepGoesLeft(u, route[0], route[1]) ? "walkLeft" : "walk"));
         logInfo("cutscene {}: step {} move {} ({}, {}) -> ({}, {}), {} hexes", c.script.id, c.step, st.actor, route.front().x, route.front().y, u.x, u.y, route.size() - 1);
         return;
       }
@@ -8434,6 +8705,7 @@ class MapStage final : public Stage {
   // Turn a unit to one of the six hex directions (Battle::neighbors' order: e ne nw w sw se; n = towards smaller y): the
   // board heading towards that neighbour and the card's side from where the camera stands (faceToward's rule).
   void faceDirection(size_t ui, int direction) {
+    if (ui < unitWalk_.size() && unitWalk_[ui].mover.facingLocked()) return;
     const size_t b = static_cast<size_t>(unitBattle_[ui]);
     ember::BattleUnit& u = battle_->units()[b];
     const std::vector<ember::BattleHex> around = ember::Battle::neighbors(u.x, u.y);
@@ -8735,7 +9007,16 @@ class MapStage final : public Stage {
     runVictoryScenes();
     runBattleLines();
     if (!openingDone_) {
-      if (!battle_ || !scene_ || readyFrames_ < 30 || !loading().ready) return;
+      if (!battle_ || !scene_) return;
+      const Loading load = loading();
+      if (readyFrames_ < 30 || !load.ready) {
+        if (now_ < 20.5f) return;
+        const auto [md, mt] = meshes_.progress();
+        const auto [pd, pt] = sprites_.pinProgress();
+        logWarn("opening: still waiting after {:.1f}s (readyFrames {}, load {}/{}, pins {}/{}, meshes {}/{}, ground {}, placed {}, fog {}, drawn {}); starting turns anyway",
+                now_, readyFrames_, load.done, load.total, pd, pt, md, mt, ground_.ready() ? 1 : 0, modelsPlaced_ ? 1 : 0,
+                (!fog_ || fogReady_) ? 1 : 0, fullFrames_ > 0 ? 1 : 0);
+      }
       openingDone_ = true;  // (a battle script waits for this moment, so its steps never run before the map's opening scene)
       if (options_.editorClick || !options_.cutscene.empty()) return;
       openingQueue_.clear();
@@ -8853,7 +9134,7 @@ class MapStage final : public Stage {
 
   void updateCombatOpening() {
     if (!combatOpeningPending_ || !battle_ || !scene_ || !board_ || battle_->roaming() || cutscene_ || !result_.empty() ||
-        options_.editorClick || !options_.battleScript.empty() || readyFrames_ < 30 || !loading().ready || !openingDone_)
+        options_.editorClick || !options_.battleScript.empty() || !openingDone_)
       return;
     std::vector<int> enemies;
     for (size_t b = 0; b < battle_->units().size(); ++b)
@@ -8904,13 +9185,19 @@ class MapStage final : public Stage {
     battle_->endRoaming();
     for (size_t i = 0; i < unitWalk_.size(); ++i) {
       Walk& w = unitWalk_[i];
-      if (w.points.empty() || w.hexes.empty() || unitBattle_[i] < 0) continue;
+      if (!w.active() || unitBattle_[i] < 0) continue;
       ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[i])];
-      const ember::BattleHex next = w.hexes.front();
+      const ember::BattleHex next{w.mover.targetHex().x, w.mover.targetHex().y};
       const int there = battle_->unitAt(next.x, next.y);
-      if (there >= 0 && there != unitBattle_[i]) continue;  // a friend stands there: it walks on to its own hex
+      if (there >= 0 && there != unitBattle_[i]) {
+        const auto [curC, curR] = ember::hexAt(board_->layout(), unitPos_[i].x, unitPos_[i].y);
+        u.x = curC, u.y = curR;
+        unitPos_[i] = anchorWorld(u, {u.x, u.y});
+        w = Walk{};
+        continue;
+      }
       u.x = next.x, u.y = next.y;
-      w.points.resize(1), w.hexes.resize(1);
+      w.mover.clearQueuedSteps();
     }
     for (ember::BattleUnit& u : battle_->units()) u.moveUsed = 0, u.acted = false, u.moved = false;
     for (const int b : met) awake_.insert(b);
@@ -8947,11 +9234,12 @@ class MapStage final : public Stage {
       ember::BattleUnit& f = battle_->units()[b];
       if (!f.alive || f.side != "player") continue;
       // Still on its way from the last click: it sets off again from the hex its card is stepping onto.
-      if (Walk& w = unitWalk_[i]; !w.points.empty() && !w.hexes.empty()) {
-        const int there = battle_->unitAt(w.hexes.front().x, w.hexes.front().y);
+      if (Walk& w = unitWalk_[i]; w.active()) {
+        const ember::BattleHex next{w.mover.targetHex().x, w.mover.targetHex().y};
+        const int there = battle_->unitAt(next.x, next.y);
         if (there < 0 || there == static_cast<int>(b)) {
-          f.x = w.hexes.front().x, f.y = w.hexes.front().y;
-          w.points.resize(1), w.hexes.resize(1);
+          f.x = next.x, f.y = next.y;
+          w.mover.clearQueuedSteps();
         }
       }
       party.push_back({i, b, ember::Battle::distance({f.x, f.y}, route.front())});
@@ -8987,7 +9275,6 @@ class MapStage final : public Stage {
       }
       if (!target) continue;
       taken.insert({target->x, target->y});
-      fu.x = target->x, fu.y = target->y;
       std::vector<ember::BattleHex> path;
       if (onRoute) {
         // Where it joins the leader's footsteps: the cheapest way to some hex j of the route plus the route from j on.
@@ -9002,11 +9289,12 @@ class MapStage final : public Stage {
           if (!join || cost < bestCost) join = j, bestCost = cost;
         }
         if (join) {
-          path = ember::Battle::path(walk, route[*join].x, route[*join].y);
+          path = look.findPath(f.b, route[*join], false);
           if (!path.empty()) path.insert(path.end(), route.begin() + static_cast<std::ptrdiff_t>(*join) + 1, route.begin() + static_cast<std::ptrdiff_t>(*onRoute) + 1);
         }
       }
-      if (path.empty()) path = ember::Battle::path(walk, target->x, target->y);
+      if (path.empty()) path = look.findPath(f.b, *target, true);
+      fu.x = target->x, fu.y = target->y;
       if (path.size() >= 2) walkAlong(f.ui, path);
     }
   }
@@ -9069,7 +9357,7 @@ class MapStage final : public Stage {
           // his special (Medida Mortal / Firmar a Linha are techniques: never the plain blade), its purple burst on the walker as it lands
           const size_t vs = static_cast<size_t>(vu);
           const std::string pose = hasPose(vs, "specialAttack") ? "specialAttack" : "attack";
-          const float at = now_ + stepSeconds() * static_cast<float>(route.size() - 1);
+          const float at = now_ + walkLead(ui) + routeSeconds(ui, route);
           unitShot_[vs] = {pose, at, false, kClipRate};
           const float lands = at + poseSeconds(vs, pose) * poseImpact(vs, pose) / kClipRate;
           const SpellEffects::Spot hit = hexSpot(route.back());
@@ -9086,17 +9374,14 @@ class MapStage final : public Stage {
       showEffects(fx);
       return;
     }
-    pendingFx_.push_back({now_ + stepSeconds() * static_cast<float>(route.size()), fx});
-    Walk w;
-    for (size_t k = 1; k < route.size(); ++k) w.points.push_back(anchorWorld(u, route[k])), w.hexes.push_back(route[k]);
+    pendingFx_.push_back({now_ + walkLead(ui) + routeSeconds(ui, route) + stepSeconds(), fx});
     const auto [hx, hy] = ember::heading(route[route.size() - 2], route.back());
     u.faceDx = hx, u.faceDy = hy;
-    w.start = now_;
     // startSeq's walk cue (Cultist V2 by its first step's side), faded when the walk ends if it is a monster's own.
-    const ember::Json& walk = sounds(b, route.size() > 1 && route[1].x < route[0].x ? "walkLeft" : "walk");
+    const ember::Json& walk = sounds(b, route.size() > 1 && stepGoesLeft(u, route[0], route[1]) ? "walkLeft" : "walk");
     playCues(walk);
-    w.fadeSound = sounds(b, "walkFade") == ember::Json(true) && walk.is_array() && !walk.empty() ? walk[0].value("file", "") : "";
-    unitWalk_[ui] = std::move(w);
+    std::string fadeSound = sounds(b, "walkFade") == ember::Json(true) && walk.is_array() && !walk.empty() ? walk[0].value("file", "") : "";
+    assignUnitWalk(ui, u, route, 1.0f, std::move(fadeSound));
   }
 
   // A unit running from what it fears: its state moves at once (a flame underfoot burns it on the way), the card follows.
@@ -9105,7 +9390,7 @@ class MapStage final : public Stage {
     std::vector<ember::BattleEffect> fx;
     walkHexes(b, route, fx);
     if (route.size() > 1) animateAlong(ui, route, stepSeconds());
-    pendingFx_.push_back({now_ + stepSeconds() * static_cast<float>(route.size()), fx});
+    pendingFx_.push_back({now_ + walkLead(ui) + routeSeconds(ui, route) + stepSeconds(), fx});
   }
 
   // The rules of a walk, hex by hex (Ember stepActive "move"): the unit stands on each hex in turn, a hazard there hurts
@@ -9150,11 +9435,9 @@ class MapStage final : public Stage {
     if (route.size() < 2) return 0.0f;
     const size_t b = static_cast<size_t>(unitBattle_[ui]);
     const ember::BattleUnit& u = battle_->units()[b];
-    Walk w;
-    for (size_t k = 1; k < route.size(); ++k) w.points.push_back(anchorWorld(u, route[k])), w.hexes.push_back(route[k]);
-    w.start = now_;
-    unitWalk_[ui] = std::move(w);
-    return secondsPerHex * static_cast<float>(route.size() - 1);
+    const float speedScale = secondsPerHex > 1e-4f ? stepSeconds() / secondsPerHex : 1.0f;
+    assignUnitWalk(ui, u, route, speedScale, {});
+    return walkLead(ui) + secondsPerHex * static_cast<float>(route.size() - 1);
   }
 
   // --- The exchange: an attack and, when it can, the counter (Ember BattleEngine's combat queue for a plain attack). ---
@@ -9272,6 +9555,20 @@ class MapStage final : public Stage {
   }
 
   // How long a unit's pose plays (its one-shot end, else its loop), seconds; 0.8 s when it has none.
+  // A sheet's own pose played whole around a walk ("unfold" before the first step, "fold" after the last: the Birolhos): its
+  // length, 0 without the pose.
+  float walkPoseSeconds(size_t ui, const char* pose) const {
+    const ember::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
+    const ember::HeroPose* p = entry ? entry->find(pose) : nullptr;
+    return p && !p->pace.empty() ? poseSeconds(ui, pose) : 0.0f;
+  }
+  float walkLead(size_t ui) const { return walkPoseSeconds(ui, "unfold"); }
+  // The length of the pose a one-shot pose is followed by (HeroPose::then), 0 without one.
+  float poseThenSeconds(size_t ui, const std::string& pose) const {
+    const ember::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
+    const ember::HeroPose* p = entry ? entry->find(pose) : nullptr;
+    return p && !p->then.empty() && p->then != pose ? walkPoseSeconds(ui, p->then.c_str()) : 0.0f;
+  }
   float poseSeconds(size_t ui, const std::string& pose) const {
     const ember::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
     const ember::HeroPose* p = entry ? entry->find(pose) : nullptr;
@@ -9307,6 +9604,7 @@ class MapStage final : public Stage {
 
   // Turn a unit to face a hex: on screen (its card) and on the board (Ember faceSpriteToward).
   void faceToward(size_t ui, size_t otherUi) {
+    if (ui < unitWalk_.size() && unitWalk_[ui].mover.facingLocked()) return;
     const size_t b = static_cast<size_t>(unitBattle_[ui]), o = static_cast<size_t>(unitBattle_[otherUi]);
     ember::BattleUnit& u = battle_->units()[b];
     const ember::BattleUnit& v = battle_->units()[o];
@@ -9332,7 +9630,10 @@ class MapStage final : public Stage {
     // Action Points: an unaffordable blow is refused here, before any pose, sound or roll (play's commit would refuse it too)
     if (const int cost = ember::apStepsCost(*battle_, strike.att, {strike}); !ember::apCanAfford(battle_->units()[strike.att], cost)) {
       if (battle_->units()[strike.att].side == "player") tip_ = tr("Sem PA para atacar", "Not enough AP to attack") + " (" + apLabel(cost) + ").", tipAt_ = now_;
-      else logInfo("battle: {} cannot pay {} AP for its blow (has {})", battle_->units()[strike.att].name, cost, battle_->units()[strike.att].ap);
+      else {
+        logInfo("battle: {} cannot pay {} AP for its blow (has {})", battle_->units()[strike.att].name, cost, battle_->units()[strike.att].ap);
+        battle_->units()[strike.att].moved = true;
+      }
       return;
     }
     play({strike}, attackerUi);
@@ -9373,6 +9674,7 @@ class MapStage final : public Stage {
         const int cost = ember::apStepsCost(*battle_, ob, steps);
         logError("battle: {} cannot pay {} AP for its action (has {}): the action is refused", battle_->units()[ob].name, cost, battle_->units()[ob].ap);
         if (battle_->units()[ob].side == "player") tip_ = tr("Sem PA para esta ação", "Not enough AP for this action") + " (" + apLabel(cost) + ").", tipAt_ = now_;
+        else battle_->units()[ob].moved = true;
         return;
       }
     }
@@ -9383,6 +9685,7 @@ class MapStage final : public Stage {
     exchange_ = std::move(x);
     ++actionSerial_;
     reach_.clear(), reachPaths_.clear(), targets_.clear();
+    hoverRouteUnit_ = SIZE_MAX;
     spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
     spellArmed_.reset(), pendingFoe_ = -1;
     // A bleeding unit takes 1D8 whenever it acts (Ember applyBleedingActionDamage): once for the whole action.
@@ -9516,7 +9819,7 @@ class MapStage final : public Stage {
     // Theirs is a magical staff hit (the user, 2026-10-25: "think of it a magical staff hit, on malrec's animation it's obvious";
     // then "can you do a purple effect for Voss' staff too?"): it lands with the magic impact at their plain bolt's lesser strength
     // and the staff glows while they swing - Isolde's in ember, Voss's in his Arcano violet
-    x.magicStaff = staffCounter && (isolde || strikerKey == "voss");
+    x.magicStaff = (staffCounter || (isolde && (pose == "counterStaff" || pose == "attack"))) && (isolde || strikerKey == "voss");
     if (x.magicStaff) x.element = isolde ? "ember" : "arcane", x.boltStrength = 0.55f;
     // A spell that leaves the caster's hands (Mãos Flamejantes, Sopro Venenoso; since 2026-10-18 also Míssil Mágico, Bola de Fogo,
     // Veneno Cáustico, Frost: the user, "para o resto usar a mesma regra do burning hands"; not Relâmpago, it falls from the sky).
@@ -9578,6 +9881,10 @@ class MapStage final : public Stage {
                              : ((striker >= 0 && !pose.empty() ? poseSeconds(static_cast<size_t>(striker), pose) : 0.6f) / poseRate);
     x.impact = now_ + length * (striker >= 0 && !pose.empty() ? poseImpact(static_cast<size_t>(striker), pose) : kImpactShare);
     x.end = now_ + length + turnLead + kExchangeGap / actionRate();
+    // The pose's own follow-up (the roster's "then": the fold after a skill that ends with the limbs open) plays whole before
+    // anything else happens (the user, 2026-11-25: "he can take all the time in the world doing his moves ... everything runs
+    // fast or gets cut short").
+    if (striker >= 0 && !pose.empty()) x.end += poseThenSeconds(static_cast<size_t>(striker), pose) / poseRate;
     if (comboStep) {
       const size_t su = static_cast<size_t>(striker);
       if (comboIndex == 0 || x.comboStart < 0.0f) x.comboStart = now_, x.comboLength = poseSeconds(su, "doubleStrike") / kClipRate;
@@ -10543,7 +10850,7 @@ class MapStage final : public Stage {
     }();
     const auto it = points.find(key);
     if (it == points.end() || !it->second.has(pose)) return std::nullopt;
-    return it->second.second;
+    return it->second;
   }
   // A spot's card height (a hex with nobody on it: a body's, from its body point).
   // content/unit-size.json: {"sizes": {"<catalog key>": factor}}; 1 for everyone else.
@@ -11005,7 +11312,7 @@ class MapStage final : public Stage {
       const ember::BattleHex to{std::atoi(p[2].c_str()), std::atoi(p[3].c_str())};
       if (!std::any_of(reach_.begin(), reach_.end(), [&](const ember::ReachCell& c) { return c.x == to.x && c.y == to.y; })) return fail("not in its reach");
       walkTo(static_cast<size_t>(ci), to);
-      const auto walking = std::count_if(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
+      const auto walking = std::count_if(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return w.active(); });
       return logInfo("battle script: walk {} to {} {}: {} walking", p[1], to.x, to.y, walking);
     }
     const size_t cb = static_cast<size_t>(unitBattle_[static_cast<size_t>(ci)]);
@@ -11666,10 +11973,11 @@ class MapStage final : public Stage {
       }
       const std::string floorId = board_ ? board_->draft().id : "";
       const std::string logMap = ember::logicalMapOfScreen(floorId);
+      const float groundY = (kind == "anchoredLight") ? toSpot.feet.y : fromSpot.feet.y;
       const glm::vec3 origin = kind == "arcaneBeam"     ? fromSpot.feet + glm::vec3(facing.x * 0.35f, 1.25f, facing.z * 0.35f)
                                : kind == "anchoredLight" ? toSpot.feet + glm::vec3(0.0f, 0.85f, 0.0f)
                                                          : fromSpot.feet;
-      ember::LightingSpellRegistry::get().cast(kind, casterId, logMap, floorId, casterLevel, origin, facing, campaignMinuteNow());
+      ember::LightingSpellRegistry::get().cast(kind, casterId, logMap, floorId, casterLevel, origin, facing, campaignMinuteNow(), nullptr, look, groundY);
     }
     spellFx_.cast(kind, look, unitSpot(hero), spots, start, start + 0.6f, static_cast<int>(hero));
     if (weaponStrikeKind(kind)) {
@@ -12055,7 +12363,7 @@ class MapStage final : public Stage {
     au.acted = true;
     exchange_.reset();
     if (!au.alive || au.side != "player" || !canStillWalk(au)) {
-      if (au.side == "player") au.moved = true;
+      au.moved = true;
       return select(-1);
     }
     refreshReach();
@@ -12085,6 +12393,7 @@ class MapStage final : public Stage {
     size_t key = 0;             // keys applied so far
     float holdUntil = 0.0f;     // the shot stays this long after the action (a death)
     int follow = -1;            // a scene unit the pivot follows while it walks (an enemy's turn)
+    bool keep = false;          // the followed walk is the player's own: the view is not given back when it ends
     // The view the player had (restored when the shot ends), and the goal as the shot left it last frame (a goal that differs
     // at the next frame was moved by the player: the shot is dropped).
     glm::vec3 playerTarget{0.0f}, wroteTarget{0.0f};
@@ -12093,6 +12402,7 @@ class MapStage final : public Stage {
     bool written = false;
   };
   CameraConfig cameraConfig_ = CameraConfig::load();
+  WalkViews walkViews_ = WalkViews::load();
   std::optional<ActionShot> shot_;
   float shotLift_ = 0.0f, shotLiftGoal_ = 0.0f;  // the frame's lift (eye and look point together), gliding like the rest
   static constexpr float kShotShoulder = 0.6109f;   // 35 deg: over the shoulder, the eye this far off the line between the two
@@ -12121,7 +12431,7 @@ class MapStage final : public Stage {
       s.playerTarget = target_, s.playerYaw = yaw_, s.playerPitch = pitch_, s.playerDistance = distance_;
       shot_ = s;
     }
-    shot_->keys.clear(), shot_->key = 0, shot_->follow = -1, shot_->holdUntil = 0.0f;
+    shot_->keys.clear(), shot_->key = 0, shot_->follow = -1, shot_->keep = false, shot_->holdUntil = 0.0f;
     return *shot_;
   }
   static float wrapAngle(float a) { return std::remainder(a, 2.0f * std::numbers::pi_v<float>); }
@@ -12298,17 +12608,24 @@ class MapStage final : public Stage {
       return;
     }
     // An enemy walking on seen ground: the pivot follows it leading ahead smoothly.
-    if (!exchange_ && enemyTurn_ && !enemyTurn_->struck && enemyTurn_->unit < unitWalk_.size() && !unitWalk_[enemyTurn_->unit].points.empty() &&
+    if (!exchange_ && enemyTurn_ && !enemyTurn_->struck && enemyTurn_->unit < unitWalk_.size() && unitWalk_[enemyTurn_->unit].active() &&
         unitOnLitHex(enemyTurn_->unit)) {
       const int eu = static_cast<int>(enemyTurn_->unit);
       if (!s || s->follow != eu) s = &openShot(), s->follow = eu;
+    } else if (!exchange_ && !enemyTurn_) {
+      // The player's own unit walking is followed the same way (docs/WALK_DEPTH_STUDY.md, 4: a camera that stands still while
+      // the unit walks gives the walk no depth), and the view stays with it where it stops.
+      const int pu = battle_ && !battle_->roaming() && turnUnit_ >= 0 ? sceneUnitOf(turnUnit_) : selected_;
+      if (pu >= 0 && static_cast<size_t>(pu) < unitWalk_.size() && unitWalk_[static_cast<size_t>(pu)].mover.active() &&
+          unitOnLitHex(static_cast<size_t>(pu)) && (!s || s->follow != pu))
+        s = &openShot(), s->follow = pu, s->keep = true;
     }
     if (!s) return;
     if (s->follow >= 0) {
       const size_t fu = static_cast<size_t>(s->follow);
-      if (!unitWalk_[fu].points.empty()) {
+      if (unitWalk_[fu].active()) {
         glm::vec3 pos = unitWorld(fu);
-        const glm::vec2 dest = unitWalk_[fu].points.front();
+        const glm::vec2 dest = unitWalk_[fu].mover.targetWorldPos();
         const glm::vec2 leadDir = dest - glm::vec2(pos.x, pos.z);
         if (glm::dot(leadDir, leadDir) > 1e-4f) {
           const glm::vec2 n = glm::normalize(leadDir) * std::min(cameraConfig_.enemyTurnLeadAhead, glm::length(leadDir));
@@ -12319,7 +12636,7 @@ class MapStage final : public Stage {
           pos = (pos + unitWorld(static_cast<size_t>(enemyTurn_->target))) * 0.5f;
         }
         target_ = pos, shotLiftGoal_ = 0.0f;
-      } else if (!exchange_ && !enemyTurn_) return endShot(true);  // its turn ended with no blow
+      } else if (!exchange_ && !enemyTurn_) return endShot(!s->keep);  // its turn ended with no blow; the player's own walk: the view stays
     } else {
       while (s->key < s->keys.size() && now_ >= s->keys[s->key].at) {
         const ShotKey& k = s->keys[s->key++];
@@ -12393,9 +12710,9 @@ class MapStage final : public Stage {
   // The move is decided at once (the battle's state), the walk then plays it hex by hex.
   void walkTo(size_t ui, ember::BattleHex to) {
     const size_t b = static_cast<size_t>(unitBattle_[ui]);
-    const std::vector<ember::BattleHex> route = ember::Battle::path(reachPaths_, to.x, to.y);
-    if (route.size() < 2) return;
     if (!std::any_of(reach_.begin(), reach_.end(), [&](const ember::ReachCell& c) { return c.x == to.x && c.y == to.y; })) return;
+    const std::vector<ember::BattleHex> route = battle_->findPath(b, to, true);
+    if (route.size() < 2) return;
     const ember::BattleUnit& u = battle_->units()[b];
     const bool leads = battle_->roaming() && myTurn() && static_cast<int>(ui) == selected_;
     if (myTurn() && static_cast<int>(ui) == selected_ && !leads)  // Cancelar takes this walk back
@@ -12416,7 +12733,7 @@ class MapStage final : public Stage {
       marks.push_back({static_cast<uint32_t>(ember::indexOf(layout, at.x, at.y)), color, rOut, rIn});
     };
     auto border = [](float r) { return r * kBorderInner; };
-    const bool walking = selected_ >= 0 && !unitWalk_[static_cast<size_t>(selected_)].points.empty();
+    const bool walking = selected_ >= 0 && unitWalk_[static_cast<size_t>(selected_)].active();
     if (selected_ >= 0 && !walking && !spellMode_.empty()) {
       // Ember's spell aim: every hex it may be aimed at washed, the hovered aim's area bright, chosen targets ringed.
       const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
@@ -12488,7 +12805,8 @@ class MapStage final : public Stage {
       // The route to the hovered hex.
       if (player && hover_ && !(hover_->x == u.x && hover_->y == u.y) &&
           std::any_of(reach_.begin(), reach_.end(), [&](const ember::ReachCell& c) { return c.x == hover_->x && c.y == hover_->y; })) {
-        const std::vector<ember::BattleHex> route = ember::Battle::path(reachPaths_, hover_->x, hover_->y);
+        const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
+        const std::vector<ember::BattleHex>& route = previewRoute(b, *hover_);
         for (size_t i = 1; i < route.size(); ++i) {
           const bool last = i + 1 == route.size();
           if (last) {
@@ -12546,7 +12864,7 @@ class MapStage final : public Stage {
     auto flagBody = [&](const ember::BattleUnit& u, uint32_t f) {
       for (const ember::BattleHex& p : ember::Battle::footprint(u, u.x, u.y)) flag(p, f);
     };
-    const bool walking = selected_ >= 0 && !unitWalk_[static_cast<size_t>(selected_)].points.empty();
+    const bool walking = selected_ >= 0 && unitWalk_[static_cast<size_t>(selected_)].active();
     if (selected_ >= 0 && !walking && !spellMode_.empty()) {
       // The spell's zone (where it reaches), the hexes it may be aimed at right now, the hovered aim's area.
       const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
@@ -12668,7 +12986,8 @@ class MapStage final : public Stage {
       // The route to the hovered hex: steps numbered from the unit's own hex (1).
       if (player && hover_ && !(hover_->x == u.x && hover_->y == u.y) &&
           std::any_of(reach_.begin(), reach_.end(), [&](const ember::ReachCell& c) { return c.x == hover_->x && c.y == hover_->y; })) {
-        const std::vector<ember::BattleHex> route = ember::Battle::path(reachPaths_, hover_->x, hover_->y);
+        const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
+        const std::vector<ember::BattleHex>& route = previewRoute(b, *hover_);
         for (size_t i = 0; i < route.size() && i < 255; ++i)
           if (Renderer::GridCell* cell = at(route[i])) {
             cell->extra = (cell->extra & ~0xFFu) | static_cast<uint32_t>(i + 1);
@@ -12699,14 +13018,15 @@ class MapStage final : public Stage {
     drawPopups(ImGui::GetBackgroundDrawList(), io.DisplaySize.x, io.DisplaySize.y);
   }
 
-  // The numbers over a struck unit: up 0.6 units over 1.2 s while they fade (crits larger and gold; "Errou" for a miss).
+  // The numbers over a struck unit: ease-out pop-up and slow hover-drift over 2.4 s, held at full opacity then smoothstep-faded,
+  // rendered in bold text over a dark pill with a 2px outline, initial impact glow, and crit border (crits larger and gold; "Errou" for a miss).
   void drawPopups(ImDrawList* dl, float w, float h) {
     std::erase_if(popups_, [&](const Popup& p) { return now_ - p.start > kPopupSeconds; });
     for (size_t pi = 0; pi < popups_.size(); ++pi) {
       const Popup& p = popups_[pi];
       if (p.unit >= unitCard_.size()) continue;
       const CardRect& c = unitCard_[p.unit];
-      const float k = (now_ - p.start) / kPopupSeconds;
+      const float k = std::clamp((now_ - p.start) / kPopupSeconds, 0.0f, 1.0f);
       const glm::vec3 up = cardUp(c);
       const glm::vec3 origin = (c.drawn && c.origin != glm::vec3(0.0f))
                                    ? c.origin
@@ -12717,7 +13037,10 @@ class MapStage final : public Stage {
                                          battle_->units()[static_cast<size_t>(unitBattle_[p.unit])].size >= 4
                                      ? 3.0f
                                      : 1.8f);
-      const std::optional<ImVec2> at = screenOf(origin + up * (cardH + 0.6f * k), w, h);
+      const float popT = std::clamp(k / 0.25f, 0.0f, 1.0f);
+      const float easeOut = 1.0f - (1.0f - popT) * (1.0f - popT) * (1.0f - popT);
+      const float rise = 0.45f * easeOut + 0.30f * k;
+      const std::optional<ImVec2> at = screenOf(origin + up * (cardH + rise), w, h);
       if (!at) continue;
 
       int unitPopupIndex = 0, unitPopupCount = 0;
@@ -12728,22 +13051,40 @@ class MapStage final : public Stage {
         }
       }
       const float xOffset = unitPopupCount > 1
-                                ? (static_cast<float>(unitPopupIndex) - static_cast<float>(unitPopupCount - 1) * 0.5f) * 32.0f
+                                ? (static_cast<float>(unitPopupIndex) - static_cast<float>(unitPopupCount - 1) * 0.5f) * 46.0f
                                 : 0.0f;
 
-      const float size = p.big ? 34.0f : 26.0f;
-      ImGui::PushFont(nullptr, size);
-      const ImVec2 t = ImGui::CalcTextSize(p.text.c_str());
-      const ImU32 alpha = static_cast<ImU32>(255.0f * std::clamp(1.5f - 1.5f * k, 0.0f, 1.0f));
+      ImFont* font = uiFont(UiFont::Strong);
+      const float size = p.big ? 46.0f : 34.0f;
+      const ImVec2 t = font->CalcTextSizeA(size, FLT_MAX, 0.0f, p.text.c_str());
+      const float fadeT = std::clamp((1.0f - k) / 0.35f, 0.0f, 1.0f);
+      const float alphaF = fadeT * fadeT * (3.0f - 2.0f * fadeT);
+      const ImU32 alpha = static_cast<ImU32>(255.0f * alphaF);
       const ImVec2 pos{at->x + xOffset - t.x * 0.5f, at->y - t.y};
+      const float padX = p.big ? 12.0f : 9.0f;
+      const float padY = p.big ? 5.0f : 3.0f;
+      const float rounding = 8.0f;
+      const ImVec2 pillMin{pos.x - padX, pos.y - padY};
+      const ImVec2 pillMax{pos.x + t.x + padX, pos.y + t.y + padY};
+      const ImU32 rgb = p.color & ~IM_COL32_A_MASK;
+      if (k < 0.20f) {
+        const float glow = 1.0f - k / 0.20f;
+        const ImU32 glowAlpha = static_cast<ImU32>((p.big ? 130.0f : 85.0f) * glow * glow);
+        dl->AddRectFilled({pillMin.x - 4.0f, pillMin.y - 4.0f}, {pillMax.x + 4.0f, pillMax.y + 4.0f},
+                          rgb | (glowAlpha << IM_COL32_A_SHIFT), rounding + 4.0f);
+      }
+      dl->AddRectFilled(pillMin, pillMax, IM_COL32(10, 8, 8, static_cast<int>(155.0f * alphaF)), rounding);
+      if (p.big) {
+        dl->AddRect(pillMin, pillMax, rgb | (static_cast<ImU32>(180.0f * alphaF) << IM_COL32_A_SHIFT), rounding, 1.5f);
+      }
       const ImU32 shadow = alpha << IM_COL32_A_SHIFT;
-      dl->AddText(nullptr, size, {pos.x + 1, pos.y + 1}, shadow, p.text.c_str());
-      dl->AddText(nullptr, size, {pos.x - 1, pos.y - 1}, shadow, p.text.c_str());
-      dl->AddText(nullptr, size, {pos.x + 1, pos.y - 1}, shadow, p.text.c_str());
-      dl->AddText(nullptr, size, {pos.x - 1, pos.y + 1}, shadow, p.text.c_str());
-      dl->AddText(nullptr, size, {pos.x + 2, pos.y + 2}, shadow, p.text.c_str());
-      dl->AddText(nullptr, size, pos, (p.color & ~IM_COL32_A_MASK) | (alpha << IM_COL32_A_SHIFT), p.text.c_str());
-      ImGui::PopFont();
+      for (int dx = -2; dx <= 2; dx += 2) {
+        for (int dy = -2; dy <= 2; dy += 2) {
+          if (dx || dy) dl->AddText(font, size, {pos.x + dx, pos.y + dy}, shadow, p.text.c_str());
+        }
+      }
+      dl->AddText(font, size, {pos.x + 2, pos.y + 3}, shadow, p.text.c_str());
+      dl->AddText(font, size, pos, rgb | (alpha << IM_COL32_A_SHIFT), p.text.c_str());
     }
   }
 
@@ -13343,7 +13684,7 @@ class MapStage final : public Stage {
     if (!battle_ || battle_->questPickups().empty() || !result_.empty()) return;
     const auto settled = [&](size_t b) {
       const int s = sceneUnitOf(static_cast<int>(b));
-      return s < 0 || static_cast<size_t>(s) >= unitWalk_.size() || unitWalk_[static_cast<size_t>(s)].points.empty();
+      return s < 0 || static_cast<size_t>(s) >= unitWalk_.size() || !unitWalk_[static_cast<size_t>(s)].active();
     };
     for (const ember::QuestPickup& p : battle_->collectQuestPickups(settled)) logInfo("quest pickup {} found at ({}, {})", p.key, p.x, p.y);
   }
@@ -14258,13 +14599,91 @@ class MapStage final : public Stage {
   }
 
   // battleHud3d.ts healthBars: a bar and the HP over each unit's head, sized by its hex on screen.
+  // Drawn in three passes: collect sprite bounds, filter bars occluded behind closer characters, then suppress lower-priority overlaps.
   void drawHealthBars() {
     const ImGuiIO& io = ImGui::GetIO();
     ImDrawList* dl = ImGui::GetBackgroundDrawList();
     const float w = io.DisplaySize.x, h = io.DisplaySize.y;
+    ImFont* font = uiFont(UiFont::Ui);
+    static constexpr float kSteps[] = {12.0f, 14.0f, 16.0f, 19.0f, 22.0f};
+    if (!hpSizesBaked_) {
+      for (const float s : kSteps) font->CalcTextSizeA(s, FLT_MAX, 0.0f, "0123456789");
+      hpSizesBaked_ = true;
+    }
+    const glm::vec3 camRight = glm::length(glm::vec3(lastCamera_.right.x, 0.0f, lastCamera_.right.z)) > 0.0f && !flat_
+                                   ? glm::normalize(glm::vec3(lastCamera_.right.x, 0.0f, lastCamera_.right.z))
+                                   : glm::vec3(1.0f, 0.0f, 0.0f);
+    const int hoveredUnit = hover_ ? sceneUnitOf(battle_->unitAt(hover_->x, hover_->y)) : -1;
+
+    struct Occluder {
+      size_t unit = 0;
+      float depth = 0.0f;
+      bool player = false;
+      ImVec2 min{0.0f, 0.0f}, max{0.0f, 0.0f};
+    };
+    std::vector<Occluder> occluders;
+    if (!flat_) {
+      occluders.reserve(scene_->units.size());
+      for (size_t i = 0; i < scene_->units.size(); ++i) {
+        const int b = unitBattle_[i];
+        if (b < 0 || i >= unitCard_.size() || !unitCard_[i].drawn) continue;
+        const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(b)];
+        if (!u.alive) continue;
+        const CardRect& c = unitCard_[i];
+        if (c.bodyTop <= c.bodyBottom) continue;
+        const float depth = glm::dot(c.origin - lastCamera_.position, lastCamera_.forward);
+        const glm::vec3 up = cardUp(c);
+        const glm::vec3 mid = c.origin + camRight * c.bodyX;
+        const float half = c.contentHalf > 0.0f ? c.contentHalf * 0.85f : c.width * 0.35f;
+        const glm::vec3 corners[4] = {
+            mid - camRight * half + up * c.bodyBottom,
+            mid + camRight * half + up * c.bodyBottom,
+            mid + camRight * half + up * c.bodyTop,
+            mid - camRight * half + up * c.bodyTop,
+        };
+        ImVec2 mn{FLT_MAX, FLT_MAX}, mx{-FLT_MAX, -FLT_MAX};
+        bool ok = true;
+        for (int k = 0; k < 4; ++k) {
+          const std::optional<ImVec2> s = screenOf(corners[k], w, h);
+          if (!s) {
+            ok = false;
+            break;
+          }
+          mn.x = std::min(mn.x, s->x);
+          mn.y = std::min(mn.y, s->y);
+          mx.x = std::max(mx.x, s->x);
+          mx.y = std::max(mx.y, s->y);
+        }
+        if (ok) occluders.push_back({i, depth, u.side == "player", {mn.x - 4.0f, mn.y - 3.0f}, {mx.x + 4.0f, mx.y + 3.0f}});
+      }
+    }
+
+    auto overlaps = [](ImVec2 a0, ImVec2 a1, ImVec2 b0, ImVec2 b1) {
+      return a0.x < b1.x && a1.x > b0.x && a0.y < b1.y && a1.y > b0.y;
+    };
+
+    struct Bar {
+      size_t unit = 0;
+      float depth = 0.0f;
+      bool player = false;
+      bool hovered = false;
+      float near = 1.0f;
+      float left = 0.0f, top = 0.0f, width = 0.0f, height = 0.0f;
+      float fillFrac = 0.0f;
+      int alpha = 255;
+      ImU32 fill = 0;
+      bool showText = false;
+      float textSize = 0.0f;
+      ImVec2 textPos{0.0f, 0.0f};
+      std::string hp;
+      ImVec2 rectMin{0.0f, 0.0f}, rectMax{0.0f, 0.0f};
+    };
+    std::vector<Bar> candidates;
+    candidates.reserve(scene_->units.size());
+
     for (size_t i = 0; i < scene_->units.size(); ++i) {
       const int b = unitBattle_[i];
-      if (b < 0 || !unitCard_[i].drawn) continue;
+      if (b < 0 || i >= unitCard_.size() || !unitCard_[i].drawn) continue;
       const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(b)];
       if (!u.alive) continue;
       const CardRect& c = unitCard_[i];
@@ -14280,47 +14699,112 @@ class MapStage final : public Stage {
       float near = 1.0f;
       if (barsFade_ == 1) {
         const std::optional<ImVec2> feet = screenOf(c.origin, w, h);
-        if (feet) {
-          const float share = std::abs(feet->y - at->y) / std::max(h, 1.0f);
+        const std::optional<ImVec2> refTop = screenOf(c.origin + up * std::max(c.height, kAirCardHeight), w, h);
+        if (feet && refTop) {
+          const float share = std::abs(feet->y - refTop->y) / std::max(h, 1.0f);
           near = 1.0f - glm::smoothstep(kBarsFadeFrom, kBarsFadeTo, share);
         }
       }
       if (near <= 0.01f) continue;
-      auto faded = [near](ImU32 color) {
+
+      const float px = std::max(std::hypot(side->x - at->x, side->y - at->y), std::hypot(deep->x - at->x, deep->y - at->y));
+      const float cell = px * 1.7320508f;
+      const float gap = std::clamp(cell * 0.09f, 4.0f, 14.0f);
+      const float maxW = u.size >= 4 ? 108.0f : u.size == 2 ? 84.0f : 66.0f;
+      const float width = std::clamp(cell * (u.size >= 4 ? 1.15f : u.size == 2 ? 0.80f : 0.52f), 26.0f, maxW);
+      const float height = std::clamp(cell * 0.048f, 3.0f, 6.0f);
+      const float left = at->x - width * 0.5f, top = at->y - gap - height;
+
+      const bool isPlayer = u.side == "player";
+      const bool hovered = static_cast<int>(i) == hoveredUnit;
+      const int alpha = isPlayer ? (u.moved ? 230 : 255) : (hovered ? 255 : 220);
+      const ImU32 fill = isPlayer ? IM_COL32(200, 196, 188, alpha) : u.side == "neutral" ? IM_COL32(95, 158, 82, alpha) : IM_COL32(174, 66, 46, alpha);
+      const float f = u.maxHp > 0 ? std::clamp(static_cast<float>(u.hp) / static_cast<float>(u.maxHp), 0.0f, 1.0f) : 0.0f;
+
+      Bar bar;
+      bar.unit = i;
+      bar.depth = glm::dot(c.origin - lastCamera_.position, lastCamera_.forward);
+      bar.player = isPlayer;
+      bar.hovered = hovered;
+      bar.near = near;
+      bar.left = left;
+      bar.top = top;
+      bar.width = width;
+      bar.height = height;
+      bar.fillFrac = f;
+      bar.alpha = alpha;
+      bar.fill = fill;
+      bar.rectMin = {left - 1.0f, top - 1.0f};
+      bar.rectMax = {left + width + 1.0f, top + height + 1.0f};
+
+      if (cell >= 32.0f) {
+        float size = kSteps[0];
+        for (const float s : kSteps)
+          if (s <= cell * 0.22f) size = s;
+        bar.hp = std::to_string(u.hp);
+        const ImVec2 t = font->CalcTextSizeA(size, FLT_MAX, 0.0f, bar.hp.c_str());
+        bar.showText = true;
+        bar.textSize = size;
+        bar.textPos = {at->x - t.x * 0.5f, top - 1.0f - t.y};
+        bar.rectMin.x = std::min(bar.rectMin.x, bar.textPos.x - 1.0f);
+        bar.rectMin.y = std::min(bar.rectMin.y, bar.textPos.y - 1.0f);
+        bar.rectMax.x = std::max(bar.rectMax.x, bar.textPos.x + t.x + 1.0f);
+      }
+
+      if (!flat_) {
+        bool blocked = false;
+        for (const Occluder& occ : occluders) {
+          if (occ.unit == i) continue;
+          const bool inFront = (occ.depth < bar.depth - 0.05f) || (occ.player && !isPlayer && occ.depth <= bar.depth + 0.15f);
+          if (inFront && overlaps(bar.rectMin, bar.rectMax, occ.min, occ.max)) {
+            blocked = true;
+            break;
+          }
+        }
+        if (blocked) continue;
+      }
+      candidates.push_back(std::move(bar));
+    }
+
+    std::sort(candidates.begin(), candidates.end(), [](const Bar& a, const Bar& b) {
+      if (a.player != b.player) return a.player;
+      if (a.hovered != b.hovered) return a.hovered;
+      return a.depth < b.depth;
+    });
+
+    std::vector<Bar> accepted;
+    accepted.reserve(candidates.size());
+    for (const Bar& bar : candidates) {
+      const ImVec2 exMin{bar.rectMin.x - 2.0f, bar.rectMin.y - 2.0f};
+      const ImVec2 exMax{bar.rectMax.x + 2.0f, bar.rectMax.y + 2.0f};
+      bool collides = false;
+      for (const Bar& prev : accepted) {
+        if (overlaps(exMin, exMax, prev.rectMin, prev.rectMax)) {
+          collides = true;
+          break;
+        }
+      }
+      if (!collides) accepted.push_back(bar);
+    }
+
+    for (auto it = accepted.rbegin(); it != accepted.rend(); ++it) {
+      const Bar& bar = *it;
+      auto faded = [near = bar.near](ImU32 color) {
         const ImU32 a = static_cast<ImU32>(std::round(static_cast<float>(color >> IM_COL32_A_SHIFT) * near));
         return (color & ~IM_COL32_A_MASK) | (a << IM_COL32_A_SHIFT);
       };
-      const float px = std::max(std::hypot(side->x - at->x, side->y - at->y), std::hypot(deep->x - at->x, deep->y - at->y));
-      const float cell = px * 1.7320508f;
-      const float gap = cell * 0.12f;
-      const float width = cell * (u.size >= 4 ? 1.35f : u.size == 2 ? 0.9f : 0.62f);
-      const float height = std::max(3.0f, cell * 0.07f);
-      const float left = at->x - width * 0.5f, top = at->y - gap - height;
-      const int alpha = u.moved && u.side == "player" ? 230 : 255;
-      dl->AddRectFilled({left - 1, top - 1}, {left + width + 1, top + height + 1}, faded(IM_COL32(12, 11, 10, 209 * alpha / 255)));
-      dl->AddRectFilled({left, top}, {left + width, top + height}, faded(IM_COL32(44, 40, 36, alpha)));
-      const ImU32 fill = u.side == "player" ? IM_COL32(200, 196, 188, alpha) : u.side == "neutral" ? IM_COL32(95, 158, 82, alpha) : IM_COL32(181, 74, 50, alpha);
-      const float f = u.maxHp > 0 ? std::clamp(static_cast<float>(u.hp) / static_cast<float>(u.maxHp), 0.0f, 1.0f) : 0.0f;
-      if (f > 0.0f) dl->AddRectFilled({left, top}, {left + width * f, top + height}, faded(fill));
-      if (cell >= 32.0f) {
-        ImFont* font = uiFont(UiFont::Ui);
-        // Fixed steps, all baked the first time (the hunt for the battle hitch, 2026-10-19: a size that followed the zoom
-        // made ImGui bake new glyphs and re-upload its font atlas as the camera came near, 21-50 ms each time).
-        static constexpr float kSteps[] = {13.0f, 15.0f, 18.0f, 22.0f, 27.0f, 33.0f, 40.0f, 48.0f};
-        if (!hpSizesBaked_) {
-          for (const float s : kSteps) font->CalcTextSizeA(s, FLT_MAX, 0.0f, "0123456789");
-          hpSizesBaked_ = true;
-        }
-        float size = kSteps[0];
-        for (const float s : kSteps)
-          if (s <= cell * 0.3f) size = s;
-        const std::string hp = std::to_string(u.hp);
-        const ImVec2 t = font->CalcTextSizeA(size, FLT_MAX, 0.0f, hp.c_str());
-        const ImVec2 p{at->x - t.x * 0.5f, top - 1.0f - t.y};
+      dl->AddRectFilled({bar.left - 1.0f, bar.top - 1.0f}, {bar.left + bar.width + 1.0f, bar.top + bar.height + 1.0f},
+                        faded(IM_COL32(12, 11, 10, 209 * bar.alpha / 255)));
+      dl->AddRectFilled({bar.left, bar.top}, {bar.left + bar.width, bar.top + bar.height},
+                        faded(IM_COL32(44, 40, 36, bar.alpha)));
+      if (bar.fillFrac > 0.0f)
+        dl->AddRectFilled({bar.left, bar.top}, {bar.left + bar.width * bar.fillFrac, bar.top + bar.height}, faded(bar.fill));
+      if (bar.showText) {
         for (int dx = -1; dx <= 1; ++dx)
           for (int dy = -1; dy <= 1; ++dy)
-            if (dx || dy) dl->AddText(font, size, {p.x + dx, p.y + dy}, faded(IM_COL32(12, 11, 10, 230)), hp.c_str());
-        dl->AddText(font, size, p, faded(IM_COL32(240, 235, 227, 255)), hp.c_str());
+            if (dx || dy)
+              dl->AddText(font, bar.textSize, {bar.textPos.x + dx, bar.textPos.y + dy}, faded(IM_COL32(12, 11, 10, 230)), bar.hp.c_str());
+        dl->AddText(font, bar.textSize, bar.textPos, faded(IM_COL32(240, 235, 227, 255)), bar.hp.c_str());
       }
     }
   }
@@ -15942,7 +16426,6 @@ class MapStage final : public Stage {
   std::vector<uint8_t> unitMoved_;     // it has left its spawn: its height is the ground under it
   std::vector<int> unitFacing_;        // 1 right, -1 left, on screen
   std::vector<uint8_t> unitReversed_;  // its art faces left (Ember drawnReversed)
-  static constexpr int kWalkBack = 0, kWalkFront = 1, kWalkSide = 2;  // Ember WalkDir: up the map, down it, along a row
   // A light born on a unit's body (an effect's glow at a caster's or a target's chest) sits in the plane of its camera-facing card,
   // where the card takes none of it and only the ground lights up (the user, 2026-10-18: the same fix as Malrec's casting light, for
   // every light on a unit): it moves 0.45 in front of that card, toward the camera, as Ember's casting light stands.
@@ -16038,12 +16521,20 @@ class MapStage final : public Stage {
   };
   std::vector<UnitGlow> glows_;
   struct Walk {
-    std::vector<glm::vec2> points;  // the hexes still ahead (feet positions)
-    std::vector<ember::BattleHex> hexes;  // the same hexes on the board (a roaming walk stops on the next one)
+    ember::HexStepMover mover;
     float start = 0.0f;            // scene clock when it set off
-    float travelled = 0.0f;        // ground covered since (world units): the walk cycle's phase
-    int dir = kWalkSide;
-    std::string fadeSound;          // its walk cue, faded out when it arrives (a monster's own)
+    float speedScale = 1.0f;       // 1.0 = normal walk, > 1 = charge dash
+    std::string fadeSound;         // its walk cue, faded out when it arrives (a monster's own)
+    ember::SpriteFacing4 dir = ember::SpriteFacing4::Right;  // this step's walk as the camera sees it (syncUnitFacing)
+    int lean = 0;                  // an up / down step's side on screen: -1 left, +1 right, 0 straight
+    int steps = 0;                 // steps started so far
+    glm::vec2 from{0.0f};          // where this step started
+    glm::vec2 before{0.0f};        // where the step before it started (hasBefore)
+    bool hasBefore = false;
+    float travelled = 0.0f;        // ground covered along the rounded route (walkPoint): what times the walk's frames
+    float hold = 0.0f;             // it stands this long first, its "unfold" playing whole, before the first step (0 = none)
+    float foldUntil = -1.0f;       // arrived, its "fold" plays until this scene time: the walk is not over before it (-1 = none)
+    bool active() const { return mover.active() || foldUntil >= 0.0f; }
   };
   std::vector<Walk> unitWalk_;
   std::vector<float> unitFoldAt_;     // per scene unit: when its walk ended, if its sheet has a "fold" pose (-1 = not folding)
@@ -16109,6 +16600,7 @@ class MapStage final : public Stage {
     // the frame's trimmed picture (the pack's crop box), narrowed to its middle: x = its centre from the origin along
     // `right`, bottom / top above the origin, half = half its width. Picking tests this, never the whole card.
     float bodyX = 0.0f, bodyBottom = 0.0f, bodyTop = 0.0f, bodyHalf = 0.0f;
+    float contentHalf = 0.0f;
   };
   std::vector<CardRect> unitCard_;
   std::vector<HandBoltFx::Card> unitBoltCard_;  // each unit's card as drawn last frame, for a bolt leaving its hands (HandBoltFx)
@@ -16147,6 +16639,11 @@ class MapStage final : public Stage {
   int selected_ = -1;                     // the picked scene unit
   std::vector<ember::ReachCell> reach_;      // where it can stop
   std::vector<ember::ReachCell> reachPaths_; // every hex it can pass (its routes)
+  mutable size_t hoverRouteUnit_ = SIZE_MAX;
+  mutable ember::BattleHex hoverRouteFrom_{}, hoverRouteTo_{};
+  mutable int hoverRouteAp_ = 0;
+  mutable bool hoverRouteMyTurn_ = false, hoverRouteRoaming_ = false;
+  mutable std::vector<ember::BattleHex> hoverRoute_;
   std::optional<ember::BattleHex> hover_;    // the hex under the cursor
   std::vector<std::pair<int, ember::BattleHex>> targets_;  // scene units the unit whose turn it is can strike, and from where
   int pendingStrike_ = -1;                // the foe to strike once the walk to its hex is over
@@ -16343,8 +16840,9 @@ class MapStage final : public Stage {
   // Every unit clip (idle, attack, cast, hit, death, turn, emote) plays at its video's own speed, at every Velocidade (the user,
   // 2026-11-25: "not all animations get the same speed ... slow fast slower faster on the same unit"); Velocidade paces the rest.
   static constexpr float kClipRate = 1.0f;
-  // The arcane energy kept on a measured palm (hand-bolts.json): the Míssil Mágico's own gathering size, never a speck (the user, 2026-11-26).
-  static constexpr float kPalmScale = 1.0f;
+  // The arcane energy kept on a measured palm (hand-bolts.json): small, the plain bolt's size, but there the whole gesture (the user,
+  // 2026-11-26: "nao pode nunca ficar vazia", then "eu já falei para fazer esse efeito de casting pequeno").
+  static constexpr float kPalmScale = 0.55f;
   // The turn away to cast (turnBack, the turn-around videos, all 24 fps): the videos turn slowly, it played slower than every other
   // move; at twice its video's speed (the user, 2026-11-26: "faz o turn around mais rapido ele esta em camera lenta", "esta mais lento
   // que todos os outros movimentos", "faz esse bosta rapido"). Every frame of it still plays.
@@ -16352,7 +16850,7 @@ class MapStage final : public Stage {
   static constexpr float kCorpseSeconds = 1.5f;  // the fallen lie this long after their death pose
   static constexpr float kEnterSeconds = 0.8f;   // a cutscene's "enter": the card's fade-in
   static constexpr size_t kTalkEvery = 5;        // a spoken line: one in this many opens with its speaker's own voice cue
-  static constexpr float kPopupSeconds = 1.2f;
+  static constexpr float kPopupSeconds = 2.4f;
   glm::vec2 mouse_{-1.0f};
   SDL_WindowID mouseWindow_ = 0;
   float now_ = 0.0f;  // this frame's scene clock
@@ -16389,7 +16887,7 @@ class MapStage final : public Stage {
     if (shownLast_[ui] == now) return;
     if (shownLast_[ui] != 0)
       logInfo("fog: {} at ({}, {}) {}: sight state {}, lit {}, walking {}", scene_->units[ui].name, c, r, shown ? "on show again" : "hidden",
-              i < fogStates_.size() ? static_cast<int>(fogStates_[i]) : -1, i < fogLit_.size() ? static_cast<int>(fogLit_[i]) : -1, !unitWalk_[ui].points.empty());
+              i < fogStates_.size() ? static_cast<int>(fogStates_[i]) : -1, i < fogLit_.size() ? static_cast<int>(fogLit_[i]) : -1, unitWalk_[ui].active());
     shownLast_[ui] = now;
   }
   std::vector<uint8_t> fogLit_;     // per hex: kFogVisible where the mask on show is lit (in sight, still lingering, beside the party)

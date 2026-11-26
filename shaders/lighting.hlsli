@@ -185,10 +185,10 @@ float3 localLights(MeshFrame f, Surface s, float3 view, float3 diffuseColor, flo
     float falloff;
     if (isAreaSpellLight) {
       const float isSpotlight = light.behind <= -100.0 ? 1.0 : 0.0;
-      const float smoothWindow = smoothstep(1.0, 0.12, ratio);
-      const float coreSpan = lerp(0.38, 0.34, isSpotlight) * light.range;
+      const float coreSpan = lerp(0.55, 0.60, isSpotlight) * light.range;
       const float normD = d / max(coreSpan, 1.0);
-      falloff = (smoothWindow * window) / (1.0 + normD * normD * light.decay) * lightFacing(light, s.position);
+      const float edgeFade = smoothstep(1.0, 0.25, ratio);
+      falloff = (window * lerp(0.55, 1.0, edgeFade)) / (1.0 + normD * normD * light.decay) * lightFacing(light, s.position);
     } else {
       falloff = window * window / (light.decay == 2.0 ? d * d + kLightSourceRadius * kLightSourceRadius : max(pow(d, light.decay), 0.01)) *
                 lightFacing(light, s.position);

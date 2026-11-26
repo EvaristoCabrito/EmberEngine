@@ -198,7 +198,9 @@ bool MeshScene::placeable() const {
 
 bool MeshScene::ready() const {
   for (const auto& mesh : meshes_)
-    if (!mesh->failed && !(streamingGeometry() ? mesh->parsed : mesh->uploaded)) return false;
+    if (!mesh->failed && !mesh->blocked && !(mesh->effect && mesh->parsed) &&
+        !(streamingGeometry() ? mesh->parsed : mesh->uploaded))
+      return false;
   if (!streamingGeometry())
     for (const auto& [id, texture] : textures_)
       if (!texture->failed && texture->index == kNoTextureIndex) return false;
@@ -209,7 +211,8 @@ bool MeshScene::ready() const {
 std::pair<uint32_t, uint32_t> MeshScene::progress() const {
   uint32_t done = 0, total = 0;
   for (const auto& mesh : meshes_)
-    ++total, done += (mesh->failed || mesh->uploaded || (streamingGeometry() && mesh->parsed && !mesh->selected)) ? 1u : 0u;
+    ++total, done += (mesh->failed || mesh->uploaded || mesh->blocked || (mesh->effect && mesh->parsed) ||
+                      (streamingGeometry() && mesh->parsed && !mesh->selected)) ? 1u : 0u;
   for (const auto& [id, texture] : textures_) ++total, done += (texture->failed || texture->index != kNoTextureIndex) ? 1u : 0u;
   if (gated_) ++total, done += (open_ && settled_) ? 1u : 0u;
   return {done, total};
@@ -426,8 +429,13 @@ void MeshScene::updateTexture(Texture& texture) {
     // every 3D object without its texture when the sprites had claimed the whole budget (the user, 2026-11-05: white trees
     // on the Wisp Forest Crossing; measured: 9 of 67 textures uploaded with the sprites at 2299 of 2321 MB).
     if (texture.target < texture.baseSkip && freeGpuBytes() < bytesAt(texture, texture.target) + (64ull << 20)) {
-      if (texture.skip != UINT32_MAX) return;  // a resize: the resident image stays until there is room
-      texture.target = texture.baseSkip;       // nothing resident yet: the base now, the larger size later
+      if (texture.skip != UINT32_MAX) {
+        assets_.release(texture.handle);
+        texture.handle = {};
+        texture.target = UINT32_MAX;
+        return;  // a resize: the resident image stays until there is room
+      }
+      texture.target = texture.baseSkip;  // nothing resident yet: the base now, the larger size later
     }
     startUpload(texture, bytes, texture.target);
     return;
@@ -514,7 +522,8 @@ void MeshScene::stream() {
     for (auto& [id, t] : textures_) {
       bool active = false;
       for (const auto& mesh : meshes_)
-        if (mesh->wanted && mesh->selected && mesh->uploaded && std::find(mesh->textures.begin(), mesh->textures.end(), t.get()) != mesh->textures.end()) { active = true; break; }
+        if (((mesh->effect && mesh->parsed) || (mesh->wanted && mesh->selected && mesh->uploaded)) &&
+            std::find(mesh->textures.begin(), mesh->textures.end(), t.get()) != mesh->textures.end()) { active = true; break; }
       if (!active && t->known && t->target == UINT32_MAX && t->skip < t->baseSkip) inactive.push_back(t.get());
     }
     for (Texture* t : inactive) {
@@ -635,7 +644,7 @@ void MeshScene::updateGeometry() {
     }();
     uint64_t total = 0;
     for (const auto& mesh : meshes_)
-      if (mesh->parsed && !mesh->failed) total += mesh->bytes;
+      if (mesh->parsed && !mesh->failed && !mesh->effect) total += mesh->bytes;
     const uint64_t budget = testBudget ? testBudget : capacity_.geometryBytes;
     geometryBudget_ = budget;
     const bool over = total > budget;
@@ -649,6 +658,7 @@ void MeshScene::updateGeometry() {
     if (mesh.geometry.buffer && !mesh.uploaded && uploads_.finished(mesh.upload)) {
       if (streamTrace()) logInfo("stream resident {}: {:.2f} MB", assets_.name(mesh.asset), mesh.bytes / 1048576.0);
       mesh.uploaded = true;
+      mesh.blocked = false;
       instancesDirty_ = true;
       uploadWaitValue_ = std::max(uploadWaitValue_, mesh.upload.signalValue);
       if (!mesh.pinned) assets_.release(mesh.handle);
@@ -656,7 +666,7 @@ void MeshScene::updateGeometry() {
       tableData<MeshGpu>(meshTable_)[id].ready = 1;
       meshTable_.dirty = true;
     }
-    mesh.wanted = !streamingGeometry() || mesh.pinned || mesh.effect;
+    mesh.wanted = !mesh.effect && (!streamingGeometry() || mesh.pinned);
     mesh.distance = mesh.wanted ? 0.0f : 1e30f;
     mesh.selected = false;
   }
@@ -671,7 +681,7 @@ void MeshScene::updateGeometry() {
       const InstanceGpu& inst = instances[i];
       if (inst.mesh >= meshes_.size()) continue;
       Mesh& mesh = *meshes_[inst.mesh];
-      if (!mesh.parsed || mesh.failed) continue;
+      if (!mesh.parsed || mesh.failed || mesh.effect) continue;
       const glm::vec4 local{mesh.header.boundsCenter[0], mesh.header.boundsCenter[1], mesh.header.boundsCenter[2], 1.0f};
       const glm::vec3 centre{glm::dot(inst.rows[0], local), glm::dot(inst.rows[1], local), glm::dot(inst.rows[2], local)};
       const float radius = mesh.header.boundsRadius * std::abs(inst.scale);
@@ -687,13 +697,13 @@ void MeshScene::updateGeometry() {
   std::vector<MeshId> order;
   for (MeshId id = 0; id < meshes_.size(); ++id) {
     Mesh& mesh = *meshes_[id];
-    if (!mesh.parsed || mesh.failed) continue;
+    if (!mesh.parsed || mesh.failed || mesh.effect) continue;
     if (mesh.wanted) mesh.lastWanted = frame_;
     if (mesh.wanted || (mesh.uploaded && frame_ - mesh.lastWanted < 120)) order.push_back(id);
   }
   std::stable_sort(order.begin(), order.end(), [&](MeshId a, MeshId b) {
     const Mesh& x = *meshes_[a]; const Mesh& y = *meshes_[b];
-    const bool xp = x.pinned || x.effect, yp = y.pinned || y.effect;
+    const bool xp = x.pinned, yp = y.pinned;
     if (xp != yp) return xp;
     if (x.wanted != y.wanted) return x.wanted;
     return x.distance < y.distance;
@@ -701,7 +711,7 @@ void MeshScene::updateGeometry() {
   uint64_t pinnedBytes = 0, largestWanted = 0;
   for (MeshId id : order) {
     const Mesh& mesh = *meshes_[id];
-    if (mesh.pinned || mesh.effect) pinnedBytes += mesh.bytes;
+    if (mesh.pinned) pinnedBytes += mesh.bytes;
     else if (mesh.wanted) largestWanted = std::max(largestWanted, mesh.bytes);
   }
   // A large tree must still be admissible beside small pinned spell/architecture
@@ -718,7 +728,10 @@ void MeshScene::updateGeometry() {
   }
   for (MeshId id = 0; id < meshes_.size(); ++id) {
     Mesh& mesh = *meshes_[id];
-    if (!mesh.selected) retireGeometry(mesh, id);
+    if (!mesh.selected) {
+      mesh.blocked = false;
+      retireGeometry(mesh, id);
+    }
     if (!mesh.selected && !mesh.geometry.buffer && mesh.handle && mesh.parsed) {
       assets_.release(mesh.handle);
       mesh.handle = {};
@@ -730,16 +743,6 @@ void MeshScene::updateGeometry() {
     Mesh& mesh = *meshes_[id];
     if (!mesh.selected || mesh.geometry.buffer) continue;
     if (geometryUsed_ && geometryUsed_ + mesh.bytes > regionBudget) continue;
-    if (!mesh.pinned && !mesh.handle) mesh.handle = assets_.load(mesh.asset, kLoadPriority);
-    const auto bytes = mesh.pinned
-        ? std::span<const std::byte>(reinterpret_cast<const std::byte*>(mesh.built.data()), mesh.built.size())
-        : assets_.data(mesh.handle);
-    if (bytes.empty()) continue;
-    if (bytes.size() != mesh.bytes) {
-      logError("meshes: geometry changed size while reloading {:016x}", mesh.asset);
-      mesh.failed = true;
-      continue;
-    }
     // Leave headroom for images and transfers; admission is retried next frame.
     // Optional cap for the headless regression test: model low free GPU memory.
     static const uint64_t testGeometryFree = [] {
@@ -748,7 +751,20 @@ void MeshScene::updateGeometry() {
     }();
     const uint64_t geometryFree = testGeometryFree ? std::min(freeGpuBytes(), testGeometryFree) : freeGpuBytes();
     if (geometryFree < mesh.bytes + (16ull << 20)) {
+      mesh.blocked = true;
       if (streamTrace() && frame_ % 120 == 0) logWarn("stream blocked {}: needs {:.2f} MB + 16 MB headroom, {:.2f} MB free", assets_.name(mesh.asset), mesh.bytes / 1048576.0, freeGpuBytes() / 1048576.0);
+      continue;
+    }
+    mesh.blocked = false;
+    if (!mesh.pinned && !mesh.handle) mesh.handle = assets_.load(mesh.asset, kLoadPriority);
+    const auto bytes = mesh.pinned
+        ? std::span<const std::byte>(reinterpret_cast<const std::byte*>(mesh.built.data()), mesh.built.size())
+        : assets_.data(mesh.handle);
+    if (bytes.empty()) continue;
+    if (bytes.size() != mesh.bytes) {
+      logError("meshes: geometry changed size while reloading {:016x}", mesh.asset);
+      mesh.failed = true;
+      mesh.blocked = false;
       continue;
     }
     if (streamTrace()) logInfo("stream request {}: {:.2f} MB, distance {:.2f}", assets_.name(mesh.asset), mesh.bytes / 1048576.0, mesh.distance);

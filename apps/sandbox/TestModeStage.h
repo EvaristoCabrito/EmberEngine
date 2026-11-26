@@ -273,6 +273,19 @@ class TestModeStage : public Stage {
       if (clicked && choices[i].go) choices[i].go();
       y += heights[i] + 12;
     }
+    // Atalho (the user, 2026-11-26: "faz um shortcut na tela de debug para abrir um mapa de teste com monstro imediatamente, não
+    // aguento mais ficar carregando tela"; "um único mapa com monstro, um único botão"): one button, Monster Testing 1's battle at
+    // once, with no world map and no briefing in between (the same testMission and play as the briefing's "Entrar").
+    const char* kQuick = "monster-testing-a";
+    const char* label = "Mapa de monstro";
+    const float bw = sans()->CalcTextSizeA(16.0f, FLT_MAX, 0.0f, label).x + 32;
+    const bool quick = cardButton("##quick", {x, y + 4}, {bw, 40}, IM_COL32(17, 17, 17, 102), kBorder);
+    dl->AddText(sans(), 16.0f, {x + 16, y + 15}, kFg, label);
+    if (quick && callbacks_.play) {
+      std::string error;
+      if (std::optional<MissionEntry> e = testMission(campaign_, paths_, kQuick, error)) callbacks_.play(*e);
+      else notice_ = error;
+    }
   }
 
   // --- MapChoiceScreen ----------------------------------------------------------------------------------------------

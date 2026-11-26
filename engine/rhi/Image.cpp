@@ -69,7 +69,20 @@ bool tryCreateImage(VulkanContext& context, const ImageDesc& desc, Image& out) {
 
 Image createImage(VulkanContext& context, const ImageDesc& desc) {
   Image out;
-  EMBER_CHECK(tryCreateImage(context, desc, out), "Out of GPU memory creating an image");
+  if (!tryCreateImage(context, desc, out)) {
+    const VkPhysicalDeviceMemoryProperties* props = nullptr;
+    vmaGetMemoryProperties(context.allocator, &props);
+    VmaBudget budgets[VK_MAX_MEMORY_HEAPS];
+    vmaGetHeapBudgets(context.allocator, budgets);
+    uint32_t heap = 0;
+    for (uint32_t h = 0; h < props->memoryHeapCount; ++h)
+      if ((props->memoryHeaps[h].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) && props->memoryHeaps[h].size > props->memoryHeaps[heap].size) heap = h;
+    logError("createImage failed: {}x{}x{} mips {} layers {} {} usage {:#x}; GPU {} MB allocated, {} MB used, budget {} MB, heap {} MB",
+             desc.extent.width, desc.extent.height, desc.depth, desc.mipLevels, desc.layers, string_VkFormat(desc.format), desc.usage,
+             budgets[heap].statistics.blockBytes >> 20, budgets[heap].usage >> 20, budgets[heap].budget >> 20,
+             props->memoryHeaps[heap].size >> 20);
+    EMBER_CHECK(false, "Out of GPU memory creating an image");
+  }
   return out;
 }
 

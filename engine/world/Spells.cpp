@@ -66,7 +66,7 @@ constexpr SpellData kSpells[] = {
     {"fireball", "Bola de Fogo", 3, "fire", false},
     {"iceStorm", "Tempestade de Gelo", 4, "ice", false},
     {"acidCloud", "Névoa Ácida", 3, "poison", false},
-    {"acidArrow", "Milf's Acid Arrow", 2, "poison", false},  // the Corrosive Slime's (AD&D 2e's 2nd-level wizard spell; ours, 2026-10-22)
+    {"acidArrow", "MILF's Magic Arrow", 2, "poison", false},  // the Corrosive Slime's (AD&D 2e's 2nd-level wizard spell; ours, 2026-10-22)
     {"causticVenom", "Veneno Cáustico", 5, "poison", false},
     {"poisonBreath", "Sopro Venenoso", 1, "poison", false},
     {"warp", "Portal", 3, "arcane", false},
@@ -186,7 +186,7 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"takeTheWeight", "Assumir o Peso", 9, "", true}, "moonwarden", 21},
     {{"reckoning", "Acerto de Contas", 10, "", true}, "moonwarden", 23},
     // Arqueiro (docs/SKILLS_ARCHER.md, 2026-10-18): bow skills (the bow's own roll + bonus dice), the second of T1 / T3, two of T4 / T5
-    {{"venomArrow", "Milf's Acid Arrow", 1, "", true}, "archer", 2},  // the user's name (2026-10-21, a gag), both languages
+    {{"venomArrow", "MILF's Magic Arrow", 1, "", true}, "archer", 2},  // the user's name (2026-10-21, a gag), both languages
     {{"arrowRain", "Chuva de Flechas", 3, "", true}, "archer", 7},
     {{"explosiveArrow", "Flecha Explosiva", 4, "", true}, "archer", 10},
     {{"cripplingShot", "Tiro Paralisante", 4, "", true}, "archer", 12},
@@ -3453,7 +3453,7 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"cureDisease", "Cure Disease"}, {"createFoodAndWater", "Create Food and Water"}, {"fantomForce", "Phantom Force"}, {"spectralBolt", "Spectral Bolt"},
     {"bloodyShot", "Bloody Shot"}, {"multiShot", "Multi Shot"}, {"provoke", "Provoke"}, {"cleave", "Cleave"}, {"sweep", "Sweep"},
     {"trip", "Trip"}, {"bullRush", "Bull Rush"}, {"shieldBash", "Shield Bash"}, {"executionerStrike", "Executioner's Strike"},
-    {"fireball", "Fireball"}, {"ignite", "Ignite"}, {"iceStorm", "Ice Storm"}, {"acidCloud", "Acid Cloud"}, {"acidArrow", "Milf's Acid Arrow"}, {"causticVenom", "Caustic Venom"}, {"poisonBreath", "Poison Breath"},
+    {"fireball", "Fireball"}, {"ignite", "Ignite"}, {"iceStorm", "Ice Storm"}, {"acidCloud", "Acid Cloud"}, {"acidArrow", "MILF's Magic Arrow"}, {"causticVenom", "Caustic Venom"}, {"poisonBreath", "Poison Breath"},
     {"warp", "Warp"}, {"bless", "Bless"}, {"burningHands", "Burning Hands"}, {"turnUndead", "Turn Undead"},
     {"divineBolt", "Divine Bolt"}, {"summonFamiliar", "Summon Familiar"}, {"phantasmalForce", "Phantasmal Force"},
     {"webOfDreams", "Web of Dreams"}, {"summonFamiliar2", "Greater Familiar"}, {"summonFamiliar3", "Summon Numen"},
@@ -3469,7 +3469,7 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"eruption", "Eruption"}, {"glacialGale", "Glacial Gale"}, {"tidalWave", "Tidal Wave"}, {"waterJet", "Water Jet"}, {"wrathOfTheSkies", "Wrath of the Skies"},
     {"primordialEmber", "Primordial Ember"},
     {"steelWhirlwind", "Steel Whirlwind"}, {"guardBreak", "Guard Break"}, {"warCry", "War Cry"}, {"leapingStrike", "Devastating Leap"},
-    {"venomArrow", "Milf's Acid Arrow"}, {"arrowRain", "Arrow Rain"}, {"explosiveArrow", "Explosive Arrow"}, {"cripplingShot", "Crippling Shot"},
+    {"venomArrow", "MILF's Magic Arrow"}, {"arrowRain", "Arrow Rain"}, {"explosiveArrow", "Explosive Arrow"}, {"cripplingShot", "Crippling Shot"},
     {"arrowStorm", "Arrow Storm"}, {"deathShot", "Death Shot"},
     {"spearToss", "Spear Toss"}, {"hookPull", "Hook"}, {"poleVault", "Pole Vault"}, {"disarm", "Disarm"}, {"swapPost", "Change of Post"},
     {"impaleDrag", "Impale and Drag"}, {"sentinelVigil", "Sentinel's Vigil"}, {"sentinelStrike", "Sentinel's Thrust"},

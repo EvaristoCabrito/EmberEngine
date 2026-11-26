@@ -1,0 +1,939 @@
+diff --git a/engine/world/Spells.cpp b/engine/world/Spells.cpp
+index 72e53204..15bf5f62 100644
+--- a/engine/world/Spells.cpp
++++ b/engine/world/Spells.cpp
+@@ -18,13 +18,13 @@
+ #include "world/ActionPoints.h"
+ #include "world/BattleExport.h"
+ #include "world/Progression.h"
++#include "world/LightingSpells.h"
+ 
+ namespace ember {
+ 
+ namespace {
+ 
+ constexpr double kSqrt3 = 1.7320508075688772;  // Math.sqrt(3)
+-double jsRound(double v) { return std::floor(v + 0.5); }
+ 
+ // --- Ember data.ts numbers --------------------------------------------------------------------------------------
+ 
+@@ -94,7 +94,11 @@ constexpr SpellData kSpells[] = {
+     {"stampede", "Debandada", 6, "", false},
+     {"auraOfProtection", "Aura de Proteção", 5, "", false},
+     {"intimidatingPresence", "Presença Intimidante", 5, "", false},
+-    {"secondWind", "Fôlego Renovado", 3, "", false},
++    {"secondWind", "Segundo Fôlego", 3, "", false},
++    {"tendrilSwipe", "Golpe do Tentáculo", 0, "", false},
++    {"arcaneBeam", "Feixe de Luz", 2, "arcane", false},
++    {"anchoredLight", "Luz Ancorada", 2, "arcane", false},
++    {"luminousHalo", "Halo Luminoso", 2, "holy", false},
+ };
+ constexpr int kMageIceStormLevel = 8;  // T4's first use in the Mago Negro's tier table.
+ // EmberEngine's own spells: the Mago Negro's promotions, two per tier from T6 to T10 (docs/SPELLS_PROMOTIONS.md).
+@@ -250,7 +254,7 @@ const char* emberClassFamily(const std::string& classId) {
+   if (classId == "ranger" || classId == "assassin" || classId == "neera") return "archer";
+   if (classId == "sentinel" || classId == "templar" || classId == "lancer") return "aldric";
+   // Salazar's own class id is "salazar" (a healer with his sprite); the Clérigo and the Bispo are the healer's promotions
+-  if (classId == "salazar" || classId == "cleric" || classId == "bishop") return "healer";
++  if (classId == "salazar" || classId == "cleric" || classId == "bishop" || classId == "priest") return "healer";
+   if (classId == "sorcerer" || classId == "necromancer") return "conjurer";
+   // Voss's own class id is "voss" in most battle files ("mage" in a few); the Bruxo and the Elementalista are the Mago Negro's promotions
+   if (classId == "voss" || classId == "warlock" || classId == "elementalist") return "mage";
+@@ -316,10 +320,6 @@ int unitTierOf(const BattleUnit& u, const std::string& kind) {
+   if (kind == "summonTelesm" && u.name == "Selene") return 2;  // her T2, everyone else's T3
+   return spellTierOf(kind);
+ }
+-std::string elementOf(const std::string& kind) {
+-  const SpellData* s = spellData(kind);
+-  return s ? s->element : "";
+-}
+ bool weaponAbility(const std::string& kind) {
+   const SpellData* s = spellData(kind);
+   return s && s->weaponAbility;
+@@ -707,21 +707,8 @@ FrostPower frostPower(int level) {
+ }
+ 
+ // --- EmberEngine's own spells: their numbers by the caster's level (docs/SPELLS_PROMOTIONS.md) -------------------------
+-struct EmberNumbers {
+-  int range = 0, radius = 0;  // reach; the area around the aimed hex (0 = one hex / a line / a cone)
+-  double mul = 0;             // the weight on floor(MAG / 2)
+-  int dice = 0, faces = 0, bonus = 0;
+-  // the spell's own extras
+-  int pct = 0, turns = 0, rounds = 0, spread = 0, jumps = 0, length = 0, push = 0, count = 0;
+-  double tickMul = 0;
+-  int tickDice = 0, tickFaces = 0;
+-  int hazardDice = 0, hazardFaces = 8;
+-  double ringMul = 0;
+-  int ringDice = 0, ringFaces = 0;
+-  const char* tier = "";
+-  int durDice = 0, durFaces = 0;
+-  double decay = 0;
+-};
++}  // namespace
++
+ EmberNumbers emberNumbers(const std::string& kind, int level) {
+   const int lv = std::max(1, level);
+   // the spells: their numbers on the level they are learned, plus what their track gave since (spellGains, one step a level)
+@@ -951,6 +938,8 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
+   if (emberAreaGrows(kind)) n.radius = areaRadius(kind, n.radius, lv);  // only a spell with an area grows one
+   return n;
+ }
++
++namespace {
+ // Both sides stand in its area (else the caster's foes only).
+ bool emberBothSides(const std::string& kind) {
+   return kind == "shroudOfShadows" || kind == "blackPestilence" || kind == "meteor" || kind == "glacialGale" || kind == "primordialEmber" ||
+@@ -1145,6 +1134,7 @@ std::vector<BattleHex> frostTiles(const Battle& b, BattleHex origin, BattleHex t
+ // --- Charges ----------------------------------------------------------------------------------------------------------
+ 
+ int tierRemaining(const BattleUnit& u, const std::string& kind) {
++  if (isLightingSpell(kind)) return u.mana >= lightingSpellManaCost(kind) ? 1 : 0;
+   if (kind == "frost" && u.side == "enemy") return u.frostCharges;
+   if (kind == "acidArrow" && u.acidArrowCharges) return *u.acidArrowCharges;  // its own casts, never its tier-2 uses
+   if (kind == "ignite" && u.igniteCharges) return *u.igniteCharges;            // its own casts, never its tier-2 uses
+@@ -1154,6 +1144,10 @@ int tierRemaining(const BattleUnit& u, const std::string& kind) {
+   return tier ? u.spells[tier - 1] : 0;
+ }
+ void spendTier(BattleUnit& u, const std::string& kind) {
++  if (isLightingSpell(kind)) {
++    u.mana = std::max(0, u.mana - lightingSpellManaCost(kind));
++    return;
++  }
+   if (kind == "frost" && u.side == "enemy") {
+     u.frostCharges = std::max(0, u.frostCharges - 1);
+     return;
+@@ -1216,15 +1210,6 @@ std::string weaponTypeLabelPt(const std::string& type) {
+     if (type == id) return label;
+   return type;
+ }
+-std::string elementLabelPt(const std::string& element) {
+-  static const std::pair<const char*, const char*> kLabels[] = {{"fire", "Fogo"},   {"lightning", "Raio"},   {"ice", "Gelo"},       {"arcane", "Arcana"},
+-                                                                {"darkness", "Trevas"}, {"holy", "Sagrado"}, {"poison", "Veneno"}, {"ember", "Brasa"}};
+-  static const std::pair<const char*, const char*> kEnglish[] = {{"fire", "Fire"},   {"lightning", "Lightning"},   {"ice", "Ice"},       {"arcane", "Arcane"},
+-                                                                 {"darkness", "Darkness"}, {"holy", "Holy"}, {"poison", "Poison"}, {"ember", "Ember"}};
+-  for (const auto& [id, label] : gLogEnglish ? kEnglish : kLabels)
+-    if (element == id) return label;
+-  return element;
+-}
+ void noteSkillGain(const BattleUnit& u, const std::string& skill, double before, double after) {
+   const std::string a = numberPt(after), d = numberPt(after - before);
+   gNotes.push_back(gLogEnglish ? std::format("{} improved {}: {} (+{})", u.name, skill, a, d) : std::format("{} melhorou {}: {} (+{})", u.name, skill, a, d));
+@@ -1398,6 +1383,21 @@ std::string levelUpLog(const BattleUnit& before, const BattleUnit& after) {
+ 
+ }  // namespace
+ 
++std::string elementOf(const std::string& kind) {
++  const SpellData* s = spellData(kind);
++  return s ? s->element : "";
++}
++
++std::string elementLabelPt(const std::string& element) {
++  static const std::pair<const char*, const char*> kLabels[] = {{"fire", "Fogo"},   {"lightning", "Raio"},   {"ice", "Gelo"},       {"arcane", "Arcana"},
++                                                                {"darkness", "Trevas"}, {"holy", "Sagrado"}, {"poison", "Veneno"}, {"ember", "Brasa"}};
++  static const std::pair<const char*, const char*> kEnglish[] = {{"fire", "Fire"},   {"lightning", "Lightning"},   {"ice", "Ice"},       {"arcane", "Arcane"},
++                                                                 {"darkness", "Darkness"}, {"holy", "Holy"}, {"poison", "Poison"}, {"ember", "Ember"}};
++  for (const auto& [id, label] : gLogEnglish ? kEnglish : kLabels)
++    if (element == id) return label;
++  return element;
++}
++
+ std::vector<LevelUpEvent> takeLevelUpEvents() {
+   std::vector<LevelUpEvent> events = std::move(gLevelUpEvents);
+   gLevelUpEvents.clear();
+@@ -1853,11 +1853,16 @@ bool bodyFitsAt(const Battle& b, const BattleUnit& u, size_t self, BattleHex at)
+   }
+   return true;
+ }
++
++}  // namespace
++
+ // The hex past `through` on the straight line from `from` (for neighbours: the next hex in that direction).
+ BattleHex hexBeyond(BattleHex from, BattleHex through) {
+   const Cube a = oddrToCube(from.x, from.y), t = oddrToCube(through.x, through.y);
+   return cubeToOddr(static_cast<int>(std::lround(2 * t.q - a.q)), static_cast<int>(std::lround(2 * t.r - a.r)));
+ }
++
++namespace {
+ // The neighbour foe standing on `aim` itself, when the aim is a click on it (-1: the aim is a hex): Arremesso then throws that very foe,
+ // Empalar e Arrastar drags that very foe, straight away from the caster as far as it goes (the user, 2026-10-19: "should allow me to aim
+ // in different targets ... I can't ever fire anything where I want").
+@@ -2746,6 +2751,20 @@ std::vector<std::string> checkSpellTracks(std::vector<std::string>* report) {
+   return fails;
+ }
+ void grantClassSpells(BattleUnit& u) {
++  const std::string fam = emberClassFamily(u.classId);
++  if (u.side == "player") {
++    if (fam == "mage") {
++      if (!contains(u.spellList, std::string("arcaneBeam"))) u.spellList.push_back("arcaneBeam");
++    } else if (fam == "conjurer") {
++      if (!contains(u.spellList, std::string("anchoredLight"))) u.spellList.push_back("anchoredLight");
++    } else if (fam == "healer") {
++      if (!contains(u.spellList, std::string("luminousHalo"))) u.spellList.push_back("luminousHalo");
++    }
++  }
++  if (u.maxMana <= 0) {
++    u.maxMana = std::max(20, u.mag * 3 + u.level * 2);
++    u.mana = u.maxMana;
++  }
+   // a hero's exclusive leaves everyone else's list, even one from an older save or battle file
+   for (const EmberSpell& e : kEmberSpells)
+     if (e.hero && u.name != e.hero) std::erase(u.spellList, std::string(e.data.kind));
+@@ -2812,7 +2831,11 @@ std::string promotionName(const std::string& classId) {
+   return classId;
+ }
+ void setPromotion(BattleUnit& u, const std::string& classId) {
+-  u.classId = classId.empty() ? "mage" : classId;
++  std::string targetClass = classId.empty() ? "mage" : classId;
++  if (u.name == "Kael" && (targetClass == "swordsman" || targetClass == "paladin" || targetClass == "heavyKnight" || targetClass == "kaelFinal" || targetClass == "kaelEarly")) {
++    targetClass = "vanguard";
++  }
++  u.classId = targetClass;
+   u.className = promotionName(u.classId);
+   std::erase_if(u.spellList, [](const std::string& k) { return emberSpell(k) != nullptr; });
+   // A hero whose new class draws its uses from another tier table (Kael: the Guerreiro's Conjuração Lenta -> the Vanguarda's Média):
+@@ -2828,49 +2851,94 @@ void setPromotion(BattleUnit& u, const std::string& classId) {
+     }
+   grantClassSpells(u);
+ }
+-std::string conditionsText(const BattleUnit& u) {
+-  std::string s;
+-  auto add = [&](const std::string& part) { s += (s.empty() ? "" : " · ") + part; };
+-  if (u.cond.markTurns > 0) add(std::format("Marcado +{}% ({})", u.cond.markPct, u.cond.markTurns));
+-  if (u.poisoned)
+-    if (const PoisonTier* t = poisonTier(u.poisonTier)) add(std::string(t->name) + (u.cond.plagueSpread > 0 ? " (espalha)" : ""));
+-  if (u.cond.bleedTurns > 0) add(std::format("Sangrando {}D{} ({})", u.cond.bleedDice, u.cond.bleedFaces, u.cond.bleedTurns));
+-  if (u.cond.acidTurns > 0) add(std::format("{} {}D{} ({})", pick("Ácido", "Acid"), u.cond.acidDice, u.cond.acidFaces, u.cond.acidTurns));
+-  if (u.cond.silenceTurns > 0) add(std::format("Silenciado ({})", u.cond.silenceTurns));
+-  if (u.cond.decayTurns > 0) add(std::format("Decadência -{}% ({})", u.cond.decayPct, u.cond.decayTurns));
+-  if (u.cond.sunderPct > 0) add(std::format("{} -{}% DEF ({})", pick("Guarda quebrada", "Guard broken"), u.cond.sunderPct, u.cond.sunderTurns + 1));
++std::vector<std::string> conditionsDetailedList(const BattleUnit& u) {
++  std::vector<std::string> list;
++  const std::function<void(const std::string&)> add = [&](const std::string& part) { if (!part.empty()) list.push_back(part); };
++  if (const LightSpellInstance* inst = LightingSpellRegistry::get().findCasterSpell(u.id)) {
++    const int64_t rem = inst->minutesRemaining(LightingSpellRegistry::get().currentMinute());
++    add(std::format("{}: ilumina a área ao redor ({} min)", lightingSpellDisplayName(inst->spellKind), rem));
++  }
++  if (u.cond.markTurns > 0)
++    add(std::format("{}: +{}% de dano recebido de todas as fontes ({} rodadas)", pick("Marca da Ruína", "Mark of Ruin"), u.cond.markPct, u.cond.markTurns));
++  if (u.poisoned) {
++    if (const PoisonTier* t = poisonTier(u.poisonTier))
++      add(std::format("{}: sofre dano no início de cada turno{}", t->name, u.cond.plagueSpread > 0 ? " (contagia aliados adjacentes)" : ""));
++    else
++      add(pick("Envenenado: sofre dano no início de cada turno", "Poisoned: takes damage at turn start"));
++  }
++  if (u.cond.bleedTurns > 0)
++    add(std::format("{}: sofre {}D{} de dano a cada ação ou movimento ({} rodadas)", pick("Sangrando", "Bleeding"), u.cond.bleedDice, u.cond.bleedFaces, u.cond.bleedTurns));
++  if (u.cond.acidTurns > 0)
++    add(std::format("{}: sofre {}D{} de dano ácido por turno ({} rodadas)", pick("Ácido", "Acid"), u.cond.acidDice, u.cond.acidFaces, u.cond.acidTurns));
++  if (u.cond.silenceTurns > 0)
++    add(std::format("{}: impedido de conjurar magias ({} rodadas)", pick("Silenciado", "Silenced"), u.cond.silenceTurns));
++  if (u.cond.decayTurns > 0)
++    add(std::format("{}: -{}% em todos os atributos ({} rodadas)", pick("Decadência", "Decay"), u.cond.decayPct, u.cond.decayTurns));
++  if (u.cond.sunderPct > 0)
++    add(std::format("{}: -{}% de Defesa ({} rodadas)", pick("Guarda Quebrada", "Guard Broken"), u.cond.sunderPct, u.cond.sunderTurns + 1));
+   if (u.cond.arcaneMarkDice > 0)
+-    add(std::format("{} {}D{} ({})", pick("Marca Arcana", "Arcane Mark"), u.cond.arcaneMarkDice, u.cond.arcaneMarkFaces, u.cond.arcaneMarkTurns + 1));
+-  if (u.cond.witchStitchDice > 0) add(pick("Costura da Bruxa · rompe ao mover", "Witch's Stitch · ruptures on move"));
+-  if (!u.cond.burialRootSources.empty()) add(pick("Peso Sepulcral · movimento impedido", "Burial Weight · movement prevented"));
+-  if (u.burialWeightActive) add(pick("Ancorado pelo Peso Sepulcral", "Anchored by Burial Weight"));
+-  if (u.cond.rallyPct > 0) add(std::format("{} +{}% ATK ({})", pick("Grito de Guerra", "War Cry"), u.cond.rallyPct, u.cond.rallyTurns + 1));
++    add(std::format("{}: detona sofrendo {}D{} de dano arcano no próximo acerto ({} rodadas)", pick("Marca Arcana", "Arcane Mark"), u.cond.arcaneMarkDice, u.cond.arcaneMarkFaces, u.cond.arcaneMarkTurns + 1));
++  if (u.cond.witchStitchDice > 0)
++    add(pick("Costura da Bruxa: sofre dano sombrio e rompe ao mudar de hex", "Witch's Stitch: ruptures and takes shadow damage on move"));
++  if (!u.cond.burialRootSources.empty())
++    add(pick("Peso Sepulcral: enraizado pela terra, incapaz de mover", "Burial Weight: rooted in earth, unable to move"));
++  if (u.burialWeightActive)
++    add(pick("Peso Sepulcral: ancorado e incapaz de mover", "Burial Weight: anchored, unable to move"));
++  if (u.cond.rallyPct > 0)
++    add(std::format("{}: +{}% de dano nos ataques ({} rodadas)", pick("Grito de Guerra", "War Cry"), u.cond.rallyPct, u.cond.rallyTurns + 1));
+   if (u.cond.mantleDice > 0)
+-    add(std::format("{} +{}D{} ({})", pick("Manto do Cruzado", "Crusader's Mantle"), u.cond.mantleDice, u.cond.mantleFaces, u.cond.mantleTurns + 1));
+-  if (oathActive(u)) add(std::format("{} +{}% ATK", pick("Juramento", "Oath"), kOathAtkPct));
+-  if (u.cond.hobblePct >= 100) add(std::format("{} ({})", pick("Empalado", "Impaled"), u.cond.hobbleTurns + 1));
+-  else if (u.cond.hobblePct > 0) add(std::format("{} -{}% MOV ({})", pick("Paralisado", "Crippled"), u.cond.hobblePct, u.cond.hobbleTurns + 1));
+-  if (u.cond.disarmPct > 0) add(std::format("{} -{}% ATK ({})", pick("Desarmado", "Disarmed"), u.cond.disarmPct, u.cond.disarmTurns + 1));
+-  if (u.cond.staggered) add(std::format("{} ({})", pick("Desequilibrado", "Off balance"), u.cond.staggerTurns + 1));
+-  if (u.cond.vigilPct > 0) add(std::format("{} ×{:g} · {} {}", pick("Vigília", "Vigil"), u.cond.vigilPct / 100.0, pick("raio", "radius"), u.cond.vigilRadius));
+-  if (u.cond.mirrorCopies > 0) add(std::format("{} ×{} ({})", pick("Imagem Espelhada", "Mirror Image"), u.cond.mirrorCopies, u.cond.mirrorRounds));
+-  if (u.cond.bondPct > 0) add(std::format("{} {}%", pick("Elo de Sacrifício", "Sacrifice Bond"), u.cond.bondPct));
++    add(std::format("{}: +{}D{} de dano sagrado nos ataques ({} rodadas)", pick("Manto do Cruzado", "Crusader's Mantle"), u.cond.mantleDice, u.cond.mantleFaces, u.cond.mantleTurns + 1));
++  if (oathActive(u))
++    add(std::format("{}: +{}% de dano contra o alvo jurado", pick("Juramento", "Oath"), kOathAtkPct));
++  if (u.cond.hobblePct >= 100)
++    add(std::format("{}: movimento completamente impedido ({} rodadas)", pick("Empalado", "Impaled"), u.cond.hobbleTurns + 1));
++  else if (u.cond.hobblePct > 0)
++    add(std::format("{}: -{}% de alcance de movimento ({} rodadas)", pick("Aleijado", "Crippled"), u.cond.hobblePct, u.cond.hobbleTurns + 1));
++  if (u.cond.disarmPct > 0)
++    add(std::format("{}: -{}% de dano de ataque e sem contra-ataque ({} rodadas)", pick("Desarmado", "Disarmed"), u.cond.disarmPct, u.cond.disarmTurns + 1));
++  if (u.cond.staggered)
++    add(std::format("{}: desequilibrado, sem reação ou contra-ataque ({} rodadas)", pick("Desequilibrado", "Off Balance"), u.cond.staggerTurns + 1));
++  if (u.cond.vigilPct > 0)
++    add(std::format("{}: golpe de reação ({:g}× ATK) se atacarem aliado a até {} hexes", pick("Vigília da Sentinela", "Sentinel's Vigil"), u.cond.vigilPct / 100.0, u.cond.vigilRadius));
++  if (u.cond.mirrorCopies > 0)
++    add(std::format("{}: {} cópia{} ilusória{} absorve{} ataques diretos ({} rodadas)", pick("Imagem Espelhada", "Mirror Image"), u.cond.mirrorCopies, u.cond.mirrorCopies > 1 ? "s" : "", u.cond.mirrorCopies > 1 ? "s" : "", u.cond.mirrorCopies > 1 ? "m" : "", u.cond.mirrorRounds));
++  if (u.cond.bondPct > 0)
++    add(std::format("{}: redireciona {}% do dano sofrido para o conjurador", pick("Elo de Sacrifício", "Sacrifice Bond"), u.cond.bondPct));
+   if (u.cond.reflectTurns > 0)
+-    add(std::format("{} {}%{} ({})", pick("Reflexo Arcano", "Arcane Reflection"), u.cond.reflectPct,
+-                    u.cond.reflectHealPct > 0 ? std::format(" · {} {}%", pick("cura", "heals"), u.cond.reflectHealPct) : std::string(), u.cond.reflectTurns));
+-  if (u.cond.empowerPct > 0) add(std::format("{} +{}% ({})", pick("Fortalecido", "Empowered"), u.cond.empowerPct, u.cond.empowerRounds));
+-  if (u.cond.daggers > 0) add(std::format("{} ×{}", pick("Adagas", "Daggers"), u.cond.daggers));
+-  if (u.diseased) add("Doente");
++    add(std::format("{}: reflete {}% do dano mágico ao atacante{} ({} rodadas)", pick("Reflexo Arcano", "Arcane Reflection"), u.cond.reflectPct,
++                    u.cond.reflectHealPct > 0 ? std::format(" e regenera {}%", u.cond.reflectHealPct) : "", u.cond.reflectTurns));
++  if (u.cond.empowerPct > 0)
++    add(std::format("{}: +{}% de poder mágico nos feitiços ({} rodadas)", pick("Fortalecido", "Empowered"), u.cond.empowerPct, u.cond.empowerRounds));
++  if (u.cond.daggers > 0)
++    add(std::format("{}: {} lâmina{} intercepta{} projéteis e fere{} inimigos adjacentes", pick("Nuvem de Adagas", "Cloud of Daggers"), u.cond.daggers, u.cond.daggers > 1 ? "s" : "", u.cond.daggers > 1 ? "m" : "", u.cond.daggers > 1 ? "m" : ""));
++  if (u.diseased)
++    add(pick("Doente: -10% em todos os atributos", "Diseased: -10% to all attributes"));
+   // Ember's statuses
+-  if (u.stunned) add(std::string(pick("Atordoado", "Stunned")) + std::format(" ({})", u.stunTurns));
+-  if (u.asleep) add(std::string(pick("Adormecido", "Asleep")) + std::format(" ({})", u.sleepTurns));
+-  if (u.bleeding) add(u.bleedRoundsLeft ? std::string(pick("Sangrando 1D8 por ação", "Bleeding 1D8 per action")) + std::format(" ({})", *u.bleedRoundsLeft)
+-                                         : std::string(pick("Sangrando 1D8 por ação", "Bleeding 1D8 per action")));
+-  if (u.crippled) add(pick("Aleijado -10%", "Crippled -10%"));
+-  if (u.fearTurns > 0) add(std::string(pick("Com medo", "Afraid")) + std::format(" ({})", u.fearTurns));
+-  if (u.blessedRoundsLeft > 0) add(std::string(pick("Abençoado", "Blessed")) + std::format(" +{}% ({})", static_cast<int>(jsRound(u.blessedHitBonusPct * 100)), u.blessedRoundsLeft));
+-  techniqueConditions(u, add);  // Kael's guards and stances, the marks on his foes
+-  if (u.cond.twinResonancePercent > 0)add(std::format("{} {}%", pick("Ressonância Geminada", "Twin Resonance"), u.cond.twinResonancePercent));
++  if (u.stunned)
++    add(std::format("{}: atordoado, perde o turno ({} rodadas)", pick("Atordoado", "Stunned"), u.stunTurns));
++  if (u.asleep)
++    add(std::format("{}: dormindo, indefeso até sofrer dano ({} rodadas)", pick("Adormecido", "Asleep"), u.sleepTurns));
++  if (u.bleeding)
++    add(u.bleedRoundsLeft ? std::format("{}: sofre 1D8 de dano a cada ação ({} rodadas)", pick("Sangrando", "Bleeding"), *u.bleedRoundsLeft)
++                          : std::format("{}: sofre 1D8 de dano a cada ação", pick("Sangrando", "Bleeding")));
++  if (u.crippled)
++    add(pick("Aleijado: -10% de movimento", "Crippled: -10% movement"));
++  if (u.fearTurns > 0)
++    add(std::format("{}: amedrontado, tenta fugir ({} rodadas)", pick("Com Medo", "Afraid"), u.fearTurns));
++  if (u.blessedRoundsLeft > 0)
++    add(std::format("{}: +{}% de chance de acerto nos ataques ({} rodadas)", pick("Abençoado", "Blessed"), static_cast<int>(jsRound(u.blessedHitBonusPct * 100)), u.blessedRoundsLeft));
++  techniqueConditions(u, add);  // Kael's guards and stances, Garran's wards, the marks on foes
++  if (u.cond.twinResonancePercent > 0)
++    add(std::format("{}: transfere {}% do dano de choque ao aliado vinculado", pick("Ressonância Geminada", "Twin Resonance"), u.cond.twinResonancePercent));
++  return list;
++}
++
++std::string conditionsText(const BattleUnit& u) {
++  const auto list = conditionsDetailedList(u);
++  std::string s;
++  for (const auto& item : list) {
++    s += (s.empty() ? "" : " · ") + item;
++  }
+   return s;
+ }
+ std::string spellExplain(const std::string& kind, bool en) {
+@@ -2888,6 +2956,12 @@ std::string spellExplain(const std::string& kind, bool en) {
+        "A greater bolt at a foe; the shock stays on it and strikes it again, harder, at the start of its turn."},
+       {"frost", "Uma linha de gelo que sai do seu lado na direção que você mira e atinge todos sobre ela, aliados também.",
+        "A line of ice from beside you toward where you aim; it strikes everyone on it, allies too."},
++      {"arcaneBeam", "Cone fixo projetado à frente a partir da posição e direção de lançamento. Vínculo fixo ao ambiente. Encerra ao sair do mapa lógico.",
++       "Fixed cone projected forward from caster position and facing. Anchored to world. Ends upon leaving logical map."},
++      {"anchoredLight", "Esfera luminosa que ilumina uma área circular a partir do ponto escolhido. Vínculo fixo ao chão. Encerra ao sair do mapa lógico.",
++       "Luminous sphere illuminating a circular area around selected point. Anchored to ground. Ends upon leaving logical map."},
++      {"luminousHalo", "Luz centrada no conjurador, iluminando seu corpo e o entorno. Acompanha os movimentos e andares. Encerra ao sair do mapa lógico.",
++       "Light centered on caster, illuminating body and surroundings. Moves with caster between floors. Ends upon leaving logical map."},
+       {"poisonBreath", "Um cone de veneno à sua frente: todos dentro levam dano e ficam envenenados, aliados também.",
+        "A cone of poison in front of you: everyone in it takes damage and is poisoned, allies too."},
+       {"acidCloud", "Uma nuvem baixa de ácido permanece no chão: atinge todos quando cai, no início do turno e ao entrar nela. Cada acerto pode causar Veneno Menor.",
+@@ -3198,6 +3272,36 @@ std::string spellScaleTextRaw(const BattleUnit& c, const std::string& kind, bool
+   return {};
+ }
+ std::string spellTooltip(const BattleUnit& c, const std::string& kind, int moon) {
++  if (isLightingSpell(kind)) {
++    const int power = effectiveLightPower(c.level);
++    const LightSpellMetrics m = lightMetricsForPower(power);
++    const int ap = lightingSpellApCost(kind);
++    const int mana = lightingSpellManaCost(kind);
++    if (kind == "arcaneBeam") {
++      return std::format("T2 · Arcano · {} PA · {} Mana · Potência {} ({})\n"
++                         "Cone fixo projetado à frente a partir da posição e direção de lançamento.\n"
++                         "Abertura: 60° · Comprimento: {:g} hexes · Duração: {} min.\n"
++                         "Vínculo: Posição e direção fixas no mapa.\n"
++                         "Encerramento: Ao expirar ou ao sair do mapa lógico.",
++                         ap, mana, power, lightingSpellDisplayName(kind), m.coneLengthHex, m.durationMinutes);
++    }
++    if (kind == "anchoredLight") {
++      return std::format("T2 · Arcano · {} PA · {} Mana · Potência {} ({})\n"
++                         "Pequena esfera luminosa posicionada em um ponto escolhido.\n"
++                         "Raio: {:g} hexes · Alcance de posicionamento: {:g} hexes · Duração: {} min.\n"
++                         "Vínculo: Posição fixa no mapa.\n"
++                         "Encerramento: Ao expirar ou ao sair do mapa lógico.",
++                         ap, mana, power, lightingSpellDisplayName(kind), m.conjurerRadiusHex, m.conjurerRangeHex, m.durationMinutes);
++    }
++    if (kind == "luminousHalo") {
++      return std::format("T2 · Sagrado · {} PA · {} Mana · Potência {} ({})\n"
++                         "Luz centrada no conjurador, iluminando seu corpo e o entorno.\n"
++                         "Raio: {:g} hexes · Acompanha o personagem entre andares · Duração: {} min.\n"
++                         "Vínculo: Móvel (entidade do conjurador).\n"
++                         "Encerramento: Ao expirar ou ao sair do mapa lógico.",
++                         ap, mana, power, lightingSpellDisplayName(kind), m.healerRadiusHex, m.durationMinutes);
++    }
++  }
+   if (techniqueKind(kind)) return techniqueTooltip(c, kind, moon);  // Kael's and Garran's techniques: their numbers at the rank (Garran's: the moon)
+   const EmberSpell* e = emberSpell(kind);
+   if (!e) return {};
+@@ -3346,6 +3450,7 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
+     {"cloudOfDaggers", "Cloud of Daggers"}, {"daggerStrike", "Dagger"}, {"dispelMagic", "Dispel Magic"}, {"globeOfInvulnerability", "Globe of Invulnerability"},
+     {"holyStrike", "Consecrated Strike"}, {"holyTouch", "Holy Touch"}, {"crusaderOath", "Oath"}, {"crusaderMantle", "Crusader's Mantle"},
+     {"arcaneBlade", "Arcane Blade"}, {"arcaneMarkBurst", "Arcane Mark"}, {"witchStitch", "Witch's Stitch"}, {"burialWeight", "Burial Weight"},
++    {"arcaneBeam", "Arcane Beam"}, {"anchoredLight", "Anchored Light"}, {"luminousHalo", "Luminous Halo"},
+ };
+ }  // namespace
+ 
+@@ -3359,6 +3464,7 @@ std::string spellNameIn(const std::string& kind, bool english) {
+ }
+ 
+ bool spellPorted(const std::string& kind) {
++  if (isLightingSpell(kind)) return true;
+   return kind == "magicMissile" || kind == "longShot" || kind == "piercing" || kind == "piercingThrust" || kind == "doubleStrike" || kind == "lightning" ||
+          kind == "frost" || kind == "cureMinor" || kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "createFoodAndWater" ||
+          emberSpell(kind) != nullptr || e2Kind(kind);
+@@ -3374,11 +3480,13 @@ bool spellInstant(const std::string& kind) {
+ // moment the socket was pressed, the area never shown): the user, 2026-10-19: "how the fuck im going to cast something without knowing the
+ // area of effect".
+ bool spellSelfArea(const std::string& kind) {
++  if (kind == "luminousHalo") return true;
+   return kind == "sweep" || kind == "turnUndead" || kind == "steelWhirlwind" || kind == "warCry" || kind == "sentinelVigil" || kind == "eruption" ||
+          kind == "globeOfInvulnerability" || kind == "crusaderMantle" || kind == "crossguard" || kind == "steadyFooting" || kind == "plantTheLine";
+ }
+ bool spellPassive(const std::string& kind) { return kind == "crusaderOath" || kind == "riposte"; }
+ bool spellAimsDirection(const std::string& kind) {
++  if (kind == "arcaneBeam") return true;
+   return kind == "piercing" || kind == "piercingThrust" || kind == "frost" || kind == "iceLance" || kind == "glacialGale" ||
+          kind == "burningHands" || kind == "poisonBreath" || kind == "divineWrath" || kind == "stampede" || kind == "boneLance";
+ }
+@@ -3528,6 +3636,7 @@ int spellTierNumber(const std::string& kind) {
+ 
+ int spellUsesLeft(const Battle& b, size_t unit, const std::string& kind) {
+   const BattleUnit& u = b.units()[unit];
++  if (isLightingSpell(kind)) return u.mana >= lightingSpellManaCost(kind) ? 1 : 0;
+   if (kind == "twinResonance" && u.classId == "hypostasis") return 1;  // every cast pays 8 AP, with no charge pool
+   if (kind == "abyssalSwap" && u.classId == "familiar2") return u.spellCharges / std::max(1, abyssalSwapPower(u.level).chargeCost);
+   if (kind == "arcaneBanquet" && u.classId == "familiar2") return u.spellCharges / std::max(1, arcaneBanquetPower(u.level).chargeCost);
+@@ -3690,12 +3799,40 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
+   else if (kind == "familiarLifeDrain") maxRange = kLifeDrainRange;
+   else if (kind == "provoke") maxRange = provokePower(u.level).range;
+   else if (kind == "cleave" || kind == "shoulderSmash") maxRange = 1;
+-  else if (kind == "sweep") maxRange = kSweepRadius;
++  else if (kind == "sweep") minRange = 1, maxRange = kSweepRadius;
++  else if (kind == "arcaneBeam") minRange = 1, maxRange = static_cast<int>(std::round(lightMetricsForPower(effectiveLightPower(u.level)).coneLengthHex));
++  else if (kind == "anchoredLight") minRange = 0, maxRange = static_cast<int>(std::floor(lightMetricsForPower(effectiveLightPower(u.level)).conjurerRangeHex + 0.001f));
++  else if (kind == "luminousHalo" || kind == "sentinelVigil") minRange = 0, maxRange = 0;
++  else if (kind == "piercingThrust") minRange = 1, maxRange = u.maxRange + 1 + spellGains("piercingThrust", u.level).n('l');
++  else if (kind == "piercing") minRange = 1, maxRange = shotReach(u.maxRange, emberNumbers("piercing", u.level).length);
++  else if (kind == "frost") minRange = 1, maxRange = frostPower(u.level).length;
++  else if (kind == "iceLance") minRange = 1, maxRange = 9;
++  else if (kind == "glacialGale") minRange = 1, maxRange = emberNumbers("glacialGale", u.level).length;
++  else if (kind == "bullRush") minRange = 1, maxRange = grownReach("bullRush", kBullRushRange, u.level);
++  else if (kind == "spearToss") minRange = 1, maxRange = 1 + emberNumbers("spearToss", u.level).range;
++  else if (kind == "impaleDrag") minRange = 1, maxRange = 1 + emberNumbers("impaleDrag", u.level).length;
++  else if (kind == "poleVault") minRange = 1, maxRange = 1;
++  else if (kind == "leapingStrike") minRange = 1, maxRange = emberNumbers("leapingStrike", u.level).range + 1;
+   for (int y = 0; y < b.rows(); ++y)
+     for (int x = 0; x < b.cols(); ++x) {
+       const BattleHex cell{x, y};
+       const int d = hexDist(from, cell);
+-      if (maxRange < 0) {  // a ray: where it is valid
++      if (kind == "spearToss" || kind == "impaleDrag") {
++        if (d >= minRange && (maxRange < 0 || d <= maxRange) && spellAimValid(b, caster, kind, cell)) zone.push_back(cell);
++        continue;
++      }
++      if (kind == "poleVault") {
++        if (d == 1) {
++          zone.push_back(cell);
++          if (const std::optional<BattleHex> landing = vaultLanding(b, caster, cell)) zone.push_back(*landing);
++        }
++        continue;
++      }
++      if (spellAimsDirection(kind)) {
++        if (d >= minRange && (maxRange < 0 || d <= maxRange)) zone.push_back(cell);
++        continue;
++      }
++      if (maxRange < 0) {
+         if (d <= 9 && spellAimValid(b, caster, kind, cell)) zone.push_back(cell);
+         continue;
+       }
+@@ -3714,6 +3851,23 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
+     return false;
+   };
+   if (!b.inBounds(cell.x, cell.y)) return fail("Fora do mapa.");
++  if (kind == "arcaneBeam") {
++    if (cell == from) return fail("Escolha uma direção.");
++    return true;
++  }
++  if (kind == "anchoredLight") {
++    const int power = effectiveLightPower(u.level);
++    const LightSpellMetrics m = lightMetricsForPower(power);
++    const int d = hexDist(from, cell);
++    if (d > static_cast<int>(std::floor(m.conjurerRangeHex + 0.001f))) {
++      return fail(std::format("Alvo fora de alcance (máximo {:g} hexes).", m.conjurerRangeHex).c_str());
++    }
++    return true;
++  }
++  if (kind == "luminousHalo") {
++    if (cell != from) return fail("O Halo Luminoso é conjurado sobre o próprio conjurador.");
++    return true;
++  }
+   if (techniqueKind(kind)) return techniqueAimValid(b, caster, kind, cell, error);  // Kael's (SpellsVanguard.inc)
+   const int here = occAt(b, cell);
+   const int d = hexDist(from, cell);
+@@ -3920,6 +4074,21 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
+ 
+ std::vector<BattleHex> spellArea(const Battle& b, size_t caster, const std::string& kind, BattleHex cell) {
+   const BattleUnit& u = b.units()[caster];
++  if (kind == "arcaneBeam") {
++    const int power = effectiveLightPower(u.level);
++    const LightSpellMetrics m = lightMetricsForPower(power);
++    return coneHexes(b, {u.x, u.y}, cell, static_cast<int>(std::round(m.coneLengthHex)));
++  }
++  if (kind == "anchoredLight") {
++    const int power = effectiveLightPower(u.level);
++    const LightSpellMetrics m = lightMetricsForPower(power);
++    return hexesWithin(b, cell, static_cast<int>(std::round(m.conjurerRadiusHex)));
++  }
++  if (kind == "luminousHalo") {
++    const int power = effectiveLightPower(u.level);
++    const LightSpellMetrics m = lightMetricsForPower(power);
++    return hexesWithin(b, {u.x, u.y}, static_cast<int>(std::round(m.healerRadiusHex)));
++  }
+   if (kind == "frost") return frostTiles(b, {u.x, u.y}, cell, u.level);
+   if (kind == "piercing") return piercingRay(b, {u.x, u.y}, cell);
+   if (kind == "piercingThrust") return piercingThrustRay(b, u, cell);
+@@ -3951,7 +4120,7 @@ std::vector<BattleHex> spellArea(const Battle& b, size_t caster, const std::stri
+     }
+     if (kind == "hookPull") {
+       const std::optional<HookPlan> p = hookPlan(b, caster, cell, n);
+-      return p ? std::vector<BattleHex>{cell, p->dest} : std::vector<BattleHex>{cell};
++      return p ? p->line : std::vector<BattleHex>{cell};
+     }
+     if (kind == "poleVault") {
+       const std::optional<BattleHex> landing = vaultLanding(b, caster, cell);
+@@ -4101,6 +4270,11 @@ std::optional<std::vector<BattleStep>> castSpell(Battle& b, size_t caster, const
+     s.tiles = {cell};
+     s.dice = p.dice, s.faces = p.faces, s.bonus = p.bonus, s.fullness = p.fullness;
+     steps.push_back(s);
++  } else if (isLightingSpell(kind)) {
++    spendTier(u, kind);
++    s.type = BattleStep::Type::Effect;
++    s.tiles = spellArea(b, caster, kind, cell);
++    steps.push_back(s);
+   } else {
+     // Choque (no player tier), and everything not ported yet.
+     return fail("Esta habilidade ainda não existe aqui.");
+@@ -4909,6 +5083,10 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
+     return;
+   }
+   if (step.type == BattleStep::Type::Effect) {
++    if (isLightingSpell(step.kind)) {
++      out.push_back(statusEffect(step.att, lightingSpellDisplayName(step.kind)));
++      return;
++    }
+     if (techniqueKind(step.kind)) {  // Kael's guards, stances and marks (SpellsVanguard.inc)
+       techniqueEffect(b, step, out);
+       return;
+@@ -6977,4 +7155,402 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
+   return std::nullopt;
+ }
+ 
++
++bool spellTargetsAlly(const std::string& kind) {
++  if (kind == "swapPost" || kind == "placeSwap" || kind == "holyTouch" || kind == "bless" ||
++      kind == "resurrection" || kind == "mirrorImage" || kind == "detonateSummon" ||
++      kind == "cureDisease" || cureData(kind) != nullptr) {
++    return true;
++  }
++  return false;
++}
++
++bool spellTargetsGroundOrFreeHex(const std::string& kind) {
++  if (kind == "spearToss" || kind == "impaleDrag" || kind == "anchoredLight" ||
++      kind == "webOfDreams" || archerVolley(kind) || kind == "fireball" ||
++      kind == "iceStorm" || kind == "acidCloud" || kind == "eruption") {
++    return true;
++  }
++  return false;
++}
++
++SpellMovementPreview spellMovementPreview(const Battle& b, size_t caster, const std::string& kind, BattleHex cell) {
++  SpellMovementPreview out;
++  if (caster >= b.units().size()) return out;
++  const BattleUnit& u = b.units()[caster];
++  const BattleHex from{u.x, u.y};
++  const int here = occAt(b, cell);
++
++  if (kind == "poleVault") {
++    if (const std::optional<BattleHex> landing = vaultLanding(b, caster, cell)) {
++      out.valid = true;
++      out.casterDestination = landing;
++      out.targetDestination = cell;
++      if (here >= 0) out.targetUnit = static_cast<size_t>(here);
++      out.trajectory = {from, cell, *landing};
++    }
++  } else if (kind == "spearToss") {
++    const EmberNumbers n = emberNumbers(kind, u.level);
++    if (const std::optional<TossPlan> p = tossPlan(b, caster, cell, n)) {
++      out.valid = true;
++      out.targetUnit = p->foe;
++      out.targetDestination = p->landing ? p->landing : (p->collide ? BattleHex{b.units()[*p->collide].x, b.units()[*p->collide].y} : cell);
++      out.collidedUnit = p->collide;
++      out.trajectory = p->tiles;
++      out.casterDestination = from;
++    }
++  } else if (kind == "hookPull") {
++    const EmberNumbers n = emberNumbers(kind, u.level);
++    if (const std::optional<HookPlan> p = hookPlan(b, caster, cell, n)) {
++      out.valid = true;
++      out.targetUnit = p->foe;
++      out.targetDestination = p->dest;
++      out.trajectory = p->line;
++      out.casterDestination = from;
++    }
++  } else if (kind == "swapPost" || kind == "placeSwap") {
++    const EmberNumbers n = emberNumbers(kind, u.level);
++    if (const int ally = swapAlly(b, caster, cell, n); ally >= 0) {
++      out.valid = true;
++      out.casterDestination = cell;
++      out.targetDestination = from;
++      out.targetUnit = static_cast<size_t>(ally);
++      out.trajectory = {from, cell};
++    }
++  } else if (kind == "impaleDrag") {
++    const EmberNumbers n = emberNumbers(kind, u.level);
++    if (const std::optional<DragPlan> p = dragPlan(b, caster, cell, n)) {
++      out.valid = true;
++      out.casterDestination = p->casterTo;
++      out.targetDestination = p->foeTo;
++      out.targetUnit = p->foe;
++      out.trajectory = p->tiles;
++    }
++  } else if (kind == "bullRush") {
++    if (const std::optional<std::vector<RushLeg>> legs = bullRushCharge(b, caster, cell)) {
++      if (!legs->empty()) {
++        out.valid = true;
++        const RushLeg& last = legs->back();
++        out.casterDestination = last.path.empty() ? from : last.path.back();
++        out.targetDestination = last.push.path.empty() ? cell : last.push.path.back();
++        out.targetUnit = last.foe;
++        for (const auto& leg : *legs) {
++          out.trajectory.insert(out.trajectory.end(), leg.path.begin(), leg.path.end());
++          out.trajectory.insert(out.trajectory.end(), leg.push.path.begin(), leg.push.path.end());
++        }
++      }
++    }
++  } else if (kind == "abyssalSwap") {
++    if (here >= 0 && canAbyssalSwap(b, caster, static_cast<size_t>(here))) {
++      out.valid = true;
++      out.casterDestination = cell;
++      out.targetDestination = from;
++      out.targetUnit = static_cast<size_t>(here);
++      out.trajectory = {from, cell};
++    }
++  } else if (kind == "leapingStrike") {
++    if (here >= 0) {
++      const EmberNumbers n = emberNumbers(kind, u.level);
++      if (const std::optional<BattleHex> landing = leapLanding(b, caster, static_cast<size_t>(here), n.range)) {
++        out.valid = true;
++        out.casterDestination = landing;
++        out.targetDestination = cell;
++        out.targetUnit = static_cast<size_t>(here);
++        out.trajectory = {from, *landing};
++      }
++    }
++  } else if (kind == "drivingCut") {
++    if (here >= 0 && targetable(b, here) && hexDist(from, cell) == 1) {
++      const BattleHex past = hexBeyond(from, cell);
++      out.valid = true;
++      out.casterDestination = cell;
++      out.targetDestination = past;
++      out.targetUnit = static_cast<size_t>(here);
++      out.trajectory = {from, cell, past};
++    }
++  } else if (kind == "rollingAdvance") {
++    if (here >= 0 && targetable(b, here) && hexDist(from, cell) == 1) {
++      const BattleHex f1 = hexBeyond(from, cell);
++      const BattleHex f2 = hexBeyond(cell, f1);
++      out.valid = true;
++      out.casterDestination = cell;
++      out.targetDestination = f2;
++      out.targetUnit = static_cast<size_t>(here);
++      out.trajectory = {from, cell, f1, f2};
++    }
++  } else if (kind == "shoulderSmash") {
++    if (here >= 0 && targetable(b, here)) {
++      if (const std::optional<BattleHex> m = shoulderMiddle(b, from, cell)) {
++        const BattleHex past = hexBeyond(*m, cell);
++        out.valid = true;
++        out.casterDestination = *m;
++        out.targetDestination = past;
++        out.targetUnit = static_cast<size_t>(here);
++        out.trajectory = {from, *m, cell, past};
++      }
++    }
++  } else if (kind == "longStep" || kind == "partingCut" || kind == "passingStep") {
++    if (hexDist(from, cell) == 1 && techniqueStandable(b, cell)) {
++      out.valid = true;
++      out.casterDestination = cell;
++      out.trajectory = {from, cell};
++    }
++  } else if (kind == "lateralShift") {
++    if (hexDist(from, cell) == 1 && techniqueStandable(b, cell)) {
++      out.valid = true;
++      out.targetDestination = cell;
++      out.trajectory = {from, cell};
++    }
++  }
++  return out;
++}
++
++std::string spellContextInstruction(const Battle& b, size_t caster, const std::string& kind, int stage, bool en) {
++  if (stage < 0) {
++    if (kind == "spearToss") return en ? "Confirm spear toss" : "Confirmar arremesso";
++    if (kind == "hookPull") return en ? "Confirm hook pull" : "Confirmar puxão com gancho";
++    if (kind == "poleVault") return en ? "Confirm pole vault (rear attack)" : "Confirmar salto de vara (golpe pelas costas)";
++    if (kind == "swapPost" || kind == "placeSwap") return en ? "Confirm change of post" : "Confirmar troca de posto";
++    if (kind == "impaleDrag") return en ? "Confirm impale and drag" : "Confirmar empalar e arrastar";
++    if (kind == "sentinelVigil") return en ? "Confirm defensive stance" : "Confirmar postura defensiva";
++    if (kind == "piercingThrust") return en ? "Confirm piercing thrust" : "Confirmar golpe perfurante";
++    if (kind == "sweep") return en ? "Confirm sweeping attack around" : "Confirmar varredura ao redor";
++    if (kind == "trip") return en ? "Confirm trip" : "Confirmar rasteira";
++    if (kind == "disarm") return en ? "Confirm disarm" : "Confirmar desarmar";
++    if (kind == "bullRush") return en ? "Confirm charge" : "Confirmar investida";
++    if (kind == "leapingStrike") return en ? "Confirm leaping strike" : "Confirmar salto com golpe";
++    if (kind == "twinResonance") return en ? "Confirm twin resonance" : "Confirmar ressonância gêmea";
++    if (kind == "circleOfHealing") return en ? "Confirm circle of healing" : "Confirmar círculo de cura";
++    if (kind == "resurrection") return en ? "Confirm resurrection" : "Confirmar ressurreição";
++    if (spellTargetsAlly(kind)) return en ? "Confirm action on ally" : "Confirmar ação no aliado";
++    if (spellAimsDirection(kind)) return en ? "Confirm directional attack" : "Confirmar ataque direcional";
++    if (spellTargetsGroundOrFreeHex(kind)) return en ? "Confirm area cast" : "Confirmar conjuração na área";
++    return en ? "Confirm action" : "Confirmar ação";
++  }
++
++  // Multi-stage abilities
++  if (kind == "twinResonance") {
++    if (stage == 1) return en ? "Select second linked enemy" : "Escolha o segundo inimigo ligado";
++    return en ? "Select first enemy" : "Escolha o primeiro inimigo";
++  }
++  if (kind == "longstepSlash" || kind == "longStep" || kind == "flankStep") {
++    if (stage == 1) return en ? "Select enemy to strike (or step hex)" : "Escolha o inimigo para golpear (ou o hex de avanço)";
++    return en ? "Select adjacent free hex to step into (or click enemy directly)" : "Escolha o hex livre adjacente para avançar (ou clique direto no inimigo)";
++  }
++  if (kind == "partingCut") {
++    if (stage == 1) return en ? "Select retreat hex" : "Escolha o hex de recuo";
++    return en ? "Select adjacent enemy to strike" : "Escolha o inimigo adjacente para golpear";
++  }
++  if (kind == "passingStep") {
++    if (stage == 1) return en ? "Select flanking hex" : "Escolha o hex de flanco";
++    return en ? "Select adjacent enemy" : "Escolha o inimigo adjacente";
++  }
++  if (kind == "lateralShift") {
++    if (stage == 1) return en ? "Select destination hex to shift enemy" : "Escolha o hex para onde deslocar o inimigo";
++    return en ? "Select adjacent enemy" : "Escolha o inimigo adjacente";
++  }
++  if (caster < b.units().size()) {
++    if (kind == "magicMissile" || kind == "magicMissileV2") {
++      const int count = magicMissileCount(b.units()[caster].level);
++      if (stage > 0) return en ? std::format("Select target for missile {} of {}", stage + 1, count) : std::format("Escolha o alvo do míssil {} de {}", stage + 1, count);
++      return en ? std::format("Select target for missile 1 of {}", count) : std::format("Escolha o alvo do míssil 1 de {}", count);
++    }
++    if (kind == "wrathOfTheSkies") {
++      const int count = emberNumbers(kind, b.units()[caster].level).count;
++      if (stage > 0) return en ? std::format("Select target for bolt {} of {}", stage + 1, count) : std::format("Escolha o alvo do raio {} de {}", stage + 1, count);
++      return en ? std::format("Select target for bolt 1 of {}", count) : std::format("Escolha o alvo do raio 1 de {}", count);
++    }
++    if (kind == "multiShot") {
++      const int count = multiShotTargets(b.units()[caster].level);
++      if (stage > 0) return en ? std::format("Select target for arrow {} of {}", stage + 1, count) : std::format("Escolha o alvo da flecha {} de {}", stage + 1, count);
++      return en ? std::format("Select target for arrow 1 of {}", count) : std::format("Escolha o alvo da flecha 1 de {}", count);
++    }
++  }
++
++  // Single-stage abilities
++  if (kind == "spearToss") {
++    return en ? "Select landing or collision hex" : "Escolha o hex de destino ou impacto";
++  }
++  if (kind == "hookPull") {
++    return en ? "Select enemy to pull" : "Escolha o inimigo a puxar";
++  }
++  if (kind == "poleVault") {
++    return en ? "Select adjacent enemy to vault over" : "Escolha o inimigo adjacente para saltar por cima";
++  }
++  if (kind == "swapPost" || kind == "placeSwap") {
++    return en ? "Select ally to swap places" : "Escolha o aliado para trocar de lugar";
++  }
++  if (kind == "impaleDrag") {
++    return en ? "Select enemy or straight line behind to drag" : "Escolha o inimigo ou a reta atrás dele para arrastar";
++  }
++  if (kind == "sentinelVigil") {
++    return en ? "Confirm defensive stance" : "Confirmar postura defensiva";
++  }
++  if (kind == "piercingThrust") {
++    return en ? "Select thrust direction in front" : "Escolha a reta na frente para o golpe perfurante";
++  }
++  if (kind == "sweep") {
++    return en ? "Confirm sweeping attack around" : "Confirmar varredura ao redor";
++  }
++  if (kind == "trip" || kind == "disarm" || kind == "doubleStrike" || kind == "shieldBash" ||
++      kind == "guardBreak" || kind == "holyStrike" || kind == "executionerStrike") {
++    return en ? "Select enemy in weapon reach" : "Escolha o inimigo ao alcance da arma";
++  }
++  if (kind == "bullRush") {
++    return en ? "Select enemy in line to charge" : "Escolha o inimigo em linha para a investida";
++  }
++  if (kind == "leapingStrike") {
++    return en ? "Select enemy to leap strike" : "Escolha o inimigo para o salto de ataque";
++  }
++  if (kind == "cleave") {
++    return en ? "Choose attack direction for sweeping arc" : "Escolha a direção para o arco de ataque";
++  }
++  if (kind == "shoulderSmash") {
++    return en ? "Select enemy 2 hexes away in straight line" : "Escolha o inimigo a 2 hexes em linha reta";
++  }
++  if (kind == "resurrection") {
++    return en ? "Select adjacent fallen ally" : "Escolha o aliado caído adjacente";
++  }
++  if (kind == "circleOfHealing") {
++    return en ? "Select center of healing circle" : "Escolha o centro do círculo de cura";
++  }
++  if (kind == "cureDisease") {
++    return en ? "Select diseased or poisoned ally" : "Escolha o aliado doente ou envenenado";
++  }
++  if (cureData(kind) != nullptr || kind == "holyTouch") {
++    return en ? "Select hurt ally to heal" : "Escolha o aliado ferido para curar";
++  }
++  if (spellTargetsAlly(kind)) {
++    return en ? "Select target ally" : "Escolha o aliado alvo";
++  }
++  if (spellAimsDirection(kind)) {
++    return en ? "Choose attack direction" : "Escolha a direção do ataque";
++  }
++  if (spellTargetsGroundOrFreeHex(kind)) {
++    return en ? "Select target area" : "Escolha o ponto de impacto";
++  }
++  return en ? "Select target" : "Escolha o alvo";
++}
++
++bool spellHasValidTargets(const Battle& b, size_t caster, const std::string& kind) {
++  if (caster >= b.units().size()) return false;
++  const BattleUnit& u = b.units()[caster];
++  if (!u.alive || spellPassive(kind)) return false;
++  if (spellInstant(kind) || spellSelfArea(kind)) return true;
++
++  if (kind == "spearToss") {
++    const EmberNumbers n = emberNumbers(kind, u.level);
++    for (const BattleHex& h : Battle::neighbors(u.x, u.y)) {
++      const int foe = occAt(b, h);
++      if (targetable(b, foe) && oneHex(b.units()[static_cast<size_t>(foe)])) {
++        if (tossPlan(b, caster, h, n)) return true;
++      }
++    }
++    return false;
++  }
++  if (kind == "impaleDrag") {
++    const EmberNumbers n = emberNumbers(kind, u.level);
++    for (const BattleHex& h : Battle::neighbors(u.x, u.y)) {
++      const int foe = occAt(b, h);
++      if (targetable(b, foe) && oneHex(b.units()[static_cast<size_t>(foe)])) {
++        if (dragPlan(b, caster, h, n)) return true;
++      }
++    }
++    return false;
++  }
++  if (kind == "poleVault") {
++    for (const BattleHex& h : Battle::neighbors(u.x, u.y)) {
++      if (vaultLanding(b, caster, h)) return true;
++    }
++    return false;
++  }
++  if (kind == "hookPull") {
++    const EmberNumbers n = emberNumbers(kind, u.level);
++    for (size_t i = 0; i < b.units().size(); ++i) {
++      const BattleUnit& t = b.units()[i];
++      if (!t.alive || t.side == u.side || t.hidden) continue;
++      if (hookPlan(b, caster, {t.x, t.y}, n)) return true;
++    }
++    return false;
++  }
++  if (kind == "swapPost" || kind == "placeSwap") {
++    const EmberNumbers n = emberNumbers(kind, u.level);
++    for (size_t i = 0; i < b.units().size(); ++i) {
++      const BattleUnit& a = b.units()[i];
++      if (i == caster || !a.alive || a.side != u.side) continue;
++      if (swapAlly(b, caster, {a.x, a.y}, n) >= 0) return true;
++    }
++    return false;
++  }
++  if (kind == "resurrection") {
++    for (const BattleHex& h : Battle::neighbors(u.x, u.y)) {
++      if (fallenAllyAt(b, caster, h) >= 0 && occAt(b, h) < 0) return true;
++    }
++    return false;
++  }
++  if (kind == "cureDisease") {
++    const int reach = grownReach(kind, kCureDiseaseRange, u.level);
++    for (size_t i = 0; i < b.units().size(); ++i) {
++      const BattleUnit& a = b.units()[i];
++      if (!a.alive || a.side != u.side) continue;
++      if (hexDist({u.x, u.y}, {a.x, a.y}) <= reach && (a.diseased || a.poisoned)) return true;
++    }
++    return false;
++  }
++  if (const CureData* cure = cureData(kind)) {
++    const int reach = grownReach(kind, cure->range, u.level);
++    for (size_t i = 0; i < b.units().size(); ++i) {
++      const BattleUnit& a = b.units()[i];
++      if (!a.alive || a.side != u.side) continue;
++      if (hexDist({u.x, u.y}, {a.x, a.y}) <= reach && (b.debugFreeCast() || a.hp < a.maxHp)) return true;
++    }
++    return false;
++  }
++  if (kind == "holyTouch") {
++    for (size_t i = 0; i < b.units().size(); ++i) {
++      const BattleUnit& a = b.units()[i];
++      if (i == caster || !a.alive || a.side != u.side) continue;
++      if (hexDist({u.x, u.y}, {a.x, a.y}) <= 1 && (b.debugFreeCast() || a.hp < a.maxHp)) return true;
++    }
++    return false;
++  }
++  if (kind == "detonateSummon") {
++    return !summonsOf(b, caster).empty();
++  }
++  if (kind == "bullRush") {
++    for (size_t i = 0; i < b.units().size(); ++i) {
++      const BattleUnit& f = b.units()[i];
++      if (!f.alive || f.side == u.side || f.hidden) continue;
++      if (bullRushCharge(b, caster, {f.x, f.y})) return true;
++    }
++    return false;
++  }
++  if (kind == "leapingStrike") {
++    const EmberNumbers n = emberNumbers(kind, u.level);
++    for (size_t i = 0; i < b.units().size(); ++i) {
++      const BattleUnit& f = b.units()[i];
++      if (!f.alive || f.side == u.side || f.hidden) continue;
++      if (leapLanding(b, caster, i, n.range)) return true;
++    }
++    return false;
++  }
++  if (spellTargetsAlly(kind)) {
++    for (size_t i = 0; i < b.units().size(); ++i) {
++      const BattleUnit& a = b.units()[i];
++      if (!a.alive || a.side != u.side) continue;
++      if (spellAimValid(b, caster, kind, {a.x, a.y})) return true;
++    }
++    return false;
++  }
++  if (spellAimsDirection(kind) || spellTargetsGroundOrFreeHex(kind)) {
++    return !spellZone(b, caster, kind).empty();
++  }
++  for (size_t i = 0; i < b.units().size(); ++i) {
++    const BattleUnit& f = b.units()[i];
++    if (!f.alive || f.side == u.side || f.hidden) continue;
++    if (spellAimValid(b, caster, kind, {f.x, f.y})) return true;
++  }
++  return false;
++}
++
+ }  // namespace ember

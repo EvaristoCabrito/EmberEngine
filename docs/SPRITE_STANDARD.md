@@ -36,7 +36,10 @@ Valem para herói, monstro, animal e invocação, sem exceção; uma unidade que
 - **Um chão**: os clipes de uma mesma tomada usam a mesma linha de chão. Quem flutua: o chão é o que se mede onde ele pousa (o corpo na
   mesma altura em toda pose flutuando).
 - **Passada medida**: o número de passadas de cada laço de andar sai de `tools/scripts/sprites/walk_stride.py` sobre o laço cortado; nunca
-  o 1.0 de fábrica.
+  o 1.0 de fábrica. Andar para cima / para baixo (nome do clipe termina em `-up` / `-down`): as pernas se sobrepõem e o contorno delas
+  repete a cada passada inteira, não a cada passo; o `walk_stride.py` mede nessas vistas a passada pelo período de cada pé (o ponto mais
+  baixo de cada pé), não pelo contorno (Vespera, 2026-11-25: o andar para cima lia 2.0, o certo é 3.5, e o jogo tocava o laço 1,7x
+  rápido demais: "ela está super rápida"). Nunca um número de andar de frente ou de costas lido pelo contorno.
 - **Abrir / fechar**: uma unidade com pose de abrir (`unfold`) e de fechar (`fold`) faz as duas sempre, ao sair andando e ao parar, e em
   volta de toda habilidade que use os membros abertos; nunca às vezes. Sem vídeo próprio de fechar, o fechar é o abrir tocado de trás
   para frente (`sprite-overrides.json` "reversed": a pose que é outra da mesma unidade ao contrário, a mesma arte); um vídeo próprio
@@ -53,6 +56,8 @@ Valem para herói, monstro, animal e invocação, sem exceção; uma unidade que
 
 ## 4. O corte e o jogo
 - Sempre Alta (o tamanho do vídeo) + Média 64 + Leve 36 (~610 px) + Cinemática (feita pelo `video_sprite.py`).
+- **Média e Leve = o desenho completo em menos quadros (o usuário, 2026-11-26):** os 64 / 36 quadros são tirados espaçados do laço
+  inteiro, do primeiro ao último quadro do vídeo, nunca um pedaço dele.
 - **O padrão da Alta, para TODOS os personagens (o da Isolde; o usuário, 2026-11-25: "todos os personagens devem seguir esse padrão"):
   vídeos em 1080p, todo quadro no tamanho do próprio vídeo, sem reduzir.** Um vídeo de 720p fica abaixo do padrão: entra só para testar,
   e o usuário manda a versão aumentada para 1080p do mesmo vídeo (mesmo movimento), que substitui o clipe. O agente nunca aumenta um 720p.

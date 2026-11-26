@@ -167,6 +167,7 @@ class MeshScene {
     float distance = 0.0f;
     ImageUpload upload;   // geometry bytes
     bool uploaded = false;
+    bool blocked = false;
     std::vector<Texture*> textures;  // the textures its materials use (streaming: what each instance needs)
     uint32_t materialBase = 0;
     bool pinned = false;

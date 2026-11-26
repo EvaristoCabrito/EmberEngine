@@ -336,7 +336,41 @@ void DebugUi::uploadTextures(VkCommandBuffer cmd, ImDrawData* drawData) {
       desc.format = VK_FORMAT_R8G8B8A8_UNORM;
       desc.extent = {static_cast<uint32_t>(tex->Width), static_cast<uint32_t>(tex->Height)};
       desc.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-      t->image = createImage(context_, desc);
+      if (!tryCreateImage(context_, desc, t->image)) {
+        const bool hasOldRetired = std::any_of(retired_.begin(), retired_.end(),
+                                               [&](const Retired& r) { return r.record < records_; });
+        const bool hasWantDestroy = std::any_of(drawData->Textures->begin(), drawData->Textures->end(),
+                                                [](const ImTextureData* d) { return d->Status == ImTextureStatus_WantDestroy; });
+        if (hasOldRetired || hasWantDestroy) {
+          vkDeviceWaitIdle(context_.device);
+          std::erase_if(retired_, [&](Retired& r) {
+            if (r.record >= records_) return false;
+            if (r.staging.buffer) destroyBuffer(context_, r.staging);
+            if (r.texture) {
+              destroyImage(context_, r.texture->image);
+              delete r.texture;
+            }
+            return true;
+          });
+          for (ImTextureData* d : *drawData->Textures) {
+            if (d->Status != ImTextureStatus_WantDestroy) continue;
+            auto* old = static_cast<UiTexture*>(d->BackendUserData);
+            if (old && textures_.erase(old)) {
+              ImGui_ImplVulkan_RemoveTexture(old->set);
+              destroyImage(context_, old->image);
+              delete old;
+            }
+            d->SetTexID(ImTextureID_Invalid);
+            d->BackendUserData = nullptr;
+            d->UnusedFrames = 0;
+            d->SetStatus(ImTextureStatus_Destroyed);
+          }
+        }
+        if (!tryCreateImage(context_, desc, t->image)) {
+          delete t;
+          (void)createImage(context_, desc);
+        }
+      }
       t->set = ImGui_ImplVulkan_AddTexture(t->image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
       textures_.insert(t);
       tex->SetTexID(reinterpret_cast<ImTextureID>(t->set));
@@ -364,6 +398,30 @@ void DebugUi::uploadTextures(VkCommandBuffer cmd, ImDrawData* drawData) {
                 VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT});
     retired_.push_back({staging, nullptr, records_});
     tex->SetStatus(ImTextureStatus_OK);
+  }
+}
+
+void DebugUi::flushReleasedTextures() {
+  vkDeviceWaitIdle(context_.device);
+  for (Retired& r : retired_) {
+    if (r.staging.buffer) destroyBuffer(context_, r.staging);
+    if (r.texture) {
+      destroyImage(context_, r.texture->image);
+      delete r.texture;
+    }
+  }
+  retired_.clear();
+  for (ImTextureData* tex : ImGui::GetPlatformIO().Textures) {
+    if (!tex->WantDestroyNextFrame && tex->Status != ImTextureStatus_WantDestroy) continue;
+    if (auto* t = static_cast<UiTexture*>(tex->BackendUserData); t && textures_.erase(t)) {
+      ImGui_ImplVulkan_RemoveTexture(t->set);
+      destroyImage(context_, t->image);
+      delete t;
+    }
+    tex->SetTexID(ImTextureID_Invalid);
+    tex->BackendUserData = nullptr;
+    tex->UnusedFrames = 0;
+    tex->SetStatus(ImTextureStatus_Destroyed);
   }
 }
 

@@ -290,8 +290,8 @@ static void testSaveLoadPreservation() {
   reg.clear();
   reg.setLogicalMap("watchtower", 500);
 
-  reg.cast("arcaneBeam", "mage1", "watchtower", "watchtower-f1", 2, {5.0f, 1.0f, 5.0f}, {1, 0, 0}, 500);  // 80 min -> 580
-  reg.cast("anchoredLight", "conjurer1", "watchtower", "watchtower-f1", 1, {8.0f, 0.6f, 8.0f}, {0, 0, 1}, 500); // 60 min -> 560
+  reg.cast("arcaneBeam", "mage1", "watchtower", "watchtower-f1", 2, {5.0f, 1.5f, 5.0f}, {1, 0, 0}, 500, nullptr, 2, 0.25f);  // 80 min -> 580
+  reg.cast("anchoredLight", "conjurer1", "watchtower", "watchtower-f1", 1, {8.0f, 0.85f, 8.0f}, {0, 0, 1}, 500, nullptr, 1, 0.0f); // 60 min -> 560
 
   // Advance to minute 520 (20 min passed)
   reg.updateTime(520);
@@ -310,6 +310,11 @@ static void testSaveLoadPreservation() {
   assert(beam != nullptr);
   assert(beam->minutesRemaining(520) == 60);  // 80 - 20
   assert(beam->power == 2);
+  assert(beam->look == 2);
+  assertAlmostEqual(beam->groundY, 0.25f, 1e-4f, "saved groundY");
+  const LightSpellInstance* anchored = reg.findCasterSpell("conjurer1");
+  assert(anchored != nullptr);
+  assert(anchored->look == 1);
 
   // Now restore at minute 570: anchoredLight (expired at 560) must be discarded!
   reg.clear();
@@ -366,7 +371,7 @@ static void testRecastingAndSimultaneousLamps() {
   std::vector<LocalLight> lights = reg.activeLightsForFloor("watchtower-f1", "watchtower", 710, [](const std::string&) { return std::nullopt; });
   assert(lights.size() == 2);
   // Intensity is softly dampened to avoid blown out colors
-  const float undampedLuma = glm::length(kColorArcaneBeam * (8.5f + 0.35f));
+  const float undampedLuma = glm::length(kColorArcaneBeam * reg.findCasterSpell("mage1")->intensity);
   for (const LocalLight& l : lights) {
     assert(glm::length(l.color) < undampedLuma);
   }

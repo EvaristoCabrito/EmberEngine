@@ -340,7 +340,8 @@ void DreamWeb::build(float now, const Camera&, VfxFrame& frame, std::vector<VfxL
   const glm::mat4 group = toWorld * glm::translate(glm::mat4(1.0f), netCentre_);
   const float tightening = kTightening * three::smoothstep(e, 1.04f, 1.48f);
   auto draw = [&](VfxMaterial material, uint32_t first, size_t count, const glm::mat4& model, glm::vec3 sight, glm::vec4 p0, glm::vec4 p1,
-                  glm::vec4 color, VfxBlend blend, uint32_t firstInstance = 0xFFFFFFFFu, uint32_t instances = 1) {
+                  glm::vec4 color, VfxBlend blend, uint32_t firstInstance = 0xFFFFFFFFu, uint32_t instances = 1,
+                  bool underCards = false, bool behindCard = false, glm::vec3 cardAt = glm::vec3(0.0f)) {
     VfxDraw d;
     d.gpu.model = model;
     d.gpu.params0 = p0;
@@ -354,6 +355,9 @@ void DreamWeb::build(float now, const Camera&, VfxFrame& frame, std::vector<VfxL
     d.instances = instances;
     d.blend = blend;
     d.depthTest = true;
+    d.underCards = underCards;
+    d.behindCard = behindCard;
+    d.cardAt = cardAt;
     frame.draws.push_back(d);
   };
 
@@ -367,13 +371,13 @@ void DreamWeb::build(float now, const Camera&, VfxFrame& frame, std::vector<VfxL
       const int variant = ((static_cast<int>(std::floor(hex.x * 3.0f)) * 7) ^ (static_cast<int>(std::floor(hex.z * 5.0f)) * 13)) & 1;
       const glm::mat4 model = glm::translate(glm::mat4(1.0f), hex + glm::vec3(0.0f, 0.05f, 0.0f)) * toWorld * glm::scale(glm::mat4(1.0f), glm::vec3(0.95f));
       draw(VfxMaterial::WebThread, first[variant], floor_[variant].size(), model, hex, {e, kPulseSpeed, grown, 0.0f},
-           {0.012f, 0.85f * (1.0f + bind * 0.9f), 0.85f * live, 0.0f}, {}, VfxBlend::Additive);
+           {0.012f, 0.85f * (1.0f + bind * 0.9f), 0.85f * live, 0.0f}, {}, VfxBlend::Additive, 0xFFFFFFFFu, 1, true);
     }
   }
 
   // --- The net, hung over the zone ---
   draw(VfxMaterial::WebThread, frame.addVertices(net_), net_.size(), group, centre_, {e, kPulseSpeed, formation, tightening},
-       {kDisplacement, 0.9f * (1.0f + bind * kPulseBrightness * 0.42f), 0.9f * live, 0}, {}, VfxBlend::Additive);
+       {kDisplacement, 0.9f * (1.0f + bind * kPulseBrightness * 0.42f), 0.9f * live, 0}, {}, VfxBlend::Additive, 0xFFFFFFFFu, 1, false, true, centre_);
 
   // --- The knots (updateNodes) ---
   {
@@ -392,7 +396,7 @@ void DreamWeb::build(float now, const Camera&, VfxFrame& frame, std::vector<VfxL
     frame.instances.insert(frame.instances.end(), knots.begin(), knots.end());
     draw(VfxMaterial::Standard, frame.addVertices(knotGeometry()), knotGeometry().size(), group, centre_, {0.25f, 0.08f, 0, 0},
          glm::vec4(three::hex(0x7959ff), 1.8f + std::exp(-std::pow((e - 1.42f) / 0.14f, 2.0f)) * 4.0f), glm::vec4(three::hex(0xb8a2ff), 0.92f * live),
-         VfxBlend::Alpha, firstInstance, static_cast<uint32_t>(knots.size()));
+         VfxBlend::Alpha, firstInstance, static_cast<uint32_t>(knots.size()), false, true, centre_);
   }
 
   // --- Drifting shards (updateParticles) ---
@@ -412,7 +416,7 @@ void DreamWeb::build(float now, const Camera&, VfxFrame& frame, std::vector<VfxL
     const uint32_t firstInstance = static_cast<uint32_t>(frame.instances.size());
     frame.instances.insert(frame.instances.end(), shards.begin(), shards.end());
     draw(VfxMaterial::Standard, frame.addVertices(shardGeometry()), shardGeometry().size(), group, centre_, {0.38f, 0.05f, 0, 0},
-         glm::vec4(three::hex(0x8061ff), 1.25f), glm::vec4(three::hex(0xb9a5ff), live), VfxBlend::Alpha, firstInstance, static_cast<uint32_t>(shards.size()));
+         glm::vec4(three::hex(0x8061ff), 1.25f), glm::vec4(three::hex(0xb9a5ff), live), VfxBlend::Alpha, firstInstance, static_cast<uint32_t>(shards.size()), false, true, centre_);
   }
 
   // --- Each unit inside: its own strands wound round its body (renderOrder 4) ---
@@ -421,7 +425,7 @@ void DreamWeb::build(float now, const Camera&, VfxFrame& frame, std::vector<VfxL
     const glm::mat4 model = glm::translate(glm::mat4(1.0f), w.at.feet + glm::vec3(0.0f, w.at.height * 0.46f, 0.0f)) * toWorld *
                             glm::scale(glm::mat4(1.0f), glm::vec3(scale));
     draw(VfxMaterial::WebThread, frame.addVertices(w.strands), w.strands.size(), model, w.at.feet, {e, kPulseSpeed, formation, tightening},
-         {kDisplacement * 0.5f, 0.75f * (1.0f + bind * kPulseBrightness * 0.2f), 0.9f * live, 0}, {}, VfxBlend::Additive);
+         {kDisplacement * 0.5f, 0.75f * (1.0f + bind * kPulseBrightness * 0.2f), 0.9f * live, 0}, {}, VfxBlend::Additive, 0xFFFFFFFFu, 1, false, true, w.at.feet);
   }
 
   // --- Lights: the central one forming, flashing on the bind, sustained; two travelling with the pulses ---

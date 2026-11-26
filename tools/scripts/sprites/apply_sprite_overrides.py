@@ -53,6 +53,41 @@ def apply_pingpong(over, roster):
                 print(f"{pp['hero']} {p['pose']}: back and forth, {n} frames at {per:.2f} ticks ({len(old)} -> {len(p['pace'])} ticks)")
 
 
+def apply_reversed(over, roster):
+    """"reversed": a pose that is another pose of the same hero played backwards, the same art and frames (the user, 2026-11-25: "porque
+    ele precisa de um fechar e não pode rodar de trás para frente quando ele abre?"): e.g. "fold" = "unfold" backwards for a unit with no
+    video of its own closing. A pose of its own (cut from a video) always wins: then nothing is added. Rebuilt on every run."""
+    for rv in over.get("reversed", []):
+        hero = next((h for h in roster["heroes"] if h.get("key") == rv["hero"]), None)
+        if hero is None:
+            continue
+        hero["poses"] = [p for p in hero["poses"] if not (p["pose"] == rv["pose"] and p.get("reversedOf"))]
+        if any(p["pose"] == rv["pose"] for p in hero["poses"]):
+            print(f"{rv['hero']} {rv['pose']}: has its own clip, not reversed")
+            continue
+        src = next((p for p in hero["poses"] if p["pose"] == rv["from"] and p.get("pace")), None)
+        if src is None:
+            continue
+        p = json.loads(json.dumps(src))
+        p.update(pose=rv["pose"], label=rv.get("label", rv["pose"]), pace=list(reversed(src["pace"])), reversedOf=rv["from"])
+        p.pop("impact", None)
+        hero["poses"].append(p)
+        print(f"{rv['hero']} {rv['pose']}: {rv['from']} backwards ({len(p['pace'])} ticks)")
+
+
+def apply_then(over, roster):
+    """"then": the pose a one-shot pose is followed by, whole, before the idle (the engine's HeroPose::then; the user, 2026-11-25: he opens
+    and closes his limbs round a skill that needs them open, e.g. the Birolho Legs' attack2 then "fold"). Its Left variant too."""
+    for t in over.get("then", []):
+        hero = next((h for h in roster["heroes"] if h.get("key") == t["hero"]), None)
+        if hero is None:
+            continue
+        for p in hero["poses"]:
+            if p["pose"] in (t["pose"], t["pose"] + "Left"):
+                p["then"] = t["then"]
+                print(f"{t['hero']} {p['pose']}: then {t['then']}")
+
+
 def main():
     over = load(os.path.join(ROOT, "content", "sprite-overrides.json"))
     manifest_path = os.path.join(ROOT, "build", "sprites", "battle.sprites.json")
@@ -274,6 +309,8 @@ def main():
             print(f"{cp['key']}: {st['hero']}'s {len(dst['poses'])} poses at x{cp['scale']}")
 
     apply_pingpong(over, roster)
+    apply_reversed(over, roster)
+    apply_then(over, roster)
 
     # "speed": a pose's own clip played faster (its pace sampled `factor` times as fast, so the pose is that much shorter in
     # the fight); marked on the pose so a second run does nothing.

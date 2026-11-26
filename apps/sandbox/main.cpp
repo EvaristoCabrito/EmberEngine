@@ -1119,6 +1119,8 @@ int runCapture(const Options& o) {
           logInfo("then-mission {:.2f} s: {} closes, {} opens", t, o.titleScreen, thenMission);
           vkDeviceWaitIdle(context.device);
           stage.reset();
+          releaseUiImages();
+          ui.flushReleasedTextures();
           stage = makeMission(std::exchange(thenMission, std::string()));
           if (o.curtain) curtain.open(loading::Curtain::Kind::Battle, t);
           continue;
@@ -1539,6 +1541,7 @@ int runWindow(const Options& o) {
   // A battle: the curtain shown for one frame over a blank screen before the battle is built (building it blocks).
   const auto curtainBeforeBattle = [&] {
     releaseUiImages();  // the world maps' paintings and the menus' art leave the GPU for the fight (back when drawn again)
+    ui.flushReleasedTextures();
     curtain.open(loading::Curtain::Kind::Battle, clockNow());
     stage = std::make_unique<BlankStage>();
     services.frame(ui, renderer, stage.get(), swapchain->extent(), 0.0f, [&] { return renderer.renderFrame(static_cast<float>(clockNow())); });
@@ -1793,6 +1796,8 @@ int runWindow(const Options& o) {
         stage = makeTitle();
       } else if (openEditor && testSession) {
         inEditorTest = false;
+        releaseUiImages();
+        ui.flushReleasedTextures();
         stage = makeEditor();
       } else if (openTest && testSession) {
         stage = makeTest(*openTest);
