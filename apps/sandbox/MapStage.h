@@ -9521,7 +9521,7 @@ class MapStage final : public Stage {
     // A spell that leaves the caster's hands (Mãos Flamejantes, Sopro Venenoso; since 2026-10-18 also Míssil Mágico, Bola de Fogo,
     // Veneno Cáustico, Frost: the user, "para o resto usar a mesma regra do burning hands"; not Relâmpago, it falls from the sky).
     const bool fromHands = s.kind == "burningHands" || s.kind == "poisonBreath" || s.kind == "magicMissile" || s.kind == "magicMissileV2" ||
-                           s.kind == "fireball" || s.kind == "causticVenom" || s.kind == "frost";
+                           s.kind == "fireball" || s.kind == "causticVenom" || s.kind == "frost" || s.kind == "waterJet" || s.kind == "tidalWave";
     // Aimed into the board, not at the camera (into the screen and to the side both; the user, 2026-10-17: "mesmo deste angulo ele
     // precisa virar de costas", then "de lado fica de costas tbm"): within 60 degrees of straight toward the camera keeps the front.
     auto aimedAway = [&](const std::vector<SpellEffects::Spot>& at) {
@@ -13085,14 +13085,14 @@ class MapStage final : public Stage {
                                                                      {"fire", IM_COL32(170, 70, 20, 255)},     {"ice", IM_COL32(60, 120, 170, 255)},
                                                                      {"lightning", IM_COL32(90, 110, 180, 255)}, {"ember", IM_COL32(190, 90, 25, 255)},
                                                                      {"steel", IM_COL32(95, 105, 120, 255)},    {"wood", IM_COL32(110, 85, 50, 255)},
-                                                                     {"arcane", IM_COL32(110, 70, 180, 255)}};
+                                                                     {"arcane", IM_COL32(110, 70, 180, 255)}, {"water", IM_COL32(30, 120, 150, 255)}};
       ImU32 back = IM_COL32(60, 60, 60, 255);
       const std::string name = ember::spellName(kind);
       static const std::map<std::string, const char*> kElementOf = {
           {"markOfRuin", "darkness"},  {"creepingPlague", "poison"}, {"lifeDrain", "darkness"}, {"shroudOfShadows", "darkness"}, {"hemorrhage", "darkness"},
           {"profaneSilence", "darkness"}, {"blackPestilence", "poison"}, {"curseOfDecay", "darkness"}, {"soulHarvest", "darkness"}, {"devouringVoid", "darkness"},
           {"pillarOfFlame", "fire"},   {"iceLance", "ice"},          {"thunderstorm", "lightning"}, {"meteor", "fire"}, {"absoluteZero", "ice"},
-          {"chainLightning", "lightning"}, {"eruption", "fire"},     {"glacialGale", "ice"},    {"wrathOfTheSkies", "lightning"}, {"primordialEmber", "ember"},
+          {"chainLightning", "lightning"}, {"eruption", "fire"},     {"glacialGale", "ice"},    {"wrathOfTheSkies", "lightning"}, {"primordialEmber", "ember"}, {"tidalWave", "water"}, {"waterJet", "water"},
           // the Guerreiro's and the Arqueiro's (no icon yet: steel / wood)
           {"steelWhirlwind", "steel"}, {"guardBreak", "steel"}, {"warCry", "steel"}, {"leapingStrike", "steel"},
           {"venomArrow", "wood"}, {"arrowRain", "wood"}, {"explosiveArrow", "wood"}, {"cripplingShot", "wood"}, {"arrowStorm", "wood"}, {"deathShot", "wood"},
@@ -16016,7 +16016,7 @@ class MapStage final : public Stage {
     static const std::unordered_map<std::string, uint32_t> kTint = {
         {"fireball", 0xff8a3c}, {"ignite", 0xff8a3c}, {"burningHands", 0xff8a3c}, {"frost", 0x9fd6ff}, {"iceStorm", 0x9fd6ff}, {"lightning", 0xb8d2ff},
         {"shock", 0xb8d2ff}, {"causticVenom", 0x86ff7c}, {"minorVenom", 0x86ff7c}, {"poisonBreath", 0x86ff7c}, {"lifeDrain", 0xff5a6e},
-        {"magicMissile", 0xc7b4ff}, {"magicMissileV2", 0xc7b4ff}, {"phantasmalForce", 0xc7b4ff}, {"phantasmalForce2", 0xc7b4ff}, {"fantomForce", 0xc7b4ff},
+        {"magicMissile", 0xc7b4ff}, {"magicMissileV2", 0xc7b4ff}, {"phantasmalForce", 0xc7b4ff}, {"phantasmalForce2", 0xc7b4ff}, {"waterJet", 0x5fd3e6}, {"tidalWave", 0x5fd3e6}, {"fantomForce", 0xc7b4ff},
         {"webOfDreams", 0xd8c8ff}, {"warp", 0xb48cff}};
     uint32_t h = 0xffe6c0;
     if (attack) h = hero == "isolde" ? 0xff5a2a : hero == "voss" ? 0xa066ff : 0xffd45a;  // the staff hits: Isolde's ember, Voss's violet

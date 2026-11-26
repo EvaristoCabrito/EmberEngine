@@ -75,6 +75,7 @@ int SpellEffects::looks(const std::string& kind) {
   if (kind == "magicMissile" || kind == "magicMissileV2") return 5;
   if (kind == "phantasmalForce") return 2;  // 01 Ember's PhantasmalForceVFX, 02 the arcane energy (vfx/ArcaneFx)
   if (kind == "phantasmalForce2") return 1;  // the Necromante's T6: Força Fantasmagórica 02's effect (vfx/ArcaneFx Phantasmal)
+  if (kind == "waterJet" || kind == "tidalWave") return 1;  // the water (vfx/WaterFx): the Sahagin's jet, the Elementalista's wave
   if (kind == "divineBolt") return 2;  // 01: ours in 3D (vfx/SpellBolts), 02 the strike from the sky (vfx/HolyFx)
   if (kind == "turnUndead") return 1;  // 01: ours in 3D (vfx/TurnUndead)
   if (isLightning(kind, 2)) return 5;  // 01 the flipbook cards, 02 ours in 3D (vfx/Lightning), 03 02 small (the enemies'), 04 02 refined, 05 vfx/StormBolt
@@ -163,6 +164,7 @@ int SpellEffects::classicLook(const std::string& kind) {
   if (kind == "creepingPlague" || kind == "blackPestilence") return 2;
   if (kind == "phantasmalForce") return 2;                           // the arcane energy (01 = PhantasmalForceVFX, the enemies')
   if (kind == "phantasmalForce2") return 1;                          // Força Fantasmagórica 02's effect
+  if (kind == "waterJet" || kind == "tidalWave") return 1;          // the water (vfx/WaterFx)
   if (kind == "webOfDreams") return 2;                               // ours in 3D (DreamWeb: shot, floor, net; 01 = WebOfDreamsVFX)
   if (kind == "burningHands") return 2;                              // BurningHandsV2VFX, its cone opening outward (02)
   if (kind == "cleave") return 1;                                    // CleaveSweepVFX
@@ -214,6 +216,12 @@ float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& c
   if (kind == "fireball" && look >= 1 && !targets.empty()) return Fireball::travelSeconds(classicOrigin(caster), fireballTarget(targets));
   if (kind == "ignite" && look >= 1) return Ignite::kLead;  // no flight: the heat gathers over the area, then it ignites
   if (kind == "phantasmalForce" && look == 1) return PhantasmalForce::kImpactAt;
+  if (isWater(kind, look) && !targets.empty()) {  // the water gathers, then the jet's flight / the wave's run to its nearest hex
+    const glm::vec3* first = &targets.front().feet;
+    for (const Spot& s : targets)
+      if (glm::length(glm::vec2(s.feet.x - caster.feet.x, s.feet.z - caster.feet.z)) < glm::length(glm::vec2(first->x - caster.feet.x, first->z - caster.feet.z))) first = &s.feet;
+    return WaterSpell::lead(kind == "waterJet" ? WaterSpell::Style::Jet : WaterSpell::Style::Wave, caster.feet, caster.body, *first);
+  }
   if (isArcane(kind, look) && !targets.empty())
     return ArcaneSpell::lead(kind == "phantasmalForce" || kind == "phantasmalForce2" ? ArcaneSpell::Style::Phantasmal : ArcaneSpell::Style::Missile, caster.feet,
                              targets.front().feet);
@@ -317,6 +325,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     if (kind == "primordialEmber" && look == 2 && !primordialEmbers_.empty()) end = std::max(end, primordialEmbers_.back().end());
     if (isFrost(kind, look) && !frosts_.empty()) end = std::max(end, frosts_.back().end());
     if (isIce(kind, look) && !ices_.empty()) end = std::max(end, ices_.back().end());
+    if (isWater(kind, look) && !waters_.empty()) end = std::max(end, waters_.back().end());
     if (isPoison(kind, look) && !poisons_.empty()) end = std::max(end, poisons_.back().end());
     if (isHolyLight(kind, look) && !holySpells_.empty()) end = std::max(end, holySpells_.back().end());
     if (isArcane(kind, look) && !arcanes_.empty()) end = std::max(end, arcanes_.back().end());
@@ -758,6 +767,16 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
                                      : kind == "causticVenom" ? PoisonSpell::Style::Caustic : kind == "creepingPlague" ? PoisonSpell::Style::Plague
                                      : PoisonSpell::Style::Pestilence;
     poisons_.emplace_back(style, caster.feet, heightOf(caster), std::move(hexes), start, impact, static_cast<uint32_t>(random() * 4294967295.0f));
+    return true;
+  }
+  if (isWater(kind, look)) {
+    // The water (vfx/WaterFx): the Sahagin's jet on the foe it names; the Elementalista's wave over every hex of its cone, a body's card
+    // height on the ones a unit stands on.
+    std::vector<WaterSpell::Target> hexes;
+    for (const Spot& s : targets) hexes.push_back({s.feet, s.cardHeight > 0.0f ? s.cardHeight : 0.0f});
+    if (kind == "waterJet" && hexes.size() > 1) hexes.resize(1);
+    waters_.emplace_back(kind == "waterJet" ? WaterSpell::Style::Jet : WaterSpell::Style::Wave, caster.feet, heightOf(caster), caster.body, std::move(hexes), start, impact,
+                         static_cast<uint32_t>(random() * 4294967295.0f));
     return true;
   }
   if (isIce(kind, look)) {
@@ -1279,6 +1298,7 @@ bool SpellEffects::active(float now) const {
   if (std::any_of(chainBolts_.begin(), chainBolts_.end(), [&](const ChainBolt& b) { return !b.done(now); })) return true;
   if (std::any_of(frosts_.begin(), frosts_.end(), [&](const FrostLine& f) { return !f.done(now); })) return true;
   if (std::any_of(ices_.begin(), ices_.end(), [&](const IceSpell& s) { return !s.done(now); })) return true;
+  if (std::any_of(waters_.begin(), waters_.end(), [&](const WaterSpell& s) { return !s.done(now); })) return true;
   if (std::any_of(arcanes_.begin(), arcanes_.end(), [&](const ArcaneSpell& s) { return !s.done(now); })) return true;
   if (std::any_of(holySpells_.begin(), holySpells_.end(), [&](const HolySpell& s) { return !s.done(now); })) return true;
   if (std::any_of(poisons_.begin(), poisons_.end(), [&](const PoisonSpell& s) { return !s.done(now) && !s.standing(); })) return true;
@@ -1343,6 +1363,8 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   for (const PrimordialEmber& e : primordialEmbers_) e.build(now, camera, vfx_, vfxLights);
   std::erase_if(frosts_, [&](const FrostLine& f) { return f.done(now); });
   for (const FrostLine& f : frosts_) f.build(now, vfx_, vfxLights);
+  std::erase_if(waters_, [&](const WaterSpell& s) { return s.done(now); });
+  for (const WaterSpell& s : waters_) s.build(now, camera, vfx_, vfxLights);
   std::erase_if(ices_, [&](const IceSpell& s) { return s.done(now); });
   for (const IceSpell& s : ices_) s.build(now, camera, vfx_, vfxLights);
   std::erase_if(arcanes_, [&](const ArcaneSpell& s) { return s.done(now); });

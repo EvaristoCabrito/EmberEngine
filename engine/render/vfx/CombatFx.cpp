@@ -145,6 +145,7 @@ CombatPalette CombatPalette::of(const char* element) {
   const auto is = [&](const char* e) { return element && std::strcmp(element, e) == 0; };
   if (is("fire")) return {{1.0f, 0.5f, 0.18f}, {1.0f, 0.92f, 0.7f}, {1.0f, 0.38f, 0.08f}};
   if (is("frost") || is("ice") || is("cold")) return {{0.5f, 0.78f, 1.0f}, {0.92f, 0.98f, 1.0f}, {0.4f, 0.7f, 1.0f}};
+  if (is("water")) return {{0.36f, 0.82f, 0.92f}, {0.9f, 0.98f, 1.0f}, {0.25f, 0.7f, 0.85f}};  // the water spells (vfx/WaterFx)
   if (is("lightning") || is("shock")) return {{0.62f, 0.75f, 1.0f}, {0.95f, 0.97f, 1.0f}, {0.5f, 0.62f, 1.0f}};
   if (is("ember")) return {{1.0f, 0.34f, 0.12f}, {1.0f, 0.8f, 0.52f}, {0.92f, 0.14f, 0.05f}};  // a live coal: Isolde's rune red, a hot heart
   if (is("moon")) return {{0.74f, 0.82f, 1.0f}, {0.97f, 0.98f, 1.0f}, {0.6f, 0.68f, 0.92f}};  // moonlight: Garam's (the Guardião da Lua), pale silver

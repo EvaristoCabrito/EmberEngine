@@ -118,6 +118,8 @@ inline const std::vector<SpellEntry>& allSpells() {
       {"sweep", "Varredura", true},
       {"devouringVoid", "Vazio Devorador", false},
       {"glacialGale", "Vendaval Glacial", false},
+      {"tidalWave", "Maremoto", false},
+      {"waterJet", "Jato d'Água", false},
       {"causticVenom", "Veneno Cáustico", false},
       {"minorVenom", "Veneno Menor", false},
       {"absoluteZero", "Zero Absoluto", false},

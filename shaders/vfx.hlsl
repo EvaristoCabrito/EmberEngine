@@ -980,12 +980,62 @@ float4 PSMain(VSOut i) : SV_Target0 {
         a = across * along * smoothstep(0.25, 0.8, streak + i.uv.x * 0.3) * d.params1.x * opacity;
         if (a < 0.004) discard;
         c = lerp(float3(0.7, 0.9, 1.0), white, i.uv.x) * (1.0 + i.uv.x) * intensity;
-      } else {
+      } else if (mode < 13.5) {
         // 13, the flash (a billboard; b.z alpha): a short soft burst, white in the middle with a cyan skirt.
         const float dd = length((i.uv - 0.5) * 2.0);
         a = exp(-dd * dd * 4.0) * (1.0 - smoothstep(0.6, 1.0, dd)) * i.particleB.z * 0.8 * opacity;
         if (a < 0.004) discard;
         c = lerp(float3(0.6, 0.85, 1.0), white, exp(-dd * dd * 10.0)) * 1.6 * intensity;
+      } else {
+        // 14, a body of water (render/vfx/WaterFx, 2026-11-26: a mesh: the orb, the jet, a drop, the wave, a crown, a ripple; instance
+        // c = alpha, seed + 100 x its thickness, breakup 0..1, foam 0..1 (+2: its top foams, the wave's crest)). Built the way game water
+        // is (the user's water brief):
+        //   refraction  the scene behind it read through it, bent (index 1.33): the world shows through, moved;
+        //   depth       Beer-Lambert, red taken first: thin water near clear, thick water teal;
+        //   Fresnel     Schlick, F0 0.02: the sky in it at a grazing angle;
+        //   glints      tiny sharp sun highlights on a surface stirred by moving ripples;
+        //   foam        white on the rims, where it is painted and on a crest, in torn cells;
+        //   breakup     it leaves torn through noise behind a white lip of foam, never faded.
+        const float alpha = i.particleC.x, breakup = i.particleC.z;
+        const float crest = step(1.5, i.particleC.w), painted = i.particleC.w - 2.0 * crest;
+        const float seed = frac(i.particleC.y), packed = floor(i.particleC.y) * 0.01;
+        const float thickness = packed > 0.005 ? clamp(packed, 0.01, 1.5) : 0.15;
+        const float3 V = normalize(f.cameraPosition - i.world);
+        float3 N = normalize(i.normal);
+        if (dot(N, V) < 0.0) N = -N;
+        const float3 q = i.world * 6.5 + float3(0.0, -t * 2.1, t * 1.3) + seed * 17.0;
+        N = normalize(N + float3(snoise(q), snoise(q + 31.7), snoise(q + 63.1)) * 0.2);
+        const float nv = saturate(dot(N, V));
+        const float fres = 0.02 + 0.98 * pow(1.0 - nv, 5.0);
+        const float thick = thickness * (0.3 + 0.7 * nv);
+        const float3 through = exp(-float3(2.7, 0.62, 0.42) * thick * 2.6);
+        const float3 R = refract(-V, N, 1.0 / 1.33);
+        const float3 right = float3(f.view[0].x, f.view[1].x, f.view[2].x), up = float3(f.view[0].y, f.view[1].y, f.view[2].y);
+        const float3 moved = (R + V) * (thick * 1.3 + 0.05);
+        const float away = max(length(f.cameraPosition - i.world), 0.5);
+        const float2 shift = float2(dot(moved, right), -dot(moved, up)) * f.projectionY * f.screenSize.y * 0.5 / away;
+        const int2 behindAt = int2(clamp(i.position.xy + shift, 0.0, f.screenSize - 1.0));
+        const float3 behind = gTextures[NonUniformResourceIndex(push.backdrop & 0xFFFFu)].Load(int3(behindAt, 0)).rgb;
+        const float3 L = normalize(f.sunDirection + float3(0.0, 0.35, 0.0));
+        const float3 H = normalize(L + V), H2 = normalize(normalize(float3(-0.3, 0.9, 0.25)) + V);
+        const float glint = pow(saturate(dot(N, H)), 420.0) * 12.0 + pow(saturate(dot(N, H2)), 300.0) * 5.0 + pow(saturate(dot(N, H)), 50.0) * 0.35;
+        const float3 own = push.brightness * volumeTransmittance(f, i.world);
+        const float3 sky = float3(0.62, 0.79, 0.95);
+        const float cells = saturate(fbm(i.world * 8.5 + float3(0.0, t * 0.7, 0.0) + seed * 5.0) * 0.5 + 0.5);
+        const float top = crest * smoothstep(0.7, 0.97, i.local.y) * (0.6 + 0.4 * cells);
+        const float foam = saturate((pow(1.0 - nv, 3.0) * 0.45 + painted) * smoothstep(0.4, 0.8, cells + painted * 0.35) + top);
+        float3 col = behind * through * (1.0 - fres) * 0.92;
+        col += lerp(float3(0.42, 0.86, 0.9), float3(0.02, 0.32, 0.38), saturate(thick * 2.2)) * 0.2 * own;
+        col += (sky * fres * 0.9 + float3(1.0, 1.0, 1.0) * glint) * own;
+        col = lerp(col, float3(0.93, 0.98, 1.0) * own, foam * 0.88);
+        const float cover = saturate(0.84 + 0.16 * fres + foam);
+        const float dn = saturate(fbm(i.local * float3(2.4, 2.4, 2.4) + seed * 13.0) * 0.5 + 0.5);
+        const float kept = smoothstep(breakup - 0.03, breakup + 0.07, dn + 0.04) * (1.0 - smoothstep(0.9, 1.0, breakup));
+        const float lip = (1.0 - smoothstep(0.0, 0.1, abs(dn - breakup - 0.03))) * step(0.001, breakup) * (1.0 - smoothstep(0.85, 1.0, breakup));
+        col = lerp(col, float3(0.95, 0.99, 1.0) * own, saturate(lip));
+        const float shown = saturate(cover * kept + lip * 0.7) * alpha * opacity * i.sight;
+        if (shown < 0.004) discard;
+        return float4(col * shown, shown);
       }
     } else if (mode < 0.5) {
       // Ours: the frosted floor (a hex, local xz = its own coordinates), spreading from the middle out to params1.x; a

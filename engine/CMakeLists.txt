@@ -68,6 +68,7 @@ add_library(EmberEngine STATIC
   render/vfx/MageFx.cpp
   render/vfx/TurnUndead.cpp
   render/vfx/LightingSpellFx.cpp
+  render/vfx/WaterFx.cpp
   render/MeshScene.cpp
   render/MeshBuild.cpp
   render/BoardGround.cpp

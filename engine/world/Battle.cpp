@@ -458,6 +458,8 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     // Ours (the user, 2026-10-18: "cultista de level 15 pode usar 1X"): a cultist of level 15 or more brings one Tempestade de
     // Gelo (its tier-4 use; Ember's cultists have none). Off in the Cooker's checks, like the progression.
     if (progressionEnabled() && o.side == "enemy" && (o.classId == "cultist" || o.classId == "cultistV2" || o.classId == "blackCultist") && o.level >= 15) o.spells[3] = 1;
+    // The Sahagin's Jato d'Água: two a fight (its tier-1 uses; the user, 2026-11-26: "make it a Sahagin Spell")
+    if (o.side == "enemy" && o.classId == "sahagin") o.spells[0] = std::max(o.spells[0], 2);
     if (progressionEnabled() && o.side == "enemy" &&
         (o.classId == "birolho" || o.classId == "birolho2" || o.classId == "birolho3" || o.classId == "birolhoLegs" ||
          o.classId == "birolhoLegs2"))

@@ -52,6 +52,7 @@ constexpr SpellData kSpells[] = {
     {"createFoodAndWater", "Criar Comida e Água", 4, "", false},
     {"fantomForce", "Força Fantasma", 0, "arcane", false},
     {"spectralBolt", "Raio Espectral", 0, "darkness", false},  // the Espectro em Brasa's, the Aparição's, the Boi Zumbi's (ours, 2026-10-20)
+    {"waterJet", "Jato d'Água", 1, "water", false},  // the Sahagin's, twice a fight (the user, 2026-11-26: "make it a Sahagin Spell", "and a tier 6 elementalist feel free do design")
     // listed (a unit's own spell bar) but not ported yet
     {"bloodyShot", "Tiro Sangrento", 2, "", true},
     {"multiShot", "Tiro Múltiplo", 3, "", true},
@@ -123,6 +124,9 @@ constexpr EmberSpell kEmberSpells[] = {
     // Elementalista: pure damage and area
     {{"pillarOfFlame", "Coluna de Fogo", 6, "fire", false}, "elementalist", 15},
     {{"iceLance", "Lança de Gelo", 6, "ice", false}, "elementalist", 15},
+    // Maremoto (the user, 2026-11-26: "make it a Sahagin Spell", "and a tier 6 elementalist feel free do design"): a wave that rolls out from the caster over a cone of
+    // hexes, striking the foes in it and pushing them back (vfx/WaterFx Wave)
+    {{"tidalWave", "Maremoto", 6, "water", false}, "elementalist", 15},
     {{"thunderstorm", "Tempestade Elétrica", 7, "lightning", false}, "elementalist", 16},
     {{"meteor", "Meteoro", 7, "fire", false}, "elementalist", 17},
     {{"absoluteZero", "Zero Absoluto", 8, "ice", false}, "elementalist", 18},
@@ -527,6 +531,7 @@ constexpr SpellTrack kSpellTracks[] = {
     {"devouringVoid", 25, "r1 m0.05 p5 s5 r1 m0.05 d1 f2 r1 m0.05 p5 s5 r1 m0.05"},
     {"pillarOfFlame", 15, "r1 m0.1 a1 r1 d1 R1 - r1 m0.1 h1 r1 f2 m0.1 r1"},
     {"iceLance", 15, "m0.05 r1 p25 m0.05 r1 r2 m0.05 d1 f2 r1 m0.05 p25 r1 m0.05"},
+    {"tidalWave", 15, "m0.05 l1 m0.05 d1 f2 m0.05 P1 m0.05 l1 d1 m0.05 f2 m0.05 m0.05"},
     {"thunderstorm", 16, "r1 m0.1 r2 r1 a1 d1 - r1 m0.1 k1 r1 b2 m0.1 r1"},
     {"meteor", 17, "r1 m0.1 M0.2 r2 a1 d1 - r1 m0.1 g1 f2 M0.2 r1 m0.1"},
     {"absoluteZero", 18, "m0.05 r1 m0.05 a1 r1 m0.05 - d1 m0.05 r1 f2 m0.05 r1 m0.05"},
@@ -909,6 +914,9 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
   else if (kind == "pillarOfFlame") {
     n.range = 6, n.radius = 1, n.mul = mul(2.0), n.dice = dice(2), n.faces = faces(8);
     n.hazardDice = 1 + g.n('h'), n.hazardFaces = 8, n.rounds = 1 + g.n('R');
+  } else if (kind == "tidalWave") {  // a cone of 4 rows (the Vendaval Glacial's shape, the T9 has 5), foes only, a push of 1
+    n.length = 4 + g.n('l'), n.mul = mul(2.0), n.dice = dice(3), n.faces = faces(8);
+    n.push = 1 + g.n('P');
   } else if (kind == "iceLance") {
     n.range = 7, n.mul = mul(2.4), n.dice = dice(2), n.faces = faces(10);
     n.pct = 50 + g.n('p');  // the hexes past the first
@@ -1397,9 +1405,9 @@ std::string elementOf(const std::string& kind) {
 
 std::string elementLabelPt(const std::string& element) {
   static const std::pair<const char*, const char*> kLabels[] = {{"fire", "Fogo"},   {"lightning", "Raio"},   {"ice", "Gelo"},       {"arcane", "Arcana"},
-                                                                {"darkness", "Trevas"}, {"holy", "Sagrado"}, {"poison", "Veneno"}, {"ember", "Brasa"}};
+                                                                {"darkness", "Trevas"}, {"holy", "Sagrado"}, {"poison", "Veneno"}, {"ember", "Brasa"}, {"water", "Água"}};
   static const std::pair<const char*, const char*> kEnglish[] = {{"fire", "Fire"},   {"lightning", "Lightning"},   {"ice", "Ice"},       {"arcane", "Arcane"},
-                                                                 {"darkness", "Darkness"}, {"holy", "Holy"}, {"poison", "Poison"}, {"ember", "Ember"}};
+                                                                 {"darkness", "Darkness"}, {"holy", "Holy"}, {"poison", "Poison"}, {"ember", "Ember"}, {"water", "Water"}};
   for (const auto& [id, label] : gLogEnglish ? kEnglish : kLabels)
     if (element == id) return label;
   return element;
@@ -2300,6 +2308,14 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     for (size_t k = 0; k < s.ids.size(); ++k) s.perTargetMul.push_back(k == 0 ? 1.0 : n.pct / 100.0);
     spend();
     steps.push_back(s);
+  } else if (kind == "tidalWave") {
+    const std::vector<BattleHex> cone = coneHexes(b, from, cell, n.length);
+    if (cone.empty()) return fail("Escolha uma direção a partir do personagem.");
+    s.tiles = cone;
+    s.ids = unitsOn(b, caster, cone, false);
+    s.push = n.push;
+    spend();
+    steps.push_back(s);
   } else if (kind == "glacialGale") {
     const std::vector<BattleHex> cone = coneHexes(b, from, cell, n.length);
     if (cone.empty()) return fail("Escolha uma direção a partir do personagem.");
@@ -3007,6 +3023,8 @@ std::string spellExplain(const std::string& kind, bool en) {
        "A straight line of holy wrath from you: the foes on it take the damage, plus half your MAG."},
       {"phantasmalForce", "Uma ilusão que fere um inimigo que você vê.", "An illusion that wounds a foe you can see."},
       {"phantasmalForce2", "Uma ilusão mais forte que fere um inimigo que você vê.", "A stronger illusion that wounds a foe you can see."},
+      {"tidalWave", "Uma onda que avança em leque, fere os inimigos nela e os empurra.", "A wave rolling out in a cone that strikes the foes in it and pushes them back."},
+      {"waterJet", "Um jato de água num inimigo que você vê.", "A jet of water at a foe you can see."},
       {"webOfDreams", "Uma teia no hex mirado que fica 3 rodadas: quem está nela pode adormecer (1D4 turnos), aliados também; quem dorme leva 25% a mais de dano.",
        "A web on the aimed hex that stays 3 rounds: whoever is in it may fall asleep (1D4 turns), allies too; sleepers take 25% more damage."},
       {"twinResonance", "Vincula dois inimigos visíveis. Até o começo do próximo turno da Hipóstase, cada um ecoa no outro parte do dano que realmente sofreu, após as resistências; dano de aliados não ecoa.",
@@ -3318,7 +3336,7 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind, int moon)
   const int half = static_cast<int>(std::floor(c.mag / 2.0));
   auto dmg = [&](double mul, int dice, int faces) { return std::format("{} + {}D{}", static_cast<int>(std::floor(half * mul)), dice, faces); };
   static const std::map<std::string, const char*> kElements = {{"darkness", "Escuridão"}, {"poison", "Veneno"}, {"fire", "Fogo"}, {"ice", "Gelo"},
-                                                               {"lightning", "Relâmpago"}, {"ember", "Brasa"}, {"holy", "Sagrado"}, {"arcane", "Arcano"}};
+                                                               {"lightning", "Relâmpago"}, {"ember", "Brasa"}, {"holy", "Sagrado"}, {"arcane", "Arcano"}, {"water", "Água"}};
   const std::string element = e->data.element;
   std::string s = std::format("T{} · {}", e->data.tier, kElements.contains(element) ? std::string(kElements.at(element)) : element.empty() ? std::string("Arma") : element);
   if (n.range > 0 && kind != "leapingStrike") s += std::format(" · alcance {}", n.range);
@@ -3415,6 +3433,7 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind, int moon)
   else if (kind == "chainLightning") s += std::format("\n{} · salta até {} vezes (a {} hexes), -{}% por salto", dmg(n.mul, n.dice, n.faces), n.jumps, n.length, static_cast<int>(n.decay * 100));
   else if (kind == "eruption") s += std::format("\nem volta de si, {} · {} em cada inimigo · o anel arde {} rodadas", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces), n.rounds);
   else if (kind == "glacialGale") s += std::format("\ncone de {} hexes (os dois lados) · {} · empurra {} hex", n.length, dmg(n.mul, n.dice, n.faces), n.push);
+  else if (kind == "tidalWave") s += std::format("\ncone de {} hexes (só inimigos) · {} · empurra {} hex", n.length, dmg(n.mul, n.dice, n.faces), n.push);
   else if (kind == "wrathOfTheSkies") s += std::format("\n{} raios à escolha · {} cada · eco 2D12+8", n.count, dmg(n.mul, n.dice, n.faces));
   else if (kind == "primordialEmber") s += std::format("\n{} (os dois lados) · {} · o chão fica em brasa {}D{} por {} rodadas", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces), n.hazardDice, n.hazardFaces, n.rounds);
   return s;
@@ -3447,7 +3466,7 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"blackPestilence", "Black Pestilence"}, {"curseOfDecay", "Curse of Decay"}, {"soulHarvest", "Soul Harvest"},
     {"devouringVoid", "Devouring Void"}, {"pillarOfFlame", "Pillar of Flame"}, {"iceLance", "Ice Lance"},
     {"thunderstorm", "Thunderstorm"}, {"meteor", "Meteor"}, {"absoluteZero", "Absolute Zero"}, {"chainLightning", "Chain Lightning"},
-    {"eruption", "Eruption"}, {"glacialGale", "Glacial Gale"}, {"wrathOfTheSkies", "Wrath of the Skies"},
+    {"eruption", "Eruption"}, {"glacialGale", "Glacial Gale"}, {"tidalWave", "Tidal Wave"}, {"waterJet", "Water Jet"}, {"wrathOfTheSkies", "Wrath of the Skies"},
     {"primordialEmber", "Primordial Ember"},
     {"steelWhirlwind", "Steel Whirlwind"}, {"guardBreak", "Guard Break"}, {"warCry", "War Cry"}, {"leapingStrike", "Devastating Leap"},
     {"venomArrow", "Milf's Acid Arrow"}, {"arrowRain", "Arrow Rain"}, {"explosiveArrow", "Explosive Arrow"}, {"cripplingShot", "Crippling Shot"},
@@ -3497,7 +3516,7 @@ bool spellSelfArea(const std::string& kind) {
 bool spellPassive(const std::string& kind) { return kind == "crusaderOath" || kind == "riposte"; }
 bool spellAimsDirection(const std::string& kind) {
   if (kind == "arcaneBeam") return true;
-  return kind == "piercing" || kind == "piercingThrust" || kind == "frost" || kind == "iceLance" || kind == "glacialGale" ||
+  return kind == "piercing" || kind == "piercingThrust" || kind == "frost" || kind == "iceLance" || kind == "glacialGale" || kind == "tidalWave" ||
          kind == "burningHands" || kind == "poisonBreath" || kind == "divineWrath" || kind == "stampede" || kind == "boneLance";
 }
 
@@ -3818,6 +3837,7 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   else if (kind == "frost") minRange = 1, maxRange = frostPower(u.level).length;
   else if (kind == "iceLance") minRange = 1, maxRange = 9;
   else if (kind == "glacialGale") minRange = 1, maxRange = emberNumbers("glacialGale", u.level).length;
+  else if (kind == "tidalWave") minRange = 1, maxRange = emberNumbers("tidalWave", u.level).length;
   else if (kind == "bullRush") minRange = 1, maxRange = grownReach("bullRush", kBullRushRange, u.level);
   else if (kind == "spearToss") minRange = 1, maxRange = 1 + emberNumbers("spearToss", u.level).range;
   else if (kind == "impaleDrag") minRange = 1, maxRange = 1 + emberNumbers("impaleDrag", u.level).length;
@@ -3989,7 +4009,7 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
       return leapLanding(b, caster, static_cast<size_t>(here), n.range) ? true : fail("Não há hex livre ao lado do alvo ao alcance do salto.");
     }
     if (kind == "iceLance") return piercingRay(b, from, cell).empty() ? fail("Escolha uma reta válida.") : true;
-    if (kind == "glacialGale") return coneHexes(b, from, cell, n.length).empty() ? fail("Escolha uma direção a partir do personagem.") : true;
+    if (kind == "glacialGale" || kind == "tidalWave") return coneHexes(b, from, cell, n.length).empty() ? fail("Escolha uma direção a partir do personagem.") : true;
     // The Lanceiro's skills
     if (kind == "spearToss") {
       std::string why;
@@ -4106,7 +4126,7 @@ std::vector<BattleHex> spellArea(const Battle& b, size_t caster, const std::stri
   if (emberSpell(kind)) {
     const EmberNumbers n = emberNumbers(kind, u.level);
     if (kind == "iceLance") return piercingRay(b, {u.x, u.y}, cell);
-    if (kind == "glacialGale") return coneHexes(b, {u.x, u.y}, cell, n.length);
+    if (kind == "glacialGale" || kind == "tidalWave") return coneHexes(b, {u.x, u.y}, cell, n.length);
     if (kind == "eruption") return areaTiles(b, {u.x, u.y}, n.radius);
     if (emberAreaSpell(kind)) return areaTiles(b, cell, n.radius);
     if (kind == "steelWhirlwind") {
@@ -6748,6 +6768,15 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
       AiCast cast;
       cast.path = walkTo(p->from);
       if (std::optional<std::vector<BattleStep>> steps = castE2(b, unit, "spectralBolt", {p->at}, nullptr, false)) {
+        cast.steps = std::move(*steps);
+        return cast;
+      }
+    }
+  if (c == "sahagin" && tierRemaining(u, "waterJet") > 0)
+    if (const auto p = bestSplash(BoltData{0, kWaterJetRange, 0, 0, 0, 0, 0, 0, 1.0, 1.0}, "waterJet")) {
+      AiCast cast;
+      cast.path = walkTo(p->from);
+      if (std::optional<std::vector<BattleStep>> steps = castE2(b, unit, "waterJet", {p->at}, nullptr, false)) {
         cast.steps = std::move(*steps);
         return cast;
       }

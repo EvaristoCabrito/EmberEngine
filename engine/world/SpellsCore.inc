@@ -187,6 +187,10 @@ constexpr BoltData kDivineBolt{1, 6, 2, 4, 0, 1, 4, 0, 1.4, 1.0};
 // mais poderosa que o Phantasmal Force e que tem AOE de 3Hex", "é do elemento darkness"): range 6 with a line of fire, the 3 hexes of a
 // size-3 body round the aimed one, Escuridão, the Força Fantasmagórica's dice at the caster's level and one more, x 1.15 on MAG; foes only.
 constexpr int kSpectralRange = 6;
+// Jato d'Água (the Sahagin's, twice a fight; ours, the user 2026-11-26: "make it a Sahagin Spell"): a jet of water at one foe in sight,
+// range 5, 1D8 + 1 per 4 levels, x 1.0 on MAG; Água.
+constexpr int kWaterJetRange = 5;
+constexpr double kWaterJetMul = 1.0;
 constexpr double kSpectralMul = 1.15;
 // Milf's Acid Arrow (the Corrosive Slime's: the Small two a fight, the Large three; the user 2026-10-22). AD&D 2e's 2nd-level
 // wizard spell: a missile of acid, 2d4 on the hit, and the acid keeps burning 2d4 a round for one more round per three caster
@@ -872,6 +876,7 @@ bool aimE2(const Battle& b, size_t caster, const std::string& kind, BattleHex ce
   if (kind == "minorVenom") return bolt(grown(kMinorVenom.range));
   if (kind == "divineBolt") return bolt(grown(kDivineBolt.range));
   if (kind == "spectralBolt") return bolt(kSpectralRange);
+  if (kind == "waterJet") return bolt(kWaterJetRange);
   if (kind == "acidArrow") return bolt(kAcidArrowRange);
   if (kind == "webOfDreams") return bolt(grown(kWebRange));
   // The verdict is spellAimValid's (targetable, range, line of fire); the reason, when it fails, spellAimError's.
@@ -1189,6 +1194,13 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
     s.tiles = tiles, s.ids = unitsAlong(b, tiles, caster, &u.side);
     s.dice = p.dice + 1, s.faces = p.faces, s.bonus = 0, s.spellMul = kSpectralMul;
     steps.push_back(s);
+  } else if (kind == "waterJet") {
+    if (checkUses && tierRemaining(u, kind) <= 0) return fail("Sem usos de Jato d'Água.");
+    const std::vector<BattleHex> tiles = areaTiles(b, cell, 0);
+    spendTier(u, kind);
+    s.tiles = tiles, s.ids = unitsAlong(b, tiles, caster, &u.side);
+    s.dice = 1, s.faces = 8, s.bonus = std::max(0, u.level / 4), s.spellMul = kWaterJetMul;
+    steps.push_back(s);
   } else if (kind == "acidArrow") {
     if (checkUses && tierRemaining(u, kind) <= 0) return fail("Sem usos de Flecha Ácida.");
     const std::vector<BattleHex> tiles = areaTiles(b, cell, 0);
@@ -1398,7 +1410,7 @@ bool e2Kind(const std::string& k) {
                                       "sweep",      "divineWrath", "stampede",   "burningHands",      "poisonBreath", "fireball",     "causticVenom",
                                       "divineBolt", "minorVenom", "iceStorm",   "turnUndead",        "lightningTier3", "familiarLifeDrain",  "phantasmalForce",
                                       "provoke",    "bullRush",     "bless",     "webOfDreams", "auraOfProtection", "intimidatingPresence", "warp",
-                                      "summonFamiliar", "summonFamiliar2", "summonFamiliar3", "summonFamiliar4", "summonZombieDog", "spectralBolt",
+                                      "summonFamiliar", "summonFamiliar2", "summonFamiliar3", "summonFamiliar4", "summonZombieDog", "spectralBolt", "waterJet",
                                       "acidCloud", "acidArrow", "witchStitch", "burialWeight", "abyssalSwap", "arcaneBanquet", "twinResonance",
                                       "ignite"};
   for (const char* c : kinds)
@@ -1424,7 +1436,7 @@ std::vector<BattleHex> areaE2(const Battle& b, size_t caster, const std::string&
     const std::optional<CubeI> dir = ray.empty() ? std::nullopt : axisDir(from, ray[0]);
     return dir ? coneSector(b, from, *dir, p.radius) : std::vector<BattleHex>{};
   }
-  if (kind == "spectralBolt" || kind == "acidArrow") return areaTiles(b, cell, 0);
+  if (kind == "spectralBolt" || kind == "acidArrow" || kind == "waterJet") return areaTiles(b, cell, 0);
   if (kind == "burialWeight") return areaTiles(b, cell, 1);
   if (kind == "fireball") return areaTiles(b, cell, areaRadius(kind, kFireballSize, u.level));
   if (kind == "ignite") return areaTiles(b, cell, kIgniteRadius);
