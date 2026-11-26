@@ -4634,7 +4634,7 @@ class MapStage final : public Stage {
         const bool over = shot->until >= 0.0f ? time > shot->until : time - shot->start > poseSeconds(ui, shot->pose) / shot->rate;
         if (!shot->hold && over) {
           OneShot& s = unitShot_[ui];
-          if (!s.next.empty()) s = {s.next, time, false, s.rate, -1.0f, s.then, s.thenUntil};  // the turn, whole, then the back still
+          if (!s.next.empty()) s = {s.next, time, false, s.next == "turnBack" ? kTurnRate : s.rate, -1.0f, s.then, s.thenUntil};  // the turn, whole, then the back still
           else if (!s.then.empty() && time < s.thenUntil) s = {s.then, time, false, s.rate, s.thenUntil};  // drawn from the next frame
           else s.pose.clear();
         }
@@ -9564,7 +9564,7 @@ class MapStage final : public Stage {
       }
     }
     // the whole turn after the whole cast pose: the spell, the step's end and the camera wait for it
-    const float turnLead = turnToCast ? poseSeconds(static_cast<size_t>(striker), "turnBack") / poseRate : 0.0f;
+    const float turnLead = turnToCast ? poseSeconds(static_cast<size_t>(striker), "turnBack") / kTurnRate : 0.0f;
     const float length = (isMissile && missileAimedAway && missileIndex > 0)
                              ? (0.12f / actionRate())
                              : ((striker >= 0 && !pose.empty() ? poseSeconds(static_cast<size_t>(striker), pose) : 0.6f) / poseRate);
@@ -16275,6 +16275,10 @@ class MapStage final : public Stage {
   // Every unit clip (idle, attack, cast, hit, death, turn, emote) plays at its video's own speed, at every Velocidade (the user,
   // 2026-11-25: "not all animations get the same speed ... slow fast slower faster on the same unit"); Velocidade paces the rest.
   static constexpr float kClipRate = 1.0f;
+  // The turn away to cast (turnBack, the turn-around videos, all 24 fps): the videos turn slowly, it played slower than every other
+  // move; at twice its video's speed (the user, 2026-11-26: "faz o turn around mais rapido ele esta em camera lenta", "esta mais lento
+  // que todos os outros movimentos", "faz esse bosta rapido"). Every frame of it still plays.
+  static constexpr float kTurnRate = 2.0f;
   static constexpr float kCorpseSeconds = 1.5f;  // the fallen lie this long after their death pose
   static constexpr float kEnterSeconds = 0.8f;   // a cutscene's "enter": the card's fade-in
   static constexpr size_t kTalkEvery = 5;        // a spoken line: one in this many opens with its speaker's own voice cue
