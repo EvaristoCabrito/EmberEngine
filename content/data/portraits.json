@@ -301,7 +301,7 @@
    "framed": false
   },
   "troll": {
-   "src": "/game/portraits/sprites/troll.png?v=1",
+   "src": "/game/portraits/sprites/troll.png",
    "framed": true
   },
   "undeadOx": {

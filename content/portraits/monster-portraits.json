@@ -10,6 +10,7 @@
   "nekomata": {"src": "content/sprites/nekomata/base-v01/base-1.png", "box": [0.72, 0.14, 0.90, 0.52], "ours": true},
   "embered-zombie": {"src": "content/sprites/embered-zombie/base-v01/base-1.png", "ours": true},
   "black-cultist": {"src": "content/sprites/black-cultist/base-v01/base-1.png", "ours": true},
+  "troll": {"src": "content/portraits/source/cave-troll-idle.png", "box": [0.31, 0.05, 0.56, 0.30], "keep": [0.29, 0.02, 0.58, 0.34], "ours": true, "why": "the user, 2026-11-25: the old troll's art gone from the game, every file; the portrait from the Cave Troll's own idle"},
   "corrosive-slime": {"src": "content/portraits/source/corrosive-slime-profile.jpg", "box": [0.34, 0.26, 0.68, 0.66], "ours": true, "why": "the user, 2026-11-12: their SlimeProfilePic.jpg (Attachments/Monsters), \"Yes, use them\""},
   "corrosive-slime-36": {"src": "content/portraits/source/corrosive-slime-profile.jpg", "box": [0.34, 0.26, 0.68, 0.66], "ours": true},
   "corrosive-slime-64": {"src": "content/portraits/source/corrosive-slime-profile.jpg", "box": [0.34, 0.26, 0.68, 0.66], "ours": true},

@@ -1056,7 +1056,7 @@
    "version": "v01",
    "hero": "troll",
    "cut": "content/sprites/cave-troll/cut.json",
-   "why": "the user, 2026-11-18: a single Cave Troll, from three videos (the 720p walks and punch, the 1080p idle, the 1080p hit and fall without the rock); Alta + 64 + 36; troll2 (Troll da caverna 2) folded into it; its sounds from the videos",
+   "why": "the user, 2026-11-18: a single Cave Troll, from three videos (the 720p walks and punch, the 1080p idle, the 1080p hit and fall without the rock); Alta + 64 + 36; its sounds from the videos",
    "poses": {"idle": "base", "attack": "atk", "walk": "move", "walkLeft": "move-left", "walkDown": "move-down", "walkUp": "move-up", "hit": "hit", "death": "death"},
    "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar", "walkLeft": "Andar (esquerda)", "walkDown": "Andar (frente)", "walkUp": "Andar (costas)", "hit": "Dano", "death": "Morte"},
    "packs": {"base": "field", "move": "field", "move-left": "field", "move-up": "field", "move-down": "field"},

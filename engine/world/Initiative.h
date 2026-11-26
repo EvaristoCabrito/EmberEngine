@@ -27,7 +27,7 @@ inline void applyEmberInitiative(BattleUnit& u) {
       // heavy warriors
       {"basePikeman", 6}, {"punisher", 6}, {"theButcher", 6},
       // brutes
-      {"horror", 5}, {"undeadOx", 5}, {"troll", 5}, {"troll2", 5},
+      {"horror", 5}, {"undeadOx", 5}, {"troll", 5},
       // slow brutes
       {"zombie", 4}, {"zombie2", 4}, {"sapling", 4}, {"ancientGolem", 4},
       // mages

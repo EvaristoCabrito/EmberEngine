@@ -78,7 +78,7 @@ bool fliesOverWater(const BattleUnit& u, const BattleCell& c) {
   return c.terrain == "water" && (u.classId == "swampBlueCalf" || u.classId == "roccoTheBird") && !c.blocked;
 }
 
-bool isTroll(const BattleUnit& u) { return u.classId == "troll" || u.classId == "troll2"; }
+bool isTroll(const BattleUnit& u) { return u.classId == "troll"; }
 
 // Every class's own movement (Ember's class table, tools/scripts/data/export_classes.ts), read once: -1 = unknown.
 int classMov(const std::string& classId) {

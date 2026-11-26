@@ -41,7 +41,7 @@ Esquiva / 2). Escape: min(100, 60 + DEX / 3).
   non-human: Cobalt Blue Deer (swampBlueCalf). The White Cultist (cultistV2, Cultista Branco, the old Cultista Ancestral; the user,
   2026-11-10: "one letter higher in the enemy ranking, with 2X Milf Acid Arrow on top of regular spells"); the Black Cultist
   (blackCultist, Cultista Negro), his twin, stays F.
-- **D**: the big ones: Undead Ox (undeadOx), Cave Troll (troll, troll2), Ancient Golem (ancientGolem); and The Butcher (theButcher).
+- **D**: the big ones: Undead Ox (undeadOx), Cave Troll (troll), Ancient Golem (ancientGolem); and The Butcher (theButcher).
 - **D+** (the user, 2026-10-27: "ele é tipo um D+"; halfway between D and C): Chain-Bound Penitent (chainBoundPenitent), a warrior
   a little stronger than The Butcher (its stats x1.10, content/data/class-stats.json) with strong magic resistance (50 % to arcane,
   darkness, ember, fire, holy, ice, lightning); first values.
