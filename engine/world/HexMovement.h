@@ -342,6 +342,8 @@ class HexStepMover {
   float stepProgress() const { return stepProgress_; }
   float travelled() const { return travelled_; }
   size_t remainingSteps() const { return queue_.size(); }
+  // The hex after the one it is walking to (null on the last step): what a walk's heading and its rounded corners look ahead to.
+  const HexWaypoint* nextQueued() const { return queue_.empty() ? nullptr : &queue_.front(); }
 
  private:
   bool runStepStart() {
