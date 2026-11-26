@@ -5,32 +5,32 @@
    "first": 0,
    "last": 119,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/sick-rat/combat 0:96",
-   "loopFirst": 34,
-   "loopLast": 59,
-   "seamSteps": 0.55,
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
    "bootRow": 975,
    "bodyDrift": [
     0,
     0
    ],
    "figurePx": 680.5,
-   "scaledTo": 610.0,
-   "frames": 26,
+   "scaledTo": 609.7,
+   "frames": 120,
    "frameMs": 41.666666666666664,
    "nat": [
-    568,
-    684
+    585,
+    689
    ],
    "crop": [
-    6,
+    5,
     8,
-    557,
-    672
+    575,
+    676
    ],
    "box": {
-    "w": 1.02483,
-    "h": 1.23413,
-    "foot": 0.05814
+    "w": 1.05555,
+    "h": 1.2432,
+    "foot": 0.06781
    },
    "pattern": "content/sprites/sick-rat/move-up-cine-v01/move-up-{}.png"
   },
@@ -39,34 +39,68 @@
    "first": 120,
    "last": 239,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/sick-rat/combat 0:96",
-   "loopFirst": 190,
-   "loopLast": 227,
-   "seamSteps": 1.18,
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 970,
    "bodyDrift": [
     0,
     0
    ],
    "figurePx": 710.5,
-   "scaledTo": 610.2,
-   "frames": 38,
+   "scaledTo": 609.5,
+   "frames": 120,
    "frameMs": 41.666666666666664,
    "nat": [
-    477,
-    639
+    493,
+    640
    ],
    "crop": [
     4,
-    7,
-    467,
-    628
+    6,
+    484,
+    629
    ],
    "box": {
-    "w": 0.8608,
-    "h": 1.15315,
-    "foot": 0.02312
+    "w": 0.88867,
+    "h": 1.15365,
+    "foot": 0.02462
    },
    "pattern": "content/sprites/sick-rat/move-down-cine-v01/move-down-{}.png"
+  },
+  "move": {
+   "video": "Attachments/Monsters/Horse/Rat_walks,_recoils,_and_collapses_4bffe6bf_1080p.mp4",
+   "first": 1,
+   "last": 83,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/sick-rat/combat 0:96",
+   "loopFirst": 1,
+   "loopLast": 83,
+   "seamSteps": NaN,
+   "bootRow": 914,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 697.0,
+   "scaledTo": 610.3,
+   "frames": 83,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1398,
+    662
+   ],
+   "crop": [
+    5,
+    7,
+    1389,
+    651
+   ],
+   "box": {
+    "w": 2.52037,
+    "h": 1.19348,
+    "foot": 0.08514
+   },
+   "pattern": "content/sprites/sick-rat/move-cine-v01/move-{}.png"
   }
  }
 }

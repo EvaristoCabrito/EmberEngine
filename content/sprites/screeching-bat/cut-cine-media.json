@@ -15,8 +15,6 @@
    "video": "Attachments/Monsters/Bat/Screeching Bat Idle.mp4",
    "first": 0,
    "last": 52,
-   "loopMin": 20,
-   "loopMax": 48,
    "mode": "loop",
    "floorRow": 825,
    "figurePx": 464.0,
@@ -32,6 +30,7 @@
     "feather": 56,
     "why": "the user, 2026-11-21: the tail vanishing and flickering; the matte drops the tail membrane between the legs"
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610
   },
   {
@@ -66,9 +65,7 @@
    "src": "build/video-cut/screeching-bat/jaws",
    "video": "Attachments/Monsters/Bat/Bat_flying_and_snapping_jaws_93b456f6.mp4",
    "first": 0,
-   "last": 130,
-   "loopMin": 24,
-   "loopMax": 100,
+   "last": 239,
    "inPlace": true,
    "mode": "loop",
    "floorRow": 707,
@@ -483,6 +480,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-26): the whole idle stretch of the video, measured on the video's contact sheet (max-loops-idle.py)",
    "scaleTo": 610
   },
   {
@@ -1718,8 +1716,6 @@
    "video": "Attachments/Monsters/Bat/BatHitandFall.mp4",
    "first": 0,
    "last": 55,
-   "loopMin": 20,
-   "loopMax": 50,
    "mode": "loop",
    "floorRow": 651,
    "figurePx": 479.0,
@@ -2113,6 +2109,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610
   },
   {
@@ -2526,8 +2523,6 @@
    "video": "Attachments/Monsters/Bat/Bat_flying_in_studio_ab821b20.mp4",
    "first": 0,
    "last": 119,
-   "loopMin": 24,
-   "loopMax": 110,
    "inPlace": true,
    "mode": "loop",
    "floorRow": 586,
@@ -2926,6 +2921,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610
   },
   {
@@ -2936,8 +2932,6 @@
    "video": "Attachments/Monsters/Bat/Bat_flying_in_studio_ab821b20.mp4",
    "first": 120,
    "last": 239,
-   "loopMin": 24,
-   "loopMax": 110,
    "inPlace": true,
    "mode": "loop",
    "floorRow": 674,
@@ -3332,6 +3326,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610
   }
  ],

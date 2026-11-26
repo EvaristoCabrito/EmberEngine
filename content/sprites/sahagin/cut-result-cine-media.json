@@ -1,0 +1,70 @@
+{
+ "clips": {
+  "move": {
+   "video": "Attachments/Sahagin/SahaginRightCharacter_walking_and_thrusting_\u2026_4884a850.mp4",
+   "first": 0,
+   "last": 87,
+   "colorMatch": "build\\video-cut\\sahagin\\idleatk 0:120",
+   "loopFirst": 0,
+   "loopLast": 87,
+   "seamSteps": NaN,
+   "bootRow": 669,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 609.0,
+   "frames": 88,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1088,
+    691
+   ],
+   "crop": [
+    0,
+    1,
+    1084,
+    685
+   ],
+   "box": {
+    "w": 5.0023,
+    "h": 3.17701,
+    "foot": 0.09655
+   },
+   "pattern": "content/sprites/sahagin/move-cine-v01/move-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/Sahagin/SahaginwalkfetandFall.mp4",
+   "first": 0,
+   "last": 112,
+   "colorMatch": "build\\video-cut\\sahagin\\idleatk 0:120",
+   "loopFirst": 0,
+   "loopLast": 112,
+   "seamSteps": NaN,
+   "bootRow": 669,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 600.0,
+   "frames": 113,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    840,
+    657
+   ],
+   "crop": [
+    4,
+    5,
+    831,
+    647
+   ],
+   "box": {
+    "w": 3.92,
+    "h": 3.066,
+    "foot": 0.112
+   },
+   "pattern": "content/sprites/sahagin/move-left-cine-v01/move-left-{}.png"
+  }
+ }
+}

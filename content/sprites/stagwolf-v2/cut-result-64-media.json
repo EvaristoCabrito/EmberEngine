@@ -5,28 +5,29 @@
    "first": 0,
    "last": 117,
    "loopFirst": 0,
-   "loopLast": 39,
-   "seamSteps": 1.67,
+   "loopLast": 117,
+   "seamSteps": NaN,
    "bootRow": 689,
    "bodyDrift": [
     -2,
-    11
+    19
    ],
+   "frameCountFrom": 118,
    "figurePx": 665.0,
-   "frames": 40,
-   "frameMs": 41.666666666666664,
+   "frames": 64,
+   "frameMs": 76.82291666666666,
    "nat": [
-    892,
+    899,
     720
    ],
    "crop": [
-    4,
     5,
-    883,
+    5,
+    888,
     713
    ],
    "box": {
-    "w": 3.5063,
+    "w": 3.53381,
     "h": 2.8302,
     "foot": 0.11792
    },
@@ -37,28 +38,29 @@
    "first": 0,
    "last": 117,
    "loopFirst": 0,
-   "loopLast": 39,
-   "seamSteps": 1.67,
+   "loopLast": 117,
+   "seamSteps": NaN,
    "bootRow": 689,
    "bodyDrift": [
     -2,
-    11
+    19
    ],
+   "frameCountFrom": 118,
    "figurePx": 665.0,
-   "frames": 40,
-   "frameMs": 41.666666666666664,
+   "frames": 64,
+   "frameMs": 76.82291666666666,
    "nat": [
-    892,
+    899,
     720
    ],
    "crop": [
+    6,
     5,
-    5,
-    883,
+    888,
     713
    ],
    "box": {
-    "w": 3.5063,
+    "w": 3.53381,
     "h": 2.8302,
     "foot": 0.11792
    },
@@ -68,29 +70,30 @@
    "video": "Attachments/ZombieBOgWolfCharacter_walking_in_place_1ed8f6c1.mp4",
    "first": 118,
    "last": 239,
-   "loopFirst": 184,
-   "loopLast": 225,
-   "seamSteps": 2.42,
+   "loopFirst": 118,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 689,
    "bodyDrift": [
-    -27,
-    -14
+    -35,
+    5
    ],
+   "frameCountFrom": 122,
    "figurePx": 665.0,
-   "frames": 42,
-   "frameMs": 41.666666666666664,
+   "frames": 64,
+   "frameMs": 79.42708333333333,
    "nat": [
-    461,
+    472,
     720
    ],
    "crop": [
-    4,
+    5,
     0,
-    451,
+    461,
     716
    ],
    "box": {
-    "w": 1.81211,
+    "w": 1.85535,
     "h": 2.8302,
     "foot": 0.11792
    },

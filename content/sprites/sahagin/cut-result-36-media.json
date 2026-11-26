@@ -66,34 +66,34 @@
   "move": {
    "video": "Attachments/Sahagin/SahaginRightCharacter_walking_and_thrusting_\u2026_4884a850.mp4",
    "first": 0,
-   "last": 84,
+   "last": 87,
    "colorMatch": "build\\video-cut\\sahagin\\idleatk 0:120",
-   "loopFirst": 24,
-   "loopLast": 73,
-   "seamSteps": 3.23,
+   "loopFirst": 0,
+   "loopLast": 87,
+   "seamSteps": NaN,
    "bootRow": 669,
    "bodyDrift": [
     0,
     0
    ],
-   "frameCountFrom": 50,
+   "frameCountFrom": 88,
    "figurePx": 609.0,
    "frames": 36,
-   "frameMs": 57.87037037037036,
+   "frameMs": 101.85185185185185,
    "nat": [
     1088,
-    678
+    691
    ],
    "crop": [
     0,
-    2,
+    4,
     1084,
-    671
+    676
    ],
    "box": {
     "w": 5.0023,
-    "h": 3.11724,
-    "foot": 0.03678
+    "h": 3.17701,
+    "foot": 0.09655
    },
    "pattern": "content/sprites/sahagin/move-media36-v01/move-{}.png"
   },
@@ -134,31 +134,31 @@
    "first": 0,
    "last": 112,
    "colorMatch": "build\\video-cut\\sahagin\\idleatk 0:120",
-   "loopFirst": 33,
-   "loopLast": 80,
-   "seamSteps": 1.7,
+   "loopFirst": 0,
+   "loopLast": 112,
+   "seamSteps": NaN,
    "bootRow": 669,
    "bodyDrift": [
     0,
     0
    ],
-   "frameCountFrom": 48,
+   "frameCountFrom": 113,
    "figurePx": 600.0,
    "frames": 36,
-   "frameMs": 55.55555555555556,
+   "frameMs": 130.78703703703704,
    "nat": [
     840,
-    642
+    657
    ],
    "crop": [
     5,
     5,
     830,
-    632
+    646
    ],
    "box": {
     "w": 3.92,
-    "h": 2.996,
+    "h": 3.066,
     "foot": 0.112
    },
    "pattern": "content/sprites/sahagin/move-left-media36-v01/move-left-{}.png"

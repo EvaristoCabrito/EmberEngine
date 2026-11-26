@@ -38,10 +38,8 @@
    "kind": "walk",
    "src": "build/video-cut/sick-rat/walk-fall",
    "video": "Attachments/Monsters/Horse/Rat_walks,_recoils,_and_collapses_4bffe6bf_1080p.mp4",
-   "first": 2,
-   "last": 90,
-   "loopMin": 24,
-   "loopMax": 84,
+   "first": 1,
+   "last": 83,
    "inPlace": true,
    "mode": "loop",
    "figurePx": 697.0,
@@ -431,7 +429,8 @@
       0.401978
      ]
     ]
-   }
+   },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "hit",
@@ -1238,8 +1237,6 @@
    "video": "Attachments/Monsters/SickRatUpandDown.mp4",
    "first": 0,
    "last": 119,
-   "loopMin": 24,
-   "loopMax": 110,
    "inPlace": true,
    "mode": "loop",
    "why": "the user, 2026-11-21 (SickRatUpandDown.mp4): walking away, seen from behind (the combo's first half); in place, the loop at its best seam",
@@ -1633,7 +1630,8 @@
       0.401978
      ]
     ]
-   }
+   },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-down",
@@ -1643,8 +1641,6 @@
    "video": "Attachments/Monsters/SickRatUpandDown.mp4",
    "first": 120,
    "last": 239,
-   "loopMin": 24,
-   "loopMax": 110,
    "inPlace": true,
    "mode": "loop",
    "why": "the user, 2026-11-21 (SickRatUpandDown.mp4): walking toward us (the combo's second half); in place, the loop at its best seam",
@@ -2034,7 +2030,8 @@
       0.401978
      ]
     ]
-   }
+   },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   }
  ]
 }

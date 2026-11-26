@@ -40,9 +40,7 @@
    "src": "build/video-cut/sahagin/walkatk",
    "video": "Attachments/Sahagin/SahaginRightCharacter_walking_and_thrusting_…_4884a850.mp4",
    "first": 0,
-   "last": 84,
-   "loopMin": 20,
-   "loopMax": 84,
+   "last": 87,
    "mode": "loop",
    "colorMatch": {
     "reference": "build\\video-cut\\sahagin\\idleatk 0:120",
@@ -431,7 +429,8 @@
     ]
    },
    "figurePx": 609,
-   "scaleTo": 916
+   "scaleTo": 916,
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "atk",
@@ -842,8 +841,6 @@
    "video": "Attachments/Sahagin/SahaginwalkfetandFall.mp4",
    "first": 0,
    "last": 112,
-   "loopMin": 20,
-   "loopMax": 112,
    "mode": "loop",
    "colorMatch": {
     "reference": "build\\video-cut\\sahagin\\idleatk 0:120",
@@ -1240,7 +1237,8 @@
     ]
    },
    "figurePx": 600,
-   "scaleTo": 916
+   "scaleTo": 916,
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "cast",
