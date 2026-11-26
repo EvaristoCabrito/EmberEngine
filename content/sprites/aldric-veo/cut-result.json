@@ -3,14 +3,14 @@
   "base": {
    "video": "Attachments/Aldric/AldricIldeV3.mp4",
    "first": 0,
-   "last": 131,
+   "last": 142,
    "bootRow": 952,
    "bootRows": [
     948,
     952
    ],
    "figurePx": 764.0,
-   "frames": 132,
+   "frames": 143,
    "frameMs": 41.666666666666664,
    "nat": [
     545,
@@ -25,7 +25,7 @@
    "box": {
     "w": 1.88253,
     "h": 3.11222,
-    "foot": 0.03455
+    "foot": 0.03454
    },
    "pattern": "content/sprites/aldric-veo/base-r01/base-{}.png"
   },
@@ -96,66 +96,66 @@
   "move": {
    "video": "Attachments/Aldric/Aldric_walking_left_in_place_51472b70_1080p.mp4",
    "first": 0,
-   "last": 100,
+   "last": 142,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/aldric/idle 0:119",
-   "loopFirst": 30,
-   "loopLast": 72,
-   "seamSteps": 1.13,
+   "loopFirst": 0,
+   "loopLast": 142,
+   "seamSteps": NaN,
    "bootRow": 1049,
    "bodyDrift": [
     0,
     0
    ],
    "figurePx": 952.0,
-   "frames": 43,
+   "frames": 143,
    "frameMs": 41.666666666666664,
    "nat": [
-    587,
-    1044
+    771,
+    1049
    ],
    "crop": [
-    5,
     4,
-    577,
-    1035
+    5,
+    762,
+    1038
    ],
    "box": {
-    "w": 1.62719,
-    "h": 2.89403,
-    "foot": 0.02772
+    "w": 2.13726,
+    "h": 2.90789,
+    "foot": 0.03049
    },
    "pattern": "content/sprites/aldric-veo/move-r01/move-{}.png"
   },
   "move-left": {
    "video": "Attachments/Aldric/Aldric_walking_left_in_place_51472b70_1080p.mp4",
    "first": 0,
-   "last": 100,
+   "last": 142,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/aldric/idle 0:119",
-   "loopFirst": 30,
-   "loopLast": 72,
-   "seamSteps": 1.13,
+   "loopFirst": 0,
+   "loopLast": 142,
+   "seamSteps": NaN,
    "bootRow": 1049,
    "bodyDrift": [
     0,
     0
    ],
    "figurePx": 952.0,
-   "frames": 43,
+   "frames": 143,
    "frameMs": 41.666666666666664,
    "nat": [
-    587,
-    1044
+    771,
+    1049
    ],
    "crop": [
     5,
-    4,
-    577,
-    1035
+    5,
+    762,
+    1038
    ],
    "box": {
-    "w": 1.62719,
-    "h": 2.89403,
-    "foot": 0.02772
+    "w": 2.13726,
+    "h": 2.90789,
+    "foot": 0.03049
    },
    "pattern": "content/sprites/aldric-veo/move-left-r01/move-left-{}.png"
   },
@@ -286,65 +286,65 @@
   "move-up": {
    "video": "Attachments/Aldric/AldricWalkupandDown.mp4",
    "first": 0,
-   "last": 96,
+   "last": 119,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/aldric/idle 0:119",
-   "loopFirst": 28,
-   "loopLast": 66,
-   "seamSteps": 1.27,
-   "bootRow": 1053,
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
+   "bootRow": 1052,
    "bodyDrift": [
     0,
     0
    ],
    "figurePx": 1012.0,
-   "frames": 39,
+   "frames": 120,
    "frameMs": 41.666666666666664,
    "nat": [
-    607,
-    1056
+    624,
+    1059
    ],
    "crop": [
+    5,
     4,
-    4,
-    598,
-    1048
+    614,
+    1051
    ],
    "box": {
-    "w": 1.58287,
-    "h": 2.75374,
+    "w": 1.62721,
+    "h": 2.76156,
     "foot": 0.02868
    },
    "pattern": "content/sprites/aldric-veo/move-up-r01/move-up-{}.png"
   },
   "move-down": {
    "video": "Attachments/Aldric/AldricWalkupandDown.mp4",
-   "first": 124,
-   "last": 220,
+   "first": 120,
+   "last": 239,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/aldric/idle 0:119",
-   "loopFirst": 144,
-   "loopLast": 187,
-   "seamSteps": 1.17,
-   "bootRow": 1063,
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
+   "bootRow": 1064,
    "bodyDrift": [
     0,
     0
    ],
    "figurePx": 1021.0,
-   "frames": 44,
+   "frames": 120,
    "frameMs": 41.666666666666664,
    "nat": [
-    705,
-    1078
+    711,
+    1079
    ],
    "crop": [
     4,
     0,
-    696,
-    1070
+    702,
+    1074
    ],
    "box": {
-    "w": 1.82222,
-    "h": 2.78633,
+    "w": 1.83774,
+    "h": 2.78891,
     "foot": 0.03619
    },
    "pattern": "content/sprites/aldric-veo/move-down-r01/move-down-{}.png"

@@ -1,0 +1,79 @@
+{
+ "about": "ashes-crawler's Personagens Cinemática (tools/scripts/sprites/quality_copies.py, the rule of 2026-10-25): every clip of cut.json from the same matted frames, every frame (the clip's own timing), the figure ~610 px tall (a clip already shorter keeps its own size).",
+ "set": "ashes-crawler-cine-media",
+ "version": "cine-v01",
+ "figureUnits": 1.6212,
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/ashes-crawler/idle",
+   "video": "Attachments/SandCrawler/iDLEaSHCRWALER.mp4",
+   "first": 16,
+   "last": 95,
+   "mode": "loop",
+   "mirror": true,
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
+   "scaleTo": 610
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/ashes-crawler/walkatt",
+   "video": "Attachments/SandCrawler/aSHCRAWLERWALKatt.mp4",
+   "first": 1,
+   "last": 92,
+   "mode": "loop",
+   "mirror": true,
+   "inPlace": true,
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
+   "scaleTo": 610
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "src": "build/video-cut/ashes-crawler/walkatt",
+   "video": "Attachments/SandCrawler/aSHCRAWLERWALKatt.mp4",
+   "first": 96,
+   "last": 191,
+   "impactFrame": 144,
+   "mode": "once",
+   "mirror": true,
+   "scaleTo": 610
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "kind": "stand",
+   "src": "build/video-cut/ashes-crawler/hitfall",
+   "video": "Attachments/AshcrawlerHitandFall.mp4",
+   "first": 8,
+   "last": 54,
+   "standUntil": 12,
+   "mode": "once",
+   "mirror": true,
+   "figurePx": 470,
+   "figureNote": "470 px: its standing body here is ~0.9 of the walk video's (522 px), by width and height on frames 6..12 and 48..54",
+   "scaleTo": 610
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "kind": "stand",
+   "src": "build/video-cut/ashes-crawler/hitfall",
+   "video": "Attachments/AshcrawlerHitandFall.mp4",
+   "first": 120,
+   "last": 215,
+   "standUntil": 124,
+   "mode": "once",
+   "mirror": true,
+   "figurePx": 470,
+   "scaleTo": 610
+  }
+ ],
+ "figureNote": "set so the idle body (its opaque box) is 3.0 units wide",
+ "result": "cut-result-cine-media.json"
+}

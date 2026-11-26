@@ -1,0 +1,105 @@
+{
+ "clips": {
+  "move": {
+   "video": "Attachments/Monsters/Horse/BanditHorseMan/Idle_Walk.mp4",
+   "first": 120,
+   "last": 239,
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
+   "bootRow": 675,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 613.0,
+   "scaledTo": 610.2,
+   "frames": 120,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    780,
+    661
+   ],
+   "crop": [
+    4,
+    5,
+    769,
+    651
+   ],
+   "box": {
+    "w": 4.60424,
+    "h": 3.9018,
+    "foot": 0.11751
+   },
+   "pattern": "content/sprites/bandit-horseman/move-cine-v01/move-{}.png"
+  },
+  "move-up": {
+   "video": "Attachments/BanditHorseman_walking_in_placeUPandDown.mp4",
+   "first": 0,
+   "last": 119,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/bandit-horseman/idle-walk 0:96",
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
+   "bootRow": 693,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 638.0,
+   "scaledTo": 609.6,
+   "frames": 120,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    272,
+    645
+   ],
+   "crop": [
+    5,
+    4,
+    263,
+    636
+   ],
+   "box": {
+    "w": 1.60815,
+    "h": 3.81345,
+    "foot": 0.06201
+   },
+   "pattern": "content/sprites/bandit-horseman/move-up-cine-v01/move-up-{}.png"
+  },
+  "move-down": {
+   "video": "Attachments/BanditHorseman_walking_in_placeUPandDown.mp4",
+   "first": 120,
+   "last": 239,
+   "colorMatch": "C:\\EmberEngineB\\build/video-cut/bandit-horseman/idle-walk 0:96",
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
+   "bootRow": 696,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 641.0,
+   "scaledTo": 610.0,
+   "frames": 120,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    266,
+    649
+   ],
+   "crop": [
+    5,
+    4,
+    257,
+    640
+   ],
+   "box": {
+    "w": 1.57254,
+    "h": 3.83677,
+    "foot": 0.06737
+   },
+   "pattern": "content/sprites/bandit-horseman/move-down-cine-v01/move-down-{}.png"
+  }
+ }
+}

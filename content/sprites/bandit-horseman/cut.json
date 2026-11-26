@@ -425,13 +425,12 @@
    "kind": "walk",
    "src": "build/video-cut/bandit-horseman/idle-walk",
    "video": "Attachments/Monsters/Horse/BanditHorseMan/Idle_Walk.mp4",
-   "first": 108,
+   "first": 120,
    "last": 239,
-   "loopMin": 24,
-   "loopMax": 120,
    "mode": "loop",
    "inPlace": true,
-   "why": "walking in place, the loop at its best seam"
+   "why": "walking in place, the loop at its best seam",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "hit",
@@ -1252,8 +1251,6 @@
    "video": "Attachments/BanditHorseman_walking_in_placeUPandDown.mp4",
    "first": 0,
    "last": 119,
-   "loopMin": 24,
-   "loopMax": 112,
    "inPlace": true,
    "mode": "loop",
    "why": "the user, 2026-11-20: walking away, seen from behind, in place; the loop at its best seam",
@@ -1646,7 +1643,8 @@
       0.194618
      ]
     ]
-   }
+   },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-down",
@@ -1656,8 +1654,6 @@
    "video": "Attachments/BanditHorseman_walking_in_placeUPandDown.mp4",
    "first": 120,
    "last": 239,
-   "loopMin": 24,
-   "loopMax": 112,
    "inPlace": true,
    "mode": "loop",
    "why": "the same video, walking toward the camera, facing us (the view cuts at 119 / 120)",
@@ -2046,7 +2042,8 @@
       0.194618
      ]
     ]
-   }
+   },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   }
  ],
  "scaleNote2": "the new up / down video's clips take the clip's own measured height, as the unit's other clips do (no figurePx)"

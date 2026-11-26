@@ -1,0 +1,66 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/SandCrawler/iDLEaSHCRWALER.mp4",
+   "first": 16,
+   "last": 95,
+   "bootRow": 702,
+   "bootRows": [
+    671,
+    707
+   ],
+   "figurePx": 689.5,
+   "scaledTo": 610.0,
+   "frames": 80,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1132,
+    637
+   ],
+   "crop": [
+    0,
+    0,
+    1128,
+    637
+   ],
+   "box": {
+    "w": 3.00962,
+    "h": 1.69358,
+    "foot": 0.03983
+   },
+   "pattern": "content/sprites/ashes-crawler/base-cine-v01/base-{}.png"
+  },
+  "move": {
+   "video": "Attachments/SandCrawler/aSHCRAWLERWALKatt.mp4",
+   "first": 1,
+   "last": 92,
+   "loopFirst": 1,
+   "loopLast": 92,
+   "seamSteps": NaN,
+   "bootRow": 646,
+   "bodyDrift": [
+    0,
+    0
+   ],
+   "figurePx": 523.0,
+   "frames": 92,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1046,
+    599
+   ],
+   "crop": [
+    5,
+    4,
+    1036,
+    591
+   ],
+   "box": {
+    "w": 3.2424,
+    "h": 1.85679,
+    "foot": 0.08679
+   },
+   "pattern": "content/sprites/ashes-crawler/move-cine-v01/move-{}.png"
+  }
+ }
+}

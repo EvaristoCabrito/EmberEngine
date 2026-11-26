@@ -12,11 +12,10 @@
    "video": "Attachments/SandCrawler/iDLEaSHCRWALER.mp4",
    "first": 16,
    "last": 95,
-   "loopMin": 40,
-   "loopMax": 80,
    "mode": "loop",
    "mirror": true,
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move",
@@ -24,14 +23,13 @@
    "kind": "walk",
    "src": "build/video-cut/ashes-crawler/walkatt",
    "video": "Attachments/SandCrawler/aSHCRAWLERWALKatt.mp4",
-   "first": 0,
-   "last": 95,
-   "loopMin": 40,
-   "loopMax": 95,
+   "first": 1,
+   "last": 92,
    "mode": "loop",
    "mirror": true,
    "inPlace": true,
-   "scaleTo": 610
+   "scaleTo": 610,
+   "maxLoop": "REGRA M\u00c1XIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "atk",

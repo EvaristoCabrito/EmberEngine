@@ -9,13 +9,10 @@
     671,
     707
    ],
-   "loopFirst": 16,
-   "loopLast": 86,
-   "seamSteps": 6.72,
-   "frameCountFrom": 71,
-   "figurePx": 689.0,
+   "frameCountFrom": 80,
+   "figurePx": 689.5,
    "frames": 64,
-   "frameMs": 46.22395833333333,
+   "frameMs": 52.08333333333333,
    "nat": [
     1280,
     720
@@ -23,54 +20,46 @@
    "crop": [
     0,
     0,
-    1276,
+    1275,
     720
    ],
    "box": {
-    "w": 3.01181,
-    "h": 1.69414,
-    "foot": 0.04
+    "w": 3.00962,
+    "h": 1.69291,
+    "foot": 0.03997
    },
-   "pattern": "content/sprites/ashes-crawler/base-media64-v02/base-{}.png",
-   "steadied": {
-    "from": "content/sprites/ashes-crawler/base-media64-v01",
-    "columns": [
-     0.0,
-     0.5
-    ],
-    "why": "the video's camera drifted (the user, 2026-11-11): each frame moved onto frame 1's still part"
-   }
+   "pattern": "content/sprites/ashes-crawler/base-media64-v01/base-{}.png"
   },
   "move": {
    "video": "Attachments/SandCrawler/aSHCRAWLERWALKatt.mp4",
-   "first": 0,
-   "last": 95,
+   "first": 1,
+   "last": 92,
    "loopFirst": 1,
-   "loopLast": 77,
-   "seamSteps": 2.76,
+   "loopLast": 92,
+   "seamSteps": NaN,
    "bootRow": 646,
    "bodyDrift": [
     0,
     0
    ],
-   "frameCountFrom": 77,
-   "figurePx": 522.0,
+   "frameCountFrom": 92,
+   "figurePx": 523.0,
    "frames": 64,
-   "frameMs": 50.13020833333333,
+   "frameMs": 59.89583333333333,
    "nat": [
-    1029,
-    573
+    1046,
+    599
    ],
    "crop": [
     5,
-    5,
-    1019,
-    564
+    4,
+    1036,
+    591
    ],
    "box": {
-    "w": 3.19581,
-    "h": 1.77959,
-    "foot": 0.08696
+    "w": 3.2424,
+    "h": 1.85679,
+    "foot": 0.08679
    },
    "pattern": "content/sprites/ashes-crawler/move-media64-v01/move-{}.png"
   },

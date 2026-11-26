@@ -66,33 +66,35 @@
   },
   "move": {
    "video": "Attachments/Monsters/Horse/BanditHorseMan/Idle_Walk.mp4",
-   "first": 108,
+   "first": 120,
    "last": 239,
-   "loopFirst": 143,
-   "loopLast": 171,
-   "seamSteps": 0.55,
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 675,
    "bodyDrift": [
     0,
     0
    ],
-   "figurePx": 610.0,
-   "frames": 29,
-   "frameMs": 41.666666666666664,
+   "frameCountFrom": 120,
+   "figurePx": 613.0,
+   "scaledTo": 610.2,
+   "frames": 36,
+   "frameMs": 138.88888888888889,
    "nat": [
-    776,
-    652
+    780,
+    661
    ],
    "crop": [
-    5,
-    5,
-    764,
-    642
+    4,
+    7,
+    769,
+    649
    ],
    "box": {
-    "w": 4.57967,
-    "h": 3.84787,
-    "foot": 0.10033
+    "w": 4.60424,
+    "h": 3.9018,
+    "foot": 0.11751
    },
    "pattern": "content/sprites/bandit-horseman/move-media36-v01/move-{}.png"
   },
@@ -165,32 +167,33 @@
    "first": 0,
    "last": 119,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/bandit-horseman/idle-walk 0:96",
-   "loopFirst": 26,
-   "loopLast": 59,
-   "seamSteps": 1.17,
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
    "bootRow": 693,
    "bodyDrift": [
     0,
     0
    ],
-   "figurePx": 641.5,
-   "scaledTo": 610.0,
-   "frames": 34,
-   "frameMs": 41.666666666666664,
+   "frameCountFrom": 120,
+   "figurePx": 638.0,
+   "scaledTo": 609.6,
+   "frames": 36,
+   "frameMs": 138.88888888888889,
    "nat": [
-    269,
-    639
+    272,
+    645
    ],
    "crop": [
     5,
     5,
-    260,
-    629
+    262,
+    635
    ],
    "box": {
-    "w": 1.58815,
-    "h": 3.7726,
-    "foot": 0.06161
+    "w": 1.60815,
+    "h": 3.81345,
+    "foot": 0.06201
    },
    "pattern": "content/sprites/bandit-horseman/move-up-media36-v01/move-up-{}.png"
   },
@@ -199,32 +202,33 @@
    "first": 120,
    "last": 239,
    "colorMatch": "C:\\EmberEngineB\\build/video-cut/bandit-horseman/idle-walk 0:96",
-   "loopFirst": 177,
-   "loopLast": 204,
-   "seamSteps": 1.15,
+   "loopFirst": 120,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 696,
    "bodyDrift": [
     0,
     0
    ],
-   "figurePx": 643.0,
-   "scaledTo": 609.6,
-   "frames": 28,
-   "frameMs": 41.666666666666664,
+   "frameCountFrom": 120,
+   "figurePx": 641.0,
+   "scaledTo": 610.0,
+   "frames": 36,
+   "frameMs": 138.88888888888889,
    "nat": [
-    259,
-    638
+    266,
+    649
    ],
    "crop": [
+    5,
     4,
-    4,
-    250,
-    629
+    257,
+    635
    ],
    "box": {
-    "w": 1.52846,
-    "h": 3.76509,
-    "foot": 0.06698
+    "w": 1.57254,
+    "h": 3.83677,
+    "foot": 0.06737
    },
    "pattern": "content/sprites/bandit-horseman/move-down-media36-v01/move-down-{}.png"
   }

@@ -14,9 +14,10 @@
    "src": "build/video-cut/redo-sonnet/aldric__idle-v3",
    "video": "Attachments/Aldric/AldricIldeV3.mp4",
    "first": 0,
-   "last": 131,
+   "last": 142,
    "figurePx": 764.0,
    "mode": "pingpong",
+   "maxLoop": "REGRA MÁXIMA (2026-11-26): the whole idle stretch of the video, measured on the video's contact sheet (max-loops-idle.py)",
    "scaleTo": 610,
    "version": "cine-r01"
   },
@@ -819,9 +820,7 @@
    "src": "build/video-cut/redo-sonnet/aldric__walk",
    "video": "Attachments/Aldric/Aldric_walking_left_in_place_51472b70_1080p.mp4",
    "first": 0,
-   "last": 100,
-   "loopMin": 36,
-   "loopMax": 100,
+   "last": 142,
    "inPlace": true,
    "mode": "loop",
    "mirror": true,
@@ -1172,6 +1171,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610,
    "version": "cine-r01"
   },
@@ -1182,9 +1182,7 @@
    "src": "build/video-cut/redo-sonnet/aldric__walk",
    "video": "Attachments/Aldric/Aldric_walking_left_in_place_51472b70_1080p.mp4",
    "first": 0,
-   "last": 100,
-   "loopMin": 36,
-   "loopMax": 100,
+   "last": 142,
    "inPlace": true,
    "mode": "loop",
    "figurePx": 952.0,
@@ -1534,6 +1532,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610,
    "version": "cine-r01"
   },
@@ -3073,9 +3072,7 @@
    "src": "build/video-cut/redo-sonnet/aldric__down",
    "video": "Attachments/Aldric/AldricWalkupandDown.mp4",
    "first": 0,
-   "last": 96,
-   "loopMin": 32,
-   "loopMax": 96,
+   "last": 119,
    "inPlace": true,
    "mode": "loop",
    "figurePx": 1012.0,
@@ -3457,6 +3454,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610,
    "version": "cine-r01"
   },
@@ -3466,10 +3464,8 @@
    "kind": "walk",
    "src": "build/video-cut/redo-sonnet/aldric__down",
    "video": "Attachments/Aldric/AldricWalkupandDown.mp4",
-   "first": 124,
-   "last": 220,
-   "loopMin": 32,
-   "loopMax": 97,
+   "first": 120,
+   "last": 239,
    "inPlace": true,
    "mode": "loop",
    "figurePx": 1021.0,
@@ -3835,6 +3831,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610,
    "version": "cine-r01"
   }
