@@ -171,33 +171,33 @@
    "first": 0,
    "last": 239,
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
-   "loopFirst": 102,
-   "loopLast": 233,
-   "seamSteps": 1.0,
+   "loopFirst": 0,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 1050,
    "bodyDrift": [
     -13,
     27
    ],
-   "frameCountFrom": 132,
-   "figurePx": 993.0,
-   "scaledTo": 610.1,
+   "frameCountFrom": 240,
+   "figurePx": 992.0,
+   "scaledTo": 610.5,
    "frames": 64,
-   "frameMs": 85.9375,
+   "frameMs": 156.25,
    "nat": [
     538,
-    639
+    640
    ],
    "crop": [
+    6,
     3,
-    3,
-    532,
-    632
+    528,
+    633
    ],
    "box": {
-    "w": 2.27341,
-    "h": 2.70021,
-    "foot": 0.03553
+    "w": 2.27571,
+    "h": 2.70716,
+    "foot": 0.03563
    },
    "pattern": "content/sprites/kael-v3/move-media64-v1121/move-{}.png"
   },
@@ -206,31 +206,32 @@
    "first": 0,
    "last": 142,
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
-   "loopFirst": 72,
-   "loopLast": 121,
-   "seamSteps": 0.77,
+   "loopFirst": 0,
+   "loopLast": 142,
+   "seamSteps": NaN,
    "bootRow": 1053,
    "bodyDrift": [
-    19,
-    47
+    0,
+    50
    ],
-   "figurePx": 996.5,
+   "frameCountFrom": 143,
+   "figurePx": 995.0,
    "scaledTo": 609.8,
-   "frames": 50,
-   "frameMs": 41.666666666666664,
+   "frames": 64,
+   "frameMs": 93.09895833333333,
    "nat": [
-    619,
-    645
+    646,
+    646
    ],
    "crop": [
-    3,
     4,
-    612,
-    631
+    4,
+    637,
+    638
    ],
    "box": {
-    "w": 2.62013,
-    "h": 2.73018,
+    "w": 2.73039,
+    "h": 2.73039,
     "foot": 0.05617
    },
    "pattern": "content/sprites/kael-v3/move-left-media64-v1121/move-left-{}.png"
@@ -471,32 +472,33 @@
    "first": 0,
    "last": 119,
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
-   "loopFirst": 34,
-   "loopLast": 74,
-   "seamSteps": 2.26,
+   "loopFirst": 0,
+   "loopLast": 119,
+   "seamSteps": NaN,
    "bootRow": 1046,
    "bodyDrift": [
-    -14,
-    37
+    -22,
+    44
    ],
-   "figurePx": 986.0,
-   "scaledTo": 610.1,
-   "frames": 41,
-   "frameMs": 41.666666666666664,
+   "frameCountFrom": 120,
+   "figurePx": 984.0,
+   "scaledTo": 609.6,
+   "frames": 64,
+   "frameMs": 78.125,
    "nat": [
-    369,
-    628
+    386,
+    635
    ],
    "crop": [
     3,
-    3,
-    363,
-    622
+    2,
+    380,
+    630
    ],
    "box": {
-    "w": 1.55951,
-    "h": 2.65413,
-    "foot": 0.02273
+    "w": 1.63348,
+    "h": 2.68719,
+    "foot": 0.02541
    },
    "pattern": "content/sprites/kael-v3/move-up-media64-v1121/move-up-{}.png"
   },
@@ -505,32 +507,33 @@
    "first": 121,
    "last": 239,
    "colorMatch": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
-   "loopFirst": 157,
-   "loopLast": 196,
-   "seamSteps": 3.25,
+   "loopFirst": 121,
+   "loopLast": 239,
+   "seamSteps": NaN,
    "bootRow": 1048,
    "bodyDrift": [
-    -41,
-    7
+    -64,
+    25
    ],
+   "frameCountFrom": 119,
    "figurePx": 991.0,
-   "scaledTo": 610.4,
-   "frames": 40,
-   "frameMs": 41.666666666666664,
+   "scaledTo": 610.0,
+   "frames": 64,
+   "frameMs": 77.47395833333333,
    "nat": [
-    334,
-    632
+    357,
+    634
    ],
    "crop": [
     3,
     3,
-    328,
-    626
+    351,
+    628
    ],
    "box": {
-    "w": 1.41366,
-    "h": 2.67496,
-    "foot": 0.03308
+    "w": 1.50999,
+    "h": 2.68161,
+    "foot": 0.03303
    },
    "pattern": "content/sprites/kael-v3/move-down-media64-v1121/move-down-{}.png"
   },

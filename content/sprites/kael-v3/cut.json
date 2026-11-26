@@ -2233,8 +2233,6 @@
    "video": "Attachments/KaelV3/supersize/WalkRight.mp4",
    "first": 0,
    "last": 239,
-   "loopMin": 96,
-   "loopMax": 239,
    "mode": "loop",
    "why": "the whole walk (he walks in place to the right), the seam at the best place between 4 and 10 s",
    "colorMatch": {
@@ -2595,7 +2593,8 @@
      ]
     ]
    },
-   "version": "v1121"
+   "version": "v1121",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-left",
@@ -2605,8 +2604,6 @@
    "video": "Attachments/KaelV3/supersize/WalkLeft.mp4",
    "first": 0,
    "last": 142,
-   "loopMin": 40,
-   "loopMax": 142,
    "mode": "loop",
    "why": "the user, 2026-11-09: their own walk to the left, in place of the mirrored walk to the right; the whole video for the loop (frames 108 and 120, written half when the PC restarted, matted again 2026-11-10)",
    "colorMatch": {
@@ -2947,7 +2944,8 @@
      ]
     ]
    },
-   "version": "v1121"
+   "version": "v1121",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "special",
@@ -5121,8 +5119,6 @@
    "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",
    "first": 0,
    "last": 119,
-   "loopMin": 40,
-   "loopMax": 110,
    "mode": "loop",
    "why": "walking away from the camera, in place (the video cuts to his front at 120)",
    "colorMatch": {
@@ -5479,7 +5475,8 @@
      ]
     ]
    },
-   "version": "v1121"
+   "version": "v1121",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-down",
@@ -5489,8 +5486,6 @@
    "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",
    "first": 121,
    "last": 239,
-   "loopMin": 40,
-   "loopMax": 115,
    "mode": "loop",
    "why": "the user, 2026-11-20: KaelWalkBack5sec is the ready-made up and down (10 s: he walks away 0-119, the video cuts to his front at 120): the walk down now comes from its front half (121-239) instead of the separate KaelWalkFront (a 1080 x 1920 test, 7 frames on the right edge); the set's light is the one already matched on those frames",
    "version": "v1121",
@@ -5847,7 +5842,8 @@
       0.932472
      ]
     ]
-   }
+   },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "emote05",

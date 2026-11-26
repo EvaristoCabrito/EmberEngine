@@ -2233,8 +2233,6 @@
    "video": "Attachments/KaelV3/supersize/WalkRight.mp4",
    "first": 0,
    "last": 239,
-   "loopMin": 96,
-   "loopMax": 239,
    "mode": "loop",
    "colorMatch": {
     "reference": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
@@ -2594,6 +2592,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610,
    "version": "cine-v1121"
   },
@@ -2605,8 +2604,6 @@
    "video": "Attachments/KaelV3/supersize/WalkLeft.mp4",
    "first": 0,
    "last": 142,
-   "loopMin": 40,
-   "loopMax": 142,
    "mode": "loop",
    "colorMatch": {
     "reference": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
@@ -2946,6 +2943,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610,
    "version": "cine-v1121"
   },
@@ -5121,8 +5119,6 @@
    "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",
    "first": 0,
    "last": 119,
-   "loopMin": 40,
-   "loopMax": 110,
    "mode": "loop",
    "colorMatch": {
     "reference": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
@@ -5478,6 +5474,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610,
    "version": "cine-v1121"
   },
@@ -5489,8 +5486,6 @@
    "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",
    "first": 121,
    "last": 239,
-   "loopMin": 40,
-   "loopMax": 115,
    "mode": "loop",
    "colorMatch": {
     "reference": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
@@ -5846,6 +5841,7 @@
      ]
     ]
    },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax",
    "scaleTo": 610,
    "version": "cine-v1121"
   },

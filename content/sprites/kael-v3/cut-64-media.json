@@ -2233,8 +2233,6 @@
    "video": "Attachments/KaelV3/supersize/WalkRight.mp4",
    "first": 0,
    "last": 239,
-   "loopMin": 96,
-   "loopMax": 239,
    "mode": "loop",
    "colorMatch": {
     "reference": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
@@ -2595,7 +2593,8 @@
     ]
    },
    "scaleTo": 610,
-   "version": "media64-v1121"
+   "version": "media64-v1121",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-left",
@@ -2605,8 +2604,6 @@
    "video": "Attachments/KaelV3/supersize/WalkLeft.mp4",
    "first": 0,
    "last": 142,
-   "loopMin": 40,
-   "loopMax": 142,
    "mode": "loop",
    "colorMatch": {
     "reference": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
@@ -2947,7 +2944,8 @@
     ]
    },
    "scaleTo": 610,
-   "version": "media64-v1121"
+   "version": "media64-v1121",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "special",
@@ -5121,8 +5119,6 @@
    "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",
    "first": 0,
    "last": 119,
-   "loopMin": 40,
-   "loopMax": 110,
    "mode": "loop",
    "colorMatch": {
     "reference": "build/video-cut/kael-att-v2/attack 104:143 + the set's grade (match_set_light.py)",
@@ -5479,7 +5475,8 @@
     ]
    },
    "scaleTo": 610,
-   "version": "media64-v1121"
+   "version": "media64-v1121",
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "move-down",
@@ -5489,8 +5486,6 @@
    "video": "Attachments/KaelV3/supersize/KaelWalkBack5sec.mp4",
    "first": 121,
    "last": 239,
-   "loopMin": 40,
-   "loopMax": 115,
    "mode": "loop",
    "version": "media64-v1121",
    "scaleTo": 610,
@@ -5847,7 +5842,8 @@
       0.932472
      ]
     ]
-   }
+   },
+   "maxLoop": "REGRA MÁXIMA (2026-11-25): the whole stretch, every frame of the walk / hover in its video, first to last, no loopMin / loopMax"
   },
   {
    "clip": "emote05",
