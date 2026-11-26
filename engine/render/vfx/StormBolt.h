@@ -26,6 +26,9 @@
 //   Cadeia de Raios       the bolt leaves the hand and jumps from body to body, each jump its own tree, thinner than the last; when
 //                         it has reached the last body the whole chain lights at once, one more time.
 //
+//   Choque                smaller than the Raio (3/4) and never its shape: a straighter bolt with two short forks, on its own path;
+//                         it falls from as high in the sky as the Raio does, never out of nothing or a cloud (the user, 2026-11-25).
+//
 // World space (y up). A bolt's return stroke lands at `impact` (the rules' damage, numbers and hit pose land then). Drawn with the
 // Combat material (shaders/vfx.hlsl: 0 streaks, 3 ground ring, 6 lightning) and GasVolume puffs (the cloud, the smoke).
 
@@ -49,7 +52,7 @@ struct BoltLimb {
 
 class StormBolt {
  public:
-  enum class Style { Bolt, Storm, Wrath, Echo };
+  enum class Style { Bolt, Shock, Storm, Wrath, Echo };
   struct Target {
     glm::vec3 feet{0.0f};
     float height = 1.8f;  // the card's height

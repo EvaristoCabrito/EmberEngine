@@ -778,7 +778,8 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     // Relâmpago 05 (vfx/StormBolt): the same spell struck another way; Choque is the same at 3/4 size.
     std::vector<StormBolt::Target> struck;
     for (const Spot& s : targets) struck.push_back({s.feet, heightOf(s)});
-    stormBolts_.emplace_back(StormBolt::Style::Bolt, caster.feet, heightOf(caster), struck, start, impact, kind == "shock" ? 0.75f : 1.0f, 0x51a7eu);
+    stormBolts_.emplace_back(kind == "shock" ? StormBolt::Style::Shock : StormBolt::Style::Bolt, caster.feet, heightOf(caster), struck, start, impact,
+                             kind == "shock" ? 0.75f : 1.0f, kind == "shock" ? 0x7c0c3u : 0x51a7eu);  // Choque: smaller, its own shape and path, from the sky
   } else if (isLightning(kind, look)) {
     // Relâmpago 02, ours, in 3D (vfx/Lightning): a bolt from the sky on every struck body; Choque is the same at 3/4 size.
     std::vector<Lightning::Target> struck;

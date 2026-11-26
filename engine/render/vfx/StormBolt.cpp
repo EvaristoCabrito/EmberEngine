@@ -260,10 +260,10 @@ void smoke(VfxFrame& frame, uint32_t quad, float time, glm::vec3 origin, float r
 // limb still had to go (`reachMost` at most, for the trunk's), and is told where along the trunk it left: the leader coming down
 // lights it as it passes.
 void growTree(std::vector<BoltLimb>& limbs, glm::vec3 from, glm::vec3 to, int levels, int generation, float alongStart, float trunkLength, uint32_t seed,
-              float reachMost) {
+              float reachMost, int trunkForks = 5, float trunkRough = 0.13f) {
   BoltLimb limb;
   limb.generation = generation;
-  limb.points = fractalLine(from, to, levels, generation == 0 ? 0.13f : 0.17f, seed);
+  limb.points = fractalLine(from, to, levels, generation == 0 ? trunkRough : 0.17f, seed);
   const size_t n = limb.points.size();
   std::vector<float> run(n, 0.0f);
   for (size_t i = 1; i < n; ++i) run[i] = run[i - 1] + glm::length(limb.points[i] - limb.points[i - 1]);
@@ -278,7 +278,7 @@ void growTree(std::vector<BoltLimb>& limbs, glm::vec3 from, glm::vec3 to, int le
   const std::vector<glm::vec3> points = limb.points;
   limbs.push_back(std::move(limb));
 
-  const int forks = generation == 0 ? 5 : generation == 1 ? 2 : 0;
+  const int forks = generation == 0 ? trunkForks : generation == 1 ? 2 : 0;
   if (forks == 0 || levels - 2 < 2 || n < 3) return;
   const glm::vec3 d = unit(to - from, -kUp);
   const glm::vec3 e1 = glm::normalize(glm::cross(d, std::abs(d.y) < 0.9f ? kUp : glm::vec3(1.0f, 0.0f, 0.0f))), e2 = glm::cross(d, e1);
@@ -291,7 +291,7 @@ void growTree(std::vector<BoltLimb>& limbs, glm::vec3 from, glm::vec3 to, int le
     float reach = (total - run[index]) * (0.35f + 0.35f * hash01(seed, key, 24));
     if (generation == 0) reach = std::min(reach, reachMost);
     growTree(limbs, points[index], points[index] + way * reach, levels - 2, generation + 1, alongStart + run[index] / trunk, trunk,
-             seed * 31u + key * 977u + static_cast<uint32_t>(generation) * 7919u + 1u, reachMost);
+             seed * 31u + key * 977u + static_cast<uint32_t>(generation) * 7919u + 1u, reachMost, trunkForks, trunkRough);
   }
 }
 
@@ -368,10 +368,11 @@ void drawBodyArcs(const Pen& pen, glm::vec3 body, float height, float k, uint32_
 // glowing, sparks that rise, fall and bounce once, smoke, and the light: it spikes with every flash and lights the whole area for
 // that moment, almost none between them, then the trace's violet and the hot ground's glow die away.
 void drawStruck(const Pen& pen, glm::vec3 feet, glm::vec3 body, float height, bool stands, float k, uint32_t seed, uint32_t shape, float age, const Flash& flash,
-                float burnEnd, float tail, uint32_t sparks, std::vector<VfxInstance>& streaks) {
+                float burnEnd, float tail, uint32_t sparks, std::vector<VfxInstance>& streaks, float crawlFor = 0.35f, uint32_t arcs = 3u) {
   const bool on = flash.on();
-  const float crawl = burnEnd + 0.35f;
-  if (stands && age < crawl) drawBodyArcs(pen, body, height, k, seed, shape, on ? 6u : 3u, on ? 0.9f : 0.4f * (1.0f - ease(burnEnd, crawl, age)));
+  const float crawl = burnEnd + crawlFor;  // the arcs go on crawling over the body this long after the last flash (`arcs` of them)
+  if (stands && age < crawl)
+    drawBodyArcs(pen, body, height, k, seed, shape, on ? arcs * 2u : arcs, on ? 0.9f : (arcs > 3u ? 0.8f : 0.4f) * (1.0f - ease(burnEnd, crawl, age)));
   if (age < burnEnd + 0.05f) {
     std::vector<VfxVertex> v;
     for (uint32_t a = 0; a < 7; ++a) {
@@ -496,9 +497,14 @@ StormBolt::StormBolt(Style style, glm::vec3 casterFeet, float casterHeight, cons
     s.head = s.feet + kUp * (s.stands ? s.height * 0.9f : 0.05f);
     const float side = (hash01(s.seed, 1, 1) - 0.5f) * (cloud ? 2.0f : 4.0f);
     const glm::vec3 lean = glm::normalize(glm::vec3(hash01(s.seed, 2, 1) - 0.5f, 0.0f, hash01(s.seed, 3, 1) - 0.5f) + glm::vec3(1e-3f)) * side;
-    s.top = cloud ? glm::vec3(s.feet.x, cloudAt_.y - 0.3f + 0.6f * hash01(s.seed, 4, 1), s.feet.z) + lean
-                  : s.feet + kUp * ((7.5f + 2.0f * hash01(s.seed, 4, 1)) * k + s.height) + lean;
-    growTree(s.limbs, s.top, s.head, 6, 0, 0.0f, 0.0f, s.seed, 4.5f * k);
+    const bool shock = style_ == Style::Shock;
+    s.top = cloud   ? glm::vec3(s.feet.x, cloudAt_.y - 0.3f + 0.6f * hash01(s.seed, 4, 1), s.feet.z) + lean
+            : shock ? s.feet + kUp * (7.5f + 2.0f * hash01(s.seed, 4, 1) + s.height) + lean  // from as high in the sky as the Raio (not scaled down)
+                    : s.feet + kUp * ((7.5f + 2.0f * hash01(s.seed, 4, 1)) * k + s.height) + lean;
+    // The Raio: its own tree, untouched. Choque: from the same sky, never the same shape (the user, 2026-11-25): a straighter
+    // bolt that wanders less, two short forks instead of five.
+    if (shock) growTree(s.limbs, s.top, s.head, 6, 0, 0.0f, 0.0f, s.seed, 1.6f * k, 2, 0.07f);
+    else growTree(s.limbs, s.top, s.head, 6, 0, 0.0f, 0.0f, s.seed, 4.5f * k);
     const float n = static_cast<float>(i);
     s.at = style_ == Style::Storm ? impact_ + (i == 0 ? 0.0f : 0.13f * n * (0.6f + 0.8f * hash01(seed_, static_cast<uint32_t>(i), 71)))
                                   : impact_ + (style_ == Style::Wrath ? 0.08f : 0.07f) * n;
@@ -523,8 +529,10 @@ void StormBolt::buildCaster(float now, const Camera& camera, VfxFrame& frame, st
   const float f = ease(start_, std::max(thrownAt, start_ + 0.05f), now), fade = 1.0f - ease(impact_, release, now);
   std::vector<VfxInstance> streaks;
   drawGather(pen, feet_, hand_, k, f, fade, now - start_, seed_, streaks);
-  // the charge thrown up: a thin bolt climbing from the hand to the sky in a few hundredths of a second, held a moment, then its trace
-  if (now >= thrownAt && now < thrownAt + 0.2f) {
+  // the charge thrown up: a thin bolt climbing from the hand to the sky in a few hundredths of a second, held a moment, then its trace.
+  // Choque: only the arcs gathering in the hand, nothing thrown up (the user, 2026-11-25: "só os raios gathering nas mãos deles sem
+  // lançar ao céu"); its bolt falls from the sky onto the body.
+  if (style_ != Style::Shock && now >= thrownAt && now < thrownAt + 0.2f) {
     const float age = now - thrownAt;
     const std::vector<BoltLimb> limbs{thrown_};
     if (age < 0.08f) {
