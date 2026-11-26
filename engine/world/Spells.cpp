@@ -71,7 +71,7 @@ constexpr SpellData kSpells[] = {
     {"warp", "Portal", 3, "arcane", false},
     {"bless", "Bênção", 1, "", false},
     {"burningHands", "Mãos Flamejantes", 2, "fire", false},
-    {"ignite", "Ignite", 2, "fire", false},  // the monsters' and the Elementalista's (the user, 2026-11-17): the air over the aimed hex catches fire, radius 2 always
+    {"ignite", "Ignite", 2, "fire", false},  // the monsters' and the Elementalista's (the user, 2026-11-17): the air over the aimed hex catches fire, radius 1 always (the user, 2026-11-25: smaller than the old 2)
     {"turnUndead", "Expulsar Mortos-Vivos", 3, "holy", false},
     {"divineBolt", "Raio Divino", 4, "holy", false},
     {"summonFamiliar", "Invocar Familiar", 1, "", false},
@@ -2980,8 +2980,8 @@ std::string spellExplain(const std::string& kind, bool en) {
        "A cone of fire in front of you: everyone in it takes damage, allies too."},
       {"fireball", "Explode no hex que você mira: todos na área levam o mesmo dano, aliados também. Precisa de linha de tiro até o hex.",
        "Bursts on the hex you aim at: everyone in the area takes the same damage, allies too. Needs a clear shot to the hex."},
-      {"ignite", "O ar sobre o hex mirado pega fogo, raio 2 em todo nível; só os inimigos de quem lança levam o dano. Precisa de linha de tiro até o hex.",
-       "The air over the aimed hex catches fire, radius 2 at every level; only the caster's foes take the damage. Needs a clear shot to the hex."},
+      {"ignite", "O ar sobre o hex mirado pega fogo, raio 1 em todo nível; só os inimigos de quem lança levam o dano. Precisa de linha de tiro até o hex.",
+       "The air over the aimed hex catches fire, radius 1 at every level; only the caster's foes take the damage. Needs a clear shot to the hex."},
       {"causticVenom", "Ácido venenoso no hex mirado: quem está no centro leva o golpe forte, os outros na área levam o respingo; todos ficam envenenados, aliados também.",
        "Poisonous acid on the aimed hex: whoever stands in the centre takes the strong hit, the others in the area the splash; all are poisoned, allies too."},
       {"minorVenom", "Veneno fraco no hex mirado: o centro leva o golpe, a área em volta o respingo; todos ficam envenenados.",
@@ -6982,7 +6982,7 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
   }
   // The fire casters (the Ember Mushroom, the user 2026-11-17: "complete with fire magic"): any other enemy carrying Ignite, Bola de Fogo
   // or Mãos Flamejantes in its spell list. Bola de Fogo when its blast catches two foes or more and none of its own side, else Ignite
-  // on two or more (radius 2, foes only), else the cone, else Ignite or Bola de Fogo on one; with none left it strikes with its blow.
+  // on two or more (radius 1, foes only), else the cone, else Ignite or Bola de Fogo on one; with none left it strikes with its blow.
   auto carries = [&](const char* k) { return std::find(u.spellList.begin(), u.spellList.end(), std::string(k)) != u.spellList.end(); };
   if (c != "roccoTheBird" && (carries("ignite") || carries("fireball") || carries("burningHands"))) {
     const bool fireball = carries("fireball") && tierRemaining(u, "fireball") > 0;

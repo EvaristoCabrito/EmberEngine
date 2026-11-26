@@ -162,10 +162,11 @@ int fireballDice(int level) { return kFireballDice + spellGains("fireball", leve
 // Ignite (the user, 2026-11-17: "make a basic flame spell in 3D for monsters only, with proper scaling, but the aoe is always radius
 // 2", "call it just Ignite", "make it a T3 spell too", then "move it to T2"; no projectile): the air over the aimed hex catches fire. Tier 2, Fogo, aimed
 // at a hex in reach with a line of fire;
-// every hex within 2 rings of it at every level (its track has no area steps), the caster's foes only. 1D6 x 1.0 on MAG at first;
+// the aimed hex and the ring around it at every level (its track has no area steps), the caster's foes only (the user, 2026-11-25:
+// "diminuir essa porra de área": radius 1, 7 hexes, no longer 2). 1D6 x 1.0 on MAG at first;
 // its track adds reach, dice and weight on MAG (kSpellTracks). A monster carries it in its spellList (its own casts: igniteCharges);
 // the Elementalista gains it with the specialization ("make elementalist gain access to it", grantClassSpells).
-constexpr int kIgniteRange = 5, kIgniteRadius = 2, kIgniteDice = 1, kIgniteFaces = 6;
+constexpr int kIgniteRange = 5, kIgniteRadius = 1, kIgniteDice = 1, kIgniteFaces = 6;
 constexpr double kIgniteMul = 1.0;
 struct IgniteP {
   int dice, faces;
